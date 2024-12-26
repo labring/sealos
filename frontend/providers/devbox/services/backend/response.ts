@@ -1,50 +1,50 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
-import { V1Status } from '@kubernetes/client-node'
-import { ERROR_ENUM, ERROR_RESPONSE, ERROR_TEXT } from '../error'
+import { V1Status } from '@kubernetes/client-node';
+import { ERROR_ENUM, ERROR_RESPONSE, ERROR_TEXT } from '../error';
 
 export const jsonRes = <T = any>(props: {
-  code?: number
-  message?: string
-  data?: T
-  error?: any
+  code?: number;
+  message?: string;
+  data?: T;
+  error?: any;
 }) => {
-  const { code = 200, message = '', data = null, error } = props || {}
+  const { code = 200, message = '', data = null, error } = props || {};
 
   if (typeof error === 'string' && ERROR_RESPONSE[error]) {
-    return NextResponse.json(ERROR_RESPONSE[error])
+    return NextResponse.json(ERROR_RESPONSE[error]);
   }
-  const body = error?.body
-  if(body instanceof V1Status && body.message?.includes('40001:')) {
-    return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment])
+  const body = error?.body;
+  if (body instanceof V1Status && body.message?.includes('40001:')) {
+    return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment]);
   }
 
-  let msg = message
+  let msg = message;
   if ((code < 200 || code >= 400) && !message) {
-    if(code >= 500) {
-      console.log(error)
-      msg = 'Internal Server Error'
+    if (code >= 500) {
+      console.log(error);
+      msg = 'Internal Server Error';
     } else {
-      msg = error?.body?.message || error?.message || 'request error'
+      msg = error?.body?.message || error?.message || 'request error';
     }
     if (typeof error === 'string') {
-      msg = error
+      msg = error;
     } else if (error?.code && error.code in ERROR_TEXT) {
-      msg = ERROR_TEXT[error.code]
+      msg = ERROR_TEXT[error.code];
     }
-    console.log('===jsonRes===\n', error)
+    console.log('===jsonRes===\n', error);
   }
-  if(code >= 500) {
+  if (code >= 500) {
     return NextResponse.json({
       code,
       statusText: '',
-      message: msg,
-    })
+      message: msg
+    });
   }
   return NextResponse.json({
     code,
     statusText: '',
     message: msg,
     data: data || error || null
-  })
-}
+  });
+};

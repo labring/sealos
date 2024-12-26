@@ -1,6 +1,4 @@
-
 import { PrismaClient } from 'prisma/generated/client';
-
 
 const createPrismaClient = () =>
   new PrismaClient({

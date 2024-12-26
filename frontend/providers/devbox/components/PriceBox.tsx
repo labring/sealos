@@ -1,61 +1,61 @@
-import { useMemo } from 'react'
-import { CurrencySymbol } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { Box, Flex, useTheme, Text } from '@chakra-ui/react'
+import { useMemo } from 'react';
+import { CurrencySymbol } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { Box, Flex, useTheme, Text } from '@chakra-ui/react';
 
-import { usePriceStore } from '@/stores/price'
-import { useEnvStore } from '@/stores/env'
+import { usePriceStore } from '@/stores/price';
+import { useEnvStore } from '@/stores/env';
 
 export const colorMap = {
   cpu: '#33BABB',
   memory: '#36ADEF',
   nodeports: '#8172D8'
-}
+};
 
 const PriceBox = ({
   components = []
 }: {
   components: {
-    cpu: number
-    memory: number
-    nodeports: number
+    cpu: number;
+    memory: number;
+    nodeports: number;
     gpu?: {
-      type: string
-      amount: number
-    }
-  }[]
+      type: string;
+      amount: number;
+    };
+  }[];
 }) => {
-  const theme = useTheme()
-  const t = useTranslations()
-  const { env } = useEnvStore()
+  const theme = useTheme();
+  const t = useTranslations();
+  const { env } = useEnvStore();
 
-  const { sourcePrice } = usePriceStore()
+  const { sourcePrice } = usePriceStore();
 
   const priceList: {
-    label: string
-    color: string
-    value: string
+    label: string;
+    color: string;
+    value: string;
   }[] = useMemo(() => {
-    let cp = 0
-    let mp = 0
-    let pp = 0
-    let tp = 0
-    let gp = 0
+    let cp = 0;
+    let mp = 0;
+    let pp = 0;
+    let tp = 0;
+    let gp = 0;
 
     components.forEach(({ cpu, memory, nodeports, gpu }) => {
-      cp = (sourcePrice.cpu * cpu * 24) / 1000
-      mp = (sourcePrice.memory * memory * 24) / 1024
-      pp = sourcePrice.nodeports * nodeports * 24
+      cp = (sourcePrice.cpu * cpu * 24) / 1000;
+      mp = (sourcePrice.memory * memory * 24) / 1024;
+      pp = sourcePrice.nodeports * nodeports * 24;
 
       gp = (() => {
-        if (!gpu || !gpu.amount) return 0
-        const item = sourcePrice?.gpu?.find((item) => item.type === gpu.type)
-        if (!item) return 0
-        return +(item.price * gpu.amount * 24)
-      })()
+        if (!gpu || !gpu.amount) return 0;
+        const item = sourcePrice?.gpu?.find((item) => item.type === gpu.type);
+        if (!item) return 0;
+        return +(item.price * gpu.amount * 24);
+      })();
 
-      tp = cp + mp + pp + gp
-    })
+      tp = cp + mp + pp + gp;
+    });
 
     return [
       {
@@ -71,8 +71,8 @@ const PriceBox = ({
       },
       ...(sourcePrice?.gpu ? [{ label: 'GPU', color: '#89CD11', value: gp.toFixed(2) }] : []),
       { label: 'total_price', color: '#485058', value: tp.toFixed(2) }
-    ]
-  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports, sourcePrice.gpu])
+    ];
+  }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports, sourcePrice.gpu]);
 
   return (
     <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
@@ -95,7 +95,7 @@ const PriceBox = ({
         ))}
       </Flex>
     </Box>
-  )
-}
+  );
+};
 
-export default PriceBox
+export default PriceBox;

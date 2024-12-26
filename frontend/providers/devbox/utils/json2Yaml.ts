@@ -1,11 +1,11 @@
-import yaml from 'js-yaml'
+import yaml from 'js-yaml';
 
-import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox'
-import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox'
-import { produce } from 'immer'
-import { parseTemplateConfig, str2Num } from './tools'
-import { getUserNamespace } from './user'
-import { RuntimeNamespaceMap } from '@/types/static'
+import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
+import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
+import { produce } from 'immer';
+import { parseTemplateConfig, str2Num } from './tools';
+import { getUserNamespace } from './user';
+import { RuntimeNamespaceMap } from '@/types/static';
 
 export const json2Devbox = (
   data: DevboxEditType,
@@ -14,7 +14,7 @@ export const json2Devbox = (
   squashEnable: string = 'false'
 ) => {
   // runtimeNamespace inject
-  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion]
+  const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
   // gpu node selector
   const gpuMap = !!data.gpu?.type
     ? {
@@ -22,7 +22,7 @@ export const json2Devbox = (
           [gpuNodeSelectorKey]: data.gpu.type
         }
       }
-    : {}
+    : {};
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -50,7 +50,7 @@ export const json2Devbox = (
       state: 'Running',
       ...gpuMap
     }
-  }
+  };
   if (devboxAffinityEnable === 'true') {
     json.spec.tolerations = [
       {
@@ -58,7 +58,7 @@ export const json2Devbox = (
         operator: 'Exists',
         effect: 'NoSchedule'
       }
-    ]
+    ];
     json.spec.affinity = {
       nodeAffinity: {
         requiredDuringSchedulingIgnoredDuringExecution: {
@@ -74,10 +74,10 @@ export const json2Devbox = (
           ]
         }
       }
-    }
+    };
   }
-  return yaml.dump(json)
-}
+  return yaml.dump(json);
+};
 export const json2DevboxV2 = (
   data: json2DevboxV2Data,
   devboxAffinityEnable: string = 'true',
@@ -109,11 +109,11 @@ export const json2DevboxV2 = (
           name: item.portName,
           protocol: 'TCP',
           targetPort: str2Num(item.port)
-        }))
+        }));
       }),
       state: 'Running'
     }
-  }
+  };
   if (devboxAffinityEnable === 'true') {
     json.spec.tolerations = [
       {
@@ -121,7 +121,7 @@ export const json2DevboxV2 = (
         operator: 'Exists',
         effect: 'NoSchedule'
       }
-    ]
+    ];
     json.spec.affinity = {
       nodeAffinity: {
         requiredDuringSchedulingIgnoredDuringExecution: {
@@ -137,16 +137,16 @@ export const json2DevboxV2 = (
           ]
         }
       }
-    }
+    };
   }
-  return yaml.dump(json)
-}
+  return yaml.dump(json);
+};
 export const json2StartOrStop = ({
   devboxName,
   type
 }: {
-  devboxName: string
-  type: 'Paused' | 'Running'
+  devboxName: string;
+  type: 'Paused' | 'Running';
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -157,17 +157,17 @@ export const json2StartOrStop = ({
     spec: {
       state: type
     }
-  }
-  return yaml.dump(json)
-}
+  };
+  return yaml.dump(json);
+};
 export const getDevboxReleaseName = (devboxName: string, tag: string) => {
-  return `${devboxName}-${tag}`
-}
+  return `${devboxName}-${tag}`;
+};
 export const json2DevboxRelease = (data: {
-  devboxName: string
-  tag: string
-  releaseDes: string
-  devboxUid: string
+  devboxName: string;
+  tag: string;
+  releaseDes: string;
+  devboxUid: string;
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -190,9 +190,9 @@ export const json2DevboxRelease = (data: {
       newTag: data.tag,
       notes: data.releaseDes
     }
-  }
-  return yaml.dump(json)
-}
+  };
+  return yaml.dump(json);
+};
 
 export const json2Ingress = (
   data: Pick<DevboxEditTypeV2, 'name' | 'networks'>,
@@ -219,15 +219,15 @@ export const json2Ingress = (
       'nginx.ingress.kubernetes.io/proxy-send-timeout': '3600',
       'nginx.ingress.kubernetes.io/backend-protocol': 'WS'
     }
-  }
+  };
 
   const result = data.networks
     .filter((item) => item.openPublicDomain)
     .map((network, i) => {
-      const host = network.customDomain ? network.customDomain : network.publicDomain
+      const host = network.customDomain ? network.customDomain : network.publicDomain;
 
-      const secretName = network.customDomain ? network.networkName : ingressSecret
-      const protocol = network.protocol
+      const secretName = network.customDomain ? network.networkName : ingressSecret;
+      const protocol = network.protocol;
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
         kind: 'Ingress',
@@ -272,7 +272,7 @@ export const json2Ingress = (
             }
           ]
         }
-      }
+      };
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
@@ -301,7 +301,7 @@ export const json2Ingress = (
             ]
           }
         }
-      }
+      };
       const certificate = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Certificate',
@@ -319,20 +319,20 @@ export const json2Ingress = (
             kind: 'Issuer'
           }
         }
-      }
+      };
 
-      let resYaml = yaml.dump(ingress)
+      let resYaml = yaml.dump(ingress);
       if (network.customDomain) {
-        resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`
+        resYaml += `\n---\n${yaml.dump(issuer)}\n---\n${yaml.dump(certificate)}`;
       }
-      return resYaml
-    })
+      return resYaml;
+    });
 
-  return result.join('\n---\n')
-}
+  return result.join('\n---\n');
+};
 export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) => {
   if (data.networks.length === 0) {
-    return ''
+    return '';
   }
   const template = {
     apiVersion: 'v1',
@@ -355,9 +355,9 @@ export const json2Service = (data: Pick<DevboxEditTypeV2, 'name' | 'networks'>) 
         ['app.kubernetes.io/managed-by']: 'sealos'
       }
     }
-  }
-  return yaml.dump(template)
-}
+  };
+  return yaml.dump(template);
+};
 export const limitRangeYaml = `
 apiVersion: v1
 kind: LimitRange
@@ -369,13 +369,13 @@ spec:
         cpu: 50m
         memory: 64Mi
       type: Container
-`
+`;
 export const generateYamlList = (
   data: json2DevboxV2Data,
   env: {
-    devboxAffinityEnable?: string
-    squashEnable?: string
-    ingressSecret: string
+    devboxAffinityEnable?: string;
+    squashEnable?: string;
+    ingressSecret: string;
   }
 ) => {
   return [
@@ -399,5 +399,5 @@ export const generateYamlList = (
           }
         ]
       : [])
-  ]
-}
+  ];
+};

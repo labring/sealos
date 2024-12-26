@@ -1,33 +1,33 @@
-import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react'
-import dayjs from 'dayjs'
-import { useTranslations } from 'next-intl'
-import dynamic from 'next/dynamic'
+import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react';
+import dayjs from 'dayjs';
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 
-import MyIcon from '@/components/Icon'
-import MyTable from '@/components/MyTable'
-import PodLineChart from '@/components/PodLineChart'
+import MyIcon from '@/components/Icon';
+import MyTable from '@/components/MyTable';
+import PodLineChart from '@/components/PodLineChart';
 
-import { NetworkType } from '@/types/devbox'
-import { useCopyData } from '@/utils/tools'
+import { NetworkType } from '@/types/devbox';
+import { useCopyData } from '@/utils/tools';
 
-import { useDevboxStore } from '@/stores/devbox'
-import { useEnvStore } from '@/stores/env'
+import { useDevboxStore } from '@/stores/devbox';
+import { useEnvStore } from '@/stores/env';
 
-const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
+const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'));
 
 const MainBody = () => {
-  const t = useTranslations()
-  const { copyData } = useCopyData()
-  const { devboxDetail } = useDevboxStore()
-  const { env } = useEnvStore()
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const t = useTranslations();
+  const { copyData } = useCopyData();
+  const { devboxDetail } = useDevboxStore();
+  const { env } = useEnvStore();
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const networkColumn: {
-    title: string
-    dataIndex?: keyof NetworkType
-    key: string
-    render?: (item: NetworkType) => JSX.Element
-    width?: string
+    title: string;
+    dataIndex?: keyof NetworkType;
+    key: string;
+    render?: (item: NetworkType) => JSX.Element;
+    width?: string;
   }[] = [
     {
       title: t('port'),
@@ -37,7 +37,7 @@ const MainBody = () => {
           <Text pl={4} color={'grayModern.600'}>
             {item.port}
           </Text>
-        )
+        );
       },
       width: '0.5fr'
     },
@@ -54,7 +54,8 @@ const MainBody = () => {
             fontSize={'12px'}
             fontWeight={400}
             py={2}
-            borderRadius={'md'}>
+            borderRadius={'md'}
+          >
             <Text
               cursor="pointer"
               _hover={{
@@ -65,9 +66,10 @@ const MainBody = () => {
                 copyData(
                   `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`
                 )
-              }>{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</Text>
+              }
+            >{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</Text>
           </Tooltip>
-        )
+        );
       }
     },
     {
@@ -75,7 +77,7 @@ const MainBody = () => {
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
-          const address = item.customDomain || item.publicDomain
+          const address = item.customDomain || item.publicDomain;
           return (
             <Tooltip
               label={t('open_link')}
@@ -85,21 +87,23 @@ const MainBody = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Text
                 cursor="pointer"
                 color={'grayModern.600'}
                 _hover={{ textDecoration: 'underline' }}
-                onClick={() => window.open(`https://${address}`, '_blank')}>
+                onClick={() => window.open(`https://${address}`, '_blank')}
+              >
                 https://{address}
               </Text>
             </Tooltip>
-          )
+          );
         }
-        return <Text>-</Text>
+        return <Text>-</Text>;
       }
     }
-  ]
+  ];
   return (
     <Box bg={'white'} borderRadius="lg" pl={6} pt={2} pr={6} pb={6} h={'full'} borderWidth={1}>
       {/* monitor */}
@@ -131,7 +135,8 @@ const MainBody = () => {
               position={'absolute'}
               right={'2px'}
               top={'-6px'}
-              onClick={onOpen}>
+              onClick={onOpen}
+            >
               <MyIcon name="maximize" width={'16px'} fill={'#667085'} />
             </Button>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
@@ -168,7 +173,7 @@ const MainBody = () => {
       </Box>
       <MonitorModal isOpen={isOpen} onClose={onClose} />
     </Box>
-  )
-}
+  );
+};
 
-export default MainBody
+export default MainBody;

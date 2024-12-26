@@ -1,60 +1,60 @@
-import { Box, Flex, Image, Spinner, Text, Tooltip } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+import { Box, Flex, Image, Spinner, Text, Tooltip } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
 
-import MyIcon from '@/components/Icon'
-import GPUItem from '@/components/GPUItem'
-import { DevboxDetailType } from '@/types/devbox'
+import MyIcon from '@/components/Icon';
+import GPUItem from '@/components/GPUItem';
+import { DevboxDetailType } from '@/types/devbox';
 
-import { useEnvStore } from '@/stores/env'
-import { usePriceStore } from '@/stores/price'
-import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env';
+import { usePriceStore } from '@/stores/price';
+import { useDevboxStore } from '@/stores/devbox';
 
 const BasicInfo = () => {
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const t = useTranslations();
+  const { message: toast } = useMessage();
 
-  const { env } = useEnvStore()
-  const { sourcePrice } = usePriceStore()
-  const { devboxDetail } = useDevboxStore()
+  const { env } = useEnvStore();
+  const { sourcePrice } = usePriceStore();
+  const { devboxDetail } = useDevboxStore();
   // const { getRuntimeDetailLabel } = useRuntimeStore()
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`
+    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`;
     navigator.clipboard.writeText(sshCommand).then(() => {
       toast({
         title: t('copy_success'),
         status: 'success',
         duration: 2000,
         isClosable: true
-      })
-    })
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t])
+      });
+    });
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t]);
 
   const handleDownloadConfig = useCallback(
     async (config: DevboxDetailType['sshConfig']) => {
-      setLoading(true)
+      setLoading(true);
 
-      const privateKey = config?.sshPrivateKey as string
+      const privateKey = config?.sshPrivateKey as string;
 
-      const blob = new Blob([privateKey], { type: 'application/octet-stream' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = devboxDetail?.name || ''
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const blob = new Blob([privateKey], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = devboxDetail?.name || '';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
 
-      setLoading(false)
+      setLoading(false);
     },
     [devboxDetail?.name]
-  )
+  );
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
@@ -77,7 +77,7 @@ const BasicInfo = () => {
               width={'20px'}
               height={'20px'}
               onError={(e) => {
-                e.currentTarget.src = '/images/custom.svg'
+                e.currentTarget.src = '/images/custom.svg';
               }}
               alt={devboxDetail?.iconId}
               src={`/images/${devboxDetail?.iconId}.svg`}
@@ -91,7 +91,8 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text
               fontSize={'12px'}
-              w={'full'}>{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
+              w={'full'}
+            >{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -181,13 +182,15 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Text
                 cursor="pointer"
                 fontSize={'12px'}
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
-                w={'full'}>
+                w={'full'}
+              >
                 {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
               </Text>
             </Tooltip>
@@ -209,13 +212,15 @@ const BasicInfo = () => {
                 fontSize={'12px'}
                 fontWeight={400}
                 py={2}
-                borderRadius={'md'}>
+                borderRadius={'md'}
+              >
                 <Flex
                   p={1}
                   borderRadius={'6px'}
                   _hover={{
                     bg: 'rgba(17, 24, 36, 0.05)'
-                  }}>
+                  }}
+                >
                   <MyIcon
                     cursor={'pointer'}
                     name="download"
@@ -266,14 +271,16 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Flex
                 ml={3}
                 p={1}
                 borderRadius={'6px'}
                 _hover={{
                   bg: 'rgba(17, 24, 36, 0.05)'
-                }}>
+                }}
+              >
                 <MyIcon
                   cursor={'pointer'}
                   name="maximize"
@@ -288,7 +295,7 @@ const BasicInfo = () => {
         </Flex>
       </Flex>
     </Flex>
-  )
-}
+  );
+};
 
-export default BasicInfo
+export default BasicInfo;

@@ -1,21 +1,21 @@
-import MyIcon from '@/components/Icon'
-import { Box, BoxProps } from '@chakra-ui/react'
-import { useTranslations } from 'next-intl'
+import MyIcon from '@/components/Icon';
+import { Box, BoxProps } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
 
-import CpuSelector from './CpuSelector'
-import GpuSelector from './GpuSelector'
-import MemorySelector from './MemorySelector'
-import DevboxNameInput from './DevboxNameInput'
-import TemplateSelector from './TemplateSelector'
-import ConfigurationHeader from '../ConfigurationHeader'
-import TemplateRepositorySelector from './TemplateRepositorySelector'
+import CpuSelector from './CpuSelector';
+import GpuSelector from './GpuSelector';
+import MemorySelector from './MemorySelector';
+import DevboxNameInput from './DevboxNameInput';
+import TemplateSelector from './TemplateSelector';
+import ConfigurationHeader from '../ConfigurationHeader';
+import TemplateRepositorySelector from './TemplateRepositorySelector';
 
 export default function BasicConfiguration({
   isEdit,
   countGpuInventory,
   ...props
 }: BoxProps & { isEdit: boolean; countGpuInventory: (type: string) => number }) {
-  const t = useTranslations()
+  const t = useTranslations();
   return (
     <Box {...props}>
       <ConfigurationHeader>
@@ -37,5 +37,5 @@ export default function BasicConfiguration({
         <MemorySelector />
       </Box>
     </Box>
-  )
+  );
 }

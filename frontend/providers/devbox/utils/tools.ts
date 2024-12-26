@@ -1,129 +1,129 @@
-import { useMessage } from '@sealos/ui'
-import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration'
-import * as jsonpatch from 'fast-json-patch'
-import yaml from 'js-yaml'
-import { useTranslations } from 'next-intl'
+import { useMessage } from '@sealos/ui';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+import * as jsonpatch from 'fast-json-patch';
+import yaml from 'js-yaml';
+import { useTranslations } from 'next-intl';
 
-import { YamlKindEnum } from '@/constants/devbox'
-import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox'
-import { customAlphabet } from 'nanoid'
+import { YamlKindEnum } from '@/constants/devbox';
+import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
+import { customAlphabet } from 'nanoid';
 
-dayjs.extend(duration)
+dayjs.extend(duration);
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
-    return 0
+    return 0;
   }
-  let value = parseFloat(cpu)
+  let value = parseFloat(cpu);
 
   if (/n/gi.test(cpu)) {
-    value = value / 1000 / 1000
+    value = value / 1000 / 1000;
   } else if (/u/gi.test(cpu)) {
-    value = value / 1000
+    value = value / 1000;
   } else if (/m/gi.test(cpu)) {
-    value = value
+    value = value;
   } else {
-    value = value * 1000
+    value = value * 1000;
   }
   if (value < 0.1) {
-    return 0
+    return 0;
   }
-  return Number(value.toFixed(4))
-}
+  return Number(value.toFixed(4));
+};
 
 export const memoryFormatToMi = (memory = '0') => {
   if (!memory || memory === '0') {
-    return 0
+    return 0;
   }
 
-  let value = parseFloat(memory)
+  let value = parseFloat(memory);
 
   if (/Ki/gi.test(memory)) {
-    value = value / 1024
+    value = value / 1024;
   } else if (/Mi/gi.test(memory)) {
-    value = value
+    value = value;
   } else if (/Gi/gi.test(memory)) {
-    value = value * 1024
+    value = value * 1024;
   } else if (/Ti/gi.test(memory)) {
-    value = value * 1024 * 1024
+    value = value * 1024 * 1024;
   } else {
-    console.log('Invalid memory value')
-    value = 0
+    console.log('Invalid memory value');
+    value = 0;
   }
 
-  return Number(value.toFixed(2))
-}
+  return Number(value.toFixed(2));
+};
 
 export const storageFormatToNum = (storage = '0') => {
-  return +`${storage.replace(/gi/i, '')}`
-}
+  return +`${storage.replace(/gi/i, '')}`;
+};
 
 export const printMemory = (val: number) => {
-  return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`
-}
+  return val >= 1024 ? `${Math.round(val / 1024)} Gi` : `${val} Mi`;
+};
 
 export function downLoadBlob(content: BlobPart, type: string, fileName: string) {
-  const blob = new Blob([content], { type })
+  const blob = new Blob([content], { type });
 
-  const url = URL.createObjectURL(blob)
+  const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
 
-  link.click()
+  link.click();
 }
 
 export const obj2Query = (obj: Record<string, string | number>) => {
-  let str = ''
+  let str = '';
   Object.entries(obj).forEach(([key, val]) => {
     if (val) {
-      str += `${key}=${val}&`
+      str += `${key}=${val}&`;
     }
-  })
+  });
 
-  return str.slice(0, str.length - 1)
-}
+  return str.slice(0, str.length - 1);
+};
 
 export const useCopyData = () => {
-  const { message: toast } = useMessage()
-  const t = useTranslations()
+  const { message: toast } = useMessage();
+  const t = useTranslations();
 
   return {
     copyData: (data: string, title: string = 'copy_success') => {
       try {
-        const textarea = document.createElement('textarea')
-        textarea.value = data
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
+        const textarea = document.createElement('textarea');
+        textarea.value = data;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
         toast({
           title: t(title),
           status: 'success',
           duration: 1000
-        })
+        });
       } catch (error) {
-        console.error(error)
+        console.error(error);
         toast({
           title: t('copy_failed'),
           status: 'error'
-        })
+        });
       }
     }
-  }
-}
+  };
+};
 
 export const str2Num = (str?: string | number) => {
-  return !!str ? +str : 0
-}
+  return !!str ? +str : 0;
+};
 
 export const getErrText = (err: any, def = '') => {
-  const msg: string = typeof err === 'string' ? err : err?.message || def || ''
-  msg && console.log('error =>', msg)
-  return msg
-}
+  const msg: string = typeof err === 'string' ? err : err?.message || def || '';
+  msg && console.log('error =>', msg);
+  return msg;
+};
 
 /**
  * patch yamlList and get action
@@ -131,48 +131,48 @@ export const getErrText = (err: any, def = '') => {
 export const patchYamlList = ({
   parsedOldYamlList,
   parsedNewYamlList,
-  originalYamlList,
+  originalYamlList
 }: {
-  parsedOldYamlList: string[]
-  parsedNewYamlList: string[]
-  originalYamlList: DevboxKindsType[],
+  parsedOldYamlList: string[];
+  parsedNewYamlList: string[];
+  originalYamlList: DevboxKindsType[];
 }) => {
   const oldFormJsonList = parsedOldYamlList
     .map((item) => yaml.loadAll(item))
-    .flat() as DevboxKindsType[]
+    .flat() as DevboxKindsType[];
 
   const newFormJsonList = parsedNewYamlList
     .map((item) => yaml.loadAll(item))
-    .flat() as DevboxKindsType[]
+    .flat() as DevboxKindsType[];
 
-  const actions: DevboxPatchPropsType = []
+  const actions: DevboxPatchPropsType = [];
 
   // find delete
   oldFormJsonList.forEach((oldYamlJson) => {
     const item = newFormJsonList.find(
       (item) => item.kind === oldYamlJson.kind && item.metadata?.name === oldYamlJson.metadata?.name
-    )
+    );
     if (!item && oldYamlJson.metadata?.name) {
       actions.push({
         type: 'delete',
         kind: oldYamlJson.kind as `${YamlKindEnum}`,
         name: oldYamlJson.metadata?.name
-      })
+      });
     }
-  })
+  });
 
   // find create and patch
   newFormJsonList.forEach((newYamlJson) => {
     const oldFormJson = oldFormJsonList.find(
       (item) =>
         item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
-    )
+    );
 
     if (oldFormJson) {
-      const patchRes = jsonpatch.compare(oldFormJson, newYamlJson)
+      const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
 
       if (patchRes.length === 0) {
-        return
+        return;
       }
 
       /* Generate a new json using the formPatchResult and the crJson */
@@ -183,21 +183,21 @@ export const patchYamlList = ({
             (item) =>
               item.kind === oldFormJson?.kind &&
               item?.metadata?.name === oldFormJson?.metadata?.name
-          )
+          );
 
           if (!crOldYamlJson) {
-            return newYamlJson
+            return newYamlJson;
           }
-          crOldYamlJson = JSON.parse(JSON.stringify(crOldYamlJson))
+          crOldYamlJson = JSON.parse(JSON.stringify(crOldYamlJson));
 
           if (!crOldYamlJson) {
-            return newYamlJson
+            return newYamlJson;
           }
 
           /* generate new json */
           const _patchRes: jsonpatch.Operation[] = patchRes
             .map((item) => {
-              let jsonPatchError = jsonpatch.validate([item], crOldYamlJson)
+              let jsonPatchError = jsonpatch.validate([item], crOldYamlJson);
               if (jsonPatchError?.name === 'OPERATION_PATH_UNRESOLVABLE') {
                 switch (item.op) {
                   case 'add':
@@ -206,20 +206,20 @@ export const patchYamlList = ({
                       ...item,
                       op: 'add' as const,
                       value: item.value ?? ''
-                    }
+                    };
                   default:
-                    return null
+                    return null;
                 }
               }
-              return item
+              return item;
             })
-            .filter((op): op is jsonpatch.Operation => op !== null)
+            .filter((op): op is jsonpatch.Operation => op !== null);
 
-          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument
+          const patchResYamlJson = jsonpatch.applyPatch(crOldYamlJson, _patchRes, true).newDocument;
 
           // delete invalid field
           // @ts-ignore
-          delete patchResYamlJson.status
+          delete patchResYamlJson.status;
           patchResYamlJson.metadata = {
             name: patchResYamlJson.metadata?.name,
             namespace: patchResYamlJson.metadata?.namespace,
@@ -227,23 +227,23 @@ export const patchYamlList = ({
             annotations: patchResYamlJson.metadata?.annotations,
             ownerReferences: patchResYamlJson.metadata?.ownerReferences,
             finalizers: patchResYamlJson.metadata?.finalizers
-          }
+          };
 
-          return patchResYamlJson
+          return patchResYamlJson;
         } catch (error) {
-          console.error('ACTIONS JSON ERROR:\n', error)
-          return newYamlJson
+          console.error('ACTIONS JSON ERROR:\n', error);
+          return newYamlJson;
         }
-      })()
+      })();
 
       if (actionsJson.kind === YamlKindEnum.Service) {
         // @ts-ignore
-        const ports = actionsJson?.spec.ports || []
+        const ports = actionsJson?.spec.ports || [];
 
         // @ts-ignore
         if (ports.length > 1 && !ports[0]?.name) {
           // @ts-ignore
-          actionsJson.spec.ports[0].name = 'adaptport'
+          actionsJson.spec.ports[0].name = 'adaptport';
         }
       }
 
@@ -251,103 +251,103 @@ export const patchYamlList = ({
         type: 'patch',
         kind: newYamlJson.kind as `${YamlKindEnum}`,
         value: actionsJson as any
-      })
+      });
     } else {
       actions.push({
         type: 'create',
         kind: newYamlJson.kind as `${YamlKindEnum}`,
         value: yaml.dump(newYamlJson)
-      })
+      });
     }
-  })
+  });
 
-  return actions
-}
+  return actions;
+};
 
 /**
  * format pod createTime
  */
 export const formatPodTime = (createTimeStamp: Date = new Date()) => {
-  const podStartTimeStamp = dayjs(createTimeStamp)
+  const podStartTimeStamp = dayjs(createTimeStamp);
 
-  let timeDiff = Math.floor(dayjs().diff(podStartTimeStamp) / 1000)
+  let timeDiff = Math.floor(dayjs().diff(podStartTimeStamp) / 1000);
 
   // 计算天数
-  const days = Math.floor(timeDiff / (24 * 60 * 60))
-  timeDiff -= days * 24 * 60 * 60
+  const days = Math.floor(timeDiff / (24 * 60 * 60));
+  timeDiff -= days * 24 * 60 * 60;
 
   // 计算小时数
-  const hours = Math.floor(timeDiff / (60 * 60))
-  timeDiff -= hours * 60 * 60
+  const hours = Math.floor(timeDiff / (60 * 60));
+  timeDiff -= hours * 60 * 60;
 
   // 计算分钟数
-  const minutes = Math.floor(timeDiff / 60)
-  timeDiff -= minutes * 60
+  const minutes = Math.floor(timeDiff / 60);
+  timeDiff -= minutes * 60;
 
   // 计算秒数
-  const seconds = timeDiff
+  const seconds = timeDiff;
 
   if (days > 0) {
-    return `${days}d${hours}h`
+    return `${days}d${hours}h`;
   }
   if (hours > 0) {
-    return `${hours}h${minutes}m`
+    return `${hours}h${minutes}m`;
   }
   if (minutes > 0) {
-    return `${minutes}m${seconds}s`
+    return `${minutes}m${seconds}s`;
   }
-  return `${seconds}s`
-}
+  return `${seconds}s`;
+};
 
 export function calculateUptime(createdTime: Date): string {
-  const now = dayjs()
-  const created = dayjs(createdTime)
-  const diff = dayjs.duration(now.diff(created))
+  const now = dayjs();
+  const created = dayjs(createdTime);
+  const diff = dayjs.duration(now.diff(created));
 
-  const days = diff.days()
-  const hours = diff.hours()
-  const minutes = diff.minutes()
+  const days = diff.days();
+  const hours = diff.hours();
+  const minutes = diff.minutes();
 
-  let uptime = ''
+  let uptime = '';
   if (days > 0) {
-    uptime += `${days}d`
+    uptime += `${days}d`;
   }
   if (hours > 0) {
-    uptime += `${hours}h`
+    uptime += `${hours}h`;
   }
   if (minutes > 0) {
-    uptime += `${minutes}m`
+    uptime += `${minutes}m`;
   }
 
-  return uptime || 'Recently Started'
+  return uptime || 'Recently Started';
 }
 
 export const isElementInViewport = (element: Element) => {
-  const rect = element.getBoundingClientRect()
-  const windowHeight = window.innerHeight || document.documentElement.clientHeight
-  const windowWidth = window.innerWidth || document.documentElement.clientWidth
-  const vertInView = rect.top <= windowHeight && rect.top + rect.height >= 0
-  const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0
-  return vertInView && horInView
-}
-export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
+  const rect = element.getBoundingClientRect();
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+  const windowWidth = window.innerWidth || document.documentElement.clientWidth;
+  const vertInView = rect.top <= windowHeight && rect.top + rect.height >= 0;
+  const horInView = rect.left <= windowWidth && rect.left + rect.width >= 0;
+  return vertInView && horInView;
+};
+export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 export const parseTemplateConfig = (config: string) => {
   return JSON.parse(config) as {
-    user: string
-    workingDir: string
-    releaseCommand: string[]
-    releaseArgs: string[]
+    user: string;
+    workingDir: string;
+    releaseCommand: string[];
+    releaseArgs: string[];
     appPorts: {
-      name: string
-      port: number
-      protocol: string
-      targetPort: number
-    }[]
+      name: string;
+      port: number;
+      protocol: string;
+      targetPort: number;
+    }[];
     ports: {
-      containerPort: number
-      name: string
-      protocol: string
-    }[]
-  }
-}
+      containerPort: number;
+      name: string;
+      protocol: string;
+    }[];
+  };
+};

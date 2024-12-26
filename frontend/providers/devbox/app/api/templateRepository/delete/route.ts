@@ -1,33 +1,33 @@
-import { authSessionWithJWT } from '@/services/backend/auth'
-import { jsonRes } from '@/services/backend/response'
-import { devboxDB } from '@/services/db/init'
-import { NextRequest } from 'next/server'
-import { z } from 'zod'
+import { authSessionWithJWT } from '@/services/backend/auth';
+import { jsonRes } from '@/services/backend/response';
+import { devboxDB } from '@/services/db/init';
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function DELETE(req: NextRequest) {
   try {
-    const headerList = req.headers
-    const { searchParams } = req.nextUrl
-    const idRaw = searchParams.get('templateRepositoryUid') as string
+    const headerList = req.headers;
+    const { searchParams } = req.nextUrl;
+    const idRaw = searchParams.get('templateRepositoryUid') as string;
 
-    const result = z.string().uuid().safeParse(idRaw)
-    if(!result.success) {
+    const result = z.string().uuid().safeParse(idRaw);
+    if (!result.success) {
       return jsonRes({
         code: 400,
         error: 'Invalid template id'
-      })
+      });
     }
-    const uid = result.data
-    const {payload} = await authSessionWithJWT(headerList)
+    const uid = result.data;
+    const { payload } = await authSessionWithJWT(headerList);
 
-    const deletedAt = new Date()
+    const deletedAt = new Date();
     await devboxDB.templateRepository.update({
       where: {
         uid,
         organizationUid: payload.organizationUid,
-        isDeleted: false,
+        isDeleted: false
       },
       data: {
         deletedAt,
@@ -36,7 +36,7 @@ export async function DELETE(req: NextRequest) {
           updateMany: {
             where: {
               templateRepositoryUid: uid,
-              isDeleted: false,
+              isDeleted: false
             },
             data: {
               deletedAt,
@@ -45,16 +45,16 @@ export async function DELETE(req: NextRequest) {
           }
         }
       }
-    })
+    });
     return jsonRes({
       data: {
         isDeleted: true
       }
-    })
+    });
   } catch (err: any) {
     return jsonRes({
       code: 500,
       error: err
-    })
+    });
   }
 }

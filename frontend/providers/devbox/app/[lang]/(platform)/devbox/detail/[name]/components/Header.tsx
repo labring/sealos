@@ -1,113 +1,113 @@
-import { Box, Button, Flex } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { Dispatch, useCallback, useMemo, useState } from 'react'
+import { Box, Button, Flex } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { Dispatch, useCallback, useMemo, useState } from 'react';
 
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
-import { useRouter } from '@/i18n'
-import { useDevboxStore } from '@/stores/devbox'
-import { useGlobalStore } from '@/stores/global'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox';
+import { useRouter } from '@/i18n';
+import { useDevboxStore } from '@/stores/devbox';
+import { useGlobalStore } from '@/stores/global';
 
-import { DevboxDetailTypeV2 } from '@/types/devbox'
+import { DevboxDetailTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
-import IDEButton from '@/components/IDEButton'
-import DelModal from '@/components/modals/DelModal'
-import { sealosApp } from 'sealos-desktop-sdk/app'
-import { useQuery } from '@tanstack/react-query'
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import MyIcon from '@/components/Icon';
+import IDEButton from '@/components/IDEButton';
+import DelModal from '@/components/modals/DelModal';
+import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useQuery } from '@tanstack/react-query';
 
 const Header = ({
   refetchDevboxDetail,
   setShowSlider,
   isLargeScreen = true
 }: {
-  refetchDevboxDetail: () => void
-  setShowSlider: Dispatch<boolean>
-  isLargeScreen: boolean
+  refetchDevboxDetail: () => void;
+  setShowSlider: Dispatch<boolean>;
+  isLargeScreen: boolean;
 }) => {
-  const router = useRouter()
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const router = useRouter();
+  const t = useTranslations();
+  const { message: toast } = useMessage();
 
-  const { devboxDetail, setDevboxList } = useDevboxStore()
-  const { screenWidth, setLoading } = useGlobalStore()
+  const { devboxDetail, setDevboxList } = useDevboxStore();
+  const { screenWidth, setLoading } = useGlobalStore();
 
-  const [delDevbox, setDelDevbox] = useState<DevboxDetailTypeV2 | null>(null)
-  const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
+  const [delDevbox, setDelDevbox] = useState<DevboxDetailTypeV2 | null>(null);
+  const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth]);
 
   const { refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
     onSettled(res) {
-      if (!res) return
+      if (!res) return;
     }
-  })
+  });
 
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxDetailTypeV2) => {
       try {
-        setLoading(true)
-        await pauseDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await pauseDevbox({ devboxName: devbox.name });
         toast({
           title: t('pause_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('pause_error'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
-      refetchDevboxDetail()
-      setLoading(false)
+      refetchDevboxDetail();
+      setLoading(false);
     },
     [refetchDevboxDetail, setLoading, t, toast]
-  )
+  );
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxDetailTypeV2) => {
       try {
-        setLoading(true)
-        await restartDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await restartDevbox({ devboxName: devbox.name });
         toast({
           title: t('restart_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('restart_error'),
           status: 'error'
-        })
-        console.error(error, '==')
+        });
+        console.error(error, '==');
       }
-      refetchDevboxDetail()
-      setLoading(false)
+      refetchDevboxDetail();
+      setLoading(false);
     },
     [setLoading, t, toast, refetchDevboxDetail]
-  )
+  );
   const handleStartDevbox = useCallback(
     async (devbox: DevboxDetailTypeV2) => {
       try {
-        setLoading(true)
-        await startDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await startDevbox({ devboxName: devbox.name });
         toast({
           title: t('start_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('start_error'),
           status: 'error'
-        })
-        console.error(error, '==')
+        });
+        console.error(error, '==');
       }
-      refetchDevboxDetail()
-      setLoading(false)
+      refetchDevboxDetail();
+      setLoading(false);
     },
     [setLoading, t, toast, refetchDevboxDetail]
-  )
+  );
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxDetailTypeV2) => {
-      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
+      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`;
       try {
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-terminal',
@@ -115,18 +115,18 @@ const Header = ({
             defaultCommand
           },
           messageData: { type: 'new terminal', command: defaultCommand }
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('jump_terminal_error'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
     },
     [t, toast]
-  )
-  if (!devboxDetail) return null
+  );
+  if (!devboxDetail) return null;
   return (
     <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
       {/* left back button and title */}
@@ -144,7 +144,7 @@ const Header = ({
         </Box>
         {/* detail button */}
         <Flex alignItems={'center'}>
-          <DevboxStatusTag status={devboxDetail.status } h={'27px'} />
+          <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
           {!isLargeScreen && (
             <Box ml={4}>
               <Button
@@ -157,7 +157,8 @@ const Header = ({
                 _hover={{
                   color: 'brightBlue.600'
                 }}
-                onClick={() => setShowSlider(true)}>
+                onClick={() => setShowSlider(true)}
+              >
                 {t('detail')}
               </Button>
             </Box>
@@ -200,7 +201,8 @@ const Header = ({
           }}
           borderWidth={1}
           leftIcon={isBigButton ? <MyIcon name={'terminal'} w={'16px'} /> : undefined}
-          onClick={() => handleGoToTerminal(devboxDetail)}>
+          onClick={() => handleGoToTerminal(devboxDetail)}
+        >
           {isBigButton ? t('terminal') : <MyIcon name={'terminal'} w={'16px'} />}
         </Button>
         {devboxDetail.status.value === 'Running' && (
@@ -214,7 +216,8 @@ const Header = ({
             }}
             borderWidth={1}
             leftIcon={isBigButton ? <MyIcon name={'shutdown'} w={'16px'} /> : undefined}
-            onClick={() => handlePauseDevbox(devboxDetail)}>
+            onClick={() => handlePauseDevbox(devboxDetail)}
+          >
             {isBigButton ? t('pause') : <MyIcon name={'shutdown'} w={'16px'} />}
           </Button>
         )}
@@ -229,7 +232,8 @@ const Header = ({
             }}
             borderWidth={1}
             leftIcon={isBigButton ? <MyIcon name={'start'} w={'16px'} /> : undefined}
-            onClick={() => handleStartDevbox(devboxDetail)}>
+            onClick={() => handleStartDevbox(devboxDetail)}
+          >
             {isBigButton ? t('start') : <MyIcon name={'start'} w={'16px'} />}
           </Button>
         )}
@@ -243,7 +247,8 @@ const Header = ({
           }}
           borderWidth={1}
           leftIcon={isBigButton ? <MyIcon name={'change'} w={'16px'} /> : undefined}
-          onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}>
+          onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}
+        >
           {!isBigButton ? <MyIcon name={'change'} w={'16px'} /> : t('update')}
         </Button>
         {devboxDetail.status.value !== 'Stopped' && (
@@ -257,7 +262,8 @@ const Header = ({
             }}
             borderWidth={1}
             leftIcon={isBigButton ? <MyIcon name={'restart'} w={'16px'} /> : undefined}
-            onClick={() => handleRestartDevbox(devboxDetail)}>
+            onClick={() => handleRestartDevbox(devboxDetail)}
+          >
             {isBigButton ? t('restart') : <MyIcon name={'restart'} w={'16px'} />}
           </Button>
         )}
@@ -271,7 +277,8 @@ const Header = ({
           }}
           borderWidth={1}
           leftIcon={isBigButton ? <MyIcon name={'delete'} w={'16px'} /> : undefined}
-          onClick={() => setDelDevbox(devboxDetail)}>
+          onClick={() => setDelDevbox(devboxDetail)}
+        >
           {isBigButton ? t('delete') : <MyIcon name={'delete'} w={'16px'} />}
         </Button>
       </Flex>
@@ -280,14 +287,14 @@ const Header = ({
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={() => {
-            setDelDevbox(null)
-            router.push('/')
+            setDelDevbox(null);
+            router.push('/');
           }}
           refetchDevboxList={refetchDevboxList}
         />
       )}
     </Flex>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

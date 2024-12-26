@@ -1,48 +1,48 @@
-import { useMemo } from 'react'
-import { useTranslations } from 'next-intl'
-import { useFormContext } from 'react-hook-form'
-import { useQuery } from '@tanstack/react-query'
-import { Box, Center, Flex } from '@chakra-ui/react'
-import { MySelect, MyTooltip } from '@sealos/ui'
+import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { useFormContext } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
+import { Box, Center, Flex } from '@chakra-ui/react';
+import { MySelect, MyTooltip } from '@sealos/ui';
 
-import Label from '../Label'
-import { usePriceStore } from '@/stores/price'
-import { DevboxEditTypeV2 } from '@/types/devbox'
-import { GpuAmountMarkList } from '@/constants/devbox'
-import { listOfficialTemplateRepository } from '@/api/template'
+import Label from '../Label';
+import { usePriceStore } from '@/stores/price';
+import { DevboxEditTypeV2 } from '@/types/devbox';
+import { GpuAmountMarkList } from '@/constants/devbox';
+import { listOfficialTemplateRepository } from '@/api/template';
 
-const labelWidth = 100
+const labelWidth = 100;
 
 export default function GpuSelector({
   countGpuInventory
 }: {
-  countGpuInventory: (type: string) => number
+  countGpuInventory: (type: string) => number;
 }) {
-  const t = useTranslations()
-  const { sourcePrice } = usePriceStore()
-  const { watch, setValue, getValues } = useFormContext<DevboxEditTypeV2>()
+  const t = useTranslations();
+  const { sourcePrice } = usePriceStore();
+  const { watch, setValue, getValues } = useFormContext<DevboxEditTypeV2>();
   const templateRepositoryQuery = useQuery(
     ['list-official-template-repository'],
     listOfficialTemplateRepository
-  )
+  );
   const templateData = useMemo(
     () => templateRepositoryQuery.data?.templateRepositoryList || [],
     [templateRepositoryQuery.data]
-  )
-  const templateRepositoryUid = getValues('templateRepositoryUid')
+  );
+  const templateRepositoryUid = getValues('templateRepositoryUid');
   const isGpuTemplate = useMemo(() => {
-    const template = templateData.find((item) => item.uid === templateRepositoryUid)
-    return template?.templateRepositoryTags.some((item) => item.tag.name === 'gpu')
-  }, [templateData, templateRepositoryUid])
+    const template = templateData.find((item) => item.uid === templateRepositoryUid);
+    return template?.templateRepositoryTags.some((item) => item.tag.name === 'gpu');
+  }, [templateData, templateRepositoryUid]);
 
   const selectedGpu = () => {
-    const selected = sourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'))
-    if (!selected) return
+    const selected = sourcePrice?.gpu?.find((item) => item.type === getValues('gpu.type'));
+    if (!selected) return;
     return {
       ...selected,
       inventory: countGpuInventory(selected.type)
-    }
-  }
+    };
+  };
 
   // add NoGPU select item
   const gpuSelectList = useMemo(
@@ -78,10 +78,10 @@ export default function GpuSelector({
           ]
         : [],
     [countGpuInventory, t, sourcePrice?.gpu]
-  )
+  );
 
   if (!isGpuTemplate || !sourcePrice?.gpu) {
-    return null
+    return null;
   }
 
   return (
@@ -94,10 +94,10 @@ export default function GpuSelector({
           value={getValues('gpu.type')}
           list={gpuSelectList}
           onchange={(type: any) => {
-            const selected = sourcePrice?.gpu?.find((item) => item.type === type)
-            const inventory = countGpuInventory(type)
+            const selected = sourcePrice?.gpu?.find((item) => item.type === type);
+            const inventory = countGpuInventory(type);
             if (type === '' || (selected && inventory > 0)) {
-              setValue('gpu.type', type)
+              setValue('gpu.type', type);
             }
           }}
         />
@@ -107,9 +107,9 @@ export default function GpuSelector({
           <Box mb={1}>{t('Amount')}</Box>
           <Flex alignItems={'center'}>
             {GpuAmountMarkList.map((item) => {
-              const inventory = selectedGpu()?.inventory || 0
+              const inventory = selectedGpu()?.inventory || 0;
 
-              const hasInventory = item.value <= inventory
+              const hasInventory = item.value <= inventory;
 
               return (
                 <MyTooltip key={item.value} label={hasInventory ? '' : t('Under Stock')}>
@@ -133,17 +133,18 @@ export default function GpuSelector({
                       ? {
                           cursor: 'pointer',
                           onClick: () => {
-                            setValue('gpu.amount', item.value)
+                            setValue('gpu.amount', item.value);
                           }
                         }
                       : {
                           cursor: 'default',
                           opacity: 0.5
-                        })}>
+                        })}
+                  >
                     {item.label}
                   </Center>
                 </MyTooltip>
-              )
+              );
             })}
             <Box ml={3} color={'MyGray.500'}>
               / {t('Card')}
@@ -152,5 +153,5 @@ export default function GpuSelector({
         </Box>
       )}
     </Box>
-  )
+  );
 }

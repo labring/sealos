@@ -1,14 +1,14 @@
-import MyIcon from "@/components/Icon";
-import { TemplateState } from "@/constants/template";
-import { useTemplateStore } from "@/stores/template";
-import { Box, Flex, Text } from "@chakra-ui/react";
-import { useTranslations } from "next-intl";
-import { usePathname } from "next/navigation";
+import MyIcon from '@/components/Icon';
+import { TemplateState } from '@/constants/template';
+import { useTemplateStore } from '@/stores/template';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 
 const TemplateRepositoryListNav = () => {
-  const t = useTranslations()
-  const { openTemplateModal, config, isOpen } = useTemplateStore()
-  const lastRoute = usePathname()
+  const t = useTranslations();
+  const { openTemplateModal, config, isOpen } = useTemplateStore();
+  const lastRoute = usePathname();
   return (
     <Flex
       // margin="0 auto"
@@ -27,9 +27,9 @@ const TemplateRepositoryListNav = () => {
         cursor="pointer"
         onClick={() => {
           openTemplateModal({
-            'templateState': TemplateState.publicTemplate,
+            templateState: TemplateState.publicTemplate,
             lastRoute
-          })
+          });
         }}
       >
         <MyIcon
@@ -37,7 +37,7 @@ const TemplateRepositoryListNav = () => {
           width="18px"
           height="18px"
           color="#0884DD"
-          fill={"#0884DD"}
+          fill={'#0884DD'}
         />
         <Text
           fontFamily="PingFang SC"
@@ -47,17 +47,12 @@ const TemplateRepositoryListNav = () => {
           letterSpacing="0.5px"
           color="#485264"
         >
-          {t("all_templates")}
+          {t('all_templates')}
         </Text>
       </Flex>
 
       {/* Divider */}
-      <Box
-        width="12px"
-        height="0"
-        border="1px solid #DFE2EA"
-        transform="rotate(90deg)"
-      />
+      <Box width="12px" height="0" border="1px solid #DFE2EA" transform="rotate(90deg)" />
 
       {/* My Templates Tab */}
       <Flex
@@ -69,17 +64,12 @@ const TemplateRepositoryListNav = () => {
         cursor="pointer"
         onClick={() => {
           openTemplateModal({
-            'templateState': TemplateState.privateTemplate,
+            templateState: TemplateState.privateTemplate,
             lastRoute
-          })
+          });
         }}
       >
-        <MyIcon
-          name={"user"}
-          width="18px"
-          height="18px"
-          color="#0884DD"
-        />
+        <MyIcon name={'user'} width="18px" height="18px" color="#0884DD" />
         <Text
           fontFamily="PingFang SC"
           fontSize="12px"
@@ -88,7 +78,7 @@ const TemplateRepositoryListNav = () => {
           letterSpacing="0.5px"
           color="#485264"
         >
-          {t("my_templates")}
+          {t('my_templates')}
         </Text>
       </Flex>
     </Flex>

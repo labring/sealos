@@ -1,21 +1,21 @@
-import { useDevboxStore } from '@/stores/devbox'
-import { DevboxEditTypeV2 } from '@/types/devbox'
-import { Center, Img, Text } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useFormContext } from 'react-hook-form'
+import { useDevboxStore } from '@/stores/devbox';
+import { DevboxEditTypeV2 } from '@/types/devbox';
+import { Center, Img, Text } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { useFormContext } from 'react-hook-form';
 
 export default function TemplateRepositoryItem({
   item,
   isEdit
 }: {
-  item: { uid: string; iconId: string; name: string }
-  isEdit: boolean
+  item: { uid: string; iconId: string; name: string };
+  isEdit: boolean;
 }) {
-  const { message: toast } = useMessage()
-  const t = useTranslations()
-  const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>()
-  const { startedTemplate, setStartedTemplate } = useDevboxStore()
+  const { message: toast } = useMessage();
+  const t = useTranslations();
+  const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
+  const { startedTemplate, setStartedTemplate } = useDevboxStore();
   return (
     <Center
       key={item.uid}
@@ -42,21 +42,22 @@ export default function TemplateRepositoryItem({
             }
           })}
       onClick={() => {
-        if (isEdit) return
-        const devboxName = getValues('name')
+        if (isEdit) return;
+        const devboxName = getValues('name');
         if (!devboxName) {
           toast({
             title: t('Please enter the devbox name first'),
             status: 'warning'
-          })
-          return
+          });
+          return;
         }
-        setValue('gpu.type', '')
+        setValue('gpu.type', '');
         if (startedTemplate && startedTemplate.uid !== item.uid) {
-          setStartedTemplate(undefined)
+          setStartedTemplate(undefined);
         }
-        setValue('templateRepositoryUid', item.uid)
-      }}>
+        setValue('templateRepositoryUid', item.uid);
+      }}
+    >
       <Img
         width={'32px'}
         height={'32px'}
@@ -67,5 +68,5 @@ export default function TemplateRepositoryItem({
         {item.name}
       </Text>
     </Center>
-  )
+  );
 }

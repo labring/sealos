@@ -11,66 +11,66 @@ import {
   ModalHeader,
   ModalOverlay,
   Textarea
-} from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
 
-import { pauseDevbox, releaseDevbox, startDevbox } from '@/api/devbox'
-import { useConfirm } from '@/hooks/useConfirm'
-import { useEnvStore } from '@/stores/env'
-import { DevboxListItemTypeV2 } from '@/types/devbox'
-import { versionSchema } from '@/utils/vaildate'
+import { pauseDevbox, releaseDevbox, startDevbox } from '@/api/devbox';
+import { useConfirm } from '@/hooks/useConfirm';
+import { useEnvStore } from '@/stores/env';
+import { DevboxListItemTypeV2 } from '@/types/devbox';
+import { versionSchema } from '@/utils/vaildate';
 
 const ReleaseModal = ({
   onClose,
   onSuccess,
   devbox
 }: {
-  devbox: Omit<DevboxListItemTypeV2, 'template'>
-  onClose: () => void
-  onSuccess: () => void
+  devbox: Omit<DevboxListItemTypeV2, 'template'>;
+  onClose: () => void;
+  onSuccess: () => void;
 }) => {
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const t = useTranslations();
+  const { message: toast } = useMessage();
 
-  const { env } = useEnvStore()
+  const { env } = useEnvStore();
 
-  const [tag, setTag] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [tagError, setTagError] = useState(false)
-  const [releaseDes, setReleaseDes] = useState('')
+  const [tag, setTag] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [tagError, setTagError] = useState(false);
+  const [releaseDes, setReleaseDes] = useState('');
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'release_confirm_info',
     showCheckbox: true,
     checkboxLabel: 'pause_devbox_info'
-  })
+  });
 
   const handleSubmit = () => {
-    const tagResult = versionSchema.safeParse(tag)
+    const tagResult = versionSchema.safeParse(tag);
     if (!tag) {
-      setTagError(true)
+      setTagError(true);
     } else if (versionSchema.safeParse(tag).success === false) {
       toast({
         title: t('tag_format_error'),
         status: 'error'
-      })
+      });
     } else {
-      setTagError(false)
-      openConfirm((enableRestartMachine: boolean) => handleReleaseDevbox(enableRestartMachine))()
+      setTagError(false);
+      openConfirm((enableRestartMachine: boolean) => handleReleaseDevbox(enableRestartMachine))();
     }
-  }
+  };
 
   const handleReleaseDevbox = useCallback(
     async (enableRestartMachine: boolean) => {
       try {
-        setLoading(true)
+        setLoading(true);
         // 1.pause devbox
         if (devbox.status.value === 'Running') {
-          await pauseDevbox({ devboxName: devbox.name })
+          await pauseDevbox({ devboxName: devbox.name });
           // wait 3s
-          await new Promise((resolve) => setTimeout(resolve, 3000))
+          await new Promise((resolve) => setTimeout(resolve, 3000));
         }
         // 2.release devbox
         await releaseDevbox({
@@ -78,28 +78,28 @@ const ReleaseModal = ({
           tag,
           releaseDes,
           devboxUid: devbox.id
-        })
+        });
         // 3.start devbox
         if (enableRestartMachine) {
-          await startDevbox({ devboxName: devbox.name })
+          await startDevbox({ devboxName: devbox.name });
         }
         toast({
           title: t('submit_release_successful'),
           status: 'success'
-        })
-        onSuccess()
-        onClose()
+        });
+        onSuccess();
+        onClose();
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('submit_release_failed'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
-      setLoading(false)
+      setLoading(false);
     },
     [devbox.status.value, devbox.name, devbox.id, tag, releaseDes, toast, t, onSuccess, onClose]
-  )
+  );
 
   return (
     <Box>
@@ -156,7 +156,8 @@ const ReleaseModal = ({
               onClick={handleSubmit}
               mr={'11px'}
               width={'80px'}
-              isLoading={loading}>
+              isLoading={loading}
+            >
               {t('publish')}
             </Button>
           </ModalFooter>
@@ -164,7 +165,7 @@ const ReleaseModal = ({
       </Modal>
       <ConfirmChild />
     </Box>
-  )
-}
+  );
+};
 
-export default ReleaseModal
+export default ReleaseModal;

@@ -1,5 +1,5 @@
-import type { IconProps } from '@chakra-ui/react'
-import { Icon } from '@chakra-ui/react'
+import type { IconProps } from '@chakra-ui/react';
+import { Icon } from '@chakra-ui/react';
 
 const map = {
   codeServer: require('./icons/codeServer.svg').default,
@@ -71,7 +71,7 @@ const map = {
   official: require('./icons/official.svg').default,
   firstPage: require('./icons/firstPage.svg').default,
   prePage: require('./icons/prePage.svg').default
-}
+};
 
 const MyIcon = ({
   name,
@@ -81,7 +81,7 @@ const MyIcon = ({
 }: { name: keyof typeof map } & IconProps) => {
   return map[name] ? (
     <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
-  ) : null
-}
+  ) : null;
+};
 
-export default MyIcon
+export default MyIcon;

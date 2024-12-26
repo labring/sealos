@@ -1,8 +1,8 @@
-import React from 'react'
-import { useTranslations } from 'next-intl'
-import { Flex, Box } from '@chakra-ui/react'
+import React from 'react';
+import { useTranslations } from 'next-intl';
+import { Flex, Box } from '@chakra-ui/react';
 
-import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox'
+import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox';
 
 const DevboxStatusTag = ({
   status,
@@ -10,15 +10,15 @@ const DevboxStatusTag = ({
   thinMode = false,
   ...props
 }: {
-  status: DevboxStatusMapType | DevboxReleaseStatusMapType
-  showBorder?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  thinMode?: boolean
-  w?: string
-  h?: string
+  status: DevboxStatusMapType | DevboxReleaseStatusMapType;
+  showBorder?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  thinMode?: boolean;
+  w?: string;
+  h?: string;
 }) => {
-  const label = status?.label
-  const t = useTranslations()
+  const label = status?.label;
+  const t = useTranslations();
 
   return (
     <Flex
@@ -34,18 +34,20 @@ const DevboxStatusTag = ({
       alignItems={'center'}
       minW={'60px'}
       whiteSpace={'nowrap'}
-      {...props}>
+      {...props}
+    >
       <Box
         w={'6px'}
         h={'6px'}
         borderRadius={'10px'}
         backgroundColor={status.dotColor}
-        display={thinMode ? 'none' : 'block'}></Box>
+        display={thinMode ? 'none' : 'block'}
+      ></Box>
       <Box ml={thinMode ? 0 : 2} flex={1}>
         {t(label)}
       </Box>
     </Flex>
-  )
-}
+  );
+};
 
-export default DevboxStatusTag
+export default DevboxStatusTag;

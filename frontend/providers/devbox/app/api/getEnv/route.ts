@@ -1,20 +1,20 @@
-import { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server';
 
-import { authSession } from '@/services/backend/auth'
-import { getK8s } from '@/services/backend/kubernetes'
-import { jsonRes } from '@/services/backend/response'
-import { defaultEnv } from '@/stores/env'
-import type { Env } from '@/types/static'
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
+import { defaultEnv } from '@/stores/env';
+import type { Env } from '@/types/static';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = req.headers
+    const headerList = req.headers;
 
     const { namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
-    })
+    });
 
     return jsonRes<Env>({
       data: {
@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
           | 'cny'
           | 'usd'
       }
-    })
+    });
   } catch (err: any) {
     return jsonRes({
       code: 500,
       error: err
-    })
+    });
   }
 }

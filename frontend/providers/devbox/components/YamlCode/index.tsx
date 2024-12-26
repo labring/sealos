@@ -1,18 +1,18 @@
-import { useMemo } from 'react'
-import ReactMarkdown from 'react-markdown'
-import SyntaxHighlighter from 'react-syntax-highlighter'
+import { useMemo } from 'react';
+import ReactMarkdown from 'react-markdown';
+import SyntaxHighlighter from 'react-syntax-highlighter';
 
-import { codeTheme } from './hljs'
+import { codeTheme } from './hljs';
 
-import styles from './index.module.scss'
+import styles from './index.module.scss';
 
 type TMarkDown = {
-  content: string
-  [key: string]: any
-}
+  content: string;
+  [key: string]: any;
+};
 
 const YamlCode = ({ content, ...props }: TMarkDown) => {
-  const code = useMemo(() => '```yaml\n' + content + '```', [content])
+  const code = useMemo(() => '```yaml\n' + content + '```', [content]);
 
   return (
     <ReactMarkdown
@@ -22,7 +22,7 @@ const YamlCode = ({ content, ...props }: TMarkDown) => {
       children={code}
       components={{
         code({ node, inline, className, children, ...props }) {
-          const match = /language-(\w+)/.exec(className || '')
+          const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
             <SyntaxHighlighter
               // eslint-disable-next-line react/no-children-prop
@@ -38,11 +38,11 @@ const YamlCode = ({ content, ...props }: TMarkDown) => {
             <code className={className} {...props}>
               {children}
             </code>
-          )
+          );
         }
       }}
     />
-  )
-}
+  );
+};
 
-export default YamlCode
+export default YamlCode;

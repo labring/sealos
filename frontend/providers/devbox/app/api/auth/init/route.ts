@@ -1,9 +1,9 @@
-import { authSessionWithDesktopJWT, generateDevboxToken } from "@/services/backend/auth"
-import { jsonRes } from "@/services/backend/response"
-import { devboxDB } from "@/services/db/init"
-import { makeOrganizationName } from "@/utils/user"
+import { authSessionWithDesktopJWT, generateDevboxToken } from '@/services/backend/auth';
+import { jsonRes } from '@/services/backend/response';
+import { devboxDB } from '@/services/db/init';
+import { makeOrganizationName } from '@/utils/user';
 
-import { NextRequest } from "next/server"
+import { NextRequest } from 'next/server';
 
 const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
   return await devboxDB.$transaction(async (tx) => {
@@ -28,11 +28,11 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
             }
           }
         }
-      })
+      });
       if (user && user.userOrganizations.length > 0) {
-        return user
+        return user;
       }
-      const organizationName = makeOrganizationName()
+      const organizationName = makeOrganizationName();
 
       if (!user) {
         const user = await tx.user.create({
@@ -44,7 +44,7 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
                 organization: {
                   create: {
                     name: organizationName,
-                    id: organizationName,
+                    id: organizationName
                   }
                 }
               }
@@ -62,8 +62,8 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
               }
             }
           }
-        })
-        return user
+        });
+        return user;
       }
       if (!user.userOrganizations.length) {
         const user = await tx.user.update({
@@ -80,7 +80,7 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
                 organization: {
                   create: {
                     name: organizationName,
-                    id: organizationName,
+                    id: organizationName
                   }
                 }
               }
@@ -98,46 +98,46 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
               }
             }
           }
-        })
-        return user
+        });
+        return user;
       }
-      throw new Error('Failed to find or create user')
+      throw new Error('Failed to find or create user');
     } catch (error) {
-      console.error('Error in findOrCreateUser transaction:', error)
-      throw new Error('Failed to find or create user')
+      console.error('Error in findOrCreateUser transaction:', error);
+      throw new Error('Failed to find or create user');
     }
-  })
-}
+  });
+};
 export async function POST(req: NextRequest) {
-  const regionUid = process.env.REGION_UID
+  const regionUid = process.env.REGION_UID;
   if (!regionUid) {
-    console.log("REGIONUID is not set")
+    console.log('REGIONUID is not set');
     return jsonRes({
-      code: 500,
-    })
+      code: 500
+    });
   }
   try {
-    const headerList = req.headers
-    const { payload } = await authSessionWithDesktopJWT(headerList)
-    const user = await findOrCreateUser(regionUid, payload.workspaceId)
+    const headerList = req.headers;
+    const { payload } = await authSessionWithDesktopJWT(headerList);
+    const user = await findOrCreateUser(regionUid, payload.workspaceId);
     if (!user) {
       return jsonRes({
         code: 500,
         error: 'Failed to find or create user'
-      })
+      });
     }
     return jsonRes({
       data: generateDevboxToken({
-        userUid:user.uid,
+        userUid: user.uid,
         organizationUid: user.userOrganizations[0].organization.uid,
         regionUid,
-        workspaceId: payload.workspaceId,
-      }),
-    })
+        workspaceId: payload.workspaceId
+      })
+    });
   } catch (err: any) {
     return jsonRes({
       code: 500,
       error: err
-    })
+    });
   }
 }
