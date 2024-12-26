@@ -7,11 +7,11 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-	log "github.com/sirupsen/logrus"
-	"gorm.io/gorm"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/shopspring/decimal"
+	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type RequestDetail struct {
@@ -682,7 +682,7 @@ func DeleteGroupLogs(groupID string) (int64, error) {
 type HourlyChartData struct {
 	Timestamp      int64   `json:"timestamp"`
 	RequestCount   int64   `json:"request_count"`
-	TotalCost      float64 `json:"total_cost"`
+	UsedAmount     float64 `json:"used_amount"`
 	ExceptionCount int64   `json:"exception_count"`
 }
 
@@ -692,6 +692,7 @@ type DashboardResponse struct {
 	Models         []string           `json:"models"`
 	TotalCount     int64              `json:"total_count"`
 	ExceptionCount int64              `json:"exception_count"`
+	UsedAmount     float64            `json:"used_amount"`
 }
 
 func getHourTimestamp() string {
@@ -716,7 +717,7 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	}
 
 	query := LogDB.Table("logs").
-		Select(hourTimestamp+" as timestamp, count(*) as request_count, sum(price) as total_cost, sum(case when code != 200 then 1 else 0 end) as exception_count").
+		Select(hourTimestamp+" as timestamp, count(*) as request_count, sum(used_amount) as used_amount, sum(case when code != 200 then 1 else 0 end) as exception_count").
 		Where("group_id = ? AND request_at BETWEEN ? AND ?", group, start, end).
 		Group("timestamp").
 		Order("timestamp ASC")
@@ -766,6 +767,14 @@ func sumExceptionCount(chartData []*HourlyChartData) int64 {
 	return count
 }
 
+func sumUsedAmount(chartData []*HourlyChartData) float64 {
+	var amount decimal.Decimal
+	for _, data := range chartData {
+		amount = amount.Add(decimal.NewFromFloat(data.UsedAmount))
+	}
+	return amount.InexactFloat64()
+}
+
 func GetDashboardData(group string, start, end time.Time, tokenName string, modelName string) (*DashboardResponse, error) {
 	if end.IsZero() {
 		end = time.Now()
@@ -790,6 +799,7 @@ func GetDashboardData(group string, start, end time.Time, tokenName string, mode
 
 	totalCount := sumTotalCount(chartData)
 	exceptionCount := sumExceptionCount(chartData)
+	usedAmount := sumUsedAmount(chartData)
 
 	return &DashboardResponse{
 		ChartData:      chartData,
@@ -797,6 +807,7 @@ func GetDashboardData(group string, start, end time.Time, tokenName string, mode
 		Models:         models,
 		TotalCount:     totalCount,
 		ExceptionCount: exceptionCount,
+		UsedAmount:     usedAmount,
 	}, nil
 }
 
