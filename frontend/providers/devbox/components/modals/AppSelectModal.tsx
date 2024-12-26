@@ -77,8 +77,7 @@ const AppSelectModal = ({
     (item: AppListItemType) => {
       const tempFormData = {
         appName: item.name,
-        imageName: deployData.imageName,
-        labels: deployData.labels
+        imageName: deployData.imageName
       }
       const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData))
       sealosApp.runEvents('openDesktopApp', {
