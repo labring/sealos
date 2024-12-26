@@ -467,7 +467,7 @@ const AppMainInfo = ({
                           {item.userId === session?.user?.userId
                             ? t('you_recalled_a_message')
                             : item.isAdmin
-                            ? t('support_staff_recalled_a_message')
+                            ? t('user_recalled_a_message')
                             : t('user_recalled_a_message')}
                         </Text>
                       ) : (
