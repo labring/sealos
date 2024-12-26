@@ -102,7 +102,7 @@ export default function GpuSelector({
           }}
         />
       </Flex>
-      {!!getValues('gpu.type') && (
+      {!!watch('gpu.type') && (
         <Box mt={4} pl={`${labelWidth}px`}>
           <Box mb={1}>{t('Amount')}</Box>
           <Flex alignItems={'center'}>
