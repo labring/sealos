@@ -12,7 +12,7 @@ import MyIcon from '@/components/Icon'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import ReleaseModal from '@/components/modals/releaseModal'
 import MyTable from '@/components/MyTable'
-import { DevboxReleaseStatusEnum } from '@/constants/devbox'
+import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
@@ -120,7 +120,10 @@ const Version = () => {
                 }
               ],
         runCMD: releaseCommand,
-        cmdParam: releaseArgs
+        cmdParam: releaseArgs,
+        labels: {
+          [devboxIdKey]: devbox.id
+        }
       }
       setDeployData(transformData)
       const apps = await getAppsByDevboxId(devbox.id)
