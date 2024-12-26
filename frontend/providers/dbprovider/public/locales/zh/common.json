@@ -331,5 +331,10 @@
   "within_1_hour": "一小时内",
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
-  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！"
+  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
+  "change_log": "操作日志",
+  "VerticalScaling": "纵向扩展",
+  "HorizontalScaling": "横向扩展",
+  "VolumeExpansion": "卷扩展",
+  "Stop": "停止"
 }

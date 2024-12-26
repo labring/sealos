@@ -3,6 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
+import { KbPgClusterType } from '@/types/cluster';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -29,13 +30,15 @@ export async function getCluster(req: NextApiRequest, name: string) {
     kubeconfig: await authSession(req)
   });
 
-  const { body } = await k8sCustomObjects.getNamespacedCustomObject(
+  const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
     'apps.kubeblocks.io',
     'v1alpha1',
     namespace,
     'clusters',
     name
-  );
+  )) as {
+    body: KbPgClusterType;
+  };
 
   return body;
 }

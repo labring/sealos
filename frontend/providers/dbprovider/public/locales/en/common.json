@@ -330,5 +330,10 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minutes": "Within 5 minutes",
   "yaml_file": "YAML",
-  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!"
+  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
+  "change_log": "Operation Log",
+  "VerticalScaling": "Vertical Scaling",
+  "HorizontalScaling": "Horizontal Scaling",
+  "VolumeExpansion": "Volume Expansion",
+  "Stop": "Stop"
 }

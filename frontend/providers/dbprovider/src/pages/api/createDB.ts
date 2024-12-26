@@ -4,7 +4,7 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
 import { BackupItemType, DBEditType } from '@/types/db';
-import { json2Account, json2ClusterOps, json2CreateCluster } from '@/utils/json2Yaml';
+import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
 import { BackupSupportedDBTypeList } from '@/constants/db';
@@ -37,18 +37,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       const opsRequests = [];
 
-      if (cpu !== dbForm.cpu || memory !== dbForm.memory) {
-        const verticalScalingYaml = json2ClusterOps(dbForm, 'VerticalScaling');
+      if (cpu !== dbForm.cpu) {
+        const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
+        opsRequests.push(verticalScalingYaml);
+      }
+
+      if (memory !== dbForm.memory) {
+        const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
         opsRequests.push(verticalScalingYaml);
       }
 
       if (replicas !== dbForm.replicas) {
-        const horizontalScalingYaml = json2ClusterOps(dbForm, 'HorizontalScaling');
+        const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
       }
 
       if (dbForm.storage > storage) {
-        const volumeExpansionYaml = json2ClusterOps(dbForm, 'VolumeExpansion');
+        const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
       }
 
@@ -97,7 +102,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const account = json2Account(dbForm);
-    const cluster = json2CreateCluster(dbForm, backupInfo);
+    const cluster = json2CreateCluster(dbForm, backupInfo, {
+      storageClassName: process.env.STORAGE_CLASSNAME
+    });
     await applyYamlList([account, cluster], 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
