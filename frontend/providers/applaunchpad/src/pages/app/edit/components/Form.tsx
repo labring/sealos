@@ -600,7 +600,7 @@ const Form = ({
                             }
                           })}
                         />
-                        <Box>%</Box>
+                        <Box>{getValues('hpa.target') === 'gpu' ? '' : '%'}</Box>
                         <Tip
                           ml={4}
                           icon={<InfoOutlineIcon />}

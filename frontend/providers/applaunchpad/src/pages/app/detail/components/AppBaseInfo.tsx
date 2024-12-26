@@ -76,7 +76,10 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         iconName: 'deployMode',
         items: app.hpa.use
           ? [
-              { label: `${app.hpa.target} ${t('target_value')}`, value: `${app.hpa.value}%` },
+              {
+                label: `${app.hpa.target} ${t('target_value')}`,
+                value: `${app.hpa.value}${app.hpa.target === 'gpu' ? '' : '%'}`
+              },
               {
                 label: 'Number of Instances',
                 value: `${app.hpa.minReplicas} ~ ${app.hpa.maxReplicas}`
