@@ -1,11 +1,15 @@
+import List from '@/components/ImageHub/list';
 import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/store/global';
-import { DESKTOP_DOMAIN, loadInitData } from '@/store/static';
+import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
+import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { ChakraProvider } from '@chakra-ui/react';
+import { getUserIsLogin } from '@/utils/user';
+import { Box, ChakraProvider, Flex, Heading, ListItem, Text, Link, useDisclosure, background } from '@chakra-ui/react';
+import '@sealos/driver/src/driver.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
@@ -13,14 +17,10 @@ import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress'; //nprogress module
+import 'nprogress/nprogress.css';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
-import '@/styles/reset.scss';
-import 'nprogress/nprogress.css';
-import '@sealos/driver/src/driver.css';
-import { AppEditSyncedFields } from '@/types/app';
-import Script from 'next/script';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -50,10 +50,17 @@ const App = ({ Component, pageProps }: AppProps) => {
     content: 'jump_message'
   });
 
+  const myStyles = {
+    cursor: 'pointer',
+  };
+
   useEffect(() => {
+    if (!getUserIsLogin()) {
+      router.push('/login');
+    }
     const response = createSealosApp();
     (async () => {
-      const { FORM_SLIDER_LIST_CONFIG, DESKTOP_DOMAIN } = await (() => loadInitData())();
+      const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
       loadUserSourcePrice();
 
@@ -67,12 +74,12 @@ const App = ({ Component, pageProps }: AppProps) => {
         console.log('app init success');
       } catch (err) {
         console.log('App is not running in desktop');
-        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-          localStorage.removeItem('session');
-          openConfirm(() => {
-            window.open(`https://${DESKTOP_DOMAIN}`, '_self');
-          })();
-        }
+        // if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+        //   localStorage.removeItem('session');
+        //   openConfirm(() => {
+        //     window.open(`https://${SEALOS_DOMAIN}`, '_self');
+        //   })();
+        // }
       }
     })();
     return response;
@@ -122,12 +129,9 @@ const App = ({ Component, pageProps }: AppProps) => {
   // record route
   useEffect(() => {
     return () => {
-      const currentPath = router.asPath;
-      if (router.isReady && !currentPath.includes('/redirect')) {
-        setLastRoute(currentPath);
-      }
+      setLastRoute(router.asPath);
     };
-  }, [router.pathname, router.isReady, setLastRoute]);
+  }, [router.pathname]);
 
   useEffect(() => {
     const lang = getLangStore() || 'zh';
@@ -137,31 +141,19 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     const setupInternalAppCallListener = async () => {
       try {
-        const event = async (
-          e: MessageEvent<{
-            type?: string;
-            name?: string;
-            formData?: string;
-          }>
-        ) => {
-          const whitelist = [`https://${DESKTOP_DOMAIN}`];
+        const event = async (e: MessageEvent) => {
+          const whitelist = [`https://${SEALOS_DOMAIN}`];
           if (!whitelist.includes(e.origin)) {
             return;
           }
           try {
-            if (e.data?.type === 'InternalAppCall') {
-              const { name, formData } = e.data;
-              if (formData) {
-                router.replace({
-                  pathname: '/redirect',
-                  query: { formData }
-                });
-              } else if (name) {
-                router.replace({
-                  pathname: '/app/detail',
-                  query: { name }
-                });
-              }
+            if (e.data?.type === 'InternalAppCall' && e.data?.name) {
+              router.push({
+                pathname: '/app/detail',
+                query: {
+                  name: e.data.name
+                }
+              });
             }
           } catch (error) {
             console.log(error, 'error');
@@ -197,7 +189,33 @@ const App = ({ Component, pageProps }: AppProps) => {
           >
             changeLanguage
           </button> */}
-          <Component {...pageProps} />
+
+          {/* <Route path="/login" component={Login} /> */}
+          <Flex minH="100vh" direction="column">
+
+            <Box bg="#001529" color="white" px={4} py={5}>
+
+              <Heading size="md">储存云</Heading>
+
+            </Box>
+
+            <Flex flex={1}>
+
+              <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/imagehub')}>镜像管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/apps')}>应用管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/tenantManage')}>租户管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/nodeManage')}>节点管理</Text>
+              </Box>
+
+              <Box flex={1}>
+
+                <Component {...pageProps} />
+
+              </Box>
+
+            </Flex>
+          </Flex>
           <ConfirmChild />
           <Loading loading={loading} />
         </ChakraProvider>
