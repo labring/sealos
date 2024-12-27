@@ -1199,8 +1199,9 @@ export const json2ResourceOps = (
     data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
 
   const getOpsName = () => {
-    const timeStr = dayjs().format('YYYYMMDDHHmmss');
-    return `ops-${type.toLowerCase()}-${timeStr}`;
+    const timeStr = dayjs().format('YYYYMMDDHHmm');
+    const randomStr = nanoid(4);
+    return `ops-${type.toLowerCase()}-${timeStr}-${randomStr}`;
   };
 
   const baseTemplate = {
