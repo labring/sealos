@@ -1,12 +1,14 @@
 import { valuationMap } from '@/constants/payment';
 import { UserQuotaItemType } from '@/pages/api/getQuota';
 import request from '@/service/request';
+import useEnvStore from '@/stores/env';
 import { ApiResp } from '@/types';
 import { Box, Divider, HStack, Stack, StackProps, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
 import CpuIcon from '../icons/CpuIcon';
+import GpuIcon from '../icons/GpuIcon';
 import { MemoryIcon } from '../icons/MemoryIcon';
 import { StorageIcon } from '../icons/StorageIcon';
 const QuotaPie = dynamic(() => import('../cost_overview/components/quotaPieChart'), { ssr: false });
@@ -15,20 +17,27 @@ export default function Quota(props: StackProps) {
   const { data } = useQuery(['quota'], () =>
     request<any, ApiResp<{ quota: UserQuotaItemType[] }>>('/api/getQuota')
   );
+  const { gpuEnabled } = useEnvStore();
   const quota = (data?.data?.quota || [])
-    .filter((d) => d.type !== 'gpu')
-    .map((d) => {
+    .filter((d) => gpuEnabled || d.type !== 'gpu')
+    .flatMap((d) => {
+      const entity = valuationMap.get(d.type);
+      if (!entity) {
+        return [];
+      }
       const _limit = Number.parseInt(d.limit * 1000 + '');
       const _used = Number.parseInt(d.used * 1000 + '');
-      return {
-        ...d,
-        limit: _limit / 1000,
-        used: _used / 1000,
-        remain: (_limit - _used) / 1000,
-        title: t(d.type),
-        unit: valuationMap.get(d.type)?.unit,
-        bg: valuationMap.get(d.type)?.bg
-      };
+      return [
+        {
+          ...d,
+          limit: _limit / 1000,
+          used: _used / 1000,
+          remain: (_limit - _used) / 1000,
+          title: t(d.type),
+          unit: t(entity.unit),
+          bg: entity.bg
+        }
+      ];
     });
   return (
     <Stack {...props}>
@@ -43,6 +52,8 @@ export default function Quota(props: StackProps) {
                 <MemoryIcon color={'grayModern.600'} boxSize={'20px'} />
               ) : item.type === 'storage' ? (
                 <StorageIcon color={'grayModern.600'} boxSize={'20px'} />
+              ) : item.type === 'gpu' ? (
+                <GpuIcon color={'grayModern.600'} boxSize={'20px'} />
               ) : (
                 <></>
               )}
