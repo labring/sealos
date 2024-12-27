@@ -44,10 +44,10 @@ func GetLogs(c *gin.Context) {
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
 	result, err := model.GetLogs(
+		group,
 		startTimestampTime,
 		endTimestampTime,
 		modelName,
-		group,
 		requestID,
 		tokenID,
 		tokenName,
@@ -68,6 +68,11 @@ func GetLogs(c *gin.Context) {
 }
 
 func GetGroupLogs(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
 	p, _ := strconv.Atoi(c.Query("p"))
 	p--
 	if p < 0 {
@@ -92,7 +97,6 @@ func GetGroupLogs(c *gin.Context) {
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
 	channelID, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Param("group")
 	endpoint := c.Query("endpoint")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
@@ -136,7 +140,7 @@ func SearchLogs(c *gin.Context) {
 	endpoint := c.Query("endpoint")
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
-	groupID := c.Query("group_id")
+	group := c.Query("group_id")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	channelID, _ := strconv.Atoi(c.Query("channel"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
@@ -155,11 +159,11 @@ func SearchLogs(c *gin.Context) {
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
 	result, err := model.SearchLogs(
+		group,
 		keyword,
 		p,
 		perPage,
 		endpoint,
-		groupID,
 		requestID,
 		tokenID,
 		tokenName,
@@ -180,6 +184,11 @@ func SearchLogs(c *gin.Context) {
 }
 
 func SearchGroupLogs(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
 	keyword := c.Query("keyword")
 	p, _ := strconv.Atoi(c.Query("p"))
 	perPage, _ := strconv.Atoi(c.Query("per_page"))
@@ -188,7 +197,6 @@ func SearchGroupLogs(c *gin.Context) {
 	} else if perPage > 100 {
 		perPage = 100
 	}
-	group := c.Param("group")
 	endpoint := c.Query("endpoint")
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
@@ -251,7 +259,7 @@ func GetGroupLogDetail(c *gin.Context) {
 		return
 	}
 	logID, _ := strconv.Atoi(c.Param("log_id"))
-	log, err := model.GetGroupLogDetail(group, logID)
+	log, err := model.GetGroupLogDetail(logID, group)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

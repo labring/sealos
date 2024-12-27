@@ -88,34 +88,11 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 	return nil
 }
 
-func GetTokens(startIdx int, num int, order string, group string, status int) (tokens []*Token, total int64, err error) {
+func GetTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
-
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
-	if status != 0 {
-		tx = tx.Where("status = ?", status)
-	}
-
-	err = tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	if total <= 0 {
-		return nil, 0, nil
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
-	return tokens, total, err
-}
-
-func GetGroupTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
-	if group == "" {
-		return nil, 0, errors.New("group is empty")
-	}
-
-	tx := DB.Model(&Token{}).Where("group_id = ?", group)
 
 	if status != 0 {
 		tx = tx.Where("status = ?", status)
@@ -133,7 +110,7 @@ func GetGroupTokens(group string, startIdx int, num int, order string, status in
 	return tokens, total, err
 }
 
-func SearchTokens(keyword string, startIdx int, num int, order string, status int, name string, key string, group string) (tokens []*Token, total int64, err error) {
+func SearchTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -151,19 +128,8 @@ func SearchTokens(keyword string, startIdx int, num int, order string, status in
 	if keyword != "" {
 		var conditions []string
 		var values []interface{}
-		if status == 0 {
-			conditions = append(conditions, "status = ?")
-			values = append(values, 1)
-		}
+
 		if group == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "group_id ILIKE ?")
-			} else {
-				conditions = append(conditions, "group_id LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
-		}
-		if name == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "name ILIKE ?")
 			} else {
@@ -171,48 +137,6 @@ func SearchTokens(keyword string, startIdx int, num int, order string, status in
 			}
 			values = append(values, "%"+keyword+"%")
 		}
-		if key == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "key ILIKE ?")
-			} else {
-				conditions = append(conditions, "key LIKE ?")
-			}
-			values = append(values, keyword)
-		}
-		if len(conditions) > 0 {
-			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
-		}
-	}
-
-	err = tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	if total <= 0 {
-		return nil, 0, nil
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
-	return tokens, total, err
-}
-
-func SearchGroupTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
-	if group == "" {
-		return nil, 0, errors.New("group is empty")
-	}
-	tx := DB.Model(&Token{}).Where("group_id = ?", group)
-	if status != 0 {
-		tx = tx.Where("status = ?", status)
-	}
-	if name != "" {
-		tx = tx.Where("name = ?", name)
-	}
-	if key != "" {
-		tx = tx.Where("key = ?", key)
-	}
-
-	if keyword != "" {
-		var conditions []string
-		var values []interface{}
 		if status == 0 {
 			conditions = append(conditions, "status = ?")
 			values = append(values, 1)
