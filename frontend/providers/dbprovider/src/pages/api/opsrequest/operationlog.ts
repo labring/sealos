@@ -122,7 +122,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           configurations
         };
       })
-      .filter(Boolean) as OpsRequestItemType[];
+      .filter((item) => item.configurations.length > 0) as OpsRequestItemType[];
 
     jsonRes(res, {
       data: opsrequests

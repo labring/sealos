@@ -141,7 +141,7 @@ export default function OperationLog({ db }: { db?: DBDetailType }) {
                 <Fragment key={app.id}>
                   {app.configurations?.map((item, configIndex) => {
                     return (
-                      <Tr key={item.parameterName}>
+                      <Tr key={item.parameterName + configIndex}>
                         {historyColumns.map((col) => (
                           <Td key={col.key} h={'48px'}>
                             {col.render
