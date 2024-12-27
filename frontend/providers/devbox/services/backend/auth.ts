@@ -1,5 +1,6 @@
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken'
 import { ERROR_ENUM } from '../error'
+import { IncomingHttpHeaders } from 'http'
 
 interface CustomJwtPayload extends JwtPayload {
   namespace: string
@@ -24,7 +25,10 @@ export const authSessionWithDesktopJWT = async (headers: Headers) => {
   const kubeConfig = await authSession(headers)
   const token = headers.get('Authorization-Bearer')
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization)
-  const payload = await verifyToken<{ workspaceId: string }>(token, process.env.JWT_SECRET as string)
+  const payload = await verifyToken<{ workspaceId: string }>(
+    token,
+    process.env.JWT_SECRET as string
+  )
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization)
   return {
     kubeConfig,
@@ -33,11 +37,15 @@ export const authSessionWithDesktopJWT = async (headers: Headers) => {
   }
 }
 export const authSessionWithJWT = async (headers: Headers) => {
-
   const kubeConfig = await authSession(headers)
   const token = headers.get('Authorization-Bearer')
   if (!token) return Promise.reject(ERROR_ENUM.unAuthorization)
-  const payload = await verifyToken<{ workspaceId: string, organizationUid: string, userUid: string, regionUid: string }>(token, process.env.JWT_SECRET as string)
+  const payload = await verifyToken<{
+    workspaceId: string
+    organizationUid: string
+    userUid: string
+    regionUid: string
+  }>(token, process.env.JWT_SECRET as string)
   if (!payload) return Promise.reject(ERROR_ENUM.unAuthorization)
   return {
     kubeConfig,
@@ -45,9 +53,12 @@ export const authSessionWithJWT = async (headers: Headers) => {
     token
   }
 }
-export const generateDevboxToken = (
-  payload: { workspaceId: string, organizationUid: string, userUid: string, regionUid: string },
-) => sign(payload, process.env.JWT_SECRET as string, { expiresIn: '7d' })
+export const generateDevboxToken = (payload: {
+  workspaceId: string
+  organizationUid: string
+  userUid: string
+  regionUid: string
+}) => sign(payload, process.env.JWT_SECRET as string, { expiresIn: '7d' })
 
 export const getPayloadWithoutVerification = <T = CustomJwtPayload>(
   headers: Headers
@@ -84,3 +95,15 @@ export const generateAccessToken = (
   },
   secret: string
 ) => sign(payload, secret, { expiresIn: '365d' })
+
+export const authAppToken = async (header: IncomingHttpHeaders) => {
+  if (!header) return Promise.reject('unAuthorization')
+  const { authorization } = header
+  if (!authorization) return Promise.reject('unAuthorization')
+
+  try {
+    return Promise.resolve(authorization)
+  } catch (err) {
+    return Promise.reject('unAuthorization')
+  }
+}

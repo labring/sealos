@@ -1,56 +1,59 @@
-import { authAppToken } from '@/services/backend/auth';
-import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
-import { UserTask } from '@/types/user';
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { authAppToken } from '@/services/backend/auth'
+import { jsonRes } from '@/services/backend/response'
+import { ApiResp } from '@/services/kubernet'
+import { UserTask } from '@/types/user'
+import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    if (!global.AppConfig.common.guideEnabled)
-      return jsonRes(res, {
+    if (process.env.GUIDE_ENABLED !== 'true') {
+      return jsonRes({
         data: {
           needGuide: false
         }
-      });
-
-    const token = await authAppToken(req.headers);
-    if (!token) {
-      return jsonRes(res, { code: 401, message: 'token is valid' });
+      })
     }
 
-    const domain = global.AppConfig.cloud.desktopDomain;
+    const token = await authAppToken(req.headers)
+    if (!token) {
+      return jsonRes({ code: 401, message: 'token is valid' })
+    }
+
+    const domain = process.env.SEALOS_DOMAIN
 
     const response = await fetch(`https://${domain}/api/account/getTasks`, {
       method: 'GET',
       headers: {
         Authorization: token
       }
-    });
+    })
+
     const result: {
-      code: number;
-      data: UserTask[];
-      message: string;
-    } = await response.json();
+      code: number
+      data: UserTask[]
+      message: string
+    } = await response.json()
+
+    console.log('result', result)
 
     if (result.code !== 200) {
-      return jsonRes(res, {
+      return jsonRes({
         code: 500,
         message: 'desktop api is err'
-      });
+      })
     }
 
-    const launchpadTask = result.data.find((task) => task.taskType === 'LAUNCHPAD');
-    const needGuide = launchpadTask ? !launchpadTask.isCompleted : false;
+    const launchpadTask = result.data.find((task) => task.taskType === 'LAUNCHPAD')
+    const needGuide = launchpadTask ? !launchpadTask.isCompleted : false
 
-    jsonRes(res, {
+    jsonRes({
       code: 200,
       data: { needGuide, task: launchpadTask }
-    });
+    })
   } catch (err: any) {
-    console.log(err);
-    jsonRes(res, {
+    jsonRes({
       code: 500,
       error: err
-    });
+    })
   }
 }
