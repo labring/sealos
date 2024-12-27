@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import DevboxHeader from './DevboxHeader'
 import DevboxList from './DevboxList'
 import Empty from './Empty'
+import useDriver from '@/hooks/useDriver'
 
 function useDevboxList() {
   const queryClient = useQueryClient()
@@ -19,25 +20,21 @@ function useDevboxList() {
   const { isOpen: templateIsOpen } = useTemplateStore()
   const list = useRef<DevboxListItemTypeV2[]>(devboxList)
 
-  const { isLoading, refetch: refetchDevboxList } = useQuery(
-    ['devboxListQuery'],
-    setDevboxList,
-    {
-      onSettled(res) {
-        if (!res) return
-        // refreshList(res)
-        list.current = res
-      },
-      refetchInterval: !templateIsOpen ? 3000 : false,
-      staleTime: 3000,
-      enabled:!templateIsOpen,
-    }
-  )
+  const { isLoading, refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
+    onSettled(res) {
+      if (!res) return
+      // refreshList(res)
+      list.current = res
+    },
+    refetchInterval: !templateIsOpen ? 3000 : false,
+    staleTime: 3000,
+    enabled: !templateIsOpen
+  })
   const getViewportDevboxes = (minCount = 3) => {
     const doms = document.querySelectorAll('.devboxListItem')
     const viewportDomIds = Array.from(doms)
       .filter(isElementInViewport)
-      .map(item => item.getAttribute('data-id'))
+      .map((item) => item.getAttribute('data-id'))
 
     return viewportDomIds.length < minCount
       ? devboxList
@@ -46,7 +43,6 @@ function useDevboxList() {
   useQuery(
     ['intervalLoadPods', devboxList.length],
     () => {
-
       const viewportDevboxList = getViewportDevboxes()
       return viewportDevboxList
         .filter((devbox) => devbox.status.value !== 'Stopped')
@@ -56,7 +52,7 @@ function useDevboxList() {
       refetchOnMount: true,
       refetchInterval: !templateIsOpen ? 3000 : false,
       staleTime: 3000,
-      enabled: !isLoading &&!templateIsOpen,
+      enabled: !isLoading && !templateIsOpen
     }
   )
 
@@ -71,7 +67,7 @@ function useDevboxList() {
     {
       refetchInterval: !templateIsOpen ? 2 * 60 * 1000 : false,
       staleTime: 2 * 60 * 1000,
-      enabled:!isLoading &&!templateIsOpen,
+      enabled: !isLoading && !templateIsOpen
     }
   )
   // 路由预加载
@@ -91,21 +87,17 @@ function useDevboxList() {
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
   const { list, isLoading, refetchList } = useDevboxList()
+  const { isGuided } = useDriver()
+
+  console.log('list222', list, isGuided)
+
   return (
-    <Flex flexDir={'column'}
-      backgroundColor={'grayModern.100'}
-      px={'32px'}
-      h="100vh"
-      {...props}
-    >
+    <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" {...props}>
       <DevboxHeader listLength={list.length} />
       {list.length === 0 && !isLoading ? (
         <Empty />
       ) : (
-        <DevboxList
-          devboxList={list}
-          refetchDevboxList={refetchList}
-        />
+        <DevboxList devboxList={list} refetchDevboxList={refetchList} />
       )}
       {/* <Loading loading={isLoading} /> */}
     </Flex>

@@ -1,4 +1,4 @@
-import DevboxListContainer from "./components/DevboxListContainer"
+import DevboxListContainer from './components/DevboxListContainer'
 
 export default function EmptyPage() {
   return <DevboxListContainer />
