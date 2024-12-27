@@ -619,6 +619,7 @@ type DashboardResponse struct {
 	ExceptionCount int64              `json:"exception_count"`
 	UsedAmount     float64            `json:"used_amount"`
 	RPM            int64              `json:"rpm"`
+	TPM            int64              `json:"tpm"`
 }
 
 type GroupDashboardResponse struct {
@@ -737,6 +738,26 @@ func getRPM(group string, end time.Time, tokenName, modelName string) (int64, er
 	return count, err
 }
 
+func getTPM(group string, end time.Time, tokenName, modelName string) (int64, error) {
+	query := LogDB.Model(&Log{}).
+		Select("COALESCE(SUM(prompt_tokens + completion_tokens), 0)").
+		Where("request_at >= ? AND request_at <= ?", end.Add(-time.Minute), end)
+
+	if group != "" {
+		query = query.Where("group_id = ?", group)
+	}
+	if tokenName != "" {
+		query = query.Where("token_name = ?", tokenName)
+	}
+	if modelName != "" {
+		query = query.Where("model = ?", modelName)
+	}
+
+	var tpm int64
+	err := query.Scan(&tpm).Error
+	return tpm, err
+}
+
 func GetDashboardData(start, end time.Time, modelName string) (*DashboardResponse, error) {
 	if end.IsZero() {
 		end = time.Now()
@@ -763,6 +784,11 @@ func GetDashboardData(start, end time.Time, modelName string) (*DashboardRespons
 		return nil, err
 	}
 
+	tpm, err := getTPM("", end, "", modelName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &DashboardResponse{
 		ChartData:      chartData,
 		Models:         models,
@@ -770,6 +796,7 @@ func GetDashboardData(start, end time.Time, modelName string) (*DashboardRespons
 		ExceptionCount: exceptionCount,
 		UsedAmount:     usedAmount,
 		RPM:            rpm,
+		TPM:            tpm,
 	}, nil
 }
 
@@ -808,6 +835,11 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 		return nil, err
 	}
 
+	tpm, err := getTPM(group, end, tokenName, modelName)
+	if err != nil {
+		return nil, err
+	}
+
 	return &GroupDashboardResponse{
 		DashboardResponse: DashboardResponse{
 			ChartData:      chartData,
@@ -816,6 +848,7 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 			ExceptionCount: exceptionCount,
 			UsedAmount:     usedAmount,
 			RPM:            rpm,
+			TPM:            tpm,
 		},
 		TokenNames: tokenNames,
 	}, nil
