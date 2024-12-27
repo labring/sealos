@@ -333,7 +333,9 @@
   "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
   "change_log": "History",
   "VerticalScaling": "Vertical Scaling",
-  "HorizontalScaling": "Horizontal Scaling",
-  "VolumeExpansion": "Volume Expansion",
+  "VerticalScalingCPU": "Vertical Scaling (CPU)",
+  "VerticalScalingMemory": "Vertical Scaling (Memory)",
+  "HorizontalScaling": "Horizontal Scaling (Instance)",
+  "VolumeExpansion": "Volume Expansion (Disk)",
   "Stop": "Stop"
 }

@@ -334,7 +334,9 @@
   "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
   "change_log": "变更历史",
   "VerticalScaling": "纵向扩展",
-  "HorizontalScaling": "横向扩展",
-  "VolumeExpansion": "卷扩展",
+  "VerticalScalingCPU": "纵向扩展（CPU）",
+  "VerticalScalingMemory": "纵向扩展（内存）",
+  "HorizontalScaling": "横向扩展（实例数）",
+  "VolumeExpansion": "卷扩展（磁盘）",
   "Stop": "停止"
 }

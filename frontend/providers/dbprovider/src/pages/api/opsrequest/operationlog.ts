@@ -5,6 +5,7 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KubeBlockOpsRequestType } from '@/types/cluster';
 import { DBType, OpsRequestItemType } from '@/types/db';
+import { cpuFormatToC, memoryFormatToGi } from '@/utils/tools';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -53,17 +54,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
             if (oldConfig?.limits?.cpu !== newConfig?.limits?.cpu) {
               changedConfigs.push({
-                parameterName: item.spec.type,
-                newValue: newConfig?.limits?.cpu || '-',
-                oldValue: oldConfig?.limits?.cpu || '-'
+                parameterName: item.spec.type + 'CPU',
+                newValue: cpuFormatToC(newConfig?.limits?.cpu) || '-',
+                oldValue: cpuFormatToC(oldConfig?.limits?.cpu) || '-'
               });
             }
 
             if (oldConfig?.limits?.memory !== newConfig?.limits?.memory) {
               changedConfigs.push({
-                parameterName: item.spec.type,
-                newValue: newConfig?.limits?.memory || '-',
-                oldValue: oldConfig?.limits?.memory || '-'
+                parameterName: item.spec.type + 'Memory',
+                newValue: memoryFormatToGi(newConfig?.limits?.memory) || '-',
+                oldValue: memoryFormatToGi(oldConfig?.limits?.memory) || '-'
               });
             }
 

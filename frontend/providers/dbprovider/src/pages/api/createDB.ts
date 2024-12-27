@@ -37,12 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       const opsRequests = [];
 
-      if (cpu !== dbForm.cpu) {
-        const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
-        opsRequests.push(verticalScalingYaml);
-      }
-
-      if (memory !== dbForm.memory) {
+      if (cpu !== dbForm.cpu || memory !== dbForm.memory) {
         const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
         opsRequests.push(verticalScalingYaml);
       }
