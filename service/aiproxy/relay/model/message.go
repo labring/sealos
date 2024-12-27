@@ -1,43 +1,54 @@
 package model
 
+import "strings"
+
 type Message struct {
 	Content    any     `json:"content,omitempty"`
 	Name       *string `json:"name,omitempty"`
 	Role       string  `json:"role,omitempty"`
 	ToolCallID string  `json:"tool_call_id,omitempty"`
-	ToolCalls  []Tool  `json:"tool_calls,omitempty"`
+	ToolCalls  []*Tool `json:"tool_calls,omitempty"`
 }
 
-func (m Message) IsStringContent() bool {
+func (m *Message) IsStringContent() bool {
 	_, ok := m.Content.(string)
 	return ok
 }
 
-func (m Message) StringContent() string {
+func (m *Message) ToStringContentMessage() {
+	if m.IsStringContent() {
+		return
+	}
+	m.Content = m.StringContent()
+}
+
+func (m *Message) StringContent() string {
 	content, ok := m.Content.(string)
 	if ok {
 		return content
 	}
 	contentList, ok := m.Content.([]any)
-	if ok {
-		var contentStr string
-		for _, contentItem := range contentList {
-			contentMap, ok := contentItem.(map[string]any)
-			if !ok {
-				continue
-			}
-			if contentMap["type"] == ContentTypeText {
-				if subStr, ok := contentMap["text"].(string); ok {
-					contentStr += subStr
-				}
+	if !ok {
+		return ""
+	}
+
+	var strBuilder strings.Builder
+	for _, contentItem := range contentList {
+		contentMap, ok := contentItem.(map[string]any)
+		if !ok {
+			continue
+		}
+		if contentMap["type"] == ContentTypeText {
+			if subStr, ok := contentMap["text"].(string); ok {
+				strBuilder.WriteString(subStr)
+				strBuilder.WriteString("\n")
 			}
 		}
-		return contentStr
 	}
-	return ""
+	return strBuilder.String()
 }
 
-func (m Message) ParseContent() []MessageContent {
+func (m *Message) ParseContent() []MessageContent {
 	var contentList []MessageContent
 	content, ok := m.Content.(string)
 	if ok {

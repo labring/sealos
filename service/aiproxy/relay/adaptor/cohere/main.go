@@ -9,11 +9,11 @@ import (
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -107,7 +107,7 @@ func StreamResponseCohere2OpenAI(cohereResponse *StreamResponse) (*openai.ChatCo
 	}
 	var openaiResponse openai.ChatCompletionsStreamResponse
 	openaiResponse.Object = "chat.completion.chunk"
-	openaiResponse.Choices = []openai.ChatCompletionsStreamResponseChoice{choice}
+	openaiResponse.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
 	return &openaiResponse, response
 }
 
@@ -126,13 +126,15 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 		Model:   "model",
 		Object:  "chat.completion",
 		Created: helper.GetTimestamp(),
-		Choices: []openai.TextResponseChoice{choice},
+		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
 
 func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
+
+	log := middleware.GetLogger(c)
 
 	createdTime := helper.GetTimestamp()
 	scanner := bufio.NewScanner(resp.Body)
@@ -148,7 +150,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		var cohereResponse StreamResponse
 		err := json.Unmarshal(conv.StringToBytes(data), &cohereResponse)
 		if err != nil {
-			logger.SysError("error unmarshalling stream response: " + err.Error())
+			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 
@@ -168,12 +170,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			logger.SysError(err.Error())
+			log.Error("error rendering stream response: " + err.Error())
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		logger.SysError("error reading stream: " + err.Error())
+		log.Error("error reading stream: " + err.Error())
 	}
 
 	render.Done(c)

@@ -117,10 +117,10 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   });
 
   return (
-    <Box h={'100%'} position={'relative'} overflowY={'auto'}>
-      <TableContainer overflow={'overlay'}>
+    <Box h={'100%'} position={'relative'}>
+      <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'} fontSize={'base'}>
-          <Thead>
+          <Thead position={'sticky'} top={'0'}>
             <Tr>
               {columns.map((item) => (
                 <Th
@@ -131,6 +131,12 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                   backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
                   color={'grayModern.600'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
                 >
                   {t(item.title)}
                 </Th>

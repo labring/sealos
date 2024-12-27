@@ -9,20 +9,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/helper"
-	channelhelper "github.com/labring/sealos/service/aiproxy/relay/adaptor"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/model"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
 type Adaptor struct{}
 
-func (a *Adaptor) Init(_ *meta.Meta) {
-}
+const baseURL = "https://generativelanguage.googleapis.com"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	version := helper.AssignOrDefault(meta.Config.APIVersion, config.GetGeminiVersion())
+	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
 	var action string
 	switch meta.Mode {
 	case relaymode.Embeddings:
@@ -31,68 +31,53 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		action = "generateContent"
 	}
 
-	if meta.IsStream {
+	if meta.GetBool("stream") {
 		action = "streamGenerateContent?alt=sse"
 	}
-	return fmt.Sprintf("%s/%s/models/%s:%s", meta.BaseURL, version, meta.ActualModelName, action), nil
+	u := meta.Channel.BaseURL
+	if u == "" {
+		u = baseURL
+	}
+	return fmt.Sprintf("%s/%s/models/%s:%s", u, version, meta.ActualModelName, action), nil
 }
 
-func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Request, meta *meta.Meta) error {
-	channelhelper.SetupCommonRequestHeader(c, req, meta)
-	req.Header.Set("X-Goog-Api-Key", meta.APIKey)
+func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
+	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(_ *gin.Context, relayMode int, request *model.GeneralOpenAIRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	switch relayMode {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+	switch meta.Mode {
 	case relaymode.Embeddings:
-		geminiEmbeddingRequest := ConvertEmbeddingRequest(request)
-		return geminiEmbeddingRequest, nil
+		return ConvertEmbeddingRequest(meta, req)
+	case relaymode.ChatCompletions:
+		return ConvertRequest(meta, req)
 	default:
-		geminiRequest := ConvertRequest(request)
-		return geminiRequest, nil
+		return nil, nil, errors.New("unsupported mode")
 	}
 }
 
-func (a *Adaptor) ConvertImageRequest(request *model.ImageRequest) (any, error) {
-	if request == nil {
-		return nil, errors.New("request is nil")
-	}
-	return request, nil
+func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
+	return utils.DoRequest(req)
 }
 
-func (a *Adaptor) DoRequest(c *gin.Context, meta *meta.Meta, requestBody io.Reader) (*http.Response, error) {
-	return channelhelper.DoRequestHelper(a, c, meta, requestBody)
-}
-
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.ReadCloser, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) ConvertTTSRequest(*model.TextToSpeechRequest) (any, error) {
-	return nil, nil
-}
-
-func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, meta *meta.Meta) (usage *model.Usage, err *model.ErrorWithStatusCode) {
-	if meta.IsStream {
-		var responseText string
-		err, responseText = StreamHandler(c, resp)
-		usage = openai.ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)
-	} else {
-		switch meta.Mode {
-		case relaymode.Embeddings:
-			err, usage = EmbeddingHandler(c, resp)
-		default:
-			err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	switch meta.Mode {
+	case relaymode.Embeddings:
+		usage, err = EmbeddingHandler(c, resp)
+	case relaymode.ChatCompletions:
+		if utils.IsStreamResponse(resp) {
+			usage, err = StreamHandler(meta, c, resp)
+		} else {
+			usage, err = Handler(meta, c, resp)
 		}
+	default:
+		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }
 
-func (a *Adaptor) GetModelList() []string {
+func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
 }
 

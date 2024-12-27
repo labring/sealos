@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"slices"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -31,7 +32,17 @@ var (
 	retryTimes atomic.Int64
 	// 暂停服务
 	disableServe atomic.Bool
+	// log detail 存储时间(小时)
+	logDetailStorageHours int64 = 3 * 24
 )
+
+func GetLogDetailStorageHours() int64 {
+	return atomic.LoadInt64(&logDetailStorageHours)
+}
+
+func SetLogDetailStorageHours(hours int64) {
+	atomic.StoreInt64(&logDetailStorageHours, hours)
+}
 
 func GetDisableServe() bool {
 	return disableServe.Load()
@@ -78,19 +89,6 @@ var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"
 var RelayTimeout = env.Int("RELAY_TIMEOUT", 0) // unit is second
 
 var RateLimitKeyExpirationDuration = 20 * time.Minute
-
-var (
-	// 是否根据请求成功率禁用渠道，默认不开启
-	EnableMetric = env.Bool("ENABLE_METRIC", false)
-	// 指标队列大小
-	MetricQueueSize = env.Int("METRIC_QUEUE_SIZE", 10)
-	// 请求成功率阈值，默认80%
-	MetricSuccessRateThreshold = env.Float64("METRIC_SUCCESS_RATE_THRESHOLD", 0.8)
-	// 请求成功率指标队列大小
-	MetricSuccessChanSize = env.Int("METRIC_SUCCESS_CHAN_SIZE", 1024)
-	// 请求失败率指标队列大小
-	MetricFailChanSize = env.Int("METRIC_FAIL_CHAN_SIZE", 128)
-)
 
 var OnlyOneLogFile = env.Bool("ONLY_ONE_LOG_FILE", false)
 
@@ -141,6 +139,10 @@ func GetDefaultChannelModels() map[int][]string {
 }
 
 func SetDefaultChannelModels(models map[int][]string) {
+	for key, ms := range models {
+		slices.Sort(ms)
+		models[key] = slices.Compact(ms)
+	}
 	defaultChannelModels.Store(models)
 }
 
@@ -168,7 +170,7 @@ var (
 
 func init() {
 	geminiSafetySetting.Store("BLOCK_NONE")
-	geminiVersion.Store("v1")
+	geminiVersion.Store("v1beta")
 }
 
 func GetGeminiSafetySetting() string {
@@ -185,4 +187,18 @@ func GetGeminiVersion() string {
 
 func SetGeminiVersion(version string) {
 	geminiVersion.Store(version)
+}
+
+var billingEnabled atomic.Bool
+
+func init() {
+	billingEnabled.Store(true)
+}
+
+func GetBillingEnabled() bool {
+	return billingEnabled.Load()
+}
+
+func SetBillingEnabled(enabled bool) {
+	billingEnabled.Store(enabled)
 }

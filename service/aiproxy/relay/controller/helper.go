@@ -1,58 +1,30 @@
 package controller
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/logger"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
-	"github.com/labring/sealos/service/aiproxy/relay/controller/validator"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/shopspring/decimal"
 )
 
 var ConsumeWaitGroup sync.WaitGroup
-
-func getAndValidateTextRequest(c *gin.Context, relayMode int) (*relaymodel.GeneralOpenAIRequest, error) {
-	textRequest := &relaymodel.GeneralOpenAIRequest{}
-	err := common.UnmarshalBodyReusable(c, textRequest)
-	if err != nil {
-		return nil, err
-	}
-	if relayMode == relaymode.Moderations && textRequest.Model == "" {
-		textRequest.Model = "text-moderation-latest"
-	}
-	if relayMode == relaymode.Embeddings && textRequest.Model == "" {
-		textRequest.Model = c.Param("model")
-	}
-	err = validator.ValidateTextRequest(textRequest, relayMode)
-	if err != nil {
-		return nil, err
-	}
-	return textRequest, nil
-}
-
-func getPromptTokens(textRequest *relaymodel.GeneralOpenAIRequest, relayMode int) int {
-	switch relayMode {
-	case relaymode.ChatCompletions:
-		return openai.CountTokenMessages(textRequest.Messages, textRequest.Model)
-	case relaymode.Completions:
-		return openai.CountTokenInput(textRequest.Prompt, textRequest.Model)
-	case relaymode.Moderations:
-		return openai.CountTokenInput(textRequest.Input, textRequest.Model)
-	}
-	return 0
-}
 
 type PreCheckGroupBalanceReq struct {
 	PromptTokens int
@@ -76,9 +48,13 @@ func getPreConsumedAmount(req *PreCheckGroupBalanceReq) float64 {
 }
 
 func preCheckGroupBalance(ctx context.Context, req *PreCheckGroupBalanceReq, meta *meta.Meta) (bool, balance.PostGroupConsumer, error) {
+	if meta.IsChannelTest {
+		return true, nil, nil
+	}
+
 	preConsumedAmount := getPreConsumedAmount(req)
 
-	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group)
+	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group.ID)
 	if err != nil {
 		return false, nil, err
 	}
@@ -88,12 +64,47 @@ func preCheckGroupBalance(ctx context.Context, req *PreCheckGroupBalanceReq, met
 	return true, postGroupConsumer, nil
 }
 
-func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, postGroupConsumer balance.PostGroupConsumer, code int, endpoint string, usage *relaymodel.Usage, meta *meta.Meta, price, completionPrice float64, content string) {
+func postConsumeAmount(
+	ctx context.Context,
+	consumeWaitGroup *sync.WaitGroup,
+	postGroupConsumer balance.PostGroupConsumer,
+	code int,
+	endpoint string,
+	usage *relaymodel.Usage,
+	meta *meta.Meta,
+	price,
+	completionPrice float64,
+	content string,
+	requestDetail *model.RequestDetail,
+) {
 	defer consumeWaitGroup.Done()
+	if meta.IsChannelTest {
+		return
+	}
+	log := middleware.NewLogger()
+	middleware.SetLogFieldsFromMeta(meta, log.Data)
 	if usage == nil {
-		err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelID, 0, 0, meta.OriginModelName, meta.TokenID, meta.TokenName, 0, price, completionPrice, endpoint, content)
+		err := model.BatchRecordConsume(
+			meta.RequestID,
+			meta.RequestAt,
+			meta.Group.ID,
+			code,
+			meta.Channel.ID,
+			0,
+			0,
+			meta.OriginModelName,
+			meta.Token.ID,
+			meta.Token.Name,
+			0,
+			price,
+			completionPrice,
+			endpoint,
+			content,
+			meta.Mode,
+			requestDetail,
+		)
 		if err != nil {
-			logger.Error(ctx, "error batch record consume: "+err.Error())
+			log.Error("error batch record consume: " + err.Error())
 		}
 		return
 	}
@@ -102,53 +113,173 @@ func postConsumeAmount(ctx context.Context, consumeWaitGroup *sync.WaitGroup, po
 	var amount float64
 	totalTokens := promptTokens + completionTokens
 	if totalTokens != 0 {
-		// amount = (float64(promptTokens)*price + float64(completionTokens)*completionPrice) / billingPrice.PriceUnit
-		promptAmount := decimal.NewFromInt(int64(promptTokens)).Mul(decimal.NewFromFloat(price)).Div(decimal.NewFromInt(billingprice.PriceUnit))
-		completionAmount := decimal.NewFromInt(int64(completionTokens)).Mul(decimal.NewFromFloat(completionPrice)).Div(decimal.NewFromInt(billingprice.PriceUnit))
+		promptAmount := decimal.
+			NewFromInt(int64(promptTokens)).
+			Mul(decimal.NewFromFloat(price)).
+			Div(decimal.NewFromInt(billingprice.PriceUnit))
+		completionAmount := decimal.
+			NewFromInt(int64(completionTokens)).
+			Mul(decimal.NewFromFloat(completionPrice)).
+			Div(decimal.NewFromInt(billingprice.PriceUnit))
 		amount = promptAmount.Add(completionAmount).InexactFloat64()
 		if amount > 0 {
-			_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.TokenName, amount)
+			_amount, err := postGroupConsumer.PostGroupConsume(ctx, meta.Token.Name, amount)
 			if err != nil {
-				logger.Error(ctx, "error consuming token remain amount: "+err.Error())
-				err = model.CreateConsumeError(meta.Group, meta.TokenName, meta.OriginModelName, err.Error(), amount, meta.TokenID)
+				log.Error("error consuming token remain amount: " + err.Error())
+				err = model.CreateConsumeError(
+					meta.RequestID,
+					meta.RequestAt,
+					meta.Group.ID,
+					meta.Token.Name,
+					meta.OriginModelName,
+					err.Error(),
+					amount,
+					meta.Token.ID,
+				)
 				if err != nil {
-					logger.Error(ctx, "failed to create consume error: "+err.Error())
+					log.Error("failed to create consume error: " + err.Error())
 				}
 			} else {
 				amount = _amount
 			}
 		}
 	}
-	err := model.BatchRecordConsume(ctx, meta.Group, code, meta.ChannelID, promptTokens, completionTokens, meta.OriginModelName, meta.TokenID, meta.TokenName, amount, price, completionPrice, endpoint, content)
+	err := model.BatchRecordConsume(
+		meta.RequestID,
+		meta.RequestAt,
+		meta.Group.ID,
+		code,
+		meta.Channel.ID,
+		promptTokens,
+		completionTokens,
+		meta.OriginModelName,
+		meta.Token.ID,
+		meta.Token.Name,
+		amount,
+		price,
+		completionPrice,
+		endpoint,
+		content,
+		meta.Mode,
+		requestDetail,
+	)
 	if err != nil {
-		logger.Error(ctx, "error batch record consume: "+err.Error())
+		log.Error("error batch record consume: " + err.Error())
 	}
 }
 
-func getMappedModelName(modelName string, mapping map[string]string) (string, bool) {
-	if mapping == nil {
-		return modelName, false
-	}
-	mappedModelName := mapping[modelName]
-	if mappedModelName != "" {
-		return mappedModelName, true
-	}
-	return modelName, false
-}
-
-func isErrorHappened(meta *meta.Meta, resp *http.Response) bool {
+func isErrorHappened(resp *http.Response) bool {
 	if resp == nil {
-		return meta.ChannelType != channeltype.AwsClaude
-	}
-	if resp.StatusCode != http.StatusOK {
-		return true
-	}
-	if meta.ChannelType == channeltype.DeepL {
-		// skip stream check for deepl
 		return false
 	}
-	if meta.IsStream && strings.HasPrefix(resp.Header.Get("Content-Type"), "application/json") {
-		return true
+	return resp.StatusCode != http.StatusOK
+}
+
+type responseWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (rw *responseWriter) Write(b []byte) (int, error) {
+	rw.body.Write(b)
+	return rw.ResponseWriter.Write(b)
+}
+
+func (rw *responseWriter) WriteString(s string) (int, error) {
+	rw.body.WriteString(s)
+	return rw.ResponseWriter.WriteString(s)
+}
+
+func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *model.RequestDetail, *relaymodel.ErrorWithStatusCode) {
+	log := middleware.GetLogger(c)
+
+	detail := model.RequestDetail{}
+	switch meta.Mode {
+	case relaymode.AudioTranscription, relaymode.AudioTranslation:
+		break
+	default:
+		reqBody, err := common.GetRequestBody(c.Request)
+		if err != nil {
+			return nil, nil, openai.ErrorWrapperWithMessage("get request body failed: "+err.Error(), "get_request_body_failed", http.StatusBadRequest)
+		}
+		detail.RequestBody = conv.BytesToString(reqBody)
 	}
-	return false
+
+	header, body, err := a.ConvertRequest(meta, c.Request)
+	if err != nil {
+		return nil, &detail, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
+	}
+
+	fullRequestURL, err := a.GetRequestURL(meta)
+	if err != nil {
+		return nil, &detail, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
+	}
+	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, body)
+	if err != nil {
+		return nil, &detail, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
+	}
+	log.Debugf("request url: %s", fullRequestURL)
+
+	contentType := req.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = "application/json; charset=utf-8"
+	}
+	req.Header.Set("Content-Type", contentType)
+	for key, value := range header {
+		req.Header[key] = value
+	}
+	err = a.SetupRequestHeader(meta, c, req)
+	if err != nil {
+		return nil, &detail, openai.ErrorWrapperWithMessage("setup request header failed: "+err.Error(), "setup_request_header_failed", http.StatusBadRequest)
+	}
+
+	resp, err := a.DoRequest(meta, c, req)
+	if err != nil {
+		return nil, &detail, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "do_request_failed", http.StatusBadRequest)
+	}
+
+	if isErrorHappened(resp) {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, &detail, openai.ErrorWrapperWithMessage("read response body failed: "+err.Error(), "read_response_body_failed", http.StatusBadRequest)
+		}
+		detail.ResponseBody = conv.BytesToString(respBody)
+		resp.Body = io.NopCloser(bytes.NewReader(respBody))
+		return nil, &detail, utils.RelayErrorHandler(meta, resp)
+	}
+
+	rw := &responseWriter{
+		ResponseWriter: c.Writer,
+		body:           bytes.NewBuffer(nil),
+	}
+	rawWriter := c.Writer
+	defer func() { c.Writer = rawWriter }()
+	c.Writer = rw
+
+	c.Header("Content-Type", resp.Header.Get("Content-Type"))
+	usage, relayErr := a.DoResponse(meta, c, resp)
+	detail.ResponseBody = conv.BytesToString(rw.body.Bytes())
+	if relayErr != nil {
+		if detail.ResponseBody == "" {
+			respData, err := json.Marshal(gin.H{
+				"error": relayErr.Error,
+			})
+			if err != nil {
+				detail.ResponseBody = relayErr.Error.String()
+			} else {
+				detail.ResponseBody = conv.BytesToString(respData)
+			}
+		}
+		return nil, &detail, relayErr
+	}
+	if usage == nil {
+		usage = &relaymodel.Usage{
+			PromptTokens: meta.PromptTokens,
+			TotalTokens:  meta.PromptTokens,
+		}
+	}
+	if usage.TotalTokens == 0 {
+		usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+	}
+	return usage, &detail, nil
 }

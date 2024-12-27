@@ -1,12 +1,11 @@
-import React from 'react'
-import { Icon } from '@chakra-ui/react'
 import type { IconProps } from '@chakra-ui/react'
+import { Icon } from '@chakra-ui/react'
 
 const map = {
   codeServer: require('./icons/codeServer.svg').default,
   version: require('./icons/version.svg').default,
   terminal: require('./icons/terminal.svg').default,
-
+  template: require('./icons/template.svg').default,
   more: require('./icons/more.svg').default,
   podList: require('./icons/podList.svg').default,
   arrowLeft: require('./icons/arrowLeft.svg').default,
@@ -62,10 +61,16 @@ const map = {
   vscodeInsiders: require('./icons/vscodeInsiders.svg').default,
   cursor: require('./icons/cursor.svg').default,
   check: require('./icons/check.svg').default,
+  checkTemplate: require('./icons/checkTemplate.svg').default,
   empty: require('./icons/empty.svg').default,
   shutdown: require('./icons/shutdown.svg').default,
   windsurf: require('./icons/windsurf.svg').default,
   rocket: require('./icons/rocket.svg').default,
+  user: require('./icons/user.svg').default,
+  templateTitle: require('./icons/templateTitle.svg').default,
+  official: require('./icons/official.svg').default,
+  firstPage: require('./icons/firstPage.svg').default,
+  prePage: require('./icons/prePage.svg').default,
   jetbrains: require('./icons/jetbrains.svg').default,
 
   clion: require('./icons/jetbrains/clion.svg').default,

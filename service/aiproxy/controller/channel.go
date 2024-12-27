@@ -8,8 +8,14 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 )
+
+func ChannelTypeNames(c *gin.Context) {
+	middleware.SuccessResponse(c, channeltype.ChannelNames)
+}
 
 func GetChannels(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
@@ -31,46 +37,29 @@ func GetChannels(c *gin.Context) {
 	order := c.Query("order")
 	channels, total, err := model.GetChannels(p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"channels": channels,
-			"total":    total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"channels": channels,
+		"total":    total,
 	})
 }
 
 func GetAllChannels(c *gin.Context) {
 	channels, err := model.GetAllChannels(false, false)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    channels,
-	})
+	middleware.SuccessResponse(c, channels)
 }
 
 func AddChannels(c *gin.Context) {
 	channels := make([]*AddChannelRequest, 0)
 	err := c.ShouldBindJSON(&channels)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 	_channels := make([]*model.Channel, 0, len(channels))
@@ -79,16 +68,10 @@ func AddChannels(c *gin.Context) {
 	}
 	err = model.BatchInsertChannels(_channels)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
+	middleware.SuccessResponse(c, nil)
 }
 
 func SearchChannels(c *gin.Context) {
@@ -112,44 +95,27 @@ func SearchChannels(c *gin.Context) {
 	order := c.Query("order")
 	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"channels": channels,
-			"total":    total,
-		},
+	middleware.SuccessResponse(c, gin.H{
+		"channels": channels,
+		"total":    total,
 	})
 }
 
 func GetChannel(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 	channel, err := model.GetChannelByID(id, false)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data":    channel,
-	})
+	middleware.SuccessResponse(c, channel)
 }
 
 type AddChannelRequest struct {
@@ -171,7 +137,6 @@ func (r *AddChannelRequest) ToChannel() *model.Channel {
 		Name:         r.Name,
 		Key:          r.Key,
 		BaseURL:      r.BaseURL,
-		Other:        r.Other,
 		Models:       slices.Clone(r.Models),
 		ModelMapping: maps.Clone(r.ModelMapping),
 		Config:       r.Config,
@@ -198,90 +163,67 @@ func AddChannel(c *gin.Context) {
 	channel := AddChannelRequest{}
 	err := c.ShouldBindJSON(&channel)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 	err = model.BatchInsertChannels(channel.ToChannels())
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
+	middleware.SuccessResponse(c, nil)
 }
 
 func DeleteChannel(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	err := model.DeleteChannelByID(id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
+	middleware.SuccessResponse(c, nil)
 }
 
-type UpdateChannelRequest struct {
-	AddChannelRequest
-	ID int `json:"id"`
-}
-
-func (r *UpdateChannelRequest) ToChannel() *model.Channel {
-	c := r.AddChannelRequest.ToChannel()
-	c.ID = r.ID
-	return c
+func DeleteChannels(c *gin.Context) {
+	ids := []int{}
+	err := c.ShouldBindJSON(&ids)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	err = model.DeleteChannelsByIDs(ids)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
 }
 
 func UpdateChannel(c *gin.Context) {
-	channel := UpdateChannelRequest{}
-	err := c.ShouldBindJSON(&channel)
+	idStr := c.Param("id")
+	if idStr == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "id is required")
+		return
+	}
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	channel := AddChannelRequest{}
+	err = c.ShouldBindJSON(&channel)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 	ch := channel.ToChannel()
+	ch.ID = id
 	err = model.UpdateChannel(ch)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": UpdateChannelRequest{
-			ID: ch.ID,
-			AddChannelRequest: AddChannelRequest{
-				Type:         ch.Type,
-				Name:         ch.Name,
-				Key:          ch.Key,
-				BaseURL:      ch.BaseURL,
-				Other:        ch.Other,
-				Models:       ch.Models,
-				ModelMapping: ch.ModelMapping,
-				Priority:     ch.Priority,
-				Config:       ch.Config,
-			},
-		},
-	})
+	middleware.SuccessResponse(c, ch)
 }
 
 type UpdateChannelStatusRequest struct {
@@ -293,22 +235,13 @@ func UpdateChannelStatus(c *gin.Context) {
 	status := UpdateChannelStatusRequest{}
 	err := c.ShouldBindJSON(&status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 	err = model.UpdateChannelStatusByID(id, status.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{
-			"success": false,
-			"message": err.Error(),
-		})
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
+	middleware.SuccessResponse(c, nil)
 }

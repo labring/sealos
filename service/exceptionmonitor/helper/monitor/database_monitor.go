@@ -62,7 +62,7 @@ func checkDeletedDatabases() {
 			//	DatabaseClusterUID:  databaseClusterUID,
 			//	Namespace:           notificationInfo.Namespace,
 			//	DatabaseClusterName: databaseClusterName,
-			//	RecoveryStatus:      "Deleted",
+			//	RecoveryStatus:      "Deleted",ws
 			//}
 			notificationInfo.RecoveryStatus = "Deleted"
 			notificationInfo.RecoveryTime = time.Now().Format("2006-01-02 15:04:05")
@@ -109,8 +109,8 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 	getClusterDatabaseInfo(cluster, &notificationInfo)
 	switch notificationInfo.ExceptionStatus {
 	case api.StatusRunning, api.StatusStopped:
-		if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
-			recoveryNotificationInfo := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]
+		if value, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; ok {
+			recoveryNotificationInfo := value
 			recoveryNotificationInfo.RecoveryStatus, recoveryNotificationInfo.RecoveryTime = getClusterDatabaseStatus(cluster, recoveryNotificationInfo)
 			handleClusterRecovery(recoveryNotificationInfo)
 		}
@@ -118,7 +118,6 @@ func processCluster(cluster metav1unstructured.Unstructured) {
 		// nothing to do
 		break
 	case api.StatusUnknown:
-		//一般都是在新建，应该发到新建的飞书群中
 		if _, ok := api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok {
 			api.DatabaseNotificationInfoMap[notificationInfo.DatabaseClusterUID] = &notificationInfo
 			//api.LastDatabaseClusterStatus[notificationInfo.DatabaseClusterUID] = notificationInfo.ExceptionStatus

@@ -1,9 +1,8 @@
 package controller
 
 import (
-	"net/http"
-
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,11 +12,7 @@ type StatusData struct {
 }
 
 func GetStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": &StatusData{
-			StartTime: common.StartTime,
-		},
+	middleware.SuccessResponse(c, &StatusData{
+		StartTime: common.StartTime,
 	})
 }

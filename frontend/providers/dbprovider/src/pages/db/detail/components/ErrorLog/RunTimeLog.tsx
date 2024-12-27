@@ -190,18 +190,21 @@ export default function RunTimeLog({
 
   return (
     <Flex flex={'1 0 0'} h={'0'} flexDirection={'column'}>
-      <Flex mt={'8px'} mb="12px" ml={'26px'} position={'relative'} alignItems={'center'} zIndex={2}>
+      <Flex mb="16px" position={'relative'} alignItems={'center'} zIndex={2}>
         {filteredSubNavList?.map((item) => (
           <Box
-            h={'32px'}
+            h={'36px'}
             key={item.label}
             mr={5}
-            cursor={'pointer'}
-            fontSize={'md'}
+            pb={'6px'}
+            pt={'4px'}
             borderBottom={'2px solid'}
+            cursor={'pointer'}
+            fontSize={'16px'}
             color={item.value === logType ? 'grayModern.900' : 'grayModern.600'}
             borderBottomColor={item.value === logType ? 'grayModern.900' : 'transparent'}
             onClick={() => item.value !== logType && updateSubMenu(item.value)}
+            fontWeight={'500'}
           >
             {t(item.label as I18nCommonKey)}
           </Box>
@@ -269,7 +272,7 @@ export default function RunTimeLog({
           />
         )}
 
-        <InputGroup w={'200px'} h={'32px'} mr={'24px'} ml={'12px'}>
+        <InputGroup w={'200px'} h={'32px'} ml={'12px'}>
           <InputLeftElement>
             <MyIcon name="search" />
           </InputLeftElement>
@@ -280,7 +283,12 @@ export default function RunTimeLog({
           />
         </InputGroup>
       </Flex>
-      <BaseTable table={table} isLoading={isLoading} overflowY={'auto'} />
+      <BaseTable
+        table={table}
+        isLoading={isLoading}
+        overflowY={'auto'}
+        tdStyle={{ p: '12px 24px 4px 24px', border: 'none' }}
+      />
       <SwitchPage
         mt={'auto'}
         justifyContent={'end'}

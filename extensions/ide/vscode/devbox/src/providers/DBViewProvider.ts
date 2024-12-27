@@ -83,7 +83,7 @@ export class DBViewProvider
         const remoteUri = workspaceFolder.uri.authority
         const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
         const region = GlobalStateManager.getRegion(devboxId)
-        targetUrl = `http://${region}?openapp=system-dbprovider`
+        targetUrl = `https://${region}?openapp=system-dbprovider`
         this._register(
           vscode.commands.registerCommand('devbox.gotoDatabaseWebPage', () => {
             vscode.commands.executeCommand('devbox.openExternalLink', [
@@ -143,7 +143,7 @@ export class DBViewProvider
       const remoteUri = workspaceFolder.uri.authority
       const devboxId = remoteUri.replace(/^ssh-remote\+/, '') // devbox = sshHostLabel
       const region = GlobalStateManager.getRegion(devboxId)
-      targetUrl = `http://${region}?openapp=system-terminal?defaultCommand=${targetCommand}`
+      targetUrl = `https://${region}?openapp=system-terminal?defaultCommand=${targetCommand}`
       vscode.commands.executeCommand('devbox.openExternalLink', [targetUrl])
     }
   }

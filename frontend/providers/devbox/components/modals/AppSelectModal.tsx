@@ -75,7 +75,11 @@ const AppSelectModal = ({
 
   const handleUpdate = useCallback(
     (item: AppListItemType) => {
-      const tempFormData = { appName: item.name, imageName: deployData.imageName }
+      const tempFormData = {
+        appName: item.name,
+        imageName: deployData.imageName,
+        labels: deployData.labels
+      }
       const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData))
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',

@@ -154,7 +154,7 @@ const ConfigTable = forwardRef<
 
   return (
     <Flex flexDirection={'column'} h={'full'}>
-      <Flex px={'25px'} backgroundColor={'grayModern.50'}>
+      <Flex px={'25px'} backgroundColor={'grayModern.50'} borderRadius={'6px'}>
         <Box
           flex={1}
           fontSize={'12px'}

@@ -1,26 +1,24 @@
 import {
-  V1Pod,
-  V1ContainerStatus,
-  V1Deployment,
   V1ConfigMap,
-  V1Service,
-  V1Ingress,
-  V1Secret,
+  V1Deployment,
   V1HorizontalPodAutoscaler,
-  SinglePodMetrics,
+  V1Ingress,
+  V1Pod,
+  V1Secret,
+  V1Service,
   V1StatefulSet
 } from '@kubernetes/client-node'
 
 import {
-  RuntimeTypeEnum,
-  DevboxStatusEnum,
   DevboxReleaseStatusEnum,
+  DevboxStatusEnum,
   FrameworkTypeEnum,
-  YamlKindEnum,
   LanguageTypeEnum,
   OSTypeEnum,
-  PodStatusEnum
+  PodStatusEnum,
+  YamlKindEnum
 } from '@/constants/devbox'
+import { PortInfos } from './ingress'
 import { MonitorDataResult } from './monitor'
 
 export type DevboxStatusValueType = `${DevboxStatusEnum}`
@@ -44,7 +42,16 @@ export interface DevboxEditType {
     customDomain: string // custom domain
   }[]
 }
-
+export interface DevboxEditTypeV2 {
+  name: string
+  templateUid: string
+  templateRepositoryUid: string
+  templateConfig: string //json
+  image: string
+  cpu: number
+  memory: number
+  networks: PortInfos
+}
 export interface DevboxStatusMapType {
   label: string
   value: DevboxStatusValueType
@@ -86,7 +93,26 @@ export interface DevboxDetailType extends DevboxEditType {
   sshPort?: number
   lastTerminatedReason?: string
 }
-
+export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
+  id: string
+  upTime?: string
+  createTime: string
+  isPause?: boolean
+  iconId: string
+  templateName: string
+  templateRepositoryName: string
+  status: DevboxStatusMapType
+  usedCpu: MonitorDataResult
+  usedMemory: MonitorDataResult
+  sshConfig?: {
+    sshUser: string
+    sshDomain: string
+    sshPort: number
+    sshPrivateKey: string
+  },
+  sshPort?: number
+  lastTerminatedReason?: string
+}
 export interface NetworkType {
   networkName: string
   portName: string
@@ -111,7 +137,25 @@ export interface DevboxListItemType {
   sshPort: number
   lastTerminatedReason?: string
 }
-
+export interface DevboxListItemTypeV2 {
+  id: string
+  name: string
+  // templateRepository: object
+  template: {
+    templateRepository: {
+      iconId: string | null;
+    };
+    uid: string;
+  }
+  status: DevboxStatusMapType
+  createTime: string
+  cpu: number
+  memory: number
+  usedCpu: MonitorDataResult
+  usedMemory: MonitorDataResult
+  sshPort: number
+  lastTerminatedReason?: string
+}
 export interface DevboxVersionListItemType {
   id: string
   name: string
@@ -178,3 +222,9 @@ export interface PodDetailType extends V1Pod {
   podMessage?: string
   containerStatus: PodStatusMapType
 }
+
+export interface json2DevboxV2Data extends DevboxEditTypeV2 {
+  templateConfig: string,
+  image: string,
+}
+

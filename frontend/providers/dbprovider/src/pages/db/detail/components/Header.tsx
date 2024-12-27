@@ -102,19 +102,20 @@ const Header = ({
   }, [db, t, toast]);
 
   return (
-    <Flex h={'86px'} alignItems={'center'}>
+    <Flex h={'60px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
-        <MyIcon name="arrowLeft" w={'24px'} />
-        <Box ml={'4px'} mr={'18px'} fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
+        <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
+        <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'18px'}>
           {router.query.name || db.dbName}
         </Box>
       </Flex>
       <DBStatusTag status={db.status} conditions={db.conditions} />
-      {!isLargeScreen && (
+      {/* {!isLargeScreen && (
         <Box mx={4}>
           <Button
-            minW={'97px'}
-            h={'40px'}
+            minW={'75px'}
+            h={'32px'}
+            fontSize={'12px'}
             variant={'outline'}
             leftIcon={<MyIcon name="detail" w={'16px'} />}
             onClick={() => setShowSlider(true)}
@@ -122,16 +123,17 @@ const Header = ({
             {t('details')}
           </Button>
         </Box>
-      )}
+      )} */}
+
       <Box flex={1} />
 
       {/* btns */}
       {/* Migrate */}
       {/* <Button
-        mr={5}
+        mr={'12px'}
         h={'36px'}
         borderColor={'myGray.200'}
-        leftIcon={<MyIcon name={'change'} w={'20px'} />}
+        leftIcon={<MyIcon name={'change'} w={'16px'} />}
         isLoading={loading}
         variant={'base'}
         bg={'white'}
@@ -143,11 +145,12 @@ const Header = ({
       </Button> */}
       {db.status.value !== 'Stopped' && (
         <Button
-          mr={5}
-          minW={'97px'}
-          h={'40px'}
+          mr={'12px'}
+          minW={'75px'}
+          h={'32px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'20px'} />}
+          leftIcon={<MyIcon name={'change'} w={'16px'} />}
           isLoading={loading}
           isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
           onClick={() => {
@@ -164,11 +167,12 @@ const Header = ({
       )}
       {db.status.value === 'Stopped' ? (
         <Button
-          mr={5}
-          minW={'97px'}
-          h={'40px'}
+          mr={'12px'}
+          minW={'75px'}
+          h={'32px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="continue" w={'20px'} />}
+          leftIcon={<MyIcon name="continue" w={'16px'} />}
           isLoading={loading}
           onClick={handleStartApp}
         >
@@ -176,11 +180,12 @@ const Header = ({
         </Button>
       ) : (
         <Button
-          mr={5}
-          minW={'97px'}
-          h={'40px'}
+          mr={'12px'}
+          minW={'75px'}
+          h={'32px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="pause" w={'20px'} />}
+          leftIcon={<MyIcon name="pause" w={'16px'} />}
           isLoading={loading}
           isDisabled={db.status.value === 'Updating'}
           onClick={onOpenPause(handlePauseApp)}
@@ -191,11 +196,12 @@ const Header = ({
 
       {db.status.value !== 'Stopped' && (
         <Button
-          mr={5}
-          minW={'97px'}
-          h={'40px'}
+          mr={'12px'}
+          minW={'75px'}
+          h={'32px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'20px'} />}
+          leftIcon={<MyIcon name="restart" w={'16px'} />}
           isDisabled={db.status.value === 'Updating'}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
@@ -205,10 +211,11 @@ const Header = ({
       )}
 
       <Button
-        minW={'97px'}
-        h={'40px'}
+        minW={'75px'}
+        h={'32px'}
+        fontSize={'12px'}
         variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'20px'} />}
+        leftIcon={<MyIcon name="delete" w={'16px'} />}
         isLoading={loading}
         isDisabled={db.status.value === 'Updating'}
         _hover={{
