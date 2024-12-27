@@ -193,20 +193,24 @@ func DeleteGroups(c *gin.Context) {
 }
 
 type CreateGroupRequest struct {
-	ID       string  `json:"id"`
 	RPMRatio float64 `json:"rpm_ratio"`
 }
 
 func CreateGroup(c *gin.Context) {
-	var group CreateGroupRequest
-	err := json.NewDecoder(c.Request.Body).Decode(&group)
-	if err != nil || group.ID == "" {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := CreateGroupRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
 	if err := model.CreateGroup(&model.Group{
-		ID:       group.ID,
-		RPMRatio: group.RPMRatio,
+		ID:       group,
+		RPMRatio: req.RPMRatio,
 	}); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
