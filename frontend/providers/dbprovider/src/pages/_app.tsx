@@ -146,10 +146,9 @@ function App({ Component, pageProps }: AppProps) {
           try {
             if (e.data?.type === 'InternalAppCall' && e.data?.name) {
               router.push({
-                pathname: '/db/detail',
+                pathname: '/redirect',
                 query: {
-                  name: e.data.name,
-                  dbType: e.data.dbType
+                  name: e.data.name
                 }
               });
             }

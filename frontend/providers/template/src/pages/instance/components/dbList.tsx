@@ -38,9 +38,9 @@ export default function AppList({ instanceName }: { instanceName: string }) {
   const handleToDetailPage = (item: DBListItemType) => {
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-dbprovider',
-      pathname: '/db/detail',
-      query: { name: item.name, dbType: item.dbType },
-      messageData: { type: 'InternalAppCall', name: item.name, dbType: item.dbType }
+      pathname: '/redirect',
+      query: { name: item.name },
+      messageData: { type: 'InternalAppCall', name: item.name }
     });
   };
 
