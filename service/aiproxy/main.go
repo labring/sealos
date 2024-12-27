@@ -103,17 +103,13 @@ func initializeCaches() error {
 	if err := model.InitOption2DB(); err != nil {
 		return err
 	}
-	if err := model.InitModelConfigCache(); err != nil {
-		return err
-	}
-	return model.InitChannelCache()
+	return model.InitModelConfigAndChannelCache()
 }
 
 func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(3)
+	wg.Add(2)
 	go model.SyncOptions(ctx, wg, time.Second*5)
-	go model.SyncChannelCache(ctx, wg, time.Second*5)
-	go model.SyncModelConfigCache(ctx, wg, time.Second*5)
+	go model.SyncModelConfigAndChannelCache(ctx, wg, time.Second*10)
 }
 
 func setupHTTPServer() (*http.Server, *gin.Engine) {
@@ -177,17 +173,22 @@ func main() {
 	go autoTestBannedModels()
 
 	<-ctx.Done()
-	log.Info("shutting down server...")
-	log.Info("max wait time: 120s")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
+	log.Info("shutting down http server...")
+	log.Info("max wait time: 120s")
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("server forced to shutdown: " + err.Error())
+	} else {
+		log.Info("server shutdown successfully")
 	}
 
+	log.Info("shutting down relay consumer...")
 	relaycontroller.ConsumeWaitGroup.Wait()
+
+	log.Info("shutting down sync services...")
 	wg.Wait()
 
 	log.Info("server exiting")

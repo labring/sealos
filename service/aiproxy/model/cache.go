@@ -295,29 +295,13 @@ func CacheUpdateGroupUsedAmountOnlyIncrease(id string, amount float64) error {
 }
 
 var (
-	enabledChannels                 []*Channel
-	allChannels                     []*Channel
 	enabledModel2channels           map[string][]*Channel
 	enabledModels                   []string
 	enabledModelConfigs             []*ModelConfig
 	enabledChannelType2ModelConfigs map[int][]*ModelConfig
 	enabledChannelID2channel        map[int]*Channel
-	allChannelID2channel            map[int]*Channel
 	channelSyncLock                 sync.RWMutex
 )
-
-func CacheGetAllChannels() []*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return allChannels
-}
-
-func CacheGetAllChannelByID(id int) (*Channel, bool) {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	channel, ok := allChannelID2channel[id]
-	return channel, ok
-}
 
 // GetEnabledModel2Channels returns a map of model name to enabled channels
 func GetEnabledModel2Channels() map[string][]*Channel {
@@ -347,12 +331,6 @@ func CacheGetEnabledModelConfigs() []*ModelConfig {
 	return enabledModelConfigs
 }
 
-func CacheGetEnabledChannels() []*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledChannels
-}
-
 func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
@@ -360,16 +338,15 @@ func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
 	return channel, ok
 }
 
-// InitChannelCache initializes the channel cache from database
-func InitChannelCache() error {
-	// Load enabled newEnabledChannels from database
-	newEnabledChannels, err := LoadEnabledChannels()
+// InitModelConfigAndChannelCache initializes the channel cache from database
+func InitModelConfigAndChannelCache() error {
+	err := initModelConfigCache()
 	if err != nil {
 		return err
 	}
 
-	// Load all channels from database
-	newAllChannels, err := LoadChannels()
+	// Load enabled newEnabledChannels from database
+	newEnabledChannels, err := LoadEnabledChannels()
 	if err != nil {
 		return err
 	}
@@ -378,7 +355,6 @@ func InitChannelCache() error {
 	newEnabledChannelID2channel := buildChannelIDMap(newEnabledChannels)
 
 	// Build all channel ID to channel map
-	newAllChannelID2channel := buildChannelIDMap(newAllChannels)
 
 	// Build model to channels map
 	newEnabledModel2channels := buildModelToChannelsMap(newEnabledChannels)
@@ -394,14 +370,11 @@ func InitChannelCache() error {
 
 	// Update global cache atomically
 	updateGlobalCache(
-		newEnabledChannels,
-		newAllChannels,
 		newEnabledModel2channels,
 		newEnabledModels,
 		newEnabledModelConfigs,
 		newEnabledChannelID2channel,
 		newEnabledChannelType2ModelConfigs,
-		newAllChannelID2channel,
 	)
 
 	return nil
@@ -572,28 +545,22 @@ func SortModelConfigsFunc(i, j *ModelConfig) int {
 }
 
 func updateGlobalCache(
-	newEnabledChannels []*Channel,
-	newAllChannels []*Channel,
 	newEnabledModel2channels map[string][]*Channel,
 	newEnabledModels []string,
 	newEnabledModelConfigs []*ModelConfig,
 	newEnabledChannelID2channel map[int]*Channel,
 	newEnabledChannelType2ModelConfigs map[int][]*ModelConfig,
-	newAllChannelID2channel map[int]*Channel,
 ) {
 	channelSyncLock.Lock()
 	defer channelSyncLock.Unlock()
-	enabledChannels = newEnabledChannels
-	allChannels = newAllChannels
 	enabledModel2channels = newEnabledModel2channels
 	enabledModels = newEnabledModels
 	enabledModelConfigs = newEnabledModelConfigs
 	enabledChannelID2channel = newEnabledChannelID2channel
 	enabledChannelType2ModelConfigs = newEnabledChannelType2ModelConfigs
-	allChannelID2channel = newAllChannelID2channel
 }
 
-func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
 	defer wg.Done()
 
 	ticker := time.NewTicker(frequency)
@@ -603,7 +570,7 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			err := InitChannelCache()
+			err := InitModelConfigAndChannelCache()
 			if err != nil {
 				log.Error("failed to sync channels: " + err.Error())
 				continue
@@ -672,7 +639,7 @@ var (
 	modelConfigMap      map[string]*ModelConfig
 )
 
-func InitModelConfigCache() error {
+func initModelConfigCache() error {
 	modelConfigs, err := GetAllModelConfigs()
 	if err != nil {
 		return err
@@ -683,27 +650,9 @@ func InitModelConfigCache() error {
 	}
 
 	modelConfigSyncLock.Lock()
+	defer modelConfigSyncLock.Unlock()
 	modelConfigMap = newModelConfigMap
-	modelConfigSyncLock.Unlock()
 	return nil
-}
-
-func SyncModelConfigCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
-	defer wg.Done()
-
-	ticker := time.NewTicker(frequency)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			err := InitModelConfigCache()
-			if err != nil {
-				log.Error("failed to sync model configs: " + err.Error())
-			}
-		}
-	}
 }
 
 func CacheGetModelConfig(model string) (*ModelConfig, bool) {
@@ -711,20 +660,4 @@ func CacheGetModelConfig(model string) (*ModelConfig, bool) {
 	defer modelConfigSyncLock.RUnlock()
 	modelConfig, ok := modelConfigMap[model]
 	return modelConfig, ok
-}
-
-func CacheCheckModelConfig(models []string) ([]string, []string) {
-	if len(models) == 0 {
-		return models, nil
-	}
-	founded := make([]string, 0)
-	missing := make([]string, 0)
-	for _, model := range models {
-		if _, ok := modelConfigMap[model]; ok {
-			founded = append(founded, model)
-		} else {
-			missing = append(missing, model)
-		}
-	}
-	return founded, missing
 }
