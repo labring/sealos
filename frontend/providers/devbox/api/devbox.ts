@@ -9,7 +9,6 @@ import {
   DevboxVersionListItemType
 } from '@/types/devbox'
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s'
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 import {
   adaptAppListItem,
   adaptDevboxDetailV2,
@@ -17,8 +16,6 @@ import {
   adaptDevboxVersionListItem,
   adaptPod
 } from '@/utils/adapt'
-import { GET, POST, DELETE } from '@/services/request'
-import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 import { AxiosProgressEvent } from 'axios'
 
@@ -117,3 +114,10 @@ export const execCommandInDevboxPod = (data: {
     onDownloadProgress: data.onDownloadProgress,
     signal: data.signal
   })
+
+export const getSSHRuntimeInfo = (data: { devboxName: string; runtimeName: string }) =>
+  GET<{
+    workingDir: string
+    releaseCommand: string
+    releaseArgs: string
+  }>('/api/getSSHRuntimeInfo', data)

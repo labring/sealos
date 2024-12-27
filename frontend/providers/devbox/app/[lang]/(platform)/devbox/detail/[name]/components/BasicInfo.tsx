@@ -1,16 +1,15 @@
-import { Box, Flex, Image, Spinner, Text, Tooltip } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import React, { useCallback, useState } from 'react'
 import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react'
 
 import MyIcon from '@/components/Icon'
-import SshConnectModal from '@/components/modals/SshConnectModal'
-import { useDevboxStore } from '@/stores/devbox'
-import { useRuntimeStore } from '@/stores/runtime'
+import { useEnvStore } from '@/stores/env'
 import { downLoadBlob } from '@/utils/tools'
-import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import { useDevboxStore } from '@/stores/devbox'
 import { JetBrainsGuideData } from '@/components/IDEButton'
+import SshConnectModal from '@/components/modals/SshConnectModal'
+import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
 
 const BasicInfo = () => {
   const t = useTranslations()
@@ -18,7 +17,6 @@ const BasicInfo = () => {
 
   const { env } = useEnvStore()
   const { devboxDetail } = useDevboxStore()
-  // const { getRuntimeDetailLabel } = useRuntimeStore()
 
   const [loading, setLoading] = useState(false)
   const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false)
@@ -26,10 +24,13 @@ const BasicInfo = () => {
 
   const handleOneClickConfig = useCallback(async () => {
     const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-      devboxName: devboxDetail?.name,
-      runtimeName: devboxDetail?.runtimeVersion
+      devboxName: devboxDetail?.name as string,
+      runtimeName: devboxDetail?.runtimeVersion as string
     })
-    const { workingDir } = await getSSHRuntimeInfo(devboxDetail?.runtimeVersion)
+    const { workingDir } = await getSSHRuntimeInfo({
+      devboxName: devboxDetail?.name as string,
+      runtimeName: devboxDetail?.runtimeVersion as string
+    })
     const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
     if (!devboxDetail?.sshPort) return

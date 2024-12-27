@@ -10,7 +10,6 @@ import { useRouter } from '@/i18n'
 import { useGlobalStore } from '@/stores/global'
 import { DevboxListItemTypeV2 } from '@/types/devbox'
 
-import DevboxStatusTag from '@/components/DevboxStatusTag'
 import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import PodLineChart from '@/components/PodLineChart'
@@ -219,6 +218,8 @@ const DevboxList = ({
             sshPort={item.sshPort}
             status={item.status}
             mr={'8px'}
+            runtimeVersion={item.runtimeVersion}
+            runtimeType={item.runtimeType}
           />
           <Button
             mr={'8px'}

@@ -15,11 +15,11 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import { getSSHConnectionInfo } from '@/api/devbox'
+import MyIcon from './Icon'
 import { useEnvStore } from '@/stores/env'
 import { IDEType, useIDEStore } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
-import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import { getSSHConnectionInfo } from '@/api/devbox'
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal'
 
 interface Props {
@@ -82,7 +82,6 @@ const IDEButton = ({
         const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
           devboxName
         })
-        const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
         setJetBrainsGuideData({
@@ -117,7 +116,7 @@ const IDEButton = ({
         setLoading(false)
       }
     },
-    [toast, t, devboxName, runtimeVersion, runtimeType, env.sealosDomain, env.namespace, sshPort]
+    [toast, t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
   )
 
   return (
@@ -251,14 +250,16 @@ export const ideObj = {
     menuLabel: 'Windsurf',
     icon: 'windsurf',
     prefix: 'windsurf://',
-    value: 'windsurf'
+    value: 'windsurf',
+    sortId: 3
   },
   jetbrains: {
     label: 'JetBrains',
     icon: 'jetbrains',
     menuLabel: 'JetBrains',
     prefix: '-',
-    value: 'jetbrains'
+    value: 'jetbrains',
+    sortId: 4
   }
 } as const
 
