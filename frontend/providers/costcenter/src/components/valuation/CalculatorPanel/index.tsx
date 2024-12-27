@@ -173,7 +173,7 @@ export default function CalculatorPanel({
     });
   }
 
-  const gpuData = priceData.filter((x) => x.title.startsWith('gpu-'));
+  const gpuData = priceData.filter((x) => x.isGpu);
   const totalAmount = useMemo(() => {
     const cpuPrice = priceData.find((x) => x.title === 'cpu')?.price || 0;
     const cpuAmount = config.resources.cpu.val * cpuPrice;
@@ -335,54 +335,56 @@ export default function CalculatorPanel({
               </HStack>
             </Flex>
             {/*gpu*/}
-            <Flex h={'36px'}>
-              <HStack minW={'147px'} gap={'6px'}>
-                <GpuIcon boxSize={'18px'} />
-                <Text fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
-                  {t('GPU')}
-                </Text>
-              </HStack>
-              <HStack gap={'12px'}>
-                <BaseMenu
-                  isDisabled={gpuData.length === 0}
-                  setItem={function (idx: number): void {
-                    updateGpuVal(idx);
-                  }}
-                  innerWidth={'280px'}
-                  itemIdx={config.resources.gpu.idx}
-                  itemlist={gpuData.map((x) => x.title)}
-                  triggerRender={({ text, idx }) => {
-                    const Icon = gpuData[idx].icon;
-                    return (
-                      <Flex key={idx}>
-                        <Icon />
-                        <Text>{text}</Text>
-                      </Flex>
-                    );
-                  }}
-                  itemRender={({ text, idx }) => {
-                    const Icon = gpuData[idx].icon;
-                    return (
-                      <Flex key={idx}>
-                        <Icon />
-                        <Text>{text}</Text>
-                      </Flex>
-                    );
-                  }}
-                ></BaseMenu>
-                <CalculatorNumberInput
-                  unit={t('GPU Unit')}
-                  value={config.resources.gpu.count}
-                  isDisabled={gpuData.length === 0}
-                  width={'104px'}
-                  onChange={(str, count) => {
-                    if (count < 0) return;
-                    updateGpuCount(count);
-                  }}
-                  min={0}
-                />
-              </HStack>
-            </Flex>
+            {gpuEnabled && (
+              <Flex h={'36px'}>
+                <HStack minW={'147px'} gap={'6px'}>
+                  <GpuIcon boxSize={'18px'} />
+                  <Text fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
+                    {t('GPU')}
+                  </Text>
+                </HStack>
+                <HStack gap={'12px'}>
+                  <BaseMenu
+                    isDisabled={gpuData.length === 0}
+                    setItem={function (idx: number): void {
+                      updateGpuVal(idx);
+                    }}
+                    innerWidth={'280px'}
+                    itemIdx={config.resources.gpu.idx}
+                    itemlist={gpuData.map((x) => x.title)}
+                    triggerRender={({ text, idx }) => {
+                      const Icon = gpuData[idx].icon;
+                      return (
+                        <Flex key={idx}>
+                          <Icon />
+                          <Text>{text}</Text>
+                        </Flex>
+                      );
+                    }}
+                    itemRender={({ text, idx }) => {
+                      const Icon = gpuData[idx].icon;
+                      return (
+                        <Flex key={idx}>
+                          <Icon />
+                          <Text>{text}</Text>
+                        </Flex>
+                      );
+                    }}
+                  ></BaseMenu>
+                  <CalculatorNumberInput
+                    unit={t('GPU Unit')}
+                    value={config.resources.gpu.count}
+                    isDisabled={gpuData.length === 0}
+                    width={'104px'}
+                    onChange={(str, count) => {
+                      if (count < 0) return;
+                      updateGpuCount(count);
+                    }}
+                    min={0}
+                  />
+                </HStack>
+              </Flex>
+            )}
             <Flex h={'36px'}>
               <HStack minW={'147px'} gap={'6px'}>
                 <PortIcon boxSize={'18px'} />
