@@ -25,7 +25,11 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
         }
       },
       legend: {
-        data: [t('调用数'), t('异常数'), t('花费')],
+        data: [
+          t('dataDashboard.callCount'),
+          t('dataDashboard.exceptionCount'),
+          t('dataDashboard.cost')
+        ],
         bottom: 0
       },
       grid: {
@@ -62,7 +66,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
       },
       series: [
         {
-          name: t('调用数'),
+          name: t('dataDashboard.callCount'),
           type: 'line',
           smooth: true,
           data: data.map((item) => [item.timestamp, item.request_count]),
@@ -71,7 +75,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           }
         },
         {
-          name: t('异常数'),
+          name: t('dataDashboard.exceptionCount'),
           type: 'line',
           smooth: true,
           data: data.map((item) => [item.timestamp, item.exception_count]),
@@ -80,7 +84,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           }
         },
         {
-          name: t('花费'),
+          name: t('dataDashboard.cost'),
           type: 'line',
           smooth: true,
           data: data.map((item) => [item.timestamp, item.used_amount]),
