@@ -506,6 +506,12 @@ importers:
       downshift:
         specifier: ^9.0.8
         version: 9.0.8(react@18.2.0)
+      echarts:
+        specifier: ^5.4.3
+        version: 5.4.3
+      echarts-for-react:
+        specifier: ^3.0.2
+        version: 3.0.2(echarts@5.4.3)(react@18.2.0)
       i18next:
         specifier: ^23.11.5
         version: 23.12.1
