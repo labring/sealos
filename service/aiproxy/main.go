@@ -71,7 +71,7 @@ func setLog(l *log.Logger) {
 	l.SetOutput(os.Stdout)
 	stdlog.SetOutput(l.Writer())
 
-	log.SetFormatter(&log.TextFormatter{
+	l.SetFormatter(&log.TextFormatter{
 		ForceColors:      true,
 		DisableColors:    false,
 		ForceQuote:       config.DebugEnabled,
