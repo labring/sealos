@@ -144,7 +144,7 @@ const Header = ({
         </Box>
         {/* detail button */}
         <Flex alignItems={'center'}>
-          <DevboxStatusTag status={devboxDetail.status } h={'27px'} />
+          <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
           {!isLargeScreen && (
             <Box ml={4}>
               <Button
@@ -168,7 +168,7 @@ const Header = ({
       <Flex gap={5}>
         <Box>
           <IDEButton
-            runtimeType={devboxDetail.runtimeType}
+            runtimeType={devboxDetail.iconId}
             devboxName={devboxDetail.name}
             sshPort={devboxDetail.sshPort as number}
             status={devboxDetail.status}

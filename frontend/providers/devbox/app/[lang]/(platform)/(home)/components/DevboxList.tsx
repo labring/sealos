@@ -218,8 +218,7 @@ const DevboxList = ({
             sshPort={item.sshPort}
             status={item.status}
             mr={'8px'}
-            runtimeVersion={item.runtimeVersion}
-            runtimeType={item.runtimeType}
+            runtimeType={item.template.templateRepository.iconId as string}
           />
           <Button
             mr={'8px'}

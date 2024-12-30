@@ -24,12 +24,11 @@ const BasicInfo = () => {
 
   const handleOneClickConfig = useCallback(async () => {
     const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-      devboxName: devboxDetail?.name as string,
-      runtimeName: devboxDetail?.runtimeVersion as string
+      devboxName: devboxDetail?.name as string
     })
     const { workingDir } = await getSSHRuntimeInfo({
       devboxName: devboxDetail?.name as string,
-      runtimeName: devboxDetail?.runtimeVersion as string
+      runtimeName: devboxDetail?.templateName as string
     })
     const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
@@ -37,7 +36,7 @@ const BasicInfo = () => {
 
     setSshConfigData({
       devboxName: devboxDetail?.name,
-      runtimeType: devboxDetail?.runtimeType,
+      runtimeType: devboxDetail?.iconId,
       privateKey: sshPrivateKey,
       userName,
       token,
@@ -49,10 +48,10 @@ const BasicInfo = () => {
 
     setOnOpenSsHConnect(true)
   }, [
+    devboxDetail?.iconId,
     devboxDetail?.name,
-    devboxDetail?.runtimeType,
-    devboxDetail?.runtimeVersion,
     devboxDetail?.sshPort,
+    devboxDetail?.templateName,
     env.namespace,
     env.sealosDomain
   ])
@@ -67,7 +66,7 @@ const BasicInfo = () => {
         isClosable: true
       })
     })
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail.sshPort, env.sealosDomain, toast, t])
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t])
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>

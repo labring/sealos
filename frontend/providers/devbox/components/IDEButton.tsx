@@ -24,7 +24,6 @@ import JetBrainsGuideModal from './modals/JetbrainsGuideModal'
 
 interface Props {
   devboxName: string
-  runtimeVersion: string
   runtimeType: string
   sshPort: number
   status: DevboxStatusMapType
@@ -47,7 +46,6 @@ export interface JetBrainsGuideData {
 
 const IDEButton = ({
   devboxName,
-  runtimeVersion,
   runtimeType,
   sshPort,
   status,
