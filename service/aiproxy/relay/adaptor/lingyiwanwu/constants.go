@@ -17,6 +17,7 @@ var ModelList = []*model.ModelConfig{
 		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(16384),
+			model.WithModelConfigToolChoice(true),
 		),
 	},
 	{
@@ -28,6 +29,8 @@ var ModelList = []*model.ModelConfig{
 		RPM:         60,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(16384),
+			model.WithModelConfigVision(true),
+			model.WithModelConfigToolChoice(true),
 		),
 	},
 }
