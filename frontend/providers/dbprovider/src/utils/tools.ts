@@ -96,6 +96,30 @@ export const strToBase64 = (str: string) => {
 };
 
 /**
+ * Format CPU value to standard C format
+ * @param cpu CPU value, like "500m", "1", "2"
+ * @returns Standardized CPU value with C suffix, like "0.5C", "1C", "2C"
+ */
+export const cpuFormatToC = (cpu: string | number = '0'): string => {
+  if (!cpu || cpu === '0') {
+    return '0C';
+  }
+
+  let value: number;
+  const cpuStr = cpu.toString();
+
+  if (/m$/i.test(cpuStr)) {
+    // Handle values with 'm' suffix, like "500m"
+    value = parseFloat(cpuStr) / 1000;
+  } else {
+    // Handle values without unit, like "1", "2"
+    value = parseFloat(cpuStr);
+  }
+
+  return `${value.toFixed(1)}C`;
+};
+
+/**
  * cpu format
  */
 export const cpuFormatToM = (cpu = '0') => {
@@ -141,6 +165,39 @@ export const memoryFormatToMi = (memory = '0') => {
   }
 
   return Number(value.toFixed(2));
+};
+
+/**
+ * Format memory value to standard Gi format
+ * @param memory Memory value, like "512Mi", "1Gi", "2048Mi"
+ * @returns Standardized memory value with Gi suffix, like "0.5Gi", "1Gi", "2Gi"
+ */
+export const memoryFormatToGi = (memory: string | number = '0'): string => {
+  if (!memory || memory === '0') {
+    return '0Gi';
+  }
+
+  let value: number;
+  const memoryStr = memory.toString();
+
+  if (/Mi$/i.test(memoryStr)) {
+    // Convert Mi to Gi
+    value = parseFloat(memoryStr) / 1024;
+  } else if (/Gi$/i.test(memoryStr)) {
+    // Already in Gi
+    value = parseFloat(memoryStr);
+  } else if (/Ti$/i.test(memoryStr)) {
+    // Convert Ti to Gi
+    value = parseFloat(memoryStr) * 1024;
+  } else if (/Ki$/i.test(memoryStr)) {
+    // Convert Ki to Gi
+    value = parseFloat(memoryStr) / 1024 / 1024;
+  } else {
+    // Assume the value is in bytes and convert to Gi
+    value = parseFloat(memoryStr) / 1024 / 1024 / 1024;
+  }
+
+  return `${value.toFixed(1)}Gi`;
 };
 
 /**

@@ -34,6 +34,7 @@ const map = {
   robot: require('./icons/robot.svg').default,
   sealosAvator: require('./icons/sealosAvator.svg').default,
   defaultAvator: require('./icons/defaultAvator.svg').default,
+  undo: require('./icons/undo.svg').default,
   link: require('./icons/link.svg').default
 };
 

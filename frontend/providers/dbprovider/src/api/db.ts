@@ -12,7 +12,7 @@ import type {
 import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
 import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
-import { json2Restart } from '@/utils/json2Yaml';
+import { json2BasicOps } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
@@ -62,7 +62,7 @@ export const restartPodByName = (podName: string) => GET(`/api/pod/restartPod?po
 
 /* db operation */
 export const restartDB = (data: { dbName: string; dbType: DBType }) => {
-  const yaml = json2Restart(data);
+  const yaml = json2BasicOps({ ...data, type: 'Restart' });
   return applyYamlList([yaml], 'update');
 };
 
@@ -103,6 +103,12 @@ export const getOpsRequest = ({
   GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
     name,
     label,
+    dbType
+  });
+
+export const getOperationLog = ({ name, dbType }: { name: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, {
+    name,
     dbType
   });
 

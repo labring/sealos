@@ -31,8 +31,13 @@ import { ShareIcon } from '@/components/icons';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
-export default function AppList({ showCarousel }: { showCarousel: boolean }) {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
+export default function AppList({
+  showCarousel,
+  brandName
+}: {
+  showCarousel: boolean;
+  brandName: string;
+}) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
@@ -270,6 +275,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
 
 // https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props#context-parameter
 export async function getServerSideProps(content: any) {
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
   const local =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
@@ -286,7 +292,8 @@ export async function getServerSideProps(content: any) {
   return {
     props: {
       ...(await serviceSideProps(content)),
-      showCarousel: data.showCarousel
+      showCarousel: data.showCarousel,
+      brandName
     }
   };
 }

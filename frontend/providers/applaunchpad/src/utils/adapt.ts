@@ -413,7 +413,7 @@ export const sliderNumber2MarkList = ({
   type: 'cpu' | 'memory';
   gpuAmount?: number;
 }) => {
-  const newVal = val.map((item) => item * gpuAmount);
+  const newVal = val.map((item) => item);
 
   return newVal.map((item) => ({
     label: type === 'memory' ? (item >= 1024 ? `${item / 1024} G` : `${item} M`) : `${item / 1000}`,

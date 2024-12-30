@@ -145,7 +145,7 @@
   "db_name": "数据库名字",
   "db_table": "数据库表",
   "dbconfig": {
-    "change_history": "修改历史",
+    "change_history": "变更历史",
     "commit": "提交",
     "confirm_updates": "请确认您修改的参数：",
     "get_config_err": "获取配置文件失败",
@@ -331,5 +331,12 @@
   "within_1_hour": "一小时内",
   "within_5_minutes": "五分钟内",
   "yaml_file": "YAML 文件",
-  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！"
+  "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
+  "change_log": "变更历史",
+  "VerticalScaling": "纵向扩展",
+  "VerticalScalingCPU": "纵向扩展（CPU）",
+  "VerticalScalingMemory": "纵向扩展（内存）",
+  "HorizontalScaling": "横向扩展（实例数）",
+  "VolumeExpansion": "卷扩展（磁盘）",
+  "Stop": "停止"
 }
