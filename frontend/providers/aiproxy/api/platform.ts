@@ -16,6 +16,8 @@ import { GetChannelTypeNamesResponse } from '@/app/api/admin/channel/type-name/r
 import { GroupQueryParams, GroupStatus } from '@/types/admin/group'
 import { GroupSearchResponse } from '@/app/api/admin/group/route'
 import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
+import { DashboardQueryParams } from '@/app/api/user/dashboard/route'
+import { DashboardResponse } from '@/types/user/dashboard'
 
 export const initAppConfig = () =>
   GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
@@ -41,6 +43,9 @@ export const deleteToken = (id: number) => DELETE(`/api/user/token/${id}`)
 export const updateToken = (id: number, status: number) =>
   POST<ApiResp>(`/api/user/token/${id}`, { status: status })
 
+// dashboard
+export const getDashboardData = (params: DashboardQueryParams) =>
+  GET<DashboardResponse['data']>('/api/user/dashboard', params)
 // ------------------------------------------------------------
 // <admin>
 

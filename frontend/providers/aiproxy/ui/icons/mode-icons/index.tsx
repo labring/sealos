@@ -27,6 +27,7 @@ import CohereIcon from '@/ui/svg/icons/modelist/cohere.svg'
 import HuggingFaceIcon from '@/ui/svg/icons/modelist/huggingface.svg'
 import LingyiWanwuIcon from '@/ui/svg/icons/modelist/lingyiwanwu.svg'
 import StepFunIcon from '@/ui/svg/icons/modelist/stepfun.svg'
+import DefaultIcon from '@/ui/svg/icons/modelist/default.svg'
 
 import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
 import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
@@ -61,5 +62,5 @@ export const modelIcons = {
   huggingface: HuggingFaceIcon,
   lingyiwanwu: LingyiWanwuIcon,
   stepfun: StepFunIcon,
-  default: OpenAIIcon
+  default: DefaultIcon
 }

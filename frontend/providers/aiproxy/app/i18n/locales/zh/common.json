@@ -2,13 +2,14 @@
   "title": "AI 代理",
   "description": "AI 代理",
   "Sidebar": {
-    "Home": "API Keys",
+    "Home": "仪表盘",
     "Logs": "调用日志",
-    "Price": "模型价格",
+    "Price": "模型广场",
     "Dashboard": "AI 渠道",
     "GlobalLogs": "全局日志",
     "GlobalConfigs": "全局配置",
-    "NsManager": "NS管理"
+    "NsManager": "NS管理",
+    "Keys": "API Keys"
   },
   "keyList": {
     "title": "API Keys"
@@ -92,22 +93,19 @@
   "copyFailed": "复制失败",
   "noData": "你还没有 API Key",
   "price": {
-    "title": "模型价格",
-    "per1kTokens": "1k tokens"
+    "title": "模型广场",
+    "per1kTokens": "1k tokens",
+    "modelOwner": "系列/厂商",
+    "modelType": "类型",
+    "modelName": "模型名",
+    "modelRpm": "RPM",
+    "modelRpmTooltip": "每个模型拥有独立的 RPM",
+    "sortUpTooltip": "点击升序",
+    "sortDownTooltip": "点击降序",
+    "modelVision": "Visual",
+    "modelToolChoice": "Tool Invocation",
+    "response": "响应"
   },
-  "ernie": "百度文心",
-  "qwen": "阿里千问",
-  "chatglm": "智谱",
-  "deepseek": "Deepseek",
-  "moonshot": "月之暗面",
-  "sparkdesk": "讯飞星火",
-  "abab": "Minimax",
-  "doubao": "字节豆包",
-  "glm": "智谱",
-  "o": "OpenAI",
-  "gpt": "OpenAI",
-  "bge": "智源研究院",
-  "hunyuan": "腾讯混元",
   "createKey2": "新建 Key",
   "dashboard": {
     "title": "Ai 渠道",
@@ -198,6 +196,38 @@
     "9": "音频翻译",
     "10": "重排序"
   },
+  "modeOwner": {
+    "openai": "OpenAI",
+    "alibaba": "阿里",
+    "tencent": "腾讯",
+    "xunfei": "讯飞",
+    "deepseek": "DeepSeek",
+    "moonshot": "月之暗面",
+    "minimax": "MiniMax",
+    "baidu": "百度",
+    "google": "谷歌",
+    "baai": "BAAI",
+    "funaudiollm": "趣音大模型",
+    "doubao": "豆包",
+    "fishaudio": "鱼声科技",
+    "chatglm": "智谱清言",
+    "stabilityai": "Stability AI",
+    "netease": "网易",
+    "ai360": "360智脑",
+    "anthropic": "Anthropic",
+    "meta": "Meta",
+    "baichuan": "百川智能",
+    "mistral": "Mistral AI",
+    "openchat": "OpenChat",
+    "microsoft": "微软",
+    "defog": "Defog",
+    "nexusflow": "NexusFlow",
+    "cohere": "Cohere",
+    "huggingface": "Hugging Face",
+    "lingyiwanwu": "零一万物",
+    "stepfun": "StepFun",
+    "unknown": "未知"
+  },
   "GlobalLogs": {
     "selectModel": "模型名称",
     "select_token_name": "token 名字",
@@ -231,5 +261,20 @@
     "updateFailed": "更新状态失败",
     "deleteSuccess": "删除成功",
     "deleteFailed": "删除失败"
+  },
+  "dataDashboard": {
+    "title": "仪表盘",
+    "selectToken": "全部密钥",
+    "selectModel": "全部模型",
+    "day": "一天内",
+    "week": "近七天",
+    "twoWeek": "近15天",
+    "month": "近30天",
+    "callCount": "调用数",
+    "exceptionCount": "异常数",
+    "rpm": "RPM（实时）",
+    "tpm": "TPM（实时）",
+    "cost": "花费",
+    "requestData": "调用数据"
   }
 }

@@ -2,13 +2,14 @@
   "title": "AI proxy",
   "description": "AI proxy",
   "Sidebar": {
-    "Home": "API Keys",
+    "Home": "Dashboard",
     "Logs": "Logs",
-    "Price": "Pricing",
+    "Price": "Models",
     "Dashboard": "Channels",
     "GlobalLogs": "Logs",
     "GlobalConfigs": "Config",
-    "NsManager": "NS Manage"
+    "NsManager": "NS Manage",
+    "Keys": "API Keys"
   },
   "keyList": {
     "title": "API Keys"
@@ -92,22 +93,19 @@
   "copyFailed": "Copy failed",
   "noData": "You don’t have an API Key yet",
   "price": {
-    "title": "Pricing",
-    "per1kTokens": "1k tokens"
+    "title": "Models",
+    "per1kTokens": "1k tokens",
+    "modelOwner": "Series/Manufacturer",
+    "modelType": "Type",
+    "modelName": "Model Name",
+    "modelRpm": "RPM",
+    "modelRpmTooltip": "Each model has its own RPM",
+    "sortUpTooltip": "Click to view in ascending order",
+    "sortDownTooltip": "Click to view in Descending order",
+    "modelVision": "Visual",
+    "modelToolChoice": "Tool Invocation",
+    "response": "Response"
   },
-  "ernie": "Baidu-Ernie",
-  "qwen": "Alibaba-Qwen",
-  "chatglm": "BigModel-Chatglm",
-  "deepseek": "Deepseek",
-  "moonshot": "Moonshot",
-  "sparkdesk": "Sparkdesk",
-  "abab": "Minimax",
-  "doubao": "ByteDance-Doubao",
-  "glm": "Glm",
-  "o": "OpenAI",
-  "gpt": "OpenAI",
-  "bge": "BAAI",
-  "hunyuan": "Hunyuan",
   "createKey2": "Create Key",
   "dashboard": {
     "title": "Channels",
@@ -198,6 +196,38 @@
     "9": "Audio",
     "10": "Rerank"
   },
+  "modeOwner": {
+    "openai": "OpenAI",
+    "alibaba": "Alibaba",
+    "tencent": "Tencent",
+    "xunfei": "iFlytek",
+    "deepseek": "DeepSeek",
+    "moonshot": "Moonshot AI",
+    "minimax": "MiniMax",
+    "baidu": "Baidu",
+    "google": "Google",
+    "baai": "BAAI",
+    "funaudiollm": "FunAudio LLM",
+    "doubao": "Doubao",
+    "fishaudio": "Fish Audio",
+    "chatglm": "ChatGLM",
+    "stabilityai": "Stability AI",
+    "netease": "NetEase",
+    "ai360": "360 AI",
+    "anthropic": "Anthropic",
+    "meta": "Meta",
+    "baichuan": "Baichuan",
+    "mistral": "Mistral AI",
+    "openchat": "OpenChat",
+    "microsoft": "Microsoft",
+    "defog": "Defog",
+    "nexusflow": "NexusFlow",
+    "cohere": "Cohere",
+    "huggingface": "Hugging Face",
+    "lingyiwanwu": "Lingyi Wanwu",
+    "stepfun": "StepFun",
+    "unknown": "Unknown"
+  },
   "GlobalLogs": {
     "selectModel": "model Name",
     "select_token_name": "token name",
@@ -231,5 +261,20 @@
     "updateFailed": "Update status failed",
     "deleteSuccess": "Delete successfully",
     "deleteFailed": "Delete failed"
+  },
+  "dataDashboard": {
+    "title": "Dashboard",
+    "selectToken": "All Keys",
+    "selectModel": "All Models",
+    "day": "Last 24h",
+    "week": "Last 7 days",
+    "twoWeek": "Last 15 days",
+    "month": "Last 30 days",
+    "callCount": "Requests",
+    "exceptionCount": "Exceptions",
+    "rpm": "RPM (Real-time)",
+    "tpm": "TPM (Real-time)",
+    "cost": "Charges",
+    "requestData": "Call Data"
   }
 }

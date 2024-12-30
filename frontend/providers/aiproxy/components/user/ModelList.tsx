@@ -8,13 +8,9 @@ import { useQuery } from '@tanstack/react-query'
 import { getEnabledMode } from '@/api/platform'
 import { useMessage } from '@sealos/ui'
 import { MyTooltip } from '@/components/common/MyTooltip'
-import { ModelIdentifier } from '@/types/front'
 import { QueryKey } from '@/types/query-key'
 import { modelIcons } from '@/ui/icons/mode-icons'
-
-const getIdentifier = (modelName: string): ModelIdentifier => {
-  return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
-}
+import { getTranslationWithFallback } from '@/utils/common'
 
 const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwner: string }) => {
   const { lng } = useI18n()
@@ -39,7 +35,14 @@ const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwn
   return (
     <Flex align="center" gap="12px">
       <Image src={iconSrc} alt={modelName} width={20} height={20} />
-      <MyTooltip label={t(getIdentifier(modelName))} width="auto" height="auto">
+      <MyTooltip
+        label={getTranslationWithFallback(
+          `modeOwner.${String(modelOwner)}`,
+          'modeOwner.unknown',
+          t as any
+        )}
+        width="auto"
+        height="auto">
         <Text
           color="grayModern.900"
           fontFamily="PingFang SC"

@@ -4,6 +4,7 @@ export enum QueryKey {
   GetTokens = 'getTokens',
   GetUserLogs = 'getUserLogs',
   GetEnabledModels = 'getEnabledModels',
+  GetDashboardData = 'getDashboardData',
   // admin
   GetChannels = 'getChannels',
   GetAllChannels = 'getAllChannels',

@@ -1,6 +1,9 @@
 import { ChannelType } from '@/types/admin/channels/channelInfo'
 
-export interface ModelInfo {
+export interface ModelConfig {
+  config?: ModelConfigDetail
+  created_at: number
+  updated_at: number
   image_prices: number[] | null
   model: string
   owner: string
@@ -8,10 +11,11 @@ export interface ModelInfo {
   type: number
   input_price: number
   output_price: number
+  rpm: number
 }
 
 export type ChannelWithMode = {
-  [K in ChannelType]?: ModelInfo[]
+  [K in ChannelType]?: ModelConfig[]
 }
 
 export type ChannelDefaultModeMapping = {
@@ -29,14 +33,10 @@ export type ChannelWithDefaultModelAndDefaultModeMapping = {
   models: ChannelDefaultModel
 }
 
-export interface TokenConfig {
-  max_input_tokens: number
-  max_output_tokens: number
-  max_context_tokens: number
-}
-
-export interface ModelConfig extends ModelInfo {
-  config: TokenConfig
-  created_at: number
-  updated_at: number
+export interface ModelConfigDetail {
+  max_input_tokens?: number
+  max_output_tokens?: number
+  max_context_tokens?: number
+  vision?: boolean
+  tool_choice?: boolean
 }

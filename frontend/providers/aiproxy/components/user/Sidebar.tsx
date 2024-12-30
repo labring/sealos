@@ -37,8 +37,16 @@ const SideBar = (): JSX.Element => {
       display: true
     },
     {
+      id: 'keys',
+      url: '/key',
+      value: t('Sidebar.Keys'),
+      icon: homeIcon,
+      activeIcon: homeIcon_a,
+      display: true
+    },
+    {
       id: 'logs',
-      url: '/logs',
+      url: '/log',
       value: t('Sidebar.Logs'),
       icon: logsIcon,
       activeIcon: logsIcon_a,
