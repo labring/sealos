@@ -22,10 +22,10 @@ import (
 
 const MetaResponseFormat = "response_format"
 
-func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalImageRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModelName
 
@@ -40,9 +40,9 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Re
 
 	data, err := json.Marshal(&imageRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return http.Header{
+	return http.MethodPost, http.Header{
 		"X-Dashscope-Async": {"enable"},
 	}, bytes.NewReader(data), nil
 }

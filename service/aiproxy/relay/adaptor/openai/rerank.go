@@ -13,18 +13,18 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	reqMap["model"] = meta.ActualModelName
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {

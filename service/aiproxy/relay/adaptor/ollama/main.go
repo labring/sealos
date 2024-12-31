@@ -23,11 +23,11 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	var request relaymodel.GeneralOpenAIRequest
 	err := common.UnmarshalBodyReusable(req, &request)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModelName
 
@@ -55,7 +55,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 			case relaymodel.ContentTypeImageURL:
 				_, data, err := image.GetImageFromURL(req.Context(), part.ImageURL.URL)
 				if err != nil {
-					return nil, nil, err
+					return "", nil, nil, err
 				}
 				imageUrls = append(imageUrls, data)
 			}
@@ -69,10 +69,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	data, err := json.Marshal(ollamaRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
@@ -175,10 +175,10 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 	return nil, &usage
 }
 
-func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModelName
 	data, err := json.Marshal(&EmbeddingRequest{
@@ -193,9 +193,9 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (http.Header, i
 		},
 	})
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {

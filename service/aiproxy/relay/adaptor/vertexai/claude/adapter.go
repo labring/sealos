@@ -55,14 +55,14 @@ const anthropicVersion = "vertex-2023-10-16"
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	if request == nil {
-		return nil, nil, errors.New("request is nil")
+		return "", nil, nil, errors.New("request is nil")
 	}
 
 	claudeReq, err := anthropic.ConvertRequest(meta, request)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	meta.Set("stream", claudeReq.Stream)
 	req := Request{
@@ -79,9 +79,9 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 	}
 	data, err := json.Marshal(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {

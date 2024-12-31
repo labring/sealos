@@ -26,11 +26,11 @@ type RerankUsage struct {
 	TotalTokens int `json:"total_tokens"`
 }
 
-func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	reqMap["model"] = meta.ActualModelName
 	reqMap["input"] = map[string]any{
@@ -50,9 +50,9 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.R
 	reqMap["parameters"] = parameters
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {

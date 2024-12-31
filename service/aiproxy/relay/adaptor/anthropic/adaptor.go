@@ -44,17 +44,17 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	data, err := ConvertRequest(meta, req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	data2, err := json.Marshal(data)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data2), nil
+	return http.MethodPost, nil, bytes.NewReader(data2), nil
 }
 
 func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {

@@ -108,7 +108,8 @@ func Relay(c *gin.Context) {
 		return
 	}
 
-	meta := middleware.NewMetaByContext(c, channel)
+	mode := relaymode.GetByPath(c.Request.URL.Path)
+	meta := middleware.NewMetaByContext(c, channel, requestModel, mode)
 	bizErr, retry := RelayHelper(meta, c)
 	if bizErr == nil {
 		return

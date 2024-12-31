@@ -97,6 +97,15 @@ func Distribute(c *gin.Context) {
 
 	SetLogModelFields(log.Data, requestModel)
 
+	mode := relaymode.GetByPath(c.Request.URL.Path)
+	if mode == relaymode.Unknown {
+		abortWithMessage(c,
+			http.StatusServiceUnavailable,
+			fmt.Sprintf("%s api not implemented", c.Request.URL.Path),
+		)
+		return
+	}
+
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
@@ -123,15 +132,14 @@ func Distribute(c *gin.Context) {
 	c.Next()
 }
 
-func NewMetaByContext(c *gin.Context, channel *model.Channel) *meta.Meta {
-	originalModel := c.MustGet(ctxkey.OriginalModel).(string)
+func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode int) *meta.Meta {
 	requestID := c.GetString(ctxkey.RequestID)
 	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 	return meta.NewMeta(
 		channel,
-		relaymode.GetByPath(c.Request.URL.Path),
-		originalModel,
+		mode,
+		modelName,
 		meta.WithRequestID(requestID),
 		meta.WithGroup(group),
 		meta.WithToken(token),

@@ -38,8 +38,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 	w := httptest.NewRecorder()
 	newc, _ := gin.CreateTestContext(w)
 	newc.Request = &http.Request{
-		Method: http.MethodPost,
-		URL:    &url.URL{Path: utils.BuildModeDefaultPath(mode)},
+		URL:    &url.URL{},
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
@@ -59,11 +58,6 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 	if success {
 		respStr = w.Body.String()
 		code = w.Code
-		log.Infof("model %s(%d) test success, unban it", modelName, channel.ID)
-		err := monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
-		if err != nil {
-			log.Errorf("clear channel errors failed: %+v", err)
-		}
 	} else {
 		respStr = bizErr.String()
 		code = bizErr.StatusCode
@@ -382,7 +376,13 @@ func AutoTestBannedModels() {
 			if err != nil {
 				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
 			}
-			if !result.Success {
+			if result.Success {
+				log.Infof("model %s(%d) test success, unban it", modelName, channel.ID)
+				err = monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
+				if err != nil {
+					log.Errorf("clear channel errors failed: %+v", err)
+				}
+			} else {
 				log.Infof("model %s(%d) test failed", modelName, channel.ID)
 			}
 		}

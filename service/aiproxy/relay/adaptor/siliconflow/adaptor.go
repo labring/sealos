@@ -36,7 +36,7 @@ func (a *Adaptor) GetChannelName() string {
 	return "siliconflow"
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	return a.Adaptor.ConvertRequest(meta, req)
 }
 

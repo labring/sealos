@@ -233,7 +233,7 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		detail.RequestBody = conv.BytesToString(reqBody)
 	}
 
-	header, body, err := a.ConvertRequest(meta, c.Request)
+	method, header, body, err := a.ConvertRequest(meta, c.Request)
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
 	}
@@ -252,7 +252,7 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 		defer func() { c.Request = rawRequest }()
 	}
 
-	req, err := http.NewRequestWithContext(c.Request.Context(), c.Request.Method, fullRequestURL, body)
+	req, err := http.NewRequestWithContext(c.Request.Context(), method, fullRequestURL, body)
 	if err != nil {
 		return nil, &detail, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
 	}

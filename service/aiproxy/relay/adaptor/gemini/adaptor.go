@@ -53,14 +53,14 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
 		return ConvertEmbeddingRequest(meta, req)
 	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported mode")
+		return "", nil, nil, errors.New("unsupported mode")
 	}
 }
 

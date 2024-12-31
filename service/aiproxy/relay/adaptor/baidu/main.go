@@ -41,10 +41,10 @@ type ChatRequest struct {
 	EnableCitation  bool             `json:"enable_citation,omitempty"`
 }
 
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModelName
 	baiduRequest := ChatRequest{
@@ -81,9 +81,9 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	data, err := json.Marshal(baiduRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {

@@ -163,29 +163,3 @@ func BuildRerankRequest(model string) (io.Reader, error) {
 	}
 	return bytes.NewReader(jsonBytes), nil
 }
-
-func BuildModeDefaultPath(mode int) string {
-	switch mode {
-	case relaymode.ChatCompletions:
-		return "/v1/chat/completions"
-	case relaymode.Completions:
-		return "/v1/completions"
-	case relaymode.Embeddings:
-		return "/v1/embeddings"
-	case relaymode.Moderations:
-		return "/v1/moderations"
-	case relaymode.ImagesGenerations:
-		return "/v1/images/generations"
-	case relaymode.Edits:
-		return "/v1/edits"
-	case relaymode.AudioSpeech:
-		return "/v1/audio/speech"
-	case relaymode.AudioTranscription:
-		return "/v1/audio/transcriptions"
-	case relaymode.AudioTranslation:
-		return "/v1/audio/translations"
-	case relaymode.Rerank:
-		return "/v1/rerank"
-	}
-	return ""
-}
