@@ -5,13 +5,13 @@ import { formatMoney } from '@/utils/tools'
 import { Center, Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
 import { DriveStep, driver } from '@sealos/driver'
 import { CurrencySymbol } from '@sealos/ui'
-import { useTranslation } from 'next-i18next'
 import { useEffect, useMemo, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 import { DriverStarIcon } from './useDriver'
+import { useTranslations } from 'next-intl'
 
 export default function useDetailDriver() {
-  const { t, i18n } = useTranslation()
+  const t = useTranslations()
   const [reward, setReward] = useState(5)
   const { detailCompleted, setDetailCompleted } = useGuideStore()
 
@@ -180,7 +180,7 @@ export default function useDetailDriver() {
 
               <Flex
                 justifyContent={'center'}
-                fontSize={i18n.language === 'en' ? '18px' : '24px'}
+                fontSize={'18px'}
                 fontWeight={500}
                 mt="28px"
                 gap={'16px'}>

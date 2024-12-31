@@ -1,10 +1,9 @@
 import { getUserTasks } from '@/api/platform'
 import { useGuideStore } from '@/stores/guide'
 import { formatMoney } from '@/utils/tools'
-
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
 import { driver } from '@sealos/driver'
-import { useTranslation } from 'next-i18next'
+import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
 export function DriverStarIcon() {
@@ -34,7 +33,8 @@ export function DriverStarIcon() {
 }
 
 export default function useDriver() {
-  const { t } = useTranslation()
+  const t = useTranslations()
+
   const [isGuided, setIsGuided] = useState(false)
   const { createCompleted, setCreateCompleted, setGuideEnabled } = useGuideStore()
   const [reward, setReward] = useState(1)
@@ -83,12 +83,12 @@ export default function useDriver() {
         popover: {
           side: 'right',
           align: 'center',
-          borderRadius: '0px 12px 12px 12px',
+          borderRadius: '12px 0px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('Can help you deploy any Docker image')}
+                {t('guide.deploy_runtimes')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -96,16 +96,16 @@ export default function useDriver() {
         }
       },
       {
-        element: '.driver-deploy-command',
+        element: '.guide-custom-resources',
         popover: {
           side: 'right',
           align: 'center',
-          borderRadius: '0px 12px 12px 12px',
+          borderRadius: '12px 0px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide_deploy_command')}
+                {t('guide.deploy_custom_resources')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -113,7 +113,7 @@ export default function useDriver() {
         }
       },
       {
-        element: '.driver-deploy-storage',
+        element: '.guide-network-configuration',
         popover: {
           side: 'top',
           align: 'start',
@@ -122,7 +122,7 @@ export default function useDriver() {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide_deploy_storage')}
+                {t('guide.deploy_network')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
             </Flex>
@@ -130,15 +130,15 @@ export default function useDriver() {
         }
       },
       {
-        element: '.driver-deploy-button',
+        element: '.guide-cost',
         popover: {
-          side: 'left',
+          side: 'right',
           align: 'center',
-          borderRadius: '12px 12px 0px 12px',
+          borderRadius: '0px 12px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
               <DriverStarIcon />
-              <Text color={'#24282C'}>{t('guide_deploy_button')}</Text>
+              <Text color={'#24282C'}>{t('guide.deploy_cost')}</Text>
             </Flex>
           )
         }

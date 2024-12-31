@@ -23,10 +23,13 @@ export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { is
         <TemplateRepositorySelector isEdit={isEdit} />
         {/* Runtime Version */}
         <TemplateSelector isEdit={isEdit} />
-        {/* CPU */}
-        <CpuSelector />
-        {/* Memory */}
-        <MemorySelector />
+
+        <Box className="guide-custom-resources">
+          {/* CPU */}
+          <CpuSelector />
+          {/* Memory */}
+          <MemorySelector />
+        </Box>
       </Box>
     </Box>
   )

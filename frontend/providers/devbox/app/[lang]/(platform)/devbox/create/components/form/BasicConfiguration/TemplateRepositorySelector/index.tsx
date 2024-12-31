@@ -139,7 +139,7 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   ])
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
-      <Flex w="full" justify={'space-between'}>
+      <Flex w="full" justify={'space-between'} className="guide-runtimes">
         <Label w={100} alignSelf={'flex-start'}>
           {t('runtime_environment')}
         </Label>
@@ -160,7 +160,7 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
           </Flex>
         </Flex>
       )}
-      <Flex gap={'10px'} px={'14px'} width={'full'} className="guide-runtimes">
+      <Flex gap={'10px'} px={'14px'} width={'full'}>
         {/* Language */}
         {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
         <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>

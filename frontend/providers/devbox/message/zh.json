@@ -94,6 +94,12 @@
   "export_yaml": "导出 YAML",
   "external_address": "公网地址",
   "framework": "框架",
+  "guide": {
+    "deploy_cost": "当前资源，预估单日消耗",
+    "deploy_custom_resources": "自定义项目资源大小",
+    "deploy_network": "默认开启，支持随开随关",
+    "deploy_runtimes": "选择项目语言和框架"
+  },
   "have_read_and_agree_to_the ": "我已阅读并同意",
   "ide_tooltip": "点击在 IDE 中开发",
   "image": "镜像",

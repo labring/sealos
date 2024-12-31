@@ -61,7 +61,7 @@ const PriceBox = ({
   }, [components, sourcePrice.cpu, sourcePrice.memory, sourcePrice.nodeports])
 
   return (
-    <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base}>
+    <Box bg={'#FFF'} borderRadius={'md'} border={theme.borders.base} className="guide-cost">
       <Flex py={3} px={'20px'} borderBottom={theme.borders.base} gap={'8px'}>
         <Text color={'grayModern.900'} fontWeight={500}>
           {t('estimated_price')}
