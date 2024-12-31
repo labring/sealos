@@ -627,29 +627,29 @@ type GroupDashboardResponse struct {
 	TokenNames []string `json:"token_names"`
 }
 
-func getHourTimestamp() string {
+func getTimeSpanFormat(timeSpan time.Duration) string {
 	switch {
 	case common.UsingMySQL:
-		return "UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%Y-%m-%d %H:00:00'))"
+		return fmt.Sprintf("UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%%Y-%%m-%%d %%H:%%i:00')) DIV %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
 	case common.UsingPostgreSQL:
-		return "FLOOR(EXTRACT(EPOCH FROM date_trunc('hour', request_at)))"
+		return fmt.Sprintf("FLOOR(EXTRACT(EPOCH FROM date_trunc('minute', request_at)) / %d) * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
 	case common.UsingSQLite:
-		return "STRFTIME('%s', STRFTIME('%Y-%m-%d %H:00:00', request_at))"
+		return fmt.Sprintf("CAST(STRFTIME('%%s', STRFTIME('%%Y-%%m-%%d %%H:%%M:00', request_at)) AS INTEGER) / %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
 	default:
 		return ""
 	}
 }
 
-func getChartData(group string, start, end time.Time, tokenName, modelName string) ([]*HourlyChartData, error) {
+func getChartData(group string, start, end time.Time, tokenName, modelName string, timeSpan time.Duration) ([]*HourlyChartData, error) {
 	var chartData []*HourlyChartData
 
-	hourTimestamp := getHourTimestamp()
-	if hourTimestamp == "" {
-		return nil, errors.New("unsupported hour format")
+	timeSpanFormat := getTimeSpanFormat(timeSpan)
+	if timeSpanFormat == "" {
+		return nil, errors.New("unsupported time format")
 	}
 
 	query := LogDB.Table("logs").
-		Select(hourTimestamp + " as timestamp, count(*) as request_count, sum(used_amount) as used_amount, sum(case when code != 200 then 1 else 0 end) as exception_count").
+		Select(timeSpanFormat + " as timestamp, count(*) as request_count, sum(used_amount) as used_amount, sum(case when code != 200 then 1 else 0 end) as exception_count").
 		Group("timestamp").
 		Order("timestamp ASC")
 
@@ -758,14 +758,14 @@ func getTPM(group string, end time.Time, tokenName, modelName string) (int64, er
 	return tpm, err
 }
 
-func GetDashboardData(start, end time.Time, modelName string) (*DashboardResponse, error) {
+func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Duration) (*DashboardResponse, error) {
 	if end.IsZero() {
 		end = time.Now()
 	} else if end.Before(start) {
 		return nil, errors.New("end time is before start time")
 	}
 
-	chartData, err := getChartData("", start, end, "", modelName)
+	chartData, err := getChartData("", start, end, "", modelName, timeSpan)
 	if err != nil {
 		return nil, err
 	}
@@ -800,7 +800,7 @@ func GetDashboardData(start, end time.Time, modelName string) (*DashboardRespons
 	}, nil
 }
 
-func GetGroupDashboardData(group string, start, end time.Time, tokenName string, modelName string) (*GroupDashboardResponse, error) {
+func GetGroupDashboardData(group string, start, end time.Time, tokenName string, modelName string, timeSpan time.Duration) (*GroupDashboardResponse, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
@@ -811,7 +811,7 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 		return nil, errors.New("end time is before start time")
 	}
 
-	chartData, err := getChartData(group, start, end, tokenName, modelName)
+	chartData, err := getChartData(group, start, end, tokenName, modelName, timeSpan)
 	if err != nil {
 		return nil, err
 	}

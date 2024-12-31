@@ -9,29 +9,30 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
-func getDashboardStartEndTime(t string) (time.Time, time.Time) {
+func getDashboardTime(t string) (time.Time, time.Time, time.Duration) {
 	end := time.Now()
 	var start time.Time
+	var timeSpan time.Duration
 	switch t {
 	case "month":
 		start = end.AddDate(0, 0, -30)
+		timeSpan = time.Hour * 24
 	case "two_week":
 		start = end.AddDate(0, 0, -15)
+		timeSpan = time.Hour * 12
 	case "week":
 		start = end.AddDate(0, 0, -7)
+		timeSpan = time.Hour * 6
 	case "day":
 		fallthrough
 	default:
 		start = end.AddDate(0, 0, -1)
+		timeSpan = time.Hour * 1
 	}
-	return start, end
+	return start, end, timeSpan
 }
 
-const (
-	fillGapsInterval = 3600
-)
-
-func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
+func fillGaps(data []*model.HourlyChartData, timeSpan time.Duration) []*model.HourlyChartData {
 	if len(data) <= 1 {
 		return data
 	}
@@ -42,7 +43,7 @@ func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
 	for i := 1; i < len(data); i++ {
 		curr := data[i]
 		prev := data[i-1]
-		hourDiff := (curr.Timestamp - prev.Timestamp) / fillGapsInterval
+		hourDiff := (curr.Timestamp - prev.Timestamp) / int64(timeSpan.Seconds())
 
 		// If gap is 1 hour or less, continue
 		if hourDiff <= 1 {
@@ -54,18 +55,18 @@ func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
 		if hourDiff > 3 {
 			// Add point for hour after prev
 			result = append(result, &model.HourlyChartData{
-				Timestamp: prev.Timestamp + fillGapsInterval,
+				Timestamp: prev.Timestamp + int64(timeSpan.Seconds()),
 			})
 			// Add point for hour before curr
 			result = append(result, &model.HourlyChartData{
-				Timestamp: curr.Timestamp - fillGapsInterval,
+				Timestamp: curr.Timestamp - int64(timeSpan.Seconds()),
 			})
 			result = append(result, curr)
 			continue
 		}
 
 		// Fill gaps of 2-3 hours with zero points
-		for j := prev.Timestamp + fillGapsInterval; j < curr.Timestamp; j += fillGapsInterval {
+		for j := prev.Timestamp + int64(timeSpan.Seconds()); j < curr.Timestamp; j += int64(timeSpan.Seconds()) {
 			result = append(result, &model.HourlyChartData{
 				Timestamp: j,
 			})
@@ -77,15 +78,15 @@ func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
 }
 
 func GetDashboard(c *gin.Context) {
-	start, end := getDashboardStartEndTime(c.Query("type"))
+	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	modelName := c.Query("model")
-	dashboards, err := model.GetDashboardData(start, end, modelName)
+	dashboards, err := model.GetDashboardData(start, end, modelName, timeSpan)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
 
-	dashboards.ChartData = fillGaps(dashboards.ChartData)
+	dashboards.ChartData = fillGaps(dashboards.ChartData, timeSpan)
 	middleware.SuccessResponse(c, dashboards)
 }
 
@@ -96,16 +97,16 @@ func GetGroupDashboard(c *gin.Context) {
 		return
 	}
 
-	start, end := getDashboardStartEndTime(c.Query("type"))
+	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model")
 
-	dashboards, err := model.GetGroupDashboardData(group, start, end, tokenName, modelName)
+	dashboards, err := model.GetGroupDashboardData(group, start, end, tokenName, modelName, timeSpan)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "failed to get statistics")
 		return
 	}
 
-	dashboards.ChartData = fillGaps(dashboards.ChartData)
+	dashboards.ChartData = fillGaps(dashboards.ChartData, timeSpan)
 	middleware.SuccessResponse(c, dashboards)
 }
