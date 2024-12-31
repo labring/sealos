@@ -869,3 +869,15 @@ func GetTokenLastRequestTime(id int) (time.Time, error) {
 	err := tx.Where("token_id = ?", id).Order("request_at desc").First(&log).Error
 	return log.RequestAt, err
 }
+
+func GetGroupModelTPM(group string, model string) (int64, error) {
+	end := time.Now()
+	start := end.Add(-time.Minute)
+	var tpm int64
+	err := LogDB.
+		Model(&Log{}).
+		Where("group_id = ? AND request_at >= ? AND request_at <= ? AND model = ?", group, start, end, model).
+		Select("COALESCE(SUM(prompt_tokens + completion_tokens), 0)").
+		Scan(&tpm).Error
+	return tpm, err
+}

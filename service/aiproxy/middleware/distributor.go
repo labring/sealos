@@ -12,6 +12,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -49,7 +50,7 @@ func getGroupRPMRatio(group *model.GroupCache) float64 {
 	return groupRPMRatio
 }
 
-func checkModelRPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64) bool {
+func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64, modelTPM int64) bool {
 	if modelRPM <= 0 {
 		return true
 	}
@@ -71,6 +72,22 @@ func checkModelRPM(c *gin.Context, group *model.GroupCache, requestModel string,
 			group.ID+" is requesting too frequently",
 		)
 		return false
+	}
+
+	if modelTPM > 0 {
+		tpm, err := model.CacheGetGroupModelTPM(group.ID, requestModel)
+		if err != nil {
+			log.Errorf("get group model tpm (%s:%s) error: %s", group.ID, requestModel, err.Error())
+			// ignore error
+			return true
+		}
+
+		if tpm >= modelTPM {
+			abortWithMessage(c, http.StatusTooManyRequests,
+				group.ID+" tpm is too high",
+			)
+			return false
+		}
 	}
 	return true
 }
@@ -101,7 +118,7 @@ func Distribute(c *gin.Context) {
 	if mode == relaymode.Unknown {
 		abortWithMessage(c,
 			http.StatusServiceUnavailable,
-			fmt.Sprintf("%s api not implemented", c.Request.URL.Path),
+			c.Request.URL.Path+" api not implemented",
 		)
 		return
 	}
@@ -123,7 +140,7 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
-	if !checkModelRPM(c, group, requestModel, mc.RPM) {
+	if !checkGroupModelRPMAndTPM(c, group, requestModel, mc.RPM, mc.TPM) {
 		return
 	}
 
