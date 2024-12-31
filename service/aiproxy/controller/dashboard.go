@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -77,9 +78,26 @@ func fillGaps(data []*model.HourlyChartData, timeSpan time.Duration) []*model.Ho
 	return result
 }
 
+func getTimeSpanWithDefault(c *gin.Context, defaultTimeSpan time.Duration) time.Duration {
+	spanStr := c.Query("span")
+	if spanStr == "" {
+		return defaultTimeSpan
+	}
+	span, err := strconv.Atoi(spanStr)
+	if err != nil {
+		return defaultTimeSpan
+	}
+	if span < 1 || span > 48 {
+		return defaultTimeSpan
+	}
+	return time.Duration(span) * time.Hour
+}
+
 func GetDashboard(c *gin.Context) {
 	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	modelName := c.Query("model")
+	timeSpan = getTimeSpanWithDefault(c, timeSpan)
+
 	dashboards, err := model.GetDashboardData(start, end, modelName, timeSpan)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -100,6 +118,7 @@ func GetGroupDashboard(c *gin.Context) {
 	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model")
+	timeSpan = getTimeSpanWithDefault(c, timeSpan)
 
 	dashboards, err := model.GetGroupDashboardData(group, start, end, tokenName, modelName, timeSpan)
 	if err != nil {
