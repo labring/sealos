@@ -6,12 +6,11 @@ import { DevboxListItemTypeV2 } from '@/types/devbox'
 import { isElementInViewport } from '@/utils/tools'
 import { Flex, FlexProps } from '@chakra-ui/react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n'
 import { useCallback, useEffect, useRef } from 'react'
 import DevboxHeader from './DevboxHeader'
 import DevboxList from './DevboxList'
 import Empty from './Empty'
-import useDriver from '@/hooks/useDriver'
 
 function useDevboxList() {
   const queryClient = useQueryClient()
@@ -87,9 +86,6 @@ function useDevboxList() {
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
   const { list, isLoading, refetchList } = useDevboxList()
-  const { isGuided } = useDriver()
-
-  console.log('list222', list, isGuided)
 
   return (
     <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" {...props}>

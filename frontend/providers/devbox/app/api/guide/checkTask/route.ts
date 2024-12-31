@@ -1,24 +1,26 @@
-import { authAppToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
-import { ApiResp } from '@/services/kubernet'
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { NextRequest } from 'next/server'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export const dynamic = 'force-dynamic'
+
+export async function POST(req: NextRequest) {
   try {
     if (process.env.GUIDE_ENABLED !== 'true') return jsonRes({ data: null })
 
-    const token = await authAppToken(req.headers)
-    if (!token) {
+    const data = (await req.json()) as {
+      desktopToAppToken: string
+    }
+    if (!data.desktopToAppToken) {
       return jsonRes({ code: 401, message: 'token is valid' })
     }
 
-    const domain = global.AppConfig.cloud.desktopDomain
+    const domain = process.env.SEALOS_DOMAIN
 
     const response = await fetch(`https://${domain}/api/account/checkTask`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: token
+        Authorization: data.desktopToAppToken
       }
     })
 
@@ -29,13 +31,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     } = await response.json()
 
     if (result.code !== 200) {
-      return jsonRes(res, { code: result.code, message: 'desktop api is err' })
+      return jsonRes({ code: result.code, message: 'desktop api is err' })
     } else {
-      return jsonRes(res, { data: result.data })
+      return jsonRes({ data: result.data })
     }
   } catch (err: any) {
-    console.log(err)
-    jsonRes(res, {
+    return jsonRes({
       code: 500,
       error: err
     })

@@ -173,6 +173,7 @@
   "select_template_tips": "Select the template you wish to update",
   "set_template_to_public_tips": "Make this template available to all users.Once public, you cannot revert it to private.",
   "shutdown": "Shutdown",
+  "skip": "Skip",
   "ssh_config": "SSH Configuration",
   "ssh_connect_info": "SSH Connection String",
   "start": "Start",

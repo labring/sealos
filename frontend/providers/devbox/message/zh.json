@@ -174,6 +174,7 @@
   "select_template_tips": "选择您想更新的模板",
   "set_template_to_public_tips": "设为公开后，其他用户可访问此模板，但无法再设为私密",
   "shutdown": "关机",
+  "skip": "跳过",
   "ssh_config": "SSH 配置",
   "ssh_connect_info": "连接串",
   "start": "开机",

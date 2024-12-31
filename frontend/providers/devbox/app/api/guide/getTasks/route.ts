@@ -1,10 +1,10 @@
-import { authAppToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
-import { ApiResp } from '@/services/kubernet'
 import { UserTask } from '@/types/user'
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { NextRequest } from 'next/server'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export const dynamic = 'force-dynamic'
+
+export async function POST(req: NextRequest) {
   try {
     if (process.env.GUIDE_ENABLED !== 'true') {
       return jsonRes({
@@ -13,9 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
       })
     }
+    const data = (await req.json()) as {
+      desktopToAppToken: string
+    }
 
-    const token = await authAppToken(req.headers)
-    if (!token) {
+    if (!data.desktopToAppToken) {
       return jsonRes({ code: 401, message: 'token is valid' })
     }
 
@@ -24,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const response = await fetch(`https://${domain}/api/account/getTasks`, {
       method: 'GET',
       headers: {
-        Authorization: token
+        Authorization: data.desktopToAppToken
       }
     })
 
@@ -43,15 +45,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     }
 
-    const launchpadTask = result.data.find((task) => task.taskType === 'LAUNCHPAD')
+    const launchpadTask = result.data.find((task) => task.taskType === 'DEVBOX')
     const needGuide = launchpadTask ? !launchpadTask.isCompleted : false
 
-    jsonRes({
+    return jsonRes({
       code: 200,
       data: { needGuide, task: launchpadTask }
     })
   } catch (err: any) {
-    jsonRes({
+    return jsonRes({
       code: 500,
       error: err
     })

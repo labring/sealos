@@ -1,21 +1,23 @@
-import { authAppToken } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
-import { ApiResp } from '@/services/kubernet'
-import type { NextApiRequest, NextApiResponse } from 'next'
+import { NextRequest } from 'next/server'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export const dynamic = 'force-dynamic'
+
+export async function GET(req: NextRequest) {
   try {
-    const token = await authAppToken(req.headers)
-    if (!token) {
+    const data = (await req.json()) as {
+      desktopToAppToken: string
+    }
+    if (!data.desktopToAppToken) {
       return jsonRes({ code: 401, message: '令牌无效' })
     }
 
-    const url = global.AppConfig.launchpad.components.billing.url
+    const url = ''
 
     const response = await fetch(`${url}/account/v1alpha1/recharge-discount`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${data.desktopToAppToken}`
       }
     })
 
@@ -32,13 +34,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     )
 
-    jsonRes(res, {
+    return jsonRes({
       code: 200,
       data: rechargeOptions
     })
   } catch (err: any) {
     console.log(err)
-    jsonRes(res, {
+    return jsonRes({
       code: 500,
       error: err
     })

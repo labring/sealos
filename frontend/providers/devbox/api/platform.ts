@@ -1,7 +1,7 @@
 import { GET, POST } from '@/services/request'
 import type { UserQuotaItemType, UserTask } from '@/types/user'
 import type { Env } from '@/types/static'
-import { getSessionFromSessionStorage } from '@/utils/user'
+import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user'
 export const getAppEnv = () => GET<Env>('/api/getEnv')
 
 export const getUserQuota = () =>
@@ -17,15 +17,11 @@ export const postAuthCname = (data: { publicDomain: string; customDomain: string
   POST('/api/platform/authCname', data)
 
 export const getUserTasks = () =>
-  GET<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', undefined, {
-    headers: {
-      Authorization: getSessionFromSessionStorage()
-    }
+  POST<{ needGuide: boolean; task: UserTask }>('/api/guide/getTasks', {
+    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
   })
 
 export const checkUserTask = () =>
-  GET('/api/guide/checkTask', undefined, {
-    headers: {
-      Authorization: getSessionFromSessionStorage()
-    }
+  POST('/api/guide/checkTask', {
+    desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
   })

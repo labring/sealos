@@ -5,7 +5,7 @@ import { formatMoney } from '@/utils/tools'
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
 import { driver } from '@sealos/driver'
 import { useTranslation } from 'next-i18next'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 export function DriverStarIcon() {
   return (
@@ -36,7 +36,7 @@ export function DriverStarIcon() {
 export default function useDriver() {
   const { t } = useTranslation()
   const [isGuided, setIsGuided] = useState(false)
-  const { createCompleted, setCreateCompleted } = useGuideStore()
+  const { createCompleted, setCreateCompleted, setGuideEnabled } = useGuideStore()
   const [reward, setReward] = useState(1)
 
   const PopoverBodyInfo = (props: FlexProps) => {
@@ -79,7 +79,7 @@ export default function useDriver() {
     disableActiveInteraction: true,
     steps: [
       {
-        element: '.driver-deploy-image',
+        element: '.guide-runtimes',
         popover: {
           side: 'right',
           align: 'center',
@@ -157,27 +157,22 @@ export default function useDriver() {
     driverObj.destroy()
   }
 
-  useEffect(() => {
-    const handleUserGuide = async () => {
-      try {
-        const data = await getUserTasks()
-        console.log('data', data)
-
-        if (data.needGuide && !createCompleted) {
-          setReward(formatMoney(Number(data.task.reward)))
-
-          setIsGuided(true)
-          requestAnimationFrame(() => {
-            startGuide()
-          })
-        }
-      } catch (error) {
-        setIsGuided(false)
+  const handleUserGuide = async () => {
+    try {
+      const data = await getUserTasks()
+      console.log('data handleUserGuide', data)
+      if (data.needGuide && !createCompleted) {
+        setGuideEnabled(true)
+        setReward(formatMoney(Number(data.task.reward)))
+        setIsGuided(true)
+        requestAnimationFrame(() => {
+          startGuide()
+        })
       }
+    } catch (error) {
+      setIsGuided(false)
     }
-    handleUserGuide()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
-  return { startGuide, closeGuide, isGuided }
+  return { startGuide, closeGuide, isGuided, handleUserGuide }
 }

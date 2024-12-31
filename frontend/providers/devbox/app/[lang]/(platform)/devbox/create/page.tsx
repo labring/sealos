@@ -35,7 +35,7 @@ import { debounce } from 'lodash'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
 const DevboxCreatePage = () => {
-  const {env } = useEnvStore()
+  const { env } = useEnvStore()
   const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env)
   const router = useRouter()
   const t = useTranslations()
@@ -94,7 +94,7 @@ const DevboxCreatePage = () => {
 
   // updateyamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
-    () => 
+    () =>
       debounce((data: DevboxEditTypeV2, env) => {
         try {
           const newYamlList = generateYamlList(data, env)
@@ -118,7 +118,6 @@ const DevboxCreatePage = () => {
       debouncedUpdateYaml.cancel()
     }
   }, [formHook, debouncedUpdateYaml, env])
-
 
   useQuery(
     ['initDevboxCreateData'],
@@ -193,8 +192,8 @@ const DevboxCreatePage = () => {
             isClosable: true
           })
         }
-        if(!parsedNewYamlList) {
-          // prevent empty yamlList 
+        if (!parsedNewYamlList) {
+          // prevent empty yamlList
           return setErrorMessage(t('submit_form_error'))
         }
         const patch = patchYamlList({
@@ -223,9 +222,7 @@ const DevboxCreatePage = () => {
       console.log('error', error)
       if (error instanceof String && error.includes('402')) {
         setErrorMessage(t('outstanding_tips'))
-      }
-      else
-        setErrorMessage(JSON.stringify(error))
+      } else setErrorMessage(JSON.stringify(error))
     }
     setIsLoading(false)
   }
@@ -250,38 +247,42 @@ const DevboxCreatePage = () => {
     })
   }, [formHook.formState.errors, toast, t])
 
-  return (<>
-    <FormProvider {...formHook} >
-      <Flex
-        flexDirection={'column'}
-        alignItems={'center'}
-        h={'100vh'}
-        minWidth={'1024px'}
-        backgroundColor={'grayModern.100'}>
-        <Header
-          yamlList={yamlList}
-          title={title}
-          applyBtnText={applyBtnText}
-          applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
-          }
-        />
-        <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-          {tabType === 'form' ? (
-            <Form pxVal={pxVal} isEdit={isEdit} />
-          ) : (
-            <Yaml yamlList={yamlList} pxVal={pxVal} />
-          )}
-        </Box>
-      </Flex>
-    </FormProvider>
-    <ConfirmChild />
-    <Loading />
+  return (
+    <>
+      <FormProvider {...formHook}>
+        <Flex
+          flexDirection={'column'}
+          alignItems={'center'}
+          h={'100vh'}
+          minWidth={'1024px'}
+          backgroundColor={'grayModern.100'}>
+          <Header
+            yamlList={yamlList}
+            title={title}
+            applyBtnText={applyBtnText}
+            applyCb={() =>
+              formHook.handleSubmit(
+                (data) => openConfirm(() => submitSuccess(data))(),
+                submitError
+              )()
+            }
+          />
+          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+            {tabType === 'form' ? (
+              <Form pxVal={pxVal} isEdit={isEdit} />
+            ) : (
+              <Yaml yamlList={yamlList} pxVal={pxVal} />
+            )}
+          </Box>
+        </Flex>
+      </FormProvider>
+      <ConfirmChild />
+      <Loading />
 
-    {!!errorMessage && (
-      <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
-    )}
-  </>
+      {!!errorMessage && (
+        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+      )}
+    </>
   )
 }
 
