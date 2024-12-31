@@ -32,27 +32,49 @@ export async function POST(req: NextRequest) {
     const ingresses: any = (ingressesResponse.body as { items: any[] }).items
 
     ingresses.forEach(async (ingress: any) => {
-      const currentIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class']
+      const annotationsIngressClass = ingress.metadata?.annotations?.['kubernetes.io/ingress.class']
+      const specIngressClass = ingress.spec?.ingressClassName
 
-      if (currentIngressClass === 'pause') {
-        return
-      }
-      await k8sCustomObjects.patchNamespacedCustomObject(
-        'networking.k8s.io',
-        'v1',
-        namespace,
-        'ingresses',
-        ingress.metadata.name,
-        { metadata: { annotations: { 'kubernetes.io/ingress.class': 'pause' } } },
-        undefined,
-        undefined,
-        undefined,
-        {
-          headers: {
-            'Content-Type': 'application/merge-patch+json'
-          }
+      if (
+        (annotationsIngressClass && annotationsIngressClass === 'nginx') ||
+        (specIngressClass && specIngressClass === 'nginx')
+      ) {
+        if (annotationsIngressClass) {
+          await k8sCustomObjects.patchNamespacedCustomObject(
+            'networking.k8s.io',
+            'v1',
+            namespace,
+            'ingresses',
+            ingress.metadata.name,
+            { metadata: { annotations: { 'kubernetes.io/ingress.class': 'pause' } } },
+            undefined,
+            undefined,
+            undefined,
+            {
+              headers: {
+                'Content-Type': 'application/merge-patch+json'
+              }
+            }
+          )
+        } else if (specIngressClass) {
+          await k8sCustomObjects.patchNamespacedCustomObject(
+            'networking.k8s.io',
+            'v1',
+            namespace,
+            'ingresses',
+            ingress.metadata.name,
+            { spec: { ingressClassName: 'pause' } },
+            undefined,
+            undefined,
+            undefined,
+            {
+              headers: {
+                'Content-Type': 'application/merge-patch+json'
+              }
+            }
+          )
         }
-      )
+      }
     })
 
     await k8sCustomObjects.patchNamespacedCustomObject(
