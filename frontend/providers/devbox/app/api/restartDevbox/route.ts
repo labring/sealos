@@ -11,21 +11,29 @@ export async function POST(req: NextRequest) {
     const { devboxName } = (await req.json()) as { devboxName: string }
     const headerList = req.headers
 
-    const { namespace, k8sCore } = await getK8s({
+    const { k8sCustomObjects, namespace, k8sCore } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
     // restart = stopped + running
 
     // 1. stopped
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/pauseDevbox`, {
-      method: 'POST',
-      headers: {
-        ...Object.fromEntries(req.headers),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ devboxName })
-    })
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName,
+      { spec: { state: 'Stopped' } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
+        }
+      }
+    )
 
     // 2.get devbox pod and ensure the devbox pod is deleted,when the devbox pod is deleted,the devbox will be restarted
     let pods
@@ -58,14 +66,22 @@ export async function POST(req: NextRequest) {
     console.log('devbox pod is deleted')
 
     // 3. running
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/startDevbox`, {
-      method: 'POST',
-      headers: {
-        ...Object.fromEntries(req.headers),
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ devboxName })
-    })
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName,
+      { spec: { state: 'Running' } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
+        }
+      }
+    )
 
     return jsonRes({
       data: 'success pause devbox'
