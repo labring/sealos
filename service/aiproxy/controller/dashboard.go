@@ -27,6 +27,60 @@ func getDashboardStartEndTime(t string) (time.Time, time.Time) {
 	return start, end
 }
 
+func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
+	if len(data) <= 1 {
+		return data
+	}
+
+	var result []*model.HourlyChartData
+	result = append(result, data[0])
+
+	for i := 1; i < len(data); i++ {
+		curr := data[i]
+		prev := data[i-1]
+		hourDiff := (curr.Timestamp - prev.Timestamp) / 3600
+
+		// If gap is 1 hour or less, continue
+		if hourDiff <= 1 {
+			result = append(result, curr)
+			continue
+		}
+
+		// If gap is more than 3 hours, only add boundary points
+		if hourDiff > 3 {
+			// Add point for hour after prev
+			result = append(result, &model.HourlyChartData{
+				Timestamp:      prev.Timestamp + 3600,
+				RequestCount:   0,
+				UsedAmount:     0,
+				ExceptionCount: 0,
+			})
+			// Add point for hour before curr
+			result = append(result, &model.HourlyChartData{
+				Timestamp:      curr.Timestamp - 3600,
+				RequestCount:   0,
+				UsedAmount:     0,
+				ExceptionCount: 0,
+			})
+			result = append(result, curr)
+			continue
+		}
+
+		// Fill gaps of 2-3 hours with zero points
+		for j := prev.Timestamp + 3600; j < curr.Timestamp; j += 3600 {
+			result = append(result, &model.HourlyChartData{
+				Timestamp:      j,
+				RequestCount:   0,
+				UsedAmount:     0,
+				ExceptionCount: 0,
+			})
+		}
+		result = append(result, curr)
+	}
+
+	return result
+}
+
 func GetDashboard(c *gin.Context) {
 	start, end := getDashboardStartEndTime(c.Query("type"))
 	modelName := c.Query("model")
@@ -35,6 +89,8 @@ func GetDashboard(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+
+	dashboards.ChartData = fillGaps(dashboards.ChartData)
 	middleware.SuccessResponse(c, dashboards)
 }
 
@@ -54,5 +110,7 @@ func GetGroupDashboard(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "failed to get statistics")
 		return
 	}
+
+	dashboards.ChartData = fillGaps(dashboards.ChartData)
 	middleware.SuccessResponse(c, dashboards)
 }
