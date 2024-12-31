@@ -11,7 +11,7 @@ export default function useListDriver() {
   const t = useTranslations()
 
   const [isGuided, setIsGuided] = useState(false)
-  const { isGuideEnabled, setGuideEnabled, listCompleted, setListCompleted } = useGuideStore()
+  const { isGuideEnabled, listCompleted, setListCompleted } = useGuideStore()
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -24,7 +24,7 @@ export default function useListDriver() {
         alignItems={'center'}
         {...props}>
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
-          {t('Click on any shadow to skip')}
+          {t('guide.click_shadow_skip')}
         </Text>
         <Icon
           xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +57,7 @@ export default function useListDriver() {
         popover: {
           side: 'right',
           align: 'center',
-          borderRadius: '12px 0px 12px 12px',
+          borderRadius: '0px 12px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
@@ -103,7 +103,6 @@ export default function useListDriver() {
   const handleUserGuide = async () => {
     try {
       if (isGuideEnabled && !listCompleted) {
-        setGuideEnabled(true)
         setIsGuided(true)
         requestAnimationFrame(() => {
           startGuide()

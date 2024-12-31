@@ -13,7 +13,7 @@ import { useTranslations } from 'next-intl'
 export default function useDetailDriver() {
   const t = useTranslations()
   const [reward, setReward] = useState(5)
-  const { detailCompleted, setDetailCompleted } = useGuideStore()
+  const { detailCompleted, setDetailCompleted, isGuideEnabled } = useGuideStore()
 
   const [rechargeOptions, setRechargeOptions] = useState([
     { amount: 8, gift: 8 },
@@ -41,7 +41,7 @@ export default function useDetailDriver() {
         alignItems={'center'}
         {...props}>
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
-          {t('Click on any shadow to skip')}
+          {t('guide.click_shadow_skip')}
         </Text>
         <Icon
           xmlns="http://www.w3.org/2000/svg"
@@ -61,7 +61,7 @@ export default function useDetailDriver() {
 
   const baseSteps: DriveStep[] = [
     {
-      element: '.driver-detail-monitor',
+      element: '.guide-close-button',
       popover: {
         side: 'bottom',
         align: 'start',
@@ -70,7 +70,7 @@ export default function useDetailDriver() {
           <Flex gap={'6px'}>
             <DriverStarIcon />
             <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide_detail_monitor')}
+              {t('guide.devbox_close_button')}
             </Text>
             <PopoverBodyInfo />
           </Flex>
@@ -78,7 +78,7 @@ export default function useDetailDriver() {
       }
     },
     {
-      element: '.driver-detail-update-button',
+      element: '.guide-network-address',
       popover: {
         side: 'bottom',
         align: 'start',
@@ -87,7 +87,7 @@ export default function useDetailDriver() {
           <Flex gap={'6px'}>
             <DriverStarIcon />
             <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide_detail_update_button')}
+              {t('guide.devbox_network_address')}
             </Text>
             <PopoverBodyInfo top={'80px'} />
           </Flex>
@@ -95,7 +95,7 @@ export default function useDetailDriver() {
       }
     },
     {
-      element: '.driver-detail-network',
+      element: '.guide-release-button',
       popover: {
         side: 'left',
         align: 'start',
@@ -104,24 +104,7 @@ export default function useDetailDriver() {
           <Flex gap={'6px'}>
             <DriverStarIcon />
             <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide_detail_network')}
-            </Text>
-            <PopoverBodyInfo top={'-120px'} />
-          </Flex>
-        )
-      }
-    },
-    {
-      element: '.driver-detail-operate',
-      popover: {
-        side: 'left',
-        align: 'center',
-        borderRadius: '12px 12px 0px 12px',
-        PopoverBody: (
-          <Flex gap={'6px'}>
-            <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide_detail_operate')}
+              {t('guide.devbox_release_button')}
             </Text>
             <PopoverBodyInfo top={'-120px'} />
           </Flex>
@@ -130,130 +113,130 @@ export default function useDetailDriver() {
     }
   ]
 
-  const giftStep: DriveStep[] = useMemo(
-    () => [
-      {
-        popover: {
-          borderRadius: '12px 12px 12px 12px',
-          PopoverBody: (
-            <Flex flexDirection={'column'} alignItems={'center'} padding={'27px 40px'} w="540px">
-              <Flex
-                w="100%"
-                color={'#24282C'}
-                fontSize={'14px'}
-                fontWeight={500}
-                bg="#F6EEFA"
-                borderRadius={'8px'}
-                p={'16px'}
-                alignItems={'center'}>
-                <DriverStarIcon />
-                <Text fontWeight={500} ml="8px">
-                  {t('You have successfully deployed an application')}
-                </Text>
-                <Text
-                  ml="auto"
-                  mr={'12px'}
-                  color={'grayModern.900'}
-                  fontSize={'12px'}
-                  fontWeight={500}>
-                  {t('receive')}
-                </Text>
-                <CurrencySymbol type={'shellCoin'} />
-                <Text mx="4px">{reward}</Text>
-                <Text fontSize={'14px'} fontWeight={500}>
-                  {t('Balance')}
-                </Text>
-              </Flex>
+  // const giftStep: DriveStep[] = useMemo(
+  //   () => [
+  //     {
+  //       popover: {
+  //         borderRadius: '12px 12px 12px 12px',
+  //         PopoverBody: (
+  //           <Flex flexDirection={'column'} alignItems={'center'} padding={'27px 40px'} w="540px">
+  //             <Flex
+  //               w="100%"
+  //               color={'#24282C'}
+  //               fontSize={'14px'}
+  //               fontWeight={500}
+  //               bg="#F6EEFA"
+  //               borderRadius={'8px'}
+  //               p={'16px'}
+  //               alignItems={'center'}>
+  //               <DriverStarIcon />
+  //               <Text fontWeight={500} ml="8px">
+  //                 {t('You have successfully deployed an application')}
+  //               </Text>
+  //               <Text
+  //                 ml="auto"
+  //                 mr={'12px'}
+  //                 color={'grayModern.900'}
+  //                 fontSize={'12px'}
+  //                 fontWeight={500}>
+  //                 {t('receive')}
+  //               </Text>
+  //               <CurrencySymbol type={'shellCoin'} />
+  //               <Text mx="4px">{reward}</Text>
+  //               <Text fontSize={'14px'} fontWeight={500}>
+  //                 {t('Balance')}
+  //               </Text>
+  //             </Flex>
 
-              <Flex
-                alignItems={'center'}
-                justifyContent={'center'}
-                color={'#24282C'}
-                fontSize={'14px'}
-                fontWeight={500}
-                mt="42px">
-                <MyIcon name="gift" w={'20px'} h={'20px'} />
-                <Text fontSize={'20px'} fontWeight={500} ml="8px" mr={'4px'}>
-                  {t('first_charge')}
-                </Text>
-              </Flex>
+  //             <Flex
+  //               alignItems={'center'}
+  //               justifyContent={'center'}
+  //               color={'#24282C'}
+  //               fontSize={'14px'}
+  //               fontWeight={500}
+  //               mt="42px">
+  //               <MyIcon name="gift" w={'20px'} h={'20px'} />
+  //               <Text fontSize={'20px'} fontWeight={500} ml="8px" mr={'4px'}>
+  //                 {t('first_charge')}
+  //               </Text>
+  //             </Flex>
 
-              <Flex
-                justifyContent={'center'}
-                fontSize={'18px'}
-                fontWeight={500}
-                mt="28px"
-                gap={'16px'}>
-                {rechargeOptions.map((item, index) => (
-                  <Center
-                    key={index}
-                    bg="#F4F4F7"
-                    borderRadius="2px"
-                    w={'100px'}
-                    h={'72px'}
-                    position={'relative'}>
-                    <CurrencySymbol type={'shellCoin'} />
-                    <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
-                      {item.amount}
-                    </Text>
-                    <Flex
-                      bg={'#F7E7FF'}
-                      position={'absolute'}
-                      top={0}
-                      right={'-15px'}
-                      borderRadius={'10px 10px 10px 0px'}
-                      color={'#9E53C1'}
-                      fontSize={'12px'}
-                      fontWeight={500}
-                      gap={'2px'}
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      w={'60px'}
-                      height={'20px'}>
-                      <Text>{t('gift')}</Text>
-                      <CurrencySymbol type={'shellCoin'} />
-                      <Text>{item.gift}</Text>
-                    </Flex>
-                  </Center>
-                ))}
-              </Flex>
+  //             <Flex
+  //               justifyContent={'center'}
+  //               fontSize={'18px'}
+  //               fontWeight={500}
+  //               mt="28px"
+  //               gap={'16px'}>
+  //               {rechargeOptions.map((item, index) => (
+  //                 <Center
+  //                   key={index}
+  //                   bg="#F4F4F7"
+  //                   borderRadius="2px"
+  //                   w={'100px'}
+  //                   h={'72px'}
+  //                   position={'relative'}>
+  //                   <CurrencySymbol type={'shellCoin'} />
+  //                   <Text fontSize={'20px'} fontWeight={500} color={'rgba(17, 24, 36, 1)'} pl="4px">
+  //                     {item.amount}
+  //                   </Text>
+  //                   <Flex
+  //                     bg={'#F7E7FF'}
+  //                     position={'absolute'}
+  //                     top={0}
+  //                     right={'-15px'}
+  //                     borderRadius={'10px 10px 10px 0px'}
+  //                     color={'#9E53C1'}
+  //                     fontSize={'12px'}
+  //                     fontWeight={500}
+  //                     gap={'2px'}
+  //                     alignItems={'center'}
+  //                     justifyContent={'center'}
+  //                     w={'60px'}
+  //                     height={'20px'}>
+  //                     <Text>{t('gift')}</Text>
+  //                     <CurrencySymbol type={'shellCoin'} />
+  //                     <Text>{item.gift}</Text>
+  //                   </Flex>
+  //                 </Center>
+  //               ))}
+  //             </Flex>
 
-              <Flex
-                mt={'40px'}
-                bg={'#111824'}
-                borderRadius={'6px'}
-                alignItems={'center'}
-                justifyContent={'center'}
-                w={'179px'}
-                h={'36px'}
-                color={'#FFF'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                onClick={() => {
-                  driverObj.destroy()
-                  openCostCenterApp()
-                }}>
-                {t('Go to recharge')}
-              </Flex>
-              <Text
-                mt="16px"
-                cursor={'pointer'}
-                color={'rgba(72, 82, 100, 1)'}
-                fontSize={'14px'}
-                fontWeight={500}
-                onClick={() => {
-                  driverObj.destroy()
-                }}>
-                {t('let me think again')}
-              </Text>
-            </Flex>
-          )
-        }
-      }
-    ],
-    [rechargeOptions, reward, t]
-  )
+  //             <Flex
+  //               mt={'40px'}
+  //               bg={'#111824'}
+  //               borderRadius={'6px'}
+  //               alignItems={'center'}
+  //               justifyContent={'center'}
+  //               w={'179px'}
+  //               h={'36px'}
+  //               color={'#FFF'}
+  //               fontSize={'14px'}
+  //               fontWeight={500}
+  //               cursor={'pointer'}
+  //               onClick={() => {
+  //                 driverObj.destroy()
+  //                 openCostCenterApp()
+  //               }}>
+  //               {t('Go to recharge')}
+  //             </Flex>
+  //             <Text
+  //               mt="16px"
+  //               cursor={'pointer'}
+  //               color={'rgba(72, 82, 100, 1)'}
+  //               fontSize={'14px'}
+  //               fontWeight={500}
+  //               onClick={() => {
+  //                 driverObj.destroy()
+  //               }}>
+  //               {t('let me think again')}
+  //             </Text>
+  //           </Flex>
+  //         )
+  //       }
+  //     }
+  //   ],
+  //   [rechargeOptions, reward, t]
+  // )
 
   const driverObj = driver({
     disableActiveInteraction: true,
@@ -266,10 +249,10 @@ export default function useDetailDriver() {
     steps: [...baseSteps],
     onDestroyed: () => {
       console.log('onDestroyed Detail')
-      setDetailCompleted(true)
-      checkUserTask().then((err) => {
-        console.log(err)
-      })
+      // setDetailCompleted(true)
+      // checkUserTask().then((err) => {
+      //   console.log(err)
+      // })
     },
     interceptSkipButtonClick: () => {
       driverObj.destroy()
@@ -280,23 +263,17 @@ export default function useDetailDriver() {
     driverObj.drive()
   }
 
-  useEffect(() => {
-    const handleUserGuide = async () => {
-      try {
-        const [taskData, bonusData] = await Promise.all([getUserTasks(), Promise.resolve([])])
-        if (taskData.needGuide && !detailCompleted) {
-          setReward(formatMoney(Number(taskData.task.reward)))
-          setRechargeOptions(bonusData)
-          requestAnimationFrame(() => {
-            startGuide()
-          })
-        }
-      } catch (error) {
-        console.log(error)
+  const handleUserGuide = async () => {
+    try {
+      if (isGuideEnabled && !detailCompleted) {
+        requestAnimationFrame(() => {
+          startGuide()
+        })
       }
+    } catch (error) {
+      console.log(error)
     }
-    handleUserGuide()
-  }, [])
+  }
 
-  return { startGuide }
+  return { handleUserGuide }
 }

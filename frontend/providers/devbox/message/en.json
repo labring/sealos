@@ -94,10 +94,14 @@
   "external_address": "Public Address",
   "framework": "Framework",
   "guide": {
+    "click_shadow_skip": "Click on any shadow to skip",
     "deploy_cost": "Current resources, estimated daily consumption",
     "deploy_custom_resources": "Custom project resource size",
     "deploy_network": "Enabled by default, supports on and off at any time",
     "deploy_runtimes": "Choose project language and framework",
+    "devbox_close_button": "Turn on and use at any time, shut down and suspend without charge",
+    "devbox_network_address": "Public network access address of the current project",
+    "devbox_release_button": "Release version, automatically packaged into docker image",
     "devbox_status": "Project running status",
     "ide_button": "Connect to the installed IDE"
   },

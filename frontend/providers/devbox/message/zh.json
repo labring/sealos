@@ -95,10 +95,14 @@
   "external_address": "公网地址",
   "framework": "框架",
   "guide": {
+    "click_shadow_skip": "点击任意阴影跳过",
     "deploy_cost": "当前资源，预估单日消耗",
     "deploy_custom_resources": "自定义项目资源大小",
     "deploy_network": "默认开启，支持随开随关",
     "deploy_runtimes": "选择项目语言和框架",
+    "devbox_close_button": "随开随用，关机暂停不扣费",
+    "devbox_network_address": "当前项目的公网访问地址",
+    "devbox_release_button": "发布版本，自动打包成docker镜像",
     "devbox_status": "项目运行状态",
     "ide_button": "连接已安装IDE"
   },

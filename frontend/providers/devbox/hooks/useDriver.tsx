@@ -50,7 +50,7 @@ export default function useDriver() {
         alignItems={'center'}
         {...props}>
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
-          {t('Click on any shadow to skip')}
+          {t('guide.click_shadow_skip')}
         </Text>
         <Icon
           xmlns="http://www.w3.org/2000/svg"
