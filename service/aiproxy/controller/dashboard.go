@@ -27,18 +27,22 @@ func getDashboardStartEndTime(t string) (time.Time, time.Time) {
 	return start, end
 }
 
+const (
+	fillGapsInterval = 3600
+)
+
 func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
 	if len(data) <= 1 {
 		return data
 	}
 
-	var result []*model.HourlyChartData
+	result := make([]*model.HourlyChartData, 0, len(data))
 	result = append(result, data[0])
 
 	for i := 1; i < len(data); i++ {
 		curr := data[i]
 		prev := data[i-1]
-		hourDiff := (curr.Timestamp - prev.Timestamp) / 3600
+		hourDiff := (curr.Timestamp - prev.Timestamp) / fillGapsInterval
 
 		// If gap is 1 hour or less, continue
 		if hourDiff <= 1 {
@@ -50,29 +54,20 @@ func fillGaps(data []*model.HourlyChartData) []*model.HourlyChartData {
 		if hourDiff > 3 {
 			// Add point for hour after prev
 			result = append(result, &model.HourlyChartData{
-				Timestamp:      prev.Timestamp + 3600,
-				RequestCount:   0,
-				UsedAmount:     0,
-				ExceptionCount: 0,
+				Timestamp: prev.Timestamp + fillGapsInterval,
 			})
 			// Add point for hour before curr
 			result = append(result, &model.HourlyChartData{
-				Timestamp:      curr.Timestamp - 3600,
-				RequestCount:   0,
-				UsedAmount:     0,
-				ExceptionCount: 0,
+				Timestamp: curr.Timestamp - fillGapsInterval,
 			})
 			result = append(result, curr)
 			continue
 		}
 
 		// Fill gaps of 2-3 hours with zero points
-		for j := prev.Timestamp + 3600; j < curr.Timestamp; j += 3600 {
+		for j := prev.Timestamp + fillGapsInterval; j < curr.Timestamp; j += fillGapsInterval {
 			result = append(result, &model.HourlyChartData{
-				Timestamp:      j,
-				RequestCount:   0,
-				UsedAmount:     0,
-				ExceptionCount: 0,
+				Timestamp: j,
 			})
 		}
 		result = append(result, curr)
