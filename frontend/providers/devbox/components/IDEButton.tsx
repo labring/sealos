@@ -80,7 +80,7 @@ const IDEButton = ({
   )
 
   return (
-    <Flex {...props}>
+    <Flex className="guide-ide-button" {...props}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
@@ -90,7 +90,7 @@ const IDEButton = ({
           color={'grayModern.900'}
           _hover={{
             color: 'brightBlue.600',
-            bg:"#1118240D"
+            bg: '#1118240D'
           }}
           borderRightWidth={0}
           borderRightRadius={0}
@@ -117,7 +117,6 @@ const IDEButton = ({
           _hover={{
             color: 'brightBlue.600'
           }}
-          
           p={2}
           borderLeftRadius={0}
           borderLeftWidth={0}
@@ -209,6 +208,8 @@ export const ideObj = {
   }
 } as const
 
-const menuItems = Object.values(ideObj).sort((a,b)=>a.sortId - b.sortId).map(({ value, menuLabel }) => ({ value, menuLabel }))
+const menuItems = Object.values(ideObj)
+  .sort((a, b) => a.sortId - b.sortId)
+  .map(({ value, menuLabel }) => ({ value, menuLabel }))
 
 export default IDEButton

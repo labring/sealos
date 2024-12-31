@@ -97,7 +97,9 @@
     "deploy_cost": "Current resources, estimated daily consumption",
     "deploy_custom_resources": "Custom project resource size",
     "deploy_network": "Enabled by default, supports on and off at any time",
-    "deploy_runtimes": "Choose project language and framework"
+    "deploy_runtimes": "Choose project language and framework",
+    "devbox_status": "Project running status",
+    "ide_button": "Connect to the installed IDE"
   },
   "have_read_and_agree_to_the ": "I have read and agree to the ",
   "ide_tooltip": "Click to develop in IDE",

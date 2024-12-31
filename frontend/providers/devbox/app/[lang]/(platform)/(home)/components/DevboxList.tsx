@@ -15,7 +15,6 @@ import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import ReleaseModal from '@/components/modals/releaseModal'
 import PodLineChart from '@/components/PodLineChart'
-import useListDriver from '@/hooks/useListDriver'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
@@ -26,7 +25,6 @@ const DevboxList = ({
   devboxList: DevboxListItemTypeV2[]
   refetchDevboxList: () => void
 }) => {
-  const { handleUserGuide } = useListDriver()
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()

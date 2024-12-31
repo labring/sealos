@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import DevboxHeader from './DevboxHeader'
 import DevboxList from './DevboxList'
 import Empty from './Empty'
+import useListDriver from '@/hooks/useListDriver'
 
 function useDevboxList() {
   const queryClient = useQueryClient()
@@ -86,6 +87,13 @@ function useDevboxList() {
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
   const { list, isLoading, refetchList } = useDevboxList()
+  const { handleUserGuide } = useListDriver()
+
+  useEffect(() => {
+    if (list.length > 0) {
+      handleUserGuide()
+    }
+  }, [list.length])
 
   return (
     <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" {...props}>

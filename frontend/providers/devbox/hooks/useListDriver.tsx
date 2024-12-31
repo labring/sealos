@@ -53,7 +53,7 @@ export default function useListDriver() {
     disableActiveInteraction: true,
     steps: [
       {
-        element: '.guide-runtimes',
+        element: '.guide-status-tag',
         popover: {
           side: 'right',
           align: 'center',
@@ -62,7 +62,7 @@ export default function useListDriver() {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide.deploy_runtimes')}
+                {t('guide.devbox_status')}
               </Text>
               <PopoverBodyInfo />
             </Flex>
@@ -70,7 +70,7 @@ export default function useListDriver() {
         }
       },
       {
-        element: '.guide-custom-resources',
+        element: '.guide-ide-button',
         popover: {
           side: 'right',
           align: 'center',
@@ -79,40 +79,9 @@ export default function useListDriver() {
             <Flex gap={'6px'}>
               <DriverStarIcon />
               <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide.deploy_custom_resources')}
+                {t('guide.ide_button')}
               </Text>
               <PopoverBodyInfo top={'-120px'} />
-            </Flex>
-          )
-        }
-      },
-      {
-        element: '.guide-network-configuration',
-        popover: {
-          side: 'top',
-          align: 'start',
-          borderRadius: '12px 12px 12px 0px',
-          PopoverBody: (
-            <Flex gap={'6px'}>
-              <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide.deploy_network')}
-              </Text>
-              <PopoverBodyInfo top={'-120px'} />
-            </Flex>
-          )
-        }
-      },
-      {
-        element: '.guide-cost',
-        popover: {
-          side: 'right',
-          align: 'center',
-          borderRadius: '0px 12px 12px 12px',
-          PopoverBody: (
-            <Flex gap={'6px'} alignItems={'center'} fontSize={'13px'} fontWeight={500}>
-              <DriverStarIcon />
-              <Text color={'#24282C'}>{t('guide.deploy_cost')}</Text>
             </Flex>
           )
         }
