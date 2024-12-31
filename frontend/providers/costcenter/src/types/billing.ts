@@ -86,6 +86,7 @@ export type PropertiesCost = {
   2: number;
   3: number;
   4: number;
+  5: number;
 };
 export type RechargeBillingItem = {
   ID: string;

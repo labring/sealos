@@ -16,17 +16,18 @@ import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import { useEnvStore } from '@/stores/env'
-import { useConfirm } from '@/hooks/useConfirm'
-import { DevboxListItemType } from '@/types/devbox'
 import { pauseDevbox, releaseDevbox, startDevbox } from '@/api/devbox'
+import { useConfirm } from '@/hooks/useConfirm'
+import { useEnvStore } from '@/stores/env'
+import { DevboxListItemTypeV2 } from '@/types/devbox'
+import { versionSchema } from '@/utils/vaildate'
 
 const ReleaseModal = ({
   onClose,
   onSuccess,
   devbox
 }: {
-  devbox: DevboxListItemType
+  devbox: Omit<DevboxListItemTypeV2, 'template'>
   onClose: () => void
   onSuccess: () => void
 }) => {
@@ -47,9 +48,10 @@ const ReleaseModal = ({
   })
 
   const handleSubmit = () => {
+    const tagResult = versionSchema.safeParse(tag)
     if (!tag) {
       setTagError(true)
-    } else if (/[\w][\w.-]{0,127}/.test(tag) === false) {
+    } else if (versionSchema.safeParse(tag).success === false) {
       toast({
         title: t('tag_format_error'),
         status: 'error'

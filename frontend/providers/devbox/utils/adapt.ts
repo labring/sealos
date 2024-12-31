@@ -3,21 +3,26 @@ import dayjs from 'dayjs'
 import {
   devboxReleaseStatusMap,
   devboxStatusMap,
-  podStatusMap,
-  PodStatusEnum
+  PodStatusEnum,
+  podStatusMap
 } from '@/constants/devbox'
-import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
-import { KBDevboxType, KBDevboxReleaseType } from '@/types/k8s'
+import { GetDevboxByNameReturn } from '@/types/adapt'
+import { DBListItemType, KbPgClusterType } from '@/types/cluster'
 import {
   DevboxDetailType,
+  DevboxDetailTypeV2,
   DevboxListItemType,
+  DevboxListItemTypeV2,
   DevboxVersionListItemType,
   PodDetailType
 } from '@/types/devbox'
-import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
-import { DBListItemType, KbPgClusterType } from '@/types/cluster'
-import { IngressListItemType } from '@/types/ingress'
+
 import { AppListItemType } from '@/types/app'
+import { IngressListItemType } from '@/types/ingress'
+import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/client-node'
+
+import { KBDevboxReleaseType, KBDevboxType, KBDevboxTypeV2 } from '@/types/k8s'
+import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools'
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -48,12 +53,50 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
   }
 }
-
+export const adaptDevboxListItemV2 = ([devbox, template]: [KBDevboxTypeV2, {
+  templateRepository: {
+    iconId: string | null;
+  };
+  uid: string;
+}
+]): DevboxListItemTypeV2 => {
+  return {
+    id: devbox.metadata?.uid || ``,
+    name: devbox.metadata.name || 'devbox',
+    template,
+    status:
+      devbox.status.phase && devboxStatusMap[devbox.status.phase]
+        ? devboxStatusMap[devbox.status.phase]
+        : devboxStatusMap.Error,
+    sshPort: devbox.status.network.nodePort,
+    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    cpu: cpuFormatToM(devbox.spec.resource.cpu),
+    memory: memoryFormatToMi(devbox.spec.resource.memory),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+            ? devbox.status.state.terminated.reason
+            : ''
+        : ''
+  }
+}
 export const adaptDevboxDetail = (
   devbox: KBDevboxType & { portInfos: any[] }
 ): DevboxDetailType => {
@@ -87,12 +130,72 @@ export const adaptDevboxDetail = (
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
+        : ''
+  }
+}
+export const adaptDevboxDetailV2 = (
+  [devbox, portInfos, template]: GetDevboxByNameReturn
+): DevboxDetailTypeV2 => {
+  console.log('adaptDevboxDetailV2')
+  const status =       devbox.status.phase && devboxStatusMap[devbox.status.phase]
+  ? devboxStatusMap[devbox.status.phase]
+  : devboxStatusMap.Error
+  return {
+    id: devbox.metadata?.uid || ``,
+    name: devbox.metadata.name || 'devbox',
+    templateUid: devbox.spec.templateID,
+    templateName: template.name,
+    templateRepositoryName: template.templateRepository.name,
+    templateRepositoryUid: template.templateRepository.uid,
+    templateConfig: JSON.stringify(devbox.spec.config),
+    image: template.image,
+    iconId: template.templateRepository.iconId || '',
+    status,
+    sshPort: devbox.status.network.nodePort,
+    isPause: devbox.status.phase === 'Stopped',
+    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    cpu: cpuFormatToM(devbox.spec.resource.cpu),
+    memory: memoryFormatToMi(devbox.spec.resource.memory),
+    usedCpu: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    usedMemory: {
+      name: '',
+      xData: new Array(30).fill(0),
+      yData: new Array(30).fill('0')
+    },
+    networks: portInfos || [],
+    lastTerminatedReason:
+      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+        ? devbox.status.state.waiting
+          ? devbox.status.state.waiting.reason
+          : devbox.status.state.terminated
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
   }
 }
 export const adaptDevboxVersionListItem = (
+  devboxRelease: KBDevboxReleaseType
+): DevboxVersionListItemType => {
+  return {
+    id: devboxRelease.metadata?.uid || '',
+    name: devboxRelease.metadata.name || 'devbox-release-default',
+    devboxName: devboxRelease.spec.devboxName || 'devbox',
+    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    tag: devboxRelease.spec.newTag || 'v1.0.0',
+    status:
+      devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
+        ? devboxReleaseStatusMap[devboxRelease.status.phase]
+        : devboxReleaseStatusMap.Failed,
+    description: devboxRelease.spec.notes || 'release notes'
+  }
+}
+export const adaptDevboxVersionListItemV2 = (
   devboxRelease: KBDevboxReleaseType
 ): DevboxVersionListItemType => {
   return {

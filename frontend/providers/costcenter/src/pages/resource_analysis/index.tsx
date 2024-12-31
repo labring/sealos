@@ -12,7 +12,7 @@ import { Box, Flex, Heading, HStack, Img, Stack, Text, VStack } from '@chakra-ui
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 export default function Resource() {
   const { t } = useTranslation();
@@ -68,7 +68,6 @@ export default function Resource() {
     keepPreviousData: true,
     queryKey: ['appOverviewBilling', queryBody, page, pageSize]
   });
-  const appOverviews = useMemo(() => data?.data?.overviews || [], [data?.data?.overviews]);
   return (
     <Flex flexDirection="column" w="100%" h="100%" overflow={'auto'} gap={'8px'} p={'8px'}>
       <Box bg={'white'} px="24px" pt="20px" borderRadius={'8px'}>

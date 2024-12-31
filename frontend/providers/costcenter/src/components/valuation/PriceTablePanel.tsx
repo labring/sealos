@@ -7,9 +7,11 @@ import { PricePayload, PriceTable } from '../table/PriceTable';
 export function PriceTablePanel({ priceData }: { priceData: PricePayload[] }) {
   const { t } = useTranslation();
   const gpuEnabled = useEnvStore((state) => state.gpuEnabled);
-  const baseData = priceData.filter((x) => x.title !== 'network' && !x.title.startsWith('gpu-'));
-  const networkData = priceData.filter((x) => x.title === 'network');
-  const gpuData = priceData.filter((x) => x.title.startsWith('gpu-'));
+  const gpuData = priceData.filter((x) => x.isGpu);
+  const otherData = priceData.filter((x) => !x.isGpu);
+  const networkData = otherData.filter((x) => x.title === 'network');
+  const baseData = otherData.filter((x) => x.title !== 'network');
+
   return (
     <TabPanel>
       <Flex direction={'column'} w="720px" mx={'auto'}>

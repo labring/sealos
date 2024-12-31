@@ -77,7 +77,7 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       px="37px"
       justify={'center'}
       align={'center'}
-      mt={'135px'}
+      m={'auto'}
       display={'flex'}
       justifyContent={'center'}
       alignItems={'center'}
@@ -411,7 +411,12 @@ const RechargeModal = forwardRef(
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent maxW="530px" minH={'495'} display={'flex'} flexDir={'column'}>
+        <ModalContent
+          maxW="530px"
+          minH={complete === 0 ? 'unset' : '495px'}
+          display={'flex'}
+          flexDir={'column'}
+        >
           {!detail ? (
             complete === 0 ? (
               <>
@@ -447,35 +452,37 @@ const RechargeModal = forwardRef(
                       {formatMoney(balance).toFixed(2)}
                     </Text>
                   </Flex>
-                  <Flex direction={'column'} mb={'20px'}>
+                  <Flex direction={'column'} mb={'20px'} width={'full'}>
                     <Flex mb={'36px'} justify={'space-between'}>
                       <Text color="grayModern.600" fontWeight={'normal'}>
                         {t('Select Amount')}
                       </Text>
-                      <Flex align={'center'}>
-                        <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
-                        <Text
-                          mr={'4px'}
-                          color={'grayModern.900'}
-                          fontSize={'14px'}
-                          fontWeight={500}
-                        >
-                          {t('first_recharge_title')}
-                        </Text>
-                        <MyTooltip
-                          px={'12px'}
-                          py={'8px'}
-                          minW={'unset'}
-                          width={'auto'}
-                          label={
-                            <Text fontSize={'12px'} fontWeight={400}>
-                              {t('first_recharge_tips')}
-                            </Text>
-                          }
-                        >
-                          <HelpIcon boxSize={'16px'}></HelpIcon>
-                        </MyTooltip>
-                      </Flex>
+                      {specialBonus && specialBonus.length > 0 && (
+                        <Flex align={'center'}>
+                          <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
+                          <Text
+                            mr={'4px'}
+                            color={'grayModern.900'}
+                            fontSize={'14px'}
+                            fontWeight={500}
+                          >
+                            {t('first_recharge_title')}
+                          </Text>
+                          <MyTooltip
+                            px={'12px'}
+                            py={'8px'}
+                            minW={'unset'}
+                            width={'auto'}
+                            label={
+                              <Text fontSize={'12px'} fontWeight={400}>
+                                {t('first_recharge_tips')}
+                              </Text>
+                            }
+                          >
+                            <HelpIcon boxSize={'16px'}></HelpIcon>
+                          </MyTooltip>
+                        </Flex>
+                      )}
                     </Flex>
                     <Flex wrap={'wrap'} gap={'16px'}>
                       {steps.map((amount, index) => (

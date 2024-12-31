@@ -1,4 +1,5 @@
 import { resourceType } from '@/constants/billing';
+import useEnvStore from '@/stores/env';
 import { formatMoney } from '@/utils/format';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { PieChart } from 'echarts/charts';
@@ -20,9 +21,10 @@ echarts.use([
 
 export default function CostChart({ data }: { data: number[]; appName: string }) {
   const { t } = useTranslation();
-
+  const { gpuEnabled } = useEnvStore();
   const radius = ['50%', '90%'];
-  const result = [0, 1, 2, 3, 4].map((_, i) => {
+
+  const result = (gpuEnabled ? [0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4]).map((_, i) => {
     return [t(resourceType[i]), formatMoney(data[i]).toFixed(2)];
   });
   const title = t('All APP', { ns: 'applist' }) + '\n' + t('Cost Form');

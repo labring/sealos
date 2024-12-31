@@ -1,15 +1,15 @@
+import Notfound from '@/components/notFound';
+import request from '@/service/request';
+import useBillingStore from '@/stores/billing';
+import useOverviewStore from '@/stores/overview';
+import { PropertiesCost } from '@/types';
 import { Box, Flex, HStack, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import Notfound from '@/components/notFound';
-import { useQuery } from '@tanstack/react-query';
-import useOverviewStore from '@/stores/overview';
-import request from '@/service/request';
-import { ApiResp, PropertiesCost } from '@/types';
-import useBillingStore from '@/stores/billing';
+import SelectRange from '../billing/selectDateRange';
 import AppNameMenu from '../menu/AppNameMenu';
 import AppTypeMenu from '../menu/AppTypeMenu';
-import SelectRange from '../billing/selectDateRange';
 const Chart = dynamic(() => import('./components/pieChart'), {
   ssr: false
 });
@@ -18,7 +18,6 @@ export const Cost = function Cost() {
   const startTime = useOverviewStore((state) => state.startTime);
   const endTime = useOverviewStore((state) => state.endTime);
   const { getNamespace, getAppName, getAppType, getRegion } = useBillingStore();
-
   const query = {
     namespace: getNamespace()?.[0] || '',
     appType: getAppType(),
@@ -30,22 +29,11 @@ export const Cost = function Cost() {
   const { data, isInitialLoading, isFetching } = useQuery({
     queryKey: ['billing', 'properties', 'costs', query],
     queryFn: () => {
-      return request.post<ApiResp<PropertiesCost>>('/api/billing/costDistrube', query);
+      return request.post<PropertiesCost>('/api/billing/costDistrube', query);
     },
     select(data) {
       const _data = data.data;
-      return [
-        // @ts-ignore
-        _data['0'],
-        // @ts-ignore
-        _data['1'],
-        // @ts-ignore
-        _data['2'],
-        // @ts-ignore
-        _data['3'],
-        // @ts-ignore
-        _data['4']
-      ];
+      return [_data['0'], _data['1'], _data['2'], _data['3'], _data['4'], _data['5']];
     }
   });
   return (
@@ -83,7 +71,7 @@ export const Cost = function Cost() {
           <Notfound></Notfound>
         </Flex>
       ) : (
-        <Chart data={data || [0, 0, 0, 0, 0]} appName={getAppName()}></Chart>
+        <Chart data={data || [0, 0, 0, 0, 0, 0]} appName={getAppName()}></Chart>
       )}
     </Flex>
   );

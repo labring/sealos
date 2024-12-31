@@ -35,8 +35,7 @@ export function BillingDetailsTable({
   ...styles
 }: { data: APPBillingItem[] } & TableContainerProps) {
   const { t } = useTranslation();
-  const currency = useEnvStore((s) => s.currency);
-
+  const { currency, gpuEnabled } = useEnvStore((s) => s);
   const columns = useMemo(() => {
     const columnHelper = createColumnHelper<APPBillingItem>();
     const customTh = (needCurrency?: boolean) =>
@@ -56,12 +55,14 @@ export function BillingDetailsTable({
       function CustomCell(props: CellContext<APPBillingItem, number>) {
         return <Amount total={isTotal} type={BillingType.CONSUME} amount={props.cell.getValue()} />;
       };
-    const getUnit = (x: string) => {
+    const getUnit = (
+      x: 'cpu' | 'memory' | 'storage' | 'gpu' | 'network' | 'services.nodeports'
+    ) => {
       return function CustomCell(props: CellContext<APPBillingItem, number>) {
         const resourceEntity = valuationMap.get(x);
         if (!resourceEntity) return '0';
         const unit = resourceEntity.unit;
-        return props.cell.getValue() / resourceEntity.scale + ' ' + unit;
+        return props.cell.getValue() / resourceEntity.scale + ' ' + t(unit, { ns: 'common' });
       };
     };
     return [
@@ -138,6 +139,20 @@ export function BillingDetailsTable({
         header: customTh(),
         cell: customCell()
       }),
+      ...(gpuEnabled
+        ? [
+            columnHelper.accessor((row) => row.used[5], {
+              id: TableHeaderID.GPU,
+              header: customTh(),
+              cell: getUnit('gpu')
+            }),
+            columnHelper.accessor((row) => row.used_amount[5], {
+              id: TableHeaderID.GPUAmount,
+              header: customTh(),
+              cell: customCell()
+            })
+          ]
+        : []),
       columnHelper.accessor((row) => row.time, {
         id: TableHeaderID.TransactionTime,
         header: customTh(),

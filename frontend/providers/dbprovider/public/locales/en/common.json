@@ -145,7 +145,7 @@
   "db_name": "DataBase Name",
   "db_table": "DataBase Table",
   "dbconfig": {
-    "change_history": "Modification History",
+    "change_history": "Operation History",
     "commit": "submit",
     "confirm_updates": "Please confirm the parameters you modified:",
     "get_config_err": "Failed to obtain configuration file",
@@ -330,5 +330,12 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minutes": "Within 5 minutes",
   "yaml_file": "YAML",
-  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!"
+  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
+  "change_log": "History",
+  "VerticalScaling": "Vertical Scaling",
+  "VerticalScalingCPU": "Vertical Scaling (CPU)",
+  "VerticalScalingMemory": "Vertical Scaling (Memory)",
+  "HorizontalScaling": "Horizontal Scaling (Instance)",
+  "VolumeExpansion": "Volume Expansion (Disk)",
+  "Stop": "Stop"
 }
