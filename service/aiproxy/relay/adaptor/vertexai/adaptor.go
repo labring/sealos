@@ -29,10 +29,10 @@ type Config struct {
 	ADCJSON   string
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, nil, errors.New("adaptor not found")
+		return "", nil, nil, errors.New("adaptor not found")
 	}
 
 	return adaptor.ConvertRequest(meta, request)

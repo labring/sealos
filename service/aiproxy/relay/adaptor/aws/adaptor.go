@@ -17,10 +17,10 @@ var _ adaptor.Adaptor = new(Adaptor)
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	adaptor := GetAdaptor(meta.ActualModelName)
 	if adaptor == nil {
-		return nil, nil, errors.New("adaptor not found")
+		return "", nil, nil, errors.New("adaptor not found")
 	}
 	meta.Set("awsAdapter", adaptor)
 	return adaptor.ConvertRequest(meta, req)

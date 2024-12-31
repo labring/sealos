@@ -17,10 +17,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	err := request.ParseMultipartForm(1024 * 1024 * 4)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	multipartBody := &bytes.Buffer{}
@@ -34,7 +34,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		if key == "model" {
 			err = multipartWriter.WriteField(key, meta.ActualModelName)
 			if err != nil {
-				return nil, nil, err
+				return "", nil, nil, err
 			}
 			continue
 		}
@@ -44,7 +44,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		}
 		err = multipartWriter.WriteField(key, value)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
@@ -55,23 +55,23 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		fileHeader := files[0]
 		file, err := fileHeader.Open()
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 		w, err := multipartWriter.CreateFormFile(key, fileHeader.Filename)
 		if err != nil {
 			file.Close()
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 		_, err = io.Copy(w, file)
 		file.Close()
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
 	multipartWriter.Close()
 	ContentType := multipartWriter.FormDataContentType()
-	return http.Header{
+	return http.MethodPost, http.Header{
 		"Content-Type": {ContentType},
 	}, multipartBody, nil
 }

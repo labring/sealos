@@ -50,7 +50,7 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
 		return ConvertImageRequest(meta, req)
@@ -65,7 +65,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	case relaymode.AudioTranscription:
 		return ConvertSTTRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 

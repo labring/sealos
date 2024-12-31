@@ -71,13 +71,13 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	return ConvertRequest(meta, req)
 }
 
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	if req == nil {
-		return nil, nil, errors.New("request is nil")
+		return "", nil, nil, errors.New("request is nil")
 	}
 	switch meta.Mode {
 	case relaymode.Moderations:
@@ -96,7 +96,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
@@ -128,25 +128,25 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
 
-func ConvertTextRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTextRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	if !meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey) {
 		if err := patchStreamOptions(reqMap); err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
 	reqMap["model"] = meta.ActualModelName
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func patchStreamOptions(reqMap map[string]any) error {

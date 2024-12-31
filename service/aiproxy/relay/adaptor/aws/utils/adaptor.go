@@ -15,7 +15,7 @@ import (
 )
 
 type AwsAdapter interface {
-	ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error)
+	ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error)
 	DoResponse(meta *meta.Meta, c *gin.Context) (usage *model.Usage, err *model.ErrorWithStatusCode)
 }
 

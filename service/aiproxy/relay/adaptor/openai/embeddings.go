@@ -13,11 +13,11 @@ import (
 const MetaEmbeddingsPatchInputToSlices = "embeddings_input_to_slices"
 
 //nolint:gocritic
-func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	reqMap["model"] = meta.ActualModelName
@@ -31,7 +31,7 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (http.Header, 
 
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }

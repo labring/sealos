@@ -184,10 +184,10 @@ func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest)
 }
 
 // Setting safety to the lowest possible values since Gemini is already powerless enough
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	textRequest.Model = meta.ActualModelName
@@ -195,12 +195,12 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	systemContent, contents, err := buildContents(req.Context(), textRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	tokenCount, err := CountTokens(req.Context(), meta, contents)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	meta.PromptTokens = tokenCount
 
@@ -216,10 +216,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	data, err := json.Marshal(geminiRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func CountTokens(ctx context.Context, meta *meta.Meta, chat []*ChatContent) (int, error) {

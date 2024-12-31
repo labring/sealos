@@ -19,11 +19,11 @@ type ModelConfig struct {
 	Model             string                 `gorm:"primaryKey"                    json:"model"`
 	Owner             ModelOwner             `gorm:"type:varchar(255);index"       json:"owner"`
 	ImageMaxBatchSize int                    `json:"image_batch_size,omitempty"`
-	// relaymode/define.go
-	Type        int     `json:"type"`
-	InputPrice  float64 `json:"input_price,omitempty"`
-	OutputPrice float64 `json:"output_price,omitempty"`
-	RPM         int64   `json:"rpm"`
+	Type              int                    `json:"type"` // relaymode/define.go
+	InputPrice        float64                `json:"input_price,omitempty"`
+	OutputPrice       float64                `json:"output_price,omitempty"`
+	RPM               int64                  `json:"rpm,omitempty"`
+	TPM               int64                  `json:"tpm,omitempty"`
 }
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {

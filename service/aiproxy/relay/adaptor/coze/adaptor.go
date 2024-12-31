@@ -38,17 +38,17 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	if meta.Mode != relaymode.ChatCompletions {
-		return nil, nil, errors.New("coze only support chat completions")
+		return "", nil, nil, errors.New("coze only support chat completions")
 	}
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	_, userID, err := getTokenAndUserID(meta.Channel.Key)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.User = userID
 	request.Model = meta.ActualModelName
@@ -70,9 +70,9 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 	}
 	data, err := json.Marshal(cozeRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {

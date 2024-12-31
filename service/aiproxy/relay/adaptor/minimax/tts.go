@@ -19,10 +19,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap, err := utils.UnmarshalMap(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	reqMap["model"] = meta.ActualModelName
@@ -79,10 +79,10 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 
 	body, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return nil, bytes.NewReader(body), nil
+	return http.MethodPost, nil, bytes.NewReader(body), nil
 }
 
 type TTSExtraInfo struct {

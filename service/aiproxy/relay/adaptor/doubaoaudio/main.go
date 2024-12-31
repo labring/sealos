@@ -38,12 +38,12 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return GetRequestURL(meta)
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
 	default:
-		return nil, nil, fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
 	}
 }
 

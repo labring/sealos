@@ -13,10 +13,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModelName
 
@@ -41,9 +41,9 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (http.Header, i
 		Requests: requests,
 	})
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {

@@ -22,21 +22,21 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	return a.Adaptor.GetRequestURL(meta)
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	domain, err := getXunfeiDomain(meta.ActualModelName)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	model := meta.ActualModelName
 	meta.ActualModelName = domain
 	defer func() {
 		meta.ActualModelName = model
 	}()
-	h, body, err := a.Adaptor.ConvertRequest(meta, req)
+	method, h, body, err := a.Adaptor.ConvertRequest(meta, req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return h, body, nil
+	return method, h, body, nil
 }
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
