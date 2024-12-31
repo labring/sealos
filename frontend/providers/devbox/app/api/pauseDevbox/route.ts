@@ -13,16 +13,13 @@ export async function POST(req: NextRequest) {
 
     const headerList = req.headers
 
-    const { k8sCustomObjects, namespace } = await getK8s({
+    const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
     })
 
     // get ingress and modify ingress annotations
-    const ingressesResponse = await k8sCustomObjects.listNamespacedCustomObject(
-      'networking.k8s.io',
-      'v1',
+    const ingressesResponse = await k8sNetworkingApp.listNamespacedIngress(
       namespace,
-      'ingresses',
       undefined,
       undefined,
       undefined,
@@ -40,13 +37,12 @@ export async function POST(req: NextRequest) {
         (specIngressClass && specIngressClass === 'nginx')
       ) {
         if (annotationsIngressClass) {
-          await k8sCustomObjects.patchNamespacedCustomObject(
-            'networking.k8s.io',
-            'v1',
-            namespace,
-            'ingresses',
+          await k8sNetworkingApp.patchNamespacedIngress(
             ingress.metadata.name,
+            namespace,
             { metadata: { annotations: { 'kubernetes.io/ingress.class': 'pause' } } },
+            undefined,
+            undefined,
             undefined,
             undefined,
             undefined,
@@ -57,13 +53,12 @@ export async function POST(req: NextRequest) {
             }
           )
         } else if (specIngressClass) {
-          await k8sCustomObjects.patchNamespacedCustomObject(
-            'networking.k8s.io',
-            'v1',
-            namespace,
-            'ingresses',
+          await k8sNetworkingApp.patchNamespacedIngress(
             ingress.metadata.name,
+            namespace,
             { spec: { ingressClassName: 'pause' } },
+            undefined,
+            undefined,
             undefined,
             undefined,
             undefined,
