@@ -8,6 +8,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/redis/go-redis/v9"
+	log "github.com/sirupsen/logrus"
 )
 
 // 使用set存储被永久禁用的channelID
@@ -21,7 +22,7 @@ var addRequestScript = redis.NewScript(`
 	local banned_key = "model:" .. model .. ":banned"
 
 	if redis.call("SISMEMBER", banned_key, channel_id) == 1 then
-		return redis.status_reply("ok")
+		return 2
 	end
 
 	local now_ms = redis.call("TIME")[1] * 1000 + math.floor(redis.call("TIME")[2]/1000)
@@ -35,7 +36,7 @@ var addRequestScript = redis.NewScript(`
 	redis.call("PEXPIRE", channel_requests_key, error_time_to_live)
 
 	local total_count = redis.call("ZCARD", channel_requests_key)
-	if total_count >= 5 then
+	if total_count >= 10 then
 		local error_count = 0
 		local requests = redis.call("ZRANGE", channel_requests_key, 0, -1)
 		for _, request in ipairs(requests) do
@@ -52,10 +53,11 @@ var addRequestScript = redis.NewScript(`
 				redis.call("PEXPIRE", banned_key, ban_time)
 			end
 			redis.call("DEL", channel_requests_key)
+			return 1
 		end
 	end
 
-	return redis.status_reply("ok")
+	return 0
 `)
 
 func AddRequest(ctx context.Context, model string, channelID int64, isError bool) error {
@@ -68,7 +70,7 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 	}
 	live := 60 * time.Second
 	banTime := 4 * live
-	return addRequestScript.Run(
+	val, err := addRequestScript.Run(
 		ctx,
 		common.RDB,
 		[]string{model},
@@ -76,7 +78,15 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		live.Milliseconds(),
 		config.GetModelErrorAutoBanRate(),
 		errorFlag,
-		banTime.Milliseconds()).Err()
+		banTime.Milliseconds()).Int64()
+	if err != nil {
+		return err
+	}
+	log.Debugf("add request result: %d", val)
+	if val == 1 {
+		log.Errorf("channel %d model %s is banned", channelID, model)
+	}
+	return nil
 }
 
 var getBannedChannelsScript = redis.NewScript(`

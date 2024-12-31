@@ -89,6 +89,8 @@ func Relay(c *gin.Context) {
 		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}
 
+	log.Debugf("%s model banned channels: %+v", requestModel, ids)
+
 	failedChannelIDs := []int{}
 	for _, id := range ids {
 		failedChannelIDs = append(failedChannelIDs, int(id))
