@@ -60,30 +60,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
       if (ingress?.items?.length > 0) {
         for (const ingressItem of ingress.items) {
-          if (
-            ingressItem?.metadata?.name &&
-            ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'nginx'
-          ) {
-            const patchData = {
-              metadata: {
+          if (ingressItem?.metadata?.name) {
+            const patchData: Record<string, any> = {};
+            if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'nginx') {
+              patchData.metadata = {
                 annotations: {
                   'kubernetes.io/ingress.class': 'pause'
                 }
-              }
-            };
-            requestQueue.push(
-              k8sNetworkingApp.patchNamespacedIngress(
-                ingressItem.metadata.name,
-                namespace,
-                patchData,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                undefined,
-                { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-              )
-            );
+              };
+            }
+            if (ingressItem.spec?.ingressClassName === 'nginx') {
+              patchData.spec = {
+                ingressClassName: 'pause'
+              };
+            }
+
+            if (Object.keys(patchData).length > 0) {
+              requestQueue.push(
+                k8sNetworkingApp.patchNamespacedIngress(
+                  ingressItem.metadata.name,
+                  namespace,
+                  patchData,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+                )
+              );
+            }
           }
         }
       }
