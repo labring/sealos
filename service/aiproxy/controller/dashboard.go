@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
@@ -111,6 +113,8 @@ func getTimeSpanWithDefault(c *gin.Context, defaultTimeSpan time.Duration) time.
 }
 
 func GetDashboard(c *gin.Context) {
+	log := middleware.GetLogger(c)
+
 	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	modelName := c.Query("model")
 	timeSpan = getTimeSpanWithDefault(c, timeSpan)
@@ -122,10 +126,22 @@ func GetDashboard(c *gin.Context) {
 	}
 
 	dashboards.ChartData = fillGaps(dashboards.ChartData, start, end, timeSpan)
+
+	if common.RedisEnabled {
+		rpm, err := rpmlimit.GetRPM(c.Request.Context(), "", modelName)
+		if err != nil {
+			log.Errorf("failed to get rpm: %v", err)
+		} else {
+			dashboards.RPM = rpm
+		}
+	}
+
 	middleware.SuccessResponse(c, dashboards)
 }
 
 func GetGroupDashboard(c *gin.Context) {
+	log := middleware.GetLogger(c)
+
 	group := c.Param("group")
 	if group == "" {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
@@ -144,5 +160,15 @@ func GetGroupDashboard(c *gin.Context) {
 	}
 
 	dashboards.ChartData = fillGaps(dashboards.ChartData, start, end, timeSpan)
+
+	if common.RedisEnabled && tokenName == "" {
+		rpm, err := rpmlimit.GetRPM(c.Request.Context(), group, modelName)
+		if err != nil {
+			log.Errorf("failed to get rpm: %v", err)
+		} else {
+			dashboards.RPM = rpm
+		}
+	}
+
 	middleware.SuccessResponse(c, dashboards)
 }

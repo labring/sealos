@@ -9,13 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	groupModelRPMKey = "group_model_rpm:%s:%s"
 )
 
 type ModelRequest struct {
@@ -59,9 +56,10 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestMo
 
 	adjustedModelRPM := int64(float64(modelRPM) * groupRPMRatio * groupConsumeLevelRpmRatio)
 
-	ok := ForceRateLimit(
+	ok := rpmlimit.ForceRateLimit(
 		c.Request.Context(),
-		fmt.Sprintf(groupModelRPMKey, group.ID, requestModel),
+		group.ID,
+		requestModel,
 		adjustedModelRPM,
 		time.Minute,
 	)
