@@ -2,6 +2,9 @@ package model
 
 import (
 	"fmt"
+
+	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
 
 type Usage struct {
@@ -11,14 +14,18 @@ type Usage struct {
 }
 
 type Error struct {
-	Code    any    `json:"code"`
-	Message string `json:"message"`
-	Type    string `json:"type"`
-	Param   string `json:"param"`
+	Code    any    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Param   string `json:"param,omitempty"`
 }
 
 func (e *Error) String() string {
-	return fmt.Sprintf("code: %v, message: %s, type: %s, param: %s", e.Code, e.Message, e.Type, e.Param)
+	jsonBuf, err := json.Marshal(e)
+	if err != nil {
+		return fmt.Sprintf("code: %v, message: %s, type: %s, param: %s", e.Code, e.Message, e.Type, e.Param)
+	}
+	return conv.BytesToString(jsonBuf)
 }
 
 func (e *Error) Error() string {
@@ -28,8 +35,4 @@ func (e *Error) Error() string {
 type ErrorWithStatusCode struct {
 	Error      Error `json:"error"`
 	StatusCode int   `json:"-"`
-}
-
-func (e *ErrorWithStatusCode) String() string {
-	return fmt.Sprintf("%s, status_code: %d", e.Error.String(), e.StatusCode)
 }

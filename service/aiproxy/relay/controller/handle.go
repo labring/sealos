@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -78,6 +79,17 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	// 5. Do request
 	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
+		if detail != nil && config.DebugEnabled {
+			log.Errorf(
+				"handle failed: %+v\nrequest detail:\n%s\nresponse detail:\n%s",
+				respErr.Error,
+				detail.RequestBody,
+				detail.ResponseBody,
+			)
+		} else {
+			log.Errorf("handle failed: %+v", respErr.Error)
+		}
+
 		ConsumeWaitGroup.Add(1)
 		go postConsumeAmount(context.Background(),
 			&ConsumeWaitGroup,
@@ -87,7 +99,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			meta,
 			preCheckReq.InputPrice,
 			preCheckReq.OutputPrice,
-			respErr.String(),
+			respErr.Error.String(),
 			detail,
 		)
 		return respErr
