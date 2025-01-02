@@ -51,7 +51,11 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		meta.WithRequestID(channelTestRequestID),
 		meta.WithChannelTest(true),
 	)
-	bizErr := relayHelper(meta, newc)
+	relayController, ok := relayController(mode)
+	if !ok {
+		return nil, fmt.Errorf("relay mode %d not implemented", mode)
+	}
+	bizErr := relayController(meta, newc)
 	success := bizErr == nil
 	var respStr string
 	var code int

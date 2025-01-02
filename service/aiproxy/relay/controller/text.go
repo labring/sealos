@@ -24,6 +24,18 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(c.Request)
 	if err != nil {
 		log.Errorf("get and validate text request failed: %s", err.Error())
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			nil,
+			http.StatusBadRequest,
+			nil,
+			meta,
+			0,
+			0,
+			err.Error(),
+			nil,
+		)
 		return openai.ErrorWrapper(err, "invalid_text_request", http.StatusBadRequest)
 	}
 
@@ -70,7 +82,6 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			respErr.StatusCode,
-			c.Request.URL.Path,
 			usage,
 			meta,
 			price,
@@ -86,7 +97,6 @@ func RelayTextHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode
 		&ConsumeWaitGroup,
 		postGroupConsumer,
 		http.StatusOK,
-		c.Request.URL.Path,
 		usage,
 		meta,
 		price,
