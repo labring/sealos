@@ -197,10 +197,10 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	token, err = CacheGetTokenByKey(key)
 	if err != nil {
-		log.Error("get token from cache failed: " + err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("invalid token")
 		}
+		log.Error("get token from cache failed: " + err.Error())
 		return nil, errors.New("token validation failed")
 	}
 	switch token.Status {
