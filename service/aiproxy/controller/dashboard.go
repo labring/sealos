@@ -40,16 +40,37 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 		return data
 	}
 
-	result := make([]*model.HourlyChartData, 0, len(data)+2)
-
-	// Add zero point before first data point if within range
+	// Handle first point
 	firstPoint := time.Unix(data[0].Timestamp, 0)
-	if firstPointPrev := firstPoint.Add(-timeSpan); !firstPointPrev.Before(start) {
-		result = append(result, &model.HourlyChartData{
-			Timestamp: firstPointPrev.Unix(),
-		})
+	firstAlignedTime := firstPoint
+	for !firstAlignedTime.Add(-timeSpan).Before(start) {
+		firstAlignedTime = firstAlignedTime.Add(-timeSpan)
+	}
+	var firstIsZero bool
+	if !firstAlignedTime.Equal(firstPoint) {
+		data = append([]*model.HourlyChartData{
+			{
+				Timestamp: firstAlignedTime.Unix(),
+			},
+		}, data...)
+		firstIsZero = true
 	}
 
+	// Handle last point
+	lastPoint := time.Unix(data[len(data)-1].Timestamp, 0)
+	lastAlignedTime := lastPoint
+	for !lastAlignedTime.Add(timeSpan).After(end) {
+		lastAlignedTime = lastAlignedTime.Add(timeSpan)
+	}
+	var lastIsZero bool
+	if !lastAlignedTime.Equal(lastPoint) {
+		data = append(data, &model.HourlyChartData{
+			Timestamp: lastAlignedTime.Unix(),
+		})
+		lastIsZero = true
+	}
+
+	result := make([]*model.HourlyChartData, 0, len(data))
 	result = append(result, data[0])
 
 	for i := 1; i < len(data); i++ {
@@ -66,13 +87,17 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 		// If gap is more than 3 hours, only add boundary points
 		if hourDiff > 3 {
 			// Add point for hour after prev
-			result = append(result, &model.HourlyChartData{
-				Timestamp: prev.Timestamp + int64(timeSpan.Seconds()),
-			})
+			if i != 1 || (i == 1 && !firstIsZero) {
+				result = append(result, &model.HourlyChartData{
+					Timestamp: prev.Timestamp + int64(timeSpan.Seconds()),
+				})
+			}
 			// Add point for hour before curr
-			result = append(result, &model.HourlyChartData{
-				Timestamp: curr.Timestamp - int64(timeSpan.Seconds()),
-			})
+			if i != len(data)-1 || (i == len(data)-1 && !lastIsZero) {
+				result = append(result, &model.HourlyChartData{
+					Timestamp: curr.Timestamp - int64(timeSpan.Seconds()),
+				})
+			}
 			result = append(result, curr)
 			continue
 		}
@@ -84,14 +109,6 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 			})
 		}
 		result = append(result, curr)
-	}
-
-	// Add zero point after last data point if within range
-	lastPoint := time.Unix(data[len(data)-1].Timestamp, 0)
-	if lastPointNext := lastPoint.Add(timeSpan); !lastPointNext.After(end) {
-		result = append(result, &model.HourlyChartData{
-			Timestamp: lastPointNext.Unix(),
-		})
 	}
 
 	return result
