@@ -64,9 +64,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		pathSuffix = "text2image"
 	}
 
-	modelEndpoint, ok := modelEndpointMap[meta.ActualModelName]
+	modelEndpoint, ok := modelEndpointMap[meta.ActualModel]
 	if !ok {
-		modelEndpoint = strings.ToLower(meta.ActualModelName)
+		modelEndpoint = strings.ToLower(meta.ActualModel)
 	}
 
 	// Construct full URL

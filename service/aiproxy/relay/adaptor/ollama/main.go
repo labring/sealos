@@ -29,7 +29,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 
 	ollamaRequest := ChatRequest{
 		Model: request.Model,
@@ -180,7 +180,7 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	data, err := json.Marshal(&EmbeddingRequest{
 		Model: request.Model,
 		Input: request.ParseInput(),

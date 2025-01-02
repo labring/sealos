@@ -24,7 +24,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	meta.Set("stream", request.Stream)
 	llamaReq := ConvertRequest(request)
 	meta.Set(ConvertedRequest, llamaReq)

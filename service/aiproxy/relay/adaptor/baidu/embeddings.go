@@ -41,7 +41,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	if err != nil {
 		return &baiduResponse.Usage, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
-	respMap["model"] = meta.OriginModelName
+	respMap["model"] = meta.OriginModel
 	respMap["object"] = "list"
 
 	data, err := json.Marshal(respMap)

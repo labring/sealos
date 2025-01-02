@@ -8,17 +8,11 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
-func GetImageSizePrice(model string, reqModel string, size string) (float64, bool) {
+func GetImageSizePrice(model string, size string) (float64, bool) {
 	if !config.GetBillingEnabled() {
 		return 0, false
 	}
-	if price, ok := getImageSizePrice(model, size); ok {
-		return price, true
-	}
-	if price, ok := getImageSizePrice(reqModel, size); ok {
-		return price, true
-	}
-	return 0, false
+	return getImageSizePrice(model, size)
 }
 
 func getImageSizePrice(modelName string, size string) (float64, bool) {

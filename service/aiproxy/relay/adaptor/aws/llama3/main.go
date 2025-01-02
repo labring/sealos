@@ -94,7 +94,7 @@ func ConvertRequest(textRequest *relaymodel.GeneralOpenAIRequest) *Request {
 }
 
 func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelID, err := awsModelID(meta.ActualModelName)
+	awsModelID, err := awsModelID(meta.ActualModel)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -132,7 +132,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 	}
 
 	openaiResp := ResponseLlama2OpenAI(&llamaResponse)
-	openaiResp.Model = meta.OriginModelName
+	openaiResp.Model = meta.OriginModel
 	usage := relaymodel.Usage{
 		PromptTokens:     llamaResponse.PromptTokenCount,
 		CompletionTokens: llamaResponse.GenerationTokenCount,
@@ -171,7 +171,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 	log := middleware.GetLogger(c)
 
 	createdTime := time.Now().Unix()
-	awsModelID, err := awsModelID(meta.ActualModelName)
+	awsModelID, err := awsModelID(meta.ActualModel)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -231,7 +231,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			}
 			response := StreamResponseLlama2OpenAI(&llamaResp)
 			response.ID = "chatcmpl-" + random.GetUUID()
-			response.Model = meta.OriginModelName
+			response.Model = meta.OriginModel
 			response.Created = createdTime
 			err = render.ObjectData(c, response)
 			if err != nil {

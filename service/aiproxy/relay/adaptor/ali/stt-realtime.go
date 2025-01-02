@@ -89,7 +89,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 			TaskID:    uuid.New().String(),
 		},
 		Payload: STTPayload{
-			Model:     meta.ActualModelName,
+			Model:     meta.ActualModel,
 			Task:      "asr",
 			TaskGroup: "audio",
 			Function:  "recognition",

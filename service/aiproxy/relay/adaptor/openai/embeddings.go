@@ -20,7 +20,7 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.
 		return "", nil, nil, err
 	}
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 
 	if meta.GetBool(MetaEmbeddingsPatchInputToSlices) {
 		switch v := reqMap["input"].(type) {

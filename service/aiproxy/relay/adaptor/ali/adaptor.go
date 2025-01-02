@@ -76,7 +76,7 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) 
 	case relaymode.AudioTranscription:
 		return STTDoRequest(meta, req)
 	case relaymode.ChatCompletions:
-		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+		if meta.IsChannelTest && strings.Contains(meta.ActualModel, "-ocr") {
 			return &http.Response{
 				StatusCode: http.StatusOK,
 				Body:       io.NopCloser(bytes.NewReader(nil)),
@@ -95,7 +95,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
-		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
+		if meta.IsChannelTest && strings.Contains(meta.ActualModel, "-ocr") {
 			return nil, nil
 		}
 		usage, err = openai.DoResponse(meta, c, resp)

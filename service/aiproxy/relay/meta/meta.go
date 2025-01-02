@@ -21,14 +21,14 @@ type Meta struct {
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
-	Endpoint        string
-	RequestAt       time.Time
-	RequestID       string
-	OriginModelName string
-	ActualModelName string
-	Mode            int
-	InputTokens     int
-	IsChannelTest   bool
+	Endpoint      string
+	RequestAt     time.Time
+	RequestID     string
+	OriginModel   string
+	ActualModel   string
+	Mode          int
+	InputTokens   int
+	IsChannelTest bool
 }
 
 type Option func(meta *Meta)
@@ -71,10 +71,10 @@ func WithToken(token *model.TokenCache) Option {
 
 func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option) *Meta {
 	meta := Meta{
-		values:          make(map[string]any),
-		Mode:            mode,
-		OriginModelName: modelName,
-		RequestAt:       time.Now(),
+		values:      make(map[string]any),
+		Mode:        mode,
+		OriginModel: modelName,
+		RequestAt:   time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -94,7 +94,7 @@ func (m *Meta) Reset(channel *model.Channel) {
 		ID:      channel.ID,
 		Type:    channel.Type,
 	}
-	m.ActualModelName, _ = GetMappedModelName(m.OriginModelName, channel.ModelMapping)
+	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
 	m.ClearValues()
 }
 

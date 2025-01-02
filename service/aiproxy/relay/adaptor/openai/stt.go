@@ -32,7 +32,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 		}
 		value := values[0]
 		if key == "model" {
-			err = multipartWriter.WriteField(key, meta.ActualModelName)
+			err = multipartWriter.WriteField(key, meta.ActualModel)
 			if err != nil {
 				return "", nil, nil, err
 			}
@@ -113,7 +113,7 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	if err != nil {
 		return nil, ErrorWrapper(err, "get_text_from_body_err", http.StatusInternalServerError)
 	}
-	completionTokens := CountTokenText(text, meta.ActualModelName)
+	completionTokens := CountTokenText(text, meta.ActualModel)
 
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])

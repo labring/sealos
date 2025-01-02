@@ -37,7 +37,7 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.
 
 	// https://x.com/alexalbert__/status/1812921642143900036
 	// claude-3-5-sonnet can support 8k context
-	if strings.HasPrefix(meta.ActualModelName, "claude-3-5-sonnet") {
+	if strings.HasPrefix(meta.ActualModel, "claude-3-5-sonnet") {
 		req.Header.Set("Anthropic-Beta", "max-tokens-3-5-sonnet-2024-07-15")
 	}
 

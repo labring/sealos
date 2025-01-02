@@ -57,7 +57,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	if err == nil {
 		if err := monitor.AddRequest(
 			c.Request.Context(),
-			meta.OriginModelName,
+			meta.OriginModel,
 			int64(meta.Channel.ID),
 			false,
 		); err != nil {
@@ -68,7 +68,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	if shouldRetry(c, err.StatusCode) {
 		if err := monitor.AddRequest(
 			c.Request.Context(),
-			meta.OriginModelName,
+			meta.OriginModel,
 			int64(meta.Channel.ID),
 			true,
 		); err != nil {

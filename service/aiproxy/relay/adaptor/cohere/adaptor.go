@@ -38,7 +38,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	requestBody := ConvertRequest(request)
 	if requestBody == nil {
 		return "", nil, nil, errors.New("request body is nil")
@@ -62,7 +62,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(c, resp)
 		} else {
-			err, usage = Handler(c, resp, meta.InputTokens, meta.ActualModelName)
+			err, usage = Handler(c, resp, meta.InputTokens, meta.ActualModel)
 		}
 	}
 	return

@@ -44,7 +44,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	textRequest.Model = meta.ActualModelName
+	textRequest.Model = meta.ActualModel
 	meta.Set("stream", textRequest.Stream)
 	claudeTools := make([]Tool, 0, len(textRequest.Tools))
 
@@ -372,7 +372,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(&claudeResponse)
-	fullTextResponse.Model = meta.OriginModelName
+	fullTextResponse.Model = meta.OriginModel
 	usage := model.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,

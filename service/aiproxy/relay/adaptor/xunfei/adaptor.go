@@ -23,14 +23,14 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 }
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
-	domain, err := getXunfeiDomain(meta.ActualModelName)
+	domain, err := getXunfeiDomain(meta.ActualModel)
 	if err != nil {
 		return "", nil, nil, err
 	}
-	model := meta.ActualModelName
-	meta.ActualModelName = domain
+	model := meta.ActualModel
+	meta.ActualModel = domain
 	defer func() {
-		meta.ActualModelName = model
+		meta.ActualModel = model
 	}()
 	method, h, body, err := a.Adaptor.ConvertRequest(meta, req)
 	if err != nil {

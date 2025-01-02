@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -40,6 +41,12 @@ func (l *LimitedReader) Read(p []byte) (n int, err error) {
 }
 
 func GetRequestBody(req *http.Request) ([]byte, error) {
+	contentType := req.Header.Get("Content-Type")
+	if contentType == "application/x-www-form-urlencoded" ||
+		strings.HasPrefix(contentType, "multipart/form-data") {
+		return nil, nil
+	}
+
 	requestBody := req.Context().Value(RequestBodyKey{})
 	if requestBody != nil {
 		return requestBody.([]byte), nil
