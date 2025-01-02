@@ -63,7 +63,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		respStr = w.Body.String()
 		code = w.Code
 	} else {
-		respStr = bizErr.String()
+		respStr = bizErr.Error.String()
 		code = bizErr.StatusCode
 	}
 

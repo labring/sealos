@@ -231,7 +231,15 @@ func putBuffer(buf *bytes.Buffer) {
 	bufferPool.Put(buf)
 }
 
-func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.Usage, *model.RequestDetail, *relaymodel.ErrorWithStatusCode) {
+func DoHelper(
+	a adaptor.Adaptor,
+	c *gin.Context,
+	meta *meta.Meta,
+) (
+	*relaymodel.Usage,
+	*model.RequestDetail,
+	*relaymodel.ErrorWithStatusCode,
+) {
 	log := middleware.GetLogger(c)
 	detail := model.RequestDetail{}
 
