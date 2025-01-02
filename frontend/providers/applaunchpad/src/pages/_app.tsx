@@ -1,3 +1,4 @@
+import List from '@/components/ImageHub/list';
 import { theme } from '@/constants/theme';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -7,7 +8,7 @@ import { useUserStore } from '@/store/user';
 import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { getUserIsLogin } from '@/utils/user';
-import { ChakraProvider, useDisclosure } from '@chakra-ui/react';
+import { Box, ChakraProvider, Flex, Heading, ListItem, Text, Link, useDisclosure, background } from '@chakra-ui/react';
 import '@sealos/driver/src/driver.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
@@ -48,6 +49,10 @@ const App = ({ Component, pageProps }: AppProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
+
+  const myStyles = {
+    cursor: 'pointer',
+  };
 
   useEffect(() => {
     if (!getUserIsLogin()) {
@@ -184,7 +189,33 @@ const App = ({ Component, pageProps }: AppProps) => {
           >
             changeLanguage
           </button> */}
-          <Component {...pageProps} />
+
+          {/* <Route path="/login" component={Login} /> */}
+          <Flex minH="100vh" direction="column">
+
+            <Box bg="#001529" color="white" px={4} py={5}>
+
+              <Heading size="md">储存云</Heading>
+
+            </Box>
+
+            <Flex flex={1}>
+
+              <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/imagehub')}>镜像管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/apps')}>应用管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/tenantManage')}>租户管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/nodeManage')}>节点管理</Text>
+              </Box>
+
+              <Box flex={1}>
+
+                <Component {...pageProps} />
+
+              </Box>
+
+            </Flex>
+          </Flex>
           <ConfirmChild />
           <Loading loading={loading} />
         </ChakraProvider>
