@@ -33,12 +33,21 @@ func getDashboardTime(t string) (time.Time, time.Time, time.Duration) {
 	return start, end, timeSpan
 }
 
-func fillGaps(data []*model.HourlyChartData, timeSpan time.Duration) []*model.HourlyChartData {
-	if len(data) <= 1 {
+func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time.Duration) []*model.HourlyChartData {
+	if len(data) == 0 {
 		return data
 	}
 
-	result := make([]*model.HourlyChartData, 0, len(data))
+	result := make([]*model.HourlyChartData, 0, len(data)+2)
+
+	// Add zero point before first data point if within range
+	firstPoint := time.Unix(data[0].Timestamp, 0)
+	if firstPointPrev := firstPoint.Add(-timeSpan); !firstPointPrev.Before(start) {
+		result = append(result, &model.HourlyChartData{
+			Timestamp: firstPointPrev.Unix(),
+		})
+	}
+
 	result = append(result, data[0])
 
 	for i := 1; i < len(data); i++ {
@@ -75,6 +84,14 @@ func fillGaps(data []*model.HourlyChartData, timeSpan time.Duration) []*model.Ho
 		result = append(result, curr)
 	}
 
+	// Add zero point after last data point if within range
+	lastPoint := time.Unix(data[len(data)-1].Timestamp, 0)
+	if lastPointNext := lastPoint.Add(timeSpan); !lastPointNext.After(end) {
+		result = append(result, &model.HourlyChartData{
+			Timestamp: lastPointNext.Unix(),
+		})
+	}
+
 	return result
 }
 
@@ -104,7 +121,7 @@ func GetDashboard(c *gin.Context) {
 		return
 	}
 
-	dashboards.ChartData = fillGaps(dashboards.ChartData, timeSpan)
+	dashboards.ChartData = fillGaps(dashboards.ChartData, start, end, timeSpan)
 	middleware.SuccessResponse(c, dashboards)
 }
 
@@ -126,6 +143,6 @@ func GetGroupDashboard(c *gin.Context) {
 		return
 	}
 
-	dashboards.ChartData = fillGaps(dashboards.ChartData, timeSpan)
+	dashboards.ChartData = fillGaps(dashboards.ChartData, start, end, timeSpan)
 	middleware.SuccessResponse(c, dashboards)
 }
