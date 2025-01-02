@@ -122,7 +122,7 @@ const IDEButton = ({
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
-          width={'90px'}
+          width={'100px'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
