@@ -86,9 +86,9 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 	var usage *relaymodel.Usage
 	if rerankResponse.Usage == nil {
 		usage = &relaymodel.Usage{
-			PromptTokens:     meta.PromptTokens,
+			PromptTokens:     meta.InputTokens,
 			CompletionTokens: 0,
-			TotalTokens:      meta.PromptTokens,
+			TotalTokens:      meta.InputTokens,
 		}
 	} else {
 		usage = &relaymodel.Usage{

@@ -41,8 +41,8 @@ func ModerationsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*
 	}
 
 	usage := &model.Usage{
-		PromptTokens: meta.PromptTokens,
-		TotalTokens:  meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
+		TotalTokens:  meta.InputTokens,
 	}
 
 	newData, err := stdjson.Marshal(respMap)

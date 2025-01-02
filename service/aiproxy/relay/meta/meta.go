@@ -27,7 +27,7 @@ type Meta struct {
 	OriginModelName string
 	ActualModelName string
 	Mode            int
-	PromptTokens    int
+	InputTokens     int
 	IsChannelTest   bool
 }
 

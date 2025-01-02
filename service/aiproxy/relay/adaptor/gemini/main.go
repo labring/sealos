@@ -202,7 +202,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	if err != nil {
 		return "", nil, nil, err
 	}
-	meta.PromptTokens = tokenCount
+	meta.InputTokens = tokenCount
 
 	// Build actual request
 	geminiRequest := ChatRequest{
@@ -438,7 +438,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	render.Done(c)
 
 	usage := model.Usage{
-		PromptTokens: meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
 	}
 
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
@@ -473,7 +473,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 
 	usage := model.Usage{
-		PromptTokens: meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
 	}
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
 	if err != nil {

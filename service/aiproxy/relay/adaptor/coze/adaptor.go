@@ -84,14 +84,14 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	if utils.IsStreamResponse(resp) {
 		err, responseText = StreamHandler(c, resp)
 	} else {
-		err, responseText = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+		err, responseText = Handler(c, resp, meta.InputTokens, meta.ActualModelName)
 	}
 	if responseText != nil {
-		usage = openai.ResponseText2Usage(*responseText, meta.ActualModelName, meta.PromptTokens)
+		usage = openai.ResponseText2Usage(*responseText, meta.ActualModelName, meta.InputTokens)
 	} else {
 		usage = &relaymodel.Usage{}
 	}
-	usage.PromptTokens = meta.PromptTokens
+	usage.PromptTokens = meta.InputTokens
 	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	return
 }

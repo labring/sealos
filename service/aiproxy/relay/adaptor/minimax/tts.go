@@ -140,7 +140,7 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 		log.Error("write response body failed: " + err.Error())
 	}
 
-	usageCharacters := meta.PromptTokens
+	usageCharacters := meta.InputTokens
 	if result.ExtraInfo.UsageCharacters > 0 {
 		usageCharacters = result.ExtraInfo.UsageCharacters
 	}
@@ -161,7 +161,7 @@ func ttsStreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
-	usageCharacters := meta.PromptTokens
+	usageCharacters := meta.InputTokens
 
 	for scanner.Scan() {
 		data := scanner.Text()

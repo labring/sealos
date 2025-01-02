@@ -111,12 +111,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	render.Done(c)
 
 	if usage == nil || (usage.TotalTokens == 0 && responseText != "") {
-		usage = ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)
+		usage = ResponseText2Usage(responseText, meta.ActualModelName, meta.InputTokens)
 	}
 
 	if usage.TotalTokens != 0 && usage.PromptTokens == 0 { // some channels don't return prompt tokens & completion tokens
-		usage.PromptTokens = meta.PromptTokens
-		usage.CompletionTokens = usage.TotalTokens - meta.PromptTokens
+		usage.PromptTokens = meta.InputTokens
+		usage.CompletionTokens = usage.TotalTokens - meta.InputTokens
 	}
 
 	return usage, nil
@@ -146,7 +146,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 			completionTokens += CountTokenText(choice.Message.StringContent(), meta.ActualModelName)
 		}
 		textResponse.Usage = model.Usage{
-			PromptTokens:     meta.PromptTokens,
+			PromptTokens:     meta.InputTokens,
 			CompletionTokens: completionTokens,
 		}
 	}

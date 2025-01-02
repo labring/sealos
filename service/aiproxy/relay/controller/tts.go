@@ -7,8 +7,11 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -23,7 +26,18 @@ func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
 	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
+		log.Errorf("invalid (%s[%d]) channel type: %d", meta.Channel.Name, meta.Channel.ID, meta.Channel.Type)
+		return openai.ErrorWrapperWithMessage("invalid channel error", "invalid_channel_type", http.StatusInternalServerError)
+	}
+
+	groupRemainBalance, postGroupConsumer, err := getGroupBalance(ctx, meta)
+	if err != nil {
+		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
+		return openai.ErrorWrapper(
+			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
+			"get_group_quota_failed",
+			http.StatusInternalServerError,
+		)
 	}
 
 	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
@@ -33,22 +47,35 @@ func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 	ttsRequest, err := utils.UnmarshalTTSRequest(c.Request)
 	if err != nil {
-		return openai.ErrorWrapper(err, "invalid_json", http.StatusBadRequest)
-	}
-	meta.PromptTokens = openai.CountTokenText(ttsRequest.Input, meta.ActualModelName)
-
-	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: meta.PromptTokens,
-		Price:        price,
-	}, meta)
-	if err != nil {
-		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
-		return openai.ErrorWrapper(
-			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
-			"get_group_quota_failed",
-			http.StatusInternalServerError,
+		log.Errorf("get request failed: %s", err.Error())
+		var detail model.RequestDetail
+		reqDetail, err := common.GetRequestBody(c.Request)
+		if err != nil {
+			log.Errorf("get request body failed: %s", err.Error())
+		} else {
+			detail.RequestBody = conv.BytesToString(reqDetail)
+		}
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			nil,
+			http.StatusBadRequest,
+			nil,
+			meta,
+			0,
+			0,
+			err.Error(),
+			&detail,
 		)
+		return openai.ErrorWrapper(err, "invalid_tts_request", http.StatusBadRequest)
 	}
+
+	meta.InputTokens = openai.CountTokenText(ttsRequest.Input, meta.ActualModelName)
+
+	ok = preCheckGroupBalance(&PreCheckGroupBalanceReq{
+		InputTokens: meta.InputTokens,
+		Price:       price,
+	}, meta, groupRemainBalance)
 	if !ok {
 		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}

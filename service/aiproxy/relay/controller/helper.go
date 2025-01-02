@@ -29,16 +29,16 @@ import (
 var ConsumeWaitGroup sync.WaitGroup
 
 type PreCheckGroupBalanceReq struct {
-	PromptTokens int
-	MaxTokens    int
-	Price        float64
+	InputTokens int
+	MaxTokens   int
+	Price       float64
 }
 
 func getPreConsumedAmount(req *PreCheckGroupBalanceReq) float64 {
-	if req.Price == 0 || (req.PromptTokens == 0 && req.MaxTokens == 0) {
+	if req == nil || req.Price == 0 || (req.InputTokens == 0 && req.MaxTokens == 0) {
 		return 0
 	}
-	preConsumedTokens := int64(req.PromptTokens)
+	preConsumedTokens := int64(req.InputTokens)
 	if req.MaxTokens != 0 {
 		preConsumedTokens += int64(req.MaxTokens)
 	}
@@ -49,21 +49,22 @@ func getPreConsumedAmount(req *PreCheckGroupBalanceReq) float64 {
 		InexactFloat64()
 }
 
-func preCheckGroupBalance(ctx context.Context, req *PreCheckGroupBalanceReq, meta *meta.Meta) (bool, balance.PostGroupConsumer, error) {
+func preCheckGroupBalance(req *PreCheckGroupBalanceReq, meta *meta.Meta, groupRemainBalance float64) bool {
 	if meta.IsChannelTest {
-		return true, nil, nil
+		return true
 	}
 
 	preConsumedAmount := getPreConsumedAmount(req)
 
-	groupRemainBalance, postGroupConsumer, err := balance.Default.GetGroupRemainBalance(ctx, meta.Group.ID)
-	if err != nil {
-		return false, nil, err
+	return groupRemainBalance > preConsumedAmount
+}
+
+func getGroupBalance(ctx context.Context, meta *meta.Meta) (float64, balance.PostGroupConsumer, error) {
+	if meta.IsChannelTest {
+		return 0, nil, nil
 	}
-	if groupRemainBalance < preConsumedAmount {
-		return false, nil, nil
-	}
-	return true, postGroupConsumer, nil
+
+	return balance.Default.GetGroupRemainBalance(ctx, meta.Group.ID)
 }
 
 func postConsumeAmount(
@@ -306,15 +307,12 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	// copy buf to detail.ResponseBody
 	detail.ResponseBody = rw.body.String()
 	if relayErr != nil {
-		if detail.ResponseBody == "" {
-			detail.ResponseBody = relayErr.JSON()
-		}
 		return nil, &detail, relayErr
 	}
 	if usage == nil {
 		usage = &relaymodel.Usage{
-			PromptTokens: meta.PromptTokens,
-			TotalTokens:  meta.PromptTokens,
+			PromptTokens: meta.InputTokens,
+			TotalTokens:  meta.InputTokens,
 		}
 	}
 	if usage.TotalTokens == 0 {

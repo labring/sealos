@@ -2,9 +2,6 @@ package model
 
 import (
 	"fmt"
-
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
 
 type Usage struct {
@@ -35,12 +32,4 @@ type ErrorWithStatusCode struct {
 
 func (e *ErrorWithStatusCode) String() string {
 	return fmt.Sprintf("%s, status_code: %d", e.Error.String(), e.StatusCode)
-}
-
-func (e *ErrorWithStatusCode) JSON() string {
-	json, err := json.Marshal(e)
-	if err != nil {
-		return ""
-	}
-	return conv.BytesToString(json)
 }
