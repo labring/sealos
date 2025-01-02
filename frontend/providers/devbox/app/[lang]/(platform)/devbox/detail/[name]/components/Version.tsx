@@ -8,7 +8,6 @@ import { sealosApp } from 'sealos-desktop-sdk/app'
 
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import ReleaseModal from '@/components/modals/releaseModal'
 import MyTable from '@/components/MyTable'
@@ -27,6 +26,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
 import { parseTemplateConfig } from '@/utils/tools'
+import MyIcon from '@/components/Icon'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 

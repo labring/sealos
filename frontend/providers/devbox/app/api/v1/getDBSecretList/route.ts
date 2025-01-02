@@ -191,8 +191,6 @@ export async function GET(req: NextRequest) {
 
     const dbListResult = await Promise.all(dbList)
 
-    console.log('dbListResult', dbListResult)
-
     return jsonRes({
       data: {
         dbList: dbListResult
