@@ -107,8 +107,8 @@ var ModelList = []*model.ModelConfig{
 		OutputPrice: 0.002,
 		RPM:         1200,
 		Config: model.NewModelConfig(
-			model.WithModelConfigMaxContextTokens(10000000),
-			model.WithModelConfigMaxInputTokens(10000000),
+			model.WithModelConfigMaxContextTokens(1000000),
+			model.WithModelConfigMaxInputTokens(1000000),
 			model.WithModelConfigMaxOutputTokens(6000),
 			model.WithModelConfigToolChoice(true),
 		),
