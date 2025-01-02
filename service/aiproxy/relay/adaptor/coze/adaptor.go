@@ -51,11 +51,11 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		return "", nil, nil, err
 	}
 	request.User = userID
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	cozeRequest := Request{
 		Stream: request.Stream,
 		User:   request.User,
-		BotID:  strings.TrimPrefix(meta.ActualModelName, "bot-"),
+		BotID:  strings.TrimPrefix(meta.ActualModel, "bot-"),
 	}
 	for i, message := range request.Messages {
 		if i == len(request.Messages)-1 {
@@ -84,10 +84,10 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	if utils.IsStreamResponse(resp) {
 		err, responseText = StreamHandler(c, resp)
 	} else {
-		err, responseText = Handler(c, resp, meta.InputTokens, meta.ActualModelName)
+		err, responseText = Handler(c, resp, meta.InputTokens, meta.ActualModel)
 	}
 	if responseText != nil {
-		usage = openai.ResponseText2Usage(*responseText, meta.ActualModelName, meta.InputTokens)
+		usage = openai.ResponseText2Usage(*responseText, meta.ActualModel, meta.InputTokens)
 	} else {
 		usage = &relaymodel.Usage{}
 	}

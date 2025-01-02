@@ -30,7 +30,7 @@ type Config struct {
 }
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
-	adaptor := GetAdaptor(meta.ActualModelName)
+	adaptor := GetAdaptor(meta.ActualModel)
 	if adaptor == nil {
 		return "", nil, nil, errors.New("adaptor not found")
 	}
@@ -39,9 +39,9 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	adaptor := GetAdaptor(meta.ActualModelName)
+	adaptor := GetAdaptor(meta.ActualModel)
 	if adaptor == nil {
-		return nil, openai.ErrorWrapperWithMessage(meta.ActualModelName+" adaptor not found", "adaptor_not_found", http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(meta.ActualModel+" adaptor not found", "adaptor_not_found", http.StatusInternalServerError)
 	}
 	return adaptor.DoResponse(meta, c, resp)
 }
@@ -56,7 +56,7 @@ func (a *Adaptor) GetChannelName() string {
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	var suffix string
-	if strings.HasPrefix(meta.ActualModelName, "gemini") {
+	if strings.HasPrefix(meta.ActualModel, "gemini") {
 		if meta.GetBool("stream") {
 			suffix = "streamGenerateContent?alt=sse"
 		} else {
@@ -81,7 +81,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 			meta.Channel.BaseURL,
 			config.ProjectID,
 			config.Region,
-			meta.ActualModelName,
+			meta.ActualModel,
 			suffix,
 		), nil
 	}
@@ -90,7 +90,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		config.Region,
 		config.ProjectID,
 		config.Region,
-		meta.ActualModelName,
+		meta.ActualModel,
 		suffix,
 	), nil
 }

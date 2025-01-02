@@ -107,7 +107,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 	if ok {
 		sampleRate = int(sampleRateI)
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 
 	if strings.HasPrefix(request.Model, "sambert-v") {
 		voice := request.Voice

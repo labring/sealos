@@ -20,7 +20,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	model := strings.ReplaceAll(meta.ActualModelName, ".", "")
+	model := strings.ReplaceAll(meta.ActualModel, ".", "")
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
 		// https://learn.microsoft.com/en-us/azure/ai-services/openai/dall-e-quickstart?tabs=dalle3%2Ccommand-line&pivots=rest-api

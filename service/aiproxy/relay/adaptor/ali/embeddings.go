@@ -21,7 +21,7 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.
 	if err != nil {
 		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	input, ok := reqMap["input"]
 	if !ok {
 		return "", nil, nil, errors.New("input is required")
@@ -56,7 +56,7 @@ func embeddingResponse2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *ope
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
 		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
-		Model:  meta.OriginModelName,
+		Model:  meta.OriginModel,
 		Usage:  response.Usage,
 	}
 

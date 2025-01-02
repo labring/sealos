@@ -43,9 +43,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return urlPrefix + "/v1/embeddings", nil
 	default:
 		if isAIGateWay {
-			return fmt.Sprintf("%s/%s", urlPrefix, meta.ActualModelName), nil
+			return fmt.Sprintf("%s/%s", urlPrefix, meta.ActualModel), nil
 		}
-		return fmt.Sprintf("%s/run/%s", urlPrefix, meta.ActualModelName), nil
+		return fmt.Sprintf("%s/run/%s", urlPrefix, meta.ActualModel), nil
 	}
 }
 

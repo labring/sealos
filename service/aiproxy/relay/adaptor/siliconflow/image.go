@@ -33,7 +33,7 @@ func ConvertImageRequest(meta *meta.Meta, request *http.Request) (http.Header, i
 
 	meta.Set(openai.MetaResponseFormat, reqMap["response_format"])
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	reqMap["batch_size"] = reqMap["n"]
 	delete(reqMap, "n")
 	if _, ok := reqMap["steps"]; ok {

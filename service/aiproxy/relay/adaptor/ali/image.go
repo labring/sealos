@@ -27,7 +27,7 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Heade
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 
 	var imageRequest ImageRequest
 	imageRequest.Input.Prompt = request.Prompt

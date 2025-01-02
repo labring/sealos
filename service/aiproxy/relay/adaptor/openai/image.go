@@ -22,7 +22,7 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Heade
 	}
 	meta.Set(MetaResponseFormat, reqMap["response_format"])
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err

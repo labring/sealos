@@ -25,7 +25,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		return "", nil, nil, err
 	}
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 
 	reqMap["text"] = reqMap["input"]
 	delete(reqMap, "input")

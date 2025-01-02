@@ -32,7 +32,7 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Head
 	if err != nil {
 		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	reqMap["input"] = map[string]any{
 		"query":     reqMap["query"],
 		"documents": reqMap["documents"],

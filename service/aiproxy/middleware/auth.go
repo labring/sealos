@@ -102,8 +102,8 @@ func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
 	SetLogRequestIDField(fields, m.RequestID)
 
 	SetLogModeField(fields, m.Mode)
-	SetLogModelFields(fields, m.OriginModelName)
-	SetLogActualModelFields(fields, m.ActualModelName)
+	SetLogModelFields(fields, m.OriginModel)
+	SetLogActualModelFields(fields, m.ActualModel)
 
 	if m.IsChannelTest {
 		SetLogIsChannelTestField(fields, true)

@@ -18,7 +18,7 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 
 	inputs := request.ParseInput()
 	requests := make([]EmbeddingRequest, len(inputs))

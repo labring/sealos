@@ -69,8 +69,8 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 
 	return channel.UpdateModelTest(
 		meta.RequestAt,
-		meta.OriginModelName,
-		meta.ActualModelName,
+		meta.OriginModel,
+		meta.ActualModel,
 		meta.Mode,
 		time.Since(meta.RequestAt).Seconds(),
 		success,

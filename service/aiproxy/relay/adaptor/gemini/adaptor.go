@@ -27,10 +27,10 @@ func getRequestURL(meta *meta.Meta, action string) string {
 		u = baseURL
 	}
 	version := "v1beta"
-	if _, ok := v1ModelMap[meta.ActualModelName]; ok {
+	if _, ok := v1ModelMap[meta.ActualModel]; ok {
 		version = "v1"
 	}
-	return fmt.Sprintf("%s/%s/models/%s:%s", u, version, meta.ActualModelName, action)
+	return fmt.Sprintf("%s/%s/models/%s:%s", u, version, meta.ActualModel, action)
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {

@@ -18,7 +18,7 @@ var _ adaptor.Adaptor = new(Adaptor)
 type Adaptor struct{}
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
-	adaptor := GetAdaptor(meta.ActualModelName)
+	adaptor := GetAdaptor(meta.ActualModel)
 	if adaptor == nil {
 		return "", nil, nil, errors.New("adaptor not found")
 	}

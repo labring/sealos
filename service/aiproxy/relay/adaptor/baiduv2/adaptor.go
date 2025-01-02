@@ -61,11 +61,11 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		actModel := meta.ActualModelName
+		actModel := meta.ActualModel
 		v2Model := toV2ModelName(actModel)
 		if v2Model != actModel {
-			meta.ActualModelName = v2Model
-			defer func() { meta.ActualModelName = actModel }()
+			meta.ActualModel = v2Model
+			defer func() { meta.ActualModel = actModel }()
 		}
 		return openai.ConvertRequest(meta, req)
 	default:

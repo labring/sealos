@@ -28,7 +28,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 	if err != nil {
 		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err

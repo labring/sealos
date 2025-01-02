@@ -141,7 +141,7 @@ func ConvertTextRequest(meta *meta.Meta, req *http.Request) (string, http.Header
 		}
 	}
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err

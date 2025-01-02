@@ -190,7 +190,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		return "", nil, nil, err
 	}
 
-	textRequest.Model = meta.ActualModelName
+	textRequest.Model = meta.ActualModel
 	meta.Set("stream", textRequest.Stream)
 
 	systemContent, contents, err := buildContents(req.Context(), textRequest)
@@ -317,7 +317,7 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 func responseGeminiChat2OpenAI(meta *meta.Meta, response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
-		Model:   meta.OriginModelName,
+		Model:   meta.OriginModel,
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
@@ -356,7 +356,7 @@ func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatRespon
 	response := &openai.ChatCompletionsStreamResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Created: time.Now().Unix(),
-		Model:   meta.OriginModelName,
+		Model:   meta.OriginModel,
 		Object:  "chat.completion.chunk",
 		Choices: make([]*openai.ChatCompletionsStreamResponseChoice, 0, len(geminiResponse.Candidates)),
 	}
@@ -444,7 +444,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
 	if err != nil {
 		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModelName)
+		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModel)
 	} else {
 		usage.CompletionTokens = tokenCount
 	}
@@ -466,7 +466,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, openai.ErrorWrapperWithMessage("No candidates returned", "gemini_error", resp.StatusCode)
 	}
 	fullTextResponse := responseGeminiChat2OpenAI(meta, &geminiResponse)
-	fullTextResponse.Model = meta.OriginModelName
+	fullTextResponse.Model = meta.OriginModel
 	respContent := []*ChatContent{}
 	for _, candidate := range geminiResponse.Candidates {
 		respContent = append(respContent, &candidate.Content)
@@ -478,7 +478,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
 	if err != nil {
 		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModelName)
+		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModel)
 	} else {
 		usage.CompletionTokens = tokenCount
 	}
