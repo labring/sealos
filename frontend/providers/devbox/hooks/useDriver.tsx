@@ -95,9 +95,9 @@ export default function useDriver() {
       {
         element: '.guide-custom-resources',
         popover: {
-          side: 'right',
-          align: 'center',
-          borderRadius: '12px 0px 12px 12px',
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />

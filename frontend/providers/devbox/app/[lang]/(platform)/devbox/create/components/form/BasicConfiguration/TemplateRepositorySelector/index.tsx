@@ -139,36 +139,39 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   ])
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
-      <Flex w="full" justify={'space-between'} className="guide-runtimes">
-        <Label w={100} alignSelf={'flex-start'}>
-          {t('runtime_environment')}
-        </Label>
-        <TemplateRepositoryListNav />
-      </Flex>
-      {!!startedTemplate && (
+      <Box className="guide-runtimes">
+        <Flex w="full" justify={'space-between'} mb={'24px'}>
+          <Label w={100} alignSelf={'flex-start'}>
+            {t('runtime_environment')}
+          </Label>
+          <TemplateRepositoryListNav />
+        </Flex>
+
+        {!!startedTemplate && (
+          <Flex gap={'10px'} px={'14px'} width={'full'}>
+            <Box width={'85px'}>{t('current')}</Box>
+            <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
+              <TemplateRepositoryItem
+                item={{
+                  uid: startedTemplate.uid,
+                  iconId: startedTemplate.iconId || '',
+                  name: startedTemplate.name
+                }}
+                isEdit={isEdit}
+              />
+            </Flex>
+          </Flex>
+        )}
         <Flex gap={'10px'} px={'14px'} width={'full'}>
-          <Box width={'85px'}>{t('current')}</Box>
+          {/* Language */}
+          {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
           <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-            <TemplateRepositoryItem
-              item={{
-                uid: startedTemplate.uid,
-                iconId: startedTemplate.iconId || '',
-                name: startedTemplate.name
-              }}
-              isEdit={isEdit}
-            />
+            {categorizedData['LANGUAGE']?.map((item) => (
+              <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
+            ))}
           </Flex>
         </Flex>
-      )}
-      <Flex gap={'10px'} px={'14px'} width={'full'}>
-        {/* Language */}
-        {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
-        <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-          {categorizedData['LANGUAGE']?.map((item) => (
-            <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
-          ))}
-        </Flex>
-      </Flex>
+      </Box>
       <Flex gap={'10px'} px={'14px'} width={'full'}>
         {/* Framework */}
         {categorizedData['FRAMEWORK'].length !== 0 && <Box width={'85px'}>{t('framework')}</Box>}
