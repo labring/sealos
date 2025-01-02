@@ -24,7 +24,7 @@ export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { is
         {/* Runtime Version */}
         <TemplateSelector isEdit={isEdit} />
 
-        <Box className="guide-custom-resources">
+        <Box className="guide-custom-resources" pb={'2px'}>
           {/* CPU */}
           <CpuSelector />
           {/* Memory */}
