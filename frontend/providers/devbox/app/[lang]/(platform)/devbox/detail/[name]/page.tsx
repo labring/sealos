@@ -34,8 +34,10 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     () => setDevboxDetail(devboxName, env.sealosDomain),
     {
       onSettled() {
-        handleUserGuide()
         setInitialized(true)
+      },
+      onSuccess: () => {
+        handleUserGuide()
       }
     }
   )

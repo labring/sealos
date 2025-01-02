@@ -11,16 +11,26 @@ interface Props extends BoxProps {
   }[]
   data: any[]
   itemClass?: string
-  alternateRowColors?: boolean,
+  alternateRowColors?: boolean
   needRadius?: boolean
 }
 
-
-const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false, needRadius = false, gridTemplateColumns }: Props) => {
+const MyTable = ({
+  columns,
+  data,
+  itemClass = '',
+  alternateRowColors = false,
+  needRadius = false,
+  gridTemplateColumns
+}: Props) => {
   return (
     <>
       <Grid
-        templateColumns={gridTemplateColumns ? gridTemplateColumns : columns.map((col) => col.width || '1fr').join(' ')}
+        templateColumns={
+          gridTemplateColumns
+            ? gridTemplateColumns
+            : columns.map((col) => col.width || '1fr').join(' ')
+        }
         overflowX={'auto'}
         borderTopRadius={'md'}
         borderBottomRadius={needRadius ? 'md' : '0'}
@@ -44,7 +54,11 @@ const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false, ne
       </Grid>
       {data.map((item: any, index1) => (
         <Grid
-          templateColumns={gridTemplateColumns ? gridTemplateColumns : columns.map((col) => col.width || '1fr').join(' ')}
+          templateColumns={
+            gridTemplateColumns
+              ? gridTemplateColumns
+              : columns.map((col) => col.width || '1fr').join(' ')
+          }
           overflowX={'auto'}
           key={index1}
           bg={alternateRowColors ? (index1 % 2 === 0 ? '#FBFBFC' : '#F4F4F7') : 'white'}

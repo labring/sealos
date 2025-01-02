@@ -144,7 +144,7 @@ const Header = ({
         </Box>
         {/* detail button */}
         <Flex alignItems={'center'}>
-          <DevboxStatusTag status={devboxDetail.status } h={'27px'} />
+          <DevboxStatusTag status={devboxDetail.status} h={'27px'} />
           {!isLargeScreen && (
             <Box ml={4}>
               <Button
@@ -205,6 +205,7 @@ const Header = ({
         </Button>
         {devboxDetail.status.value === 'Running' && (
           <Button
+            className="guide-close-button"
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}

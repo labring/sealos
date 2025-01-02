@@ -104,7 +104,8 @@
     "devbox_network_address": "当前项目的公网访问地址",
     "devbox_release_button": "发布版本，自动打包成docker镜像",
     "devbox_status": "项目运行状态",
-    "ide_button": "连接已安装IDE"
+    "ide_button": "连接已安装IDE",
+    "online_button": "点击上线，自动独立部署到生产环境内"
   },
   "have_read_and_agree_to_the ": "我已阅读并同意",
   "ide_tooltip": "点击在 IDE 中开发",

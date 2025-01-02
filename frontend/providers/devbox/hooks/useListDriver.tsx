@@ -1,6 +1,4 @@
-import { getUserTasks } from '@/api/platform'
 import { useGuideStore } from '@/stores/guide'
-import { formatMoney } from '@/utils/tools'
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
 import { driver } from '@sealos/driver'
 import { useTranslations } from 'next-intl'
@@ -9,8 +7,6 @@ import { DriverStarIcon } from './useDriver'
 
 export default function useListDriver() {
   const t = useTranslations()
-
-  const [isGuided, setIsGuided] = useState(false)
   const { isGuideEnabled, listCompleted, setListCompleted } = useGuideStore()
 
   const PopoverBodyInfo = (props: FlexProps) => {
@@ -103,15 +99,12 @@ export default function useListDriver() {
   const handleUserGuide = async () => {
     try {
       if (isGuideEnabled && !listCompleted) {
-        setIsGuided(true)
         requestAnimationFrame(() => {
           startGuide()
         })
       }
-    } catch (error) {
-      setIsGuided(false)
-    }
+    } catch (error) {}
   }
 
-  return { startGuide, isGuided, handleUserGuide, closeGuide }
+  return { startGuide, handleUserGuide, closeGuide }
 }

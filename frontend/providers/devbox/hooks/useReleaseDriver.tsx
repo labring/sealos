@@ -1,13 +1,14 @@
 import { useGuideStore } from '@/stores/guide'
 import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
-import { DriveStep, driver } from '@sealos/driver'
+import { driver } from '@sealos/driver'
 import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 import { DriverStarIcon } from './useDriver'
-import { checkUserTask } from '@/api/platform'
 
-export default function useDetailDriver() {
+export default function useReleaseDriver() {
   const t = useTranslations()
-  const { detailCompleted, setDetailCompleted, isGuideEnabled } = useGuideStore()
+
+  const { isGuideEnabled, releaseCompleted, setReleaseCompleted, setGuideEnabled } = useGuideStore()
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -38,62 +39,7 @@ export default function useDetailDriver() {
     )
   }
 
-  const baseSteps: DriveStep[] = [
-    {
-      element: '.guide-close-button',
-      popover: {
-        side: 'bottom',
-        align: 'start',
-        borderRadius: '0px 12px 12px 12px',
-        PopoverBody: (
-          <Flex gap={'6px'}>
-            <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide.devbox_close_button')}
-            </Text>
-            <PopoverBodyInfo />
-          </Flex>
-        )
-      }
-    },
-    {
-      element: '.guide-network-address',
-      popover: {
-        side: 'bottom',
-        align: 'start',
-        borderRadius: '0px 12px 12px 12px',
-        PopoverBody: (
-          <Flex gap={'6px'}>
-            <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide.devbox_network_address')}
-            </Text>
-            <PopoverBodyInfo top={'80px'} />
-          </Flex>
-        )
-      }
-    },
-    {
-      element: '.guide-release-button',
-      popover: {
-        side: 'left',
-        align: 'start',
-        borderRadius: '12px 12px 0px 12px',
-        PopoverBody: (
-          <Flex gap={'6px'}>
-            <DriverStarIcon />
-            <Text color={'#24282C'} fontSize={'12px'} fontWeight={500}>
-              {t('guide.devbox_release_button')}
-            </Text>
-            <PopoverBodyInfo top={'-120px'} />
-          </Flex>
-        )
-      }
-    }
-  ]
-
   const driverObj = driver({
-    disableActiveInteraction: true,
     showProgress: false,
     allowClose: false,
     allowClickMaskNextStep: true,
@@ -101,34 +47,49 @@ export default function useDetailDriver() {
     isShowButtons: false,
     allowKeyboardControl: false,
     overlaySkipButton: t('skip') || 'skip',
-    steps: [...baseSteps],
+    disableActiveInteraction: true,
+    steps: [
+      {
+        element: '.guide-online-button',
+        popover: {
+          side: 'left',
+          align: 'start',
+          borderRadius: '12px 0px 12px 12px',
+          PopoverBody: (
+            <Flex gap={'6px'}>
+              <DriverStarIcon />
+              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                {t('guide.online_button')}
+              </Text>
+              <PopoverBodyInfo />
+            </Flex>
+          )
+        }
+      }
+    ],
     onDestroyed: () => {
-      console.log('onDestroyed Detail')
-      setDetailCompleted(true)
-      checkUserTask().then((err) => {
-        console.log(err)
-      })
-    },
-    interceptSkipButtonClick: () => {
-      driverObj.destroy()
+      setReleaseCompleted(true)
+      setGuideEnabled(false)
     }
   })
 
-  const startGuide = () => {
+  const startGuide = useCallback(() => {
     driverObj.drive()
+  }, [driverObj])
+
+  const closeGuide = () => {
+    driverObj.destroy()
   }
 
-  const handleUserGuide = async () => {
+  const startReleaseGuide = async () => {
     try {
-      if (isGuideEnabled && !detailCompleted) {
+      if (isGuideEnabled && !releaseCompleted) {
         requestAnimationFrame(() => {
           startGuide()
         })
       }
-    } catch (error) {
-      console.log(error)
-    }
+    } catch (error) {}
   }
 
-  return { handleUserGuide }
+  return { startReleaseGuide, closeGuide }
 }

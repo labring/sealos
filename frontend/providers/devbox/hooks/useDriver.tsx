@@ -34,10 +34,7 @@ export function DriverStarIcon() {
 
 export default function useDriver() {
   const t = useTranslations()
-
-  const [isGuided, setIsGuided] = useState(false)
   const { createCompleted, setCreateCompleted, setGuideEnabled } = useGuideStore()
-  const [reward, setReward] = useState(1)
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -81,9 +78,9 @@ export default function useDriver() {
       {
         element: '.guide-runtimes',
         popover: {
-          side: 'right',
-          align: 'center',
-          borderRadius: '12px 0px 12px 12px',
+          side: 'bottom',
+          align: 'start',
+          borderRadius: '0px 12px 12px 12px',
           PopoverBody: (
             <Flex gap={'6px'}>
               <DriverStarIcon />
@@ -161,18 +158,20 @@ export default function useDriver() {
     try {
       const data = await getUserTasks()
       console.log('data handleUserGuide', data)
-      if (data.needGuide && !createCompleted) {
+      // setGuideEnabled(true)
+      if (data.needGuide) {
         setGuideEnabled(true)
-        setReward(formatMoney(Number(data.task.reward)))
-        setIsGuided(true)
+      }
+
+      if (!createCompleted) {
         requestAnimationFrame(() => {
           startGuide()
         })
       }
     } catch (error) {
-      setIsGuided(false)
+      setGuideEnabled(false)
     }
   }
 
-  return { startGuide, closeGuide, isGuided, handleUserGuide }
+  return { startGuide, closeGuide, handleUserGuide }
 }

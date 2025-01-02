@@ -103,7 +103,8 @@
     "devbox_network_address": "Public network access address of the current project",
     "devbox_release_button": "Release version, automatically packaged into docker image",
     "devbox_status": "Project running status",
-    "ide_button": "Connect to the installed IDE"
+    "ide_button": "Connect to the installed IDE",
+    "online_button": "Click Go Online to automatically deploy to the production environment"
   },
   "have_read_and_agree_to_the ": "I have read and agree to the ",
   "ide_tooltip": "Click to develop in IDE",
