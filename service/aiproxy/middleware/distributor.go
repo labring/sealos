@@ -11,7 +11,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -114,15 +113,6 @@ func Distribute(c *gin.Context) {
 
 	SetLogModelFields(log.Data, requestModel)
 
-	mode := relaymode.GetByPath(c.Request.URL.Path)
-	if mode == relaymode.Unknown {
-		abortWithMessage(c,
-			http.StatusServiceUnavailable,
-			c.Request.URL.Path+" api not implemented",
-		)
-		return
-	}
-
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
@@ -153,6 +143,7 @@ func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, 
 	requestID := c.GetString(ctxkey.RequestID)
 	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
 	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+
 	return meta.NewMeta(
 		channel,
 		mode,
@@ -160,5 +151,6 @@ func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, 
 		meta.WithRequestID(requestID),
 		meta.WithGroup(group),
 		meta.WithToken(token),
+		meta.WithEndpoint(c.Request.URL.Path),
 	)
 }

@@ -3,7 +3,6 @@ package controller
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -72,7 +71,6 @@ func postConsumeAmount(
 	consumeWaitGroup *sync.WaitGroup,
 	postGroupConsumer balance.PostGroupConsumer,
 	code int,
-	endpoint string,
 	usage *relaymodel.Usage,
 	meta *meta.Meta,
 	price,
@@ -101,7 +99,7 @@ func postConsumeAmount(
 			0,
 			price,
 			completionPrice,
-			endpoint,
+			meta.Endpoint,
 			content,
 			meta.Mode,
 			requestDetail,
@@ -161,7 +159,7 @@ func postConsumeAmount(
 		amount,
 		price,
 		completionPrice,
-		endpoint,
+		meta.Endpoint,
 		content,
 		meta.Mode,
 		requestDetail,
@@ -309,14 +307,7 @@ func DoHelper(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*relaymodel.U
 	detail.ResponseBody = rw.body.String()
 	if relayErr != nil {
 		if detail.ResponseBody == "" {
-			respData, err := json.Marshal(gin.H{
-				"error": relayErr.Error,
-			})
-			if err != nil {
-				detail.ResponseBody = relayErr.Error.String()
-			} else {
-				detail.ResponseBody = conv.BytesToString(respData)
-			}
+			detail.ResponseBody = relayErr.JSON()
 		}
 		return nil, &detail, relayErr
 	}

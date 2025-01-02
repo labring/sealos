@@ -58,7 +58,19 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 
 	imageRequest, err := getImageRequest(c)
 	if err != nil {
-		log.Errorf("getImageRequest failed: %s", err.Error())
+		log.Errorf("get image request failed: %s", err.Error())
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			nil,
+			http.StatusOK,
+			nil,
+			meta,
+			0,
+			0,
+			imageRequest.Size,
+			nil,
+		)
 		return openai.ErrorWrapper(err, "invalid_image_request", http.StatusBadRequest)
 	}
 
@@ -108,7 +120,6 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 			&ConsumeWaitGroup,
 			postGroupConsumer,
 			respErr.StatusCode,
-			c.Request.URL.Path,
 			usage,
 			meta,
 			imageCostPrice,
@@ -124,7 +135,6 @@ func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStat
 		&ConsumeWaitGroup,
 		postGroupConsumer,
 		http.StatusOK,
-		c.Request.URL.Path,
 		usage,
 		meta,
 		imageCostPrice,

@@ -21,6 +21,7 @@ type Meta struct {
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
+	Endpoint        string
 	RequestAt       time.Time
 	RequestID       string
 	OriginModelName string
@@ -31,6 +32,12 @@ type Meta struct {
 }
 
 type Option func(meta *Meta)
+
+func WithEndpoint(endpoint string) Option {
+	return func(meta *Meta) {
+		meta.Endpoint = endpoint
+	}
+}
 
 func WithChannelTest(isChannelTest bool) Option {
 	return func(meta *Meta) {

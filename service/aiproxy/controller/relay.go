@@ -22,27 +22,38 @@ import (
 
 // https://platform.openai.com/docs/api-reference/chat
 
-func relayHelper(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
-	log := middleware.GetLogger(c)
-	middleware.SetLogFieldsFromMeta(meta, log.Data)
-	switch meta.Mode {
-	case relaymode.ImagesGenerations:
-		return controller.RelayImageHelper(meta, c)
+type RelayController func(*meta.Meta, *gin.Context) *model.ErrorWithStatusCode
+
+func relayController(mode int) (RelayController, bool) {
+	var relayController RelayController
+	switch mode {
+	case relaymode.ImagesGenerations,
+		relaymode.Edits:
+		relayController = controller.RelayImageHelper
 	case relaymode.AudioSpeech:
-		return controller.RelayTTSHelper(meta, c)
-	case relaymode.AudioTranslation:
-		return controller.RelaySTTHelper(meta, c)
-	case relaymode.AudioTranscription:
-		return controller.RelaySTTHelper(meta, c)
+		relayController = controller.RelayTTSHelper
+	case relaymode.AudioTranslation,
+		relaymode.AudioTranscription:
+		relayController = controller.RelaySTTHelper
 	case relaymode.Rerank:
-		return controller.RerankHelper(meta, c)
+		relayController = controller.RerankHelper
+	case relaymode.ChatCompletions,
+		relaymode.Embeddings,
+		relaymode.Completions,
+		relaymode.Moderations:
+		relayController = controller.RelayTextHelper
 	default:
-		return controller.RelayTextHelper(meta, c)
+		return nil, false
 	}
+	return func(meta *meta.Meta, c *gin.Context) *model.ErrorWithStatusCode {
+		log := middleware.GetLogger(c)
+		middleware.SetLogFieldsFromMeta(meta, log.Data)
+		return relayController(meta, c)
+	}, true
 }
 
-func RelayHelper(meta *meta.Meta, c *gin.Context) (*model.ErrorWithStatusCode, bool) {
-	err := relayHelper(meta, c)
+func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayController) (*model.ErrorWithStatusCode, bool) {
+	err := relayController(meta, c)
 	if err == nil {
 		if err := monitor.AddRequest(
 			c.Request.Context(),
@@ -79,7 +90,17 @@ func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Cha
 	return dbmodel.CacheGetRandomSatisfiedChannel(model)
 }
 
-func Relay(c *gin.Context) {
+func NewRelay(mode int) func(c *gin.Context) {
+	relayController, ok := relayController(mode)
+	if !ok {
+		log.Fatalf("relay mode %d not implemented", mode)
+	}
+	return func(c *gin.Context) {
+		relay(c, mode, relayController)
+	}
+}
+
+func relay(c *gin.Context, mode int, relayController RelayController) {
 	log := middleware.GetLogger(c)
 
 	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
@@ -108,9 +129,8 @@ func Relay(c *gin.Context) {
 		return
 	}
 
-	mode := relaymode.GetByPath(c.Request.URL.Path)
 	meta := middleware.NewMetaByContext(c, channel, requestModel, mode)
-	bizErr, retry := RelayHelper(meta, c)
+	bizErr, retry := RelayHelper(meta, c, relayController)
 	if bizErr == nil {
 		return
 	}
@@ -139,7 +159,7 @@ func Relay(c *gin.Context) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		meta.Reset(newChannel)
-		bizErr, retry = RelayHelper(meta, c)
+		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return
 		}
@@ -149,10 +169,8 @@ func Relay(c *gin.Context) {
 		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
 	}
 	if bizErr != nil {
-		bizErr.Message = middleware.MessageWithRequestID(bizErr.Message, requestID)
-		c.JSON(bizErr.StatusCode, gin.H{
-			"error": bizErr,
-		})
+		bizErr.Error.Message = middleware.MessageWithRequestID(bizErr.Error.Message, requestID)
+		c.JSON(bizErr.StatusCode, bizErr)
 	}
 }
 
