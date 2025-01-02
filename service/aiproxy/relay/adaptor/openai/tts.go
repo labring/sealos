@@ -50,8 +50,8 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 		log.Error("write response body failed: " + err.Error())
 	}
 	return &relaymodel.Usage{
-		PromptTokens:     meta.PromptTokens,
+		PromptTokens:     meta.InputTokens,
 		CompletionTokens: 0,
-		TotalTokens:      meta.PromptTokens,
+		TotalTokens:      meta.InputTokens,
 	}, nil
 }

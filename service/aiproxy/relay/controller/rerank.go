@@ -8,8 +8,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -22,23 +25,13 @@ func RerankHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCo
 	log := middleware.GetLogger(c)
 	ctx := c.Request.Context()
 
-	rerankRequest, err := getRerankRequest(c)
-	if err != nil {
-		log.Errorf("get rerank request failed: %s", err.Error())
-		return openai.ErrorWrapper(err, "invalid_rerank_request", http.StatusBadRequest)
-	}
-
-	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
+	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
 	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
+		log.Errorf("invalid (%s[%d]) channel type: %d", meta.Channel.Name, meta.Channel.ID, meta.Channel.Type)
+		return openai.ErrorWrapperWithMessage("invalid channel error", "invalid_channel_type", http.StatusInternalServerError)
 	}
 
-	meta.PromptTokens = rerankPromptTokens(rerankRequest)
-
-	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: meta.PromptTokens,
-		Price:        price,
-	}, meta)
+	groupRemainBalance, postGroupConsumer, err := getGroupBalance(ctx, meta)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		return openai.ErrorWrapper(
@@ -47,13 +40,45 @@ func RerankHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCo
 			http.StatusInternalServerError,
 		)
 	}
-	if !ok {
-		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
+
+	rerankRequest, err := getRerankRequest(c)
+	if err != nil {
+		log.Errorf("get request failed: %s", err.Error())
+		var detail model.RequestDetail
+		reqDetail, err := common.GetRequestBody(c.Request)
+		if err != nil {
+			log.Errorf("get request body failed: %s", err.Error())
+		} else {
+			detail.RequestBody = conv.BytesToString(reqDetail)
+		}
+		ConsumeWaitGroup.Add(1)
+		go postConsumeAmount(context.Background(),
+			&ConsumeWaitGroup,
+			nil,
+			http.StatusBadRequest,
+			nil,
+			meta,
+			0,
+			0,
+			err.Error(),
+			&detail,
+		)
+		return openai.ErrorWrapper(err, "invalid_rerank_request", http.StatusBadRequest)
 	}
 
-	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
+	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
 	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
+		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
+	}
+
+	meta.InputTokens = rerankPromptTokens(rerankRequest)
+
+	ok = preCheckGroupBalance(&PreCheckGroupBalanceReq{
+		InputTokens: meta.InputTokens,
+		Price:       price,
+	}, meta, groupRemainBalance)
+	if !ok {
+		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}
 
 	usage, detail, respErr := DoHelper(adaptor, c, meta)

@@ -22,18 +22,11 @@ func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
 	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
+		log.Errorf("invalid (%s[%d]) channel type: %d", meta.Channel.Name, meta.Channel.ID, meta.Channel.Type)
+		return openai.ErrorWrapperWithMessage("invalid channel error", "invalid_channel_type", http.StatusInternalServerError)
 	}
 
-	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
-	}
-
-	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: meta.PromptTokens,
-		Price:        price,
-	}, meta)
+	groupRemainBalance, postGroupConsumer, err := getGroupBalance(ctx, meta)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		return openai.ErrorWrapper(
@@ -42,6 +35,16 @@ func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 			http.StatusInternalServerError,
 		)
 	}
+
+	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
+	if !ok {
+		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
+	}
+
+	ok = preCheckGroupBalance(&PreCheckGroupBalanceReq{
+		InputTokens: meta.InputTokens,
+		Price:       price,
+	}, meta, groupRemainBalance)
 	if !ok {
 		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
 	}

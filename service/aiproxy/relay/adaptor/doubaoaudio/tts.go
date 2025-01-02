@@ -171,8 +171,8 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (*relaymod
 	defer conn.Close()
 
 	usage := &relaymodel.Usage{
-		PromptTokens: meta.PromptTokens,
-		TotalTokens:  meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
+		TotalTokens:  meta.InputTokens,
 	}
 
 	for {

@@ -62,7 +62,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(c, resp)
 		} else {
-			err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+			err, usage = Handler(c, resp, meta.InputTokens, meta.ActualModelName)
 		}
 	}
 	return
