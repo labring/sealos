@@ -8,7 +8,13 @@ import { DriverStarIcon } from './useDriver'
 export default function useReleaseDriver() {
   const t = useTranslations()
 
-  const { isGuideEnabled, releaseCompleted, setReleaseCompleted, setGuideEnabled } = useGuideStore()
+  const {
+    isGuideEnabled,
+    releaseCompleted,
+    detailCompleted,
+    setReleaseCompleted,
+    setGuideEnabled
+  } = useGuideStore()
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -39,57 +45,49 @@ export default function useReleaseDriver() {
     )
   }
 
-  const driverObj = driver({
-    showProgress: false,
-    allowClose: false,
-    allowClickMaskNextStep: true,
-    allowPreviousStep: false,
-    isShowButtons: false,
-    allowKeyboardControl: false,
-    overlaySkipButton: t('skip') || 'skip',
-    disableActiveInteraction: true,
-    steps: [
-      {
-        element: '.guide-online-button',
-        popover: {
-          side: 'left',
-          align: 'start',
-          borderRadius: '12px 0px 12px 12px',
-          PopoverBody: (
-            <Flex gap={'6px'}>
-              <DriverStarIcon />
-              <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
-                {t('guide.online_button')}
-              </Text>
-              <PopoverBodyInfo />
-            </Flex>
-          )
-        }
-      }
-    ],
-    onDestroyed: () => {
-      setReleaseCompleted(true)
-      setGuideEnabled(false)
-    }
-  })
-
-  const startGuide = useCallback(() => {
-    driverObj.drive()
-  }, [driverObj])
-
-  const closeGuide = () => {
-    driverObj.destroy()
-  }
-
   const startReleaseGuide = async () => {
     try {
       if (isGuideEnabled && !releaseCompleted) {
+        const driverObj = driver({
+          showProgress: false,
+          allowClose: false,
+          allowClickMaskNextStep: true,
+          allowPreviousStep: false,
+          isShowButtons: false,
+          allowKeyboardControl: false,
+          overlaySkipButton: t('skip') || 'skip',
+          disableActiveInteraction: true,
+          steps: [
+            {
+              element: '.guide-online-button',
+              popover: {
+                side: 'left',
+                align: 'start',
+                borderRadius: '12px 0px 12px 12px',
+                PopoverBody: (
+                  <Flex gap={'6px'}>
+                    <DriverStarIcon />
+                    <Text color={'#24282C'} fontSize={'13px'} fontWeight={500}>
+                      {t('guide.online_button')}
+                    </Text>
+                    <PopoverBodyInfo />
+                  </Flex>
+                )
+              }
+            }
+          ],
+          onDestroyed: () => {
+            setReleaseCompleted(true)
+            setGuideEnabled(false)
+          }
+        })
+
         requestAnimationFrame(() => {
-          startGuide()
+          driverObj.drive()
         })
       }
     } catch (error) {}
   }
 
-  return { startReleaseGuide, closeGuide }
+  return { startReleaseGuide }
 }

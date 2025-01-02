@@ -158,7 +158,7 @@ export default function useDriver() {
     try {
       const data = await getUserTasks()
       console.log('data handleUserGuide', data)
-      // setGuideEnabled(true)
+
       if (data.needGuide) {
         setGuideEnabled(true)
       }

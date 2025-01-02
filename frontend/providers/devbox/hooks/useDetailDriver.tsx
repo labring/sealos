@@ -92,37 +92,33 @@ export default function useDetailDriver() {
     }
   ]
 
-  const driverObj = driver({
-    disableActiveInteraction: true,
-    showProgress: false,
-    allowClose: false,
-    allowClickMaskNextStep: true,
-    allowPreviousStep: false,
-    isShowButtons: false,
-    allowKeyboardControl: false,
-    overlaySkipButton: t('skip') || 'skip',
-    steps: [...baseSteps],
-    onDestroyed: () => {
-      console.log('onDestroyed Detail')
-      setDetailCompleted(true)
-      checkUserTask().then((err) => {
-        console.log(err)
-      })
-    },
-    interceptSkipButtonClick: () => {
-      driverObj.destroy()
-    }
-  })
-
-  const startGuide = () => {
-    driverObj.drive()
-  }
-
   const handleUserGuide = async () => {
     try {
       if (isGuideEnabled && !detailCompleted) {
+        const driverObj = driver({
+          disableActiveInteraction: true,
+          showProgress: false,
+          allowClose: false,
+          allowClickMaskNextStep: true,
+          allowPreviousStep: false,
+          isShowButtons: false,
+          allowKeyboardControl: false,
+          overlaySkipButton: t('skip') || 'skip',
+          steps: baseSteps,
+          onDestroyed: () => {
+            console.log('onDestroyed Detail')
+            setDetailCompleted(true)
+            checkUserTask().then((err) => {
+              console.log(err)
+            })
+          },
+          interceptSkipButtonClick: () => {
+            driverObj.destroy()
+          }
+        })
+
         requestAnimationFrame(() => {
-          startGuide()
+          driverObj.drive()
         })
       }
     } catch (error) {

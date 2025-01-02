@@ -1,3 +1,5 @@
+'use client'
+
 import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react'
 import { SealosMenu, useMessage } from '@sealos/ui'
 import { useQuery } from '@tanstack/react-query'
