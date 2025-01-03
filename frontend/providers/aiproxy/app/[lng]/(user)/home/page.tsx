@@ -1,43 +1,19 @@
 'use client'
 
-import {
-  Box,
-  Flex,
-  Text,
-  Button,
-  Icon,
-  Modal,
-  useDisclosure,
-  ModalOverlay,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalContent,
-  Grid
-} from '@chakra-ui/react'
-import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui'
-import { useMemo, useState } from 'react'
+import { Box, Flex, Text, Button } from '@chakra-ui/react'
+import { CurrencySymbol, MySelect } from '@sealos/ui'
+import { useState } from 'react'
 
-import { getTokens, getUserLogs, getEnabledMode, getDashboardData } from '@/api/platform'
+import { getDashboardData } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
-import SelectDateRange from '@/components/common/SelectDateRange'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
 import { useI18n } from '@/providers/i18n/i18nContext'
-import { LogItem } from '@/types/user/logs'
 import { UseQueryResult, useQuery } from '@tanstack/react-query'
-import { getCoreRowModel, useReactTable, createColumnHelper } from '@tanstack/react-table'
 import { QueryKey } from '@/types/query-key'
 import { useBackendStore } from '@/store/backend'
-import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
-import { getTranslationWithFallback } from '@/utils/common'
-import ReactJson, { OnCopyProps } from 'react-json-view'
-import { getTimeDiff } from './tools/handleTime'
-import dynamic from 'next/dynamic'
-import { DashboardResponse } from '@/types/user/dashboard'
 import RequestDataChart from './components/RequestDataChart'
+import { DashboardResponse } from '@/types/user/dashboard'
 
-export default function Logs(): React.JSX.Element {
+export default function Home(): React.JSX.Element {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const { currencySymbol } = useBackendStore()
@@ -53,13 +29,10 @@ export default function Logs(): React.JSX.Element {
         type,
         ...(tokenName && { token_name: tokenName }),
         ...(model && { model })
-      }),
-    {
-      onSuccess: (data) => {
-        console.log(data)
-      }
-    }
+      })
   )
+
+  console.log('dashboardData', dashboardData)
 
   return (
     <Flex
@@ -84,11 +57,11 @@ export default function Logs(): React.JSX.Element {
         {/* -- header */}
         <Flex
           w="full"
-          h="36px"
           justifyContent="space-between"
           alignItems="center"
           alignSelf="stretch"
-          gap="24px">
+          gap="24px"
+          flexWrap="wrap">
           <Flex gap="24px" alignItems="center">
             <Text
               color="black"
@@ -103,13 +76,12 @@ export default function Logs(): React.JSX.Element {
             </Text>
             <Flex gap="12px" alignItems="center">
               <MySelect
+                w="200px"
                 boxStyle={{
                   w: '100%'
                 }}
-                maxW={'200px'}
-                w={'200px'}
                 height="36px"
-                value={''}
+                value={tokenName}
                 list={[
                   {
                     value: 'all',
@@ -122,7 +94,11 @@ export default function Logs(): React.JSX.Element {
                 ]}
                 placeholder={t('dataDashboard.selectToken')}
                 onchange={(token: string) => {
-                  setTokenName(token)
+                  if (token === 'all') {
+                    setTokenName('')
+                  } else {
+                    setTokenName(token)
+                  }
                 }}
               />
 
@@ -130,11 +106,10 @@ export default function Logs(): React.JSX.Element {
                 boxStyle={{
                   w: '100%'
                 }}
-                maxW={'200px'}
-                w={'200px'}
+                w="200px"
                 height="36px"
                 placeholder={t('dataDashboard.selectModel')}
-                value={''}
+                value={model}
                 list={[
                   {
                     value: 'all',
@@ -146,7 +121,11 @@ export default function Logs(): React.JSX.Element {
                   })) || [])
                 ]}
                 onchange={(model: string) => {
-                  setModel(model)
+                  if (model === 'all') {
+                    setModel('')
+                  } else {
+                    setModel(model)
+                  }
                 }}
               />
             </Flex>
@@ -156,7 +135,7 @@ export default function Logs(): React.JSX.Element {
             alignItems="flex-start"
             p="3px"
             borderColor="gray.200"
-            bg="gray.50"
+            bg="grayModern.50"
             borderRadius="6px">
             {[
               { label: t('dataDashboard.day'), value: 'day' },
@@ -208,7 +187,7 @@ export default function Logs(): React.JSX.Element {
           <Flex w="full" gap="16px" alignItems="center">
             <Flex
               flex="1"
-              bg="blue.50"
+              bg="#EDFAFF"
               gap="16px"
               borderRadius="12px"
               px="10px"
@@ -254,8 +233,7 @@ export default function Logs(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px"
-                  whiteSpace="nowrap">
+                  letterSpacing="0.25px">
                   {t('dataDashboard.callCount')}
                 </Text>
                 <Text
@@ -312,8 +290,7 @@ export default function Logs(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px"
-                  whiteSpace="nowrap">
+                  letterSpacing="0.25px">
                   {t('dataDashboard.exceptionCount')}
                 </Text>
                 <Text
@@ -330,7 +307,7 @@ export default function Logs(): React.JSX.Element {
 
             <Flex
               flex="1"
-              bg="purple.50"
+              bg="#F0F4FF"
               gap="16px"
               borderRadius="12px"
               px="10px"
@@ -366,8 +343,7 @@ export default function Logs(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px"
-                  whiteSpace="nowrap">
+                  letterSpacing="0.25px">
                   {t('dataDashboard.rpm')}
                 </Text>
                 <Text
@@ -384,7 +360,7 @@ export default function Logs(): React.JSX.Element {
 
             <Flex
               flex="1"
-              bg="blue.50"
+              bg="purple.50"
               gap="16px"
               borderRadius="12px"
               px="10px"
@@ -424,8 +400,7 @@ export default function Logs(): React.JSX.Element {
                   fontSize="14px"
                   fontWeight="400"
                   lineHeight="20px"
-                  letterSpacing="0.25px"
-                  whiteSpace="nowrap">
+                  letterSpacing="0.25px">
                   {t('dataDashboard.tpm')}
                 </Text>
                 <Text
@@ -442,7 +417,7 @@ export default function Logs(): React.JSX.Element {
 
             <Flex
               flex="1"
-              bg="green.50"
+              bg="teal.50"
               gap="16px"
               borderRadius="12px"
               px="10px"
@@ -483,8 +458,7 @@ export default function Logs(): React.JSX.Element {
                     fontSize="14px"
                     fontWeight="400"
                     lineHeight="20px"
-                    letterSpacing="0.25px"
-                    whiteSpace="nowrap">
+                    letterSpacing="0.25px">
                     {t('dataDashboard.cost')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} fontSize={'12px'} h={'15px'} />
@@ -496,33 +470,14 @@ export default function Logs(): React.JSX.Element {
                   fontSize="32px"
                   fontWeight="500"
                   lineHeight="40px">
-                  {dashboardData?.used_amount ? Number(dashboardData.used_amount.toFixed(6)) : 0}
+                  {dashboardData?.used_amount ? Number(dashboardData.used_amount.toFixed(2)) : 0}
                 </Text>
               </Flex>
             </Flex>
           </Flex>
           {/* chart 1 end */}
 
-          <Flex
-            w="full"
-            h="full"
-            alignItems="flex-start"
-            justifyContent="center"
-            flexDirection="column">
-            <Flex w="full">
-              <Text
-                color="black"
-                fontFamily="PingFang SC"
-                fontStyle="normal"
-                fontSize="14px"
-                fontWeight="500"
-                lineHeight="20px"
-                letterSpacing="0.1px">
-                {t('dataDashboard.requestData')}
-              </Text>
-            </Flex>
-            <RequestDataChart data={dashboardData?.chart_data || []} />
-          </Flex>
+          <RequestDataChart data={dashboardData?.chart_data || []} />
         </Flex>
       </Flex>
     </Flex>

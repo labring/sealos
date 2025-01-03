@@ -1,12 +1,12 @@
 export interface RequestDetail {
-  request_body: string
-  response_body: string
+  request_body?: string
+  response_body?: string
   id: number
   log_id: number
 }
 
 export interface LogItem {
-  request_detail: RequestDetail
+  request_detail?: RequestDetail
   request_id: string
   request_at: number
   id: number

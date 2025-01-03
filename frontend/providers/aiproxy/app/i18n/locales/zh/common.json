@@ -3,7 +3,7 @@
   "description": "AI 代理",
   "Sidebar": {
     "Home": "仪表盘",
-    "Logs": "调用日志",
+    "Logs": "日志",
     "Price": "模型广场",
     "Dashboard": "AI 渠道",
     "GlobalLogs": "全局日志",
@@ -35,17 +35,19 @@
     "inputPrice": "输入单价",
     "outputPrice": "输出单价",
     "createName": "名称",
-    "modelType": "模型类型"
+    "modelType": "模型类型",
+    "requestCount": "请求次数",
+    "usedAmount": "消耗金额"
   },
   "logs": {
     "call_log": "调用日志",
-    "name": "名称",
+    "name": "Key 名称",
     "modal": "模型",
     "status": "状态",
     "time": "时间",
     "model": "模型",
-    "prompt_tokens": "输入",
-    "completion_tokens": "输出",
+    "prompt_tokens": "输入 Tokens",
+    "completion_tokens": "输出 Tokens",
     "price": "价格",
     "select_modal": "请选择模型",
     "select_token_name": "请选择名称",
@@ -59,14 +61,15 @@
     "requestId": "RequestID",
     "mode": "模型类型",
     "requestTime": "请求时间",
-    "totalTime": "耗时",
+    "totalTime": "耗时（s）",
     "tokenName": "密钥名称",
     "tokenId": "密钥 ID",
     "info": "信息",
     "requestBody": "请求内容",
     "responseBody": "响应内容",
     "inputTokens": "输入 Tokens",
-    "outputTokens": "输出 Tokens"
+    "outputTokens": "输出 Tokens",
+    "searchByContent": "输入搜索关键词"
   },
   "Page": "页",
   "Total": "总数",
@@ -102,9 +105,10 @@
     "modelRpmTooltip": "每个模型拥有独立的 RPM",
     "sortUpTooltip": "点击升序",
     "sortDownTooltip": "点击降序",
-    "modelVision": "Visual",
-    "modelToolChoice": "Tool Invocation",
-    "response": "响应"
+    "modelVision": "视觉",
+    "modelVisionLabel": "该模型支持视觉能力",
+    "modelToolChoice": "工具调用",
+    "response": "输出"
   },
   "createKey2": "新建 Key",
   "dashboard": {
@@ -230,11 +234,12 @@
   },
   "GlobalLogs": {
     "selectModel": "模型名称",
-    "select_token_name": "token 名字",
+    "select_token_name": "Key 名称",
     "selectGroupId": "工作空间",
     "groupId": "工作空间",
-    "tokenName": "Token 名称",
-    "channel": "渠道 ID"
+    "tokenName": "Key 名称",
+    "channel": "渠道 ID",
+    "keyName": "Key 名称"
   },
   "nsManager": {
     "groupId": "工作空间",
@@ -270,10 +275,10 @@
     "week": "近七天",
     "twoWeek": "近15天",
     "month": "近30天",
-    "callCount": "调用数",
+    "callCount": "请求数",
     "exceptionCount": "异常数",
-    "rpm": "RPM（实时）",
-    "tpm": "TPM（实时）",
+    "rpm": "当前 RPM",
+    "tpm": "当前 TPM",
     "cost": "花费",
     "requestData": "调用数据"
   }

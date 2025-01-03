@@ -11,6 +11,8 @@ import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
 import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
 import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
 import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
+import keysIcon from '@/ui/svg/icons/sidebar/key.svg'
+import keysIcon_a from '@/ui/svg/icons/sidebar/key_a.svg'
 import { useI18n } from '@/providers/i18n/i18nContext'
 
 type Menu = {
@@ -40,8 +42,8 @@ const SideBar = (): JSX.Element => {
       id: 'keys',
       url: '/key',
       value: t('Sidebar.Keys'),
-      icon: homeIcon,
-      activeIcon: homeIcon_a,
+      icon: keysIcon,
+      activeIcon: keysIcon_a,
       display: true
     },
     {

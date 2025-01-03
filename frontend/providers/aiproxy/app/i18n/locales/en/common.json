@@ -35,21 +35,23 @@
     "inputPrice": "Input price",
     "outputPrice": "Output price",
     "createName": "Name",
-    "modelType": "Type"
+    "modelType": "Type",
+    "requestCount": "Request Count",
+    "usedAmount": "Amount Charged"
   },
   "logs": {
     "call_log": "Logs",
-    "name": "Name",
+    "name": "Key Name",
     "status": "State",
     "time": "Time",
     "modal": "Model",
-    "prompt_tokens": "Input",
-    "completion_tokens": "Output",
+    "prompt_tokens": "Input Tokens",
+    "completion_tokens": "Output Tokens",
     "price": "Price",
     "select_modal": "please select model",
     "select_token_name": "please select name",
     "model": "Model",
-    "total_price": "Total amount",
+    "total_price": "Total Charged",
     "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
     "success": "Success",
     "failed": "Failed",
@@ -59,14 +61,15 @@
     "requestId": "RequestID",
     "mode": "Type",
     "requestTime": "Request At",
-    "totalTime": "Time consuming",
+    "totalTime": "Duration (s)",
     "tokenName": "Key name",
     "tokenId": "Key ID",
     "info": "Message",
     "requestBody": "Request Body",
     "responseBody": "Response Body",
     "inputTokens": "Input Tokens",
-    "outputTokens": "Output Tokens"
+    "outputTokens": "Output Tokens",
+    "searchByContent": "Enter search keyword"
   },
   "Page": "Page",
   "Total": "Total",
@@ -102,9 +105,10 @@
     "modelRpmTooltip": "Each model has its own RPM",
     "sortUpTooltip": "Click to view in ascending order",
     "sortDownTooltip": "Click to view in Descending order",
-    "modelVision": "Visual",
-    "modelToolChoice": "Tool Invocation",
-    "response": "Response"
+    "modelVision": "Vision",
+    "modelVisionLabel": "This model supports vision capabilities",
+    "modelToolChoice": "Tool Chocice",
+    "response": "Output"
   },
   "createKey2": "Create Key",
   "dashboard": {
@@ -233,8 +237,9 @@
     "select_token_name": "token name",
     "selectGroupId": "workspace",
     "groupId": "Workspace",
-    "tokenName": "Token Name",
-    "channel": "Channel ID"
+    "tokenName": "Key Name",
+    "channel": "Channel ID",
+    "keyName": "Key name"
   },
   "nsManager": {
     "groupId": "Workspace",
@@ -272,8 +277,8 @@
     "month": "Last 30 days",
     "callCount": "Requests",
     "exceptionCount": "Exceptions",
-    "rpm": "RPM (Real-time)",
-    "tpm": "TPM (Real-time)",
+    "rpm": "Current RPM",
+    "tpm": "Current TPM",
     "cost": "Charges",
     "requestData": "Call Data"
   }

@@ -18,6 +18,7 @@ import { GroupSearchResponse } from '@/app/api/admin/group/route'
 import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
 import { DashboardQueryParams } from '@/app/api/user/dashboard/route'
 import { DashboardResponse } from '@/types/user/dashboard'
+import { UserLogDetailResponse } from '@/app/api/user/log/detail/[log_id]/route'
 
 export const initAppConfig = () =>
   GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
@@ -30,6 +31,9 @@ export const getEnabledMode = () => GET<GetEnabledModelsResponse['data']>('/api/
 // log
 export const getUserLogs = (params: UserLogQueryParams) =>
   GET<UserLogSearchResponse['data']>('/api/user/log', params)
+
+export const getUserLogDetail = (log_id: number) =>
+  GET<UserLogDetailResponse['data']>(`/api/user/log/detail/${log_id}`)
 
 // token
 export const getTokens = (params: GetTokensQueryParams) =>

@@ -23,7 +23,7 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import { getEnabledMode } from '@/api/platform'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -490,36 +490,50 @@ const ModelComponent = ({ modelConfig }: { modelConfig: ModelConfig }) => {
         </Text>
         <Flex gap="4px" alignItems="center" justifyContent="flex-start">
           {modelConfig.config?.vision && (
-            <Badge
-              display="flex"
-              padding="1px 4px"
-              justifyContent="center"
-              alignItems="center"
-              gap="2px"
-              borderRadius="4px"
-              background="var(--Teal-50, #EBFAF8)">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none">
-                <path
-                  d="M6.9999 5.35705C7.43565 5.35705 7.85355 5.53015 8.16167 5.83827C8.46979 6.14639 8.64289 6.56429 8.64289 7.00004C8.64289 7.43578 8.46979 7.85368 8.16167 8.1618C7.85355 8.46992 7.43565 8.64302 6.9999 8.64302C6.56416 8.64302 6.14626 8.46992 5.83814 8.1618C5.53002 7.85368 5.35692 7.43578 5.35692 7.00004C5.35692 6.56429 5.53002 6.14639 5.83814 5.83827C6.14626 5.53015 6.56416 5.35705 6.9999 5.35705ZM6.9999 2.89258C9.44394 2.89258 11.5695 4.2494 12.6718 6.25045C12.7785 6.44422 12.8319 6.5411 12.8719 6.73711C12.8982 6.86627 12.8982 7.13381 12.8719 7.26297C12.8319 7.45898 12.7785 7.55586 12.6718 7.74962C11.5695 9.75068 9.44394 11.1075 6.9999 11.1075C4.55587 11.1075 2.43032 9.75068 1.32805 7.74962C1.22132 7.55586 1.16795 7.45898 1.12793 7.26297C1.10156 7.13381 1.10156 6.86627 1.12793 6.73711C1.16795 6.5411 1.22132 6.44422 1.32805 6.25045C2.43032 4.2494 4.55587 2.89258 6.9999 2.89258ZM2.70809 6.12392C2.56204 6.31728 2.48901 6.41395 2.4229 6.6637C2.38194 6.81844 2.38194 7.18164 2.4229 7.33638C2.48901 7.58612 2.56204 7.6828 2.70809 7.87616C3.10318 8.3992 3.59235 8.84798 4.15342 9.19794C5.00732 9.73055 5.99352 10.0129 6.9999 10.0129C8.00629 10.0129 8.99249 9.73055 9.84639 9.19794C10.4075 8.84798 10.8966 8.3992 11.2917 7.87616C11.4378 7.6828 11.5108 7.58612 11.5769 7.33638C11.6179 7.18164 11.6179 6.81844 11.5769 6.6637C11.5108 6.41395 11.4378 6.31728 11.2917 6.12392C10.8966 5.60087 10.4075 5.15209 9.84639 4.80213C8.99249 4.26953 8.00629 3.98718 6.9999 3.98718C5.99352 3.98718 5.00732 4.26953 4.15342 4.80213C3.59235 5.15209 3.10318 5.60088 2.70809 6.12392Z"
-                  fill="#00A9A6"
-                />
-              </svg>
-              <Text
-                color="#007E7C" // Changed from "#EBFAF8" to "teal.700" for better readability
-                fontFamily="PingFang SC"
-                fontStyle="normal"
-                fontSize="11px"
-                fontWeight={500}
-                lineHeight="16px"
-                letterSpacing="0.5px">
-                {t('price.modelVision')}
-              </Text>
-            </Badge>
+            <MyTooltip
+              label={
+                <Text
+                  color="grayModern.900"
+                  fontFamily="Inter"
+                  fontSize="12px"
+                  fontWeight={400}
+                  lineHeight="150%">
+                  {t('price.modelVisionLabel')}
+                </Text>
+              }
+              width="auto"
+              height="auto">
+              <Badge
+                display="flex"
+                padding="1px 4px"
+                justifyContent="center"
+                alignItems="center"
+                gap="2px"
+                borderRadius="4px"
+                background="var(--Teal-50, #EBFAF8)">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none">
+                  <path
+                    d="M6.9999 5.35705C7.43565 5.35705 7.85355 5.53015 8.16167 5.83827C8.46979 6.14639 8.64289 6.56429 8.64289 7.00004C8.64289 7.43578 8.46979 7.85368 8.16167 8.1618C7.85355 8.46992 7.43565 8.64302 6.9999 8.64302C6.56416 8.64302 6.14626 8.46992 5.83814 8.1618C5.53002 7.85368 5.35692 7.43578 5.35692 7.00004C5.35692 6.56429 5.53002 6.14639 5.83814 5.83827C6.14626 5.53015 6.56416 5.35705 6.9999 5.35705ZM6.9999 2.89258C9.44394 2.89258 11.5695 4.2494 12.6718 6.25045C12.7785 6.44422 12.8319 6.5411 12.8719 6.73711C12.8982 6.86627 12.8982 7.13381 12.8719 7.26297C12.8319 7.45898 12.7785 7.55586 12.6718 7.74962C11.5695 9.75068 9.44394 11.1075 6.9999 11.1075C4.55587 11.1075 2.43032 9.75068 1.32805 7.74962C1.22132 7.55586 1.16795 7.45898 1.12793 7.26297C1.10156 7.13381 1.10156 6.86627 1.12793 6.73711C1.16795 6.5411 1.22132 6.44422 1.32805 6.25045C2.43032 4.2494 4.55587 2.89258 6.9999 2.89258ZM2.70809 6.12392C2.56204 6.31728 2.48901 6.41395 2.4229 6.6637C2.38194 6.81844 2.38194 7.18164 2.4229 7.33638C2.48901 7.58612 2.56204 7.6828 2.70809 7.87616C3.10318 8.3992 3.59235 8.84798 4.15342 9.19794C5.00732 9.73055 5.99352 10.0129 6.9999 10.0129C8.00629 10.0129 8.99249 9.73055 9.84639 9.19794C10.4075 8.84798 10.8966 8.3992 11.2917 7.87616C11.4378 7.6828 11.5108 7.58612 11.5769 7.33638C11.6179 7.18164 11.6179 6.81844 11.5769 6.6637C11.5108 6.41395 11.4378 6.31728 11.2917 6.12392C10.8966 5.60087 10.4075 5.15209 9.84639 4.80213C8.99249 4.26953 8.00629 3.98718 6.9999 3.98718C5.99352 3.98718 5.00732 4.26953 4.15342 4.80213C3.59235 5.15209 3.10318 5.60088 2.70809 6.12392Z"
+                    fill="#00A9A6"
+                  />
+                </svg>
+                <Text
+                  color="#007E7C" // Changed from "#EBFAF8" to "teal.700" for better readability
+                  fontFamily="PingFang SC"
+                  fontStyle="normal"
+                  fontSize="11px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px">
+                  {t('price.modelVision')}
+                </Text>
+              </Badge>
+            </MyTooltip>
           )}
           {modelConfig.config?.tool_choice && (
             <Badge
@@ -575,7 +589,11 @@ const ModelComponent = ({ modelConfig }: { modelConfig: ModelConfig }) => {
                 fontWeight={500}
                 lineHeight="16px"
                 letterSpacing="0.5px">
-                {`${Math.ceil(modelConfig.config.max_context_tokens / 1024)}K`}
+                {`${
+                  modelConfig.config.max_context_tokens % 1024 === 0
+                    ? Math.ceil(modelConfig.config.max_context_tokens / 1024)
+                    : Math.ceil(modelConfig.config.max_context_tokens / 1000)
+                }K`}
               </Text>
             </Badge>
           )}

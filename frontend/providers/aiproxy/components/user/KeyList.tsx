@@ -29,6 +29,7 @@ import {
   Center,
   Spinner
 } from '@chakra-ui/react'
+import { CurrencySymbol } from '@sealos/ui'
 import {
   Column,
   createColumnHelper,
@@ -85,7 +86,9 @@ export enum TableHeaderId {
   CREATED_AT = 'key.createdAt',
   LAST_USED_AT = 'key.lastUsedAt',
   STATUS = 'key.status',
-  ACTIONS = 'key.actions'
+  ACTIONS = 'key.actions',
+  REQUEST_COUNT = 'key.requestCount',
+  USED_AMOUNT = 'key.usedAmount'
 }
 
 enum KeyStatus {
@@ -96,6 +99,23 @@ enum KeyStatus {
 }
 
 const CustomHeader = ({ column, t }: { column: Column<TokenInfo>; t: TFunction }) => {
+  const { currencySymbol } = useBackendStore()
+  if (column.id === TableHeaderId.USED_AMOUNT) {
+    return (
+      <Flex alignItems={'center'} gap={'4px'}>
+        <Text
+          color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {t(column.id as TableHeaderId)}
+        </Text>
+        <CurrencySymbol type={currencySymbol} />
+      </Flex>
+    )
+  }
   return (
     <Text
       color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
@@ -246,9 +266,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             )
           }}>
           <MyTooltip label={t('copy')}>
-            {'sk-' +
-              info.getValue().substring(0, 8) +
-              '*'.repeat(Math.max(0, info.getValue().length - 8))}
+            {'sk-' + info.getValue().substring(0, 8) + '*'.repeat(3)}
           </MyTooltip>
         </Text>
       )
@@ -340,6 +358,46 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
             lineHeight="16px"
             letterSpacing="0.5px">
             {statusText}
+          </Text>
+        )
+      }
+    }),
+
+    columnHelper.accessor((row) => row.request_count, {
+      id: TableHeaderId.REQUEST_COUNT,
+      header: (props) => <CustomHeader column={props.column} t={t} />,
+      cell: (info) => (
+        <Text
+          color="grayModern.900"
+          fontFamily="PingFang SC"
+          fontSize="14px"
+          fontWeight={500}
+          lineHeight="20px"
+          letterSpacing="0.1px">
+          {info.getValue()}
+        </Text>
+      )
+    }),
+
+    columnHelper.accessor((row) => row.used_amount, {
+      id: TableHeaderId.USED_AMOUNT,
+      header: (props) => <CustomHeader column={props.column} t={t} />,
+      cell: (info) => {
+        const value = Number(info.getValue())
+        // 获取小数部分的长度
+        const decimalLength = value.toString().split('.')[1]?.length || 0
+        // 如果小数位超过6位则保留6位，否则保持原样
+        const formattedValue = decimalLength > 6 ? value.toFixed(6) : value
+
+        return (
+          <Text
+            color="grayModern.900"
+            fontFamily="PingFang SC"
+            fontSize="14px"
+            fontWeight={500}
+            lineHeight="20px"
+            letterSpacing="0.1px">
+            {formattedValue}
           </Text>
         )
       }

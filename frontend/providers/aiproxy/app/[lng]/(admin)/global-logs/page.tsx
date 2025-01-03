@@ -258,7 +258,7 @@ export default function Home(): React.JSX.Element {
                   fontWeight="500"
                   lineHeight="16px"
                   letterSpacing="0.5px">
-                  {t('logs.name')}
+                  {t('GlobalLogs.keyName')}
                 </Text>
                 <Input
                   w="500px"
@@ -361,7 +361,7 @@ export default function Home(): React.JSX.Element {
                   fontWeight="500"
                   lineHeight="16px"
                   letterSpacing="0.5px">
-                  {t('logs.name')}
+                  {t('GlobalLogs.groupId')}
                 </Text>
                 <Input
                   w="500px"

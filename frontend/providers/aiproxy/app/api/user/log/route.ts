@@ -17,6 +17,7 @@ export type UserLogSearchResponse = ApiResp<{
 export interface UserLogQueryParams {
   token_name?: string
   model_name?: string
+  keyword?: string
   start_timestamp?: string
   end_timestamp?: string
   code_type?: 'all' | 'success' | 'error' | undefined
@@ -57,6 +58,10 @@ async function fetchLogs(
     }
     if (params.model_name) {
       url.searchParams.append('model_name', params.model_name)
+    }
+
+    if (params.keyword) {
+      url.searchParams.append('keyword', params.keyword)
     }
 
     if (params.code_type) {
@@ -111,7 +116,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserLogSea
       model_name: searchParams.get('model_name') || undefined,
       code_type: (searchParams.get('code_type') as 'all' | 'success' | 'error') || undefined,
       start_timestamp: searchParams.get('start_timestamp') || undefined,
-      end_timestamp: searchParams.get('end_timestamp') || undefined
+      end_timestamp: searchParams.get('end_timestamp') || undefined,
+      keyword: searchParams.get('keyword') || undefined
     }
 
     const validationError = validateParams(queryParams)

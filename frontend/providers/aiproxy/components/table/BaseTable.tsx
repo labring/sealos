@@ -30,6 +30,7 @@ export function BaseTable<T extends unknown>({
                       key={header.id}
                       color="grayModern.600"
                       border="none"
+                      textTransform="none"
                       borderTopLeftRadius={i === 0 ? '6px' : '0'}
                       borderBottomLeftRadius={i === 0 ? '6px' : '0'}
                       borderTopRightRadius={i === headers.headers.length - 1 ? '6px' : '0'}

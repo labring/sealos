@@ -4,35 +4,30 @@ import {
   Box,
   Flex,
   Text,
-  Button,
-  Icon,
   Modal,
-  useDisclosure,
   ModalOverlay,
   ModalHeader,
   ModalCloseButton,
   ModalBody,
   ModalContent,
-  Grid
+  Grid,
+  Center,
+  Spinner
 } from '@chakra-ui/react'
-import { CurrencySymbol, MySelect, MyTooltip } from '@sealos/ui'
-import { useMemo, useState } from 'react'
+import { CurrencySymbol } from '@sealos/ui'
+import { MyTooltip } from '@/components/common/MyTooltip'
 
-import { getTokens, getUserLogs, getEnabledMode } from '@/api/platform'
+import { getUserLogDetail } from '@/api/platform'
 import { useTranslationClientSide } from '@/app/i18n/client'
-import SelectDateRange from '@/components/common/SelectDateRange'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { LogItem } from '@/types/user/logs'
 import { useQuery } from '@tanstack/react-query'
-import { getCoreRowModel, useReactTable, createColumnHelper } from '@tanstack/react-table'
 import { QueryKey } from '@/types/query-key'
 import { useBackendStore } from '@/store/backend'
-import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
 import { getTranslationWithFallback } from '@/utils/common'
 import ReactJson, { OnCopyProps } from 'react-json-view'
 import { getTimeDiff } from '../tools/handleTime'
+import { useMessage } from '@sealos/ui'
 
 export default function LogDetailModal({
   isOpen,
@@ -46,6 +41,26 @@ export default function LogDetailModal({
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
   const { currencySymbol } = useBackendStore()
+
+  const { data: logDetail, isLoading } = useQuery({
+    queryKey: [QueryKey.GetUserLogDetail, rowData?.request_detail?.log_id],
+    queryFn: () => {
+      if (!rowData?.request_detail?.log_id) throw new Error('No log ID')
+      return getUserLogDetail(rowData.request_detail.log_id)
+    },
+    enabled: !!rowData?.request_detail?.log_id
+  })
+
+  const isDetailLoading = !!rowData?.request_detail?.log_id && isLoading
+
+  const { message } = useMessage({
+    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
+    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningIconFill: 'white',
+    successBoxBg: 'var(--Green-50, #EDFBF3)',
+    successIconBg: 'var(--Green-600, #039855)',
+    successIconFill: 'white'
+  })
 
   // 定义默认的网格配置
   const gridConfig = {
@@ -184,6 +199,7 @@ export default function LogDetailModal({
       isLast?: boolean
     }
   ) => {
+    if (!content) return null
     const handleCopy = (copy: OnCopyProps) => {
       if (typeof window === 'undefined') return
 
@@ -192,8 +208,6 @@ export default function LogDetailModal({
 
       navigator.clipboard.writeText(copyText)
     }
-
-    if (!content) return null
 
     let parsed = null
 
@@ -290,7 +304,50 @@ export default function LogDetailModal({
     )
   }
 
-  return (
+  return isDetailLoading ? (
+    <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <ModalOverlay />
+      <ModalContent w="730px" maxW="730px" maxH="806px" flexShrink="0">
+        <ModalHeader
+          height="48px"
+          padding="10px 20px"
+          justifyContent="center"
+          alignItems="center"
+          flexShrink="0"
+          borderBottom="1px solid grayModern.100"
+          background="grayModern.25"
+          w="full">
+          <Flex alignItems="flex-start" flexShrink="0">
+            <Text
+              color="grayModern.900"
+              fontFamily="PingFang SC"
+              fontSize="16px"
+              fontStyle="normal"
+              fontWeight={500}
+              lineHeight="24px"
+              letterSpacing="0.15px">
+              {t('logs.logDetail')}
+            </Text>
+          </Flex>
+        </ModalHeader>
+        <ModalCloseButton
+          display="flex"
+          width="28px"
+          height="28px"
+          padding="4px"
+          justifyContent="center"
+          alignItems="center"
+          flexShrink={0}
+          borderRadius="4px"
+        />
+        <ModalBody>
+          <Center w="full" minH="400px">
+            <Spinner size="xl" />
+          </Center>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  ) : (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
       <ModalContent w="730px" maxW="730px" maxH="806px" flexShrink="0">
@@ -424,7 +481,30 @@ export default function LogDetailModal({
                     fontWeight={500}
                     lineHeight="20px"
                     letterSpacing="0.1px"
-                    whiteSpace="nowrap">
+                    whiteSpace="nowrap"
+                    cursor="pointer"
+                    onClick={() => {
+                      navigator.clipboard.writeText(rowData.content || '').then(
+                        () => {
+                          message({
+                            status: 'success',
+                            title: t('copySuccess'),
+                            isClosable: true,
+                            duration: 2000,
+                            position: 'top'
+                          })
+                        },
+                        (err) => {
+                          message({
+                            status: 'warning',
+                            title: t('copyFailed'),
+                            description: err?.message || t('copyFailed'),
+                            isClosable: true,
+                            position: 'top'
+                          })
+                        }
+                      )
+                    }}>
                     {rowData.content}
                   </Text>
                 </Flex>,
@@ -437,14 +517,14 @@ export default function LogDetailModal({
                 }
               )}
 
-            {rowData?.request_detail?.request_body &&
-              renderJsonContent(t('logs.requestBody'), rowData.request_detail.request_body, {
+            {logDetail?.request_body &&
+              renderJsonContent(t('logs.requestBody'), logDetail.request_body, {
                 labelWidth: gridConfig.labelWidth,
                 contentHeight: gridConfig.jsonContentHeight,
                 isFirst: false
               })}
-            {rowData?.request_detail?.response_body &&
-              renderJsonContent(t('logs.responseBody'), rowData.request_detail.response_body, {
+            {logDetail?.response_body &&
+              renderJsonContent(t('logs.responseBody'), logDetail.response_body, {
                 labelWidth: gridConfig.labelWidth,
                 contentHeight: gridConfig.jsonContentHeight,
                 isLast: false
