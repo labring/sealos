@@ -96,8 +96,13 @@ const JetBrainsGuideModal = ({
       })
       setOnConnecting(false)
       setProgress(0)
+      console.log('execDownloadCommand', execDownloadCommand)
     } catch (error: any) {
-      if (!error) {
+      console.log('error', error)
+      if (
+        !error ||
+        error.startsWith('nvidia driver modules are not yet loaded, invoking runc directly')
+      ) {
         window.open(
           `jetbrains-gateway://connect#host=${
             jetbrainsGuideData.configHost
