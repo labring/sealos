@@ -99,7 +99,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			meta,
 			preCheckReq.InputPrice,
 			preCheckReq.OutputPrice,
-			respErr.Error.String(),
+			respErr.Error.JSONOrEmpty(),
 			detail,
 		)
 		return respErr

@@ -1,8 +1,6 @@
 package model
 
 import (
-	"fmt"
-
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
@@ -20,16 +18,19 @@ type Error struct {
 	Param   string `json:"param,omitempty"`
 }
 
-func (e *Error) String() string {
-	jsonBuf, err := json.Marshal(e)
-	if err != nil {
-		return fmt.Sprintf("code: %v, message: %s, type: %s, param: %s", e.Code, e.Message, e.Type, e.Param)
-	}
-	return conv.BytesToString(jsonBuf)
+func (e *Error) IsEmpty() bool {
+	return e == nil || (e.Code == nil && e.Message == "" && e.Type == "" && e.Param == "")
 }
 
-func (e *Error) Error() string {
-	return e.String()
+func (e *Error) JSONOrEmpty() string {
+	if e.IsEmpty() {
+		return ""
+	}
+	jsonBuf, err := json.Marshal(e)
+	if err != nil {
+		return ""
+	}
+	return conv.BytesToString(jsonBuf)
 }
 
 type ErrorWithStatusCode struct {
@@ -37,7 +38,10 @@ type ErrorWithStatusCode struct {
 	StatusCode int   `json:"-"`
 }
 
-func (e *ErrorWithStatusCode) JSON() string {
+func (e *ErrorWithStatusCode) JSONOrEmpty() string {
+	if e.Error.IsEmpty() {
+		return ""
+	}
 	jsonBuf, err := json.Marshal(e)
 	if err != nil {
 		return ""
