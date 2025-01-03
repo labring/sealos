@@ -1475,6 +1475,9 @@ importers:
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.10.2(prisma@5.10.2)
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
@@ -14299,7 +14302,7 @@ packages:
       debug: 3.2.7
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@6.13.1)(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.29.0)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@6.13.1)(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0)(eslint@8.57.0)
     transitivePeerDependencies:
       - supports-color
     dev: true

@@ -3,7 +3,7 @@ import { customAlphabet } from 'nanoid'
 import { SessionV1 } from 'sealos-desktop-sdk/*'
 
 export const getUserKubeConfig = () => {
-  if(typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return ''
   }
   let kubeConfig: string =
@@ -13,7 +13,6 @@ export const getUserKubeConfig = () => {
     if (!kubeConfig && store) {
       const session = JSON.parse(store) as SessionV1
       kubeConfig = session.kubeconfig
-
     }
   } catch (err) {
     err
@@ -21,7 +20,7 @@ export const getUserKubeConfig = () => {
   return kubeConfig
 }
 export const getDesktopSessionFromSessionStorage = () => {
-  if(typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return null
   }
   try {
@@ -38,7 +37,7 @@ export const getDesktopSessionFromSessionStorage = () => {
   }
 }
 export const getSessionFromSessionStorage = () => {
-  if(typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return null
   }
   try {
@@ -49,14 +48,14 @@ export const getSessionFromSessionStorage = () => {
   }
 }
 export const setSessionToSessionStorage = (token: string) => {
-  if(typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return null
   }
-  
+
   sessionStorage.setItem('token', token)
 }
 export const cleanSession = () => {
-  if(typeof window === 'undefined') {
+  if (typeof window === 'undefined') {
     return null
   }
   sessionStorage.removeItem('session')

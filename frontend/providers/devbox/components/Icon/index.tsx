@@ -70,6 +70,7 @@ const map = {
   official: require('./icons/official.svg').default,
   firstPage: require('./icons/firstPage.svg').default,
   prePage: require('./icons/prePage.svg').default,
+  gift: require('./icons/gift.svg').default
 }
 
 const MyIcon = ({

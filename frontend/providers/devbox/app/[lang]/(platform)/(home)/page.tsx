@@ -1,5 +1,5 @@
-import DevboxListContainer from "./components/DevboxListContainer"
+import DevboxListContainer from './components/DevboxListContainer'
 
-export default function EmptyPage() {
+export default async function EmptyPage() {
   return <DevboxListContainer />
 }
