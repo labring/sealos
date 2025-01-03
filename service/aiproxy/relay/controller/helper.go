@@ -256,7 +256,7 @@ func DoHelper(
 	// 3. Handle error response
 	if isErrorHappened(resp) {
 		relayErr := utils.RelayErrorHandler(meta, resp)
-		// detail.ResponseBody = relayErr.JSON()
+		detail.ResponseBody = relayErr.JSONOrEmpty()
 		return nil, &detail, relayErr
 	}
 
