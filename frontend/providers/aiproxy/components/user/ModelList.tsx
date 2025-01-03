@@ -1,101 +1,20 @@
 'use client'
 import { Badge, Center, Flex, Spinner, Text } from '@chakra-ui/react'
-import { ListIcon } from '@/ui/icons/home/Icons'
+import { ListIcon } from '@/ui/icons/index'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import Image, { StaticImageData } from 'next/image'
 import { useQuery } from '@tanstack/react-query'
-import { getModels } from '@/api/platform'
+import { getEnabledMode } from '@/api/platform'
 import { useMessage } from '@sealos/ui'
-// icons
-import OpenAIIcon from '@/ui/svg/icons/modelist/openai.svg'
-import QwenIcon from '@/ui/svg/icons/modelist/qianwen.svg'
-import ChatglmIcon from '@/ui/svg/icons/modelist/chatglm.svg'
-import DeepseekIcon from '@/ui/svg/icons/modelist/deepseek.svg'
-import MoonshotIcon from '@/ui/svg/icons/modelist/moonshot.svg'
-import SparkdeskIcon from '@/ui/svg/icons/modelist/sparkdesk.svg'
-import AbabIcon from '@/ui/svg/icons/modelist/minimax.svg'
-import DoubaoIcon from '@/ui/svg/icons/modelist/doubao.svg'
-import ErnieIcon from '@/ui/svg/icons/modelist/ernie.svg'
-import { useMemo } from 'react'
-import { MyTooltip } from '@/components/MyTooltip'
-import { ModelIdentifier } from '@/types/front'
+import { MyTooltip } from '@/components/common/MyTooltip'
+import { QueryKey } from '@/types/query-key'
+import { modelIcons } from '@/ui/icons/mode-icons'
+import { getTranslationWithFallback } from '@/utils/common'
 
-const getIdentifier = (modelName: string): ModelIdentifier => {
-  return modelName.toLowerCase().split(/[-._\d]/)[0] as ModelIdentifier
-}
-
-const sortModels = (models: string[]): string[] => {
-  // group by identifier
-  const groupMap = new Map<string, string[]>()
-
-  // group by identifier
-  models.forEach((model) => {
-    const identifier = getIdentifier(model)
-    // special handle gpt and o1, group them as 'openai'
-    const groupKey = identifier === 'gpt' || identifier === 'o' ? 'openai' : identifier
-    if (!groupMap.has(groupKey)) {
-      groupMap.set(groupKey, [])
-    }
-    groupMap.get(groupKey)?.push(model)
-  })
-
-  // sort by identifier and flatten the result
-  return Array.from(groupMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0])) // sort by identifier
-    .flatMap(([_, models]) => models.sort()) // flatten and keep the order in each group
-}
-
-const ModelComponent = ({ modelName }: { modelName: string }) => {
-  const modelGroups = {
-    openai: {
-      icon: OpenAIIcon,
-      identifiers: ['gpt', 'o1']
-    },
-    ernie: {
-      icon: ErnieIcon,
-      identifiers: ['ernie']
-    },
-    qwen: {
-      icon: QwenIcon,
-      identifiers: ['qwen']
-    },
-    chatglm: {
-      icon: ChatglmIcon,
-      identifiers: ['chatglm', 'glm']
-    },
-    deepseek: {
-      icon: DeepseekIcon,
-      identifiers: ['deepseek']
-    },
-    moonshot: {
-      icon: MoonshotIcon,
-      identifiers: ['moonshot']
-    },
-    sparkdesk: {
-      icon: SparkdeskIcon,
-      identifiers: ['sparkdesk']
-    },
-    abab: {
-      icon: AbabIcon,
-      identifiers: ['abab']
-    },
-    doubao: {
-      icon: DoubaoIcon,
-      identifiers: ['doubao']
-    }
-  }
-
-  // get model icon
-  const getModelIcon = (modelName: string): StaticImageData => {
-    const identifier = getIdentifier(modelName)
-    const group = Object.values(modelGroups).find((group) => group.identifiers.includes(identifier))
-    return group?.icon || OpenAIIcon
-  }
-
+const ModelComponent = ({ modelName, modelOwner }: { modelName: string; modelOwner: string }) => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const iconSrc = getModelIcon(modelName)
   const { message } = useMessage({
     warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
     warningIconBg: 'var(--Yellow-500, #F79009)',
@@ -105,10 +24,25 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
     successIconFill: 'white'
   })
 
+  // get model icon
+  const getModelIcon = (modelOwner: string): StaticImageData => {
+    const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
+    return icon
+  }
+
+  const iconSrc = getModelIcon(modelOwner)
+
   return (
     <Flex align="center" gap="12px">
       <Image src={iconSrc} alt={modelName} width={20} height={20} />
-      <MyTooltip label={t(getIdentifier(modelName))} width="auto" height="auto">
+      <MyTooltip
+        label={getTranslationWithFallback(
+          `modeOwner.${String(modelOwner)}`,
+          'modeOwner.unknown',
+          t as any
+        )}
+        width="auto"
+        height="auto">
         <Text
           color="grayModern.900"
           fontFamily="PingFang SC"
@@ -116,6 +50,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
           fontWeight={500}
           lineHeight="16px"
           letterSpacing="0.5px"
+          whiteSpace="nowrap"
           onClick={() =>
             navigator.clipboard.writeText(modelName).then(
               () => {
@@ -151,9 +86,7 @@ const ModelComponent = ({ modelName }: { modelName: string }) => {
 const ModelList: React.FC = () => {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
-  const { isLoading, data } = useQuery(['getModels'], () => getModels())
-
-  const sortedData = useMemo(() => sortModels(data || []), [data])
+  const { isLoading, data } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
 
   return (
     <>
@@ -190,15 +123,44 @@ const ModelList: React.FC = () => {
           </Badge>
         </Flex>
       </Flex>
-      <Flex flexDir="column" align="flex-start" gap="16px">
-        {isLoading ? (
-          <Center>
-            <Spinner size="md" color="grayModern.800" />
-          </Center>
-        ) : (
-          sortedData.map((model) => <ModelComponent key={model} modelName={model} />)
-        )}
-      </Flex>
+
+      {isLoading ? (
+        <Center
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          w="100%"
+          h="100%"
+          zIndex={1}>
+          <Spinner size="md" color="grayModern.800" />
+        </Center>
+      ) : (
+        <Flex
+          flexDir="column"
+          align="flex-start"
+          gap="16px"
+          h="full"
+          maxH="full"
+          overflow="hidden"
+          overflowY="auto"
+          sx={{
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
+          }}>
+          {data?.map((modelConfig) => (
+            <ModelComponent
+              key={modelConfig.model}
+              modelName={modelConfig.model}
+              modelOwner={modelConfig.owner}
+            />
+          ))}
+        </Flex>
+      )}
     </>
   )
 }
