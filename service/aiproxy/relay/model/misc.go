@@ -36,3 +36,11 @@ type ErrorWithStatusCode struct {
 	Error      Error `json:"error"`
 	StatusCode int   `json:"-"`
 }
+
+func (e *ErrorWithStatusCode) JSON() string {
+	jsonBuf, err := json.Marshal(e)
+	if err != nil {
+		return ""
+	}
+	return conv.BytesToString(jsonBuf)
+}

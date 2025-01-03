@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -256,10 +255,9 @@ func DoHelper(
 
 	// 3. Handle error response
 	if isErrorHappened(resp) {
-		if err := handleErrorResponse(resp, &detail); err != nil {
-			return nil, &detail, err
-		}
-		return nil, &detail, utils.RelayErrorHandler(meta, resp)
+		relayErr := utils.RelayErrorHandler(meta, resp)
+		// detail.ResponseBody = relayErr.JSON()
+		return nil, &detail, relayErr
 	}
 
 	// 4. Handle success response
@@ -346,16 +344,6 @@ func doRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, req *http.Req
 		return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusBadRequest)
 	}
 	return resp, nil
-}
-
-func handleErrorResponse(resp *http.Response, detail *model.RequestDetail) *relaymodel.ErrorWithStatusCode {
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return openai.ErrorWrapperWithMessage("read response body failed: "+err.Error(), "read_response_body_failed", http.StatusBadRequest)
-	}
-	detail.ResponseBody = conv.BytesToString(respBody)
-	resp.Body = io.NopCloser(bytes.NewReader(respBody))
-	return nil
 }
 
 func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, resp *http.Response, detail *model.RequestDetail) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
