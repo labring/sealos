@@ -6,4 +6,5 @@ export interface AppListItemType {
   cpu: number;
   memory: number;
   replicas: number;
+  kind: string;
 }

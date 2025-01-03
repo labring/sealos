@@ -6,6 +6,8 @@ import { cronJobKey } from '@/constants/keys';
 import useEnvStore from '@/store/env';
 
 export const json2CronJob = (data: CronJobEditType) => {
+  console.log(data, 123);
+
   const timeZone = getUserTimeZone();
   const kcHeader = encodeURIComponent(getUserKubeConfig());
   const { applaunchpadUrl, successfulJobsHistoryLimit, failedJobsHistoryLimit } =
@@ -56,7 +58,7 @@ export const json2CronJob = (data: CronJobEditType) => {
         command += ` && curl -k -X POST -H "Authorization: $(cat ~/.kube/config | jq -sRr @uri)" -d "appName=${data.launchpadName}&replica=${data.replicas}" https://${applaunchpadUrl}/api/v1alpha/updateReplica`;
       }
       if (data.enableResources) {
-        command += ` && kubectl set resources deployment ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
+        command += ` && kubectl set resources ${data.launchpadKind} ${data.launchpadName} --limits=cpu=${resources.limits.cpu},memory=${resources.limits.memory} --requests=cpu=${resources.requests.cpu},memory=${resources.requests.memory}`;
       }
 
       return command.replace(/\n/g, '') || '';
@@ -70,7 +72,8 @@ export const json2CronJob = (data: CronJobEditType) => {
       memory: `${str2Num(data.memory)}Mi`,
       launchpadName: data.launchpadName,
       launchpadId: data.launchpadId,
-      replicas: `${data.replicas}`
+      replicas: `${data.replicas}`,
+      launchpadKind: data.launchpadKind
     };
   }
 
