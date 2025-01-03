@@ -6,8 +6,6 @@ import { cronJobKey } from '@/constants/keys';
 import useEnvStore from '@/store/env';
 
 export const json2CronJob = (data: CronJobEditType) => {
-  console.log(data, 123);
-
   const timeZone = getUserTimeZone();
   const kcHeader = encodeURIComponent(getUserKubeConfig());
   const { applaunchpadUrl, successfulJobsHistoryLimit, failedJobsHistoryLimit } =

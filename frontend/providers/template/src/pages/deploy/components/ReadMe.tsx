@@ -14,7 +14,7 @@ const ReadMe = ({ readUrl, readmeContent }: { readUrl: string; readmeContent: st
     if (node.tagName === 'img' && !node.properties.src.startsWith('http')) {
       const imgSrc = node.properties.src.replace(/^\.\/|^\//, '');
       const baseUrl = readUrl?.substring(0, readUrl?.lastIndexOf('/') + 1);
-      console.log(baseUrl, imgSrc);
+      node.properties.referrerPolicy = 'no-referrer';
       node.properties.src = `${baseUrl}${imgSrc}`;
     }
   };
