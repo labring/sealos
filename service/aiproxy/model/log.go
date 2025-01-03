@@ -1,8 +1,10 @@
 package model
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -674,7 +676,7 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	return chartData, err
 }
 
-func getLogDistinctValues[T any](field string, group string, start, end time.Time) ([]T, error) {
+func getLogDistinctValues[T cmp.Ordered](field string, group string, start, end time.Time) ([]T, error) {
 	var values []T
 	query := LogDB.
 		Model(&Log{}).
@@ -692,7 +694,11 @@ func getLogDistinctValues[T any](field string, group string, start, end time.Tim
 	}
 
 	err := query.Pluck(field, &values).Error
-	return values, err
+	if err != nil {
+		return nil, err
+	}
+	slices.Sort(values)
+	return values, nil
 }
 
 func sumTotalCount(chartData []*HourlyChartData) int64 {
