@@ -4,14 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
 type ChannelMeta struct {
-	Config  model.ChannelConfig
 	Name    string
 	BaseURL string
 	Key     string
@@ -25,16 +21,23 @@ type Meta struct {
 	Group   *model.GroupCache
 	Token   *model.TokenCache
 
-	RequestAt       time.Time
-	RequestID       string
-	OriginModelName string
-	ActualModelName string
-	Mode            int
-	PromptTokens    int
-	IsChannelTest   bool
+	Endpoint      string
+	RequestAt     time.Time
+	RequestID     string
+	OriginModel   string
+	ActualModel   string
+	Mode          int
+	InputTokens   int
+	IsChannelTest bool
 }
 
 type Option func(meta *Meta)
+
+func WithEndpoint(endpoint string) Option {
+	return func(meta *Meta) {
+		meta.Endpoint = endpoint
+	}
+}
 
 func WithChannelTest(isChannelTest bool) Option {
 	return func(meta *Meta) {
@@ -68,10 +71,10 @@ func WithToken(token *model.TokenCache) Option {
 
 func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option) *Meta {
 	meta := Meta{
-		values:          make(map[string]any),
-		Mode:            mode,
-		OriginModelName: modelName,
-		RequestAt:       time.Now(),
+		values:      make(map[string]any),
+		Mode:        mode,
+		OriginModel: modelName,
+		RequestAt:   time.Now(),
 	}
 
 	for _, opt := range opts {
@@ -85,14 +88,13 @@ func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option)
 
 func (m *Meta) Reset(channel *model.Channel) {
 	m.Channel = &ChannelMeta{
-		Config:  channel.Config,
 		Name:    channel.Name,
 		BaseURL: channel.BaseURL,
 		Key:     channel.Key,
 		ID:      channel.ID,
 		Type:    channel.Type,
 	}
-	m.ActualModelName, _ = GetMappedModelName(m.OriginModelName, channel.ModelMapping)
+	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
 	m.ClearValues()
 }
 
@@ -135,18 +137,6 @@ func (m *Meta) GetBool(key string) bool {
 		return v.(bool)
 	}
 	return false
-}
-
-func (m *Meta) AwsClient() *bedrockruntime.Client {
-	if v, ok := m.Get("awsClient"); ok {
-		return v.(*bedrockruntime.Client)
-	}
-	awsClient := bedrockruntime.New(bedrockruntime.Options{
-		Region:      m.Channel.Config.Region,
-		Credentials: aws.NewCredentialsCache(credentials.NewStaticCredentialsProvider(m.Channel.Config.AK, m.Channel.Config.SK, "")),
-	})
-	m.Set("awsClient", awsClient)
-	return awsClient
 }
 
 //nolint:unparam

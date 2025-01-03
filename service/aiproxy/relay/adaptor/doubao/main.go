@@ -17,7 +17,7 @@ func GetRequestURL(meta *meta.Meta) (string, error) {
 	}
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		if strings.HasPrefix(meta.ActualModelName, "bot-") {
+		if strings.HasPrefix(meta.ActualModel, "bot-") {
 			return u + "/api/v3/bots/chat/completions", nil
 		}
 		return u + "/api/v3/chat/completions", nil

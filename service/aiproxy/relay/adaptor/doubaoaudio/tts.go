@@ -62,20 +62,20 @@ type RequestConfig struct {
 var defaultHeader = []byte{0x11, 0x10, 0x11, 0x00}
 
 //nolint:gosec
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalTTSRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	reqMap, err := utils.UnmarshalMap(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	appID, token, err := getAppIDAndToken(meta.Channel.Key)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	doubaoRequest := DoubaoTTSRequest{
@@ -119,12 +119,12 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 
 	data, err := json.Marshal(doubaoRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	compressedData, err := gzipCompress(data)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	payloadArr := make([]byte, 4)
@@ -134,7 +134,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 	clientRequest = append(clientRequest, payloadArr...)
 	clientRequest = append(clientRequest, compressedData...)
 
-	return nil, bytes.NewReader(clientRequest), nil
+	return http.MethodPost, nil, bytes.NewReader(clientRequest), nil
 }
 
 func TTSDoRequest(meta *meta.Meta, req *http.Request) (*http.Response, error) {
@@ -171,8 +171,8 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (*relaymod
 	defer conn.Close()
 
 	usage := &relaymodel.Usage{
-		PromptTokens: meta.PromptTokens,
-		TotalTokens:  meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
+		TotalTokens:  meta.InputTokens,
 	}
 
 	for {

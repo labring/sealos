@@ -25,7 +25,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	if !ok {
 		return 0, fmt.Errorf("invalid channel type: %d", channel.Type)
 	}
-	if getBalance, ok := adaptorI.(adaptor.GetBalance); ok {
+	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
 		if err != nil {
 			return 0, err
@@ -48,7 +48,7 @@ func UpdateChannelBalance(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
+	channel, err := model.GetChannelByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
@@ -72,7 +72,7 @@ func UpdateChannelBalance(c *gin.Context) {
 }
 
 func updateAllChannelsBalance() error {
-	channels, err := model.GetAllChannels(false, false)
+	channels, err := model.GetAllChannels()
 	if err != nil {
 		return err
 	}

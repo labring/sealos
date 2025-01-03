@@ -9,15 +9,40 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
+		Model:       "Doubao-vision-lite-32k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.008,
+		OutputPrice: 0.008,
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(32768),
+			model.WithModelConfigVision(true),
+		),
+	},
+	{
+		Model:       "Doubao-vision-pro-32k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.02,
+		OutputPrice: 0.02,
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(32768),
+			model.WithModelConfigVision(true),
+		),
+	},
+	{
 		Model:       "Doubao-pro-256k",
 		Type:        relaymode.ChatCompletions,
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0050,
 		OutputPrice: 0.0090,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 256000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(256000),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-pro-128k",
@@ -25,10 +50,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0050,
 		OutputPrice: 0.0090,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         1000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(128000),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-pro-32k",
@@ -36,10 +63,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 32768,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-pro-4k",
@@ -47,10 +76,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0020,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4096,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         10000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(4096),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-lite-128k",
@@ -58,10 +89,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0008,
 		OutputPrice: 0.0010,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 128000,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(128000),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-lite-32k",
@@ -69,10 +102,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 32768,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 	{
 		Model:       "Doubao-lite-4k",
@@ -80,10 +115,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerDoubao,
 		InputPrice:  0.0003,
 		OutputPrice: 0.0006,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxContextTokensKey: 4096,
-			model.ModelConfigMaxOutputTokensKey:  4096,
-		},
+		RPM:         10000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(4096),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
 	},
 
 	{
@@ -91,17 +128,19 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerDoubao,
 		InputPrice: 0.0005,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 4096,
-		},
+		RPM:        1200,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(4096),
+		),
 	},
 	{
 		Model:      "Doubao-embedding-large",
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerDoubao,
 		InputPrice: 0.0007,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigMaxInputTokensKey: 4096,
-		},
+		RPM:        1000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(4096),
+		),
 	},
 }

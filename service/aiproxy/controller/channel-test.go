@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -16,10 +17,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
@@ -37,12 +38,11 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 	w := httptest.NewRecorder()
 	newc, _ := gin.CreateTestContext(w)
 	newc.Request = &http.Request{
-		Method: http.MethodPost,
-		URL:    &url.URL{Path: utils.BuildModeDefaultPath(mode)},
+		URL:    &url.URL{},
 		Body:   io.NopCloser(body),
 		Header: make(http.Header),
 	}
-	newc.Set(string(helper.RequestIDKey), channelTestRequestID)
+	middleware.SetRequestID(newc, channelTestRequestID)
 
 	meta := meta.NewMeta(
 		channel,
@@ -51,24 +51,29 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		meta.WithRequestID(channelTestRequestID),
 		meta.WithChannelTest(true),
 	)
-	bizErr := relayHelper(meta, newc)
+	relayController, ok := relayController(mode)
+	if !ok {
+		return nil, fmt.Errorf("relay mode %d not implemented", mode)
+	}
+	bizErr := relayController(meta, newc)
+	success := bizErr == nil
 	var respStr string
 	var code int
-	if bizErr == nil {
+	if success {
 		respStr = w.Body.String()
 		code = w.Code
 	} else {
-		respStr = bizErr.String()
+		respStr = bizErr.Error.JSONOrEmpty()
 		code = bizErr.StatusCode
 	}
 
 	return channel.UpdateModelTest(
 		meta.RequestAt,
-		meta.OriginModelName,
-		meta.ActualModelName,
+		meta.OriginModel,
+		meta.ActualModel,
 		meta.Mode,
 		time.Since(meta.RequestAt).Seconds(),
-		bizErr == nil,
+		success,
 		respStr,
 		code,
 	)
@@ -348,5 +353,42 @@ func TestAllChannels(c *gin.Context) {
 			Success: true,
 			Data:    results,
 		})
+	}
+}
+
+func AutoTestBannedModels() {
+	log := log.WithFields(log.Fields{
+		"auto_test_banned_models": "true",
+	})
+	channels, err := monitor.GetAllBannedChannels(context.Background())
+	if err != nil {
+		log.Errorf("failed to get banned channels: %s", err.Error())
+		return
+	}
+	if len(channels) == 0 {
+		return
+	}
+
+	for modelName, ids := range channels {
+		for _, id := range ids {
+			channel, err := model.LoadChannelByID(int(id))
+			if err != nil {
+				log.Errorf("failed to get channel by model %s: %s", modelName, err.Error())
+				continue
+			}
+			result, err := testSingleModel(channel, modelName)
+			if err != nil {
+				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
+			}
+			if result.Success {
+				log.Infof("model %s(%d) test success, unban it", modelName, channel.ID)
+				err = monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
+				if err != nil {
+					log.Errorf("clear channel errors failed: %+v", err)
+				}
+			} else {
+				log.Infof("model %s(%d) test failed", modelName, channel.ID)
+			}
+		}
 	}
 }
