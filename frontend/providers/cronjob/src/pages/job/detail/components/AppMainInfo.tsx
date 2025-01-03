@@ -94,6 +94,8 @@ export default function AppBaseInfo({
                       ? '#33BABB'
                       : jobItem.status === 'failed'
                       ? '#FF8492'
+                      : jobItem.status === 'active'
+                      ? '#33BABB'
                       : '#FF8492'
                 }}
               >

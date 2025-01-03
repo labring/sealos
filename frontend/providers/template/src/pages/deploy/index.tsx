@@ -33,7 +33,9 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false });
 export default function EditApp({
   appName,
   metaData,
-  brandName
+  brandName,
+  readmeContent,
+  readUrl
 }: {
   appName?: string;
   metaData: {
@@ -42,6 +44,8 @@ export default function EditApp({
     description: string;
   };
   brandName?: string;
+  readmeContent: string;
+  readUrl: string;
 }) {
   const { t, i18n } = useTranslation();
   const { message: toast } = useMessage();
@@ -387,7 +391,7 @@ export default function EditApp({
               platformEnvs={platformEnvs!}
             />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
-            <ReadMe templateDetail={data?.templateYaml!} />
+            <ReadMe key={readUrl} readUrl={readUrl} readmeContent={readmeContent} />
           </Flex>
         </Flex>
       </Flex>
@@ -421,16 +425,24 @@ export async function getServerSideProps(content: any) {
     keywords: '',
     description: ''
   };
+  let readmeContent = '';
+  let readUrl = '';
 
   try {
     const templateSource: { data: TemplateSourceType } = await (
       await fetch(`${baseurl}/api/getTemplateSource?templateName=${appName}`)
     ).json();
+    const templateDetail = templateSource?.data.templateYaml;
+
     metaData = {
-      title: templateSource?.data.templateYaml.spec.title,
-      keywords: templateSource?.data.templateYaml.spec.description,
-      description: templateSource?.data.templateYaml.spec.description
+      title: templateDetail?.spec?.title,
+      keywords: templateDetail?.spec?.description,
+      description: templateDetail?.spec?.description
     };
+
+    const readme = templateDetail?.spec?.i18n?.[local]?.readme ?? templateDetail?.spec?.readme;
+    readUrl = readme;
+    readmeContent = await (await fetch(readme)).text();
   } catch (error) {}
 
   return {
@@ -438,6 +450,8 @@ export async function getServerSideProps(content: any) {
       appName,
       metaData,
       brandName,
+      readmeContent,
+      readUrl,
       ...(await serviceSideProps(content))
     }
   };

@@ -60,6 +60,7 @@ export type CronJobEditType = {
   launchpadName: string;
   launchpadId: string;
   serviceAccountName: string;
+  launchpadKind: string;
 } & CronJobDetailType;
 
 export type CronJobDetailType = {
@@ -115,4 +116,5 @@ export type CronJobAnnotations = {
   launchpadName: string;
   launchpadId: string;
   replicas: string;
+  launchpadKind: string;
 };

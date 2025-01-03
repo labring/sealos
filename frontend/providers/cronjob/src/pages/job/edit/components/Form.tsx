@@ -436,6 +436,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                             setValue('replicas', launchpad.replicas);
                             setValue('cpu', launchpad.cpu);
                             setValue('memory', launchpad.memory);
+                            setValue('launchpadKind', launchpad.kind);
                           }}
                         />
                       )}
