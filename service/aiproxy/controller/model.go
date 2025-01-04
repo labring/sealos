@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -190,19 +191,22 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 }
 
 func ListModels(c *gin.Context) {
-	models := model.CacheGetEnabledModelConfigs()
+	modelConfigsMap := model.CacheGetEnabledModelConfigsMap()
+	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
 
-	availableOpenAIModels := make([]*OpenAIModels, len(models))
+	availableOpenAIModels := make([]*OpenAIModels, 0, len(token.Models))
 
-	for idx, model := range models {
-		availableOpenAIModels[idx] = &OpenAIModels{
-			ID:         model.Model,
-			Object:     "model",
-			Created:    1626777600,
-			OwnedBy:    string(model.Owner),
-			Root:       model.Model,
-			Permission: permission,
-			Parent:     nil,
+	for _, model := range token.Models {
+		if mc, ok := modelConfigsMap[model]; ok {
+			availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
+				ID:         model,
+				Object:     "model",
+				Created:    1626777600,
+				OwnedBy:    string(mc.Owner),
+				Root:       model,
+				Permission: permission,
+				Parent:     nil,
+			})
 		}
 	}
 
@@ -214,10 +218,15 @@ func ListModels(c *gin.Context) {
 
 func RetrieveModel(c *gin.Context) {
 	modelName := c.Param("model")
-	enabledModels := model.GetEnabledModel2Channels()
-	model, ok := model.CacheGetModelConfig(modelName)
 
-	if _, exist := enabledModels[modelName]; !exist || !ok {
+	modelConfigsMap := model.CacheGetEnabledModelConfigsMap()
+	mc, ok := modelConfigsMap[modelName]
+	if ok {
+		token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+		ok = slices.Contains(token.Models, modelName)
+	}
+
+	if !ok {
 		c.JSON(200, gin.H{
 			"error": &relaymodel.Error{
 				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
@@ -230,11 +239,11 @@ func RetrieveModel(c *gin.Context) {
 	}
 
 	c.JSON(200, &OpenAIModels{
-		ID:         model.Model,
+		ID:         modelName,
 		Object:     "model",
 		Created:    1626777600,
-		OwnedBy:    string(model.Owner),
-		Root:       model.Model,
+		OwnedBy:    string(mc.Owner),
+		Root:       modelName,
 		Permission: permission,
 		Parent:     nil,
 	})
