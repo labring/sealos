@@ -13,12 +13,11 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-	"github.com/maruel/natural"
-	"github.com/redis/go-redis/v9"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/maruel/natural"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -45,6 +44,11 @@ func (r redisStringSlice) MarshalBinary() ([]byte, error) {
 }
 
 type redisTime time.Time
+
+var (
+	_ redis.Scanner            = (*redisTime)(nil)
+	_ encoding.BinaryMarshaler = (*redisTime)(nil)
+)
 
 func (t *redisTime) ScanRedis(value string) error {
 	return (*time.Time)(t).UnmarshalBinary(conv.StringToBytes(value))
@@ -90,13 +94,13 @@ func CacheDeleteToken(key string) error {
 }
 
 //nolint:gosec
-func CacheSetToken(token *Token) error {
+func CacheSetToken(token *TokenCache) error {
 	if !common.RedisEnabled {
 		return nil
 	}
 	key := fmt.Sprintf(TokenCacheKey, token.Key)
 	pipe := common.RDB.Pipeline()
-	pipe.HSet(context.Background(), key, token.ToTokenCache())
+	pipe.HSet(context.Background(), key, token)
 	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
@@ -127,11 +131,13 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 		return nil, err
 	}
 
-	if err := CacheSetToken(token); err != nil {
+	tc := token.ToTokenCache()
+
+	if err := CacheSetToken(tc); err != nil {
 		log.Error("redis set token error: " + err.Error())
 	}
 
-	return token.ToTokenCache(), nil
+	return tc, nil
 }
 
 var updateTokenUsedAmountOnlyIncreaseScript = redis.NewScript(`
@@ -181,11 +187,29 @@ func CacheUpdateTokenStatus(key string, status int) error {
 	return updateTokenStatusScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, status).Err()
 }
 
+type redisMapStringInt64 map[string]int64
+
+var (
+	_ redis.Scanner            = (*redisMapStringInt64)(nil)
+	_ encoding.BinaryMarshaler = (*redisMapStringInt64)(nil)
+)
+
+func (r *redisMapStringInt64) ScanRedis(value string) error {
+	return json.Unmarshal(conv.StringToBytes(value), r)
+}
+
+func (r redisMapStringInt64) MarshalBinary() ([]byte, error) {
+	return json.Marshal(r)
+}
+
 type GroupCache struct {
-	ID         string  `json:"-"           redis:"-"`
-	Status     int     `json:"status"      redis:"st"`
-	UsedAmount float64 `json:"used_amount" redis:"ua"`
-	RPMRatio   float64 `json:"rpm_ratio"   redis:"rpm"`
+	ID         string              `json:"-"           redis:"-"`
+	Status     int                 `json:"status"      redis:"st"`
+	UsedAmount float64             `json:"used_amount" redis:"ua"`
+	RPMRatio   float64             `json:"rpm_ratio"   redis:"rpm_r"`
+	RPM        redisMapStringInt64 `json:"rpm"         redis:"rpm"`
+	TPMRatio   float64             `json:"tpm_ratio"   redis:"tpm_r"`
+	TPM        redisMapStringInt64 `json:"tpm"         redis:"tpm"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
@@ -194,6 +218,9 @@ func (g *Group) ToGroupCache() *GroupCache {
 		Status:     g.Status,
 		UsedAmount: g.UsedAmount,
 		RPMRatio:   g.RPMRatio,
+		RPM:        g.RPM,
+		TPMRatio:   g.TPMRatio,
+		TPM:        g.TPM,
 	}
 }
 
@@ -204,6 +231,20 @@ func CacheDeleteGroup(id string) error {
 	return common.RedisDel(fmt.Sprintf(GroupCacheKey, id))
 }
 
+var updateGroupRPMRatioScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "rpm_r") then
+		redis.call("HSet", KEYS[1], "rpm_r", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupRPMRatio(id string, rpmRatio float64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateGroupRPMRatioScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, rpmRatio).Err()
+}
+
 var updateGroupRPMScript = redis.NewScript(`
 	if redis.call("HExists", KEYS[1], "rpm") then
 		redis.call("HSet", KEYS[1], "rpm", ARGV[1])
@@ -211,11 +252,47 @@ var updateGroupRPMScript = redis.NewScript(`
 	return redis.status_reply("ok")
 `)
 
-func CacheUpdateGroupRPM(id string, rpmRatio float64) error {
+func CacheUpdateGroupRPM(id string, rpm map[string]int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	return updateGroupRPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, rpmRatio).Err()
+	jsonRPM, err := json.Marshal(rpm)
+	if err != nil {
+		return err
+	}
+	return updateGroupRPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, conv.BytesToString(jsonRPM)).Err()
+}
+
+var updateGroupTPMRatioScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "tpm_r") then
+		redis.call("HSet", KEYS[1], "tpm_r", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupTPMRatio(id string, tpmRatio float64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateGroupTPMRatioScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, tpmRatio).Err()
+}
+
+var updateGroupTPMScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "tpm") then
+		redis.call("HSet", KEYS[1], "tpm", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupTPM(id string, tpm map[string]int64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	jsonTPM, err := json.Marshal(tpm)
+	if err != nil {
+		return err
+	}
+	return updateGroupTPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, conv.BytesToString(jsonTPM)).Err()
 }
 
 var updateGroupStatusScript = redis.NewScript(`
@@ -233,13 +310,13 @@ func CacheUpdateGroupStatus(id string, status int) error {
 }
 
 //nolint:gosec
-func CacheSetGroup(group *Group) error {
+func CacheSetGroup(group *GroupCache) error {
 	if !common.RedisEnabled {
 		return nil
 	}
 	key := fmt.Sprintf(GroupCacheKey, group.ID)
 	pipe := common.RDB.Pipeline()
-	pipe.HSet(context.Background(), key, group.ToGroupCache())
+	pipe.HSet(context.Background(), key, group)
 	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
@@ -270,11 +347,13 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 		return nil, err
 	}
 
-	if err := CacheSetGroup(group); err != nil {
+	gc := group.ToGroupCache()
+
+	if err := CacheSetGroup(gc); err != nil {
 		log.Error("redis set group error: " + err.Error())
 	}
 
-	return group.ToGroupCache(), nil
+	return gc, nil
 }
 
 var updateGroupUsedAmountOnlyIncreaseScript = redis.NewScript(`

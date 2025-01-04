@@ -47,7 +47,14 @@ func getGroupRPMRatio(group *model.GroupCache) float64 {
 }
 
 func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64, modelTPM int64) error {
-	if modelRPM <= 0 {
+	if group.RPM != nil && group.RPM[requestModel] > 0 {
+		modelRPM = group.RPM[requestModel]
+	}
+	if group.TPM != nil && group.TPM[requestModel] > 0 {
+		modelTPM = group.TPM[requestModel]
+	}
+
+	if modelRPM <= 0 && modelTPM <= 0 {
 		return nil
 	}
 
