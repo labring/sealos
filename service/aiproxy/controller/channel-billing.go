@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -105,7 +104,7 @@ func AutomaticallyUpdateChannels(frequency int) {
 
 // subscription
 func GetSubscription(c *gin.Context) {
-	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
+	group := middleware.GetGroup(c)
 	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
@@ -115,7 +114,7 @@ func GetSubscription(c *gin.Context) {
 		})
 		return
 	}
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	token := middleware.GetToken(c)
 	quota := token.Quota
 	if quota <= 0 {
 		quota = b
@@ -128,6 +127,6 @@ func GetSubscription(c *gin.Context) {
 }
 
 func GetUsage(c *gin.Context) {
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	token := middleware.GetToken(c)
 	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount / 7 * 100})
 }

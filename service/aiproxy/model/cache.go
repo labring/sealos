@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	json "github.com/json-iterator/go"
@@ -326,67 +327,33 @@ func CacheGetGroupModelTPM(id string, model string) (int64, error) {
 	return tpm, nil
 }
 
-var (
-	enabledModel2channels           map[string][]*Channel
-	enabledModels                   []string
-	enabledModelsMap                map[string]struct{}
-	enabledModelConfigs             []*ModelConfig
-	enabledModelConfigsMap          map[string]*ModelConfig
-	enabledChannelType2ModelConfigs map[int][]*ModelConfig
-	enabledChannelID2channel        map[int]*Channel
-	channelSyncLock                 sync.RWMutex
-)
-
-// GetEnabledModel2Channels returns a map of model name to enabled channels
-func GetEnabledModel2Channels() map[string][]*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModel2channels
+// read-only cache
+//
+//nolint:revive
+type ModelCaches struct {
+	ModelConfigMap                  map[string]*ModelConfig
+	EnabledModel2channels           map[string][]*Channel
+	EnabledModels                   []string
+	EnabledModelsMap                map[string]struct{}
+	EnabledModelConfigs             []*ModelConfig
+	EnabledModelConfigsMap          map[string]*ModelConfig
+	EnabledChannelType2ModelConfigs map[int][]*ModelConfig
+	EnabledChannelID2channel        map[int]*Channel
 }
 
-// CacheGetEnabledModels returns a list of enabled model names
-func CacheGetEnabledModels() []string {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModels
+var modelCaches atomic.Pointer[ModelCaches]
+
+func init() {
+	modelCaches.Store(new(ModelCaches))
 }
 
-func CacheGetEnabledModelsMap() map[string]struct{} {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModelsMap
-}
-
-// CacheGetEnabledChannelType2ModelConfigs returns a map of channel type to enabled model configs
-func CacheGetEnabledChannelType2ModelConfigs() map[int][]*ModelConfig {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledChannelType2ModelConfigs
-}
-
-// CacheGetEnabledModelConfigs returns a list of enabled model configs
-func CacheGetEnabledModelConfigs() []*ModelConfig {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModelConfigs
-}
-
-func CacheGetEnabledModelConfigsMap() map[string]*ModelConfig {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModelConfigsMap
-}
-
-func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	channel, ok := enabledChannelID2channel[id]
-	return channel, ok
+func LoadModelCaches() *ModelCaches {
+	return modelCaches.Load()
 }
 
 // InitModelConfigAndChannelCache initializes the channel cache from database
 func InitModelConfigAndChannelCache() error {
-	err := initModelConfigCache()
+	modelConfigMap, err := initializeModelConfigCache()
 	if err != nil {
 		return err
 	}
@@ -409,21 +376,22 @@ func InitModelConfigAndChannelCache() error {
 	sortChannelsByPriority(newEnabledModel2channels)
 
 	// Build channel type to model configs map
-	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels)
+	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels, modelConfigMap)
 
 	// Build enabled models and configs lists
 	newEnabledModels, newEnabledModelsMap, newEnabledModelConfigs, newEnabledModelConfigsMap := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
 
 	// Update global cache atomically
-	updateGlobalCache(
-		newEnabledModel2channels,
-		newEnabledModels,
-		newEnabledModelsMap,
-		newEnabledModelConfigs,
-		newEnabledModelConfigsMap,
-		newEnabledChannelID2channel,
-		newEnabledChannelType2ModelConfigs,
-	)
+	modelCaches.Store(&ModelCaches{
+		ModelConfigMap:                  modelConfigMap,
+		EnabledModel2channels:           newEnabledModel2channels,
+		EnabledModels:                   newEnabledModels,
+		EnabledModelsMap:                newEnabledModelsMap,
+		EnabledModelConfigs:             newEnabledModelConfigs,
+		EnabledModelConfigsMap:          newEnabledModelConfigsMap,
+		EnabledChannelType2ModelConfigs: newEnabledChannelType2ModelConfigs,
+		EnabledChannelID2channel:        newEnabledChannelID2channel,
+	})
 
 	return nil
 }
@@ -469,6 +437,19 @@ func LoadChannelByID(id int) (*Channel, error) {
 	initializeChannelModelMapping(&channel)
 
 	return &channel, nil
+}
+
+func initializeModelConfigCache() (map[string]*ModelConfig, error) {
+	modelConfigs, err := GetAllModelConfigs()
+	if err != nil {
+		return nil, err
+	}
+	newModelConfigMap := make(map[string]*ModelConfig)
+	for _, modelConfig := range modelConfigs {
+		newModelConfigMap[modelConfig.Model] = modelConfig
+	}
+
+	return newModelConfigMap, nil
 }
 
 func initializeChannelModels(channel *Channel) {
@@ -522,7 +503,7 @@ func sortChannelsByPriority(modelMap map[string][]*Channel) {
 	}
 }
 
-func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConfig {
+func buildChannelTypeToModelConfigsMap(channels []*Channel, modelConfigMap map[string]*ModelConfig) map[int][]*ModelConfig {
 	typeMap := make(map[int][]*ModelConfig)
 
 	for _, channel := range channels {
@@ -532,7 +513,7 @@ func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConf
 		configs := typeMap[channel.Type]
 
 		for _, model := range channel.Models {
-			if config, ok := CacheGetModelConfig(model); ok {
+			if config, ok := modelConfigMap[model]; ok {
 				configs = append(configs, config)
 			}
 		}
@@ -594,26 +575,6 @@ func SortModelConfigsFunc(i, j *ModelConfig) int {
 	return 1
 }
 
-func updateGlobalCache(
-	newEnabledModel2channels map[string][]*Channel,
-	newEnabledModels []string,
-	newEnabledModelsMap map[string]struct{},
-	newEnabledModelConfigs []*ModelConfig,
-	newEnabledModelConfigsMap map[string]*ModelConfig,
-	newEnabledChannelID2channel map[int]*Channel,
-	newEnabledChannelType2ModelConfigs map[int][]*ModelConfig,
-) {
-	channelSyncLock.Lock()
-	defer channelSyncLock.Unlock()
-	enabledModel2channels = newEnabledModel2channels
-	enabledModels = newEnabledModels
-	enabledModelsMap = newEnabledModelsMap
-	enabledModelConfigs = newEnabledModelConfigs
-	enabledModelConfigsMap = newEnabledModelConfigsMap
-	enabledChannelID2channel = newEnabledChannelID2channel
-	enabledChannelType2ModelConfigs = newEnabledChannelType2ModelConfigs
-}
-
 func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
 	defer wg.Done()
 
@@ -653,8 +614,8 @@ var (
 )
 
 //nolint:gosec
-func CacheGetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
-	_channels := GetEnabledModel2Channels()[model]
+func (c *ModelCaches) GetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
+	_channels := c.EnabledModel2channels[model]
 	if len(_channels) == 0 {
 		return nil, ErrChannelsNotFound
 	}
@@ -686,32 +647,4 @@ func CacheGetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channe
 	}
 
 	return channels[rand.IntN(len(channels))], nil
-}
-
-var (
-	modelConfigSyncLock sync.RWMutex
-	modelConfigMap      map[string]*ModelConfig
-)
-
-func initModelConfigCache() error {
-	modelConfigs, err := GetAllModelConfigs()
-	if err != nil {
-		return err
-	}
-	newModelConfigMap := make(map[string]*ModelConfig)
-	for _, modelConfig := range modelConfigs {
-		newModelConfigMap[modelConfig.Model] = modelConfig
-	}
-
-	modelConfigSyncLock.Lock()
-	defer modelConfigSyncLock.Unlock()
-	modelConfigMap = newModelConfigMap
-	return nil
-}
-
-func CacheGetModelConfig(model string) (*ModelConfig, bool) {
-	modelConfigSyncLock.RLock()
-	defer modelConfigSyncLock.RUnlock()
-	modelConfig, ok := modelConfigMap[model]
-	return modelConfig, ok
 }

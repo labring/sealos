@@ -29,8 +29,12 @@ import (
 const channelTestRequestID = "channel-test"
 
 // testSingleModel tests a single model in the channel
-func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTest, error) {
-	body, mode, err := utils.BuildRequest(modelName)
+func testSingleModel(mc *model.ModelCaches, channel *model.Channel, modelName string) (*model.ChannelTest, error) {
+	modelConfig, ok := mc.ModelConfigMap[modelName]
+	if !ok {
+		return nil, errors.New(modelName + " model config not found")
+	}
+	body, mode, err := utils.BuildRequest(modelConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +52,7 @@ func testSingleModel(channel *model.Channel, modelName string) (*model.ChannelTe
 		channel,
 		mode,
 		modelName,
+		modelConfig,
 		meta.WithRequestID(channelTestRequestID),
 		meta.WithChannelTest(true),
 	)
@@ -116,7 +121,7 @@ func TestChannel(c *gin.Context) {
 		return
 	}
 
-	ct, err := testSingleModel(channel, modelName)
+	ct, err := testSingleModel(model.LoadModelCaches(), channel, modelName)
 	if err != nil {
 		log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
 		c.JSON(http.StatusOK, middleware.APIResponse{
@@ -142,8 +147,8 @@ type testResult struct {
 	Success bool               `json:"success"`
 }
 
-func processTestResult(channel *model.Channel, modelName string, returnSuccess bool, successResponseBody bool) *testResult {
-	ct, err := testSingleModel(channel, modelName)
+func processTestResult(mc *model.ModelCaches, channel *model.Channel, modelName string, returnSuccess bool, successResponseBody bool) *testResult {
+	ct, err := testSingleModel(mc, channel, modelName)
 
 	e := &utils.UnsupportedModelTypeError{}
 	if errors.As(err, &e) {
@@ -216,6 +221,8 @@ func TestChannelModels(c *gin.Context) {
 		models[i], models[j] = models[j], models[i]
 	})
 
+	mc := model.LoadModelCaches()
+
 	for _, modelName := range models {
 		wg.Add(1)
 		semaphore <- struct{}{}
@@ -224,7 +231,7 @@ func TestChannelModels(c *gin.Context) {
 			defer wg.Done()
 			defer func() { <-semaphore }()
 
-			result := processTestResult(channel, model, returnSuccess, successResponseBody)
+			result := processTestResult(mc, channel, model, returnSuccess, successResponseBody)
 			if result == nil {
 				return
 			}
@@ -299,6 +306,8 @@ func TestAllChannels(c *gin.Context) {
 		newChannels[i], newChannels[j] = newChannels[j], newChannels[i]
 	})
 
+	mc := model.LoadModelCaches()
+
 	for _, channel := range newChannels {
 		channelHasError := &atomic.Bool{}
 		hasErrorMap[channel.ID] = channelHasError
@@ -316,7 +325,7 @@ func TestAllChannels(c *gin.Context) {
 				defer wg.Done()
 				defer func() { <-semaphore }()
 
-				result := processTestResult(ch, model, returnSuccess, successResponseBody)
+				result := processTestResult(mc, ch, model, returnSuccess, successResponseBody)
 				if result == nil {
 					return
 				}
@@ -369,6 +378,8 @@ func AutoTestBannedModels() {
 		return
 	}
 
+	mc := model.LoadModelCaches()
+
 	for modelName, ids := range channels {
 		for _, id := range ids {
 			channel, err := model.LoadChannelByID(int(id))
@@ -376,7 +387,7 @@ func AutoTestBannedModels() {
 				log.Errorf("failed to get channel by model %s: %s", modelName, err.Error())
 				continue
 			}
-			result, err := testSingleModel(channel, modelName)
+			result, err := testSingleModel(mc, channel, modelName)
 			if err != nil {
 				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
 			}

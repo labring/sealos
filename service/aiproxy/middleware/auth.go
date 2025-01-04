@@ -89,12 +89,27 @@ func TokenAuth(c *gin.Context) {
 	}
 	SetLogGroupFields(log.Data, group)
 
-	storeTokenModels(token)
+	modelCaches := model.LoadModelCaches()
+
+	storeTokenModels(token, modelCaches)
 
 	c.Set(ctxkey.Group, group)
 	c.Set(ctxkey.Token, token)
+	c.Set(ctxkey.ModelCaches, modelCaches)
 
 	c.Next()
+}
+
+func GetGroup(c *gin.Context) *model.GroupCache {
+	return c.MustGet(ctxkey.Group).(*model.GroupCache)
+}
+
+func GetToken(c *gin.Context) *model.TokenCache {
+	return c.MustGet(ctxkey.Token).(*model.TokenCache)
+}
+
+func GetModelCaches(c *gin.Context) *model.ModelCaches {
+	return c.MustGet(ctxkey.ModelCaches).(*model.ModelCaches)
 }
 
 func sliceFilter[T any](s []T, fn func(T) bool) []T {
@@ -108,11 +123,11 @@ func sliceFilter[T any](s []T, fn func(T) bool) []T {
 	return s[:i]
 }
 
-func storeTokenModels(token *model.TokenCache) {
+func storeTokenModels(token *model.TokenCache, modelCaches *model.ModelCaches) {
 	if len(token.Models) == 0 {
-		token.Models = model.CacheGetEnabledModels()
+		token.Models = modelCaches.EnabledModels
 	} else {
-		enabledModelsMap := model.CacheGetEnabledModelsMap()
+		enabledModelsMap := modelCaches.EnabledModelsMap
 		token.Models = sliceFilter(token.Models, func(m string) bool {
 			_, ok := enabledModelsMap[m]
 			return ok

@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
@@ -169,11 +168,11 @@ func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
 }
 
 func EnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, model.CacheGetEnabledModelConfigs())
+	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledModelConfigs)
 }
 
 func ChannelEnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs())
+	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledChannelType2ModelConfigs)
 }
 
 func ChannelEnabledModelsByType(c *gin.Context) {
@@ -187,17 +186,17 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt])
+	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledChannelType2ModelConfigs[channelTypeInt])
 }
 
 func ListModels(c *gin.Context) {
-	modelConfigsMap := model.CacheGetEnabledModelConfigsMap()
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	enabledModelConfigsMap := middleware.GetModelCaches(c).EnabledModelConfigsMap
+	token := middleware.GetToken(c)
 
 	availableOpenAIModels := make([]*OpenAIModels, 0, len(token.Models))
 
 	for _, model := range token.Models {
-		if mc, ok := modelConfigsMap[model]; ok {
+		if mc, ok := enabledModelConfigsMap[model]; ok {
 			availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
 				ID:         model,
 				Object:     "model",
@@ -218,11 +217,11 @@ func ListModels(c *gin.Context) {
 
 func RetrieveModel(c *gin.Context) {
 	modelName := c.Param("model")
+	enabledModelConfigsMap := middleware.GetModelCaches(c).EnabledModelConfigsMap
 
-	modelConfigsMap := model.CacheGetEnabledModelConfigsMap()
-	mc, ok := modelConfigsMap[modelName]
+	mc, ok := enabledModelConfigsMap[modelName]
 	if ok {
-		token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+		token := middleware.GetToken(c)
 		ok = slices.Contains(token.Models, modelName)
 	}
 

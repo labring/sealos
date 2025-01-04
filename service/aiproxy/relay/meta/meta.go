@@ -16,10 +16,11 @@ type ChannelMeta struct {
 }
 
 type Meta struct {
-	values  map[string]any
-	Channel *ChannelMeta
-	Group   *model.GroupCache
-	Token   *model.TokenCache
+	values      map[string]any
+	Channel     *ChannelMeta
+	Group       *model.GroupCache
+	Token       *model.TokenCache
+	ModelConfig *model.ModelConfig
 
 	Endpoint      string
 	RequestAt     time.Time
@@ -69,12 +70,19 @@ func WithToken(token *model.TokenCache) Option {
 	}
 }
 
-func NewMeta(channel *model.Channel, mode int, modelName string, opts ...Option) *Meta {
+func NewMeta(
+	channel *model.Channel,
+	mode int,
+	modelName string,
+	modelConfig *model.ModelConfig,
+	opts ...Option,
+) *Meta {
 	meta := Meta{
 		values:      make(map[string]any),
 		Mode:        mode,
 		OriginModel: modelName,
 		RequestAt:   time.Now(),
+		ModelConfig: modelConfig,
 	}
 
 	for _, opt := range opts {

@@ -20,6 +20,10 @@ func SetRequestID(c *gin.Context, id string) {
 	SetLogRequestIDField(log.Data, id)
 }
 
+func GetRequestID(c *gin.Context) string {
+	return c.GetString(ctxkey.RequestID)
+}
+
 func RequestID(c *gin.Context) {
 	id := GenRequestID()
 	SetRequestID(c, id)
