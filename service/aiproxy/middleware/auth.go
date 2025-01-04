@@ -88,14 +88,36 @@ func TokenAuth(c *gin.Context) {
 		return
 	}
 	SetLogGroupFields(log.Data, group)
-	if len(token.Models) == 0 {
-		token.Models = model.CacheGetEnabledModels()
-	}
+
+	storeTokenModels(token)
 
 	c.Set(ctxkey.Group, group)
 	c.Set(ctxkey.Token, token)
 
 	c.Next()
+}
+
+func sliceFilter[T any](s []T, fn func(T) bool) []T {
+	i := 0
+	for _, v := range s {
+		if fn(v) {
+			s[i] = v
+			i++
+		}
+	}
+	return s[:i]
+}
+
+func storeTokenModels(token *model.TokenCache) {
+	if len(token.Models) == 0 {
+		token.Models = model.CacheGetEnabledModels()
+	} else {
+		enabledModelsMap := model.CacheGetEnabledModelsMap()
+		token.Models = sliceFilter(token.Models, func(m string) bool {
+			_, ok := enabledModelsMap[m]
+			return ok
+		})
+	}
 }
 
 func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {

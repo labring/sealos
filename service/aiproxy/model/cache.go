@@ -329,7 +329,9 @@ func CacheGetGroupModelTPM(id string, model string) (int64, error) {
 var (
 	enabledModel2channels           map[string][]*Channel
 	enabledModels                   []string
+	enabledModelsMap                map[string]struct{}
 	enabledModelConfigs             []*ModelConfig
+	enabledModelConfigsMap          map[string]*ModelConfig
 	enabledChannelType2ModelConfigs map[int][]*ModelConfig
 	enabledChannelID2channel        map[int]*Channel
 	channelSyncLock                 sync.RWMutex
@@ -349,6 +351,12 @@ func CacheGetEnabledModels() []string {
 	return enabledModels
 }
 
+func CacheGetEnabledModelsMap() map[string]struct{} {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return enabledModelsMap
+}
+
 // CacheGetEnabledChannelType2ModelConfigs returns a map of channel type to enabled model configs
 func CacheGetEnabledChannelType2ModelConfigs() map[int][]*ModelConfig {
 	channelSyncLock.RLock()
@@ -361,6 +369,12 @@ func CacheGetEnabledModelConfigs() []*ModelConfig {
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 	return enabledModelConfigs
+}
+
+func CacheGetEnabledModelConfigsMap() map[string]*ModelConfig {
+	channelSyncLock.RLock()
+	defer channelSyncLock.RUnlock()
+	return enabledModelConfigsMap
 }
 
 func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
@@ -398,13 +412,15 @@ func InitModelConfigAndChannelCache() error {
 	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels)
 
 	// Build enabled models and configs lists
-	newEnabledModels, newEnabledModelConfigs := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
+	newEnabledModels, newEnabledModelsMap, newEnabledModelConfigs, newEnabledModelConfigsMap := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
 
 	// Update global cache atomically
 	updateGlobalCache(
 		newEnabledModel2channels,
 		newEnabledModels,
+		newEnabledModelsMap,
 		newEnabledModelConfigs,
+		newEnabledModelConfigsMap,
 		newEnabledChannelID2channel,
 		newEnabledChannelType2ModelConfigs,
 	)
@@ -532,10 +548,11 @@ func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConf
 	return typeMap
 }
 
-func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, []*ModelConfig) {
+func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, map[string]struct{}, []*ModelConfig, map[string]*ModelConfig) {
 	models := make([]string, 0)
 	configs := make([]*ModelConfig, 0)
 	appended := make(map[string]struct{})
+	modelConfigsMap := make(map[string]*ModelConfig)
 
 	for _, modelConfigs := range typeMap {
 		for _, config := range modelConfigs {
@@ -545,13 +562,14 @@ func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, []*
 			models = append(models, config.Model)
 			configs = append(configs, config)
 			appended[config.Model] = struct{}{}
+			modelConfigsMap[config.Model] = config
 		}
 	}
 
 	slices.Sort(models)
 	slices.SortStableFunc(configs, SortModelConfigsFunc)
 
-	return models, configs
+	return models, appended, configs, modelConfigsMap
 }
 
 func SortModelConfigsFunc(i, j *ModelConfig) int {
@@ -579,7 +597,9 @@ func SortModelConfigsFunc(i, j *ModelConfig) int {
 func updateGlobalCache(
 	newEnabledModel2channels map[string][]*Channel,
 	newEnabledModels []string,
+	newEnabledModelsMap map[string]struct{},
 	newEnabledModelConfigs []*ModelConfig,
+	newEnabledModelConfigsMap map[string]*ModelConfig,
 	newEnabledChannelID2channel map[int]*Channel,
 	newEnabledChannelType2ModelConfigs map[int][]*ModelConfig,
 ) {
@@ -587,7 +607,9 @@ func updateGlobalCache(
 	defer channelSyncLock.Unlock()
 	enabledModel2channels = newEnabledModel2channels
 	enabledModels = newEnabledModels
+	enabledModelsMap = newEnabledModelsMap
 	enabledModelConfigs = newEnabledModelConfigs
+	enabledModelConfigsMap = newEnabledModelConfigsMap
 	enabledChannelID2channel = newEnabledChannelID2channel
 	enabledChannelType2ModelConfigs = newEnabledChannelType2ModelConfigs
 }
