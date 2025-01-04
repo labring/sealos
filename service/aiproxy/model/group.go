@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -22,13 +23,16 @@ const (
 )
 
 type Group struct {
-	CreatedAt    time.Time `json:"created_at"`
-	ID           string    `gorm:"primaryKey"         json:"id"`
-	Tokens       []*Token  `gorm:"foreignKey:GroupID" json:"-"`
-	Status       int       `gorm:"default:1;index"    json:"status"`
-	UsedAmount   float64   `gorm:"index"              json:"used_amount"`
-	RPMRatio     float64   `gorm:"index"              json:"rpm_ratio"`
-	RequestCount int       `gorm:"index"              json:"request_count"`
+	CreatedAt    time.Time        `json:"created_at"`
+	ID           string           `gorm:"primaryKey"          json:"id"`
+	Tokens       []*Token         `gorm:"foreignKey:GroupID"  json:"-"`
+	Status       int              `gorm:"default:1;index"     json:"status"`
+	UsedAmount   float64          `gorm:"index"               json:"used_amount"`
+	RPMRatio     float64          `gorm:"index"               json:"rpm_ratio"`
+	RPM          map[string]int64 `gorm:"serializer:fastjson" json:"rpm"`
+	TPMRatio     float64          `gorm:"index"               json:"tpm_ratio"`
+	TPM          map[string]int64 `gorm:"serializer:fastjson" json:"tpm"`
+	RequestCount int              `gorm:"index"               json:"request_count"`
 }
 
 func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
@@ -151,15 +155,59 @@ func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) 
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
-func UpdateGroupRPM(id string, rpmRatio float64) (err error) {
+func UpdateGroupRPMRatio(id string, rpmRatio float64) (err error) {
 	defer func() {
 		if err == nil {
-			if err := CacheUpdateGroupRPM(id, rpmRatio); err != nil {
+			if err := CacheUpdateGroupRPMRatio(id, rpmRatio); err != nil {
 				log.Error("cache update group rpm failed: " + err.Error())
 			}
 		}
 	}()
 	result := DB.Model(&Group{}).Where("id = ?", id).Update("rpm_ratio", rpmRatio)
+	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
+func UpdateGroupRPM(id string, rpm map[string]int64) (err error) {
+	defer func() {
+		if err == nil {
+			if err := CacheUpdateGroupRPM(id, rpm); err != nil {
+				log.Error("cache update group rpm failed: " + err.Error())
+			}
+		}
+	}()
+	jsonRpm, err := json.Marshal(rpm)
+	if err != nil {
+		return err
+	}
+	result := DB.Model(&Group{}).Where("id = ?", id).Update("rpm", jsonRpm)
+	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
+func UpdateGroupTPMRatio(id string, tpmRatio float64) (err error) {
+	defer func() {
+		if err == nil {
+			if err := CacheUpdateGroupTPMRatio(id, tpmRatio); err != nil {
+				log.Error("cache update group tpm ratio failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.Model(&Group{}).Where("id = ?", id).Update("tpm_ratio", tpmRatio)
+	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
+func UpdateGroupTPM(id string, tpm map[string]int64) (err error) {
+	defer func() {
+		if err == nil {
+			if err := CacheUpdateGroupTPM(id, tpm); err != nil {
+				log.Error("cache update group tpm failed: " + err.Error())
+			}
+		}
+	}()
+	jsonTpm, err := json.Marshal(tpm)
+	if err != nil {
+		return err
+	}
+	result := DB.Model(&Group{}).Where("id = ?", id).Update("tpm", jsonTpm)
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 

@@ -115,8 +115,32 @@ func GetGroup(c *gin.Context) {
 	middleware.SuccessResponse(c, groupResponse)
 }
 
-type UpdateGroupRPMRequest struct {
+type UpdateGroupRPMRatioRequest struct {
 	RPMRatio float64 `json:"rpm_ratio"`
+}
+
+func UpdateGroupRPMRatio(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := UpdateGroupRPMRatioRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	err = model.UpdateGroupRPMRatio(group, req.RPMRatio)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
+}
+
+type UpdateGroupRPMRequest struct {
+	RPM map[string]int64 `json:"rpm"`
 }
 
 func UpdateGroupRPM(c *gin.Context) {
@@ -131,7 +155,55 @@ func UpdateGroupRPM(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
 	}
-	err = model.UpdateGroupRPM(group, req.RPMRatio)
+	err = model.UpdateGroupRPM(group, req.RPM)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
+}
+
+type UpdateGroupTPMRequest struct {
+	TPM map[string]int64 `json:"tpm"`
+}
+
+func UpdateGroupTPM(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := UpdateGroupTPMRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	err = model.UpdateGroupTPM(group, req.TPM)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
+}
+
+type UpdateGroupTPMRatioRequest struct {
+	TPMRatio float64 `json:"tpm_ratio"`
+}
+
+func UpdateGroupTPMRatio(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := UpdateGroupTPMRatioRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	err = model.UpdateGroupTPMRatio(group, req.TPMRatio)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -193,7 +265,10 @@ func DeleteGroups(c *gin.Context) {
 }
 
 type CreateGroupRequest struct {
-	RPMRatio float64 `json:"rpm_ratio"`
+	RPM      map[string]int64 `json:"rpm"`
+	RPMRatio float64          `json:"rpm_ratio"`
+	TPM      map[string]int64 `json:"tpm"`
+	TPMRatio float64          `json:"tpm_ratio"`
 }
 
 func CreateGroup(c *gin.Context) {
@@ -211,6 +286,9 @@ func CreateGroup(c *gin.Context) {
 	if err := model.CreateGroup(&model.Group{
 		ID:       group,
 		RPMRatio: req.RPMRatio,
+		RPM:      req.RPM,
+		TPMRatio: req.TPMRatio,
+		TPM:      req.TPM,
 	}); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
