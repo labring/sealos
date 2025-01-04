@@ -46,9 +46,9 @@ func getGroupRPMRatio(group *model.GroupCache) float64 {
 	return groupRPMRatio
 }
 
-func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64, modelTPM int64) bool {
+func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64, modelTPM int64) error {
 	if modelRPM <= 0 {
-		return true
+		return nil
 	}
 
 	groupConsumeLevelRpmRatio := calculateGroupConsumeLevelRpmRatio(group.UsedAmount)
@@ -65,10 +65,7 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestMo
 	)
 
 	if !ok {
-		abortWithMessage(c, http.StatusTooManyRequests,
-			group.ID+" is requesting too frequently",
-		)
-		return false
+		return fmt.Errorf("group (%s) is requesting too frequently", group.ID)
 	}
 
 	if modelTPM > 0 {
@@ -76,17 +73,14 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestMo
 		if err != nil {
 			log.Errorf("get group model tpm (%s:%s) error: %s", group.ID, requestModel, err.Error())
 			// ignore error
-			return true
+			return nil
 		}
 
 		if tpm >= modelTPM {
-			abortWithMessage(c, http.StatusTooManyRequests,
-				group.ID+" tpm is too high",
-			)
-			return false
+			return fmt.Errorf("group (%s) tpm is too high", group.ID)
 		}
 	}
-	return true
+	return nil
 }
 
 func Distribute(c *gin.Context) {
@@ -111,6 +105,12 @@ func Distribute(c *gin.Context) {
 
 	SetLogModelFields(log.Data, requestModel)
 
+	mc, ok := GetModelCaches(c).ModelConfigMap[requestModel]
+	if !ok {
+		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
+		return
+	}
+
 	token := GetToken(c)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
@@ -122,13 +122,8 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
-	mc, ok := GetModelCaches(c).ModelConfigMap[requestModel]
-	if !ok {
-		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
-		return
-	}
-
-	if !checkGroupModelRPMAndTPM(c, group, requestModel, mc.RPM, mc.TPM) {
+	if err := checkGroupModelRPMAndTPM(c, group, requestModel, mc.RPM, mc.TPM); err != nil {
+		abortWithMessage(c, http.StatusTooManyRequests, err.Error())
 		return
 	}
 

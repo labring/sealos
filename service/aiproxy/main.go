@@ -18,10 +18,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
-	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/router"
 	log "github.com/sirupsen/logrus"
 )
@@ -185,8 +185,8 @@ func main() {
 		log.Info("server shutdown successfully")
 	}
 
-	log.Info("shutting down relay consumer...")
-	relaycontroller.ConsumeWaitGroup.Wait()
+	log.Info("shutting down consumer...")
+	consume.Wait()
 
 	log.Info("shutting down sync services...")
 	wg.Wait()

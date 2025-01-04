@@ -9,22 +9,23 @@ import (
 )
 
 func SetRelayRouter(router *gin.Engine) {
-	router.Use(middleware.CORS())
+	router.Use(
+		middleware.CORS(),
+		middleware.TokenAuth,
+	)
 	// https://platform.openai.com/docs/api-reference/introduction
 	modelsRouter := router.Group("/v1/models")
-	modelsRouter.Use(middleware.TokenAuth)
 	{
 		modelsRouter.GET("", controller.ListModels)
 		modelsRouter.GET("/:model", controller.RetrieveModel)
 	}
 	dashboardRouter := router.Group("/v1/dashboard")
-	dashboardRouter.Use(middleware.TokenAuth)
 	{
 		dashboardRouter.GET("/billing/subscription", controller.GetSubscription)
 		dashboardRouter.GET("/billing/usage", controller.GetUsage)
 	}
 	relayV1Router := router.Group("/v1")
-	relayV1Router.Use(middleware.TokenAuth, middleware.Distribute)
+	relayV1Router.Use(middleware.Distribute)
 	{
 		relayV1Router.POST("/completions", controller.NewRelay(relaymode.Completions))
 		relayV1Router.POST("/chat/completions", controller.NewRelay(relaymode.ChatCompletions))

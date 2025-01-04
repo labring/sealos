@@ -10,6 +10,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	// /1K tokens
+	PriceUnit = 1000
+)
+
 //nolint:revive
 type ModelConfig struct {
 	CreatedAt         time.Time              `gorm:"index;autoCreateTime"          json:"created_at"`
