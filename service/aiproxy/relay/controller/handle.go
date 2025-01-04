@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -26,15 +27,28 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
 	if !ok {
 		log.Errorf("invalid (%s[%d]) channel type: %d", meta.Channel.Name, meta.Channel.ID, meta.Channel.Type)
-		return openai.ErrorWrapperWithMessage("invalid channel error", "invalid_channel_type", http.StatusInternalServerError)
+		return openai.ErrorWrapperWithMessage(
+			"invalid channel error", "invalid_channel_type", http.StatusInternalServerError)
 	}
 
 	// 2. Get group balance
 	groupRemainBalance, postGroupConsumer, err := getGroupBalance(ctx, meta)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
-		return openai.ErrorWrapper(
-			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
+		errMsg := fmt.Sprintf("get group (%s) balance failed", meta.Group.ID)
+		consume.AsyncConsume(
+			context.Background(),
+			nil,
+			http.StatusInternalServerError,
+			nil,
+			meta,
+			0,
+			0,
+			errMsg,
+			nil,
+		)
+		return openai.ErrorWrapperWithMessage(
+			errMsg,
 			"get_group_quota_failed",
 			http.StatusInternalServerError,
 		)
@@ -53,9 +67,8 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 				RequestBody: conv.BytesToString(body),
 			}
 		}
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
+		consume.AsyncConsume(
+			context.Background(),
 			nil,
 			http.StatusBadRequest,
 			nil,
@@ -90,9 +103,8 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			log.Errorf("handle failed: %+v", respErr.Error)
 		}
 
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
+		consume.AsyncConsume(
+			context.Background(),
 			postGroupConsumer,
 			respErr.StatusCode,
 			usage,
@@ -106,9 +118,8 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	}
 
 	// 6. Post consume
-	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(context.Background(),
-		&ConsumeWaitGroup,
+	consume.AsyncConsume(
+		context.Background(),
 		postGroupConsumer,
 		http.StatusOK,
 		usage,

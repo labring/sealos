@@ -5,11 +5,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
-const (
-	// /1K tokens
-	PriceUnit = 1000
-)
-
 func GetModelPrice(modelConfig *model.ModelConfig) (float64, float64, bool) {
 	if !config.GetBillingEnabled() {
 		return 0, 0, true
