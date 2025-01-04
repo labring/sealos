@@ -97,7 +97,7 @@ func Distribute(c *gin.Context) {
 
 	log := GetLogger(c)
 
-	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
+	group := GetGroup(c)
 
 	requestModel, err := getRequestModel(c)
 	if err != nil {
@@ -111,7 +111,7 @@ func Distribute(c *gin.Context) {
 
 	SetLogModelFields(log.Data, requestModel)
 
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	token := GetToken(c)
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
 			http.StatusForbidden,
@@ -122,7 +122,7 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
-	mc, ok := model.CacheGetModelConfig(requestModel)
+	mc, ok := GetModelCaches(c).ModelConfigMap[requestModel]
 	if !ok {
 		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
 		return
@@ -133,19 +133,29 @@ func Distribute(c *gin.Context) {
 	}
 
 	c.Set(ctxkey.OriginalModel, requestModel)
+	c.Set(ctxkey.ModelConfig, mc)
 
 	c.Next()
 }
 
+func GetOriginalModel(c *gin.Context) string {
+	return c.GetString(ctxkey.OriginalModel)
+}
+
+func GetModelConfig(c *gin.Context) *model.ModelConfig {
+	return c.MustGet(ctxkey.ModelConfig).(*model.ModelConfig)
+}
+
 func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode int) *meta.Meta {
-	requestID := c.GetString(ctxkey.RequestID)
-	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	requestID := GetRequestID(c)
+	group := GetGroup(c)
+	token := GetToken(c)
 
 	return meta.NewMeta(
 		channel,
 		mode,
 		modelName,
+		GetModelConfig(c),
 		meta.WithRequestID(requestID),
 		meta.WithGroup(group),
 		meta.WithToken(token),

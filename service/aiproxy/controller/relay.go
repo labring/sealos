@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
@@ -79,15 +78,15 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	return err, false
 }
 
-func getChannelWithFallback(model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
-	channel, err := dbmodel.CacheGetRandomSatisfiedChannel(model, failedChannelIDs...)
+func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
+	channel, err := cache.GetRandomSatisfiedChannel(model, failedChannelIDs...)
 	if err == nil {
 		return channel, nil
 	}
 	if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
 		return nil, err
 	}
-	return dbmodel.CacheGetRandomSatisfiedChannel(model)
+	return cache.GetRandomSatisfiedChannel(model)
 }
 
 func NewRelay(mode int) func(c *gin.Context) {
@@ -103,7 +102,7 @@ func NewRelay(mode int) func(c *gin.Context) {
 func relay(c *gin.Context, mode int, relayController RelayController) {
 	log := middleware.GetLogger(c)
 
-	requestModel := c.MustGet(string(ctxkey.OriginalModel)).(string)
+	requestModel := middleware.GetOriginalModel(c)
 
 	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
 	if err != nil {
@@ -117,7 +116,9 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		failedChannelIDs = append(failedChannelIDs, int(id))
 	}
 
-	channel, err := getChannelWithFallback(requestModel, failedChannelIDs...)
+	mc := middleware.GetModelCaches(c)
+
+	channel, err := getChannelWithFallback(mc, requestModel, failedChannelIDs...)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
@@ -135,13 +136,13 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		return
 	}
 	failedChannelIDs = append(failedChannelIDs, channel.ID)
-	requestID := c.GetString(ctxkey.RequestID)
+	requestID := middleware.GetRequestID(c)
 	var retryTimes int64
 	if retry {
 		retryTimes = config.GetRetryTimes()
 	}
 	for i := retryTimes; i > 0; i-- {
-		newChannel, err := dbmodel.CacheGetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
+		newChannel, err := mc.GetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
 		if err != nil {
 			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
 				break

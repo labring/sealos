@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -22,7 +21,7 @@ func abortWithMessage(c *gin.Context, statusCode int, message string) {
 	GetLogger(c).Error(message)
 	c.JSON(statusCode, gin.H{
 		"error": &model.Error{
-			Message: MessageWithRequestID(message, c.GetString(ctxkey.RequestID)),
+			Message: MessageWithRequestID(message, GetRequestID(c)),
 			Type:    ErrorTypeAIPROXY,
 		},
 	})
