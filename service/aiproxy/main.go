@@ -117,9 +117,9 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 
 	w := log.StandardLogger().Writer()
 	server.
-		Use(middleware.NewLog(log.StandardLogger())).
 		Use(gin.RecoveryWithWriter(w)).
-		Use(middleware.RequestID)
+		Use(middleware.NewLog(log.StandardLogger())).
+		Use(middleware.RequestID, middleware.CORS())
 	router.SetRouter(server)
 
 	port := os.Getenv("PORT")
