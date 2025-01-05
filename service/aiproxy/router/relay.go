@@ -24,20 +24,66 @@ func SetRelayRouter(router *gin.Engine) {
 		dashboardRouter.GET("/billing/usage", controller.GetUsage)
 	}
 	relayRouter := v1Router.Group("")
-	relayRouter.Use(middleware.Distribute)
 	{
-		relayRouter.POST("/completions", controller.NewRelay(relaymode.Completions))
-		relayRouter.POST("/chat/completions", controller.NewRelay(relaymode.ChatCompletions))
-		relayRouter.POST("/edits", controller.NewRelay(relaymode.Edits))
-		relayRouter.POST("/images/generations", controller.NewRelay(relaymode.ImagesGenerations))
+		relayRouter.POST(
+			"/completions",
+			middleware.NewDistribute(relaymode.Completions),
+			controller.NewRelay(relaymode.Completions),
+		)
+
+		relayRouter.POST(
+			"/chat/completions",
+			middleware.NewDistribute(relaymode.ChatCompletions),
+			controller.NewRelay(relaymode.ChatCompletions),
+		)
+		relayRouter.POST(
+			"/edits",
+			middleware.NewDistribute(relaymode.Edits),
+			controller.NewRelay(relaymode.Edits),
+		)
+		relayRouter.POST(
+			"/images/generations",
+			middleware.NewDistribute(relaymode.ImagesGenerations),
+			controller.NewRelay(relaymode.ImagesGenerations),
+		)
+		relayRouter.POST(
+			"/embeddings",
+			middleware.NewDistribute(relaymode.Embeddings),
+			controller.NewRelay(relaymode.Embeddings),
+		)
+		relayRouter.POST(
+			"/engines/:model/embeddings",
+			middleware.NewDistribute(relaymode.Embeddings),
+			controller.NewRelay(relaymode.Embeddings),
+		)
+		relayRouter.POST(
+			"/audio/transcriptions",
+			middleware.NewDistribute(relaymode.AudioTranscription),
+			controller.NewRelay(relaymode.AudioTranscription),
+		)
+		relayRouter.POST(
+			"/audio/translations",
+			middleware.NewDistribute(relaymode.AudioTranslation),
+			controller.NewRelay(relaymode.AudioTranslation),
+		)
+		relayRouter.POST(
+			"/audio/speech",
+			middleware.NewDistribute(relaymode.AudioSpeech),
+			controller.NewRelay(relaymode.AudioSpeech),
+		)
+		relayRouter.POST(
+			"/rerank",
+			middleware.NewDistribute(relaymode.Rerank),
+			controller.NewRelay(relaymode.Rerank),
+		)
+		relayRouter.POST(
+			"/moderations",
+			middleware.NewDistribute(relaymode.Moderations),
+			controller.NewRelay(relaymode.Moderations),
+		)
+
 		relayRouter.POST("/images/edits", controller.RelayNotImplemented)
 		relayRouter.POST("/images/variations", controller.RelayNotImplemented)
-		relayRouter.POST("/embeddings", controller.NewRelay(relaymode.Embeddings))
-		relayRouter.POST("/engines/:model/embeddings", controller.NewRelay(relaymode.Embeddings))
-		relayRouter.POST("/audio/transcriptions", controller.NewRelay(relaymode.AudioTranscription))
-		relayRouter.POST("/audio/translations", controller.NewRelay(relaymode.AudioTranslation))
-		relayRouter.POST("/audio/speech", controller.NewRelay(relaymode.AudioSpeech))
-		relayRouter.POST("/rerank", controller.NewRelay(relaymode.Rerank))
 		relayRouter.GET("/files", controller.RelayNotImplemented)
 		relayRouter.POST("/files", controller.RelayNotImplemented)
 		relayRouter.DELETE("/files/:id", controller.RelayNotImplemented)
@@ -49,7 +95,6 @@ func SetRelayRouter(router *gin.Engine) {
 		relayRouter.POST("/fine_tuning/jobs/:id/cancel", controller.RelayNotImplemented)
 		relayRouter.GET("/fine_tuning/jobs/:id/events", controller.RelayNotImplemented)
 		relayRouter.DELETE("/models/:model", controller.RelayNotImplemented)
-		relayRouter.POST("/moderations", controller.NewRelay(relaymode.Moderations))
 		relayRouter.POST("/assistants", controller.RelayNotImplemented)
 		relayRouter.GET("/assistants/:id", controller.RelayNotImplemented)
 		relayRouter.POST("/assistants/:id", controller.RelayNotImplemented)

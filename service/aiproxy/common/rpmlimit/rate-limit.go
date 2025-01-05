@@ -16,60 +16,89 @@ const (
 	groupModelRPMKey = "group_model_rpm:%s:%s"
 )
 
-// 1. 使用Redis列表存储请求时间戳
-// 2. 列表长度代表当前窗口内的请求数
-// 3. 如果请求数未达到限制，直接添加新请求并返回成功
-// 4. 如果达到限制，则检查最老的请求是否已经过期
-// 5. 如果最老的请求已过期，最多移除3个过期请求并添加新请求，否则拒绝新请求
-// 6. 通过EXPIRE命令设置键的过期时间，自动清理过期数据
-var luaScript = `
+var pushRequestScript = `
 local key = KEYS[1]
-local max_requests = tonumber(ARGV[1])
-local window = tonumber(ARGV[2])
-local current_time = tonumber(ARGV[3])
+local window = tonumber(ARGV[1])
+local current_time = tonumber(ARGV[2])
+local cutoff = current_time - window
 
-local count = redis.call('LLEN', key)
+local page_size = 100
+local remove_count = 0
 
-if count < max_requests then
-    redis.call('LPUSH', key, current_time)
-    redis.call('PEXPIRE', key, window)
-    return 1
-else
-    local removed = 0
-    for i = 1, 3 do
-        local oldest = redis.call('LINDEX', key, -1)
-        if current_time - tonumber(oldest) >= window then
-            redis.call('RPOP', key)
-            removed = removed + 1
+while true do
+    local timestamps = redis.call('LRANGE', key, remove_count, remove_count + page_size - 1)
+    if #timestamps == 0 then
+        break
+    end
+
+    local found_non_expired = false
+    for i = 1, #timestamps do
+        local timestamp = tonumber(timestamps[i])
+        if timestamp < cutoff then
+            remove_count = remove_count + 1
         else
+            found_non_expired = true
             break
         end
     end
-    if removed > 0 then
-        redis.call('LPUSH', key, current_time)
-        redis.call('PEXPIRE', key, window)
-        return 1
-    else
-        return 0
+
+    if found_non_expired then
+        break
     end
 end
+
+if remove_count > 0 then
+    redis.call('LTRIM', key, remove_count, -1)
+end
+
+redis.call('LPUSH', key, current_time)
+
+redis.call('PEXPIRE', key, window)
+
+return redis.call('LLEN', key)
 `
 
-var getRPMSumLuaScript = `
+var getRequestCountScript = `
 local pattern = ARGV[1]
 local window = tonumber(ARGV[2])
 local current_time = tonumber(ARGV[3])
+local cutoff = current_time - window
+local page_size = 100
 
 local keys = redis.call('KEYS', pattern)
 local total = 0
 
 for _, key in ipairs(keys) do
-    local timestamps = redis.call('LRANGE', key, 0, -1)
-    for _, ts in ipairs(timestamps) do
-        if current_time - tonumber(ts) < window then
-            total = total + 1
+    local remove_count = 0
+
+    while true do
+        local timestamps = redis.call('LRANGE', key, remove_count, remove_count + page_size - 1)
+        if #timestamps == 0 then
+            break
+        end
+        
+        local found_non_expired = false
+        for i = 1, #timestamps do
+            local timestamp = tonumber(timestamps[i])
+            if timestamp < cutoff then
+                remove_count = remove_count + 1
+            else
+                found_non_expired = true
+                break
+            end
+        end
+        
+        if found_non_expired then
+            break
         end
     end
+
+    if remove_count > 0 then
+        redis.call('LTRIM', key, remove_count, -1)
+    end
+
+    local total_count = redis.call('LLEN', key)
+    total = total + total_count
 end
 
 return total
@@ -93,24 +122,35 @@ func GetRPM(ctx context.Context, group, model string) (int64, error) {
 
 	rdb := common.RDB
 	currentTime := time.Now().UnixMilli()
-	result, err := rdb.Eval(ctx, getRPMSumLuaScript, []string{}, pattern, time.Minute.Milliseconds(), currentTime).Int64()
+	result, err := rdb.Eval(
+		ctx,
+		getRequestCountScript,
+		[]string{},
+		pattern,
+		time.Minute.Milliseconds(),
+		currentTime,
+	).Int64()
 	if err != nil {
 		return 0, err
 	}
-
 	return result, nil
 }
 
 func redisRateLimitRequest(ctx context.Context, group, model string, maxRequestNum int64, duration time.Duration) (bool, error) {
 	rdb := common.RDB
-	currentTime := time.Now().UnixMilli()
-	result, err := rdb.Eval(ctx, luaScript, []string{
-		fmt.Sprintf(groupModelRPMKey, group, model),
-	}, maxRequestNum, duration.Milliseconds(), currentTime).Int64()
+	result, err := rdb.Eval(
+		ctx,
+		pushRequestScript,
+		[]string{
+			fmt.Sprintf(groupModelRPMKey, group, model),
+		},
+		duration.Milliseconds(),
+		time.Now().UnixMilli(),
+	).Int64()
 	if err != nil {
 		return false, err
 	}
-	return result == 1, nil
+	return result <= maxRequestNum, nil
 }
 
 func RateLimit(ctx context.Context, group, model string, maxRequestNum int64, duration time.Duration) (bool, error) {
