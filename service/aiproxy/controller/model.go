@@ -168,11 +168,11 @@ func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
 }
 
 func EnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledModelConfigs)
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledModelConfigs)
 }
 
 func ChannelEnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledChannelType2ModelConfigs)
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledChannelType2ModelConfigs)
 }
 
 func ChannelEnabledModelsByType(c *gin.Context) {
@@ -186,7 +186,7 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	middleware.SuccessResponse(c, middleware.GetModelCaches(c).EnabledChannelType2ModelConfigs[channelTypeInt])
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledChannelType2ModelConfigs[channelTypeInt])
 }
 
 func ListModels(c *gin.Context) {
