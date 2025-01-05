@@ -51,7 +51,7 @@ if remove_count > 0 then
     redis.call('LTRIM', key, remove_count, -1)
 end
 
-redis.call('LPUSH', key, current_time)
+redis.call('RPUSH', key, current_time)
 
 redis.call('PEXPIRE', key, window)
 
