@@ -19,7 +19,6 @@ func Wait() {
 }
 
 func AsyncConsume(
-	ctx context.Context,
 	postGroupConsumer balance.PostGroupConsumer,
 	code int,
 	usage *relaymodel.Usage,
@@ -41,7 +40,17 @@ func AsyncConsume(
 		}
 	}()
 
-	go Consume(ctx, postGroupConsumer, code, usage, meta, inputPrice, outputPrice, content, requestDetail)
+	go Consume(
+		context.Background(),
+		postGroupConsumer,
+		code,
+		usage,
+		meta,
+		inputPrice,
+		outputPrice,
+		content,
+		requestDetail,
+	)
 }
 
 func Consume(

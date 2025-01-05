@@ -81,6 +81,7 @@ func NewMeta(
 		values:      make(map[string]any),
 		Mode:        mode,
 		OriginModel: modelName,
+		ActualModel: modelName,
 		RequestAt:   time.Now(),
 		ModelConfig: modelConfig,
 	}
@@ -89,7 +90,9 @@ func NewMeta(
 		opt(&meta)
 	}
 
-	meta.Reset(channel)
+	if channel != nil {
+		meta.Reset(channel)
+	}
 
 	return &meta
 }

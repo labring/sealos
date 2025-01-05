@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -37,7 +36,6 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		errMsg := fmt.Sprintf("get group (%s) balance failed", meta.Group.ID)
 		consume.AsyncConsume(
-			context.Background(),
 			nil,
 			http.StatusInternalServerError,
 			nil,
@@ -68,7 +66,6 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			}
 		}
 		consume.AsyncConsume(
-			context.Background(),
 			nil,
 			http.StatusBadRequest,
 			nil,
@@ -104,7 +101,6 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		}
 
 		consume.AsyncConsume(
-			context.Background(),
 			postGroupConsumer,
 			respErr.StatusCode,
 			usage,
@@ -119,7 +115,6 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 
 	// 6. Post consume
 	consume.AsyncConsume(
-		context.Background(),
 		postGroupConsumer,
 		http.StatusOK,
 		usage,

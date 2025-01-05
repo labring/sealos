@@ -4,20 +4,19 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	log "github.com/sirupsen/logrus"
 )
-
-type ModelRequest struct {
-	Model string `form:"model" json:"model"`
-}
 
 func calculateGroupConsumeLevelRpmRatio(usedAmount float64) float64 {
 	v := config.GetGroupConsumeLevelRpmRatio()
@@ -90,7 +89,13 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestMo
 	return nil
 }
 
-func Distribute(c *gin.Context) {
+func NewDistribute(mode int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		distribute(c, mode)
+	}
+}
+
+func distribute(c *gin.Context, mode int) {
 	if config.GetDisableServe() {
 		abortWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
 		return
@@ -110,6 +115,8 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
+	c.Set(ctxkey.OriginalModel, requestModel)
+
 	SetLogModelFields(log.Data, requestModel)
 
 	mc, ok := GetModelCaches(c).ModelConfigMap[requestModel]
@@ -118,7 +125,10 @@ func Distribute(c *gin.Context) {
 		return
 	}
 
+	c.Set(ctxkey.ModelConfig, mc)
+
 	token := GetToken(c)
+
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortWithMessage(c,
 			http.StatusForbidden,
@@ -130,12 +140,20 @@ func Distribute(c *gin.Context) {
 	}
 
 	if err := checkGroupModelRPMAndTPM(c, group, requestModel, mc.RPM, mc.TPM); err != nil {
-		abortWithMessage(c, http.StatusTooManyRequests, err.Error())
+		errMsg := err.Error()
+		consume.AsyncConsume(
+			nil,
+			http.StatusTooManyRequests,
+			nil,
+			NewMetaByContext(c, nil, requestModel, mode),
+			0,
+			0,
+			errMsg,
+			nil,
+		)
+		abortWithMessage(c, http.StatusTooManyRequests, errMsg)
 		return
 	}
-
-	c.Set(ctxkey.OriginalModel, requestModel)
-	c.Set(ctxkey.ModelConfig, mc)
 
 	c.Next()
 }
@@ -163,4 +181,27 @@ func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, 
 		meta.WithToken(token),
 		meta.WithEndpoint(c.Request.URL.Path),
 	)
+}
+
+type ModelRequest struct {
+	Model string `form:"model" json:"model"`
+}
+
+func getRequestModel(c *gin.Context) (string, error) {
+	path := c.Request.URL.Path
+	switch {
+	case strings.HasPrefix(path, "/v1/audio/transcriptions"),
+		strings.HasPrefix(path, "/v1/audio/translations"):
+		return c.Request.FormValue("model"), nil
+	case strings.HasPrefix(path, "/v1/engines") && strings.HasSuffix(path, "/embeddings"):
+		// /engines/:model/embeddings
+		return c.Param("model"), nil
+	default:
+		var modelRequest ModelRequest
+		err := common.UnmarshalBodyReusable(c.Request, &modelRequest)
+		if err != nil {
+			return "", fmt.Errorf("get request model failed: %w", err)
+		}
+		return modelRequest.Model, nil
+	}
 }
