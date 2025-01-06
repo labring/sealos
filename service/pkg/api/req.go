@@ -70,19 +70,22 @@ type Stats struct {
 	ExecutionTimeMsec int    `json:"executionTimeMsec"`
 }
 
-type VlogsRequest struct {
-	Time    string
-	NS      string
-	App     string
-	Pod     string
-	Limit   string
-	Json    string
-	Keyword string
+type JsonQuery struct {
+	key   string
+	mode  string
+	value string
 }
 
-type VlogsResult struct {
-	Time string `json:"_time"`
-	Msg  string `json:"_msg"`
+type VlogsRequest struct {
+	Time      string
+	Namespace string
+	App       string
+	Pod       string
+	Container string
+	Limit     string
+	JsonMode  string
+	Keyword   []string
+	JsonQuery []JsonQuery
 }
 
 var (

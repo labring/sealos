@@ -7,166 +7,153 @@ import (
 	"github.com/labring/sealos/service/pkg/auth"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
 	"github.com/labring/sealos/service/vlogs/request"
 )
 
-type VMServer struct {
+type VLogsServer struct {
 	Config *Config
 }
 
-func NewVMServer(c *Config) (*VMServer, error) {
-	vs := &VMServer{
+func NewVMServer(c *Config) (*VLogsServer, error) {
+	vl := &VLogsServer{
 		Config: c,
 	}
-	return vs, nil
+	return vl, nil
 }
 
 // 获取客户端请求的信息
-func (vs *VMServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
 	switch {
 	case req.URL.Path == pathPrefix+"/queryLogsByParams":
-		vs.queryLogsByParams(rw, req)
-	case req.URL.Path == pathPrefix+"/queryLogsByLogsQl":
-		vs.queryLogsByLogsQl(rw, req)
-	case req.URL.Path == pathPrefix+"/queryFieldsByParams":
-		vs.queryLogsByLogsQl(rw, req)
+		vl.queryLogsByParams(rw, req)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
 		return
 	}
 }
 
-func (vs *VMServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) {
-	vr, err := vs.ParseParamsRequest(req)
-	if err != nil {
-		http.Error(rw, fmt.Sprintf("Bad request (%s)", err), http.StatusBadRequest)
-		log.Printf("Bad request (%s)\n", err)
-		return
-	}
-	//todo: auth
-
-	res, err := request.QueryLogsByParams(vr)
-	if err != nil {
-		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
-		log.Printf("Query failed (%s)\n", err)
-		return
-	}
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(rw, "Result failed (invalid query expression)", http.StatusInternalServerError)
-		log.Printf("Reulst failed (%s)\n", err)
-		return
-	}
-	_, err = rw.Write(result)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (vs *VMServer) queryFieldsByParams(rw http.ResponseWriter, req *http.Request) {
-	vr, err := vs.ParseLogsRequest(req)
+func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) {
+	kubeConfig, namespace, query, err := vl.ParseParamsRequest(req)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Bad request (%s)", err), http.StatusBadRequest)
 		log.Printf("Bad request (%s)\n", err)
 		return
 	}
 
-	//todo: auth
+	err = auth.Authenticate(namespace, kubeConfig)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		log.Printf("Authentication failed (%s)\n", err)
+		return
+	}
 
-	res, err := request.QueryLogsByLogsQl(vr)
+	err = request.QueryLogsByParams(query, rw)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
 		log.Printf("Query failed (%s)\n", err)
 		return
 	}
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(rw, "Result failed (invalid query expression)", http.StatusInternalServerError)
-		log.Printf("Reulst failed (%s)\n", err)
-		return
-	}
-	_, err = rw.Write(result)
-	if err != nil {
-		return
-	}
 	return
 }
 
-func (vs *VMServer) queryLogsByLogsQl(rw http.ResponseWriter, req *http.Request) {
-	vr, err := vs.ParseLogsRequest(req)
-	if err != nil {
-		http.Error(rw, fmt.Sprintf("Bad request (%s)", err), http.StatusBadRequest)
-		log.Printf("Bad request (%s)\n", err)
-		return
+func (vl *VLogsServer) ParseParamsRequest(req *http.Request) (string, string, string, error) {
+	kubeConfig := req.Header.Get("Authorization")
+	if config, err := url.PathUnescape(kubeConfig); err == nil {
+		kubeConfig = config
+	} else {
+		return "", "", "", err
 	}
 
-	//todo: auth
-
-	res, err := request.QueryLogsByLogsQl(vr)
+	var query string
+	vlogsReq := &api.VlogsRequest{}
+	err := json.NewDecoder(req.Body).Decode(&vlogsReq)
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
-		log.Printf("Query failed (%s)\n", err)
-		return
+		return "", "", "", errors.New("invalid JSON data,decode error")
 	}
-	result, err := json.Marshal(res)
-	if err != nil {
-		http.Error(rw, "Result failed (invalid query expression)", http.StatusInternalServerError)
-		log.Printf("Reulst failed (%s)\n", err)
-		return
+	if vlogsReq.Namespace == "" {
+		return "", "", "", errors.New("invalid JSON data,namespace not found")
 	}
-	_, err = rw.Write(result)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (vs *VMServer) ParseLogsRequest(req *http.Request) (string, error) {
-	if err := req.ParseForm(); err != nil {
-		return "", err
-	}
-	for key, val := range req.Form {
-		switch key {
-		case "query":
-			return val[0], nil
+	switch vlogsReq.JsonMode {
+	case "":
+		return "", "", "", errors.New("invalid JSON data,jsonMode not found")
+	case "false":
+		query, err = parserKeywordQuery(vlogsReq)
+		if err != nil {
+			return "", "", "", err
 		}
-	}
-	return "", errors.New("no query parameter found")
-}
-
-func (vs *VMServer) ParseParamsRequest(req *http.Request) (*api.VlogsRequest, error) {
-	vr := &api.VlogsRequest{}
-	if err := req.ParseForm(); err != nil {
-		return nil, err
-	}
-	for key, val := range req.Form {
-		switch key {
-		case "time":
-			vr.Time = val[0]
-		case "namespace":
-			vr.NS = val[0]
-		case "app":
-			vr.App = val[0]
-		case "pod":
-			vr.Pod = val[0]
-		case "limit":
-			vr.Limit = val[0]
-		case "json":
-			vr.Json = val[0]
-		case "keyword":
-			vr.Keyword = val[0]
+	case "true":
+		query, err = parserJsonQuery(vlogsReq)
+		if err != nil {
+			return "", "", "", err
 		}
+	default:
+		return "", "", "", errors.New("invalid JSON data,jsonMode value err")
 	}
-	if vr.NS == "" {
-		return nil, api.ErrUncompleteParam
-	}
-	return vr, nil
 }
 
-func (vs *VMServer) Authenticate(vr *api.VMRequest) error {
-	return auth.Authenticate(vr.NS, vr.Pwd)
+func parserKeywordQuery(req *api.VlogsRequest) (string, error) {
+	var builder strings.Builder
+	for _, key := range req.Keyword {
+		builder.WriteString(key)
+		builder.WriteString(" ")
+	}
+
+}
+
+func parserJsonQuery(req *api.VlogsRequest) (string, error) {
+
+}
+
+func paraseQuery(req *api.VlogsRequest) {
+	var builder strings.Builder
+
+}
+
+func GetQuery(query *api.VlogsRequest) (string, error) {
+	var builder strings.Builder
+
+	// 添加关键词
+	builder.WriteString(query.Keyword)
+	builder.WriteString(" ")
+
+	builder.WriteString(fmt.Sprintf("{namespace=%s}", query.NS))
+	builder.WriteString(" ")
+
+	// 添加 pod
+	if query.Pod != "" {
+		builder.WriteString(fmt.Sprintf("pod:%s", query.Pod))
+		builder.WriteString(" ")
+	}
+
+	// 添加时间
+	if query.Time == "" {
+		builder.WriteString(defaultTime)
+	} else {
+		builder.WriteString("_time:")
+		builder.WriteString(query.Time)
+	}
+	builder.WriteString(" ")
+
+	// JSON 模式
+	if query.Json == "true" {
+		builder.WriteString("| unpack_json")
+		builder.WriteString(" ")
+	}
+
+	// 添加 limit
+	if query.Limit == "" {
+		builder.WriteString(defaultLimit)
+	} else {
+		builder.WriteString("| limit ")
+		builder.WriteString(query.Limit)
+	}
+	builder.WriteString(" ")
+
+	//添加field
+	return builder.String(), nil
 }

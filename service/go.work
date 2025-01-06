@@ -9,6 +9,7 @@ use (
 	./launchpad
 	./pay
 	./devbox
+	./vlogs
 )
 
 replace (
