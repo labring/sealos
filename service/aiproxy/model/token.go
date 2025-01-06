@@ -73,7 +73,7 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 			if err != nil {
 				return err
 			}
-			if count >= int64(maxTokenNum) {
+			if count >= maxTokenNum {
 				return errors.New("group max token num reached")
 			}
 		}

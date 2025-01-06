@@ -4,43 +4,63 @@ import (
 	"math"
 	"os"
 	"slices"
-	"strconv"
 	"sync/atomic"
-	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/env"
 )
 
 var (
-	DebugEnabled, _    = strconv.ParseBool(os.Getenv("DEBUG"))
-	DebugSQLEnabled, _ = strconv.ParseBool(os.Getenv("DEBUG_SQL"))
+	DebugEnabled    = env.Bool("DEBUG", false)
+	DebugSQLEnabled = env.Bool("DEBUG_SQL", false)
 )
 
 var (
-	// 暂停服务
-	disableServe atomic.Bool
-	// log detail 存储时间(小时)
+	DisableAutoMigrateDB = env.Bool("DISABLE_AUTO_MIGRATE_DB", false)
+	OnlyOneLogFile       = env.Bool("ONLY_ONE_LOG_FILE", false)
+	AdminKey             = os.Getenv("ADMIN_KEY")
+)
+
+var (
+	disableServe          atomic.Bool
 	logDetailStorageHours int64 = 3 * 24
+	internalToken         atomic.Value
 )
 
 var (
-	// 重试次数
-	retryTimes atomic.Int64
-	// 是否开启模型错误率自动封禁
+	retryTimes              atomic.Int64
 	enableModelErrorAutoBan atomic.Bool
-	// 模型错误率自动封禁
-	modelErrorAutoBanRate = math.Float64bits(0.5)
-	// 模型类型超时时间，单位秒
-	timeoutWithModelType atomic.Value
-
-	disableModelConfig atomic.Bool
+	modelErrorAutoBanRate   = math.Float64bits(0.5)
+	timeoutWithModelType    atomic.Value
+	disableModelConfig      atomic.Bool
 )
+
+var (
+	defaultChannelModels       atomic.Value
+	defaultChannelModelMapping atomic.Value
+	groupMaxTokenNum           atomic.Int64
+	groupConsumeLevelRatio     atomic.Value
+)
+
+var geminiSafetySetting atomic.Value
+
+var billingEnabled atomic.Bool
+
+func init() {
+	timeoutWithModelType.Store(make(map[int]int64))
+	defaultChannelModels.Store(make(map[int][]string))
+	defaultChannelModelMapping.Store(make(map[int]map[string]string))
+	groupConsumeLevelRatio.Store(make(map[float64]float64))
+	geminiSafetySetting.Store("BLOCK_NONE")
+	billingEnabled.Store(true)
+	internalToken.Store(os.Getenv("INTERNAL_TOKEN"))
+}
 
 func GetDisableModelConfig() bool {
 	return disableModelConfig.Load()
 }
 
 func SetDisableModelConfig(disabled bool) {
+	disabled = env.Bool("DISABLE_MODEL_CONFIG", disabled)
 	disableModelConfig.Store(disabled)
 }
 
@@ -48,11 +68,17 @@ func GetRetryTimes() int64 {
 	return retryTimes.Load()
 }
 
+func SetRetryTimes(times int64) {
+	times = env.Int64("RETRY_TIMES", times)
+	retryTimes.Store(times)
+}
+
 func GetEnableModelErrorAutoBan() bool {
 	return enableModelErrorAutoBan.Load()
 }
 
 func SetEnableModelErrorAutoBan(enabled bool) {
+	enabled = env.Bool("ENABLE_MODEL_ERROR_AUTO_BAN", enabled)
 	enableModelErrorAutoBan.Store(enabled)
 }
 
@@ -61,15 +87,8 @@ func GetModelErrorAutoBanRate() float64 {
 }
 
 func SetModelErrorAutoBanRate(rate float64) {
+	rate = env.Float64("MODEL_ERROR_AUTO_BAN_RATE", rate)
 	atomic.StoreUint64(&modelErrorAutoBanRate, math.Float64bits(rate))
-}
-
-func SetRetryTimes(times int64) {
-	retryTimes.Store(times)
-}
-
-func init() {
-	timeoutWithModelType.Store(make(map[int]int64))
 }
 
 func GetTimeoutWithModelType() map[int]int64 {
@@ -77,6 +96,7 @@ func GetTimeoutWithModelType() map[int]int64 {
 }
 
 func SetTimeoutWithModelType(timeout map[int]int64) {
+	timeout = env.JSON("TIMEOUT_WITH_MODEL_TYPE", timeout)
 	timeoutWithModelType.Store(timeout)
 }
 
@@ -85,6 +105,7 @@ func GetLogDetailStorageHours() int64 {
 }
 
 func SetLogDetailStorageHours(hours int64) {
+	hours = env.Int64("LOG_DETAIL_STORAGE_HOURS", hours)
 	atomic.StoreInt64(&logDetailStorageHours, hours)
 }
 
@@ -93,29 +114,8 @@ func GetDisableServe() bool {
 }
 
 func SetDisableServe(disabled bool) {
+	disabled = env.Bool("DISABLE_SERVE", disabled)
 	disableServe.Store(disabled)
-}
-
-var DisableAutoMigrateDB = os.Getenv("DISABLE_AUTO_MIGRATE_DB") == "true"
-
-var RateLimitKeyExpirationDuration = 20 * time.Minute
-
-var OnlyOneLogFile = env.Bool("ONLY_ONE_LOG_FILE", false)
-
-var AdminKey = env.String("ADMIN_KEY", "")
-
-var (
-	defaultChannelModels       atomic.Value
-	defaultChannelModelMapping atomic.Value
-	groupMaxTokenNum           atomic.Int32
-	// group消费金额对应的rpm/tpm乘数，使用map[float64]float64
-	groupConsumeLevelRatio atomic.Value
-)
-
-func init() {
-	defaultChannelModels.Store(make(map[int][]string))
-	defaultChannelModelMapping.Store(make(map[int]map[string]string))
-	groupConsumeLevelRatio.Store(make(map[float64]float64))
 }
 
 func GetDefaultChannelModels() map[int][]string {
@@ -123,6 +123,7 @@ func GetDefaultChannelModels() map[int][]string {
 }
 
 func SetDefaultChannelModels(models map[int][]string) {
+	models = env.JSON("DEFAULT_CHANNEL_MODELS", models)
 	for key, ms := range models {
 		slices.Sort(ms)
 		models[key] = slices.Compact(ms)
@@ -135,6 +136,7 @@ func GetDefaultChannelModelMapping() map[int]map[string]string {
 }
 
 func SetDefaultChannelModelMapping(mapping map[int]map[string]string) {
+	mapping = env.JSON("DEFAULT_CHANNEL_MODEL_MAPPING", mapping)
 	defaultChannelModelMapping.Store(mapping)
 }
 
@@ -143,22 +145,18 @@ func GetGroupConsumeLevelRatio() map[float64]float64 {
 }
 
 func SetGroupConsumeLevelRatio(ratio map[float64]float64) {
+	ratio = env.JSON("GROUP_CONSUME_LEVEL_RATIO", ratio)
 	groupConsumeLevelRatio.Store(ratio)
 }
 
-// 那个group最多可创建的token数量，0表示不限制
-func GetGroupMaxTokenNum() int32 {
+// GetGroupMaxTokenNum returns max number of tokens per group, 0 means unlimited
+func GetGroupMaxTokenNum() int64 {
 	return groupMaxTokenNum.Load()
 }
 
-func SetGroupMaxTokenNum(num int32) {
+func SetGroupMaxTokenNum(num int64) {
+	num = env.Int64("GROUP_MAX_TOKEN_NUM", num)
 	groupMaxTokenNum.Store(num)
-}
-
-var geminiSafetySetting atomic.Value
-
-func init() {
-	geminiSafetySetting.Store("BLOCK_NONE")
 }
 
 func GetGeminiSafetySetting() string {
@@ -166,13 +164,8 @@ func GetGeminiSafetySetting() string {
 }
 
 func SetGeminiSafetySetting(setting string) {
+	setting = env.String("GEMINI_SAFETY_SETTING", setting)
 	geminiSafetySetting.Store(setting)
-}
-
-var billingEnabled atomic.Bool
-
-func init() {
-	billingEnabled.Store(true)
 }
 
 func GetBillingEnabled() bool {
@@ -180,5 +173,15 @@ func GetBillingEnabled() bool {
 }
 
 func SetBillingEnabled(enabled bool) {
+	enabled = env.Bool("BILLING_ENABLED", enabled)
 	billingEnabled.Store(enabled)
+}
+
+func GetInternalToken() string {
+	return internalToken.Load().(string)
+}
+
+func SetInternalToken(token string) {
+	token = env.String("INTERNAL_TOKEN", token)
+	internalToken.Store(token)
 }
