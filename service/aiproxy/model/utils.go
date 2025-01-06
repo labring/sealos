@@ -92,9 +92,11 @@ func BatchRecordConsume(
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to update token used amount: %w", err))
 	}
-	err = UpdateChannelUsedAmount(channelID, amount, 1)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
+	if channelID > 0 {
+		err = UpdateChannelUsedAmount(channelID, amount, 1)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
+		}
 	}
 	if len(errs) == 0 {
 		return nil
