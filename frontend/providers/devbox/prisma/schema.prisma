@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   uid               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionUid         String
+  regionUid         String             
   namespaceId       String
   deletedAt         DateTime?          @db.Timestamptz(3)
   createdAt         DateTime           @default(now()) @db.Timestamptz(3)
@@ -50,31 +50,32 @@ model UserOrganization {
 }
 
 model TemplateRepository {
-  uid             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  deletedAt       DateTime?              @db.Timestamptz(3)
-  createdAt       DateTime               @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime               @updatedAt @db.Timestamptz(3)
-  name            String
+  uid                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deletedAt              DateTime?               @db.Timestamptz(3)
+  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
+  name                   String
   // hzh.hub.sealos.run/orgNanoid/templateRepositoryName:templateName
-  description     String?
-  kind            TemplateRepositoryKind
-  organizationUid String
-  isPublic        Boolean                @default(false)
-  templates       Template[]
-  iconId          String?
-  organization    Organization           @relation(fields: [organizationUid], references: [uid])
-  isDeleted       Boolean?               @default(false)
-
+  description            String?
+  kind                   TemplateRepositoryKind
+  organizationUid        String                  @db.Uuid
+  isPublic               Boolean                 @default(false)
+  templates              Template[]
+  iconId                 String?
+  organization           Organization            @relation(fields: [organizationUid], references: [uid])
+  isDeleted              Boolean?                @default(false)
+  regionUid              String
   templateRepositoryTags TemplateRepositoryTag[]
 
-  @@unique([isDeleted, name])
+  @@unique([isDeleted, regionUid, name])
   @@index([isDeleted, isPublic])
+  @@index([isDeleted, createdAt])
 }
 
 model Template {
   uid                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                  String
-  templateRepositoryUid String
+  templateRepositoryUid String     @db.Uuid
   devboxReleaseImage    String?
   image                 String
   config                String // json
@@ -93,7 +94,7 @@ model Template {
 
 model Tag {
   uid                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type                   TagType            @default(OFFICIAL_CONTENT)
+  type                   TagType                 @default(OFFICIAL_CONTENT)
   name                   String
   zhName                 String?
   enName                 String?
