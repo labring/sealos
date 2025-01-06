@@ -79,7 +79,7 @@ func initOptionMap() error {
 	}
 	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
 	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
-	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
+	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(config.GetGroupMaxTokenNum(), 10)
 	groupConsumeLevelRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRatio())
 	if err != nil {
 		return err
@@ -207,7 +207,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		if groupMaxTokenNum < 0 {
 			return errors.New("group max token num must be greater than 0")
 		}
-		config.SetGroupMaxTokenNum(int32(groupMaxTokenNum))
+		config.SetGroupMaxTokenNum(groupMaxTokenNum)
 	case "GeminiSafetySetting":
 		config.SetGeminiSafetySetting(value)
 	case "DefaultChannelModels":

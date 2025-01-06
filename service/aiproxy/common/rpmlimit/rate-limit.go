@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -187,6 +186,6 @@ func ForceRateLimit(ctx context.Context, group, model string, maxRequestNum int6
 
 func MemoryRateLimit(_ context.Context, group, model string, maxRequestNum int64, duration time.Duration) bool {
 	// It's safe to call multi times.
-	inMemoryRateLimiter.Init(config.RateLimitKeyExpirationDuration)
+	inMemoryRateLimiter.Init(3 * time.Minute)
 	return inMemoryRateLimiter.Request(fmt.Sprintf(groupModelRPMKey, group, model), int(maxRequestNum), duration)
 }

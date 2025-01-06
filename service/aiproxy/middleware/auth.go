@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -52,8 +51,6 @@ func AdminAuth(c *gin.Context) {
 	c.Next()
 }
 
-var internalToken = os.Getenv("INTERNAL_TOKEN")
-
 func TokenAuth(c *gin.Context) {
 	log := GetLogger(c)
 	key := c.Request.Header.Get("Authorization")
@@ -66,7 +63,7 @@ func TokenAuth(c *gin.Context) {
 
 	var token *model.TokenCache
 	var useInternalToken bool
-	if internalToken != "" && internalToken == key {
+	if config.GetInternalToken() != "" && config.GetInternalToken() == key {
 		token = &model.TokenCache{}
 		useInternalToken = true
 	} else {
@@ -202,7 +199,10 @@ func SetLogRequestIDField(fields logrus.Fields, requestID string) {
 }
 
 func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
-	if group != nil {
+	if group == nil {
+		return
+	}
+	if group.ID != "" {
 		fields["gid"] = group.ID
 	}
 }
