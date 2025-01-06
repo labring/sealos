@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -51,6 +52,8 @@ func AdminAuth(c *gin.Context) {
 	c.Next()
 }
 
+var internalToken = os.Getenv("INTERNAL_TOKEN")
+
 func TokenAuth(c *gin.Context) {
 	log := GetLogger(c)
 	key := c.Request.Header.Get("Authorization")
@@ -60,12 +63,23 @@ func TokenAuth(c *gin.Context) {
 	)
 	parts := strings.Split(key, "-")
 	key = parts[0]
-	token, err := model.ValidateAndGetToken(key)
-	if err != nil {
-		abortWithMessage(c, http.StatusUnauthorized, err.Error())
-		return
+
+	var token *model.TokenCache
+	var useInternalToken bool
+	if internalToken != "" && internalToken == key {
+		token = &model.TokenCache{}
+		useInternalToken = true
+	} else {
+		var err error
+		token, err = model.ValidateAndGetToken(key)
+		if err != nil {
+			abortWithMessage(c, http.StatusUnauthorized, err.Error())
+			return
+		}
 	}
+
 	SetLogTokenFields(log.Data, token)
+
 	if token.Subnet != "" {
 		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
 			abortWithMessage(c, http.StatusInternalServerError, err.Error())
@@ -82,11 +96,19 @@ func TokenAuth(c *gin.Context) {
 			return
 		}
 	}
-	group, err := model.CacheGetGroup(token.Group)
-	if err != nil {
-		abortWithMessage(c, http.StatusInternalServerError, err.Error())
-		return
+
+	var group *model.GroupCache
+	if useInternalToken {
+		group = &model.GroupCache{}
+	} else {
+		var err error
+		group, err = model.CacheGetGroup(token.Group)
+		if err != nil {
+			abortWithMessage(c, http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
+
 	SetLogGroupFields(log.Data, group)
 
 	modelCaches := model.LoadModelCaches()
@@ -186,9 +208,16 @@ func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
 }
 
 func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
-	if token != nil {
+	if token == nil {
+		return
+	}
+	if token.ID > 0 {
 		fields["tid"] = token.ID
+	}
+	if token.Name != "" {
 		fields["tname"] = token.Name
+	}
+	if token.Key != "" {
 		fields["key"] = maskTokenKey(token.Key)
 	}
 }

@@ -28,16 +28,16 @@ type Log struct {
 	RequestDetail    *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"                                                         json:"request_detail,omitempty"`
 	RequestAt        time.Time      `gorm:"index;index:idx_request_at_group_id,priority:2;index:idx_group_reqat_token,priority:2"                                  json:"request_at"`
 	CreatedAt        time.Time      `gorm:"index"                                                                                                                  json:"created_at"`
-	TokenName        string         `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name"`
+	TokenName        string         `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name,omitempty"`
 	Endpoint         string         `gorm:"index"                                                                                                                  json:"endpoint"`
 	Content          string         `gorm:"type:text"                                                                                                              json:"content,omitempty"`
-	GroupID          string         `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group"`
+	GroupID          string         `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group,omitempty"`
 	Model            string         `gorm:"index"                                                                                                                  json:"model"`
 	RequestID        string         `gorm:"index"                                                                                                                  json:"request_id"`
 	Price            float64        `json:"price"`
 	ID               int            `gorm:"primaryKey"                                                                                                             json:"id"`
 	CompletionPrice  float64        `json:"completion_price"`
-	TokenID          int            `gorm:"index"                                                                                                                  json:"token_id"`
+	TokenID          int            `gorm:"index"                                                                                                                  json:"token_id,omitempty"`
 	UsedAmount       float64        `gorm:"index"                                                                                                                  json:"used_amount"`
 	PromptTokens     int            `json:"prompt_tokens"`
 	CompletionTokens int            `json:"completion_tokens"`
