@@ -32,7 +32,12 @@ func InitRedisClient() (err error) {
 	defer cancel()
 
 	_, err = RDB.Ping(ctx).Result()
-	return err
+	if err != nil {
+		log.Errorf("failed to ping redis: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 func RedisSet(key string, value string, expiration time.Duration) error {
