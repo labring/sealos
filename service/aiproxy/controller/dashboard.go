@@ -22,10 +22,10 @@ func getDashboardTime(t string) (time.Time, time.Time, time.Duration) {
 		timeSpan = time.Hour * 24
 	case "two_week":
 		start = end.AddDate(0, 0, -15)
-		timeSpan = time.Hour * 12
+		timeSpan = time.Hour * 24
 	case "week":
 		start = end.AddDate(0, 0, -7)
-		timeSpan = time.Hour * 6
+		timeSpan = time.Hour * 24
 	case "day":
 		fallthrough
 	default:
