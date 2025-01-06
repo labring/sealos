@@ -98,14 +98,14 @@ var (
 	defaultChannelModels       atomic.Value
 	defaultChannelModelMapping atomic.Value
 	groupMaxTokenNum           atomic.Int32
-	// group消费金额对应的rpm乘数，使用map[float64]float64
-	groupConsumeLevelRpmRatio atomic.Value
+	// group消费金额对应的rpm/tpm乘数，使用map[float64]float64
+	groupConsumeLevelRatio atomic.Value
 )
 
 func init() {
 	defaultChannelModels.Store(make(map[int][]string))
 	defaultChannelModelMapping.Store(make(map[int]map[string]string))
-	groupConsumeLevelRpmRatio.Store(make(map[float64]float64))
+	groupConsumeLevelRatio.Store(make(map[float64]float64))
 }
 
 func GetDefaultChannelModels() map[int][]string {
@@ -128,12 +128,12 @@ func SetDefaultChannelModelMapping(mapping map[int]map[string]string) {
 	defaultChannelModelMapping.Store(mapping)
 }
 
-func GetGroupConsumeLevelRpmRatio() map[float64]float64 {
-	return groupConsumeLevelRpmRatio.Load().(map[float64]float64)
+func GetGroupConsumeLevelRatio() map[float64]float64 {
+	return groupConsumeLevelRatio.Load().(map[float64]float64)
 }
 
-func SetGroupConsumeLevelRpmRatio(ratio map[float64]float64) {
-	groupConsumeLevelRpmRatio.Store(ratio)
+func SetGroupConsumeLevelRatio(ratio map[float64]float64) {
+	groupConsumeLevelRatio.Store(ratio)
 }
 
 // 那个group最多可创建的token数量，0表示不限制

@@ -79,11 +79,11 @@ func initOptionMap() error {
 	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
 	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
 	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
-	groupConsumeLevelRpmRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRpmRatio())
+	groupConsumeLevelRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRatio())
 	if err != nil {
 		return err
 	}
-	optionMap["GroupConsumeLevelRpmRatio"] = conv.BytesToString(groupConsumeLevelRpmRatioJSON)
+	optionMap["GroupConsumeLevelRatio"] = conv.BytesToString(groupConsumeLevelRatioJSON)
 
 	optionKeys = make([]string, 0, len(optionMap))
 	for key := range optionMap {
@@ -284,7 +284,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 			}
 		}
 		config.SetTimeoutWithModelType(newTimeoutWithModelType)
-	case "GroupConsumeLevelRpmRatio":
+	case "GroupConsumeLevelRatio":
 		var newGroupRpmRatio map[float64]float64
 		err := json.Unmarshal(conv.StringToBytes(value), &newGroupRpmRatio)
 		if err != nil {
@@ -298,7 +298,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 				return errors.New("rpm ratio must be greater than 0")
 			}
 		}
-		config.SetGroupConsumeLevelRpmRatio(newGroupRpmRatio)
+		config.SetGroupConsumeLevelRatio(newGroupRpmRatio)
 	default:
 		return ErrUnknownOptionKey
 	}

@@ -189,3 +189,23 @@ func GetGroupDashboard(c *gin.Context) {
 
 	middleware.SuccessResponse(c, dashboards)
 }
+
+func GetGroupDashboardModels(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	groupCache, err := model.CacheGetGroup(group)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "failed to get group")
+		return
+	}
+
+	enabledModelConfigs := model.LoadModelCaches().EnabledModelConfigs
+	newEnabledModelConfigs := make([]*model.ModelConfig, len(enabledModelConfigs))
+	for i, mc := range enabledModelConfigs {
+		newEnabledModelConfigs[i] = middleware.GetGroupAdjustedModelConfig(groupCache, mc)
+	}
+	middleware.SuccessResponse(c, newEnabledModelConfigs)
+}

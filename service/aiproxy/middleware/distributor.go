@@ -18,71 +18,87 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func calculateGroupConsumeLevelRpmRatio(usedAmount float64) float64 {
-	v := config.GetGroupConsumeLevelRpmRatio()
+func calculateGroupConsumeLevelRatio(usedAmount float64) float64 {
+	v := config.GetGroupConsumeLevelRatio()
+	if len(v) == 0 {
+		return 1
+	}
 	var maxConsumeLevel float64 = -1
-	var groupConsumeLevelRpmRatio float64
+	var groupConsumeLevelRatio float64
 	for consumeLevel, ratio := range v {
 		if usedAmount < consumeLevel {
 			continue
 		}
 		if consumeLevel > maxConsumeLevel {
 			maxConsumeLevel = consumeLevel
-			groupConsumeLevelRpmRatio = ratio
+			groupConsumeLevelRatio = ratio
 		}
 	}
-	if groupConsumeLevelRpmRatio <= 0 {
-		groupConsumeLevelRpmRatio = 1
+	if groupConsumeLevelRatio <= 0 {
+		groupConsumeLevelRatio = 1
 	}
-	return groupConsumeLevelRpmRatio
+	return groupConsumeLevelRatio
 }
 
-func getGroupRPMRatio(group *model.GroupCache) float64 {
+func getGroupPMRatio(group *model.GroupCache) (float64, float64) {
 	groupRPMRatio := group.RPMRatio
 	if groupRPMRatio <= 0 {
 		groupRPMRatio = 1
 	}
-	return groupRPMRatio
+	groupTPMRatio := group.TPMRatio
+	if groupTPMRatio <= 0 {
+		groupTPMRatio = 1
+	}
+	return groupRPMRatio, groupTPMRatio
 }
 
-func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, requestModel string, modelRPM int64, modelTPM int64) error {
-	if group.RPM != nil && group.RPM[requestModel] > 0 {
-		modelRPM = group.RPM[requestModel]
+func GetGroupAdjustedModelConfig(group *model.GroupCache, mc *model.ModelConfig) *model.ModelConfig {
+	rpm := mc.RPM
+	tpm := mc.TPM
+	if group.RPM != nil && group.RPM[mc.Model] > 0 {
+		rpm = group.RPM[mc.Model]
 	}
-	if group.TPM != nil && group.TPM[requestModel] > 0 {
-		modelTPM = group.TPM[requestModel]
+	if group.TPM != nil && group.TPM[mc.Model] > 0 {
+		tpm = group.TPM[mc.Model]
+	}
+	rpmRatio, tpmRatio := getGroupPMRatio(group)
+	groupConsumeLevelRatio := calculateGroupConsumeLevelRatio(group.UsedAmount)
+	rpm = int64(float64(rpm) * rpmRatio * groupConsumeLevelRatio)
+	tpm = int64(float64(tpm) * tpmRatio * groupConsumeLevelRatio)
+	if rpm != mc.RPM || tpm != mc.TPM {
+		newMc := *mc
+		newMc.RPM = rpm
+		newMc.TPM = tpm
+		return &newMc
+	}
+	return mc
+}
+
+func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model.ModelConfig) error {
+	adjustedModelConfig := GetGroupAdjustedModelConfig(group, mc)
+
+	if adjustedModelConfig.RPM > 0 {
+		ok := rpmlimit.ForceRateLimit(
+			c.Request.Context(),
+			group.ID,
+			mc.Model,
+			adjustedModelConfig.RPM,
+			time.Minute,
+		)
+		if !ok {
+			return fmt.Errorf("group (%s) is requesting too frequently", group.ID)
+		}
 	}
 
-	if modelRPM <= 0 && modelTPM <= 0 {
-		return nil
-	}
-
-	groupConsumeLevelRpmRatio := calculateGroupConsumeLevelRpmRatio(group.UsedAmount)
-	groupRPMRatio := getGroupRPMRatio(group)
-
-	adjustedModelRPM := int64(float64(modelRPM) * groupRPMRatio * groupConsumeLevelRpmRatio)
-
-	ok := rpmlimit.ForceRateLimit(
-		c.Request.Context(),
-		group.ID,
-		requestModel,
-		adjustedModelRPM,
-		time.Minute,
-	)
-
-	if !ok {
-		return fmt.Errorf("group (%s) is requesting too frequently", group.ID)
-	}
-
-	if modelTPM > 0 {
-		tpm, err := model.CacheGetGroupModelTPM(group.ID, requestModel)
+	if adjustedModelConfig.TPM > 0 {
+		tpm, err := model.CacheGetGroupModelTPM(group.ID, mc.Model)
 		if err != nil {
-			log.Errorf("get group model tpm (%s:%s) error: %s", group.ID, requestModel, err.Error())
+			log.Errorf("get group model tpm (%s:%s) error: %s", group.ID, mc.Model, err.Error())
 			// ignore error
 			return nil
 		}
 
-		if tpm >= modelTPM {
+		if tpm >= adjustedModelConfig.TPM {
 			return fmt.Errorf("group (%s) tpm is too high", group.ID)
 		}
 	}
@@ -139,13 +155,13 @@ func distribute(c *gin.Context, mode int) {
 		return
 	}
 
-	if err := checkGroupModelRPMAndTPM(c, group, requestModel, mc.RPM, mc.TPM); err != nil {
+	if err := checkGroupModelRPMAndTPM(c, group, mc); err != nil {
 		errMsg := err.Error()
 		consume.AsyncConsume(
 			nil,
 			http.StatusTooManyRequests,
 			nil,
-			NewMetaByContext(c, nil, requestModel, mode),
+			NewMetaByContext(c, nil, mc.Model, mode),
 			0,
 			0,
 			errMsg,
