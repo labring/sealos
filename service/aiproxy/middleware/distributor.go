@@ -88,6 +88,11 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 		if !ok {
 			return fmt.Errorf("group (%s) is requesting too frequently", group.ID)
 		}
+	} else if common.RedisEnabled {
+		_, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, time.Minute)
+		if err != nil {
+			log.Errorf("push request error: %s", err.Error())
+		}
 	}
 
 	if adjustedModelConfig.TPM > 0 {

@@ -137,8 +137,15 @@ func GetRPM(ctx context.Context, group, model string) (int64, error) {
 }
 
 func redisRateLimitRequest(ctx context.Context, group, model string, maxRequestNum int64, duration time.Duration) (bool, error) {
-	rdb := common.RDB
-	result, err := rdb.Eval(
+	result, err := PushRequest(ctx, group, model, duration)
+	if err != nil {
+		return false, err
+	}
+	return result <= maxRequestNum, nil
+}
+
+func PushRequest(ctx context.Context, group, model string, duration time.Duration) (int64, error) {
+	result, err := common.RDB.Eval(
 		ctx,
 		pushRequestScript,
 		[]string{
@@ -148,9 +155,9 @@ func redisRateLimitRequest(ctx context.Context, group, model string, maxRequestN
 		time.Now().UnixMilli(),
 	).Int64()
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return result <= maxRequestNum, nil
+	return result, nil
 }
 
 func RateLimit(ctx context.Context, group, model string, maxRequestNum int64, duration time.Duration) (bool, error) {
