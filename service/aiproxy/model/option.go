@@ -38,7 +38,8 @@ func GetOption(key string) (*Option, error) {
 }
 
 var (
-	optionMap  = make(map[string]string)
+	optionMap = make(map[string]string)
+	// allowed option keys
 	optionKeys []string
 )
 
@@ -85,6 +86,7 @@ func initOptionMap() error {
 		return err
 	}
 	optionMap["GroupConsumeLevelRatio"] = conv.BytesToString(groupConsumeLevelRatioJSON)
+	optionMap["InternalToken"] = config.GetInternalToken()
 
 	optionKeys = make([]string, 0, len(optionMap))
 	for key := range optionMap {
@@ -184,6 +186,8 @@ func isTrue(value string) bool {
 //nolint:gocyclo
 func updateOption(key string, value string, isInit bool) (err error) {
 	switch key {
+	case "InternalToken":
+		config.SetInternalToken(value)
 	case "DisableModelConfig":
 		config.SetDisableModelConfig(isTrue(value))
 	case "LogDetailStorageHours":
