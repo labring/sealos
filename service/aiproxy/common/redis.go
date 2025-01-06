@@ -34,7 +34,6 @@ func InitRedisClient() (err error) {
 	_, err = RDB.Ping(ctx).Result()
 	if err != nil {
 		log.Errorf("failed to ping redis: %s", err.Error())
-		return err
 	}
 
 	return nil
