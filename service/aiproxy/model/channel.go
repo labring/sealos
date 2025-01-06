@@ -9,6 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -48,7 +49,7 @@ func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 }
 
 func GetModelConfigWithModels(models []string) ([]string, []string, error) {
-	if len(models) == 0 {
+	if len(models) == 0 || config.GetDisableModelConfig() {
 		return models, nil, nil
 	}
 

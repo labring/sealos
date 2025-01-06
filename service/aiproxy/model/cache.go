@@ -406,11 +406,15 @@ func CacheGetGroupModelTPM(id string, model string) (int64, error) {
 	return tpm, nil
 }
 
+type ModelConfigCache interface {
+	GetModelConfig(model string) (*ModelConfig, bool)
+}
+
 // read-only cache
 //
 //nolint:revive
 type ModelCaches struct {
-	ModelConfigMap                  map[string]*ModelConfig
+	ModelConfig                     ModelConfigCache
 	EnabledModel2channels           map[string][]*Channel
 	EnabledModels                   []string
 	EnabledModelsMap                map[string]struct{}
@@ -432,7 +436,7 @@ func LoadModelCaches() *ModelCaches {
 
 // InitModelConfigAndChannelCache initializes the channel cache from database
 func InitModelConfigAndChannelCache() error {
-	modelConfigMap, err := initializeModelConfigCache()
+	modelConfig, err := initializeModelConfigCache()
 	if err != nil {
 		return err
 	}
@@ -455,14 +459,14 @@ func InitModelConfigAndChannelCache() error {
 	sortChannelsByPriority(newEnabledModel2channels)
 
 	// Build channel type to model configs map
-	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels, modelConfigMap)
+	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels, modelConfig)
 
 	// Build enabled models and configs lists
 	newEnabledModels, newEnabledModelsMap, newEnabledModelConfigs, newEnabledModelConfigsMap := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
 
 	// Update global cache atomically
 	modelCaches.Store(&ModelCaches{
-		ModelConfigMap:                  modelConfigMap,
+		ModelConfig:                     modelConfig,
 		EnabledModel2channels:           newEnabledModel2channels,
 		EnabledModels:                   newEnabledModels,
 		EnabledModelsMap:                newEnabledModelsMap,
@@ -518,7 +522,29 @@ func LoadChannelByID(id int) (*Channel, error) {
 	return &channel, nil
 }
 
-func initializeModelConfigCache() (map[string]*ModelConfig, error) {
+var _ ModelConfigCache = (*modelConfigMapCache)(nil)
+
+type modelConfigMapCache struct {
+	modelConfigMap map[string]*ModelConfig
+}
+
+func (m *modelConfigMapCache) GetModelConfig(model string) (*ModelConfig, bool) {
+	config, ok := m.modelConfigMap[model]
+	return config, ok
+}
+
+var _ ModelConfigCache = (*disabledModelConfigCache)(nil)
+
+type disabledModelConfigCache struct{}
+
+func (d *disabledModelConfigCache) GetModelConfig(model string) (*ModelConfig, bool) {
+	return NewDefaultModelConfig(model), true
+}
+
+func initializeModelConfigCache() (ModelConfigCache, error) {
+	if config.GetDisableModelConfig() {
+		return &disabledModelConfigCache{}, nil
+	}
 	modelConfigs, err := GetAllModelConfigs()
 	if err != nil {
 		return nil, err
@@ -528,7 +554,7 @@ func initializeModelConfigCache() (map[string]*ModelConfig, error) {
 		newModelConfigMap[modelConfig.Model] = modelConfig
 	}
 
-	return newModelConfigMap, nil
+	return &modelConfigMapCache{modelConfigMap: newModelConfigMap}, nil
 }
 
 func initializeChannelModels(channel *Channel) {
@@ -582,7 +608,7 @@ func sortChannelsByPriority(modelMap map[string][]*Channel) {
 	}
 }
 
-func buildChannelTypeToModelConfigsMap(channels []*Channel, modelConfigMap map[string]*ModelConfig) map[int][]*ModelConfig {
+func buildChannelTypeToModelConfigsMap(channels []*Channel, modelConfigMap ModelConfigCache) map[int][]*ModelConfig {
 	typeMap := make(map[int][]*ModelConfig)
 
 	for _, channel := range channels {
@@ -592,7 +618,7 @@ func buildChannelTypeToModelConfigsMap(channels []*Channel, modelConfigMap map[s
 		configs := typeMap[channel.Type]
 
 		for _, model := range channel.Models {
-			if config, ok := modelConfigMap[model]; ok {
+			if config, ok := modelConfigMap.GetModelConfig(model); ok {
 				configs = append(configs, config)
 			}
 		}

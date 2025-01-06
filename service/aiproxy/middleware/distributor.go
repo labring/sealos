@@ -135,7 +135,7 @@ func distribute(c *gin.Context, mode int) {
 
 	SetLogModelFields(log.Data, requestModel)
 
-	mc, ok := GetModelCaches(c).ModelConfigMap[requestModel]
+	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
 	if !ok {
 		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
 		return

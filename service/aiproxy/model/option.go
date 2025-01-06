@@ -60,6 +60,7 @@ func initOptionMap() error {
 	optionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
 	optionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
+	optionMap["DisableModelConfig"] = strconv.FormatBool(config.GetDisableModelConfig())
 	optionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
 	optionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
 	timeoutWithModelTypeJSON, err := json.Marshal(config.GetTimeoutWithModelType())
@@ -183,6 +184,8 @@ func isTrue(value string) bool {
 //nolint:gocyclo
 func updateOption(key string, value string, isInit bool) (err error) {
 	switch key {
+	case "DisableModelConfig":
+		config.SetDisableModelConfig(isTrue(value))
 	case "LogDetailStorageHours":
 		logDetailStorageHours, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
