@@ -30,7 +30,7 @@ const channelTestRequestID = "channel-test"
 
 // testSingleModel tests a single model in the channel
 func testSingleModel(mc *model.ModelCaches, channel *model.Channel, modelName string) (*model.ChannelTest, error) {
-	modelConfig, ok := mc.ModelConfigMap[modelName]
+	modelConfig, ok := mc.ModelConfig.GetModelConfig(modelName)
 	if !ok {
 		return nil, errors.New(modelName + " model config not found")
 	}

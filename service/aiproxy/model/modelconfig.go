@@ -31,6 +31,12 @@ type ModelConfig struct {
 	TPM               int64                  `json:"tpm,omitempty"`
 }
 
+func NewDefaultModelConfig(model string) *ModelConfig {
+	return &ModelConfig{
+		Model: model,
+	}
+}
+
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {
 	type Alias ModelConfig
 	return json.Marshal(&struct {

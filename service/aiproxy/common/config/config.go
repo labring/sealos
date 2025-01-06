@@ -32,7 +32,17 @@ var (
 	modelErrorAutoBanRate = math.Float64bits(0.5)
 	// 模型类型超时时间，单位秒
 	timeoutWithModelType atomic.Value
+
+	disableModelConfig atomic.Bool
 )
+
+func GetDisableModelConfig() bool {
+	return disableModelConfig.Load()
+}
+
+func SetDisableModelConfig(disabled bool) {
+	disableModelConfig.Store(disabled)
+}
 
 func GetRetryTimes() int64 {
 	return retryTimes.Load()
