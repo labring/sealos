@@ -1,5 +1,6 @@
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { getRegionUid } from '@/utils/env'
 import { NextRequest } from 'next/server'
 export const dynamic = 'force-dynamic'
 
@@ -10,12 +11,14 @@ export const GET = async function GET(req: NextRequest) {
         id: 'labring'
       }
     })
-    if(!organization) throw Error('organization not found')
+    if (!organization) throw Error('organization not found')
+    const regionUid = getRegionUid()
     const templateRepositoryList = await devboxDB.templateRepository.findMany({
       where: {
         isPublic: true,
         isDeleted: false,
-        organizationUid: organization.uid
+        organizationUid: organization.uid,
+        regionUid,
       },
       select: {
         kind: true,

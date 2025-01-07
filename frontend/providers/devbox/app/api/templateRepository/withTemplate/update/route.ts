@@ -6,6 +6,7 @@ import { devboxDB } from '@/services/db/init'
 import { ERROR_ENUM } from '@/services/error'
 import { retagSvcClient } from '@/services/retag'
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s'
+import { getRegionUid } from '@/utils/env'
 import { updateTemplateSchema } from '@/utils/vaildate'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
       where: {
         uid: query.templateRepositoryUid,
         organizationUid: payload.organizationUid,
+        regionUid: getRegionUid()
       },
       select: {
         uid: true,
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest) {
           select: {
             tagUid: true
           }
+
         },
         templates: true
       }
@@ -130,6 +133,7 @@ export async function POST(req: NextRequest) {
       await tx.templateRepository.update({
         where: {
           organizationUid: organization.uid,
+          regionUid: getRegionUid(),
           uid: templateRepository.uid,
         },
         data: {

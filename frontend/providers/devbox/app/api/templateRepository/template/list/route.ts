@@ -1,6 +1,7 @@
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { getRegionUid } from '@/utils/env'
 import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -18,12 +19,13 @@ export async function GET(req: NextRequest) {
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
         uid,
-        isDeleted: false
+        isDeleted: false,
+        regionUid: getRegionUid()
       },
       select: {
         name: true,
         uid: true,
-        organization:{
+        organization: {
           select: {
             uid: true,
             isDeleted: true
@@ -45,18 +47,26 @@ export async function GET(req: NextRequest) {
         }
       }
     })
-    if (templateRepository &&
-      !(
-         (templateRepository.organization.isDeleted === false 
-         && templateRepository.organization.uid === payload.organizationUid)
-        || templateRepository.isPublic === true
-      )) {
+
+    if (!templateRepository) {
       return jsonRes({
-        code: 404,
-        error: 'Template is not found'
+        data: {
+          templateList: []
+        }
       })
     }
-    const templateList = templateRepository?.templates || []
+    const templateList = templateRepository.templates
+    if (!(
+      (templateRepository.organization.isDeleted === false
+        && templateRepository.organization.uid === payload.organizationUid)
+      || templateRepository.isPublic === true
+    )) {
+      return jsonRes({
+        data: {
+          templateList
+        }
+      })
+    }
     return jsonRes({
       data: {
         templateList

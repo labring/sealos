@@ -1,4 +1,5 @@
 import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template'
+import useDriver from '@/hooks/useDriver'
 import { TemplateRepositoryKind } from '@/prisma/generated/client'
 import { useDevboxStore } from '@/stores/devbox'
 import { DevboxEditTypeV2 } from '@/types/devbox'
@@ -11,7 +12,6 @@ import { useFormContext } from 'react-hook-form'
 import Label from '../../Label'
 import TemplateRepositoryListNav from '../TemplateRepositoryListNav'
 import TemplateRepositoryItem from './TemplateReposistoryItem'
-import useDriver from '@/hooks/useDriver'
 
 interface TemplateRepositorySelectorProps {
   isEdit: boolean
@@ -139,8 +139,8 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   ])
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
-      <Box className="guide-runtimes">
-        <Flex w="full" justify={'space-between'} mb={'24px'}>
+      <Flex className="guide-runtimes" gap={'24px'} flexDir={'column'} w={'full'}>
+        <Flex w="full" justify={'space-between'} >
           <Label w={100} alignSelf={'flex-start'}>
             {t('runtime_environment')}
           </Label>
@@ -171,7 +171,7 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
             ))}
           </Flex>
         </Flex>
-      </Box>
+      </Flex>
       <Flex gap={'10px'} px={'14px'} width={'full'}>
         {/* Framework */}
         {categorizedData['FRAMEWORK'].length !== 0 && <Box width={'85px'}>{t('framework')}</Box>}

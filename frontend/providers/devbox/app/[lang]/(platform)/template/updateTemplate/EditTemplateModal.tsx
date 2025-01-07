@@ -93,14 +93,14 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
         dataIndex: 'createAt',
         key: 'createAt',
         render: (item) => {
-          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD mm:ss')}</Text>
+          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD hh:mm')}</Text>
         }
       }, {
         title: t('update_time'),
         dataIndex: 'createAt',
         key: 'createAt',
         render: (item) => {
-          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD mm:ss')}</Text>
+          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD hh:mm')}</Text>
         }
       },
       {

@@ -1,6 +1,7 @@
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { getRegionUid } from '@/utils/env'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
@@ -23,11 +24,13 @@ export async function DELETE(req: NextRequest) {
     const {payload} = await authSessionWithJWT(headerList)
 
     const deletedAt = new Date()
+    const regionUid = getRegionUid()
     await devboxDB.templateRepository.update({
       where: {
         uid,
         organizationUid: payload.organizationUid,
         isDeleted: false,
+        regionUid
       },
       data: {
         deletedAt,
