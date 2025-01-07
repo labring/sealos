@@ -3,8 +3,9 @@ import { Box, CircularProgress, CircularProgressLabel, Flex, Text } from '@chakr
 import { MonitorIcon } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { CpuIcon, FlowIcon, MemoryIcon, StorageIcon } from '../icons';
+import { CpuIcon, FlowIcon, GpuIcon, MemoryIcon, StorageIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
+import { useMemo } from 'react';
 
 export default function Monitor({ needStyles = true }: { needStyles?: boolean }) {
   const { t } = useTranslation();
@@ -12,32 +13,45 @@ export default function Monitor({ needStyles = true }: { needStyles?: boolean })
     staleTime: 60 * 1000
   });
 
-  const info = [
-    {
-      label: 'CPU',
-      value: data?.data?.totalCpu,
-      icon: <CpuIcon />,
-      unit: 'C'
-    },
-    {
-      label: t('common:memory'),
-      value: data?.data?.totalMemory,
-      icon: <MemoryIcon />,
-      unit: 'GB'
-    },
-    {
-      label: t('common:storage'),
-      value: data?.data?.totalStorage,
-      icon: <StorageIcon />,
-      unit: 'GB'
-    },
-    {
-      label: t('common:flow'),
-      value: `~`,
-      icon: <FlowIcon />,
-      unit: 'GB'
-    }
-  ];
+  const info = useMemo(
+    () => [
+      {
+        label: 'CPU',
+        value: data?.data?.totalCpu,
+        icon: <CpuIcon />,
+        unit: 'C'
+      },
+      {
+        label: t('common:memory'),
+        value: data?.data?.totalMemory,
+        icon: <MemoryIcon />,
+        unit: 'GB'
+      },
+      {
+        label: t('common:storage'),
+        value: data?.data?.totalStorage,
+        icon: <StorageIcon />,
+        unit: 'GB'
+      },
+      {
+        label: t('common:flow'),
+        value: `~`,
+        icon: <FlowIcon />,
+        unit: 'GB'
+      },
+      ...(Number(data?.data?.totalGpuCount) > 0
+        ? [
+            {
+              label: 'GPU',
+              value: data?.data?.totalGpuCount,
+              icon: <GpuIcon color={'rgba(255, 255, 255, 0.90)'} width={'13px'} height={'13px'} />,
+              unit: 'Card'
+            }
+          ]
+        : [])
+    ],
+    [data?.data, t]
+  );
 
   const totalPodCount = Number(data?.data?.totalPodCount) || 0;
   const runningPodCount = Number(data?.data?.runningPodCount) || 0;
