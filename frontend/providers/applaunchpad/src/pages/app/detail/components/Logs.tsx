@@ -1,13 +1,10 @@
 import { useTranslation } from 'next-i18next';
-import { Box, useTheme, Text, Flex } from '@chakra-ui/react';
+import { Box, useTheme, Flex } from '@chakra-ui/react';
 
-import dynamic from 'next/dynamic';
-
-const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
+import { Header } from './logs/Header';
 
 const Logs = () => {
   const theme = useTheme();
-  const { t } = useTranslation();
 
   return (
     <>
@@ -21,12 +18,7 @@ const Logs = () => {
         minH={'50px'}
         alignItems={'center'}
       >
-        <Flex justify={'space-between'} gap={'12px'} alignItems={'center'}>
-          <Text fontSize={'14px'} fontWeight={'bold'} lineHeight={'20px'}>
-            {t('filter')}
-          </Text>
-          <DatePicker />
-        </Flex>
+        <Header />
       </Flex>
       <Box
         mb={4}

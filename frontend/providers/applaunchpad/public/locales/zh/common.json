@@ -285,5 +285,8 @@
   "recently": "最近",
   "minute": "分钟",
   "hour": "小时",
-  "day": "天"
+  "day": "天",
+  "time": "时间",
+  "log_number": "日志数",
+  "close": "关闭"
 }

@@ -55,7 +55,8 @@ const map = {
   download: require('./icons/download.svg').default,
   calendar: require('./icons/calendar.svg').default,
   to: require('./icons/to.svg').default,
-  refresh: require('./icons/refresh.svg').default
+  refresh: require('./icons/refresh.svg').default,
+  container: require('./icons/container.svg').default
 };
 
 export type IconType = keyof typeof map;
