@@ -22,6 +22,8 @@ import '@sealos/driver/src/driver.css';
 import { AppEditSyncedFields } from '@/types/app';
 import Script from 'next/script';
 
+import 'react-day-picker/dist/style.css';
+
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
 Router.events.on('routeChangeComplete', () => NProgress.done());

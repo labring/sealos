@@ -12,6 +12,7 @@ import React, { useMemo, useState } from 'react';
 import AppBaseInfo from './components/AppBaseInfo';
 import Header from './components/Header';
 import Pods from './components/Pods';
+import Logs from './components/Logs';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -89,7 +90,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
         />
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0}>
-        <Box
+        {/* <Box
           h={'100%'}
           flex={'0 0 410px'}
           w={'410px'}
@@ -110,9 +111,9 @@ const AppDetail = ({ appName }: { appName: string }) => {
               })}
         >
           {appDetail ? <AppBaseInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
-        </Box>
+        </Box> */}
         <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
-          <Box
+          {/* <Box
             mb={4}
             bg={'white'}
             border={theme.borders.base}
@@ -131,11 +132,12 @@ const AppDetail = ({ appName }: { appName: string }) => {
             minH={'300px'}
           >
             <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
-          </Box>
+          </Box> */}
+          <Logs />
         </Flex>
       </Flex>
       {/* mask */}
-      {!isLargeScreen && showSlider && (
+      {/* {!isLargeScreen && showSlider && (
         <Box
           position={'fixed'}
           top={0}
@@ -144,7 +146,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
           bottom={0}
           onClick={() => setShowSlider(false)}
         />
-      )}
+      )} */}
     </Flex>
   );
 };
