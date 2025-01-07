@@ -21,7 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -297,52 +297,8 @@ func (in *DevboxSpec) DeepCopyInto(out *DevboxSpec) {
 		}
 	}
 	out.RuntimeRef = in.RuntimeRef
+	in.Config.DeepCopyInto(&out.Config)
 	in.NetworkSpec.DeepCopyInto(&out.NetworkSpec)
-	if in.ExtraLabels != nil {
-		in, out := &in.ExtraLabels, &out.ExtraLabels
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-	if in.ExtraAnnotations != nil {
-		in, out := &in.ExtraAnnotations, &out.ExtraAnnotations
-		*out = make(map[string]string, len(*in))
-		for key, val := range *in {
-			(*out)[key] = val
-		}
-	}
-	if in.Command != nil {
-		in, out := &in.Command, &out.Command
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
-	if in.Args != nil {
-		in, out := &in.Args, &out.Args
-		*out = make([]string, len(*in))
-		copy(*out, *in)
-	}
-	if in.ExtraEnvs != nil {
-		in, out := &in.ExtraEnvs, &out.ExtraEnvs
-		*out = make([]v1.EnvVar, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.ExtraVolumes != nil {
-		in, out := &in.ExtraVolumes, &out.ExtraVolumes
-		*out = make([]v1.Volume, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
-	if in.ExtraVolumeMounts != nil {
-		in, out := &in.ExtraVolumeMounts, &out.ExtraVolumeMounts
-		*out = make([]v1.VolumeMount, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))

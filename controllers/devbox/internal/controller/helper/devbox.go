@@ -46,11 +46,6 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Ru
 			labels[k] = v
 		}
 	}
-	if devbox.Spec.ExtraLabels != nil {
-		for k, v := range devbox.Spec.ExtraLabels {
-			labels[k] = v
-		}
-	}
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
@@ -66,11 +61,6 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alph
 	annotations := make(map[string]string)
 	if runtime.Spec.Config.Annotations != nil {
 		for k, v := range runtime.Spec.Config.Annotations {
-			annotations[k] = v
-		}
-	}
-	if devbox.Spec.ExtraAnnotations != nil {
-		for k, v := range devbox.Spec.ExtraAnnotations {
 			annotations[k] = v
 		}
 	}
@@ -450,24 +440,15 @@ func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, request
 
 // GenerateWorkingDir generates the working directory for the Devbox pod
 func GenerateWorkingDir(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
-	if devbox.Spec.WorkingDir != "" {
-		return devbox.Spec.WorkingDir
-	}
 	return runtime.Spec.Config.WorkingDir
 }
 
 // GenerateCommand generates the command for the Devbox pod
 func GenerateCommand(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Command) != 0 {
-		return devbox.Spec.Command
-	}
 	return runtime.Spec.Config.Command
 }
 
 // GenerateDevboxArgs generates the arguments for the Devbox pod
 func GenerateDevboxArgs(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Args) != 0 {
-		return devbox.Spec.Args
-	}
 	return runtime.Spec.Config.Args
 }
