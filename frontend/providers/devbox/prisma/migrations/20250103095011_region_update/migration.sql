@@ -2,9 +2,6 @@
 -- DropIndex  
 DROP INDEX "TemplateRepository_isDeleted_name_key";  
 
--- DropIndex  
-DROP INDEX "TemplateRepository_isDeleted_name_key";  
-
 -- add regionUid column
 ALTER TABLE "TemplateRepository"  
     ADD COLUMN "regionUid" STRING NOT NULL default '00000000-0000-0000-0000-000000000000';  
