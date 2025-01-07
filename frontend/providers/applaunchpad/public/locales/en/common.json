@@ -257,7 +257,7 @@
   "total_price_tip": "The estimated cost does not include port fees and traffic fees, and is subject to actual usage.",
   "nodeports": "NodePorts",
   "streaming_logs": "Streaming logs",
-  "within_5_minutes": "Within 5 minutes",
+  "within_5_minute": "Within 5 minute",
   "within_1_hour": "Within 1 hour",
   "within_1_day": "Within 1 day",
   "terminated_logs": "Terminated logs",
@@ -277,5 +277,12 @@
     "storage_path_placeholder": "For Example: /data"
   },
   "guide_deploy_button": "Complete creation",
-  "shared": "Shared"
+  "filter": "Filter",
+  "start": "Start",
+  "end": "End",
+  "time_zone": "Time Zone",
+  "recently": "Recent",
+  "minute": "Minute",
+  "day": "Day",
+  "hour": "Hour"
 }

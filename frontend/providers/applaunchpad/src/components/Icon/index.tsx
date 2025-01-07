@@ -52,7 +52,10 @@ const map = {
   search: require('./icons/search.svg').default,
   pods: require('./icons/pods.svg').default,
   hardDrive: require('./icons/hardDrive.svg').default,
-  download: require('./icons/download.svg').default
+  download: require('./icons/download.svg').default,
+  calendar: require('./icons/calendar.svg').default,
+  to: require('./icons/to.svg').default,
+  refresh: require('./icons/refresh.svg').default
 };
 
 export type IconType = keyof typeof map;
