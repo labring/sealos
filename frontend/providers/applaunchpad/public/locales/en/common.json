@@ -284,5 +284,8 @@
   "recently": "Recent",
   "minute": "Minute",
   "day": "Day",
-  "hour": "Hour"
+  "hour": "Hour",
+  "time": "Time",
+  "log_number": "Log Number",
+  "close": "Close"
 }
