@@ -303,5 +303,7 @@
   "overview": "Overview",
   "monitor": "Monitor",
   "logs": "Logs",
-  "application_source": "Source"
+  "application_source": "Source",
+  "contains": "contains",
+  "not_contains": "not contains"
 }

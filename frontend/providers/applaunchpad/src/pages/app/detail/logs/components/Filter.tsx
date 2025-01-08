@@ -8,7 +8,7 @@ import MySelect from '@/components/MySelect';
 interface JsonModeFormItem {
   jsonKey: string;
   jsonValue: string;
-  jsonOperator: '=' | '>' | '<';
+  jsonOperator: '=' | '>' | '<' | 'contains' | 'not_contains';
 }
 
 export const Filter = () => {
@@ -113,7 +113,9 @@ export const Filter = () => {
                 list={[
                   { value: '=', label: t('equal') },
                   { value: '>', label: t('greater_than') },
-                  { value: '<', label: t('less_than') }
+                  { value: '<', label: t('less_than') },
+                  { value: 'contains', label: t('contains') },
+                  { value: 'not_contains', label: t('not_contains') }
                 ]}
                 onchange={(val: any) => setJsonFormList(val)}
               />
