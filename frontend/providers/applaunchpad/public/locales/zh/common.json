@@ -304,5 +304,7 @@
   "overview": "概览",
   "monitor": "监控",
   "logs": "日志",
-  "application_source": "来源"
+  "application_source": "来源",
+  "contains": "包含",
+  "not_contains": "不包含"
 }
