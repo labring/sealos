@@ -51,6 +51,7 @@ const map = {
   upload: require('./icons/upload.svg').default,
   search: require('./icons/search.svg').default,
   pods: require('./icons/pods.svg').default,
+  monitor: require('./icons/monitor.svg').default,
   hardDrive: require('./icons/hardDrive.svg').default,
   download: require('./icons/download.svg').default,
   calendar: require('./icons/calendar.svg').default,

@@ -299,5 +299,8 @@
   "greater_than": "Greater than",
   "less_than": "Less than",
   "value": "Value",
-  "logNumber": "Log Counts"
+  "logNumber": "Log Counts",
+  "overview": "Overview",
+  "monitor": "Monitor",
+  "logs": "Logs"
 }
