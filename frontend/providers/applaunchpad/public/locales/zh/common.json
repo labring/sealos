@@ -300,5 +300,8 @@
   "greater_than": "大于",
   "less_than": "小于",
   "value": "值",
-  "logNumber": "日志数量"
+  "logNumber": "日志数量",
+  "overview": "概览",
+  "monitor": "监控",
+  "logs": "日志"
 }
