@@ -23,7 +23,7 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import { getEnabledMode } from '@/api/platform'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -40,6 +40,7 @@ import { getTranslationWithFallback } from '@/utils/common'
 import { useBackendStore } from '@/store/backend'
 import { modelIcons } from '@/ui/icons/mode-icons'
 import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
+import { useDebounce } from '@/hooks/useDebounce'
 
 type SortDirection = 'asc' | 'desc' | false
 
@@ -101,26 +102,15 @@ const getTypeStyle = (type: number) => {
   return MODEL_TYPE_STYLES[type as keyof typeof MODEL_TYPE_STYLES] || MODEL_TYPE_STYLES.default
 }
 
-function Price() {
+export default function Price() {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
 
   const [modelOwner, setModelOwner] = useState<string>('')
   const [modelType, setModelType] = useState<string>('')
   const [modelName, setModelName] = useState<string>('')
-  const [filteredModelConfigs, setFilteredModelConfigs] = useState<ModelConfig[]>([])
-
-  const {
-    isLoading,
-    data: modelConfigs = [] as ModelConfig[],
-    refetch
-  }: UseQueryResult<ModelConfig[]> = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode(), {
-    onSuccess: (data) => {
-      if (data) {
-        setFilteredModelConfigs(data)
-      }
-    }
-  })
+  const [searchInput, setSearchInput] = useState('')
+  const debouncedSearch = useDebounce(searchInput, 500)
 
   interface FilterParams {
     owner: string
@@ -131,11 +121,17 @@ function Price() {
   const filterModels = (modelConfigs: ModelConfig[], filterParams: FilterParams): ModelConfig[] => {
     return modelConfigs.filter((config) => {
       const ownerMatch =
-        !filterParams.owner || filterParams.owner === 'all' || config.owner === filterParams.owner
+        !filterParams.owner ||
+        filterParams.owner === t('price.all') ||
+        getTranslationWithFallback(
+          `modeOwner.${String(config.owner)}`,
+          'modeOwner.unknown',
+          t as any
+        ) === filterParams.owner
 
       const typeMatch =
         !filterParams.type ||
-        filterParams.type === 'all' ||
+        filterParams.type === t('price.all') ||
         getTranslationWithFallback(`modeType.${String(config.type)}`, 'modeType.0', t as any) ===
           filterParams.type
 
@@ -145,6 +141,24 @@ function Price() {
       return ownerMatch && typeMatch && nameMatch
     })
   }
+
+  const {
+    isLoading,
+    data: modelConfigs = [] as ModelConfig[],
+    refetch
+  }: UseQueryResult<ModelConfig[]> = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
+
+  const filteredModelConfigs = useMemo(() => {
+    return filterModels(modelConfigs, {
+      owner: modelOwner,
+      type: modelType,
+      name: debouncedSearch
+    })
+  }, [modelConfigs, modelOwner, modelType, debouncedSearch])
+
+  useEffect(() => {
+    setModelName(debouncedSearch)
+  }, [debouncedSearch])
 
   return (
     <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
@@ -230,27 +244,37 @@ function Price() {
                     letterSpacing="0.5px">
                     {t('price.modelOwner')}
                   </Text>
-                  <SingleSelectComboboxUnstyle<string>
-                    dropdownItems={['all', ...new Set(modelConfigs.map((config) => config.owner))]}
-                    setSelectedItem={(modelOwner) => {
-                      setModelOwner(modelOwner)
-                      setFilteredModelConfigs(
-                        filterModels(modelConfigs, {
-                          owner: modelOwner,
-                          type: modelType,
-                          name: modelName
-                        })
+                  <SingleSelectComboboxUnstyle<{ icon: string; name: string }>
+                    dropdownItems={[
+                      { icon: '', name: t('price.all') },
+                      ...Array.from(
+                        new Map(
+                          modelConfigs.map((config) => [
+                            config.owner,
+                            {
+                              icon: config.owner,
+                              name: getTranslationWithFallback(
+                                `modeOwner.${String(config.owner)}`,
+                                'modeOwner.unknown',
+                                t as any
+                              )
+                            }
+                          ])
+                        ).values()
                       )
+                    ]}
+                    setSelectedItem={(modelOwner) => {
+                      setModelOwner(modelOwner.name)
                     }}
                     handleDropdownItemFilter={(dropdownItems, inputValue) => {
                       const lowerCasedInput = inputValue.toLowerCase()
                       return dropdownItems.filter(
-                        (item) => !inputValue || item.toLowerCase().includes(lowerCasedInput)
+                        (item) => !inputValue || item.name.toLowerCase().includes(lowerCasedInput)
                       )
                     }}
                     handleDropdownItemDisplay={(dropdownItem) => {
-                      const iconSrc = getModelIcon(dropdownItem)
-                      if (dropdownItem === 'all') {
+                      const iconSrc = getModelIcon(dropdownItem.icon)
+                      if (dropdownItem.name === t('price.all')) {
                         return (
                           <Flex alignItems="center" gap="8px">
                             <Image src={iconSrc} alt="default" width={20} height={20} />
@@ -262,14 +286,14 @@ function Price() {
                               fontWeight={500}
                               lineHeight="16px"
                               letterSpacing="0.5px">
-                              {dropdownItem}
+                              {dropdownItem.name}
                             </Text>
                           </Flex>
                         )
                       }
                       return (
                         <Flex alignItems="center" gap="8px">
-                          <Image src={iconSrc} alt={dropdownItem} width={20} height={20} />
+                          <Image src={iconSrc} alt={dropdownItem.icon} width={20} height={20} />
                           <Text
                             color="grayModern.600"
                             fontFamily="PingFang SC"
@@ -278,13 +302,14 @@ function Price() {
                             fontWeight={500}
                             lineHeight="16px"
                             letterSpacing="0.5px">
-                            {dropdownItem}
+                            {dropdownItem.name}
                           </Text>
                         </Flex>
                       )
                     }}
                     flexProps={{ w: '240px' }}
-                    initSelectedItem="all"
+                    initSelectedItem={{ icon: '', name: t('price.all') }}
+                    handleInputDisplay={(dropdownItem) => dropdownItem.name}
                   />
                 </Flex>
                 <Flex h="32px" gap="24px" alignItems="center" flex="0 1 auto">
@@ -301,7 +326,7 @@ function Price() {
                   </Text>
                   <SingleSelectComboboxUnstyle<string>
                     dropdownItems={[
-                      'all',
+                      t('price.all'),
                       ...new Set(
                         modelConfigs.map((config) =>
                           getTranslationWithFallback(
@@ -314,13 +339,6 @@ function Price() {
                     ]}
                     setSelectedItem={(modelType) => {
                       setModelType(modelType)
-                      setFilteredModelConfigs(
-                        filterModels(modelConfigs, {
-                          owner: modelOwner,
-                          type: modelType,
-                          name: modelName
-                        })
-                      )
                     }}
                     handleDropdownItemFilter={(dropdownItems, inputValue) => {
                       const lowerCasedInput = inputValue.toLowerCase()
@@ -343,7 +361,7 @@ function Price() {
                       )
                     }}
                     flexProps={{ w: '240px' }}
-                    initSelectedItem="all"
+                    initSelectedItem={t('price.all')}
                   />
                 </Flex>
               </Flex>
@@ -371,18 +389,9 @@ function Price() {
                       lineHeight: '16px',
                       letterSpacing: '0.048px'
                     }}
-                    value={modelName}
+                    value={searchInput}
                     onChange={(e) => {
-                      const searchValue = e.target.value
-                      setModelName(searchValue)
-
-                      setFilteredModelConfigs(
-                        filterModels(modelConfigs, {
-                          owner: modelOwner,
-                          type: modelType,
-                          name: searchValue
-                        })
-                      )
+                      setSearchInput(e.target.value)
                     }}
                   />
                   <InputRightElement w="32px" h="32px">
@@ -551,8 +560,8 @@ const ModelComponent = ({ modelConfig }: { modelConfig: ModelConfig }) => {
                 viewBox="0 0 14 14"
                 fill="none">
                 <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
+                  fillRule="evenodd"
+                  clipRule="evenodd"
                   d="M2.38275 8.52685C1.2703 7.4144 0.919623 5.8231 1.32317 4.38399C1.43455 3.98679 1.60339 3.60118 1.82953 3.24043L3.94506 5.35597L5.19686 5.19681L5.35601 3.94501L3.2406 1.8296C3.60141 1.60351 3.98708 1.43474 4.38434 1.32342C5.82323 0.920248 7.41413 1.27101 8.52636 2.38324C9.65082 3.5077 9.99697 5.1214 9.57262 6.57264L12.1265 8.95704C13.0537 9.82265 13.0787 11.2844 12.1818 12.1813C11.2845 13.0786 9.82197 13.053 8.95657 12.1249L6.57622 9.57192C5.12392 9.99811 3.50826 9.65236 2.38275 8.52685ZM5.39327 2.33236L6.58552 3.52461L6.24026 6.24021L3.52465 6.58547L2.33192 5.39274C2.2883 6.23601 2.5846 7.07879 3.20771 7.70189C4.01259 8.50677 5.1785 8.76623 6.2477 8.45246L6.93854 8.24972L9.80987 11.3293C10.225 11.7745 10.9265 11.7867 11.3569 11.3563C11.7871 10.9261 11.7751 10.225 11.3303 9.80981L8.25115 6.93498L8.45284 6.24521C8.76525 5.1768 8.50554 4.01234 7.70141 3.2082C7.07855 2.58534 6.23621 2.28903 5.39327 2.33236Z"
                   fill="#6F5DD7"
                 />
@@ -1086,5 +1095,3 @@ function PriceTable({
     </TableContainer>
   )
 }
-
-export default Price

@@ -69,7 +69,13 @@
     "responseBody": "Response Body",
     "inputTokens": "Input Tokens",
     "outputTokens": "Output Tokens",
-    "searchByContent": "Enter search keyword"
+    "searchByContent": "Enter search keyword",
+    "status": "State",
+    "statusOptions": {
+      "all": "All",
+      "success": "Success",
+      "error": "Error"
+    }
   },
   "Page": "Page",
   "Total": "Total",
@@ -96,6 +102,7 @@
   "copyFailed": "Copy failed",
   "noData": "You don’t have an API Key yet",
   "price": {
+    "all": "All",
     "title": "Models",
     "per1kTokens": "1k tokens",
     "modelOwner": "Series/Manufacturer",

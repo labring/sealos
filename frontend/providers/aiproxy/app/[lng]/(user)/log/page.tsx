@@ -48,27 +48,20 @@ export default function Logs(): React.JSX.Element {
     return currentDate
   })
   const [endTime, setEndTime] = useState(new Date())
-  const [name, setName] = useState('')
+  const [keyName, setKeyName] = useState('')
   const [codeType, setCodeType] = useState('all')
   const [modelName, setModelName] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [logData, setLogData] = useState<LogItem[]>([])
-  const [total, setTotal] = useState(0)
   const [inputKeyword, setInputKeyword] = useState('')
   const debouncedKeyword = useDebounce(inputKeyword, 500) // 500ms 延迟 0.5s
 
-  const { data: modelConfigs = [] } = useQuery([QueryKey.GetEnabledModels], () => getEnabledMode())
-  const { data: tokenData } = useQuery([QueryKey.GetTokens], () =>
-    getTokens({ page: 1, perPage: 100 })
-  )
-
-  const { isLoading } = useQuery(
+  const { data: logData, isLoading } = useQuery(
     [
       QueryKey.GetUserLogs,
       page,
       pageSize,
-      name,
+      keyName,
       modelName,
       startTime,
       endTime,
@@ -79,24 +72,13 @@ export default function Logs(): React.JSX.Element {
       getUserLogs({
         page,
         perPage: pageSize,
-        token_name: name,
+        token_name: keyName,
         model_name: modelName,
         keyword: debouncedKeyword,
         code_type: codeType as 'all' | 'success' | 'error',
         start_timestamp: startTime.getTime().toString(),
         end_timestamp: endTime.getTime().toString()
-      }),
-    {
-      onSuccess: (data) => {
-        if (!data?.logs) {
-          setLogData([])
-          setTotal(0)
-          return
-        }
-        setLogData(data?.logs || [])
-        setTotal(data?.total || 0)
-      }
-    }
+      })
   )
 
   const columnHelper = createColumnHelper<LogItem>()
@@ -348,7 +330,7 @@ export default function Logs(): React.JSX.Element {
   )
 
   const table = useReactTable({
-    data: logData,
+    data: logData?.logs || [],
     columns,
     getCoreRowModel: getCoreRowModel()
   })
@@ -473,8 +455,9 @@ export default function Logs(): React.JSX.Element {
                 bg="white"
                 boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
                 onClick={() => {
-                  setName('')
+                  setKeyName('')
                   setModelName('')
+                  setCodeType('all')
                 }}>
                 <Icon
                   xmlns="http://www.w3.org/2000/svg"
@@ -517,12 +500,12 @@ export default function Logs(): React.JSX.Element {
                   {t('logs.name')}
                 </Text>
                 <SingleSelectComboboxUnstyle<string>
-                  dropdownItems={['all', ...(tokenData?.tokens?.map((item) => item.name) || [])]}
+                  dropdownItems={['all', ...(logData?.token_names || [])]}
                   setSelectedItem={(value) => {
                     if (value === 'all') {
-                      setName('')
+                      setKeyName('')
                     } else {
-                      setName(value)
+                      setKeyName(value)
                     }
                   }}
                   handleDropdownItemFilter={(dropdownItems, inputValue) => {
@@ -563,7 +546,7 @@ export default function Logs(): React.JSX.Element {
                   {t('logs.modal')}
                 </Text>
                 <SingleSelectComboboxUnstyle<string>
-                  dropdownItems={['all', ...modelConfigs.map((item) => item.model)]}
+                  dropdownItems={['all', ...(logData?.models || [])]}
                   setSelectedItem={(value) => {
                     if (value === 'all') {
                       setModelName('')
@@ -619,15 +602,15 @@ export default function Logs(): React.JSX.Element {
                   list={[
                     {
                       value: 'all',
-                      label: 'all'
+                      label: t('logs.statusOptions.all')
                     },
                     {
                       value: 'success',
-                      label: 'success'
+                      label: t('logs.statusOptions.success')
                     },
                     {
                       value: 'error',
-                      label: 'error'
+                      label: t('logs.statusOptions.error')
                     }
                   ]}
                   onchange={(val: string) => {
@@ -669,8 +652,8 @@ export default function Logs(): React.JSX.Element {
             m="0"
             justifyContent={'end'}
             currentPage={page}
-            totalPage={Math.ceil(total / pageSize)}
-            totalItem={total}
+            totalPage={Math.ceil((logData?.total || 0) / pageSize)}
+            totalItem={logData?.total || 0}
             pageSize={pageSize}
             setCurrentPage={(idx: number) => setPage(idx)}
           />

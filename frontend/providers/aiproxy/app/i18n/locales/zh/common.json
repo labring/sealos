@@ -69,7 +69,13 @@
     "responseBody": "响应内容",
     "inputTokens": "输入 Tokens",
     "outputTokens": "输出 Tokens",
-    "searchByContent": "输入搜索关键词"
+    "searchByContent": "输入搜索关键词",
+    "status": "状态",
+    "statusOptions": {
+      "all": "全部",
+      "success": "成功",
+      "error": "失败"
+    }
   },
   "Page": "页",
   "Total": "总数",
@@ -96,6 +102,7 @@
   "copyFailed": "复制失败",
   "noData": "你还没有 API Key",
   "price": {
+    "all": "全部",
     "title": "模型广场",
     "per1kTokens": "1k tokens",
     "modelOwner": "系列/厂商",

@@ -7,11 +7,15 @@ export const dynamic = 'force-dynamic'
 export type ApiProxyBackendUserLogSearchResponse = ApiProxyBackendResp<{
   logs: LogItem[]
   total: number
+  models: string[]
+  token_names: string[]
 }>
 
 export type UserLogSearchResponse = ApiResp<{
   logs: LogItem[]
   total: number
+  models: string[]
+  token_names: string[]
 }>
 
 export interface UserLogQueryParams {
@@ -43,7 +47,7 @@ function validateParams(params: UserLogQueryParams): string | null {
 async function fetchLogs(
   params: UserLogQueryParams,
   group: string
-): Promise<{ logs: LogItem[]; total: number }> {
+): Promise<{ logs: LogItem[]; total: number; models: string[]; token_names: string[] }> {
   try {
     const url = new URL(
       `/api/log/${group}/search`,
@@ -96,7 +100,9 @@ async function fetchLogs(
 
     return {
       logs: result.data?.logs || [],
-      total: result.data?.total || 0
+      total: result.data?.total || 0,
+      models: result.data?.models || [],
+      token_names: result.data?.token_names || []
     }
   } catch (error) {
     console.error('Error fetching logs:', error)
@@ -132,13 +138,15 @@ export async function GET(request: NextRequest): Promise<NextResponse<UserLogSea
       )
     }
 
-    const { logs, total } = await fetchLogs(queryParams, group)
+    const { logs, total, models, token_names } = await fetchLogs(queryParams, group)
 
     return NextResponse.json({
       code: 200,
       data: {
         logs,
-        total
+        total,
+        models,
+        token_names
       }
     } satisfies UserLogSearchResponse)
   } catch (error) {

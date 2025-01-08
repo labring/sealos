@@ -10,6 +10,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   setSelectedItem: (value: T) => void
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  handleInputDisplay?: (item: T) => string
   initSelectedItem?: T
   flexProps?: FlexProps
   placeholder?: string
@@ -18,6 +19,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   setSelectedItem,
   handleDropdownItemFilter,
   handleDropdownItemDisplay,
+  handleInputDisplay,
   initSelectedItem,
   flexProps,
   placeholder
@@ -26,6 +28,7 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
   setSelectedItem: (value: T) => void
   handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
   handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
+  handleInputDisplay?: (item: T) => string
   initSelectedItem?: T
   flexProps?: FlexProps
   placeholder?: string
@@ -50,8 +53,12 @@ export const SingleSelectComboboxUnstyle: <T>(props: {
     onInputValueChange: ({ inputValue }) => {
       setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue))
     },
-
     initialSelectedItem: initSelectedItem || undefined,
+
+    itemToString: (item) => {
+      if (!item) return ''
+      return handleInputDisplay ? handleInputDisplay(item) : String(item)
+    },
 
     onSelectedItemChange: ({ selectedItem }) => {
       const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem)

@@ -83,6 +83,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
       },
       axisTick: {
         show: true,
+        length: 6,
         lineStyle: {
           color: '#E8EBF0',
           width: 2
