@@ -1,4 +1,4 @@
-import Sidebar from '@/components/Sidebar';
+import Sidebar from '@/components/layouts/Sidebar';
 import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/pages/app/detail/components/Header';
@@ -52,7 +52,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
       flexDirection={'column'}
       height={'100vh'}
       backgroundColor={'grayModern.100'}
-      px={'32px'}
+      px={'16px'}
       pb={4}
     >
       <Header

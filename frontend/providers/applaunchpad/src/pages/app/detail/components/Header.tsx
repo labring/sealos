@@ -112,19 +112,20 @@ const Header = ({
   }, [appName, refetch, toast]);
 
   return (
-    <Flex h={'86px'} alignItems={'center'}>
+    <Flex h={'32px'} my={'14px'} alignItems={'center'}>
       <Center cursor={'pointer'} onClick={() => router.replace('/apps')}>
         <MyIcon name="arrowLeft" w={'24px'} />
       </Center>
-      <Box ml={'4px'} mr={3} fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
+      <Box ml={'4px'} mr={3} fontWeight={'bold'} color={'grayModern.900'} fontSize={'18px'}>
         {appName}
       </Box>
       <AppStatusTag status={appStatus} isPause={isPause} showBorder={false} />
-      {!isLargeScreen && (
+      {/* {!isLargeScreen && (
         <Box mx={4}>
           <Button
-            width={'96px'}
-            height={'40px'}
+            minW={'75px'}
+            fontSize={'12px'}
+            height={'32px'}
             leftIcon={<MyIcon name="detail" w="16px" h="16px" />}
             variant={'outline'}
             onClick={() => setShowSlider(true)}
@@ -132,17 +133,18 @@ const Header = ({
             {t('Details')}
           </Button>
         </Box>
-      )}
+      )} */}
       <Box flex={1} />
 
       {/* btns */}
       {isPause ? (
         <Button
-          width={'96px'}
+          minW={'75px'}
+          fontSize={'12px'}
           variant={'outline'}
-          mr={5}
-          h={'40px'}
-          leftIcon={<MyIcon name="continue" w={'20px'} fill={'#485264'} />}
+          mr={'12px'}
+          h={'32px'}
+          leftIcon={<MyIcon name="continue" w={'16px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={handleStartApp}
         >
@@ -150,11 +152,12 @@ const Header = ({
         </Button>
       ) : (
         <Button
-          width={'96px'}
+          minW={'75px'}
+          fontSize={'12px'}
           variant={'outline'}
-          mr={5}
-          h={'40px'}
-          leftIcon={<MyIcon name="pause" w={'20px'} fill={'#485264'} />}
+          mr={'12px'}
+          h={'32px'}
+          leftIcon={<MyIcon name="pause" w={'16px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={onOpenPause(handlePauseApp)}
         >
@@ -165,11 +168,12 @@ const Header = ({
         <Button
           className="driver-detail-update-button"
           _focusVisible={{ boxShadow: '' }}
-          mr={5}
-          h={'40px'}
-          width={'96px'}
+          mr={'12px'}
+          h={'32px'}
+          minW={'75px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name={'change'} w={'20px'} fill={'#485264'} />}
+          leftIcon={<MyIcon name={'change'} w={'16px'} fill={'#485264'} />}
           isLoading={loading}
           onClick={() => {
             if (source?.hasSource && source?.sourceType === 'sealaf') {
@@ -186,11 +190,12 @@ const Header = ({
 
       {!isPause && (
         <Button
-          mr={5}
-          h={'40px'}
-          width={'96px'}
+          mr={'12px'}
+          h={'32px'}
+          minW={'75px'}
+          fontSize={'12px'}
           variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'20px'} fill={'#485264'} />}
+          leftIcon={<MyIcon name="restart" w={'16px'} fill={'#485264'} />}
           onClick={openRestartConfirm(handleRestartApp)}
           isLoading={loading}
         >
@@ -198,10 +203,11 @@ const Header = ({
         </Button>
       )}
       <Button
-        h={'40px'}
-        width={'96px'}
+        h={'32px'}
+        minW={'75px'}
+        fontSize={'12px'}
         variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'20px'} fill={'#485264'} />}
+        leftIcon={<MyIcon name="delete" w={'16px'} fill={'#485264'} />}
         _hover={{
           color: '#FF324A'
         }}

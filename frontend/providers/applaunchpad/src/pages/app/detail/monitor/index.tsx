@@ -1,6 +1,6 @@
 // pages/app/detail/monitor.tsx
 import { Box } from '@chakra-ui/react';
-import DetailLayout from '@/components/Sidebar/layout';
+import DetailLayout from '@/components/layouts/DetailLayout';
 import { serviceSideProps } from '@/utils/i18n';
 import { useAppStore } from '@/store/app';
 import { useQuery } from '@tanstack/react-query';

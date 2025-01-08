@@ -12,7 +12,7 @@ import React, { useMemo, useState } from 'react';
 import AppBaseInfo from './components/AppBaseInfo';
 import Header from './components/Header';
 import Pods from './components/Pods';
-import DetailLayout from '@/components/Sidebar/layout';
+import DetailLayout from '@/components/layouts/DetailLayout';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -72,25 +72,24 @@ const AppDetail = ({ appName }: { appName: string }) => {
 
   return (
     <DetailLayout appName={appName}>
-      <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
-        <Box
-          mb={4}
-          bg={'white'}
-          border={theme.borders.base}
-          borderRadius={'lg'}
-          flexShrink={0}
-          minH={'257px'}
-        >
-          {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
-        </Box>
-        <Box
-          bg={'white'}
-          border={theme.borders.base}
-          borderRadius={'lg'}
-          h={0}
-          flex={1}
-          minH={'300px'}
-        >
+      <Flex
+        flexDirection={'column'}
+        minH={'100%'}
+        flex={'1 0 0'}
+        w={0}
+        overflowY={'auto'}
+        overflowX={'hidden'}
+      >
+        <Flex mb={4} borderRadius={'lg'} flexShrink={0} minH={'257px'} gap={'6px'}>
+          <Box flexShrink={0} w="408px" bg={'white'} borderRadius={'8px'}>
+            <AppBaseInfo app={appDetail} />
+          </Box>
+          <Box flex="1" bg={'white'} borderRadius={'8px'}>
+            {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
+          </Box>
+        </Flex>
+        <Box>高级配置</Box>
+        <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
           <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
         </Box>
       </Flex>
