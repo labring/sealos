@@ -16,9 +16,9 @@ import {
 } from '@chakra-ui/react';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
-import { useState } from 'react';
+import { ChangeEvent, ChangeEventHandler, useState } from 'react';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
-import { endOfDay, format, isAfter, isBefore, isValid, parse, startOfDay } from 'date-fns';
+import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { useDisclosure } from '@chakra-ui/react';
 
 import MyIcon from '../Icon';
@@ -57,34 +57,66 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
 
-  const [fromDateTimeValue, setFromDateTimeValue] = useState<Date>(initState.from);
-  const [toDateTimeValue, setToDateTimeValue] = useState<Date>(initState.to);
+  const [fromDateString, setFromDateString] = useState<string>(format(initState.from, 'y-MM-dd'));
+  const [toDateString, setToDateString] = useState<string>(format(initState.to, 'y-MM-dd'));
+  const [fromTimeString, setFromTimeString] = useState<string>(format(initState.from, 'HH:mm:ss'));
+  const [toTimeString, setToTimeString] = useState<string>(format(initState.to, 'HH:mm:ss'));
+
+  const [fromDateError, setFromDateError] = useState<string | null>(null);
+  const [toDateError, setToDateError] = useState<string | null>(null);
+  const [fromTimeError, setFromTimeError] = useState<string | null>(null);
+  const [toTimeError, setToTimeError] = useState<string | null>(null);
+  const [fromDateShake, setFromDateShake] = useState(false);
+  const [toDateShake, setToDateShake] = useState(false);
+  const [fromTimeShake, setFromTimeShake] = useState(false);
+  const [toTimeShake, setToTimeShake] = useState(false);
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
 
   const onSubmit = () => {
+    if (fromDateError || fromTimeError || toDateError || toTimeError) {
+      if (fromDateError) setFromDateShake(true);
+      if (toDateError) setToDateShake(true);
+      if (fromTimeError) setFromTimeShake(true);
+      if (toTimeError) setToTimeShake(true);
+      setTimeout(() => {
+        setFromDateShake(false);
+        setToDateShake(false);
+        setFromTimeShake(false);
+        setToTimeShake(false);
+      }, 300);
+
+      return;
+    }
     selectedRange?.from && setStartDateTime(selectedRange.from);
     selectedRange?.to && setEndDateTime(selectedRange.to);
     onClose();
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
-    const currentValue = format(fromDateTimeValue, 'y-MM-dd HH:mm:ss');
-    let newDateString = currentValue;
+    let newDateTimeString;
 
     if (type === 'date') {
-      const newDate = value;
-      const oldTime = format(fromDateTimeValue, 'HH:mm:ss');
-      newDateString = `${newDate} ${oldTime}`;
+      setFromDateString(value);
+      if (!isMatch(value, 'y-MM-dd')) {
+        setFromDateError('Invalid date format');
+        return;
+      }
+      setFromDateError(null);
+      newDateTimeString = `${value} ${fromTimeString}`;
     } else {
-      const newTime = value;
-      const oldDate = format(fromDateTimeValue, 'y-MM-dd');
-      newDateString = `${oldDate} ${newTime}`;
+      setFromTimeString(value);
+      if (!isMatch(value, 'HH:mm:ss')) {
+        setFromTimeError('Invalid time format');
+        return;
+      }
+      setFromTimeError(null);
+      newDateTimeString = `${fromDateString} ${value}`;
     }
 
-    const date = parse(newDateString, 'y-MM-dd HH:mm:ss', new Date());
+    console.log(newDateTimeString);
 
-    setFromDateTimeValue(date);
+    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
 
     if (!isValid(date)) {
       return setSelectedRange({ from: undefined, to: selectedRange?.to });
@@ -102,21 +134,27 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   };
 
   const handleToChange = (value: string, type: 'date' | 'time') => {
-    const currentValue = format(fromDateTimeValue, 'y-MM-dd HH:mm:ss');
-    let newDateString = currentValue;
+    let newDateTimeString;
 
     if (type === 'date') {
-      const newDate = value;
-      const oldTime = format(fromDateTimeValue, 'HH:mm:ss');
-      newDateString = `${newDate} ${oldTime}`;
+      setToDateString(value);
+      if (!isMatch(value, 'y-MM-dd')) {
+        setToDateError('Invalid date format');
+        return;
+      }
+      setToDateError(null);
+      newDateTimeString = `${value} ${toTimeString}`;
     } else {
-      const newTime = value;
-      const oldDate = format(fromDateTimeValue, 'y-MM-dd');
-      newDateString = `${oldDate} ${newTime}`;
+      setToTimeString(value);
+      if (!isMatch(value, 'HH:mm:ss')) {
+        setToTimeError('Invalid time format');
+        return;
+      }
+      setToTimeError(null);
+      newDateTimeString = `${toDateString} ${value}`;
     }
 
-    const date = parse(newDateString, 'y-MM-dd HH:mm:ss', new Date());
-    setToDateTimeValue(date);
+    const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
 
     if (!isValid(date)) {
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
@@ -152,19 +190,24 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         to
       });
       if (from) {
-        setFromDateTimeValue(startOfDay(from));
+        setFromDateString(format(startOfDay(from), 'y-MM-dd'));
+        setFromTimeString(format(startOfDay(from), 'HH:mm:ss'));
       } else {
-        setFromDateTimeValue(new Date());
+        setFromDateString(format(new Date(), 'y-MM-dd'));
+        setFromTimeString(format(new Date(), 'HH:mm:ss'));
       }
       if (to) {
-        setToDateTimeValue(endOfDay(to));
+        setToDateString(format(endOfDay(to), 'y-MM-dd'));
+        setToTimeString(format(endOfDay(to), 'HH:mm:ss'));
       } else {
-        setToDateTimeValue(from ? from : new Date());
+        setToDateString(format(from ? from : new Date(), 'y-MM-dd'));
+        setToTimeString(format(from ? from : new Date(), 'HH:mm:ss'));
       }
     } else {
       // default is cancel
-      if (fromDateTimeValue && selectedRange?.from) {
-        setToDateTimeValue(fromDateTimeValue);
+      if (fromDateString && fromTimeString && selectedRange?.from) {
+        setToDateString(fromDateString);
+        setToTimeString(fromTimeString);
         setSelectedRange({
           ...selectedRange,
           to: selectedRange.from
@@ -175,13 +218,20 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   };
 
   const handleRecentDateClick = (item: RecentDate) => {
+    setFromDateError(null);
+    setFromTimeError(null);
+    setToDateError(null);
+    setToTimeError(null);
+
     setRecentDate(item);
     setSelectedRange(item.value);
     if (item.value.from) {
-      setFromDateTimeValue(item.value.from);
+      setFromDateString(format(item.value.from, 'y-MM-dd'));
+      setFromTimeString(format(item.value.from, 'HH:mm:ss'));
     }
     if (item.value.to) {
-      setToDateTimeValue(item.value.to);
+      setToDateString(format(item.value.to, 'y-MM-dd'));
+      setToTimeString(format(item.value.to, 'HH:mm:ss'));
     }
   };
 
@@ -283,41 +333,44 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                   weekStartsOn={0}
                 />
                 <Divider />
+                {/* start date and time */}
                 <Flex flexDir={'column'} gap={'5px'} p={'12px'}>
-                  {/* start date and time */}
                   <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'}>
                     {t('start')}
                   </Text>
                   <Flex w={'100%'} justify={'center'} gap={'10px'}>
-                    <Input
-                      backgroundColor={'white'}
-                      w={'50%'}
-                      value={format(fromDateTimeValue, 'y-MM-dd')}
+                    <DatePickerInput
+                      value={fromDateString}
                       onChange={(e) => handleFromChange(e.target.value, 'date')}
+                      error={!!fromDateError}
+                      showError={fromDateShake}
                     />
-                    <Input
-                      w={'50%'}
-                      backgroundColor={'white'}
-                      value={format(fromDateTimeValue, 'HH:mm:ss')}
+                    <DatePickerInput
+                      value={fromTimeString}
                       onChange={(e) => handleFromChange(e.target.value, 'time')}
+                      error={!!fromTimeError}
+                      showError={fromTimeShake}
                     />
                   </Flex>
-                  {/* end date and time */}
+                </Flex>
+                <Divider />
+                {/* end date and time */}
+                <Flex flexDir={'column'} gap={'5px'} p={'12px'}>
                   <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'}>
                     {t('end')}
                   </Text>
                   <Flex w={'100%'} justify={'center'} gap={'10px'}>
-                    <Input
-                      w={'50%'}
-                      backgroundColor={'white'}
-                      value={format(toDateTimeValue, 'y-MM-dd')}
+                    <DatePickerInput
+                      value={toDateString}
                       onChange={(e) => handleToChange(e.target.value, 'date')}
+                      error={!!toDateError}
+                      showError={toDateShake}
                     />
-                    <Input
-                      w={'50%'}
-                      backgroundColor={'white'}
-                      value={format(toDateTimeValue, 'HH:mm:ss')}
+                    <DatePickerInput
+                      value={toTimeString}
                       onChange={(e) => handleToChange(e.target.value, 'time')}
+                      error={!!toTimeError}
+                      showError={toTimeShake}
                     />
                   </Flex>
                 </Flex>
@@ -395,6 +448,40 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
         </PopoverContent>
       </Popover>
     </Flex>
+  );
+};
+
+interface DatePickerInputProps {
+  value: string;
+  onChange: ChangeEventHandler<HTMLInputElement> | undefined;
+  error: boolean;
+  showError: boolean;
+}
+
+const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputProps) => {
+  return (
+    <Input
+      backgroundColor={'white'}
+      w={'50%'}
+      {...(error && {
+        borderColor: 'red.500',
+        _hover: { borderColor: 'red.500' }
+      })}
+      {...(showError && {
+        borderColor: 'red.500',
+        _hover: { borderColor: 'red.500' },
+        animation: 'shake 0.3s'
+      })}
+      sx={{
+        '@keyframes shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-4px)' },
+          '75%': { transform: 'translateX(4px)' }
+        }
+      }}
+      value={value}
+      onChange={onChange}
+    />
   );
 };
 
