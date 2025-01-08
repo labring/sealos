@@ -53,6 +53,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    // Reverse version arrays for all database types before returning result
+    Object.keys(DBVersionMap).forEach((key) => {
+      DBVersionMap[key as keyof Response] = DBVersionMap[key as keyof Response].reverse();
+    });
+
     jsonRes(res, {
       data: DBVersionMap
     });
