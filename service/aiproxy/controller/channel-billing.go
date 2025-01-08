@@ -120,9 +120,9 @@ func GetSubscription(c *gin.Context) {
 		quota = b
 	}
 	c.JSON(http.StatusOK, openai.SubscriptionResponse{
-		HardLimitUSD:       quota / 7,
+		HardLimitUSD:       (quota + token.UsedAmount) / 7,
 		SoftLimitUSD:       b / 7,
-		SystemHardLimitUSD: quota / 7,
+		SystemHardLimitUSD: (quota + token.UsedAmount) / 7,
 	})
 }
 
