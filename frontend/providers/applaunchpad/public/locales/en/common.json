@@ -309,5 +309,6 @@
   "visible": "Visable",
   "hidden": "Hidden",
   "export_log": "Export",
-  "no_data_available": "No data available"
+  "no_data_available": "No data available",
+  "all": "All"
 }

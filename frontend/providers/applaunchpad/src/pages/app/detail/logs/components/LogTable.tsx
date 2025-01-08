@@ -1,10 +1,4 @@
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable
-} from '@tanstack/react-table';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'next-i18next';
 import {
   Box,
@@ -16,6 +10,7 @@ import {
   Checkbox,
   CheckboxGroup
 } from '@chakra-ui/react';
+import AdvancedTable from '@/components/AdvancedTable';
 
 import MyIcon from '@/components/Icon';
 
@@ -25,7 +20,7 @@ interface FieldItem {
   checked: boolean;
 }
 
-export const LogList = () => {
+export const LogTable = () => {
   const { t, i18n } = useTranslation();
   const lang = i18n.language;
 
@@ -41,8 +36,81 @@ export const LogList = () => {
     }
   ]);
 
+  const columns = useMemo<
+    {
+      title: string;
+      dataIndex?: string;
+      key: string;
+      render?: (item: any) => JSX.Element;
+    }[]
+  >(
+    () => [
+      {
+        title: 'time',
+        dataIndex: 'time',
+        key: 'time',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.time}
+          </Text>
+        )
+      },
+      {
+        title: 'log_tag',
+        dataIndex: 'log_tag',
+        key: 'log_tag',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.log_tag}
+          </Text>
+        )
+      },
+      {
+        title: 'message',
+        dataIndex: 'message',
+        key: 'message',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.message}
+          </Text>
+        )
+      },
+      {
+        title: 'authority',
+        dataIndex: 'authority',
+        key: 'authority',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.authority}
+          </Text>
+        )
+      },
+      {
+        title: 'bytes_received',
+        dataIndex: 'source',
+        key: 'source',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.source}
+          </Text>
+        )
+      },
+      {
+        title: 'bytes_sent',
+        dataIndex: 'bytes_sent',
+        key: 'bytes_sent',
+        render: (item: any) => (
+          <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            {item.bytes_sent}
+          </Text>
+        )
+      }
+    ],
+    []
+  );
+
   return (
-    <Flex flexDir={'column'}>
+    <Flex flexDir={'column'} w={'100%'}>
       <Flex pl={4} alignItems={'center'} gap={4} justifyContent={'space-between'}>
         <Flex alignItems={'center'} gap={4}>
           <Text
@@ -119,7 +187,7 @@ export const LogList = () => {
           minW={'75px'}
           fontSize={'12px'}
           variant={'outline'}
-          h={'32px'}
+          h={'28px'}
           leftIcon={<MyIcon name="export" />}
         >
           {t('export_log')}
@@ -163,6 +231,52 @@ export const LogList = () => {
           </CheckboxGroup>
         </Flex>
       </Collapse>
+      <Box mb={6}></Box>
+      {/* table */}
+      <AdvancedTable columns={columns} data={mockData} />
     </Flex>
   );
 };
+
+const mockData = [
+  {
+    time: '2024-01-01 10:00:00',
+    log_tag: 'test',
+    message: 'test',
+    authority: 'test',
+    source: 'test',
+    bytes_sent: 'test'
+  },
+  {
+    time: '2024-01-01 10:00:00',
+    log_tag: 'test',
+    message: 'test',
+    authority: 'test',
+    source: 'test',
+    bytes_sent: 'test'
+  },
+  {
+    time: '2024-01-01 10:00:00',
+    log_tag: 'test',
+    message: 'test',
+    authority: 'test',
+    source: 'test',
+    bytes_sent: 'test'
+  },
+  {
+    time: '2024-01-01 10:00:00',
+    log_tag: 'test',
+    message: 'test',
+    authority: 'test',
+    source: 'test',
+    bytes_sent: 'test'
+  },
+  {
+    time: '2024-01-01 10:00:00',
+    log_tag: 'test',
+    message: 'test',
+    authority: 'test',
+    source: 'test',
+    bytes_sent: 'test'
+  }
+];

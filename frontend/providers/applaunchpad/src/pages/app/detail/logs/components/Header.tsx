@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 import MyIcon from '@/components/Icon';
-import MySelect from '@/components/MySelect';
+import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
@@ -23,6 +23,15 @@ export const Header = () => {
   const { t } = useTranslation();
 
   const [refreshInterval, setRefreshInterval] = useState(0);
+
+  const [podList, setPodList] = useState<ListItem[]>([
+    { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
+    { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
+  ]);
+  const [containerList, setContainerList] = useState<ListItem[]>([
+    { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
+    { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
+  ]);
 
   const refreshIntervalList = [
     { value: 0, label: t('close') },
@@ -54,15 +63,16 @@ export const Header = () => {
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           Pod
         </Text>
-        <MySelect
+        <AdvancedSelect
           height="32px"
+          checkBoxMode
           leftIcon={<MyIcon name="pods" w={'16px'} h={'16px'} color={'grayModern.500'} />}
           width={'fit-content'}
           value={'hello-sql-postgresql-0'}
-          list={[
-            { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
-            { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
-          ]}
+          onCheckboxChange={(val) => {
+            setPodList(val);
+          }}
+          list={podList}
         />
       </Flex>
       {/* container */}
@@ -70,15 +80,16 @@ export const Header = () => {
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           Container
         </Text>
-        <MySelect
+        <AdvancedSelect
           height="32px"
+          checkBoxMode
           leftIcon={<MyIcon name="container" w={'16px'} h={'16px'} color={'grayModern.500'} />}
           width={'fit-content'}
           value={'hello-sql-postgresql-0'}
-          list={[
-            { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
-            { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
-          ]}
+          list={containerList}
+          onCheckboxChange={(val) => {
+            setContainerList(val);
+          }}
         />
       </Flex>
       {/* log number */}
