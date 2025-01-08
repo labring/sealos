@@ -7,9 +7,9 @@ import { useToast } from '@/hooks/useToast';
 import { serviceSideProps } from '@/utils/i18n';
 import DetailLayout from '@/components/layouts/DetailLayout';
 
-import { Header } from '../components/logs/Header';
-import { Filter } from '../components/logs/Filter';
-import { LogCounts } from '../components/logs/LogCounts';
+import { Header } from './components/Header';
+import { Filter } from './components/Filter';
+import { LogCounts } from './components/LogCounts';
 
 export default function LogsPage({ appName }: { appName: string }) {
   const { toast } = useToast();
