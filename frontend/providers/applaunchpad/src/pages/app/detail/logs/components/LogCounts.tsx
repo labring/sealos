@@ -20,7 +20,9 @@ export const LogCounts = () => {
           border={'none'}
           boxShadow={'none'}
           color={'grayModern.900'}
-          fontWeight={400}
+          fontWeight={500}
+          fontSize={'14px'}
+          lineHeight={'20px'}
           leftIcon={
             <MyIcon
               name="arrowRight"
@@ -52,6 +54,6 @@ export const LogCounts = () => {
 
 const mockData: MonitorDataResult = {
   name: 'log',
-  xData: [1, 2, 3, 4, 5, 6, 7],
-  yData: ['50', '80', '70', '60', '50', '60', '70']
+  xData: [1, 2, 3, 4, 5, 6, 7, 8],
+  yData: ['50', '80', '70', '60', '50', '60', '70', '80']
 };

@@ -158,7 +158,7 @@ const LogBarChart = ({
       containLabel: isShowLabel,
       show: false,
       left: 0,
-      right: isShowLabel ? 14 : 0,
+      right: isShowLabel ? 20 : 0,
       top: 10,
       bottom: 2
     },

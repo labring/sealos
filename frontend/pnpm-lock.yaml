@@ -606,6 +606,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
+      '@tanstack/react-table':
+        specifier: ^8.10.7
+        version: 8.10.7(react-dom@18.2.0)(react@18.2.0)
       ansi_up:
         specifier: ^5.2.1
         version: 5.2.1

@@ -306,5 +306,9 @@
   "logs": "日志",
   "application_source": "来源",
   "contains": "包含",
-  "not_contains": "不包含"
+  "not_contains": "不包含",
+  "visible": "可见",
+  "hidden": "隐藏",
+  "piece": "个",
+  "export_log": "导出日志"
 }

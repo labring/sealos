@@ -9,6 +9,7 @@ import DetailLayout from '@/components/layouts/DetailLayout';
 
 import { Header } from './components/Header';
 import { Filter } from './components/Filter';
+import { LogList } from './components/LogList';
 import { LogCounts } from './components/LogCounts';
 
 export default function LogsPage({ appName }: { appName: string }) {
@@ -65,11 +66,10 @@ export default function LogsPage({ appName }: { appName: string }) {
             p={4}
             border={theme.borders.base}
             borderRadius={'lg'}
-            h={0}
             flex={1}
-            minH={'257px'}
+            minH={'400px'}
           >
-            日志数量
+            <LogList />
           </Box>
         </>
       </Box>
