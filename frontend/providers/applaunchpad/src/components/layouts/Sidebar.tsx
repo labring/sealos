@@ -39,7 +39,7 @@ export default function Sidebar() {
       path: ROUTES.MONITOR
     },
     {
-      label: t('logs'),
+      label: t('Log'),
       icon: (
         <MyIcon
           name="log"

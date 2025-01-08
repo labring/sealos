@@ -308,5 +308,6 @@
   "not_contains": "not contains",
   "visible": "Visable",
   "hidden": "Hidden",
-  "export_log": "Export"
+  "export_log": "Export",
+  "no_data_available": "No data available"
 }
