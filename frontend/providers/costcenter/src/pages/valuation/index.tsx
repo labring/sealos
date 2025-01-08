@@ -26,6 +26,7 @@ type CardItem = {
   unit: string;
   idx: number; // used to sort
   icon: typeof Img;
+  isGpu: boolean;
 };
 // 1 ,24,
 export const PRICE_CYCLE_SCALE = [1, 24, 168, 720, 8760];
@@ -49,7 +50,7 @@ function Valuation() {
       _data?.data?.properties
         // ?.filter((x) => !x.name.startsWith('gpu-'))
         ?.flatMap<CardItem>((x) => {
-          let props = valuationMap.get(x.name);
+          let props = valuationMap.get(x.name as any);
           if (!props) {
             if (!x.name.startsWith('gpu-')) return [];
             const gpuprops = valuationMap.get('gpu');
@@ -57,6 +58,7 @@ function Valuation() {
             props = gpuprops;
           }
           let icon: typeof Img;
+          let isGpu = x.name.startsWith('gpu-');
           let title = x.name;
           let unit = [t(props.unit), t(CYCLE[cycleIdx])].join('/');
           if (x.name === 'cpu') icon = CpuIcon;
@@ -69,18 +71,18 @@ function Valuation() {
             icon = PortIcon;
             title = 'Port';
           } else if (x.name.startsWith('gpu-')) {
-            // const reg = /nvidia/g
             icon = NvidiaIcon;
+            x.alias && (title = x.alias);
           } else return [];
           const price = (x.unit_price || 0) * (props.scale || 1);
-          console.log(x.name, x.unit_price, price);
           return [
             {
               title,
               price,
               unit,
               idx: props.idx,
-              icon
+              icon,
+              isGpu
             }
           ];
         })
@@ -113,8 +115,6 @@ function Valuation() {
         、
         <Tabs
           flex={1}
-          // mt={'20px'}
-          // mx={'24px'}
           display={'flex'}
           flexDir={'column'}
           w={'full'}

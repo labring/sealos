@@ -1,5 +1,4 @@
-import React from 'react'
-import { Box, BoxProps, Grid, Flex } from '@chakra-ui/react'
+import { Box, BoxProps, Flex, Grid } from '@chakra-ui/react'
 
 interface Props extends BoxProps {
   columns: {
@@ -13,15 +12,28 @@ interface Props extends BoxProps {
   data: any[]
   itemClass?: string
   alternateRowColors?: boolean
+  needRadius?: boolean
 }
 
-const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false }: Props) => {
+const MyTable = ({
+  columns,
+  data,
+  itemClass = '',
+  alternateRowColors = false,
+  needRadius = false,
+  gridTemplateColumns
+}: Props) => {
   return (
     <>
       <Grid
-        templateColumns={columns.map((col) => col.width || '1fr').join(' ')}
+        templateColumns={
+          gridTemplateColumns
+            ? gridTemplateColumns
+            : columns.map((col) => col.width || '1fr').join(' ')
+        }
         overflowX={'auto'}
         borderTopRadius={'md'}
+        borderBottomRadius={needRadius ? 'md' : '0'}
         fontSize={'base'}
         color={'grayModern.600'}
         fontWeight={'bold'}
@@ -42,7 +54,11 @@ const MyTable = ({ columns, data, itemClass = '', alternateRowColors = false }: 
       </Grid>
       {data.map((item: any, index1) => (
         <Grid
-          templateColumns={columns.map((col) => col.width || '1fr').join(' ')}
+          templateColumns={
+            gridTemplateColumns
+              ? gridTemplateColumns
+              : columns.map((col) => col.width || '1fr').join(' ')
+          }
           overflowX={'auto'}
           key={index1}
           bg={alternateRowColors ? (index1 % 2 === 0 ? '#FBFBFC' : '#F4F4F7') : 'white'}

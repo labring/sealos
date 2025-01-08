@@ -1,127 +1,65 @@
 'use client'
 
 import { useRouter } from '@/i18n'
-import dynamic from 'next/dynamic'
-import debounce from 'lodash/debounce'
-import { useMessage } from '@sealos/ui'
-import { customAlphabet } from 'nanoid'
-import { useForm } from 'react-hook-form'
 import { Box, Flex } from '@chakra-ui/react'
-import { useTranslations } from 'next-intl'
+import { useMessage } from '@sealos/ui'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslations } from 'next-intl'
+import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FormProvider, useForm } from 'react-hook-form'
 
-import Form from './components/Form'
-import Yaml from './components/Yaml'
+import Form from './components/form'
 import Header from './components/Header'
+import Yaml from './components/Yaml'
 
 import type { YamlItemType } from '@/types'
-import type { DevboxEditType, DevboxKindsType, ProtocolType } from '@/types/devbox'
+import type { DevboxEditType, DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 
+import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
+import { useGlobalStore } from '@/stores/global'
 import { useIDEStore } from '@/stores/ide'
 import { useUserStore } from '@/stores/user'
-import { useDevboxStore } from '@/stores/devbox'
-import { useGlobalStore } from '@/stores/global'
-import { useRuntimeStore } from '@/stores/runtime'
 
-import { patchYamlList } from '@/utils/tools'
 import { createDevbox, updateDevbox } from '@/api/devbox'
-import { json2Devbox, json2Ingress, json2Service } from '@/utils/json2Yaml'
-import {
-  FrameworkTypeEnum,
-  LanguageTypeEnum,
-  OSTypeEnum,
-  defaultDevboxEditValue,
-  editModeMap
-} from '@/constants/devbox'
+import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox'
+import { useTemplateStore } from '@/stores/template'
+import { generateYamlList } from '@/utils/json2Yaml'
+import { patchYamlList } from '@/utils/tools'
+import { debounce } from 'lodash'
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'))
-
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
-
 const DevboxCreatePage = () => {
+  const { env } = useEnvStore()
+  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env)
   const router = useRouter()
   const t = useTranslations()
-
   const searchParams = useSearchParams()
   const { message: toast } = useMessage()
-
-  const { env } = useEnvStore()
   const { addDevboxIDE } = useIDEStore()
   const { checkQuotaAllow } = useUserStore()
   const { setDevboxDetail, devboxList } = useDevboxStore()
-  const { runtimeNamespaceMap, languageVersionMap, frameworkVersionMap, osVersionMap } =
-    useRuntimeStore()
 
   const crOldYamls = useRef<DevboxKindsType[]>([])
   const formOldYamls = useRef<YamlItemType[]>([])
-  const oldDevboxEditData = useRef<DevboxEditType>()
+  const oldDevboxEditData = useRef<DevboxEditTypeV2>()
 
   const { Loading, setIsLoading } = useLoading()
   const [errorMessage, setErrorMessage] = useState('')
-  const [forceUpdate, setForceUpdate] = useState(false)
   const [yamlList, setYamlList] = useState<YamlItemType[]>([])
 
   const tabType = searchParams.get('type') || 'form'
   const devboxName = searchParams.get('name') || ''
-  const runtime = searchParams.get('runtime') || ''
-
-  const formData2Yamls = (data: DevboxEditType) => [
-    {
-      filename: 'devbox.yaml',
-      value: json2Devbox(data, runtimeNamespaceMap, env.devboxAffinityEnable, env.squashEnable)
-    },
-    ...(data.networks.length > 0
-      ? [
-          {
-            filename: 'service.yaml',
-            value: json2Service(data)
-          }
-        ]
-      : []),
-    ...(data.networks.find((item) => item.openPublicDomain)
-      ? [
-          {
-            filename: 'ingress.yaml',
-            value: json2Ingress(data, env.ingressSecret)
-          }
-        ]
-      : [])
-  ]
-
-  const defaultEdit = {
-    ...defaultDevboxEditValue,
-    runtimeType: runtime || LanguageTypeEnum.go,
-    runtimeVersion: runtime
-      ? languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.id ||
-        frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.id ||
-        osVersionMap[runtime as OSTypeEnum]?.[0]?.id
-      : languageVersionMap[LanguageTypeEnum.go]?.[0]?.id,
-    networks: (
-      languageVersionMap[runtime as LanguageTypeEnum]?.[0]?.defaultPorts ||
-      frameworkVersionMap[runtime as FrameworkTypeEnum]?.[0]?.defaultPorts ||
-      osVersionMap[runtime as OSTypeEnum]?.[0]?.defaultPorts ||
-      languageVersionMap[LanguageTypeEnum.go]?.[0]?.defaultPorts
-    ).map((port) => ({
-      networkName: `${defaultDevboxEditValue.name}-${nanoid()}`,
-      portName: nanoid(),
-      port: port,
-      protocol: 'HTTP' as ProtocolType,
-      openPublicDomain: true,
-      publicDomain: `${nanoid()}.${env.ingressDomain}`,
-      customDomain: ''
-    }))
-  }
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
   const [captureDevboxName, setCaptureDevboxName] = useState('')
-
+  const { updateTemplateModalConfig, config: templateConfig } = useTemplateStore()
   useEffect(() => {
     const name = searchParams.get('name')
     if (name) {
@@ -150,84 +88,42 @@ const DevboxCreatePage = () => {
     return val
   }, [screenWidth])
 
-  const generateYamlList = (data: DevboxEditType) => {
-    return [
-      {
-        filename: 'devbox.yaml',
-        value: json2Devbox(data, runtimeNamespaceMap, env.devboxAffinityEnable, env.squashEnable)
-      },
-      ...(data.networks.length > 0
-        ? [
-            {
-              filename: 'service.yaml',
-              value: json2Service(data)
-            }
-          ]
-        : []),
-      ...(data.networks.find((item) => item.openPublicDomain)
-        ? [
-            {
-              filename: 'ingress.yaml',
-              value: json2Ingress(data, env.ingressSecret)
-            }
-          ]
-        : [])
-    ]
-  }
-
-  const formHook = useForm<DevboxEditType>({
-    defaultValues: defaultEdit
+  const formHook = useForm<DevboxEditTypeV2>({
+    defaultValues: defaultDevboxEditValueV2
   })
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const formOnchangeDebounce = useCallback(
-    debounce((data: DevboxEditType) => {
-      try {
-        setYamlList(generateYamlList(data))
-      } catch (error) {
-        console.log(error)
-      }
-    }, 200),
+  // updateyamlList every time yamlList change
+  const debouncedUpdateYaml = useMemo(
+    () =>
+      debounce((data: DevboxEditTypeV2, env) => {
+        try {
+          const newYamlList = generateYamlList(data, env)
+          setYamlList(newYamlList)
+        } catch (error) {
+          console.error('Failed to generate yaml:', error)
+        }
+      }, 300),
     []
   )
 
-  // watch form change, compute new yaml
-  formHook.watch((data) => {
-    data && formOnchangeDebounce(data as DevboxEditType)
-    setForceUpdate(!forceUpdate)
-  })
+  // 监听表单变化
+  useEffect(() => {
+    const subscription = formHook.watch((value) => {
+      if (value) {
+        debouncedUpdateYaml(value as DevboxEditTypeV2, env)
+      }
+    })
+    return () => {
+      subscription.unsubscribe()
+      debouncedUpdateYaml.cancel()
+    }
+  }, [formHook, debouncedUpdateYaml, env])
 
   useQuery(
     ['initDevboxCreateData'],
     () => {
       if (!devboxName) {
-        setYamlList([
-          {
-            filename: 'devbox.yaml',
-            value: json2Devbox(
-              defaultEdit,
-              runtimeNamespaceMap,
-              env.devboxAffinityEnable,
-              env.squashEnable
-            )
-          },
-          ...(defaultEdit.networks.length > 0
-            ? [
-                {
-                  filename: 'service.yaml',
-                  value: json2Service(defaultEdit)
-                }
-              ]
-            : []),
-          ...(defaultEdit.networks.find((item) => item.openPublicDomain)
-            ? [
-                {
-                  filename: 'ingress.yaml',
-                  value: json2Ingress(defaultEdit, env.ingressSecret)
-                }
-              ]
-            : [])
-        ])
+        setYamlList(generateDefaultYamlList())
         return null
       }
       setIsLoading(true)
@@ -239,8 +135,8 @@ const DevboxCreatePage = () => {
           return
         }
         oldDevboxEditData.current = res
-        formOldYamls.current = formData2Yamls(res)
-        crOldYamls.current = generateYamlList(res) as DevboxKindsType[]
+        formOldYamls.current = generateYamlList(res, env)
+        crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[]
         formHook.reset(res)
       },
       onError(err) {
@@ -254,14 +150,12 @@ const DevboxCreatePage = () => {
       }
     }
   )
-
-  const submitSuccess = async (formData: DevboxEditType) => {
+  const submitSuccess = async (formData: DevboxEditTypeV2) => {
     setIsLoading(true)
-
     try {
       // quote check
       const quoteCheckRes = checkQuotaAllow(
-        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditType & {
+        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
           nodeports: number
         },
         {
@@ -280,45 +174,55 @@ const DevboxCreatePage = () => {
           isClosable: true
         })
       }
-      const parsedNewYamlList = yamlList.map((item) => item.value)
-      const parsedOldYamlList = formOldYamls.current.map((item) => item.value)
-
-      const areYamlListsEqual =
-        new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
-        [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item))
-      if (areYamlListsEqual) {
-        setIsLoading(false)
-        return toast({
-          status: 'info',
-          title: t('No changes detected'),
-          duration: 5000,
-          isClosable: true
-        })
-      }
-      // create or update
+      // update
       if (isEdit) {
+        const yamlList = generateYamlList(formData, env)
+        setYamlList(yamlList)
+        const parsedNewYamlList = yamlList.map((item) => item.value)
+        const parsedOldYamlList = formOldYamls.current.map((item) => item.value)
+        const areYamlListsEqual =
+          new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
+          [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item))
+        if (areYamlListsEqual) {
+          setIsLoading(false)
+          return toast({
+            status: 'info',
+            title: t('No changes detected'),
+            duration: 5000,
+            isClosable: true
+          })
+        }
+        if (!parsedNewYamlList) {
+          // prevent empty yamlList
+          return setErrorMessage(t('submit_form_error'))
+        }
         const patch = patchYamlList({
           parsedOldYamlList: parsedOldYamlList,
           parsedNewYamlList: parsedNewYamlList,
           originalYamlList: crOldYamls.current
         })
-
         await updateDevbox({
           patch,
           devboxName: formData.name
         })
       } else {
-        await createDevbox({ devboxForm: formData, runtimeNamespaceMap })
+        await createDevbox({ devboxForm: formData })
       }
-      addDevboxIDE('cursor', formData.name)
+      addDevboxIDE('vscode', formData.name)
       toast({
         title: t(applySuccess),
         status: 'success'
       })
+      updateTemplateModalConfig({
+        ...templateConfig,
+        lastRoute
+      })
       router.push(lastRoute)
     } catch (error) {
-      console.error(error)
-      setErrorMessage(JSON.stringify(error))
+      console.log('error', error)
+      if (error instanceof String && error.includes('402')) {
+        setErrorMessage(t('outstanding_tips'))
+      } else setErrorMessage(JSON.stringify(error))
     }
     setIsLoading(false)
   }
@@ -345,30 +249,36 @@ const DevboxCreatePage = () => {
 
   return (
     <>
-      <Flex
-        flexDirection={'column'}
-        alignItems={'center'}
-        h={'100vh'}
-        minWidth={'1024px'}
-        backgroundColor={'grayModern.100'}>
-        <Header
-          yamlList={yamlList}
-          title={title}
-          applyBtnText={applyBtnText}
-          applyCb={() =>
-            formHook.handleSubmit((data) => openConfirm(() => submitSuccess(data))(), submitError)()
-          }
-        />
-        <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
-          {tabType === 'form' ? (
-            <Form formHook={formHook} pxVal={pxVal} isEdit={isEdit} />
-          ) : (
-            <Yaml yamlList={yamlList} pxVal={pxVal} />
-          )}
-        </Box>
-      </Flex>
+      <FormProvider {...formHook}>
+        <Flex
+          flexDirection={'column'}
+          alignItems={'center'}
+          h={'100vh'}
+          minWidth={'1024px'}
+          backgroundColor={'grayModern.100'}>
+          <Header
+            yamlList={yamlList}
+            title={title}
+            applyBtnText={applyBtnText}
+            applyCb={() =>
+              formHook.handleSubmit(
+                (data) => openConfirm(() => submitSuccess(data))(),
+                submitError
+              )()
+            }
+          />
+          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+            {tabType === 'form' ? (
+              <Form pxVal={pxVal} isEdit={isEdit} />
+            ) : (
+              <Yaml yamlList={yamlList} pxVal={pxVal} />
+            )}
+          </Box>
+        </Flex>
+      </FormProvider>
       <ConfirmChild />
       <Loading />
+
       {!!errorMessage && (
         <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
       )}

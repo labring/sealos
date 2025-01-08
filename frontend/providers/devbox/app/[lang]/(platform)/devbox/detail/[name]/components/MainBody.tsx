@@ -1,17 +1,17 @@
-import dayjs from 'dayjs'
-import dynamic from 'next/dynamic'
-import { useTranslations } from 'next-intl'
 import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react'
+import dayjs from 'dayjs'
+import { useTranslations } from 'next-intl'
+import dynamic from 'next/dynamic'
 
 import MyIcon from '@/components/Icon'
 import MyTable from '@/components/MyTable'
 import PodLineChart from '@/components/PodLineChart'
 
-import { useCopyData } from '@/utils/tools'
 import { NetworkType } from '@/types/devbox'
+import { useCopyData } from '@/utils/tools'
 
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env'
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'))
 
@@ -87,6 +87,7 @@ const MainBody = () => {
               py={2}
               borderRadius={'md'}>
               <Text
+                className="guide-network-address"
                 cursor="pointer"
                 color={'grayModern.600'}
                 _hover={{ textDecoration: 'underline' }}
@@ -135,7 +136,7 @@ const MainBody = () => {
               <MyIcon name="maximize" width={'16px'} fill={'#667085'} />
             </Button>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
-              {t('memory')}{' '}
+              {t('memory')}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
             </Box>
             <Box h={'60px'}>
@@ -154,7 +155,7 @@ const MainBody = () => {
             {t('network')} ( {devboxDetail?.networks?.length} )
           </Text>
         </Flex>
-        {devboxDetail?.networks?.length > 0 ? (
+        {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
           <MyTable
             columns={networkColumn}
             data={devboxDetail?.networks}

@@ -1,6 +1,6 @@
 {
   "SwitchLanguage": "Switch Language",
-  "Charge": "Top-ups",
+  "Charge": "Top Up",
   "Balance is insufficient": "Balance is insufficient",
   "Payment Status": "Payment Status",
   "Scan with WeChat": "Scan with WeChat",
@@ -24,6 +24,7 @@
   "Select Amount": "Select Amount",
   "Port Amount": "Port Amount",
   "CPU Amount": "CPU Amount",
+  "GPU Amount": "GPU Amount",
   "Storage Amount": "Storage Amount",
   "Memory Amount": "Memory Amount",
   "Network Amount": "Network Amount",
@@ -49,6 +50,7 @@
   "Network": "Network",
   "Storage": "Storage",
   "cpu": "CPU",
+  "gpu": "GPU",
   "memory": "Memory",
   "network": "Network",
   "storage": "Storage",
@@ -67,7 +69,7 @@
   "All": "All",
   "Total": "Total",
   "Page": "Page",
-  "View Discount Rules": "View recharge discount rules.",
+  "View Discount Rules": "Review Bonus Policy",
   "Cancel": "Cancel",
   "Not Enough Balance": "Insufficient balance, please recharge immediately.",
   "Insufficient Balance": "Insufficient balance",
@@ -235,6 +237,9 @@
   "usage": "usage",
   "resource": "resource",
   "Double": "Double",
-  "first_recharge_tips": "Partial specifications can enjoy double the amount of the initial recharge.",
-  "first_recharge_title": "Double on First Recharge"
+  "first_recharge_tips": "Get double credits when making a first-time purchase for some tiers.",
+  "first_recharge_title": "Get Double with Initial Purchase!",
+  "credit_purchase": "Credit Purchase",
+  "remaining_balance": "Remaining Balance",
+  "custom_amount": "Custom Amount"
 }

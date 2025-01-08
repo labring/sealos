@@ -43,6 +43,7 @@ const DBStatusTag = ({
         fontWeight={'bold'}
         alignItems={'center'}
         minW={'88px'}
+        maxW={'110px'}
         whiteSpace={'nowrap'}
       >
         <Box w={'6px'} h={'6px'} borderRadius={'10px'} backgroundColor={status.dotColor}></Box>

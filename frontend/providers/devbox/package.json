@@ -9,13 +9,17 @@
     "lint": "next lint",
     "ts-lint": "tsc --noEmit",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
-    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
+    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
+    "gen-client": "prisma generate --schema ./prisma/schema.prisma",
+    "postinstall": "pnpm gen-client"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.21.0",
+    "@prisma/client": "^5.10.2",
+    "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "axios": "^1.7.3",
@@ -36,6 +40,7 @@
     "next": "14.2.5",
     "next-intl": "^3.17.2",
     "nprogress": "^0.2.0",
+    "prisma": "^5.10.2",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.46.2",
@@ -44,6 +49,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
+    "zod": "^3.23.8",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

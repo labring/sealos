@@ -97,7 +97,7 @@ function App({ Component, pageProps }: AppProps) {
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
       const newLang = data.currentLanguage;
-      if (lastLang !== newLang) {
+      if (lastLang !== newLang && typeof i18n?.changeLanguage === 'function') {
         i18n?.changeLanguage(newLang);
         setLangStore(newLang);
         setRefresh((state) => !state);
@@ -146,7 +146,7 @@ function App({ Component, pageProps }: AppProps) {
           try {
             if (e.data?.type === 'InternalAppCall' && e.data?.name) {
               router.push({
-                pathname: '/db/detail',
+                pathname: '/redirect',
                 query: {
                   name: e.data.name
                 }

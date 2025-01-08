@@ -1487,6 +1487,12 @@ importers:
       '@kubernetes/client-node':
         specifier: ^0.21.0
         version: 0.21.0
+      '@prisma/client':
+        specifier: ^5.10.2
+        version: 5.10.2(prisma@5.10.2)
+      '@sealos/driver':
+        specifier: workspace:^
+        version: link:../../packages/driver
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
@@ -1547,6 +1553,9 @@ importers:
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
+      prisma:
+        specifier: ^5.10.2
+        version: 5.10.2
       react:
         specifier: ^18
         version: 18.2.0
@@ -1571,6 +1580,9 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
       zustand:
         specifier: ^4.5.4
         version: 4.5.4(@types/react@18.2.37)(immer@10.1.1)(react@18.2.0)

@@ -1,28 +1,28 @@
 import {
+  Box,
   Button,
+  ButtonProps,
   Flex,
+  FlexProps,
+  IconButton,
   Menu,
   MenuButton,
-  MenuList,
-  Tooltip,
-  IconButton,
   MenuItem,
-  ButtonProps,
-  Box
+  MenuList,
+  Tooltip
 } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
-import MyIcon from './Icon'
+import { getSSHConnectionInfo } from '@/api/devbox'
 import { useEnvStore } from '@/stores/env'
-import { useIDEStore, IDEType } from '@/stores/ide'
+import { IDEType, useIDEStore } from '@/stores/ide'
 import { DevboxStatusMapType } from '@/types/devbox'
-import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
+import MyIcon from './Icon'
 
 interface Props {
   devboxName: string
-  runtimeVersion: string
   sshPort: number
   status: DevboxStatusMapType
   isBigButton?: boolean
@@ -32,13 +32,13 @@ interface Props {
 
 const IDEButton = ({
   devboxName,
-  runtimeVersion,
   sshPort,
   status,
   isBigButton = true,
   leftButtonProps = {},
-  rightButtonProps = {}
-}: Props) => {
+  rightButtonProps = {},
+  ...props
+}: Props & FlexProps) => {
   const t = useTranslations()
 
   const { env } = useEnvStore()
@@ -57,11 +57,9 @@ const IDEButton = ({
       })
 
       try {
-        const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-          devboxName,
-          runtimeName: runtimeVersion
+        const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
+          devboxName
         })
-        const { workingDir } = await getSSHRuntimeInfo(runtimeVersion)
 
         const idePrefix = ideObj[currentIDE].prefix
         const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
@@ -71,7 +69,6 @@ const IDEButton = ({
         )}&sshHostLabel=${encodeURIComponent(
           `${env.sealosDomain}_${env.namespace}_${devboxName}`
         )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`
-
         window.location.href = fullUri
       } catch (error: any) {
         console.error(error, '==')
@@ -79,19 +76,21 @@ const IDEButton = ({
         setLoading(false)
       }
     },
-    [devboxName, env.namespace, env.sealosDomain, runtimeVersion, setLoading, sshPort, toast, t]
+    [devboxName, env.namespace, env.sealosDomain, setLoading, sshPort, toast, t]
   )
 
   return (
-    <Flex>
+    <Flex className="guide-ide-button" {...props}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
+          width={'90px'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
           _hover={{
-            color: 'brightBlue.600'
+            color: 'brightBlue.600',
+            bg: '#1118240D'
           }}
           borderRightWidth={0}
           borderRightRadius={0}
@@ -101,7 +100,7 @@ const IDEButton = ({
           {isBigButton ? (
             <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
               <MyIcon name={currentIDE} w={'25%'} />
-              <Box w={'75%'} textAlign={'center'} pl={2}>
+              <Box w={'75%'} textAlign={'center'} px={'7px'}>
                 {ideObj[currentIDE]?.label}
               </Box>
             </Flex>
@@ -118,7 +117,6 @@ const IDEButton = ({
           _hover={{
             color: 'brightBlue.600'
           }}
-          mr={6}
           p={2}
           borderLeftRadius={0}
           borderLeftWidth={0}
@@ -181,31 +179,37 @@ export const ideObj = {
     menuLabel: 'VSCode',
     icon: 'vscode',
     prefix: 'vscode://',
-    value: 'vscode'
+    value: 'vscode',
+    sortId: 0
   },
   vscodeInsiders: {
     label: 'Insiders',
     menuLabel: 'VSCode Insiders',
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
-    value: 'vscodeInsiders'
+    value: 'vscodeInsiders',
+    sortId: 1
   },
   cursor: {
     label: 'Cursor',
     menuLabel: 'Cursor',
     icon: 'cursor',
     prefix: 'cursor://',
-    value: 'cursor'
+    value: 'cursor',
+    sortId: 2
   },
   windsurf: {
     label: 'Windsurf',
     menuLabel: 'Windsurf',
     icon: 'windsurf',
     prefix: 'windsurf://',
-    value: 'windsurf'
+    value: 'windsurf',
+    sortId: 3
   }
-}
+} as const
 
-const menuItems = Object.values(ideObj).map(({ value, menuLabel }) => ({ value, menuLabel }))
+const menuItems = Object.values(ideObj)
+  .sort((a, b) => a.sortId - b.sortId)
+  .map(({ value, menuLabel }) => ({ value, menuLabel }))
 
 export default IDEButton

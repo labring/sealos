@@ -32,7 +32,10 @@ const Header = dynamic(() => import('./components/Header'), { ssr: false });
 
 export default function EditApp({
   appName,
-  metaData
+  metaData,
+  brandName,
+  readmeContent,
+  readUrl
 }: {
   appName?: string;
   metaData: {
@@ -40,6 +43,9 @@ export default function EditApp({
     keywords: string;
     description: string;
   };
+  brandName?: string;
+  readmeContent: string;
+  readUrl: string;
 }) {
   const { t, i18n } = useTranslation();
   const { message: toast } = useMessage();
@@ -295,10 +301,10 @@ export default function EditApp({
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
     >
       <Head>
-        <title>{`${metaData.title}${
+        <title>{`${metaData.title} ${
           i18n.language === 'en'
-            ? 'Deployment and installation tutorial - Sealos'
-            : '部署和安装教程 - Sealos'
+            ? `Deployment and installation tutorial - ${brandName}`
+            : `部署和安装教程 - ${brandName}`
         }`}</title>
         <meta name="keywords" content={metaData.keywords} />
         <meta name="description" content={metaData.description} />
@@ -385,7 +391,7 @@ export default function EditApp({
               platformEnvs={platformEnvs!}
             />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
-            <ReadMe templateDetail={data?.templateYaml!} />
+            <ReadMe key={readUrl} readUrl={readUrl} readmeContent={readmeContent} />
           </Flex>
         </Flex>
       </Flex>
@@ -400,6 +406,7 @@ export default function EditApp({
 }
 
 export async function getServerSideProps(content: any) {
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
   const local =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
@@ -418,22 +425,33 @@ export async function getServerSideProps(content: any) {
     keywords: '',
     description: ''
   };
+  let readmeContent = '';
+  let readUrl = '';
 
   try {
     const templateSource: { data: TemplateSourceType } = await (
       await fetch(`${baseurl}/api/getTemplateSource?templateName=${appName}`)
     ).json();
+    const templateDetail = templateSource?.data.templateYaml;
+
     metaData = {
-      title: templateSource?.data.templateYaml.spec.title,
-      keywords: templateSource?.data.templateYaml.spec.description,
-      description: templateSource?.data.templateYaml.spec.description
+      title: templateDetail?.spec?.title,
+      keywords: templateDetail?.spec?.description,
+      description: templateDetail?.spec?.description
     };
+
+    const readme = templateDetail?.spec?.i18n?.[local]?.readme ?? templateDetail?.spec?.readme;
+    readUrl = readme;
+    readmeContent = await (await fetch(readme)).text();
   } catch (error) {}
 
   return {
     props: {
       appName,
       metaData,
+      brandName,
+      readmeContent,
+      readUrl,
       ...(await serviceSideProps(content))
     }
   };

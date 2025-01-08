@@ -1,5 +1,6 @@
 export type ValuationStandard = {
   name: string;
+  alias?: string;
   unit: string;
   unit_price?: number;
 };

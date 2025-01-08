@@ -1,22 +1,24 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { Box, Flex } from '@chakra-ui/react'
+import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
 
-import Header from './components/Header'
-import Version from './components/Version'
-import MainBody from './components/MainBody'
-import BasicInfo from './components/BasicInfo'
 import { useLoading } from '@/hooks/useLoading'
+import BasicInfo from './components/BasicInfo'
+import Header from './components/Header'
+import MainBody from './components/MainBody'
+import Version from './components/Version'
 
-import { useEnvStore } from '@/stores/env'
 import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env'
 import { useGlobalStore } from '@/stores/global'
+import useDetailDriver from '@/hooks/useDetailDriver'
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name
   const { Loading } = useLoading()
+  const { handleUserGuide } = useDetailDriver()
 
   const { env } = useEnvStore()
   const { screenWidth } = useGlobalStore()
@@ -27,16 +29,18 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const [initialized, setInitialized] = useState(false)
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth])
 
-  const { refetch } = useQuery(
+  const { refetch, data } = useQuery(
     ['initDevboxDetail'],
     () => setDevboxDetail(devboxName, env.sealosDomain),
     {
       onSettled() {
         setInitialized(true)
+      },
+      onSuccess: () => {
+        handleUserGuide()
       }
     }
   )
-
   useQuery(
     ['devbox-detail-pod'],
     () => {
@@ -44,6 +48,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       return intervalLoadPods(devboxName, true)
     },
     {
+      enabled: !devboxDetail?.isPause,
       refetchOnMount: true,
       refetchInterval: 3000
     }
@@ -60,11 +65,10 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       refetchInterval: 2 * 60 * 1000
     }
   )
-
   return (
     <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
       <Loading loading={!initialized} />
-      {devboxDetail !== null && initialized && (
+      {devboxDetail && initialized && (
         <>
           <Box mb={6}>
             <Header

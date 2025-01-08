@@ -12,17 +12,17 @@ import type {
 import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
 import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
-import { json2Restart } from '@/utils/json2Yaml';
+import { json2BasicOps } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
-import { json2StartOrStop } from '../utils/json2Yaml';
+import { AxiosRequestConfig } from 'axios';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
 
-export const getDBByName = (name: string) =>
-  GET(`/api/getDBByName?name=${name}`).then(adaptDBDetail);
+export const getDBByName = (name: string, config?: AxiosRequestConfig) =>
+  GET(`/api/getDBByName?name=${name}`, {}, config).then(adaptDBDetail);
 
 export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
   GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
@@ -62,7 +62,7 @@ export const restartPodByName = (podName: string) => GET(`/api/pod/restartPod?po
 
 /* db operation */
 export const restartDB = (data: { dbName: string; dbType: DBType }) => {
-  const yaml = json2Restart(data);
+  const yaml = json2BasicOps({ ...data, type: 'Restart' });
   return applyYamlList([yaml], 'update');
 };
 
@@ -103,6 +103,12 @@ export const getOpsRequest = ({
   GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
     name,
     label,
+    dbType
+  });
+
+export const getOperationLog = ({ name, dbType }: { name: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, {
+    name,
     dbType
   });
 

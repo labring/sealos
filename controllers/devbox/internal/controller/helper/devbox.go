@@ -16,7 +16,6 @@ package helper
 
 import (
 	"fmt"
-	"log/slog"
 	"sort"
 	"strings"
 
@@ -31,6 +30,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 )
 
@@ -38,16 +38,11 @@ const (
 	DevBoxPartOf = "devbox"
 )
 
-func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	labels := make(map[string]string)
 
-	if runtime.Spec.Config.Labels != nil {
-		for k, v := range runtime.Spec.Config.Labels {
-			labels[k] = v
-		}
-	}
-	if devbox.Spec.ExtraLabels != nil {
-		for k, v := range devbox.Spec.ExtraLabels {
+	if devbox.Spec.Config.Labels != nil {
+		for k, v := range devbox.Spec.Config.Labels {
 			labels[k] = v
 		}
 	}
@@ -62,15 +57,10 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Ru
 	return labels
 }
 
-func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox) map[string]string {
 	annotations := make(map[string]string)
-	if runtime.Spec.Config.Annotations != nil {
-		for k, v := range runtime.Spec.Config.Annotations {
-			annotations[k] = v
-		}
-	}
-	if devbox.Spec.ExtraAnnotations != nil {
-		for k, v := range devbox.Spec.ExtraAnnotations {
+	if devbox.Spec.Config.Annotations != nil {
+		for k, v := range devbox.Spec.Config.Annotations {
 			annotations[k] = v
 		}
 	}
@@ -200,94 +190,11 @@ func podContainerID(pod *corev1.Pod) string {
 	}
 	return ""
 }
-
-// PredicateCommitStatus returns the commit status of the pod
-// if the pod container id is empty, it means the pod is pending or has't started, we can assume the image has not been committed
-// otherwise, it means the pod has been started, we can assume the image has been committed
 func PredicateCommitStatus(pod *corev1.Pod) devboxv1alpha1.CommitStatus {
 	if podContainerID(pod) == "" {
 		return devboxv1alpha1.CommitStatusPending
 	}
 	return devboxv1alpha1.CommitStatusSuccess
-}
-
-func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod) bool {
-	if len(pod.Spec.Containers) == 0 {
-		slog.Info("Pod has no containers")
-		return false
-	}
-	container := pod.Spec.Containers[0]
-	expectContainer := expectPod.Spec.Containers[0]
-
-	// Check CPU and memory limits
-	if container.Resources.Requests.Cpu().Cmp(*expectContainer.Resources.Requests.Cpu()) != 0 {
-		slog.Info("CPU requests are not equal")
-		return false
-	}
-	if container.Resources.Limits.Cpu().Cmp(*expectContainer.Resources.Limits.Cpu()) != 0 {
-		slog.Info("CPU limits are not equal")
-		return false
-	}
-	if container.Resources.Requests.Memory().Cmp(*expectContainer.Resources.Requests.Memory()) != 0 {
-		slog.Info("Memory requests are not equal")
-		return false
-	}
-	if container.Resources.Limits.Memory().Cmp(*expectContainer.Resources.Limits.Memory()) != 0 {
-		slog.Info("Memory limits are not equal")
-		return false
-	}
-
-	// Check Ephemeral Storage changes
-	if container.Resources.Requests.StorageEphemeral().Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) != 0 {
-		slog.Info("Ephemeral-Storage requests are not equal")
-		return false
-	}
-	if container.Resources.Limits.StorageEphemeral().Cmp(*expectContainer.Resources.Limits.StorageEphemeral()) != 0 {
-		slog.Info("Ephemeral-Storage limits are not equal")
-		return false
-	}
-
-	// Check environment variables
-	if len(container.Env) != len(expectContainer.Env) {
-		return false
-	}
-	for _, env := range container.Env {
-		found := false
-		for _, expectEnv := range expectContainer.Env {
-			if env.Name == "SEALOS_COMMIT_IMAGE_NAME" {
-				found = true
-				break
-			}
-			if env.Name == expectEnv.Name && env.Value == expectEnv.Value {
-				found = true
-				break
-			}
-		}
-		if !found {
-			slog.Info("Environment variables are not equal", "env not found", env.Name, "env value", env.Value)
-			return false
-		}
-	}
-
-	// Check ports
-	if len(container.Ports) != len(expectContainer.Ports) {
-		return false
-	}
-	for _, expectPort := range expectContainer.Ports {
-		found := false
-		for _, podPort := range container.Ports {
-			if expectPort.ContainerPort == podPort.ContainerPort && expectPort.Protocol == podPort.Protocol {
-				found = true
-				break
-			}
-		}
-		if !found {
-			slog.Info("Ports are not equal")
-			return false
-		}
-	}
-
-	return true
 }
 
 func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) []corev1.EnvVar {
@@ -347,13 +254,13 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 	return nil
 }
 
-func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
+func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox) string {
 	if len(devbox.Status.CommitHistory) == 0 {
-		return runtime.Spec.Config.Image
+		return devbox.Spec.Image
 	}
 	commit := GetLastSuccessCommitHistory(devbox)
 	if commit == nil {
-		return runtime.Spec.Config.Image
+		return devbox.Spec.Image
 	}
 	return commit.Image
 }
@@ -398,76 +305,63 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 	}
 }
 
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox,
-	requestCPURate, requestMemoryRate float64,
-	requestEphemeralStorage, limitEphemeralStorage string,
-) corev1.ResourceRequirements {
+// GenerateResourceRequirements generates the resource requirements for the Devbox pod
+func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
-		Requests: calculateResourceRequest(
-			corev1.ResourceList{
-				corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
-				corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
-				corev1.ResourceEphemeralStorage: resource.MustParse(requestEphemeralStorage),
-			},
-			requestCPURate, requestMemoryRate,
-		),
-		Limits: corev1.ResourceList{
-			corev1.ResourceCPU:              devbox.Spec.Resource["cpu"],
-			corev1.ResourceMemory:           devbox.Spec.Resource["memory"],
-			corev1.ResourceEphemeralStorage: resource.MustParse(limitEphemeralStorage),
-		},
+		Limits:   calculateResourceLimit(devbox.Spec.Resource, ephemeralStorage),
+		Requests: calculateResourceRequest(devbox.Spec.Resource, requestRate, ephemeralStorage),
 	}
+}
+
+func calculateResourceLimit(original corev1.ResourceList, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceList {
+	limit := original.DeepCopy()
+	// If ephemeral storage limit is not set, set it to default limit
+	if l, ok := limit[corev1.ResourceEphemeralStorage]; !ok {
+		limit[corev1.ResourceEphemeralStorage] = ephemeralStorage.DefaultLimit
+	} else {
+		// Check if the resource limit for ephemeral storage is set and compare it, if it is exceeded the maximum limit, set it to maximum limit
+		if l.AsApproximateFloat64() > ephemeralStorage.MaximumLimit.AsApproximateFloat64() {
+			limit[corev1.ResourceEphemeralStorage] = ephemeralStorage.MaximumLimit
+		}
+	}
+	return limit
+}
+
+func calculateResourceRequest(original corev1.ResourceList, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceList {
+	// deep copy limit to request, only cpu and memory are calculated
+	request := original.DeepCopy()
+	// Calculate CPU request
+	if cpu, ok := original[corev1.ResourceCPU]; ok {
+		cpuValue := cpu.AsApproximateFloat64()
+		cpuRequest := cpuValue / requestRate.CPU
+		request[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuRequest*1000), resource.DecimalSI)
+	}
+	// Calculate memory request
+	if memory, ok := original[corev1.ResourceMemory]; ok {
+		memoryValue := memory.AsApproximateFloat64()
+		memoryRequest := memoryValue / requestRate.Memory
+		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
+	}
+	// Set ephemeral storage request to default request
+	request[corev1.ResourceEphemeralStorage] = ephemeralStorage.DefaultRequest
+	return request
+}
+
+// GetWorkingDir get the working directory for the Devbox pod
+func GetWorkingDir(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Spec.Config.WorkingDir
+}
+
+// GetCommand get the command for the Devbox pod
+func GetCommand(devbox *devboxv1alpha1.Devbox) []string {
+	return devbox.Spec.Config.Command
+}
+
+// GetArgs get the arguments for the Devbox pod
+func GetArgs(devbox *devboxv1alpha1.Devbox) []string {
+	return devbox.Spec.Config.Args
 }
 
 func IsExceededQuotaError(err error) bool {
 	return strings.Contains(err.Error(), "exceeded quota")
-}
-
-func calculateResourceRequest(limit corev1.ResourceList, requestCPURate, requestMemoryRate float64) corev1.ResourceList {
-	if limit == nil {
-		return nil
-	}
-	request := make(corev1.ResourceList)
-	// Calculate CPU request
-	if cpu, ok := limit[corev1.ResourceCPU]; ok {
-		cpuValue := cpu.AsApproximateFloat64()
-		cpuRequest := cpuValue / requestCPURate
-		request[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuRequest*1000), resource.DecimalSI)
-	}
-	// Calculate memory request
-	if memory, ok := limit[corev1.ResourceMemory]; ok {
-		memoryValue := memory.AsApproximateFloat64()
-		memoryRequest := memoryValue / requestMemoryRate
-		request[corev1.ResourceMemory] = *resource.NewQuantity(int64(memoryRequest), resource.BinarySI)
-	}
-
-	if ephemeralStorage, ok := limit[corev1.ResourceEphemeralStorage]; ok {
-		request[corev1.ResourceEphemeralStorage] = ephemeralStorage
-	}
-
-	return request
-}
-
-// GenerateWorkingDir generates the working directory for the Devbox pod
-func GenerateWorkingDir(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) string {
-	if devbox.Spec.WorkingDir != "" {
-		return devbox.Spec.WorkingDir
-	}
-	return runtime.Spec.Config.WorkingDir
-}
-
-// GenerateCommand generates the command for the Devbox pod
-func GenerateCommand(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Command) != 0 {
-		return devbox.Spec.Command
-	}
-	return runtime.Spec.Config.Command
-}
-
-// GenerateDevboxArgs generates the arguments for the Devbox pod
-func GenerateDevboxArgs(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) []string {
-	if len(devbox.Spec.Args) != 0 {
-		return devbox.Spec.Args
-	}
-	return runtime.Spec.Config.Args
 }

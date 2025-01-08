@@ -1,0 +1,24 @@
+{
+    "redirects": [
+      {
+        "source": "/zh-Hans/blog/:path(.*)",
+        "destination": "https://blog.sealos.run/blog/:path",
+        "permanent": true
+      },
+      {
+        "source": "/zh-Hans/blog",
+        "destination": "https://blog.sealos.run/blog",
+        "permanent": true
+      },
+      {
+        "source": "/zh-Hans/:path(.*)",
+        "destination": "https://sealos.run/:path",
+        "permanent": true
+      },
+      {
+        "source": "/zh-Hans",
+        "destination": "https://sealos.run/",
+        "permanent": true
+      }
+    ]
+  }

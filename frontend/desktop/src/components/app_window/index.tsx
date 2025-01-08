@@ -47,10 +47,10 @@ export default function AppWindow(props: {
       setPosition({
         x:
           x < 0
-            ? x < -1.1 * appHeaderWidth // (0.8width + width/0.6*0.2)
+            ? x < -0.9 * appHeaderWidth // (0.8width + width/0.70*0.15)
               ? 0
               : x
-            : x > 1.1 * appHeaderWidth
+            : x > 0.9 * appHeaderWidth
             ? 0
             : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
@@ -92,7 +92,7 @@ export default function AppWindow(props: {
         <Flex
           cursor={'pointer'}
           h="28px"
-          background={'#F7F8FA'}
+          background={'grayModern.100'}
           className={'windowHeader'}
           borderRadius={'6px 6px 0 0'}
           onClick={() => {

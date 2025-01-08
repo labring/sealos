@@ -1,29 +1,40 @@
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { sealosApp } from 'sealos-desktop-sdk/app'
-import { SealosMenu, useMessage } from '@sealos/ui'
+'use client'
+
 import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react'
+import { SealosMenu, useMessage } from '@sealos/ui'
+import { useQuery } from '@tanstack/react-query'
+import { customAlphabet } from 'nanoid'
+import { useTranslations } from 'next-intl'
+import { useCallback, useEffect, useState } from 'react'
+import { sealosApp } from 'sealos-desktop-sdk/app'
 
-import MyIcon from '@/components/Icon'
-import MyTable from '@/components/MyTable'
+import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import ReleaseModal from '@/components/modals/releaseModal'
+import MyIcon from '@/components/Icon'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
-
+import ReleaseModal from '@/components/modals/releaseModal'
+import MyTable from '@/components/MyTable'
+import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
-import { DevboxReleaseStatusEnum, devboxIdKey } from '@/constants/devbox'
-import { delDevboxVersionByName, getAppsByDevboxId, getSSHRuntimeInfo } from '@/api/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
 import { useLoading } from '@/hooks/useLoading'
 
-import { useEnvStore } from '@/stores/env'
-import { useDevboxStore } from '@/stores/devbox'
+import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template'
+import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal'
+import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal'
+import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal'
 import AppSelectModal from '@/components/modals/AppSelectModal'
+import { useDevboxStore } from '@/stores/devbox'
+import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
+import { parseTemplateConfig } from '@/utils/tools'
+import useReleaseDriver from '@/hooks/useReleaseDriver'
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 
 const Version = () => {
+  const { startReleaseGuide } = useReleaseDriver()
   const t = useTranslations()
   const { message: toast } = useMessage()
   const { Loading, setIsLoading } = useLoading()
@@ -38,31 +49,60 @@ const Version = () => {
   const [apps, setApps] = useState<AppListItemType[]>([])
   const [deployData, setDeployData] = useState<any>(null)
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
-
+  const [updateTemplateRepo, setUpdateTemplateRepo] = useState<
+    | null
+    | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
+  >(null)
+  const createTemplateModalHandler = useDisclosure()
+  const selectTemplalteModalHandler = useDisclosure()
+  const updateTemplateModalHandler = useDisclosure()
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'delete_version_confirm_info'
   })
-
   const { refetch } = useQuery(
     ['initDevboxVersionList'],
-    () => setDevboxVersionList(devbox.name, devbox.id),
+    () => setDevboxVersionList(devbox!.name, devbox!.id),
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
+        !createTemplateModalHandler.isOpen &&
+        !updateTemplateModalHandler.isOpen &&
+        !selectTemplalteModalHandler.isOpen &&
         devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
           ? 3000
           : false,
       onSettled() {
         setInitialized(true)
-      }
+      },
+      enabled: !!devbox
     }
   )
 
+  useEffect(() => {
+    if (devboxVersionList?.length && devboxVersionList.length > 0) {
+      startReleaseGuide()
+    }
+  }, [devboxVersionList.length])
+
+  const listPrivateTemplateRepositoryQuery = useQuery(
+    ['template-repository-list', 'template-repository-private'],
+    () => {
+      return listPrivateTemplateRepository({
+        page: 1,
+        pageSize: 100
+      })
+    }
+  )
+  const templateRepositoryList =
+    listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      const devboxId = devbox.id
-
-      const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
+      // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
+      if (!devbox) return
+      const result = await getTemplateConfig(devbox.templateUid)
+      const config = parseTemplateConfig(result.template.config)
+      const releaseArgs = config.releaseArgs.join(' ')
+      const releaseCommand = config.releaseCommand.join(' ')
       const { cpu, memory, networks, name } = devbox
       const newNetworks = networks.map((network) => {
         return {
@@ -75,7 +115,7 @@ const Version = () => {
       const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`
 
       const transformData = {
-        appName: `${name}-release`,
+        appName: `${name}-release-${nanoid()}`,
         cpu: cpu,
         memory: memory,
         imageName: imageName,
@@ -93,11 +133,11 @@ const Version = () => {
         runCMD: releaseCommand,
         cmdParam: releaseArgs,
         labels: {
-          [devboxIdKey]: devboxId
+          [devboxIdKey]: devbox.id
         }
       }
       setDeployData(transformData)
-      const apps = await getAppsByDevboxId(devboxId)
+      const apps = await getAppsByDevboxId(devbox.id)
 
       // when: there is no app,create a new app
       if (apps.length === 0) {
@@ -121,7 +161,6 @@ const Version = () => {
     },
     [devbox, env.ingressDomain, env.namespace, env.registryAddr]
   )
-
   const handleDelDevboxVersion = useCallback(
     async (versionName: string) => {
       try {
@@ -189,13 +228,8 @@ const Version = () => {
       title: t('version_description'),
       key: 'description',
       render: (item: DevboxVersionListItemType) => (
-        <Flex alignItems="center" minH={'20px'}>
-          <Box
-            color={'grayModern.600'}
-            overflow={'hidden'}
-            textOverflow={'ellipsis'}
-            whiteSpace={'nowrap'}
-            w={'250px'}>
+        <Flex alignItems="center" minH={'20px'} width={'full'}>
+          <Box color={'grayModern.600'} noOfLines={1} w={'0'} flex={1}>
             {item.description}
           </Box>
         </Flex>
@@ -205,12 +239,14 @@ const Version = () => {
       title: t('control'),
       key: 'control',
       render: (item: DevboxVersionListItemType) => (
-        <Flex>
+        <Flex alignItems={'center'}>
           <Button
+            className="guide-online-button"
             mr={5}
             height={'27px'}
             w={'60px'}
             size={'sm'}
+            h="32px"
             fontSize={'base'}
             bg={'grayModern.150'}
             color={'grayModern.900'}
@@ -224,8 +260,15 @@ const Version = () => {
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
-                <MyIcon name={'more'} color={'grayModern.600'} />
+              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+                <MyIcon
+                  name={'more'}
+                  color={'grayModern.600'}
+                  _groupHover={{
+                    color: 'brightBlue.600'
+                  }}
+                  fill={'currentcolor'}
+                />
               </MenuButton>
             }
             menuList={[
@@ -239,6 +282,24 @@ const Version = () => {
                 onClick: () => {
                   setCurrentVersion(item)
                   onOpenEdit()
+                }
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'template'} w={'16px'} />
+                    <Box ml={2}>{t('convert_to_runtime')}</Box>
+                  </>
+                ),
+                onClick: () => {
+                  setCurrentVersion(item)
+                  // onOpenEdit()
+                  // openTemplateModal({templateState: })
+                  if (templateRepositoryList.length > 0) {
+                    selectTemplalteModalHandler.onOpen()
+                  } else {
+                    createTemplateModalHandler.onOpen()
+                  }
                 }
               },
               {
@@ -262,7 +323,6 @@ const Version = () => {
       )
     }
   ]
-
   return (
     <Box
       borderWidth={1}
@@ -281,6 +341,7 @@ const Version = () => {
           </Text>
         </Flex>
         <Button
+          className="guide-release-button"
           onClick={() => setOnOpenRelease(true)}
           bg={'white'}
           color={'grayModern.600'}
@@ -307,7 +368,12 @@ const Version = () => {
           </Box>
         </Flex>
       ) : (
-        <MyTable columns={columns} data={devboxVersionList} />
+        <MyTable
+          columns={columns}
+          data={devboxVersionList}
+          needRadius
+          gridTemplateColumns={'105px 105px 144px minmax(0, 1fr) 140px'}
+        />
       )}
       {!!currentVersion && (
         <EditVersionDesModal
@@ -317,7 +383,7 @@ const Version = () => {
           onClose={onCloseEdit}
         />
       )}
-      {!!onOpenRelease && (
+      {!!onOpenRelease && !!devbox && (
         <ReleaseModal
           onSuccess={refetch}
           onClose={() => {
@@ -329,13 +395,39 @@ const Version = () => {
       {!!onOpenSelectApp && (
         <AppSelectModal
           apps={apps}
-          devboxName={devbox.name}
+          devboxName={devbox?.name || ''}
           deployData={deployData}
           onSuccess={() => setOnOpenSelectApp(false)}
           onClose={() => setOnOpenSelectApp(false)}
         />
       )}
       <ConfirmChild />
+      <CreateTemplateModal
+        isOpen={createTemplateModalHandler.isOpen}
+        onClose={createTemplateModalHandler.onClose}
+        devboxReleaseName={currentVersion?.name || ''}
+      />
+      {templateRepositoryList.length > 0 && (
+        <SelectTemplateModal
+          onOpenCreate={createTemplateModalHandler.onOpen}
+          onOpenUdate={(uid) => {
+            const repo = templateRepositoryList.find((item) => item.uid === uid)
+            setUpdateTemplateRepo(repo || null)
+            updateTemplateModalHandler.onOpen()
+          }}
+          templateRepositoryList={templateRepositoryList}
+          isOpen={selectTemplalteModalHandler.isOpen}
+          onClose={selectTemplalteModalHandler.onClose}
+        />
+      )}
+      {!!updateTemplateRepo && (
+        <UpdateTemplateRepositoryModal
+          templateRepository={updateTemplateRepo}
+          isOpen={updateTemplateModalHandler.isOpen}
+          onClose={updateTemplateModalHandler.onClose}
+          devboxReleaseName={currentVersion?.name || ''}
+        />
+      )}
     </Box>
   )
 }

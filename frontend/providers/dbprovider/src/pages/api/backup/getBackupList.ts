@@ -20,9 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     return;
   }
 
+  const data = await getBackupListByDBName({ dbName, req });
   try {
     jsonRes(res, {
-      data: await getBackups({ dbName, req })
+      data
     });
   } catch (err: any) {
     jsonRes(res, {
@@ -32,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   }
 }
 
-export async function getBackups({ dbName, req }: Props & { req: NextApiRequest }) {
+export async function getBackupListByDBName({ dbName, req }: Props & { req: NextApiRequest }) {
   const group = 'dataprotection.kubeblocks.io';
   const version = 'v1alpha1';
   const plural = 'backups';

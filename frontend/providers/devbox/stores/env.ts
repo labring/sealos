@@ -1,9 +1,9 @@
 import { create } from 'zustand'
-import { immer } from 'zustand/middleware/immer'
 import { devtools, persist } from 'zustand/middleware'
+import { immer } from 'zustand/middleware/immer'
 
-import { Env } from '@/types/static'
 import { getAppEnv } from '@/api/platform'
+import { Env } from '@/types/static'
 
 export const defaultEnv: Env = {
   sealosDomain: 'dev.sealos.plus',
@@ -12,6 +12,7 @@ export const defaultEnv: Env = {
   devboxAffinityEnable: 'true',
   squashEnable: 'false',
   namespace: 'default',
+  privacyUrl: '',
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
   currencySymbol: 'shellCoin'

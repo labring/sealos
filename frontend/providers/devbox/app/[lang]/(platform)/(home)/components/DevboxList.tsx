@@ -1,20 +1,20 @@
-import dynamic from 'next/dynamic'
+import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react'
+import { MyTable, SealosMenu, useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
+import dynamic from 'next/dynamic'
 import { useCallback, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
-import { SealosMenu, MyTable, useMessage } from '@sealos/ui'
-import { Box, Button, Center, Flex, Image, MenuButton, useTheme, Text } from '@chakra-ui/react'
 
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 import { useRouter } from '@/i18n'
 import { useGlobalStore } from '@/stores/global'
-import { DevboxListItemType } from '@/types/devbox'
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
+import { DevboxListItemTypeV2 } from '@/types/devbox'
 
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
-import PodLineChart from '@/components/PodLineChart'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
 import ReleaseModal from '@/components/modals/releaseModal'
+import PodLineChart from '@/components/PodLineChart'
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'))
 
@@ -22,10 +22,9 @@ const DevboxList = ({
   devboxList = [],
   refetchDevboxList
 }: {
-  devboxList: DevboxListItemType[]
+  devboxList: DevboxListItemTypeV2[]
   refetchDevboxList: () => void
 }) => {
-  const theme = useTheme()
   const router = useRouter()
   const t = useTranslations()
   const { message: toast } = useMessage()
@@ -34,17 +33,17 @@ const DevboxList = ({
   const { setLoading } = useGlobalStore()
 
   const [onOpenRelease, setOnOpenRelease] = useState(false)
-  const [delDevbox, setDelDevbox] = useState<DevboxListItemType | null>(null)
-  const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemType | null>(
+  const [delDevbox, setDelDevbox] = useState<DevboxListItemTypeV2 | null>(null)
+  const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemTypeV2 | null>(
     null
   )
 
-  const handleOpenRelease = (devbox: DevboxListItemType) => {
+  const handleOpenRelease = (devbox: DevboxListItemTypeV2) => {
     setCurrentDevboxListItem(devbox)
     setOnOpenRelease(true)
   }
   const handlePauseDevbox = useCallback(
-    async (devbox: DevboxListItemType) => {
+    async (devbox: DevboxListItemTypeV2) => {
       try {
         setLoading(true)
         await pauseDevbox({ devboxName: devbox.name })
@@ -65,7 +64,7 @@ const DevboxList = ({
     [refetchDevboxList, setLoading, t, toast]
   )
   const handleRestartDevbox = useCallback(
-    async (devbox: DevboxListItemType) => {
+    async (devbox: DevboxListItemTypeV2) => {
       try {
         setLoading(true)
         await restartDevbox({ devboxName: devbox.name })
@@ -86,7 +85,7 @@ const DevboxList = ({
     [refetchDevboxList, setLoading, t, toast]
   )
   const handleStartDevbox = useCallback(
-    async (devbox: DevboxListItemType) => {
+    async (devbox: DevboxListItemTypeV2) => {
       try {
         setLoading(true)
         await startDevbox({ devboxName: devbox.name })
@@ -107,7 +106,7 @@ const DevboxList = ({
     [refetchDevboxList, setLoading, t, toast]
   )
   const handleGoToTerminal = useCallback(
-    async (devbox: DevboxListItemType) => {
+    async (devbox: DevboxListItemTypeV2) => {
       const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
       try {
         sealosApp.runEvents('openDesktopApp', {
@@ -127,27 +126,23 @@ const DevboxList = ({
     },
     [t, toast]
   )
-
   const columns: {
     title: string
-    dataIndex?: keyof DevboxListItemType
+    dataIndex?: keyof DevboxListItemTypeV2
     key: string
-    render?: (item: DevboxListItemType) => JSX.Element
+    render?: (item: DevboxListItemTypeV2) => JSX.Element
   }[] = [
     {
       title: t('name'),
       key: 'name',
-      render: (item: DevboxListItemType) => {
+      render: (item) => {
         return (
           <Flex alignItems={'center'} gap={'6px'} ml={4} mr={1}>
             <Image
               width={'20px'}
               height={'20px'}
               alt={item.id}
-              src={`/images/${item.runtimeType}.svg`}
-              onError={(e) => {
-                e.currentTarget.src = '/images/custom.svg'
-              }}
+              src={`/images/${item.template.templateRepository.iconId}.svg`}
             />
             <Box color={'grayModern.900'} fontSize={'md'}>
               {item.name}
@@ -159,22 +154,22 @@ const DevboxList = ({
     {
       title: t('status'),
       key: 'status',
-      render: (item: DevboxListItemType) => <DevboxStatusTag status={item.status} h={'27px'} />
+      render: (item) => <DevboxStatusTag status={item.status} h={'27px'} />
     },
     {
       title: t('create_time'),
       dataIndex: 'createTime',
       key: 'createTime',
-      render: (item: DevboxListItemType) => {
+      render: (item) => {
         return <Text color={'grayModern.600'}>{item.createTime}</Text>
       }
     },
     {
       title: t('cpu'),
       key: 'cpu',
-      render: (item: DevboxListItemType) => (
+      render: (item) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="blue" data={item.usedCpu} />
             <Text
               color={'#0077A9'}
@@ -194,9 +189,9 @@ const DevboxList = ({
     {
       title: t('memory'),
       key: 'storage',
-      render: (item: DevboxListItemType) => (
+      render: (item) => (
         <Box h={'35px'} w={['120px', '130px', '140px']}>
-          <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+          <Box h={'35px'} w={['120px', '130px', '140px']} position={'relative'}>
             <PodLineChart type="purple" data={item.usedMemory} />
             <Text
               color={'#6F5DD7'}
@@ -216,37 +211,36 @@ const DevboxList = ({
     {
       title: t('control'),
       key: 'control',
-      render: (item: DevboxListItemType) => (
+      render: (item) => (
         <Flex>
           <IDEButton
             devboxName={item.name}
-            runtimeVersion={item.runtimeVersion}
             sshPort={item.sshPort}
             status={item.status}
-            leftButtonProps={{
-              width: '95px'
-            }}
+            mr={'8px'}
           />
           <Button
-            mr={5}
-            height={'32px'}
+            mr={'8px'}
             size={'sm'}
+            boxSize={'32px'}
             fontSize={'base'}
             bg={'grayModern.150'}
             color={'grayModern.900'}
             _hover={{
               color: 'brightBlue.600'
             }}
-            leftIcon={<MyIcon name={'detail'} w={'16px'} />}
+            minW={'unset'}
+            // leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => {
               router.push(`/devbox/detail/${item.name}`)
             }}>
-            {t('detail')}
+            {/* {t('detail')} */}
+            <MyIcon name={'detail'} w={'16px'} />
           </Button>
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
+              <MenuButton as={Button} variant={'square'} boxSize={'32px'}>
                 <MyIcon name={'more'} />
               </MenuButton>
             }
@@ -344,35 +338,8 @@ const DevboxList = ({
       )
     }
   ]
-
   return (
-    <Box backgroundColor={'grayModern.100'} px={'32px'} minH="100vh">
-      <Flex h={'90px'} alignItems={'center'}>
-        <Center
-          mr={'16px'}
-          width={'46px'}
-          bg={'#FFF'}
-          height={'46px'}
-          border={theme.borders.base}
-          borderRadius={'md'}>
-          <MyIcon name="logo" w={'30px'} h={'30px'} />
-        </Center>
-        <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
-          {t('devbox_list')}
-        </Box>
-        <Box ml={'8px'} fontSize={'md'} fontWeight={'bold'} color={'grayModern.500'}>
-          ( {devboxList.length} )
-        </Box>
-        <Box flex={1}></Box>
-        <Button
-          minW={'156px'}
-          h={'40px'}
-          variant={'solid'}
-          leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#ffffff'} />}
-          onClick={() => router.push('/devbox/create')}>
-          {t('create_devbox')}
-        </Button>
-      </Flex>
+    <>
       <MyTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
@@ -394,7 +361,7 @@ const DevboxList = ({
           devbox={currentDevboxListItem}
         />
       )}
-    </Box>
+    </>
   )
 }
 

@@ -5,7 +5,8 @@
     "target": "ES2020",
     "forceConsistentCasingInFileNames": false,
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "prisma/*": ["prisma/*"]
     },
     "plugins": [
       {

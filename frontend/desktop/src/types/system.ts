@@ -165,7 +165,19 @@ export type AuthClientConfigType = DeepRequired<
       'cloudVitrualMachineUrl'
     ]
   >
->;
+> & {
+  idp: {
+    sms: {
+      enabled: boolean;
+      ali: {
+        enabled: boolean;
+      };
+      email: {
+        enabled: boolean;
+      };
+    };
+  };
+};
 
 export type JwtConfigType = {
   internal?: string;
@@ -277,7 +289,13 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     },
     sms: {
-      enabled: false
+      enabled: false,
+      ali: {
+        enabled: false
+      },
+      email: {
+        enabled: false
+      }
     },
     oauth2: {
       enabled: false,

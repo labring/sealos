@@ -1,4 +1,5 @@
 import {
+  HTMLChakraProps,
   Spinner,
   Table,
   TableContainer,
@@ -9,17 +10,34 @@ import {
   Thead,
   Tr
 } from '@chakra-ui/react';
-import { Table as ReactTable, flexRender } from '@tanstack/react-table';
+import { Column, Table as ReactTable, flexRender } from '@tanstack/react-table';
+import { CSSProperties } from 'react';
+
+const getCommonPinningStyles = <T,>(column: Column<T, unknown>): CSSProperties => {
+  const isPinned = column.getIsPinned();
+
+  return {
+    position: isPinned ? 'sticky' : 'relative',
+    left: isPinned === 'left' ? 0 : undefined,
+    right: isPinned === 'right' ? 0 : undefined,
+    zIndex: isPinned ? 10 : 0
+  };
+};
 
 export function BaseTable<T extends unknown>({
   table,
   isLoading,
+  tdStyle,
   ...props
-}: { table: ReactTable<T>; isLoading: boolean } & TableContainerProps) {
+}: {
+  table: ReactTable<T>;
+  isLoading: boolean;
+  tdStyle?: HTMLChakraProps<'td'>;
+} & TableContainerProps) {
   return (
     <TableContainer {...props}>
       <Table variant="unstyled" width={'full'}>
-        <Thead position={'sticky'} top={0} zIndex={1}>
+        <Thead>
           {table.getHeaderGroups().map((headers) => {
             return (
               <Tr key={headers.id}>
@@ -30,9 +48,16 @@ export function BaseTable<T extends unknown>({
                       py="13px"
                       px={'24px'}
                       key={header.id}
-                      backgroundColor={'grayModern.50'}
+                      bg={'grayModern.100'}
                       color={'grayModern.600'}
                       border={'none'}
+                      _first={{
+                        borderLeftRadius: '6px'
+                      }}
+                      _last={{
+                        borderRightRadius: '6px'
+                      }}
+                      {...(getCommonPinningStyles(header.column) as HTMLChakraProps<'th'>)}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </Th>
@@ -50,17 +75,23 @@ export function BaseTable<T extends unknown>({
               </Td>
             </Tr>
           ) : (
-            table.getRowModel().rows.map((item) => {
+            table.getRowModel().rows.map((item, index) => {
               return (
-                <Tr
-                  key={item.id}
-                  fontSize={'12px'}
-                  // borderBottom={'1px solid'}
-                  // borderColor={'#F0F1F6'}
-                >
+                <Tr key={item.id} fontSize={'12px'}>
                   {item.getAllCells().map((cell, i) => {
+                    const isPinned = cell.column.getIsPinned();
                     return (
-                      <Td py="10px" key={cell.id} px={'24px'}>
+                      <Td
+                        key={cell.id}
+                        p={'10px 24px'}
+                        bg={isPinned ? 'white' : ''}
+                        borderBottom={'1px solid'}
+                        borderBottomColor={
+                          index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'
+                        }
+                        {...(getCommonPinningStyles(cell.column) as HTMLChakraProps<'td'>)}
+                        {...tdStyle}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </Td>
                     );

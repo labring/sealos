@@ -3,7 +3,8 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { pauseKey } from '@/constants/app';
+import { appDeployKey, pauseKey } from '@/constants/app';
+import { PatchUtils } from '@kubernetes/client-node';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -11,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (!appName) {
       throw new Error('appName is empty');
     }
-    const { apiClient, k8sAutoscaling, getDeployApp, namespace } = await getK8s({
+    const { apiClient, k8sAutoscaling, getDeployApp, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -44,6 +45,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     } catch (error: any) {
       if (error?.statusCode !== 404) {
         return Promise.reject('无法读取到hpa');
+      }
+    }
+
+    // handle ingress
+    try {
+      const { body: ingress } = await k8sNetworkingApp.listNamespacedIngress(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${appDeployKey}=${appName}`
+      );
+      if (ingress?.items?.length > 0) {
+        for (const ingressItem of ingress.items) {
+          if (ingressItem?.metadata?.name) {
+            const patchData: Record<string, any> = {};
+            if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'nginx') {
+              patchData.metadata = {
+                annotations: {
+                  'kubernetes.io/ingress.class': 'pause'
+                }
+              };
+            }
+            if (ingressItem.spec?.ingressClassName === 'nginx') {
+              patchData.spec = {
+                ingressClassName: 'pause'
+              };
+            }
+
+            if (Object.keys(patchData).length > 0) {
+              requestQueue.push(
+                k8sNetworkingApp.patchNamespacedIngress(
+                  ingressItem.metadata.name,
+                  namespace,
+                  patchData,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+                )
+              );
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        return Promise.reject('无法读取到ingress');
       }
     }
 

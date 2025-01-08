@@ -1,0 +1,125 @@
+generator globalClient {
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider     = "cockroachdb"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model User {
+  uid               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  regionUid         String             
+  namespaceId       String
+  deletedAt         DateTime?          @db.Timestamptz(3)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime           @updatedAt @db.Timestamptz(3)
+  isDeleted         Boolean?           @default(false)
+  userOrganizations UserOrganization[]
+
+  @@unique([isDeleted, regionUid, namespaceId])
+}
+
+model Organization {
+  uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                   String               @unique //nanoid 
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
+  deletedAt            DateTime?            @db.Timestamptz(3)
+  isDeleted            Boolean?             @default(false)
+  name                 String
+  userOrganizations    UserOrganization[]
+  templateRepositories TemplateRepository[]
+}
+
+model UserOrganization {
+  createdAt       DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @db.Timestamptz(3)
+  userUid         String       @db.Uuid
+  organizationUid String       @db.Uuid
+  organization    Organization @relation(fields: [organizationUid], references: [uid])
+  user            User         @relation(fields: [userUid], references: [uid])
+  // role            OrganizationRole // rbac
+
+  @@id([organizationUid, userUid])
+  @@index([userUid])
+  @@index([createdAt])
+}
+
+model TemplateRepository {
+  uid                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  deletedAt              DateTime?               @db.Timestamptz(3)
+  createdAt              DateTime                @default(now()) @db.Timestamptz(3)
+  updatedAt              DateTime                @updatedAt @db.Timestamptz(3)
+  name                   String
+  // hzh.hub.sealos.run/orgNanoid/templateRepositoryName:templateName
+  description            String?
+  kind                   TemplateRepositoryKind
+  organizationUid        String                  @db.Uuid
+  isPublic               Boolean                 @default(false)
+  templates              Template[]
+  iconId                 String?
+  organization           Organization            @relation(fields: [organizationUid], references: [uid])
+  isDeleted              Boolean?                @default(false)
+  regionUid              String
+  templateRepositoryTags TemplateRepositoryTag[]
+
+  @@unique([isDeleted, regionUid, name])
+  @@index([isDeleted, isPublic])
+  @@index([isDeleted, createdAt])
+}
+
+model Template {
+  uid                   String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  templateRepositoryUid String     @db.Uuid
+  devboxReleaseImage    String?
+  image                 String
+  config                String // json
+  deletedAt             DateTime?  @db.Timestamptz(3)
+  createdAt             DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime   @updatedAt @db.Timestamptz(3)
+  parentUid             String?    @db.Uuid
+  isDeleted             Boolean?   @default(false)
+  parent                Template?  @relation("Template", fields: [parentUid], references: [uid], onDelete: NoAction, onUpdate: NoAction)
+  children              Template[] @relation("Template")
+
+  templateRepository TemplateRepository @relation(fields: [templateRepositoryUid], references: [uid])
+
+  @@unique([isDeleted, templateRepositoryUid, name])
+}
+
+model Tag {
+  uid                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                   TagType                 @default(OFFICIAL_CONTENT)
+  name                   String
+  zhName                 String?
+  enName                 String?
+  templateRepositoryTags TemplateRepositoryTag[]
+}
+
+model TemplateRepositoryTag {
+  templateRepositoryUid String             @db.Uuid
+  tagUid                String             @db.Uuid
+  templateRepository    TemplateRepository @relation(fields: [templateRepositoryUid], references: [uid])
+  tag                   Tag                @relation(fields: [tagUid], references: [uid])
+
+  @@id([templateRepositoryUid, tagUid])
+  @@index([tagUid])
+}
+
+enum TemplateRepositoryKind {
+  FRAMEWORK
+  OS
+  LANGUAGE
+  CUSTOM
+}
+
+enum TagType {
+  PROGRAMMING_LANGUAGE
+  USE_CASE
+  OFFICIAL_CONTENT
+}

@@ -3,7 +3,7 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { getBackups } from './backup/getBackupList';
+import { getBackupListByDBName } from './backup/getBackupList';
 import { delBackupByName } from './backup/delBackup';
 import { getMigrateList } from './migrate/list';
 import { delMigrateByName } from './migrate/delete';
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     // get backup and delete
-    const backups = await getBackups({ dbName: name, req });
+    const backups = await getBackupListByDBName({ dbName: name, req });
     await Promise.all(
       backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
     );

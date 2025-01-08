@@ -33,6 +33,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           manualHandling: { isManuallyHandled: true, handlingTime: new Date() }
         }
       });
+    } else if (!isRobot) {
+      // When a regular user (non-robot) replies, update status to pending
+      await updateOrder({
+        orderId,
+        userId: payload.userId,
+        updates: {
+          status: WorkOrderStatus.Pending
+        }
+      });
     }
 
     const result = await addDialogToOrder({

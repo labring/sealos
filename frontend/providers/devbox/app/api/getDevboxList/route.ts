@@ -1,13 +1,12 @@
 import { NextRequest } from 'next/server'
 
-import { defaultEnv } from '@/stores/env'
 import { authSession } from '@/services/backend/auth'
-import { jsonRes } from '@/services/backend/response'
 import { getK8s } from '@/services/backend/kubernetes'
-import { KBDevboxType, KBRuntimeType } from '@/types/k8s'
+import { jsonRes } from '@/services/backend/response'
+import { devboxDB } from '@/services/db/init'
+import { KBDevboxTypeV2 } from '@/types/k8s'
 
 export const dynamic = 'force-dynamic'
-
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers
@@ -17,32 +16,36 @@ export async function GET(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     })
 
-    const [devboxResponse, runtimeResponse] = await Promise.all([
+    const devboxResponse = await 
       k8sCustomObjects.listNamespacedCustomObject(
         'devbox.sealos.io',
         'v1alpha1',
         namespace,
         'devboxes'
-      ),
-      k8sCustomObjects.listNamespacedCustomObject(
-        'devbox.sealos.io',
-        'v1alpha1',
-        ROOT_RUNTIME_NAMESPACE || defaultEnv.rootRuntimeNamespace,
-        'runtimes'
       )
-    ])
 
-    const devboxBody = devboxResponse.body as { items: KBDevboxType[] }
-    const runtimeBody = runtimeResponse.body as { items: KBRuntimeType[] }
-
-    // add runtimeType to devbox yaml
-    const resp = devboxBody.items.map((item) => {
-      const runtimeName = item.spec.runtimeRef.name
-      const runtime = runtimeBody.items.find((item) => item.metadata.name === runtimeName)
-
-      item.spec.runtimeType = runtime?.spec.classRef
-
-      return item
+    const devboxBody = devboxResponse.body as { items: KBDevboxTypeV2[] }
+    const uidList = devboxBody.items.map((item) => item.spec.templateID)
+    const templateResultList = await devboxDB.template.findMany({
+      where: {
+        uid: {
+          in: uidList
+        },
+      },
+      select: {
+        uid: true,
+        templateRepository: {
+          select: {
+            iconId: true,
+          }
+        }
+      }
+    })
+    // match template with devbox
+    const resp = devboxBody.items.flatMap((item) => {
+      const templateItem = templateResultList.find((templateResult) => templateResult.uid === item.spec.templateID)
+      if(!templateItem) return []
+      return [[item, templateItem] as const]
     })
 
     return jsonRes({ data: resp })

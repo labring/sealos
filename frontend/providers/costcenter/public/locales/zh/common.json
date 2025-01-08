@@ -43,11 +43,13 @@
   "Storage": "存储卷",
   "Network": "网络",
   "CPU Amount": "CPU金额",
+  "GPU Amount": "GPU金额",
   "Port Amount": "端口金额",
   "Storage Amount": "存储金额",
   "Memory Amount": "内存金额",
   "Network Amount": "网络金额",
   "cpu": "CPU",
+  "gpu": "GPU",
   "memory": "内存",
   "storage": "存储卷",
   "network": "网络",
@@ -236,5 +238,8 @@
   "resource": "资源",
   "Double": "双倍",
   "first_recharge_tips": "部分规格首次充值可享双倍赠送金额",
-  "first_recharge_title": "首充双倍"
+  "first_recharge_title": "首充双倍!",
+  "credit_purchase": "余额充值",
+  "remaining_balance": "当前余额",
+  "custom_amount": "输入金额"
 }

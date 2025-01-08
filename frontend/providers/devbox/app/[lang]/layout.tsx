@@ -1,9 +1,11 @@
-import { Inter } from 'next/font/google'
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 
 import IntlProvider from '@/components/providers/MyIntlProvider'
-
+import QueryProvider from '@/components/providers/MyQueryProvider'
+import { enableMapSet } from 'immer'
 import './globals.css'
+import '@sealos/driver/src/driver.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,10 +24,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1
 }
-
+enableMapSet()
 export default function RootLayout({
   children,
-  params: { lang }
+
+  params: { lang },
+  ...props
 }: Readonly<{
   children: React.ReactNode
   params: { lang: string }
@@ -33,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang={lang}>
       <body className={inter.className}>
-        <IntlProvider>{children}</IntlProvider>
+        <IntlProvider>
+          <QueryProvider>{children}</QueryProvider>
+        </IntlProvider>
       </body>
     </html>
   )

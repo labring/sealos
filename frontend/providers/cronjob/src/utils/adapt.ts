@@ -15,7 +15,8 @@ import {
   V1Deployment,
   V1Job,
   V1Pod,
-  V1ServiceAccount
+  V1ServiceAccount,
+  V1StatefulSet
 } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import cronstrue from 'cronstrue';
@@ -56,8 +57,16 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     .next()
     .toString();
   const status_str = job.spec?.suspend ? StatusEnum.Stopped : StatusEnum.Running;
-  const { cpu, enableNumberCopies, enableResources, launchpadId, launchpadName, memory, replicas } =
-    job.metadata?.annotations as CronJobAnnotations;
+  const {
+    cpu,
+    enableNumberCopies,
+    enableResources,
+    launchpadId,
+    launchpadName,
+    memory,
+    replicas,
+    launchpadKind
+  } = job.metadata?.annotations as CronJobAnnotations;
 
   const getUrl = (): string => {
     const commands = job.spec?.jobTemplate?.spec?.template?.spec?.containers?.[0]?.args;
@@ -101,6 +110,7 @@ export const adaptCronJobDetail = async (job: V1CronJob): Promise<CronJobEditTyp
     memory: memoryFormatToMi(memory || '0'),
     launchpadName: launchpadName || '',
     launchpadId: launchpadId || '',
+    launchpadKind: launchpadKind || '',
     serviceAccountName: 'userns',
     // detail page
     status: CronJobStatusMap[status_str]
@@ -130,7 +140,7 @@ export const sliderNumber2MarkList = ({
   }));
 };
 
-export const adaptAppListItem = (app: V1Deployment): AppListItemType => {
+export const adaptAppListItem = (app: V1Deployment | V1StatefulSet): AppListItemType => {
   return {
     id: app.metadata?.uid || ``,
     name: app.metadata?.name || 'app name',
@@ -140,7 +150,8 @@ export const adaptAppListItem = (app: V1Deployment): AppListItemType => {
     memory: memoryFormatToMi(
       app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.memory || '0'
     ),
-    replicas: app.spec?.replicas || 0
+    replicas: app.spec?.replicas || 0,
+    kind: app.kind || ''
   };
 };
 

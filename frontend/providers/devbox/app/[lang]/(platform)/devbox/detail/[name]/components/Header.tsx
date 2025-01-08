@@ -1,19 +1,19 @@
+import { Box, Button, Flex } from '@chakra-ui/react'
 import { useMessage } from '@sealos/ui'
 import { useTranslations } from 'next-intl'
-import { Flex, Button, Box } from '@chakra-ui/react'
 import { Dispatch, useCallback, useMemo, useState } from 'react'
 
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 import { useRouter } from '@/i18n'
 import { useDevboxStore } from '@/stores/devbox'
 import { useGlobalStore } from '@/stores/global'
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
 
-import { DevboxDetailType } from '@/types/devbox'
+import { DevboxDetailTypeV2 } from '@/types/devbox'
 
+import DevboxStatusTag from '@/components/DevboxStatusTag'
 import MyIcon from '@/components/Icon'
 import IDEButton from '@/components/IDEButton'
 import DelModal from '@/components/modals/DelModal'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 import { useQuery } from '@tanstack/react-query'
 
@@ -33,7 +33,7 @@ const Header = ({
   const { devboxDetail, setDevboxList } = useDevboxStore()
   const { screenWidth, setLoading } = useGlobalStore()
 
-  const [delDevbox, setDelDevbox] = useState<DevboxDetailType | null>(null)
+  const [delDevbox, setDelDevbox] = useState<DevboxDetailTypeV2 | null>(null)
   const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth])
 
   const { refetch: refetchDevboxList } = useQuery(['devboxListQuery'], setDevboxList, {
@@ -43,7 +43,7 @@ const Header = ({
   })
 
   const handlePauseDevbox = useCallback(
-    async (devbox: DevboxDetailType) => {
+    async (devbox: DevboxDetailTypeV2) => {
       try {
         setLoading(true)
         await pauseDevbox({ devboxName: devbox.name })
@@ -64,7 +64,7 @@ const Header = ({
     [refetchDevboxDetail, setLoading, t, toast]
   )
   const handleRestartDevbox = useCallback(
-    async (devbox: DevboxDetailType) => {
+    async (devbox: DevboxDetailTypeV2) => {
       try {
         setLoading(true)
         await restartDevbox({ devboxName: devbox.name })
@@ -85,7 +85,7 @@ const Header = ({
     [setLoading, t, toast, refetchDevboxDetail]
   )
   const handleStartDevbox = useCallback(
-    async (devbox: DevboxDetailType) => {
+    async (devbox: DevboxDetailTypeV2) => {
       try {
         setLoading(true)
         await startDevbox({ devboxName: devbox.name })
@@ -106,7 +106,7 @@ const Header = ({
     [setLoading, t, toast, refetchDevboxDetail]
   )
   const handleGoToTerminal = useCallback(
-    async (devbox: DevboxDetailType) => {
+    async (devbox: DevboxDetailTypeV2) => {
       const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
       try {
         sealosApp.runEvents('openDesktopApp', {
@@ -126,6 +126,7 @@ const Header = ({
     },
     [t, toast]
   )
+  if (!devboxDetail) return null
   return (
     <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
       {/* left back button and title */}
@@ -168,7 +169,6 @@ const Header = ({
         <Box>
           <IDEButton
             devboxName={devboxDetail.name}
-            runtimeVersion={devboxDetail.runtimeVersion}
             sshPort={devboxDetail.sshPort as number}
             status={devboxDetail.status}
             isBigButton={isBigButton}
@@ -205,6 +205,7 @@ const Header = ({
         </Button>
         {devboxDetail.status.value === 'Running' && (
           <Button
+            className="guide-close-button"
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}

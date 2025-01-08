@@ -31,7 +31,13 @@ import { ShareIcon } from '@/components/icons';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
-export default function AppList({ showCarousel }: { showCarousel: boolean }) {
+export default function AppList({
+  showCarousel,
+  brandName
+}: {
+  showCarousel: boolean;
+  brandName: string;
+}) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { searchValue, appType } = useSearchStore();
@@ -102,8 +108,8 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
       <Head>
         <title>
           {i18n.language === 'en'
-            ? 'Enterprise-level distributed application hosting platform - Sealos'
-            : '企业级分布式应用托管平台 - Sealos'}
+            ? `Enterprise-level distributed application hosting platform - ${brandName}`
+            : `企业级分布式应用托管平台 - ${brandName}`}
         </title>
         <meta
           name="keywords"
@@ -117,8 +123,8 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
           name="description"
           content={
             i18n.language === 'en'
-              ? 'Sealos: All-in-one platform for app development and deployment. Features app engine, API gateway. Deploy your app with one click.'
-              : 'Sealos提供高性能可伸缩的容器应用管理能力，支持企业级 Kubernetes 容器化应用的全生命周期管理,一站式集成应用创建、开发、部署、上线等功能，提供了应用引擎、前后端开发框架、API网关、调度引擎等模块，一键部署Helm应用。'
+              ? `All-in-one platform for app development and deployment. Features app engine, API gateway. Deploy your app with one click.`
+              : `提供高性能可伸缩的容器应用管理能力，支持企业级 Kubernetes 容器化应用的全生命周期管理,一站式集成应用创建、开发、部署、上线等功能，提供了应用引擎、前后端开发框架、API网关、调度引擎等模块，一键部署Helm应用。`
           }
         />
       </Head>
@@ -269,6 +275,7 @@ export default function AppList({ showCarousel }: { showCarousel: boolean }) {
 
 // https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props#context-parameter
 export async function getServerSideProps(content: any) {
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
   const local =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
@@ -285,7 +292,8 @@ export async function getServerSideProps(content: any) {
   return {
     props: {
       ...(await serviceSideProps(content)),
-      showCarousel: data.showCarousel
+      showCarousel: data.showCarousel,
+      brandName
     }
   };
 }
