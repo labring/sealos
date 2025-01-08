@@ -288,5 +288,16 @@
   "day": "天",
   "time": "时间",
   "log_number": "日志数",
-  "close": "关闭"
+  "close": "关闭",
+  "normal_filter": "普通筛选",
+  "advanced_filter": "高级筛选",
+  "json_mode": "JSON模式",
+  "only_stderr": "只看 Stderr",
+  "keyword": "关键词",
+  "search": "查询",
+  "field_name": "字段名",
+  "equal": "等于",
+  "greater_than": "大于",
+  "less_than": "小于",
+  "value": "值"
 }

@@ -1,7 +1,8 @@
 import { useTranslation } from 'next-i18next';
-import { Box, useTheme, Flex } from '@chakra-ui/react';
+import { Box, useTheme, Flex, Divider } from '@chakra-ui/react';
 
 import { Header } from './logs/Header';
+import { Filter } from './logs/Filter';
 
 const Logs = () => {
   const theme = useTheme();
@@ -11,14 +12,14 @@ const Logs = () => {
       <Flex
         mb={4}
         bg={'white'}
-        p={4}
+        gap={'12px'}
+        flexDir={'column'}
         border={theme.borders.base}
         borderRadius={'lg'}
-        flexShrink={0}
-        minH={'50px'}
-        alignItems={'center'}
       >
         <Header />
+        <Divider />
+        <Filter />
       </Flex>
       <Box
         mb={4}

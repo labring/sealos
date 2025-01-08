@@ -11,10 +11,11 @@ import {
   MenuList,
   Text
 } from '@chakra-ui/react';
-import MySelect from '@/components/MySelect';
-import MyIcon from '@/components/Icon';
+import { useState } from 'react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
-import { useRef, useState } from 'react';
+
+import MyIcon from '@/components/Icon';
+import MySelect from '@/components/MySelect';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
@@ -33,6 +34,7 @@ export const Header = () => {
 
   return (
     <Flex
+      p={'12px'}
       justify={'space-between'}
       gap={'12px'}
       alignItems={'center'}

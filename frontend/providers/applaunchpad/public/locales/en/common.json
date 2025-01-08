@@ -287,5 +287,16 @@
   "hour": "Hour",
   "time": "Time",
   "log_number": "Log Number",
-  "close": "Close"
+  "close": "Close",
+  "normal_filter": "Normal",
+  "advanced_filter": "Advance",
+  "json_mode": "JSON Mode",
+  "only_stderr": "Only Stderr",
+  "keyword": "Keyword",
+  "search": "Search",
+  "field_name": "Field Name",
+  "equal": "Equal",
+  "greater_than": "Greater than",
+  "less_than": "Less than",
+  "value": "Value"
 }

@@ -102,7 +102,12 @@ const MySelect = (
               })}
           {...props}
         >
-          <Flex justifyContent={'flex-start'} width="100%" alignItems={'center'}>
+          <Flex
+            justifyContent={'flex-start'}
+            width="100%"
+            alignItems={'center'}
+            {...(placeholder ? { color: 'grayModern.500' } : {})}
+          >
             {activeMenu ? activeMenu.label : placeholder}
           </Flex>
         </MenuButton>
