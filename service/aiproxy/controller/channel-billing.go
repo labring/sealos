@@ -120,13 +120,13 @@ func GetSubscription(c *gin.Context) {
 		quota = b
 	}
 	c.JSON(http.StatusOK, openai.SubscriptionResponse{
-		HardLimitUSD:       (quota + token.UsedAmount) / 7,
-		SoftLimitUSD:       b / 7,
-		SystemHardLimitUSD: (quota + token.UsedAmount) / 7,
+		HardLimitUSD:       quota + token.UsedAmount,
+		SoftLimitUSD:       b,
+		SystemHardLimitUSD: quota + token.UsedAmount,
 	})
 }
 
 func GetUsage(c *gin.Context) {
 	token := middleware.GetToken(c)
-	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount / 7 * 100})
+	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount * 100})
 }
