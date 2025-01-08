@@ -14,7 +14,7 @@ import {
   ModalContent,
   ModalHeader
 } from '@chakra-ui/react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 import { Tip } from '@sealos/ui';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useRequest } from '@/hooks/useRequest';
