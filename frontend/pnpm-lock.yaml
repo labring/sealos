@@ -606,9 +606,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
-      '@tanstack/react-table':
-        specifier: ^8.10.7
-        version: 8.10.7(react-dom@18.2.0)(react@18.2.0)
       ansi_up:
         specifier: ^5.2.1
         version: 5.2.1
@@ -18102,6 +18099,7 @@ packages:
   /lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
+    requiresBuild: true
     dependencies:
       yallist: 4.0.0
 

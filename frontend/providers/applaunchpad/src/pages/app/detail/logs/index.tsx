@@ -9,7 +9,7 @@ import DetailLayout from '@/components/layouts/DetailLayout';
 
 import { Header } from './components/Header';
 import { Filter } from './components/Filter';
-import { LogList } from './components/LogList';
+import { LogTable } from './components/LogTable';
 import { LogCounts } from './components/LogCounts';
 
 export default function LogsPage({ appName }: { appName: string }) {
@@ -36,7 +36,7 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   return (
     <DetailLayout appName={appName}>
-      <Box flex={1} bg="white" borderRadius="lg" p={4}>
+      <Box flex={1} borderRadius="lg" p={4}>
         <>
           <Flex
             mb={4}
@@ -69,7 +69,7 @@ export default function LogsPage({ appName }: { appName: string }) {
             flex={1}
             minH={'400px'}
           >
-            <LogList />
+            <LogTable />
           </Box>
         </>
       </Box>
