@@ -3,7 +3,7 @@ import { Box, useTheme, Flex, Divider } from '@chakra-ui/react';
 
 import { Header } from './logs/Header';
 import { Filter } from './logs/Filter';
-import { LogNumber } from './logs/LogNumber';
+import { LogCounts } from './logs/LogCounts';
 
 const Logs = () => {
   const theme = useTheme();
@@ -31,7 +31,7 @@ const Logs = () => {
         flexShrink={0}
         minH={'257px'}
       >
-        <LogNumber />
+        <LogCounts />
       </Box>
       <Box
         bg={'white'}

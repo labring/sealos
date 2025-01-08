@@ -90,7 +90,7 @@ export const Filter = () => {
             />
           )}
           {jsonFormList.map((item, index) => (
-            <Flex key={index} w={'100%'} gap={'12px'}>
+            <Flex key={index} w={'fit-content'} gap={'12px'}>
               <MySelect
                 height="32px"
                 minW={'200px'}
