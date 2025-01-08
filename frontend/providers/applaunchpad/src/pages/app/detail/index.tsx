@@ -13,6 +13,7 @@ import AppBaseInfo from './components/AppBaseInfo';
 import Header from './components/Header';
 import Pods from './components/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
+import AdvancedInfo from './components/AdvancedInfo';
 
 const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
 
@@ -80,7 +81,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
         overflowY={'auto'}
         overflowX={'hidden'}
       >
-        <Flex mb={4} borderRadius={'lg'} flexShrink={0} minH={'257px'} gap={'6px'}>
+        <Flex mb={'6px'} borderRadius={'lg'} flexShrink={0} minH={'257px'} gap={'6px'}>
           <Box flexShrink={0} w="408px" bg={'white'} borderRadius={'8px'}>
             <AppBaseInfo app={appDetail} />
           </Box>
@@ -88,7 +89,9 @@ const AppDetail = ({ appName }: { appName: string }) => {
             {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
           </Box>
         </Flex>
-        <Box>高级配置</Box>
+        <Box bg={'white'} borderRadius={'8px'} mb={'6px'}>
+          <AdvancedInfo app={appDetail} />
+        </Box>
         <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
           <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
         </Box>

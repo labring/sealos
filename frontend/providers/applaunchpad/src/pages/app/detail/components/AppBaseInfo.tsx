@@ -11,8 +11,10 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
+  Divider,
   Flex,
   Tag,
+  Text,
   useTheme
 } from '@chakra-ui/react';
 import { MyTooltip } from '@sealos/ui';
@@ -60,6 +62,10 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           {
             label: 'Limit Memory',
             value: printMemory(app.memory)
+          },
+          {
+            label: 'GPU',
+            render: <GPUItem gpu={app.gpu} />
           },
           ...(userSourcePrice?.gpu
             ? [
@@ -125,49 +131,8 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   }, [app.volumes, app.volumeMounts]);
 
   return (
-    <Box px={6} py={7} position={'relative'}>
-      {app?.source?.hasSource && (
-        <Box fontSize={'base'} mb={'12px'}>
-          <Flex alignItems={'center'} gap={'8px'} color={'grayModern.600'} fontWeight={'bold'}>
-            <MyIcon w={'16px'} name={'target'}></MyIcon>
-            <Box>{t('Application Source')}</Box>
-          </Flex>
-          <Box mt={'12px'} p={'16px'} backgroundColor={'grayModern.50'} borderRadius={'lg'}>
-            <Flex
-              flexWrap={'wrap'}
-              _notFirst={{
-                mt: 4
-              }}
-              cursor={'pointer'}
-              onClick={() => {
-                if (!app?.source?.sourceName) return;
-                if (app.source.sourceType === 'app_store') {
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-template',
-                    pathname: '/instance',
-                    query: { instanceName: app.source.sourceName }
-                  });
-                }
-                if (app.source.sourceType === 'sealaf') {
-                  sealosApp.runEvents('openDesktopApp', {
-                    appKey: 'system-sealaf',
-                    pathname: '/',
-                    query: { instanceName: app.source.sourceName }
-                  });
-                }
-              }}
-            >
-              <Box flex={'0 0 110px'} w={0} color={'grayModern.900'}>
-                {t(app.source?.sourceType)}
-              </Box>
-              <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
-              <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
-            </Flex>
-          </Box>
-        </Box>
-      )}
-
-      <>
+    <Box px={'32px'} py={'24px'} position={'relative'}>
+      {/* <>
         <Flex alignItems={'center'} color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           <MyIcon w={'16px'} name={'appType'}></MyIcon>
           <Box ml={2}>{t('Application Type')}</Box>
@@ -185,38 +150,73 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             </Tag>
           ))}
         </Flex>
-      </>
-      {appInfoTable.map((info) => (
-        <Box
-          _notFirst={{
-            mt: 6
-          }}
-          key={info.name}
-        >
+      </> */}
+
+      {appInfoTable.map((info, index) => (
+        <Box key={info.name}>
           <Flex
             alignItems={'center'}
-            color={'grayModern.600'}
-            fontSize={'base'}
+            color={'grayModern.900'}
+            fontSize={'14px'}
             fontWeight={'bold'}
           >
-            <MyIcon w={'16px'} name={info.iconName as any}></MyIcon>
-            <Box ml={2}>{t(info.name)}</Box>
+            {t(info.name)}
           </Flex>
-          <Box mt={3} p={4} backgroundColor={'grayModern.50'} borderRadius={'md'}>
+          <Box mt={'14px'}>
+            {app?.source?.hasSource && index === 0 && (
+              <Box fontSize={'12px'}>
+                <Flex
+                  flexWrap={'wrap'}
+                  cursor={'pointer'}
+                  onClick={() => {
+                    if (!app?.source?.sourceName) return;
+                    if (app.source.sourceType === 'app_store') {
+                      sealosApp.runEvents('openDesktopApp', {
+                        appKey: 'system-template',
+                        pathname: '/instance',
+                        query: { instanceName: app.source.sourceName }
+                      });
+                    }
+                    if (app.source.sourceType === 'sealaf') {
+                      sealosApp.runEvents('openDesktopApp', {
+                        appKey: 'system-sealaf',
+                        pathname: '/',
+                        query: { instanceName: app.source.sourceName }
+                      });
+                    }
+                  }}
+                >
+                  <Text flex={'0 0 110px'} w={0} color={'grayModern.600'}>
+                    {t('application_source')}
+                  </Text>
+                  <Flex alignItems={'center'}>
+                    <Text color={'grayModern.900'}>{t(app.source?.sourceType)}</Text>
+                    <Divider
+                      orientation="vertical"
+                      h={'12px'}
+                      mx={'8px'}
+                      borderColor={'grayModern.300'}
+                    />
+                    <Box color={'grayModern.600'}>{t('Manage all resources')}</Box>
+                    <MyIcon name="upperRight" width={'14px'} color={'grayModern.600'} />
+                  </Flex>
+                </Flex>
+              </Box>
+            )}
             {info.items.map((item, i) => (
               <Flex
                 key={item.label || i}
                 flexWrap={'wrap'}
                 _notFirst={{
-                  mt: 4
+                  mt: '12px'
                 }}
               >
-                <Box flex={'0 0 110px'} w={0} color={'grayModern.900'} fontSize={'12px'}>
+                <Box flex={'0 0 110px'} w={0} color={'grayModern.600'} fontSize={'12px'}>
                   {t(item.label)}
                 </Box>
                 <Box
                   fontSize={'12px'}
-                  color={'grayModern.600'}
+                  color={'grayModern.900'}
                   flex={'1 0 0'}
                   textOverflow={'ellipsis'}
                   overflow={'hidden'}
@@ -235,9 +235,10 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </Flex>
             ))}
           </Box>
+          {index !== appInfoTable.length - 1 && <Divider my={'16px'} />}
         </Box>
       ))}
-      <Box mt={6}>
+      {/* <Box mt={6}>
         <Flex alignItems={'center'} color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
           <MyIcon w={'16px'} name={'settings'}></MyIcon>
           <Box ml={2}>{t('Advanced Configuration')}</Box>
@@ -267,7 +268,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </Box>
             </Flex>
           ))}
-          {/* env */}
+
           <Accordion allowToggle defaultIndex={0} mt={4}>
             <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
@@ -331,7 +332,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </AccordionPanel>
             </AccordionItem>
           </Accordion>
-          {/* configMap */}
+
           <Accordion allowToggle defaultIndex={0}>
             <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
@@ -387,7 +388,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </AccordionPanel>
             </AccordionItem>
           </Accordion>
-          {/* store */}
+
           <Accordion allowToggle defaultIndex={0}>
             <AccordionItem borderBottom={0} borderColor={'#EFF0F1'}>
               <AccordionButton
@@ -465,7 +466,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             </AccordionItem>
           </Accordion>
         </Box>
-      </Box>
+      </Box> */}
 
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />

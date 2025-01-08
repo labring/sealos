@@ -21,7 +21,7 @@ export default function Sidebar() {
           name="pods"
           w={'24px'}
           h={'24px'}
-          color={router.pathname === ROUTES.OVERVIEW ? 'black' : 'grayModern.500'}
+          color={router.pathname === ROUTES.OVERVIEW ? 'grayModern.900' : 'grayModern.500'}
         />
       ),
       path: ROUTES.OVERVIEW
@@ -33,7 +33,7 @@ export default function Sidebar() {
           name="monitor"
           w={'24px'}
           h={'24px'}
-          color={router.pathname === ROUTES.MONITOR ? 'black' : 'grayModern.500'}
+          color={router.pathname === ROUTES.MONITOR ? 'grayModern.900' : 'grayModern.500'}
         />
       ),
       path: ROUTES.MONITOR
@@ -45,7 +45,7 @@ export default function Sidebar() {
           name="log"
           w={'24px'}
           h={'24px'}
-          color={router.pathname === ROUTES.LOGS ? 'black' : 'grayModern.500'}
+          color={router.pathname === ROUTES.LOGS ? 'grayModern.900' : 'grayModern.500'}
         />
       ),
       path: ROUTES.LOGS

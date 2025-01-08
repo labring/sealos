@@ -8,7 +8,7 @@ import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Box, Button, Center, Flex, Grid, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, Grid, Text, useDisclosure } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useMemo } from 'react';
@@ -35,41 +35,29 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   );
 
   return (
-    <Box px={6} py={6} position={'relative'}>
+    <Box p={'24px'} position={'relative'}>
       <>
-        <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
-          <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
-          <Box ml={'12px'} color={'grayModern.600'}>
-            {t('Real-time Monitoring')}
-          </Box>
-          <Box ml={2} color={'grayModern.500'}>
-            ({t('Update Time')}&ensp;
-            {dayjs().format('HH:mm')})
+        <Flex alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
+          <Box color={'grayModern.900'}>{t('Real-time Monitoring')}</Box>
+          <Box ml={'8px'} color={'grayModern.600'}>
+            ({t('Update Time')}&ensp;{dayjs().format('HH:mm')})
           </Box>
         </Flex>
         <Grid
           w={'100%'}
           templateColumns={'1fr 1fr'}
           gap={3}
-          mt={2}
-          p={'16px'}
-          backgroundColor={'grayModern.50'}
-          borderRadius={'md'}
+          mt={'12px'}
+          px={'16px'}
+          py={'12px'}
+          backgroundColor={'#FBFBFC'}
+          borderRadius={'6px'}
           fontSize={'12px'}
           color={'grayModern.600'}
           fontWeight={'bold'}
           position={'relative'}
           className="driver-detail-monitor"
         >
-          <Button
-            variant={'square'}
-            position={'absolute'}
-            right={'12px'}
-            top={'8px'}
-            onClick={onOpen}
-          >
-            <MyIcon name="enlarge" width={'16px'} fill={'#667085'} />
-          </Button>
           <Box>
             <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'60px'}>
@@ -85,17 +73,11 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             </Box>
           </Box>
         </Grid>
-        <Flex
-          mt={3}
-          alignItems={'center'}
-          fontSize={'12px'}
-          color={'grayModern.600'}
-          fontWeight={'bold'}
-        >
-          <MyIcon name={'network'} w={'14px'} />
-          <Box ml={'12px'}>
-            {t('Network Configuration')}({networks.length})
-          </Box>
+        <Flex mt={3} alignItems={'center'} fontSize={'14px'} fontWeight={'bold'}>
+          <Text color={'grayModern.900'}>{t('Network Configuration')}</Text>
+          <Text ml={'8px'} color={'grayModern.600'}>
+            ({networks.length})
+          </Text>
         </Flex>
         <Flex mt={'12px'} className="driver-detail-network">
           <table className={'table-cross'}>
@@ -117,6 +99,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                       <Flex>
                         <MyTooltip label={t('Copy')} placement={'bottom-start'}>
                           <Box
+                            fontSize={'12px'}
                             cursor={'pointer'}
                             _hover={{ textDecoration: 'underline' }}
                             onClick={() => copyData(network.inline)}
@@ -133,6 +116,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                           placement={'bottom-start'}
                         >
                           <Box
+                            fontSize={'12px'}
                             className={'textEllipsis'}
                             {...(network.public
                               ? {
@@ -146,17 +130,23 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                           </Box>
                         </MyTooltip>
                         {!!network.public && (
-                          <MyIcon
-                            cursor={'pointer'}
-                            mr={2}
-                            name={'copy'}
-                            w={'14px'}
-                            color={'grayModern.500'}
+                          <Center
+                            flexShrink={0}
+                            w={'24px'}
+                            h={'24px'}
+                            borderRadius={'6px'}
                             _hover={{
-                              color: 'hover.iconBlue'
+                              bg: 'rgba(17, 24, 36, 0.05)'
                             }}
-                            onClick={() => copyData(network.public)}
-                          />
+                            cursor={'pointer'}
+                          >
+                            <MyIcon
+                              name={'copy'}
+                              w={'16px'}
+                              color={'#667085'}
+                              onClick={() => copyData(network.public)}
+                            />
+                          </Center>
                         )}
                       </Flex>
                     </th>

@@ -1,24 +1,38 @@
 .table-cross {
-  border-radius: 6px;
   overflow: hidden;
   table-layout: fixed;
   width: 100%;
 
   th {
-    border: 1px solid transparent;
     text-align: left;
     padding: 8px 16px;
     user-select: all;
     font-weight: 500;
     color: #485264;
+    line-height: 16px;
+    &:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-child {
+      border-radius: 0 4px 4px 0;
+    }
   }
 
   thead tr {
-    background: #f4f4f7;
+    background: #f7f8fa;
   }
 
-  tbody tr:nth-child(odd) {
-    background: #fafafc;
+  tbody tr:nth-child(even) {
+    background: #fbfbfc;
+  }
+
+  tbody tr {
+    &:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-child {
+      border-radius: 0 4px 4px 0;
+    }
   }
 }
 

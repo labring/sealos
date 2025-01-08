@@ -30,7 +30,7 @@
   "Auto scaling": "弹性伸缩",
   "Balance": "余额",
   "Basic Config": "基础配置",
-  "Basic Information": "基本信息",
+  "Basic Information": "基础信息",
   "Can help you deploy any Docker image": "丰富的镜像仓库，支持任意 Docker 镜像",
   "Can not change storage path": "不允许修改挂载路径",
   "Cancel": "取消",
@@ -303,5 +303,6 @@
   "logNumber": "日志数量",
   "overview": "概览",
   "monitor": "监控",
-  "logs": "日志"
+  "logs": "日志",
+  "application_source": "来源"
 }
