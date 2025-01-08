@@ -298,5 +298,6 @@
   "equal": "Equal",
   "greater_than": "Greater than",
   "less_than": "Less than",
-  "value": "Value"
+  "value": "Value",
+  "logNumber": "Log Counts"
 }

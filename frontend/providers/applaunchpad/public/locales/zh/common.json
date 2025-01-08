@@ -299,5 +299,6 @@
   "equal": "等于",
   "greater_than": "大于",
   "less_than": "小于",
-  "value": "值"
+  "value": "值",
+  "logNumber": "日志数量"
 }
