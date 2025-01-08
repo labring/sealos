@@ -285,7 +285,7 @@ const Pods = ({
             {pods.map((app, i) => (
               <Tr key={app.podName}>
                 {columns.map((col) => (
-                  <Td key={col.key}>
+                  <Td key={col.key} border={'none'}>
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex

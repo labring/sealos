@@ -302,5 +302,6 @@
   "logNumber": "Log Counts",
   "overview": "Overview",
   "monitor": "Monitor",
-  "logs": "Logs"
+  "logs": "Logs",
+  "application_source": "Source"
 }
