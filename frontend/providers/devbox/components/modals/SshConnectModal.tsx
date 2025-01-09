@@ -246,13 +246,22 @@ const SshConnectModal = ({
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
               </Step>
             </Stepper>
-            <Box position={'relative'} w={'100%'} h={'30px'} mt={4}>
+            <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
               <Button
-                onClick={() => onSuccess()}
-                position={'absolute'}
-                right={0}
+                w={'100%'}
+                bg={'white'}
+                borderWidth={1}
+                borderRadius={'6px'}
+                color={'grayModern.600'}
                 size={'sm'}
-                p={'12px'}>
+                px={1}
+                borderColor={'grayModern.200'}
+                _hover={{
+                  color: 'brightBlue.600',
+                  borderColor: 'brightBlue.500'
+                }}
+                onClick={() => onClose()}
+                h={'36px'}>
                 {t('jetbrains_guide_confirm')}
               </Button>
             </Box>
@@ -403,6 +412,25 @@ const SshConnectModal = ({
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
               </Step>
             </Stepper>
+            <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
+              <Button
+                w={'100%'}
+                bg={'white'}
+                borderWidth={1}
+                borderRadius={'6px'}
+                color={'grayModern.600'}
+                size={'sm'}
+                px={1}
+                borderColor={'grayModern.200'}
+                _hover={{
+                  color: 'brightBlue.600',
+                  borderColor: 'brightBlue.500'
+                }}
+                onClick={() => onClose()}
+                h={'36px'}>
+                {t('jetbrains_guide_confirm')}
+              </Button>
+            </Box>
           </ModalBody>
         </ModalContent>
       </Modal>
