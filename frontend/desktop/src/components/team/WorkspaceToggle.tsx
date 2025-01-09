@@ -1,7 +1,6 @@
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import NsListItem from '@/components/team/NsListItem';
 import TeamCenter from '@/components/team/TeamCenter';
-import useAppStore from '@/stores/app';
 import useSessionStore from '@/stores/session';
 import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
@@ -16,13 +15,12 @@ import { CubeIcon, DesktopExchangeIcon } from '../icons';
 
 export default function WorkspaceToggle() {
   const disclosure = useDisclosure();
-  const { setWorkSpaceId, session } = useSessionStore();
+  const { session } = useSessionStore();
   const { t } = useTranslation();
   const user = session?.user;
   const ns_uid = user?.ns_uid || '';
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { init } = useAppStore();
   const mutation = useMutation({
     mutationFn: switchRequest,
     async onSuccess(data) {
