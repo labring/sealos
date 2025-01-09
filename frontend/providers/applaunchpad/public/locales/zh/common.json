@@ -297,8 +297,6 @@
   "search": "查询",
   "field_name": "字段名",
   "equal": "等于",
-  "greater_than": "大于",
-  "less_than": "小于",
   "value": "值",
   "logNumber": "日志数量",
   "overview": "概览",
@@ -312,5 +310,8 @@
   "piece": "个",
   "export_log": "导出日志",
   "no_data_available": "暂无数据",
-  "all": "全部"
+  "all": "全部",
+  "hour-singular": "小时",
+  "not_equal": "不等于",
+  "field_settings": "字段设置"
 }

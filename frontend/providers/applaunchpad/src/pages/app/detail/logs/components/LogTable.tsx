@@ -160,7 +160,7 @@ export const LogTable = () => {
                 }
               }}
             >
-              {t('logNumber')}
+              {t('field_settings')}
             </Button>
             <Flex alignItems={'center'} gap={2} mr={2}>
               <Text fontSize={'12px'} lineHeight={'16px'} color={'grayModern.500'}>

@@ -252,7 +252,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       compareValue: '30m'
     },
     {
-      label: `${t('recently')} 1 ${t('hour')}`,
+      label: `${t('recently')} 1 ${t('hour-singular')}`,
       value: getDateRange('1h'),
       compareValue: '1h'
     },
