@@ -60,6 +60,7 @@ export const defaultEditVal: AppEditType = {
   },
   storeList: [],
   volumes: [],
+  volumeMounts: [],
   gpu: {
     manufacturers: 'nvidia',
     type: '',

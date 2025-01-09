@@ -169,7 +169,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
             containers: [
               {
                 ...commonContainer,
-                volumeMounts: [...configMapVolumeMounts]
+                volumeMounts: [...(data?.volumeMounts || []), ...configMapVolumeMounts]
               }
             ],
             ...gpuMap,
@@ -202,6 +202,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               {
                 ...commonContainer,
                 volumeMounts: [
+                  ...(data?.volumeMounts || []),
                   ...configMapVolumeMounts,
                   ...data.storeList.map((item) => ({
                     name: item.name,

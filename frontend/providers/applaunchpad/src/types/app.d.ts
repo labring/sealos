@@ -10,7 +10,8 @@ import type {
   V1Pod,
   SinglePodMetrics,
   V1StatefulSet,
-  V1Volume
+  V1Volume,
+  V1VolumeMount
 } from '@kubernetes/client-node';
 import { MonitorDataResult } from './monitor';
 
@@ -110,6 +111,7 @@ export interface AppEditType {
   }[];
   labels: { [key: string]: string };
   volumes: V1Volume[];
+  volumeMounts: V1VolumeMount[];
   kind: 'deployment' | 'statefulset';
 }
 

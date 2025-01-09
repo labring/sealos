@@ -250,6 +250,19 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
   );
   const gpuNodeSelector = useGpu ? appDeploy?.spec?.template?.spec?.nodeSelector : null;
 
+  const getFilteredVolumeMounts = () => {
+    const volumeMounts = appDeploy?.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
+    const configMapKeys = Object.keys(deployKindsMap.ConfigMap?.data || {});
+    const storeNames =
+      deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates?.map(
+        (template) => template.metadata?.name
+      ) || [];
+
+    return volumeMounts.filter(
+      (mount) => !configMapKeys.includes(mount.name) && !storeNames.includes(mount.name)
+    );
+  };
+
   return {
     labels: appDeploy?.metadata?.labels || {},
     crYamlList: configs,
@@ -373,6 +386,7 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           value: Number(item.metadata?.annotations?.value || 0)
         }))
       : [],
+    volumeMounts: getFilteredVolumeMounts(),
     // keep original non-configMap type volumes
     volumes: appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => !volume.configMap) || [],
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
@@ -398,7 +412,8 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'gpu',
     'labels',
     'kind',
-    'volumes'
+    'volumes',
+    'volumeMounts'
   ];
 
   const res: Record<string, any> = {};
