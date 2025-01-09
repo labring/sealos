@@ -14,8 +14,6 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
-  console.log('deploy data', STORAGE_CLASSNAME, SEALOS_USER_DOMAINS);
-
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   const metadata = {
