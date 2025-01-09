@@ -46,16 +46,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         item?.metadata?.name &&
         !DBVersionMap[db].find((db) => db.id === item.metadata.name)
       ) {
-        DBVersionMap[db].push({
+        DBVersionMap[db].unshift({
           id: item.metadata.name,
           label: item.metadata.name
         });
       }
-    });
-
-    // Reverse version arrays for all database types before returning result
-    Object.keys(DBVersionMap).forEach((key) => {
-      DBVersionMap[key as keyof Response] = DBVersionMap[key as keyof Response].reverse();
     });
 
     jsonRes(res, {
