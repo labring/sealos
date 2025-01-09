@@ -2,8 +2,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app: launchpad-monitor
-  name: launchpad-monitor-config
+    app: service-vlogs
+  name: service-vlogs-config
   namespace: sealos
 data:
   config.yml: |
@@ -14,32 +14,29 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: launchpad-monitor
-  name: launchpad-monitor-deployment
+    app: service-vlogs
+  name: service-vlogs-deployment
   namespace: sealos
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: launchpad-monitor
+      app: service-vlogs
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: launchpad-monitor
+        app: service-vlogs
     spec:
       containers:
         - args:
             - /config/config.yml
           command:
             - /manager
-          env:
-            - name: VM_SERVICE_HOST
-              value: http://vmsingle-victoria-metrics-k8s-stack.vm.svc:8429
-          image: ghcr.io/labring/sealos-launchpad-service:latest
+          image: ghcr.io/labring/sealos-vlogs-service:latest
           imagePullPolicy: Always
-          name: launchpad-monitor
+          name: service-vlogs
           ports:
             - containerPort: 8428
               protocol: TCP
@@ -58,6 +55,9 @@ spec:
             runAsNonRoot: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+          env:
+            - name: WHITELIST_KUBERNETES_HOSTS
+              value: "https://usw.sailos.io:6443"
           volumeMounts:
             - mountPath: /config
               name: config-vol
@@ -66,15 +66,15 @@ spec:
       volumes:
         - configMap:
             defaultMode: 420
-            name: launchpad-monitor-config
+            name: service-vlogs-config
           name: config-vol
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: launchpad-monitor
-  name: launchpad-monitor
+    app: service-vlogs
+  name: service-vlogs
   namespace: sealos
 spec:
   ports:
@@ -83,4 +83,4 @@ spec:
       protocol: TCP
       targetPort: 8428
   selector:
-    app: launchpad-monitor
+    app: service-vlogs

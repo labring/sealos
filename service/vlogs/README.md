@@ -2,7 +2,7 @@
 
 ## Description
 
-restserver for database monitoring
+restserver for victoria logs
 
 ## Getting Started
 
@@ -11,7 +11,7 @@ restserver for database monitoring
 1. Build and push your image to the location specified by `IMG`:
 
 ```sh
-make docker-build docker-push IMG=<some-registry>/sealos-cloud-database-monitor:tag
+make docker-build docker-push IMG=<some-registry>/sealos-vlogs-service:latest
 ```
 
 2. Deploy the restserver:
@@ -19,7 +19,7 @@ make docker-build docker-push IMG=<some-registry>/sealos-cloud-database-monitor:
 ```sh
 kubectl apply -f deploy/manifests/
 ```
-  
+
 ### How it works
 
 To enable the database frontend application to retrieve monitoring data, you need to modify the environment variable `MONITOR_URL` of the frontend deployment to the corresponding address of the restserver.
