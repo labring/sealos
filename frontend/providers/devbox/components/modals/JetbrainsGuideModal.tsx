@@ -354,33 +354,6 @@ const JetBrainsGuideModal = ({
                 </Flex>
               )}
             </Box>
-            <Divider />
-            <Box py={6}>
-              <Text fontWeight={'bold'} fontSize={'lg'} mb={6}>
-                {t('jetbrains_guide_post_use')}
-              </Text>
-              <Text fontSize={'14px'} mb={2}>
-                {t('jetbrains_guide_post_connection')}
-              </Text>
-              <Button
-                leftIcon={<MyIcon name="upperRight" color={'grayModern.600'} w={'16px'} />}
-                bg={'white'}
-                color={'grayModern.600'}
-                borderRadius={'5px'}
-                borderWidth={1}
-                size={'sm'}
-                _hover={{
-                  color: 'brightBlue.600',
-                  '& svg': {
-                    color: 'brightBlue.600'
-                  }
-                }}
-                onClick={() => {
-                  window.open('https://www.jetbrains.com/remote-development/gateway/', '_blank')
-                }}>
-                {t('jetbrains_guide_documentation')}
-              </Button>
-            </Box>
             {onOpenSSHConnectModal && (
               <SshConnectModal
                 onClose={() => setOnOpenSSHConnectModal(false)}
