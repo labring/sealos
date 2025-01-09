@@ -112,8 +112,7 @@ export const Filter = () => {
                 value={jsonFormList[0]?.jsonOperator || '='}
                 list={[
                   { value: '=', label: t('equal') },
-                  { value: '>', label: t('greater_than') },
-                  { value: '<', label: t('less_than') },
+                  { value: '!=', label: t('not_equal') },
                   { value: 'contains', label: t('contains') },
                   { value: 'not_contains', label: t('not_contains') }
                 ]}

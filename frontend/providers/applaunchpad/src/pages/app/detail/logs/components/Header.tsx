@@ -61,7 +61,7 @@ export const Header = () => {
       {/* pod */}
       <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
-          Pod
+          Pods
         </Text>
         <AdvancedSelect
           height="32px"
@@ -78,7 +78,7 @@ export const Header = () => {
       {/* container */}
       <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
-          Container
+          Containers
         </Text>
         <AdvancedSelect
           height="32px"
