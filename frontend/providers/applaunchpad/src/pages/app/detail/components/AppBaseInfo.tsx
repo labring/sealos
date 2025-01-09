@@ -413,6 +413,9 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                           {item.value} Gi
                         </Box>
                       </Box>
+                      <Box fontSize={'12px'} color={'grayModern.600'}>
+                        {item.isShared ? t('shared') : ''}
+                      </Box>
                     </Flex>
                   ))}
                 </Box>

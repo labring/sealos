@@ -1128,17 +1128,19 @@ const Form = ({
                         w={'320px'}
                         height={'32px'}
                         variant={'outline'}
-                        onClick={() => setStoreEdit({ name: '', path: '', value: 1 })}
+                        onClick={() =>
+                          setStoreEdit({ name: '', path: '', value: 1, isShared: false })
+                        }
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
                         {t('Add volume')}
                       </Button>
-                      <Tip
+                      {/* <Tip
                         ml={4}
                         icon={<InfoOutlineIcon />}
                         size="sm"
                         text={t('Data cannot be communicated between multiple instances')}
-                      />
+                      /> */}
                     </Flex>
                     <Box mt={4} pl={`${labelWidth}px`}>
                       {storeList.map((item, index) => (
@@ -1157,7 +1159,7 @@ const Form = ({
                           >
                             <MyIcon name={'store'} />
                             <Box ml={4} flex={'1 0 0'} w={0}>
-                              <Box color={'myGray.900'} fontWeight={'bold'}>
+                              <Box color={'grayModern.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>
                               <Box
@@ -1167,6 +1169,9 @@ const Form = ({
                               >
                                 {item.value} Gi
                               </Box>
+                            </Box>
+                            <Box fontSize={'12px'} color={'grayModern.600'}>
+                              {item.isShared ? t('shared') : ''}
                             </Box>
                           </Flex>
                           <IconButton
@@ -1262,7 +1267,8 @@ const Form = ({
                 storeList.map((item) => ({
                   name: item.id === e.id ? e.name : item.name,
                   path: item.id === e.id ? e.path : item.path,
-                  value: item.id === e.id ? e.value : item.value
+                  value: item.id === e.id ? e.value : item.value,
+                  isShared: item.id === e.id ? e.isShared : item.isShared
                 }))
               );
             }

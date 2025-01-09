@@ -10,6 +10,7 @@ common:
   apiEnabled: false
   gpuEnabled: false
 launchpad:
+  storageClassName: "choosable"
   pvcStorageMax: 100
   eventAnalyze:
     enabled: false

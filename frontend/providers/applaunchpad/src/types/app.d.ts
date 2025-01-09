@@ -106,6 +106,7 @@ export interface AppEditType {
     name: string;
     path: string;
     value: number;
+    isShared: boolean;
   }[];
   labels: { [key: string]: string };
 }

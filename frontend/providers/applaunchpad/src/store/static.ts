@@ -11,6 +11,7 @@ export let UPLOAD_LIMIT = 50;
 export let DOWNLOAD_LIMIT = 100;
 export let PVC_STORAGE_MAX = 20;
 export let GPU_ENABLED = false;
+export let STORAGE_CLASSNAME = '';
 
 export const loadInitData = async () => {
   try {
@@ -26,6 +27,7 @@ export const loadInitData = async () => {
     DESKTOP_DOMAIN = res.DESKTOP_DOMAIN;
     PVC_STORAGE_MAX = res.PVC_STORAGE_MAX;
     GPU_ENABLED = res.GPU_ENABLED;
+    STORAGE_CLASSNAME = res.STORAGE_CLASSNAME;
 
     return {
       SEALOS_DOMAIN,
@@ -33,7 +35,8 @@ export const loadInitData = async () => {
       CURRENCY,
       FORM_SLIDER_LIST_CONFIG: res.FORM_SLIDER_LIST_CONFIG,
       DESKTOP_DOMAIN: res.DESKTOP_DOMAIN,
-      GPU_ENABLED
+      GPU_ENABLED,
+      STORAGE_CLASSNAME
     };
   } catch (error) {}
 

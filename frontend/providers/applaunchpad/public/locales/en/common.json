@@ -276,5 +276,8 @@
     "add_configmap": "Add Configmaps",
     "storage_path_placeholder": "For Example: /data"
   },
-  "guide_deploy_button": "Complete creation"
+  "guide_deploy_button": "Complete creation",
+  "shared_storage": "shared storage",
+  "data_can_be_communicated_between_multiple_instances": "Data can be shared across multiple instances",
+  "shared": "Shard"
 }

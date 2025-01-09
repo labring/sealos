@@ -370,7 +370,8 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
           name: item.metadata?.name || '',
           path: item.metadata?.annotations?.path || '',
-          value: Number(item.metadata?.annotations?.value || 0)
+          value: Number(item.metadata?.annotations?.value || 0),
+          isShared: item.spec?.accessModes?.[0] === 'ReadWriteMany' ? true : false
         }))
       : [],
     source: getAppSource(appDeploy)

@@ -15,27 +15,35 @@ import {
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
-  NumberDecrementStepper
+  NumberDecrementStepper,
+  Flex,
+  Switch,
+  Text
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { pathToNameFormat } from '@/utils/tools';
-import { MyTooltip } from '@sealos/ui';
+import { MyTooltip, Tip } from '@sealos/ui';
 import { PVC_STORAGE_MAX } from '@/store/static';
+import { InfoOutlineIcon } from '@chakra-ui/icons';
+import { getValueByPointer } from 'fast-json-patch';
+import { STORAGE_CLASSNAME } from '@/store/static';
 
 export type StoreType = {
   id?: string;
   name: string;
   path: string;
   value: number;
+  isShared: boolean;
 };
 
 const StoreModal = ({
   defaultValue = {
     name: '',
     path: '',
-    value: 1
+    value: 1,
+    isShared: false
   },
   listNames,
   isEditStore,
@@ -57,6 +65,8 @@ const StoreModal = ({
   const {
     register,
     setValue,
+
+    watch,
     handleSubmit,
     formState: { errors }
   } = useForm({
@@ -155,6 +165,28 @@ const StoreModal = ({
                     setValue('name', pathToNameFormat(e.target.value));
                   }
                 })}
+              />
+              {STORAGE_CLASSNAME && (
+                <Flex alignItems={'center'} mt={'8px'}>
+                  <Text fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
+                    {t('shared_storage')}
+                  </Text>
+                  <Switch
+                    ml={'8px'}
+                    isChecked={watch('isShared')}
+                    onChange={(e) => setValue('isShared', e.target.checked)}
+                  />
+                </Flex>
+              )}
+              <Tip
+                mt={'8px'}
+                icon={<InfoOutlineIcon />}
+                size="sm"
+                text={
+                  watch('isShared')
+                    ? t('data_can_be_communicated_between_multiple_instances')
+                    : t('Data cannot be communicated between multiple instances')
+                }
               />
             </MyFormControl>
           </ModalBody>

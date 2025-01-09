@@ -7,13 +7,15 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
+import { SEALOS_USER_DOMAINS, STORAGE_CLASSNAME } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  console.log('deploy data', STORAGE_CLASSNAME, SEALOS_USER_DOMAINS);
+
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   const metadata = {
@@ -125,7 +127,8 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
       name: store.name
     },
     spec: {
-      accessModes: ['ReadWriteOnce'],
+      ...(STORAGE_CLASSNAME && store.isShared ? { storageClassName: STORAGE_CLASSNAME } : {}),
+      accessModes: [STORAGE_CLASSNAME && store.isShared ? 'ReadWriteMany' : 'ReadWriteOnce'],
       resources: {
         requests: {
           storage: `${store.value}Gi`

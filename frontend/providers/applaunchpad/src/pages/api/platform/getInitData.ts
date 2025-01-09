@@ -19,6 +19,7 @@ export type Response = {
   DESKTOP_DOMAIN: string;
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
+  STORAGE_CLASSNAME: string;
 };
 
 export const defaultAppConfig: AppConfigType = {
@@ -39,6 +40,7 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
+    storageClassName: 'choosable',
     currencySymbol: Coin.shellCoin,
     pvcStorageMax: 20,
     eventAnalyze: {
@@ -99,7 +101,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain,
         PVC_STORAGE_MAX: global.AppConfig.launchpad.pvcStorageMax || 20,
-        GPU_ENABLED: global.AppConfig.common.gpuEnabled
+        GPU_ENABLED: global.AppConfig.common.gpuEnabled,
+        STORAGE_CLASSNAME: global.AppConfig.launchpad.storageClassName
       }
     });
   } catch (error) {
