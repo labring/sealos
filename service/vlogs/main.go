@@ -16,7 +16,7 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *vlogsServer.Config) {
-	var vs, err = vlogsServer.NewVMServer(c)
+	var vs, err = vlogsServer.NewVLogsServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
 		return

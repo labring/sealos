@@ -13,6 +13,9 @@ type Config struct {
 
 type ServeConfig struct {
 	ListenAddress string `yaml:"addr"`
+	Path          string `yaml:"path"`
+	Username      string `yaml:"username"`
+	Password      string `yaml:"password"`
 }
 
 func InitConfig(configPath string) (*Config, error) {
@@ -24,6 +27,5 @@ func InitConfig(configPath string) (*Config, error) {
 	if err := yaml.Unmarshal(configData, c); err != nil {
 		return nil, fmt.Errorf("could not parse config: %s", err)
 	}
-
 	return c, nil
 }

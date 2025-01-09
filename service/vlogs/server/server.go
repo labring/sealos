@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/service/pkg/auth"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,17 +14,20 @@ import (
 )
 
 type VLogsServer struct {
-	Config *Config
+	path     string
+	username string
+	password string
 }
 
-func NewVMServer(c *Config) (*VLogsServer, error) {
+func NewVLogsServer(config *Config) (*VLogsServer, error) {
 	vl := &VLogsServer{
-		Config: c,
+		path:     config.Server.Path,
+		username: config.Server.Username,
+		password: config.Server.Password,
 	}
 	return vl, nil
 }
 
-// 获取客户端请求的信息
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
 	switch {
@@ -38,21 +40,23 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) {
-	kubeConfig, namespace, query, err := vl.ParseParamsRequest(req)
+	//kubeConfig, namespace, query, err := vl.ParseParamsRequest(req)
+	_, _, query, err := vl.generateParamsRequest(req)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Bad request (%s)", err), http.StatusBadRequest)
 		log.Printf("Bad request (%s)\n", err)
 		return
 	}
 
-	err = auth.Authenticate(namespace, kubeConfig)
-	if err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
-		log.Printf("Authentication failed (%s)\n", err)
-		return
-	}
+	//err = auth.Authenticate(namespace, kubeConfig)
+	//if err != nil {
+	//	http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+	//	log.Printf("Authentication failed (%s)\n", err)
+	//	return
+	//}
 
-	err = request.QueryLogsByParams(query, rw)
+	fmt.Println("query: " + query)
+	err = request.QueryLogsByParams(vl.path, vl.username, vl.password, query, rw)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
 		log.Printf("Query failed (%s)\n", err)
@@ -61,7 +65,7 @@ func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Reque
 	return
 }
 
-func (vl *VLogsServer) ParseParamsRequest(req *http.Request) (string, string, string, error) {
+func (vl *VLogsServer) generateParamsRequest(req *http.Request) (string, string, string, error) {
 	kubeConfig := req.Header.Get("Authorization")
 	if config, err := url.PathUnescape(kubeConfig); err == nil {
 		kubeConfig = config
@@ -82,78 +86,110 @@ func (vl *VLogsServer) ParseParamsRequest(req *http.Request) (string, string, st
 	case "":
 		return "", "", "", errors.New("invalid JSON data,jsonMode not found")
 	case "false":
-		query, err = parserKeywordQuery(vlogsReq)
+		query, err = generateKeywordQuery(vlogsReq)
 		if err != nil {
 			return "", "", "", err
 		}
 	case "true":
-		query, err = parserJsonQuery(vlogsReq)
+		query, err = generateJsonQuery(vlogsReq)
 		if err != nil {
 			return "", "", "", err
 		}
 	default:
 		return "", "", "", errors.New("invalid JSON data,jsonMode value err")
 	}
+	return kubeConfig, vlogsReq.Namespace, query, nil
 }
 
-func parserKeywordQuery(req *api.VlogsRequest) (string, error) {
+func generateKeywordQuery(req *api.VlogsRequest) (string, error) {
 	var builder strings.Builder
 	for _, key := range req.Keyword {
 		builder.WriteString(key)
 		builder.WriteString(" ")
 	}
-
+	stream, err := generateStreamQuery(req)
+	if err != nil {
+		return "", err
+	}
+	return builder.String() + stream + generateCommonQuery(req) + generateDropQuery(), nil
 }
 
-func parserJsonQuery(req *api.VlogsRequest) (string, error) {
-
-}
-
-func paraseQuery(req *api.VlogsRequest) {
+func generateJsonQuery(req *api.VlogsRequest) (string, error) {
 	var builder strings.Builder
-
+	builder.WriteString(" | unpack_json")
+	if len(req.JsonQuery) == 0 {
+		return builder.String(), nil
+	}
+	for _, jsonQuery := range req.JsonQuery {
+		var item string
+		switch jsonQuery.Mode {
+		case "=":
+			item = fmt.Sprintf("| %s:=%s ", jsonQuery.Key, jsonQuery.Value)
+		case "!=":
+			item = fmt.Sprintf("| %s:(!=%s) ", jsonQuery.Key, jsonQuery.Value)
+		case "~":
+			item = fmt.Sprintf("| %s:%s ", jsonQuery.Key, jsonQuery.Value)
+		default:
+			return "", errors.New("invalid JSON data,jsonMode value err")
+		}
+		builder.WriteString(item)
+	}
+	return "", nil
 }
 
-func GetQuery(query *api.VlogsRequest) (string, error) {
+func generateStreamQuery(req *api.VlogsRequest) (string, error) {
 	var builder strings.Builder
-
-	// 添加关键词
-	builder.WriteString(query.Keyword)
-	builder.WriteString(" ")
-
-	builder.WriteString(fmt.Sprintf("{namespace=%s}", query.NS))
-	builder.WriteString(" ")
-
-	// 添加 pod
-	if query.Pod != "" {
-		builder.WriteString(fmt.Sprintf("pod:%s", query.Pod))
-		builder.WriteString(" ")
+	if len(req.Pod) == 0 && len(req.Container) == 0 {
+		item := fmt.Sprintf(`{namespace="%s"}`, req.Namespace)
+		builder.WriteString(item)
+		return builder.String(), nil
 	}
-
-	// 添加时间
-	if query.Time == "" {
-		builder.WriteString(defaultTime)
-	} else {
-		builder.WriteString("_time:")
-		builder.WriteString(query.Time)
+	if len(req.Pod) == 0 {
+		for i, container := range req.Container {
+			item := fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace)
+			builder.WriteString(item)
+			if i != len(req.Pod)-1 {
+				builder.WriteString(" OR")
+			}
+		}
+		return builder.String(), nil
 	}
-	builder.WriteString(" ")
-
-	// JSON 模式
-	if query.Json == "true" {
-		builder.WriteString("| unpack_json")
-		builder.WriteString(" ")
+	if len(req.Container) == 0 {
+		for i, pod := range req.Pod {
+			item := fmt.Sprintf(`{namespace="%s",pod="%s"}`, req.Namespace, pod)
+			builder.WriteString(item)
+			if i != len(req.Pod)-1 {
+				builder.WriteString(" OR")
+			}
+		}
+		return builder.String(), nil
 	}
-
-	// 添加 limit
-	if query.Limit == "" {
-		builder.WriteString(defaultLimit)
-	} else {
-		builder.WriteString("| limit ")
-		builder.WriteString(query.Limit)
+	for _, container := range req.Container {
+		for j, pod := range req.Pod {
+			item := fmt.Sprintf(`{container="%s",namespace="%s",pod="%s"}`, container, req.Namespace, pod)
+			builder.WriteString(item)
+			if j != len(req.Pod)-1 {
+				builder.WriteString(" OR")
+			}
+		}
 	}
-	builder.WriteString(" ")
-
-	//添加field
 	return builder.String(), nil
+}
+
+func generateCommonQuery(req *api.VlogsRequest) string {
+	var builder strings.Builder
+	if req.StderrMode == "true" {
+		item := fmt.Sprintf(` _time:%s app:="%s" stream:="stderr" | limit %s `, req.Time, req.App, req.Limit)
+		builder.WriteString(item)
+	} else {
+		item := fmt.Sprintf(` _time:%s app:="%s" | limit %s `, req.Time, req.App, req.Limit)
+		builder.WriteString(item)
+	}
+	return builder.String()
+}
+
+func generateDropQuery() string {
+	var builder strings.Builder
+	builder.WriteString("| Drop _stream_id,_stream,app,container,job,namespace,node,pod ")
+	return builder.String()
 }

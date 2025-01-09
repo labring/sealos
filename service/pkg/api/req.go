@@ -71,21 +71,22 @@ type Stats struct {
 }
 
 type JsonQuery struct {
-	key   string
-	mode  string
-	value string
+	Key   string
+	Mode  string
+	Value string
 }
 
 type VlogsRequest struct {
-	Time      string
-	Namespace string
-	App       string
-	Pod       string
-	Container string
-	Limit     string
-	JsonMode  string
-	Keyword   []string
-	JsonQuery []JsonQuery
+	Time       string
+	Namespace  string
+	App        string
+	Limit      string
+	JsonMode   string
+	StderrMode string
+	Pod        []string
+	Container  []string
+	Keyword    []string
+	JsonQuery  []JsonQuery
 }
 
 var (

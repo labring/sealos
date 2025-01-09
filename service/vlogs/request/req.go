@@ -6,42 +6,26 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 )
 
-func generateReq(query string) (*http.Request, error) {
-	//地址
-	vlogsHost := GetVLogsServerFromEnv()
-	vlogsHost = "https://vvvvvlogs.192.168.10.35.nip.io"
-	//if vlogsHost == "" {
-	//	return nil, api.ErrNoVMHost
-	//}
-	baseURL, err := url.Parse(vlogsHost + "/select/logsql/query")
+func generateReq(path string, username string, password string, query string) (*http.Request, error) {
+	baseURL, err := url.Parse(path + "/select/logsql/query")
 	if err != nil {
-		return nil, fmt.Errorf("无法解析 API URL: %v", err)
+		return nil, fmt.Errorf("can not parser API URL: %v", err)
 	}
-
-	//参数
 	params := url.Values{}
 	params.Add("query", query)
 	baseURL.RawQuery = params.Encode()
-
-	//创建请求
 	req, err := http.NewRequest("GET", baseURL.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("创建 HTTP 请求失败: %v", err)
+		return nil, fmt.Errorf("create HTTP req error: %v", err)
 	}
 
-	//认证
-	username, password := GetVLogsUsernameAndPasswordFromEnv()
-	username = "admin"
-	password = "sealos@123#@!"
 	req.SetBasicAuth(username, password)
-
 	return req, nil
 }
 
-func QueryLogsByParams(query string, rw http.ResponseWriter) error {
+func QueryLogsByParams(path string, username string, password string, query string, rw http.ResponseWriter) error {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -49,20 +33,19 @@ func QueryLogsByParams(query string, rw http.ResponseWriter) error {
 			},
 		},
 	}
-	req, err := generateReq(query)
+	req, err := generateReq(path, username, password, query)
 	if err != nil {
 		return err
 	}
-	// 发起请求
+	fmt.Printf("URL: %s\n", req.URL.String())
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("HTTP 请求失败: %v", err)
+		return fmt.Errorf("HTTP req error: %v", err)
 	}
 	defer resp.Body.Close()
 
-	// 检查 HTTP 状态码
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("请求失败，状态码: %d", resp)
+		return fmt.Errorf("res error,err info: %d", resp)
 	} else {
 		_, err := io.Copy(rw, resp.Body)
 		if err != nil {
@@ -70,12 +53,4 @@ func QueryLogsByParams(query string, rw http.ResponseWriter) error {
 		}
 	}
 	return nil
-}
-
-func GetVLogsUsernameAndPasswordFromEnv() (string, string) {
-	return os.Getenv("VLOGS_SERVICE_USERNAME"), os.Getenv("VLOGS_SERVICE_PASSWORD")
-}
-
-func GetVLogsServerFromEnv() string {
-	return os.Getenv("VLOGS_SERVICE_HOST")
 }
