@@ -238,6 +238,8 @@ export const MOCK_PODS: PodDetailType[] = [
 ];
 
 export const MOCK_APP_DETAIL: AppDetailType = {
+  kind: 'deployment',
+  volumes: [],
   crYamlList: [],
   id: '4bd50c41-149e-4da5-89d5-0308b9dd75c6',
   createTime: '2022/1/22',

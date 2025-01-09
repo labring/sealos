@@ -77,13 +77,13 @@ const EditEnvs = ({
             {t('Environment Variables')}
           </Box>
           <Textarea
+            whiteSpace={'pre-wrap'}
             h={'350px'}
             maxH={'100%'}
             value={inputVal}
             resize={'both'}
             placeholder={t('Env Placeholder') || ''}
             overflowX={'auto'}
-            whiteSpace={inputVal === '' ? 'pre-wrap' : 'nowrap'}
             onChange={(e) => setInputVal(e.target.value)}
           />
         </ModalBody>

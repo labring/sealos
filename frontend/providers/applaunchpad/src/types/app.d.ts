@@ -9,7 +9,8 @@ import type {
   V1HorizontalPodAutoscaler,
   V1Pod,
   SinglePodMetrics,
-  V1StatefulSet
+  V1StatefulSet,
+  V1Volume
 } from '@kubernetes/client-node';
 import { MonitorDataResult } from './monitor';
 
@@ -108,6 +109,8 @@ export interface AppEditType {
     value: number;
   }[];
   labels: { [key: string]: string };
+  volumes: V1Volume[];
+  kind: 'deployment' | 'statefulset';
 }
 
 export type AppEditSyncedFields = Pick<

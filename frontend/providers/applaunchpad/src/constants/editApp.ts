@@ -23,6 +23,7 @@ export const editModeMap = (isEdit: boolean) => {
 };
 
 export const defaultEditVal: AppEditType = {
+  kind: 'deployment',
   appName: 'hello-world',
   imageName: 'nginx',
   runCMD: '',
@@ -58,6 +59,7 @@ export const defaultEditVal: AppEditType = {
     serverAddress: 'docker.io'
   },
   storeList: [],
+  volumes: [],
   gpu: {
     manufacturers: 'nvidia',
     type: '',

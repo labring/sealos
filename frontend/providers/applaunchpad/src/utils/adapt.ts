@@ -373,6 +373,9 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           value: Number(item.metadata?.annotations?.value || 0)
         }))
       : [],
+    // keep original non-configMap type volumes
+    volumes: appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => !volume.configMap) || [],
+    kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
     source: getAppSource(appDeploy)
   };
 };
@@ -393,7 +396,9 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'secret',
     'storeList',
     'gpu',
-    'labels'
+    'labels',
+    'kind',
+    'volumes'
   ];
 
   const res: Record<string, any> = {};

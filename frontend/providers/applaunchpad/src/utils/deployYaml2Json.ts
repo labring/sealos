@@ -14,6 +14,8 @@ import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
+  console.log(data, 'data');
+
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
   const metadata = {
@@ -171,7 +173,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               }
             ],
             ...gpuMap,
-            volumes: [...configMapVolumes]
+            volumes: [...(data?.volumes || []), ...configMapVolumes]
           }
         }
       }
@@ -209,7 +211,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               }
             ],
             ...gpuMap,
-            volumes: [...configMapVolumes]
+            volumes: [...(data?.volumes || []), ...configMapVolumes]
           }
         },
         volumeClaimTemplates: storageTemplates
