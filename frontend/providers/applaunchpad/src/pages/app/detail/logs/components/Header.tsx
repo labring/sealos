@@ -15,23 +15,30 @@ import { useState } from 'react';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 import MyIcon from '@/components/Icon';
+import { useAppStore } from '@/store/app';
 import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
 export const Header = () => {
   const { t } = useTranslation();
+  const { appDetailPods } = useAppStore();
+
+  const currentPodList = appDetailPods.map((pod) => ({
+    value: pod.podName,
+    label: pod.podName
+  }));
+  const currentContainerList = appDetailPods
+    .flatMap((pod) => pod.spec?.containers || [])
+    .map((container) => ({
+      value: container.name,
+      label: container.name
+    }));
 
   const [refreshInterval, setRefreshInterval] = useState(0);
 
-  const [podList, setPodList] = useState<ListItem[]>([
-    { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
-    { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
-  ]);
-  const [containerList, setContainerList] = useState<ListItem[]>([
-    { value: 'hello-sql-postgresql-0', label: 'hello-sql-postgresql-0' },
-    { value: 'hello-sql-postgresql-1', label: 'hello-sql-postgresql-1' }
-  ]);
+  const [podList, setPodList] = useState<ListItem[]>(currentPodList);
+  const [containerList, setContainerList] = useState<ListItem[]>(currentContainerList);
 
   const refreshIntervalList = [
     { value: 0, label: t('close') },
