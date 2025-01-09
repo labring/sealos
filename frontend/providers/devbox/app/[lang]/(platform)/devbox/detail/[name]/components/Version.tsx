@@ -25,11 +25,11 @@ import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate
 import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal'
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal'
 import AppSelectModal from '@/components/modals/AppSelectModal'
+import useReleaseDriver from '@/hooks/useReleaseDriver'
 import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
 import { parseTemplateConfig } from '@/utils/tools'
-import useReleaseDriver from '@/hooks/useReleaseDriver'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 
@@ -260,7 +260,7 @@ const Version = () => {
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group isDisabled={item?.status?.value !== 'Success'}>
                 <MyIcon
                   name={'more'}
                   color={'grayModern.600'}
