@@ -5,8 +5,16 @@ import MyIcon from './Icon'
 import Code from './Code'
 import { useCopyData } from '@/utils/tools'
 
-const ScriptCode = ({ platform, script }: { platform: string; script: string }) => {
-  const [onOpenScripts, setOnOpenScripts] = useState(false)
+const ScriptCode = ({
+  platform,
+  script,
+  defaultOpen = false
+}: {
+  platform: string
+  script: string
+  defaultOpen?: boolean
+}) => {
+  const [onOpenScripts, setOnOpenScripts] = useState(defaultOpen)
 
   const { copyData } = useCopyData()
 
@@ -18,7 +26,8 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
       border={'1px solid'}
       borderColor={'grayModern.200'}
       flexDirection={'column'}
-      w={'585px'}>
+      w={'585px'}
+      maxH={'400px'}>
       <Flex justifyContent={'space-between'} alignItems={'center'} w={'full'}>
         <Box>
           <Button
@@ -66,7 +75,7 @@ const ScriptCode = ({ platform, script }: { platform: string; script: string }) 
         </Button>
       </Flex>
       <Collapse in={onOpenScripts} animateOpacity>
-        <Box pt={2} pl={3}>
+        <Box pt={2} pl={3} overflowY={'auto'} h={'100%'}>
           <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
         </Box>
       </Collapse>

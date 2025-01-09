@@ -154,21 +154,37 @@ const SshConnectModal = ({
                       color={'grayModern.900'}
                       fontWeight={400}
                       lineHeight={'20px'}>
-                      {t.rich('jetbrains_guide_one_click_setup_desc', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}>
-                            {chunks}
-                          </Text>
-                        ),
-                        lightColor: (chunks) => (
-                          <Text color={'grayModern.600'} display={'inline-block'}>
-                            {chunks}
-                          </Text>
-                        )
-                      })}
+                      {script.platform === 'Windows'
+                        ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            ),
+                            lightColor: (chunks) => (
+                              <Text color={'grayModern.600'} display={'inline-block'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })
+                        : t.rich('jetbrains_guide_one_click_setup_desc', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            ),
+                            lightColor: (chunks) => (
+                              <Text color={'grayModern.600'} display={'inline-block'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
                     </Box>
                     <Button
                       leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
@@ -217,6 +233,7 @@ const SshConnectModal = ({
                   <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
                     <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                     <ScriptCode
+                      defaultOpen={true}
                       platform={script.platform}
                       script={sshConnectCommand(jetbrainsGuideData.configHost)}
                     />
@@ -229,6 +246,16 @@ const SshConnectModal = ({
                 <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
               </Step>
             </Stepper>
+            <Box position={'relative'} w={'100%'} h={'30px'} mt={4}>
+              <Button
+                onClick={() => onSuccess()}
+                position={'absolute'}
+                right={0}
+                size={'sm'}
+                p={'12px'}>
+                {t('jetbrains_guide_confirm')}
+              </Button>
+            </Box>
 
             <Divider my={6} />
             {/* step-by-step */}
@@ -363,6 +390,7 @@ const SshConnectModal = ({
                   <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
                     <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                     <ScriptCode
+                      defaultOpen={true}
                       platform={script.platform}
                       script={sshConnectCommand(jetbrainsGuideData.configHost)}
                     />
