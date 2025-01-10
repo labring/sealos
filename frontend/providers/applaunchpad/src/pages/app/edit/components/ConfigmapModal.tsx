@@ -94,6 +94,7 @@ const ConfigmapModal = ({
                 {t('file value')}{' '}
               </Box>
               <Textarea
+                whiteSpace={'pre-wrap'}
                 rows={10}
                 resize={'both'}
                 {...register('value', {

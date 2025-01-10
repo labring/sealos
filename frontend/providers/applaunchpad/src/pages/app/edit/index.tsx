@@ -47,9 +47,9 @@ export const formData2Yamls = (
     filename: 'service.yaml',
     value: json2Service(data)
   },
-  !!data.storeList?.length
+  data.kind === 'statefulset' || data.storeList?.length > 0
     ? {
-        filename: 'statefulSet.yaml',
+        filename: 'statefulset.yaml',
         value: json2DeployCr(data, 'statefulset')
       }
     : {

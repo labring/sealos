@@ -16,7 +16,10 @@ let retryGetPrice = 3;
 let retryVersion = 3;
 let retryGetEnv = 3;
 export let DBVersionMap: DBVersionMapType = {
-  [DBTypeEnum.postgresql]: [{ id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }],
+  [DBTypeEnum.postgresql]: [
+    { id: 'postgresql-12.14.0', label: 'postgresql-12.14.0' },
+    { id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }
+  ],
   [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0', label: 'mongodb-5.0' }],
   [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }],
   [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }],
