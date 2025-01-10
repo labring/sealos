@@ -9,7 +9,6 @@ import {
 import { GetDevboxByNameReturn } from '@/types/adapt'
 import { DBListItemType, KbPgClusterType } from '@/types/cluster'
 import {
-  DevboxDetailType,
   DevboxDetailTypeV2,
   DevboxListItemType,
   DevboxListItemTypeV2,
@@ -70,10 +69,10 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [KBDevboxTypeV2, {
     name: devbox.metadata.name || 'devbox',
     template,
     status:
-      devbox.status.phase && devboxStatusMap[devbox.status.phase]
+      devbox.status?.phase && devboxStatusMap[devbox.status.phase]
         ? devboxStatusMap[devbox.status.phase]
         : devboxStatusMap.Error,
-    sshPort: devbox.status.network.nodePort,
+    sshPort: devbox.status?.network.nodePort || 65535,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
@@ -88,60 +87,25 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [KBDevboxTypeV2, {
       yData: new Array(30).fill('0')
     },
     lastTerminatedReason:
-      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
+      devbox.status ?
+        devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+          ? devbox.status.state.waiting
+            ? devbox.status.state.waiting.reason
+            : devbox.status.state.terminated
+              ? devbox.status.state.terminated.reason
+              : ''
+          : ''
         : ''
   }
 }
-export const adaptDevboxDetail = (
-  devbox: KBDevboxType & { portInfos: any[] }
-): DevboxDetailType => {
-  return {
-    id: devbox.metadata?.uid || ``,
-    name: devbox.metadata.name || 'devbox',
-    runtimeType: devbox.spec.runtimeType || '',
-    runtimeVersion: devbox.spec.runtimeRef.name || '',
-    status:
-      devbox.status.phase && devboxStatusMap[devbox.status.phase]
-        ? devboxStatusMap[devbox.status.phase]
-        : devboxStatusMap.Error,
-    sshPort: devbox.status.network.nodePort,
-    isPause: devbox.status.phase === 'Stopped',
-    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    cpu: cpuFormatToM(devbox.spec.resource.cpu),
-    memory: memoryFormatToMi(devbox.spec.resource.memory),
-    usedCpu: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    usedMemory: {
-      name: '',
-      xData: new Array(30).fill(0),
-      yData: new Array(30).fill('0')
-    },
-    networks: devbox.portInfos,
-    lastTerminatedReason:
-      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
-        : ''
-  }
-}
+
 export const adaptDevboxDetailV2 = (
   [devbox, portInfos, template]: GetDevboxByNameReturn
 ): DevboxDetailTypeV2 => {
   console.log('adaptDevboxDetailV2')
-  const status =       devbox.status.phase && devboxStatusMap[devbox.status.phase]
-  ? devboxStatusMap[devbox.status.phase]
-  : devboxStatusMap.Error
+  const status = devbox.status?.phase && devboxStatusMap[devbox.status.phase]
+    ? devboxStatusMap[devbox.status.phase]
+    : devboxStatusMap.Error
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',
@@ -153,8 +117,8 @@ export const adaptDevboxDetailV2 = (
     image: template.image,
     iconId: template.templateRepository.iconId || '',
     status,
-    sshPort: devbox.status.network.nodePort,
-    isPause: devbox.status.phase === 'Stopped',
+    sshPort: devbox.status?.network.nodePort || 65535,
+    isPause: devbox.status?.phase === 'Stopped',
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
@@ -170,12 +134,14 @@ export const adaptDevboxDetailV2 = (
     },
     networks: portInfos || [],
     lastTerminatedReason:
-      devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
-        ? devbox.status.state.waiting
-          ? devbox.status.state.waiting.reason
-          : devbox.status.state.terminated
-            ? devbox.status.state.terminated.reason
-            : ''
+      devbox.status ?
+        devbox.status.lastState?.terminated && devbox.status.lastState.terminated.reason === 'Error'
+          ? devbox.status.state.waiting
+            ? devbox.status.state.waiting.reason
+            : devbox.status.state.terminated
+              ? devbox.status.state.terminated.reason
+              : ''
+          : ''
         : ''
   }
 }

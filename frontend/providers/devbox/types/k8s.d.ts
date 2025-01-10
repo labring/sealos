@@ -59,7 +59,7 @@ export type KBDevboxTypeV2 = {
     creationTimestamp: string
   }
   spec: KBDevboxSpecV2
-  status: {
+  status?: {
     lastState: {
       terminated?: {
         containerID: string
