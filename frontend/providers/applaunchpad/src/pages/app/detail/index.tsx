@@ -72,7 +72,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 
   return (
-    <DetailLayout appName={appName}>
+    <DetailLayout appName={appName} key={'detail'}>
       <Flex
         flexDirection={'column'}
         minH={'100%'}
