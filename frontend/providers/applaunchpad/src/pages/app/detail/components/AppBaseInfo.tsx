@@ -407,7 +407,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                   borderRadius={'md'}
                   overflow={'hidden'}
                   bg={'#FFF'}
-                  {...(app.storeList.length > 0
+                  {...(app.storeList.length > 0 || persistentVolumes.length > 0
                     ? {
                         mb: 4,
                         border: theme.borders.base
