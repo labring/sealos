@@ -26,7 +26,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
   );
 
   return (
-    <DetailLayout appName={appName}>
+    <DetailLayout appName={appName} key={'monitor'}>
       <Box flex={1} bg="white" borderRadius="lg" p={4}>
         Monitor Page Content
       </Box>
