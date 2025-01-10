@@ -1,14 +1,16 @@
-// pages/app/detail/monitor.tsx
-import { Box } from '@chakra-ui/react';
 import DetailLayout from '@/components/layouts/DetailLayout';
-import { serviceSideProps } from '@/utils/i18n';
-import { useAppStore } from '@/store/app';
-import { useQuery } from '@tanstack/react-query';
 import { useToast } from '@/hooks/useToast';
+import { useAppStore } from '@/store/app';
+import { serviceSideProps } from '@/utils/i18n';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import Header from '@/components/Monitor/Header';
 
 export default function MonitorPage({ appName }: { appName: string }) {
   const { toast } = useToast();
   const { appDetail } = useAppStore();
+  const { t } = useTranslation();
 
   const { data: monitorData } = useQuery(
     ['monitor-data', appName],
@@ -27,8 +29,8 @@ export default function MonitorPage({ appName }: { appName: string }) {
 
   return (
     <DetailLayout appName={appName} key={'monitor'}>
-      <Box flex={1} bg="white" borderRadius="lg" p={4}>
-        Monitor Page Content
+      <Box flex={1} bg="white" borderRadius="8px" py={'16px'} px={'24px'}>
+        <Header />
       </Box>
     </DetailLayout>
   );
