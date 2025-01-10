@@ -233,6 +233,7 @@ const SshConnectModal = ({
                   <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
                     <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                     <ScriptCode
+                      oneLine={true}
                       defaultOpen={true}
                       platform={script.platform}
                       script={sshConnectCommand(jetbrainsGuideData.configHost)}
@@ -399,6 +400,7 @@ const SshConnectModal = ({
                   <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
                     <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                     <ScriptCode
+                      oneLine={true}
                       defaultOpen={true}
                       platform={script.platform}
                       script={sshConnectCommand(jetbrainsGuideData.configHost)}

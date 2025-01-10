@@ -8,11 +8,13 @@ import { useCopyData } from '@/utils/tools'
 const ScriptCode = ({
   platform,
   script,
-  defaultOpen = false
+  defaultOpen = false,
+  oneLine = false
 }: {
   platform: string
   script: string
   defaultOpen?: boolean
+  oneLine?: boolean
 }) => {
   const [onOpenScripts, setOnOpenScripts] = useState(defaultOpen)
 
@@ -25,10 +27,10 @@ const ScriptCode = ({
       borderRadius={'6px'}
       border={'1px solid'}
       borderColor={'grayModern.200'}
-      flexDirection={'column'}
+      flexDirection={oneLine ? 'row' : 'column'}
       w={'585px'}
       maxH={'400px'}>
-      <Flex justifyContent={'space-between'} alignItems={'center'} w={'full'}>
+      <Flex justifyContent={oneLine ? 'null' : 'space-between'} alignItems={'center'} w={'full'}>
         <Box>
           <Button
             onClick={() => setOnOpenScripts(!onOpenScripts)}
@@ -37,15 +39,17 @@ const ScriptCode = ({
             boxShadow={'none'}
             color={'grayModern.900'}
             fontWeight={400}
-            leftIcon={
-              <MyIcon
-                name="arrowRight"
-                color={'grayModern.500'}
-                w={'16px'}
-                transform={onOpenScripts ? 'rotate(90deg)' : 'rotate(0)'}
-                transition="transform 0.2s ease"
-              />
-            }
+            {...(!oneLine && {
+              leftIcon: (
+                <MyIcon
+                  name="arrowRight"
+                  color={'grayModern.500'}
+                  w={'16px'}
+                  transform={onOpenScripts ? 'rotate(90deg)' : 'rotate(0)'}
+                  transition="transform 0.2s ease"
+                />
+              )
+            })}
             _hover={{
               color: 'brightBlue.600',
               '& svg': {
@@ -55,9 +59,18 @@ const ScriptCode = ({
             {platform === 'Windows' ? 'PowerShell' : 'Bash'}
           </Button>
         </Box>
+        {oneLine && (
+          <Box pt={2} overflowY={'auto'} h={'100%'}>
+            <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
+          </Box>
+        )}
         <Button
           bg={'transparent'}
           border={'none'}
+          {...(oneLine && {
+            position: 'absolute',
+            right: 2
+          })}
           boxShadow={'none'}
           color={'grayModern.900'}
           _hover={{
@@ -74,11 +87,13 @@ const ScriptCode = ({
           />
         </Button>
       </Flex>
-      <Collapse in={onOpenScripts} animateOpacity>
-        <Box pt={2} pl={3} overflowY={'auto'} h={'100%'}>
-          <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
-        </Box>
-      </Collapse>
+      {!oneLine && (
+        <Collapse in={onOpenScripts} animateOpacity>
+          <Box pt={2} pl={3} overflowY={'auto'} h={'100%'}>
+            <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
+          </Box>
+        </Collapse>
+      )}
     </Flex>
   )
 }
