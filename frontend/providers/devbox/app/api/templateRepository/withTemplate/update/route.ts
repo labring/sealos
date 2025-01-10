@@ -74,9 +74,10 @@ export async function POST(req: NextRequest) {
     }
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
+        isDeleted: false,
         uid: query.templateRepositoryUid,
+        regionUid: getRegionUid(),
         organizationUid: payload.organizationUid,
-        regionUid: getRegionUid()
       },
       select: {
         uid: true,
