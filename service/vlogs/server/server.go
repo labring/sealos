@@ -40,7 +40,7 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) {
-	//kubeConfig, namespace, query, err := vl.ParseParamsRequest(req)
+	//kubeConfig, namespace, query, err := vl.generateParamsRequest(req)
 	_, _, query, err := vl.generateParamsRequest(req)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Bad request (%s)", err), http.StatusBadRequest)
@@ -103,22 +103,24 @@ func (vl *VLogsServer) generateParamsRequest(req *http.Request) (string, string,
 
 func generateKeywordQuery(req *api.VlogsRequest) (string, error) {
 	var builder strings.Builder
-	for _, key := range req.Keyword {
-		builder.WriteString(key)
-		builder.WriteString(" ")
-	}
+	builder.WriteString(req.Keyword)
+	builder.WriteString(" ")
 	stream, err := generateStreamQuery(req)
 	if err != nil {
 		return "", err
 	}
-	return builder.String() + stream + generateCommonQuery(req) + generateDropQuery(), nil
+	return builder.String() + stream + generateCommonQuery(req) + generateDropQuery() + generateNumberQuery(req), nil
 }
 
 func generateJsonQuery(req *api.VlogsRequest) (string, error) {
+	stream, err := generateStreamQuery(req)
+	if err != nil {
+		return "", err
+	}
 	var builder strings.Builder
 	builder.WriteString(" | unpack_json")
 	if len(req.JsonQuery) == 0 {
-		return builder.String(), nil
+		return stream + generateCommonQuery(req) + builder.String() + generateDropQuery() + generateNumberQuery(req), nil
 	}
 	for _, jsonQuery := range req.JsonQuery {
 		var item string
@@ -134,7 +136,7 @@ func generateJsonQuery(req *api.VlogsRequest) (string, error) {
 		}
 		builder.WriteString(item)
 	}
-	return "", nil
+	return stream + generateCommonQuery(req) + builder.String() + generateDropQuery() + generateNumberQuery(req), nil
 }
 
 func generateStreamQuery(req *api.VlogsRequest) (string, error) {
@@ -178,11 +180,15 @@ func generateStreamQuery(req *api.VlogsRequest) (string, error) {
 
 func generateCommonQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
+	item := fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+	builder.WriteString(item)
 	if req.StderrMode == "true" {
-		item := fmt.Sprintf(` _time:%s app:="%s" stream:="stderr" | limit %s `, req.Time, req.App, req.Limit)
+		item := fmt.Sprintf(` stream:="stderr" `)
 		builder.WriteString(item)
-	} else {
-		item := fmt.Sprintf(` _time:%s app:="%s" | limit %s `, req.Time, req.App, req.Limit)
+	}
+	// if query number,dont use limit param
+	if req.NumberMode == "false" {
+		item := fmt.Sprintf(`  | limit %s  `, req.Limit)
 		builder.WriteString(item)
 	}
 	return builder.String()
@@ -192,4 +198,15 @@ func generateDropQuery() string {
 	var builder strings.Builder
 	builder.WriteString("| Drop _stream_id,_stream,app,container,job,namespace,node,pod ")
 	return builder.String()
+}
+
+func generateNumberQuery(req *api.VlogsRequest) string {
+	var builder strings.Builder
+	if req.NumberMode == "true" {
+		item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", req.NumberLevel)
+		builder.WriteString(item)
+		return builder.String()
+	} else {
+		return ""
+	}
 }

@@ -1,5 +1,5 @@
 server:
   addr: ":8428"
-  path: "https://vvvvvlogs.192.168.10.35.nip.io"
+  path: "https://vvvvvlogs.usw.sailos.io"
   username: "admin"
   password: "sealos@123#@!"
