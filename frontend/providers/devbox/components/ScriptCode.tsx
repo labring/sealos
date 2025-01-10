@@ -29,7 +29,7 @@ const ScriptCode = ({
       borderColor={'grayModern.200'}
       flexDirection={oneLine ? 'row' : 'column'}
       w={'585px'}
-      maxH={'400px'}>
+      maxH={'300px'}>
       <Flex justifyContent={oneLine ? 'null' : 'space-between'} alignItems={'center'} w={'full'}>
         <Box>
           <Button
@@ -39,6 +39,9 @@ const ScriptCode = ({
             boxShadow={'none'}
             color={'grayModern.900'}
             fontWeight={400}
+            _hover={{
+              cursor: 'default'
+            }}
             {...(!oneLine && {
               leftIcon: (
                 <MyIcon
@@ -48,14 +51,14 @@ const ScriptCode = ({
                   transform={onOpenScripts ? 'rotate(90deg)' : 'rotate(0)'}
                   transition="transform 0.2s ease"
                 />
-              )
-            })}
-            _hover={{
-              color: 'brightBlue.600',
-              '& svg': {
-                color: 'brightBlue.600'
+              ),
+              _hover: {
+                color: 'brightBlue.600',
+                '& svg': {
+                  color: 'brightBlue.600'
+                }
               }
-            }}>
+            })}>
             {platform === 'Windows' ? 'PowerShell' : 'Bash'}
           </Button>
         </Box>

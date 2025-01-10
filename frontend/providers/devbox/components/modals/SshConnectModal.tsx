@@ -22,6 +22,7 @@ import {
 } from '@chakra-ui/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Tabs as MyTabs } from '@sealos/ui'
 
 import Tab from '../Tab'
 import MyIcon from '../Icon'
@@ -37,6 +38,11 @@ import { downLoadBlob, useCopyData } from '@/utils/tools'
 
 const systemList = ['Windows', 'Mac', 'Linux']
 
+enum stepEnum {
+  OneClick = 'one-click',
+  StepByStep = 'step-by-step'
+}
+
 const SshConnectModal = ({
   onClose,
   jetbrainsGuideData,
@@ -50,6 +56,7 @@ const SshConnectModal = ({
   const { copyData } = useCopyData()
 
   const [activeTab, setActiveTab] = useState(0)
+  const [activeStep, setActiveStep] = useState(stepEnum.OneClick)
 
   useEffect(() => {
     const detectPlatform = () => {
@@ -137,302 +144,334 @@ const SshConnectModal = ({
                 ))}
               </TabList>
             </Tabs>
+
+            <MyTabs
+              my={8}
+              list={[
+                { id: stepEnum.OneClick, label: t('jetbrains_guide_one_click_setup') },
+                { id: stepEnum.StepByStep, label: t('jetbrains_guide_step_by_step') }
+              ]}
+              activeId={activeStep}
+              onChange={(step) => setActiveStep(step as stepEnum)}
+            />
             {/* one-click */}
-            <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
-              {t('jetbrains_guide_one_click_setup')}
-            </Text>
-            <Stepper orientation="vertical" index={-1} mt={3} gap={0}>
-              {/* 1 */}
-              <Box>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex flexDirection={'column'} gap={4} mt={1} ml={2} mb={5} flex={1}>
-                    <Box
-                      fontSize={'14px'}
-                      color={'grayModern.900'}
-                      fontWeight={400}
-                      lineHeight={'20px'}>
-                      {script.platform === 'Windows'
-                        ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
+            {activeStep === stepEnum.OneClick && (
+              <>
+                <Stepper orientation="vertical" index={-1} mt={3} gap={0}>
+                  {/* 1 */}
+                  <Box>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex flexDirection={'column'} gap={4} mt={1} ml={2} mb={5} flex={1}>
+                        <Box
+                          fontSize={'14px'}
+                          color={'grayModern.900'}
+                          fontWeight={400}
+                          lineHeight={'20px'}>
+                          {script.platform === 'Windows'
+                            ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
+                                blue: (chunks) => (
+                                  <Text
+                                    fontWeight={'bold'}
+                                    display={'inline-block'}
+                                    color={'brightBlue.600'}>
+                                    {chunks}
+                                  </Text>
+                                ),
+                                lightColor: (chunks) => (
+                                  <Text color={'grayModern.600'} display={'inline-block'}>
+                                    {chunks}
+                                  </Text>
+                                )
+                              })
+                            : t.rich('jetbrains_guide_one_click_setup_desc', {
+                                blue: (chunks) => (
+                                  <Text
+                                    fontWeight={'bold'}
+                                    display={'inline-block'}
+                                    color={'brightBlue.600'}>
+                                    {chunks}
+                                  </Text>
+                                ),
+                                lightColor: (chunks) => (
+                                  <Text color={'grayModern.600'} display={'inline-block'}>
+                                    {chunks}
+                                  </Text>
+                                )
+                              })}
+                        </Box>
+                        <Button
+                          leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
+                          bg={'white'}
+                          w={'fit-content'}
+                          size={'sm'}
+                          py={4}
+                          color={'grayModern.600'}
+                          border={'1px solid'}
+                          borderColor={'grayModern.200'}
+                          borderRadius={'6px'}
+                          _hover={{
+                            color: 'brightBlue.600',
+                            '& svg': {
+                              color: 'brightBlue.600'
+                            }
+                          }}
+                          onClick={() => {
+                            if (script.platform === 'Windows') {
+                              downLoadBlob(
+                                script.script,
+                                'text/plain',
+                                `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
+                              )
+                            } else {
+                              downLoadBlob(
+                                script.script,
+                                'text/plain',
+                                `ssh-config-${jetbrainsGuideData.devboxName}.sh`
+                              )
+                            }
+                          }}>
+                          {t('download_scripts')}
+                        </Button>
+                        <ScriptCode platform={script.platform} script={script.script} defaultOpen />
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* 2 */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                        <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                        <ScriptCode
+                          oneLine={true}
+                          defaultOpen={true}
+                          platform={script.platform}
+                          script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                        />
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* done */}
+                  <Step>
+                    <Circle
+                      size="10px"
+                      bg="grayModern.100"
+                      top={-3}
+                      left={2.5}
+                      position={'absolute'}
+                    />
+                  </Step>
+                </Stepper>
+                <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
+                  <Button
+                    w={'100%'}
+                    bg={'white'}
+                    borderWidth={1}
+                    borderRadius={'6px'}
+                    color={'green.600'}
+                    size={'sm'}
+                    px={1}
+                    borderColor={'green.600'}
+                    _hover={{
+                      bg: 'green.50'
+                    }}
+                    onClick={() => onClose()}
+                    h={'36px'}>
+                    {t('jetbrains_guide_confirm')}
+                  </Button>
+                </Box>
+              </>
+            )}
+            {activeStep === stepEnum.StepByStep && (
+              <>
+                <Stepper orientation="vertical" index={-1} mt={3} gap={0} position={'relative'}>
+                  {/* 1 */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Box mt={1} ml={2} mb={5} flex={1}>
+                        <Box fontSize={'14px'} mb={3}>
+                          {t.rich('jetbrains_guide_download_private_key', {
                             blue: (chunks) => (
                               <Text
                                 fontWeight={'bold'}
                                 display={'inline-block'}
                                 color={'brightBlue.600'}>
-                                {chunks}
-                              </Text>
-                            ),
-                            lightColor: (chunks) => (
-                              <Text color={'grayModern.600'} display={'inline-block'}>
-                                {chunks}
-                              </Text>
-                            )
-                          })
-                        : t.rich('jetbrains_guide_one_click_setup_desc', {
-                            blue: (chunks) => (
-                              <Text
-                                fontWeight={'bold'}
-                                display={'inline-block'}
-                                color={'brightBlue.600'}>
-                                {chunks}
-                              </Text>
-                            ),
-                            lightColor: (chunks) => (
-                              <Text color={'grayModern.600'} display={'inline-block'}>
                                 {chunks}
                               </Text>
                             )
                           })}
-                    </Box>
-                    <Button
-                      leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
-                      bg={'white'}
-                      w={'fit-content'}
-                      size={'sm'}
-                      py={4}
-                      color={'grayModern.600'}
-                      border={'1px solid'}
-                      borderColor={'grayModern.200'}
-                      borderRadius={'6px'}
-                      _hover={{
-                        color: 'brightBlue.600',
-                        '& svg': {
-                          color: 'brightBlue.600'
-                        }
-                      }}
-                      onClick={() => {
-                        if (script.platform === 'Windows') {
-                          downLoadBlob(
-                            script.script,
-                            'text/plain',
-                            `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
-                          )
-                        } else {
-                          downLoadBlob(
-                            script.script,
-                            'text/plain',
-                            `ssh-config-${jetbrainsGuideData.devboxName}.sh`
-                          )
-                        }
-                      }}>
-                      {t('download_scripts')}
-                    </Button>
-                    <ScriptCode platform={script.platform} script={script.script} />
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* 2 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
-                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                    <ScriptCode
-                      oneLine={true}
-                      defaultOpen={true}
-                      platform={script.platform}
-                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
-                    />
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* done */}
-              <Step>
-                <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
-              </Step>
-            </Stepper>
-            <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
-              <Button
-                w={'100%'}
-                bg={'white'}
-                borderWidth={1}
-                borderRadius={'6px'}
-                color={'grayModern.600'}
-                size={'sm'}
-                px={1}
-                borderColor={'grayModern.200'}
-                _hover={{
-                  color: 'brightBlue.600',
-                  borderColor: 'brightBlue.500'
-                }}
-                onClick={() => onClose()}
-                h={'36px'}>
-                {t('jetbrains_guide_confirm')}
-              </Button>
-            </Box>
-
-            <Divider my={6} />
-            {/* step-by-step */}
-            <Text fontSize={'18px'} fontWeight={500} color={'grayModern.900'}>
-              {t('jetbrains_guide_step_by_step')}
-            </Text>
-            <Stepper orientation="vertical" index={-1} mt={3} gap={0} position={'relative'}>
-              {/* 1 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Box mt={1} ml={2} mb={5} flex={1}>
-                    <Box fontSize={'14px'} mb={3}>
-                      {t.rich('jetbrains_guide_download_private_key', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}>
-                            {chunks}
-                          </Text>
-                        )
-                      })}
-                    </Box>
-                    <Button
-                      leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
-                      bg={'white'}
-                      color={'grayModern.600'}
-                      borderRadius={'5px'}
-                      borderWidth={1}
-                      py={4}
-                      size={'sm'}
-                      _hover={{
-                        color: 'brightBlue.600',
-                        '& svg': {
-                          color: 'brightBlue.600'
-                        }
-                      }}
-                      onClick={() => {
-                        downLoadBlob(
-                          jetbrainsGuideData.privateKey,
-                          'application/octet-stream',
-                          `${jetbrainsGuideData.configHost}`
-                        )
-                      }}>
-                      {t('download_private_key')}
-                    </Button>
+                        </Box>
+                        <Button
+                          leftIcon={<MyIcon name="download" color={'grayModern.600'} w={'16px'} />}
+                          bg={'white'}
+                          color={'grayModern.600'}
+                          borderRadius={'5px'}
+                          borderWidth={1}
+                          py={4}
+                          size={'sm'}
+                          _hover={{
+                            color: 'brightBlue.600',
+                            '& svg': {
+                              color: 'brightBlue.600'
+                            }
+                          }}
+                          onClick={() => {
+                            downLoadBlob(
+                              jetbrainsGuideData.privateKey,
+                              'application/octet-stream',
+                              `${jetbrainsGuideData.configHost}`
+                            )
+                          }}>
+                          {t('download_private_key')}
+                        </Button>
+                      </Box>
+                      <StepSeparator />
+                    </Step>
                   </Box>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* 2 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex mt={1} ml={2} mb={5} flex={1} h={'40px'}>
-                    <Box fontSize={'14px'}>
-                      {t.rich('jetbrains_guide_move_to_path', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}>
-                            {chunks}
-                          </Text>
-                        )
-                      })}
-                    </Box>
-                    <Box
-                      color={'grayModern.900'}
-                      _hover={{
-                        color: 'brightBlue.600',
-                        '& svg': {
-                          color: 'brightBlue.600'
-                        }
-                      }}
-                      cursor={'pointer'}
-                      ml={2}>
-                      <MyIcon
-                        name="copy"
-                        color={'grayModern.500'}
-                        w={'16px'}
-                        onClick={() => copyData('~/.ssh/sealos')}
-                      />
-                    </Box>
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* 3 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
-                    <Box fontSize={'14px'}>
-                      {t.rich('jetbrains_guide_modified_file', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}>
-                            {chunks}
-                          </Text>
-                        )
-                      })}
-                    </Box>
-                    <ScriptCode
-                      platform={script.platform}
-                      script={sshConfig(
-                        jetbrainsGuideData.configHost,
-                        jetbrainsGuideData.host,
-                        jetbrainsGuideData.port,
-                        jetbrainsGuideData.userName
-                      )}
+                  {/* 2 */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex mt={1} ml={2} mb={5} flex={1} h={'40px'}>
+                        <Box fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_move_to_path', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
+                        <Box
+                          color={'grayModern.900'}
+                          _hover={{
+                            color: 'brightBlue.600',
+                            '& svg': {
+                              color: 'brightBlue.600'
+                            }
+                          }}
+                          cursor={'pointer'}
+                          ml={2}>
+                          <MyIcon
+                            name="copy"
+                            color={'grayModern.500'}
+                            w={'16px'}
+                            onClick={() => copyData('~/.ssh/sealos')}
+                          />
+                        </Box>
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* 3 */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                        <Box fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_modified_file', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
+                        <ScriptCode
+                          platform={script.platform}
+                          defaultOpen
+                          script={sshConfig(
+                            jetbrainsGuideData.configHost,
+                            jetbrainsGuideData.host,
+                            jetbrainsGuideData.port,
+                            jetbrainsGuideData.userName
+                          )}
+                        />
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* 4 */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}>
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                        <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
+                        <ScriptCode
+                          oneLine={true}
+                          defaultOpen={true}
+                          platform={script.platform}
+                          script={sshConnectCommand(jetbrainsGuideData.configHost)}
+                        />
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* done */}
+                  <Step>
+                    <Circle
+                      size="10px"
+                      bg="grayModern.100"
+                      top={-3}
+                      left={2.5}
+                      position={'absolute'}
                     />
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* 4 */}
-              <Box w={'100%'}>
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
-                    <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
-                    <ScriptCode
-                      oneLine={true}
-                      defaultOpen={true}
-                      platform={script.platform}
-                      script={sshConnectCommand(jetbrainsGuideData.configHost)}
-                    />
-                  </Flex>
-                  <StepSeparator />
-                </Step>
-              </Box>
-              {/* done */}
-              <Step>
-                <Circle size="10px" bg="grayModern.100" top={-3} left={2.5} position={'absolute'} />
-              </Step>
-            </Stepper>
-            <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
-              <Button
-                w={'100%'}
-                bg={'white'}
-                borderWidth={1}
-                borderRadius={'6px'}
-                color={'grayModern.600'}
-                size={'sm'}
-                px={1}
-                borderColor={'grayModern.200'}
-                _hover={{
-                  color: 'brightBlue.600',
-                  borderColor: 'brightBlue.500'
-                }}
-                onClick={() => onClose()}
-                h={'36px'}>
-                {t('jetbrains_guide_confirm')}
-              </Button>
-            </Box>
+                  </Step>
+                </Stepper>
+                <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
+                  <Button
+                    w={'100%'}
+                    bg={'white'}
+                    borderWidth={1}
+                    borderRadius={'6px'}
+                    color={'green.600'}
+                    size={'sm'}
+                    px={1}
+                    borderColor={'green.600'}
+                    _hover={{
+                      bg: 'green.50'
+                    }}
+                    onClick={() => onClose()}
+                    h={'36px'}>
+                    {t('jetbrains_guide_confirm')}
+                  </Button>
+                </Box>
+              </>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
