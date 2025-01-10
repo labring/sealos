@@ -19,7 +19,6 @@ export async function GET(req: NextRequest) {
     const template = await devboxDB.template.findUnique({
       where: {
         uid,
-        isDeleted: false,
       },
       select: {
         config: true,
@@ -36,8 +35,10 @@ export async function GET(req: NextRequest) {
             regionUid: true,
             isDeleted: true,
             isPublic: true,
+            
           }
-        }
+        },
+        isDeleted: true
       }
     })
     const regionUid = getRegionUid()
