@@ -1,10 +1,10 @@
 import Sidebar from '@/components/layouts/Sidebar';
 import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
-import Header from '@/pages/app/detail/components/Header';
+import Header from '@/components/app/detail/index/Header';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
-import { Box, Flex } from '@chakra-ui/react';
+import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
 
@@ -45,18 +45,6 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
     {
       refetchOnMount: true,
       refetchInterval: 3000
-    }
-  );
-
-  useQuery(
-    ['loadDetailMonitorData', appName, appDetail?.isPause],
-    () => {
-      if (appDetail?.isPause) return null;
-      return loadDetailMonitorData(appName);
-    },
-    {
-      refetchOnMount: true,
-      refetchInterval: 2 * 60 * 1000
     }
   );
 

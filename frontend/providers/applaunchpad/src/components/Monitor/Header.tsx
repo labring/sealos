@@ -1,6 +1,5 @@
 import MyIcon from '@/components/Icon';
 import {
-  Box,
   Button,
   ButtonGroup,
   Flex,
@@ -11,34 +10,24 @@ import {
   Text
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import DynamicTime from './Time';
 import AdvancedSelect, { ListItem } from '../AdvancedSelect';
-import { useAppStore } from '@/store/app';
-import { useState } from 'react';
+import DynamicTime from './Time';
 
-import dynamic from 'next/dynamic';
+import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
 import useDateTimeStore from '@/store/date';
 import { ChevronDownIcon } from '@chakra-ui/icons';
+import dynamic from 'next/dynamic';
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
-export default function Header() {
+export default function Header({
+  podList,
+  setPodList
+}: {
+  podList: ListItem[];
+  setPodList: (val: ListItem[]) => void;
+}) {
   const { t } = useTranslation();
-  const { appDetailPods } = useAppStore();
-  const currentPodList = appDetailPods.map((pod) => ({
-    value: pod.podName,
-    label: pod.podName
-  }));
-  const [podList, setPodList] = useState<ListItem[]>(currentPodList);
-  const { startDateTime, endDateTime } = useDateTimeStore();
-  const [refreshInterval, setRefreshInterval] = useState(0);
-
-  const refreshIntervalList = [
-    { value: 0, label: t('close') },
-    { value: 1000, label: '1s' },
-    { value: 2000, label: '2s' },
-    { value: 5000, label: '5s' },
-    { value: 10000, label: '10s' }
-  ];
+  const { refreshInterval, setRefreshInterval } = useDateTimeStore();
 
   return (
     <Flex alignItems={'center'}>
@@ -127,7 +116,7 @@ export default function Header() {
             overflow={'overlay'}
             maxH={'300px'}
           >
-            {refreshIntervalList.map((item) => (
+            {REFRESH_INTERVAL_OPTIONS.map((item) => (
               <MenuItem
                 key={item.value}
                 value={item.value}

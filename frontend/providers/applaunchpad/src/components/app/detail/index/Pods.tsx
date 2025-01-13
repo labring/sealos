@@ -34,15 +34,7 @@ const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
 const PodFileModal = dynamic(() => import('./PodFileModal'));
 
-const Pods = ({
-  pods = [],
-  loading,
-  appName
-}: {
-  pods: PodDetailType[];
-  loading: boolean;
-  appName: string;
-}) => {
+const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
@@ -299,7 +291,6 @@ const Pods = ({
         </Table>
       </TableContainer>
 
-      <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
           appName={appName}

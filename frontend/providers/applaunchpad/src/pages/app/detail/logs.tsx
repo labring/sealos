@@ -36,7 +36,7 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   return (
     <DetailLayout appName={appName}>
-      <Box flex={1} borderRadius="lg" p={4}>
+      <Box flex={1} borderRadius="lg" overflowY={'auto'}>
         <>
           <Flex
             mb={4}

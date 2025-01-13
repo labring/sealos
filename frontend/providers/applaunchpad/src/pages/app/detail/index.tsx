@@ -8,14 +8,15 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import React, { useMemo, useState } from 'react';
-import AppBaseInfo from './components/AppBaseInfo';
-import Header from './components/Header';
-import Pods from './components/Pods';
+import React, { useMemo } from 'react';
+import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
+import Pods from '@/components/app/detail/index/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
-import AdvancedInfo from './components/AdvancedInfo';
+import AdvancedInfo from '@/components/app/detail/index/AdvancedInfo';
 
-const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
+const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainInfo'), {
+  ssr: false
+});
 
 const AppDetail = ({ appName }: { appName: string }) => {
   const { startGuide } = useDetailDriver();
@@ -31,9 +32,6 @@ const AppDetail = ({ appName }: { appName: string }) => {
     intervalLoadPods,
     loadDetailMonitorData
   } = useAppStore();
-
-  const [podsLoaded, setPodsLoaded] = useState(false);
-  const [showSlider, setShowSlider] = useState(false);
 
   const { refetch, isSuccess } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
     onError(err) {
@@ -93,7 +91,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
           <AdvancedInfo app={appDetail} />
         </Box>
         <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
-          <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
+          <Pods pods={appDetailPods} appName={appName} />
         </Box>
       </Flex>
     </DetailLayout>

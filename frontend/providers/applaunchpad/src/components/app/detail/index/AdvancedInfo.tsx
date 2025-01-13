@@ -19,7 +19,7 @@ import { MyTooltip } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import React, { useState } from 'react';
-import styles from '../index.module.scss';
+import styles from '@/components/app/detail/index/index.module.scss';
 
 const ConfigMapDetailModal = dynamic(() => import('./ConfigMapDetailModal'));
 
