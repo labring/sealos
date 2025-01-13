@@ -1,113 +1,117 @@
-import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react'
-import { MyTable, SealosMenu, useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import dynamic from 'next/dynamic'
-import { useCallback, useState } from 'react'
-import { sealosApp } from 'sealos-desktop-sdk/app'
+import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react';
+import { SealosMenu, useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { useCallback, useState } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox'
-import { useRouter } from '@/i18n'
-import { useGlobalStore } from '@/stores/global'
-import { DevboxListItemTypeV2 } from '@/types/devbox'
+import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox';
+import { useRouter } from '@/i18n';
+import { useGlobalStore } from '@/stores/global';
+import { DevboxListItemTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
-import IDEButton from '@/components/IDEButton'
-import ReleaseModal from '@/components/modals/releaseModal'
-import PodLineChart from '@/components/PodLineChart'
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import MyIcon from '@/components/Icon';
+import IDEButton from '@/components/IDEButton';
+import ReleaseModal from '@/components/modals/releaseModal';
+import PodLineChart from '@/components/PodLineChart';
+import { AdvancedTable } from '@/components/AdvancedTable';
 
-const DelModal = dynamic(() => import('@/components/modals/DelModal'))
+const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
 const DevboxList = ({
   devboxList = [],
   refetchDevboxList
 }: {
-  devboxList: DevboxListItemTypeV2[]
-  refetchDevboxList: () => void
+  devboxList: DevboxListItemTypeV2[];
+  refetchDevboxList: () => void;
 }) => {
-  const router = useRouter()
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const router = useRouter();
+  const t = useTranslations();
+  const { message: toast } = useMessage();
+  const duplicatedDevboxList = Array(20)
+    .fill(0)
+    .flatMap(() => [...devboxList]);
 
   // TODO: Unified Loading Behavior
-  const { setLoading } = useGlobalStore()
+  const { setLoading } = useGlobalStore();
 
-  const [onOpenRelease, setOnOpenRelease] = useState(false)
-  const [delDevbox, setDelDevbox] = useState<DevboxListItemTypeV2 | null>(null)
+  const [onOpenRelease, setOnOpenRelease] = useState(false);
+  const [delDevbox, setDelDevbox] = useState<DevboxListItemTypeV2 | null>(null);
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemTypeV2 | null>(
     null
-  )
+  );
 
   const handleOpenRelease = (devbox: DevboxListItemTypeV2) => {
-    setCurrentDevboxListItem(devbox)
-    setOnOpenRelease(true)
-  }
+    setCurrentDevboxListItem(devbox);
+    setOnOpenRelease(true);
+  };
   const handlePauseDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
       try {
-        setLoading(true)
-        await pauseDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await pauseDevbox({ devboxName: devbox.name });
         toast({
           title: t('pause_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('pause_error'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
-      refetchDevboxList()
-      setLoading(false)
+      refetchDevboxList();
+      setLoading(false);
     },
     [refetchDevboxList, setLoading, t, toast]
-  )
+  );
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
       try {
-        setLoading(true)
-        await restartDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await restartDevbox({ devboxName: devbox.name });
         toast({
           title: t('restart_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('restart_error'),
           status: 'error'
-        })
-        console.error(error, '==')
+        });
+        console.error(error, '==');
       }
-      refetchDevboxList()
-      setLoading(false)
+      refetchDevboxList();
+      setLoading(false);
     },
     [refetchDevboxList, setLoading, t, toast]
-  )
+  );
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
       try {
-        setLoading(true)
-        await startDevbox({ devboxName: devbox.name })
+        setLoading(true);
+        await startDevbox({ devboxName: devbox.name });
         toast({
           title: t('start_success'),
           status: 'success'
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('start_error'),
           status: 'error'
-        })
-        console.error(error, '==')
+        });
+        console.error(error, '==');
       }
-      refetchDevboxList()
-      setLoading(false)
+      refetchDevboxList();
+      setLoading(false);
     },
     [refetchDevboxList, setLoading, t, toast]
-  )
+  );
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
-      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`
+      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`;
       try {
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-terminal',
@@ -115,22 +119,22 @@ const DevboxList = ({
             defaultCommand
           },
           messageData: { type: 'new terminal', command: defaultCommand }
-        })
+        });
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('jump_terminal_error'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
     },
     [t, toast]
-  )
+  );
   const columns: {
-    title: string
-    dataIndex?: keyof DevboxListItemTypeV2
-    key: string
-    render?: (item: DevboxListItemTypeV2) => JSX.Element
+    title: string;
+    dataIndex?: keyof DevboxListItemTypeV2;
+    key: string;
+    render?: (item: DevboxListItemTypeV2) => JSX.Element;
   }[] = [
     {
       title: t('name'),
@@ -148,7 +152,7 @@ const DevboxList = ({
               {item.name}
             </Box>
           </Flex>
-        )
+        );
       }
     },
     {
@@ -161,7 +165,7 @@ const DevboxList = ({
       dataIndex: 'createTime',
       key: 'createTime',
       render: (item) => {
-        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>;
       }
     },
     {
@@ -179,7 +183,8 @@ const DevboxList = ({
               right={'4px'}
               bottom={'0px'}
               pointerEvents={'none'}
-              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+            >
               {item?.usedCpu?.yData[item?.usedCpu?.yData?.length - 1]}%
             </Text>
           </Box>
@@ -201,7 +206,8 @@ const DevboxList = ({
               right={'4px'}
               bottom={'0px'}
               pointerEvents={'none'}
-              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF">
+              textShadow="1px 1px 0 #FFF, -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF"
+            >
               {item?.usedMemory?.yData[item?.usedMemory?.yData?.length - 1]}%
             </Text>
           </Box>
@@ -232,8 +238,9 @@ const DevboxList = ({
             minW={'unset'}
             // leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => {
-              router.push(`/devbox/detail/${item.name}`)
-            }}>
+              router.push(`/devbox/detail/${item.name}`);
+            }}
+          >
             {/* {t('detail')} */}
             <MyIcon name={'detail'} w={'16px'} />
           </Button>
@@ -337,10 +344,10 @@ const DevboxList = ({
         </Flex>
       )
     }
-  ]
+  ];
   return (
     <>
-      <MyTable columns={columns} data={devboxList} itemClass="devboxListItem" />
+      <AdvancedTable columns={columns} data={duplicatedDevboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}
@@ -352,17 +359,17 @@ const DevboxList = ({
       {!!onOpenRelease && !!currentDevboxListItem && (
         <ReleaseModal
           onSuccess={() => {
-            router.push(`/devbox/detail/${currentDevboxListItem?.name}`)
+            router.push(`/devbox/detail/${currentDevboxListItem?.name}`);
           }}
           onClose={() => {
-            setOnOpenRelease(false)
-            setCurrentDevboxListItem(null)
+            setOnOpenRelease(false);
+            setCurrentDevboxListItem(null);
           }}
           devbox={currentDevboxListItem}
         />
       )}
     </>
-  )
-}
+  );
+};
 
-export default DevboxList
+export default DevboxList;
