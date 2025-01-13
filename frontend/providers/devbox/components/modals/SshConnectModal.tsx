@@ -121,7 +121,13 @@ const SshConnectModal = ({
     <Box>
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'4xl'}>
         <ModalOverlay />
-        <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
+        <ModalContent
+          top={'5%'}
+          maxWidth={'800px'}
+          w={'700px'}
+          h={activeStep === stepEnum.OneClick ? '60%' : '80%'}
+          transition={'height 0.2s ease-in-out'}
+          position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody
@@ -237,7 +243,7 @@ const SshConnectModal = ({
                           }}>
                           {t('download_scripts')}
                         </Button>
-                        <ScriptCode platform={script.platform} script={script.script} defaultOpen />
+                        <ScriptCode platform={script.platform} script={script.script} />
                       </Flex>
                       <StepSeparator />
                     </Step>
@@ -293,6 +299,7 @@ const SshConnectModal = ({
                 </Box>
               </>
             )}
+            {/* step-by-step */}
             {activeStep === stepEnum.StepByStep && (
               <>
                 <Stepper orientation="vertical" index={-1} mt={3} gap={0} position={'relative'}>
