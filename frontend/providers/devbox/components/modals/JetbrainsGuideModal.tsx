@@ -20,38 +20,38 @@ import {
   Circle,
   ModalCloseButton,
   Progress
-} from '@chakra-ui/react'
-import { useCallback, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+} from '@chakra-ui/react';
+import { useCallback, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
-import MyIcon from '../Icon'
-import SshConnectModal from './SshConnectModal'
+import MyIcon from '../Icon';
+import SshConnectModal from './SshConnectModal';
 
-import { JetBrainsGuideData } from '../IDEButton'
-import { execCommandInDevboxPod } from '@/api/devbox'
+import { JetBrainsGuideData } from '../IDEButton';
+import { execCommandInDevboxPod } from '@/api/devbox';
 
 const JetBrainsGuideModal = ({
   onClose,
   jetbrainsGuideData
 }: {
-  onSuccess: () => void
-  onClose: () => void
-  jetbrainsGuideData: JetBrainsGuideData
+  onSuccess: () => void;
+  onClose: () => void;
+  jetbrainsGuideData: JetBrainsGuideData;
 }) => {
-  const t = useTranslations()
+  const t = useTranslations();
 
-  const controllerRef = useRef<AbortController | null>(null)
+  const controllerRef = useRef<AbortController | null>(null);
 
-  const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType)
+  const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType);
 
   const [selectedIDE, setSelectedIDE] = useState<{
-    label: string
-    value: string
-    productCode: string
-  }>(recommendIDE)
-  const [progress, setProgress] = useState(0)
-  const [onConnecting, setOnConnecting] = useState(false)
-  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false)
+    label: string;
+    value: string;
+    productCode: string;
+  }>(recommendIDE);
+  const [progress, setProgress] = useState(0);
+  const [onConnecting, setOnConnecting] = useState(false);
+  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false);
 
   const handleConnectIDE = useCallback(async () => {
     const res = await fetch(
@@ -62,19 +62,19 @@ const JetBrainsGuideModal = ({
           'Content-Type': 'application/json'
         }
       }
-    )
-    const data = await res.json()
+    );
+    const data = await res.json();
 
-    setOnConnecting(true)
+    setOnConnecting(true);
 
-    const controller = new AbortController()
-    controllerRef.current = controller
+    const controller = new AbortController();
+    controllerRef.current = controller;
 
-    const version = data[selectedIDE.productCode][0].version
-    const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link']
-    const idePathName = selectedIDE.value
+    const version = data[selectedIDE.productCode][0].version;
+    const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link'];
+    const idePathName = selectedIDE.value;
 
-    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`
+    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`;
 
     try {
       await execCommandInDevboxPod({
@@ -82,23 +82,23 @@ const JetBrainsGuideModal = ({
         command: execDownloadCommand,
         idePath: `/home/devbox/.cache/JetBrains/${idePathName}${version}`,
         onDownloadProgress: (progressEvent) => {
-          const text = progressEvent.event.target.response
-          const progressMatch = text.match(/\s+(\d+)%\[/g)
+          const text = progressEvent.event.target.response;
+          const progressMatch = text.match(/\s+(\d+)%\[/g);
           const progress = progressMatch
             ? parseInt(progressMatch[progressMatch.length - 1].split('%')[0])
-            : null
+            : null;
 
           if (progress) {
-            setProgress(progress)
+            setProgress(progress);
           }
         },
         signal: controller.signal
-      })
-      setOnConnecting(false)
-      setProgress(0)
-      console.log('execDownloadCommand', execDownloadCommand)
+      });
+      setOnConnecting(false);
+      setProgress(0);
+      console.log('execDownloadCommand', execDownloadCommand);
     } catch (error: any) {
-      console.log('error', error)
+      console.log('error', error);
       if (
         !error ||
         error.startsWith('nvidia driver modules are not yet loaded, invoking runc directly')
@@ -112,10 +112,10 @@ const JetBrainsGuideModal = ({
             jetbrainsGuideData.port
           )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
           '_blank'
-        )
+        );
       }
-      setProgress(0)
-      setOnConnecting(false)
+      setProgress(0);
+      setOnConnecting(false);
     }
   }, [
     selectedIDE,
@@ -124,7 +124,7 @@ const JetBrainsGuideModal = ({
     jetbrainsGuideData.port,
     jetbrainsGuideData.userName,
     jetbrainsGuideData.workingDir
-  ])
+  ]);
 
   return (
     <Box>
@@ -152,7 +152,8 @@ const JetBrainsGuideModal = ({
                           <Text
                             fontWeight={'bold'}
                             display={'inline-block'}
-                            color={'brightBlue.600'}>
+                            color={'brightBlue.600'}
+                          >
                             {chunks}
                           </Text>
                         )
@@ -172,8 +173,9 @@ const JetBrainsGuideModal = ({
                         }
                       }}
                       onClick={() => {
-                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank')
-                      }}>
+                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank');
+                      }}
+                    >
                       JetBrains Gateway
                     </Button>
                   </Box>
@@ -191,7 +193,8 @@ const JetBrainsGuideModal = ({
                           <Text
                             fontWeight={'bold'}
                             display={'inline-block'}
-                            color={'brightBlue.600'}>
+                            color={'brightBlue.600'}
+                          >
                             {chunks}
                           </Text>
                         )
@@ -210,7 +213,8 @@ const JetBrainsGuideModal = ({
                           color: 'brightBlue.600'
                         }
                       }}
-                      onClick={() => setOnOpenSSHConnectModal(true)}>
+                      onClick={() => setOnOpenSSHConnectModal(true)}
+                    >
                       {t('jetbrains_guide_config_ssh')}
                     </Button>
                   </Box>
@@ -260,10 +264,11 @@ const JetBrainsGuideModal = ({
                       }}
                       onClick={() => {
                         if (!onConnecting) {
-                          setSelectedIDE(ideType)
+                          setSelectedIDE(ideType);
                         }
                       }}
-                      position={'relative'}>
+                      position={'relative'}
+                    >
                       <MyIcon name={ideType.value as any} color={'grayModern.600'} w={'36px'} />
                       <Text>{ideType.label}</Text>
                       {recommendIDE === ideType && (
@@ -275,7 +280,8 @@ const JetBrainsGuideModal = ({
                           p={'1px 10px'}
                           borderRadius={'0px 4px 4px 0px'}
                           fontSize={'12px'}
-                          color={'yellow.600'}>
+                          color={'yellow.600'}
+                        >
                           {t('recommend')}
                         </Box>
                       )}
@@ -302,7 +308,8 @@ const JetBrainsGuideModal = ({
                       }
                 }
                 onClick={handleConnectIDE}
-                h={'36px'}>
+                h={'36px'}
+              >
                 {onConnecting ? (
                   <Flex position={'relative'} w={'full'} alignItems={'center'} justify={'center'}>
                     {t.rich('jetbrains_guide_connecting', {
@@ -316,12 +323,13 @@ const JetBrainsGuideModal = ({
                       color={'brightBlue.600'}
                       ml={1}
                       onClick={(e) => {
-                        e.stopPropagation()
-                        controllerRef.current?.abort()
-                        controllerRef.current = null
-                        setProgress(0)
-                        setOnConnecting(false)
-                      }}>
+                        e.stopPropagation();
+                        controllerRef.current?.abort();
+                        controllerRef.current = null;
+                        setProgress(0);
+                        setOnConnecting(false);
+                      }}
+                    >
                       {t('jetbrains_guide_cancel')}
                     </Box>
                     <Progress
@@ -346,7 +354,8 @@ const JetBrainsGuideModal = ({
                   p={2}
                   borderRadius={'6px'}
                   alignItems={'center'}
-                  justify={'center'}>
+                  justify={'center'}
+                >
                   <MyIcon name="infoCircle" color={'brightBlue.600'} w={'16px'} mr={1} />
                   <Text fontSize={'14px'} fontWeight={'400'} color={'brightBlue.600'}>
                     {t('jetbrains_guide_connecting_info')}
@@ -365,8 +374,8 @@ const JetBrainsGuideModal = ({
         </ModalContent>
       </Modal>
     </Box>
-  )
-}
+  );
+};
 const jetbrainsIDEObj = {
   IntelliJ: {
     label: 'IntelliJ IDEA',
@@ -413,7 +422,7 @@ const jetbrainsIDEObj = {
     value: 'rustover',
     productCode: 'RR'
   }
-}
+};
 
 const runtimeTypeToIDEType = (runtimeType: string): any => {
   switch (runtimeType) {
@@ -421,7 +430,7 @@ const runtimeTypeToIDEType = (runtimeType: string): any => {
     case 'python':
     case 'django':
     case 'flask':
-      return jetbrainsIDEObj.PyCharm
+      return jetbrainsIDEObj.PyCharm;
 
     // Go
     case 'go':
@@ -430,7 +439,7 @@ const runtimeTypeToIDEType = (runtimeType: string): any => {
     case 'hertz':
     case 'iris':
     case 'chi':
-      return jetbrainsIDEObj.GoLand
+      return jetbrainsIDEObj.GoLand;
 
     // Frontend and nodejs
     case 'angular':
@@ -452,41 +461,41 @@ const runtimeTypeToIDEType = (runtimeType: string): any => {
     case 'nest.js':
     case 'node.js':
     case 'docusaurus':
-      return jetbrainsIDEObj.WebStorm
+      return jetbrainsIDEObj.WebStorm;
 
     // C/C++
     case 'c':
     case 'cpp':
-      return jetbrainsIDEObj.CLion
+      return jetbrainsIDEObj.CLion;
 
     // Java
     case 'java':
     case 'quarkus':
     case 'vert.x':
     case 'spring-boot':
-      return jetbrainsIDEObj.IntelliJ
+      return jetbrainsIDEObj.IntelliJ;
 
     // PHP
     case 'php':
     case 'laravel':
-      return jetbrainsIDEObj.PhpStorm
+      return jetbrainsIDEObj.PhpStorm;
 
     // Ruby
     case 'ruby':
     case 'rails':
-      return jetbrainsIDEObj.RubyMine
+      return jetbrainsIDEObj.RubyMine;
 
     // Rust
     case 'rust':
     case 'rocket':
-      return jetbrainsIDEObj.RustRover
+      return jetbrainsIDEObj.RustRover;
 
     // other
     case 'debian-ssh':
     case 'custom':
     default:
-      return jetbrainsIDEObj.IntelliJ
+      return jetbrainsIDEObj.IntelliJ;
   }
-}
+};
 
-export default JetBrainsGuideModal
+export default JetBrainsGuideModal;

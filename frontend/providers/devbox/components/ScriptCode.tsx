@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Box, Button, Collapse, Flex } from '@chakra-ui/react'
+import { useState } from 'react';
+import { Box, Button, Collapse, Flex } from '@chakra-ui/react';
 
-import MyIcon from './Icon'
-import Code from './Code'
-import { useCopyData } from '@/utils/tools'
+import MyIcon from './Icon';
+import Code from './Code';
+import { useCopyData } from '@/utils/tools';
 
 const ScriptCode = ({
   platform,
@@ -11,14 +11,14 @@ const ScriptCode = ({
   defaultOpen = false,
   oneLine = false
 }: {
-  platform: string
-  script: string
-  defaultOpen?: boolean
-  oneLine?: boolean
+  platform: string;
+  script: string;
+  defaultOpen?: boolean;
+  oneLine?: boolean;
 }) => {
-  const [onOpenScripts, setOnOpenScripts] = useState(defaultOpen)
+  const [onOpenScripts, setOnOpenScripts] = useState(defaultOpen);
 
-  const { copyData } = useCopyData()
+  const { copyData } = useCopyData();
 
   return (
     <Flex
@@ -29,7 +29,8 @@ const ScriptCode = ({
       borderColor={'grayModern.200'}
       flexDirection={oneLine ? 'row' : 'column'}
       w={'585px'}
-      maxH={'300px'}>
+      maxH={'300px'}
+    >
       <Flex justifyContent={oneLine ? 'null' : 'space-between'} alignItems={'center'} w={'full'}>
         <Box>
           <Button
@@ -58,7 +59,8 @@ const ScriptCode = ({
                   color: 'brightBlue.600'
                 }
               }
-            })}>
+            })}
+          >
             {platform === 'Windows' ? 'PowerShell' : 'Bash'}
           </Button>
         </Box>
@@ -81,7 +83,8 @@ const ScriptCode = ({
             '& svg': {
               color: 'brightBlue.600'
             }
-          }}>
+          }}
+        >
           <MyIcon
             name="copy"
             color={'grayModern.600'}
@@ -98,7 +101,7 @@ const ScriptCode = ({
         </Collapse>
       )}
     </Flex>
-  )
-}
+  );
+};
 
-export default ScriptCode
+export default ScriptCode;

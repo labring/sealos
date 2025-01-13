@@ -19,24 +19,24 @@ import {
   Circle,
   Tabs,
   TabList
-} from '@chakra-ui/react'
-import { useEffect, useMemo, useState } from 'react'
-import { useTranslations } from 'next-intl'
-import { Tabs as MyTabs } from '@sealos/ui'
+} from '@chakra-ui/react';
+import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Tabs as MyTabs } from '@sealos/ui';
 
-import Tab from '../Tab'
-import MyIcon from '../Icon'
-import ScriptCode from '../ScriptCode'
+import Tab from '../Tab';
+import MyIcon from '../Icon';
+import ScriptCode from '../ScriptCode';
 import {
   macosAndLinuxScriptsTemplate,
   sshConfig,
   sshConnectCommand,
   windowsScriptsTemplate
-} from '@/constants/scripts'
-import { JetBrainsGuideData } from '../IDEButton'
-import { downLoadBlob, useCopyData } from '@/utils/tools'
+} from '@/constants/scripts';
+import { JetBrainsGuideData } from '../IDEButton';
+import { downLoadBlob, useCopyData } from '@/utils/tools';
 
-const systemList = ['Windows', 'Mac', 'Linux']
+const systemList = ['Windows', 'Mac', 'Linux'];
 
 enum stepEnum {
   OneClick = 'one-click',
@@ -48,37 +48,37 @@ const SshConnectModal = ({
   jetbrainsGuideData,
   onSuccess
 }: {
-  onSuccess: () => void
-  onClose: () => void
-  jetbrainsGuideData: JetBrainsGuideData
+  onSuccess: () => void;
+  onClose: () => void;
+  jetbrainsGuideData: JetBrainsGuideData;
 }) => {
-  const t = useTranslations()
-  const { copyData } = useCopyData()
+  const t = useTranslations();
+  const { copyData } = useCopyData();
 
-  const [activeTab, setActiveTab] = useState(0)
-  const [activeStep, setActiveStep] = useState(stepEnum.OneClick)
+  const [activeTab, setActiveTab] = useState(0);
+  const [activeStep, setActiveStep] = useState(stepEnum.OneClick);
 
   useEffect(() => {
     const detectPlatform = () => {
       if (window.navigator.platform) {
-        const platform = window.navigator.platform.toLowerCase()
-        console.log('platform', platform)
-        if (platform.includes('windows')) return 0
-        if (platform.includes('mac')) return 1
-        if (platform.includes('linux')) return 2
+        const platform = window.navigator.platform.toLowerCase();
+        console.log('platform', platform);
+        if (platform.includes('windows')) return 0;
+        if (platform.includes('mac')) return 1;
+        if (platform.includes('linux')) return 2;
       }
 
-      const userAgent = window.navigator.userAgent.toLowerCase()
-      console.log('userAgent', userAgent)
-      if (userAgent.includes('win')) return 0
-      if (userAgent.includes('mac')) return 1
-      if (userAgent.includes('linux')) return 2
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      console.log('userAgent', userAgent);
+      if (userAgent.includes('win')) return 0;
+      if (userAgent.includes('mac')) return 1;
+      if (userAgent.includes('linux')) return 2;
 
-      return 0
-    }
+      return 0;
+    };
 
-    setActiveTab(detectPlatform())
-  }, [])
+    setActiveTab(detectPlatform());
+  }, []);
 
   const script = useMemo(() => {
     if (activeTab === 0) {
@@ -91,7 +91,7 @@ const SshConnectModal = ({
           jetbrainsGuideData.port,
           jetbrainsGuideData.userName
         )
-      }
+      };
     } else if (activeTab === 1) {
       return {
         platform: 'Mac',
@@ -102,7 +102,7 @@ const SshConnectModal = ({
           jetbrainsGuideData.port,
           jetbrainsGuideData.userName
         )
-      }
+      };
     } else {
       return {
         platform: 'Linux',
@@ -113,9 +113,9 @@ const SshConnectModal = ({
           jetbrainsGuideData.port,
           jetbrainsGuideData.userName
         )
-      }
+      };
     }
-  }, [activeTab, jetbrainsGuideData])
+  }, [activeTab, jetbrainsGuideData]);
 
   return (
     <Box>
@@ -127,7 +127,8 @@ const SshConnectModal = ({
           w={'700px'}
           h={'80%'}
           transition={'height 0.2s ease-in-out'}
-          position={'relative'}>
+          position={'relative'}
+        >
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
@@ -135,7 +136,8 @@ const SshConnectModal = ({
               onChange={(index) => setActiveTab(index)}
               mb={4}
               colorScheme={'brightBlue'}
-              defaultIndex={activeTab}>
+              defaultIndex={activeTab}
+            >
               <TabList>
                 {systemList.map((item) => (
                   <Tab key={item}>{item}</Tab>
@@ -161,7 +163,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Flex flexDirection={'column'} gap={12} mt={1} ml={2} mb={5} flex={1}>
@@ -169,14 +172,16 @@ const SshConnectModal = ({
                           fontSize={'14px'}
                           color={'grayModern.900'}
                           fontWeight={400}
-                          lineHeight={'20px'}>
+                          lineHeight={'20px'}
+                        >
                           {script.platform === 'Windows'
                             ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
                                 blue: (chunks) => (
                                   <Text
                                     fontWeight={'bold'}
                                     display={'inline-block'}
-                                    color={'brightBlue.600'}>
+                                    color={'brightBlue.600'}
+                                  >
                                     {chunks}
                                   </Text>
                                 ),
@@ -191,7 +196,8 @@ const SshConnectModal = ({
                                   <Text
                                     fontWeight={'bold'}
                                     display={'inline-block'}
-                                    color={'brightBlue.600'}>
+                                    color={'brightBlue.600'}
+                                  >
                                     {chunks}
                                   </Text>
                                 ),
@@ -224,15 +230,16 @@ const SshConnectModal = ({
                                 script.script,
                                 'text/plain',
                                 `ssh-config-${jetbrainsGuideData.devboxName}.ps1`
-                              )
+                              );
                             } else {
                               downLoadBlob(
                                 script.script,
                                 'text/plain',
                                 `ssh-config-${jetbrainsGuideData.devboxName}.sh`
-                              )
+                              );
                             }
-                          }}>
+                          }}
+                        >
                           {t('download_scripts')}
                         </Button>
                         <ScriptCode platform={script.platform} script={script.script} />
@@ -245,7 +252,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={12} flex={1}>
@@ -285,7 +293,8 @@ const SshConnectModal = ({
                       bg: 'green.50'
                     }}
                     onClick={() => onClose()}
-                    h={'36px'}>
+                    h={'36px'}
+                  >
                     {t('jetbrains_guide_confirm')}
                   </Button>
                 </Box>
@@ -300,7 +309,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Box mt={1} ml={2} mb={5} flex={1}>
@@ -310,7 +320,8 @@ const SshConnectModal = ({
                               <Text
                                 fontWeight={'bold'}
                                 display={'inline-block'}
-                                color={'brightBlue.600'}>
+                                color={'brightBlue.600'}
+                              >
                                 {chunks}
                               </Text>
                             )
@@ -335,8 +346,9 @@ const SshConnectModal = ({
                               jetbrainsGuideData.privateKey,
                               'application/octet-stream',
                               `${jetbrainsGuideData.configHost}`
-                            )
-                          }}>
+                            );
+                          }}
+                        >
                           {t('download_private_key')}
                         </Button>
                       </Box>
@@ -348,7 +360,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Flex mt={1} ml={2} mb={5} flex={1} h={'40px'}>
@@ -358,7 +371,8 @@ const SshConnectModal = ({
                               <Text
                                 fontWeight={'bold'}
                                 display={'inline-block'}
-                                color={'brightBlue.600'}>
+                                color={'brightBlue.600'}
+                              >
                                 {chunks}
                               </Text>
                             )
@@ -373,7 +387,8 @@ const SshConnectModal = ({
                             }
                           }}
                           cursor={'pointer'}
-                          ml={2}>
+                          ml={2}
+                        >
                           <MyIcon
                             name="copy"
                             color={'grayModern.500'}
@@ -390,7 +405,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
@@ -400,7 +416,8 @@ const SshConnectModal = ({
                               <Text
                                 fontWeight={'bold'}
                                 display={'inline-block'}
-                                color={'brightBlue.600'}>
+                                color={'brightBlue.600'}
+                              >
                                 {chunks}
                               </Text>
                             )
@@ -425,7 +442,8 @@ const SshConnectModal = ({
                     <Step>
                       <StepIndicator
                         backgroundColor={'grayModern.100'}
-                        borderColor={'grayModern.100'}>
+                        borderColor={'grayModern.100'}
+                      >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
                       <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
@@ -465,7 +483,8 @@ const SshConnectModal = ({
                       bg: 'green.50'
                     }}
                     onClick={() => onClose()}
-                    h={'36px'}>
+                    h={'36px'}
+                  >
                     {t('jetbrains_guide_confirm')}
                   </Button>
                 </Box>
@@ -475,7 +494,7 @@ const SshConnectModal = ({
         </ModalContent>
       </Modal>
     </Box>
-  )
-}
+  );
+};
 
-export default SshConnectModal
+export default SshConnectModal;

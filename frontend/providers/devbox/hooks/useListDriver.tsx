@@ -1,13 +1,13 @@
-import { useGuideStore } from '@/stores/guide'
-import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
-import { driver } from '@sealos/driver'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
-import { DriverStarIcon } from './useDriver'
+import { useGuideStore } from '@/stores/guide';
+import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
+import { driver } from '@sealos/driver';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
+import { DriverStarIcon } from './useDriver';
 
 export default function useListDriver() {
-  const t = useTranslations()
-  const { isGuideEnabled, listCompleted, setListCompleted } = useGuideStore()
+  const t = useTranslations();
+  const { isGuideEnabled, listCompleted, setListCompleted } = useGuideStore();
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -18,7 +18,8 @@ export default function useListDriver() {
         bottom={'-30px'}
         color={'white'}
         alignItems={'center'}
-        {...props}>
+        {...props}
+      >
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
           {t('guide.click_shadow_skip')}
         </Text>
@@ -27,7 +28,8 @@ export default function useListDriver() {
           width="20"
           height="20"
           viewBox="0 0 20 20"
-          fill="white">
+          fill="white"
+        >
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -35,8 +37,8 @@ export default function useListDriver() {
           />
         </Icon>
       </Flex>
-    )
-  }
+    );
+  };
 
   const driverObj = driver({
     showProgress: false,
@@ -84,27 +86,27 @@ export default function useListDriver() {
       }
     ],
     onDestroyed: () => {
-      setListCompleted(true)
+      setListCompleted(true);
     }
-  })
+  });
 
   const startGuide = useCallback(() => {
-    driverObj.drive()
-  }, [driverObj])
+    driverObj.drive();
+  }, [driverObj]);
 
   const closeGuide = () => {
-    driverObj.destroy()
-  }
+    driverObj.destroy();
+  };
 
   const handleUserGuide = async () => {
     try {
       if (isGuideEnabled && !listCompleted) {
         requestAnimationFrame(() => {
-          startGuide()
-        })
+          startGuide();
+        });
       }
     } catch (error) {}
-  }
+  };
 
-  return { startGuide, handleUserGuide, closeGuide }
+  return { startGuide, handleUserGuide, closeGuide };
 }

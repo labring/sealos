@@ -81,7 +81,7 @@ if (Select-String -Path \$ConfigFile -Pattern "^Host \$Name") {
     # Append to the end of the file
     Add-Content -Path \$ConfigFile -Value \$HostEntry
 }
-`
+`;
 export const macosAndLinuxScriptsTemplate = (
   privateKey: string,
   configHost: string,
@@ -161,7 +161,7 @@ if grep -q "^Host \$NAME" "\$CONFIG_FILE"; then
     mv "$temp_file" "$CONFIG_FILE"
 else
     echo "\$HOST_ENTRY" >> "\$CONFIG_FILE"
-fi`
+fi`;
 
 export const sshConfig = (
   configHost: string,
@@ -175,7 +175,7 @@ export const sshConfig = (
   IdentityFile ~/.ssh/sealos/${configHost}
   IdentitiesOnly yes
   StrictHostKeyChecking no
-`
+`;
 
 export const sshConnectCommand = (configHost: string) => `ssh ${configHost}
-`
+`;

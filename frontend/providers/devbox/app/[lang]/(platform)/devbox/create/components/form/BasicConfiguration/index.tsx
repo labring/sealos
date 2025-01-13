@@ -1,15 +1,15 @@
-import MyIcon from '@/components/Icon'
-import { Box, BoxProps } from '@chakra-ui/react'
-import { useTranslations } from 'next-intl'
-import ConfigurationHeader from '../ConfigurationHeader'
-import CpuSelector from './CpuSelector'
-import DevboxNameInput from './DevboxNameInput'
-import MemorySelector from './MemorySelector'
-import TemplateRepositorySelector from './TemplateRepositorySelector'
-import TemplateSelector from './TemplateSelector'
+import MyIcon from '@/components/Icon';
+import { Box, BoxProps } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import ConfigurationHeader from '../ConfigurationHeader';
+import CpuSelector from './CpuSelector';
+import DevboxNameInput from './DevboxNameInput';
+import MemorySelector from './MemorySelector';
+import TemplateRepositorySelector from './TemplateRepositorySelector';
+import TemplateSelector from './TemplateSelector';
 
 export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { isEdit: boolean }) {
-  const t = useTranslations()
+  const t = useTranslations();
   return (
     <Box {...props}>
       <ConfigurationHeader>
@@ -32,5 +32,5 @@ export default function BasicConfiguration({ isEdit, ...props }: BoxProps & { is
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
