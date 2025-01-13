@@ -83,7 +83,6 @@ const Version = () => {
     listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
       if (!devbox) return
       const result = await getTemplateConfig(devbox.templateUid)
       const config = parseTemplateConfig(result.template.config)

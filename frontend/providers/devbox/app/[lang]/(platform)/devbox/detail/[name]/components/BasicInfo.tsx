@@ -5,11 +5,12 @@ import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/rea
 
 import MyIcon from '@/components/Icon'
 import { useEnvStore } from '@/stores/env'
-import { downLoadBlob } from '@/utils/tools'
 import { useDevboxStore } from '@/stores/devbox'
+import { getTemplateConfig } from '@/api/template'
+import { getSSHConnectionInfo } from '@/api/devbox'
 import { JetBrainsGuideData } from '@/components/IDEButton'
+import { downLoadBlob, parseTemplateConfig } from '@/utils/tools'
 import SshConnectModal from '@/components/modals/SshConnectModal'
-import { getSSHConnectionInfo, getSSHRuntimeInfo } from '@/api/devbox'
 
 const BasicInfo = () => {
   const t = useTranslations()
@@ -26,21 +27,22 @@ const BasicInfo = () => {
     const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
       devboxName: devboxDetail?.name as string
     })
-    const { workingDir } = await getSSHRuntimeInfo({
-      devboxName: devboxDetail?.name as string,
-      runtimeName: devboxDetail?.templateName as string
-    })
+
+    const result = await getTemplateConfig(devboxDetail?.templateUid as string)
+    const config = parseTemplateConfig(result.template.config)
+    console.log('config', config)
+
     const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
 
     if (!devboxDetail?.sshPort) return
 
     setSshConfigData({
       devboxName: devboxDetail?.name,
-      runtimeType: devboxDetail?.iconId,
+      runtimeType: devboxDetail?.templateRepositoryName,
       privateKey: sshPrivateKey,
       userName,
       token,
-      workingDir,
+      workingDir: config.workingDir,
       host: env.sealosDomain,
       port: devboxDetail?.sshPort.toString(),
       configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
@@ -48,12 +50,12 @@ const BasicInfo = () => {
 
     setOnOpenSsHConnect(true)
   }, [
-    devboxDetail?.iconId,
     devboxDetail?.name,
+    devboxDetail?.templateUid,
     devboxDetail?.sshPort,
-    devboxDetail?.templateName,
-    env.namespace,
-    env.sealosDomain
+    devboxDetail?.templateRepositoryName,
+    env.sealosDomain,
+    env.namespace
   ])
 
   const handleCopySSHCommand = useCallback(() => {

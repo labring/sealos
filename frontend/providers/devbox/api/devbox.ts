@@ -114,10 +114,3 @@ export const execCommandInDevboxPod = (data: {
     onDownloadProgress: data.onDownloadProgress,
     signal: data.signal
   })
-
-export const getSSHRuntimeInfo = (data: { devboxName: string; runtimeName: string }) =>
-  GET<{
-    workingDir: string
-    releaseCommand: string
-    releaseArgs: string
-  }>('/api/getSSHRuntimeInfo', data)
