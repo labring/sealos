@@ -7,10 +7,10 @@ import { useToast } from '@/hooks/useToast';
 import { serviceSideProps } from '@/utils/i18n';
 import DetailLayout from '@/components/layouts/DetailLayout';
 
-import { Header } from './components/Header';
-import { Filter } from './components/Filter';
-import { LogTable } from './components/LogTable';
-import { LogCounts } from './components/LogCounts';
+import { Header } from '@/components/app/detail/logs/Header';
+import { Filter } from '@/components/app/detail/logs/Filter';
+import { LogTable } from '@/components/app/detail/logs/LogTable';
+import { LogCounts } from '@/components/app/detail/logs/LogCounts';
 
 export default function LogsPage({ appName }: { appName: string }) {
   const { toast } = useToast();
