@@ -44,20 +44,20 @@ const AppDetail = ({ appName }: { appName: string }) => {
     }
   });
 
-  useQuery(
-    ['app-detail-pod'],
-    () => {
-      if (appDetail?.isPause) return null;
-      return intervalLoadPods(appName, true);
-    },
-    {
-      refetchOnMount: true,
-      refetchInterval: 3000,
-      onSettled() {
-        setPodsLoaded(true);
-      }
-    }
-  );
+  // useQuery(
+  //   ['app-detail-pod'],
+  //   () => {
+  //     if (appDetail?.isPause) return null;
+  //     return intervalLoadPods(appName, true);
+  //   },
+  //   {
+  //     refetchOnMount: true,
+  //     refetchInterval: 3000,
+  //     onSettled() {
+  //       setPodsLoaded(true);
+  //     }
+  //   }
+  // );
 
   useQuery(
     ['loadDetailMonitorData', appName, appDetail?.isPause],

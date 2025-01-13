@@ -9,8 +9,10 @@ import Header from '@/components/Monitor/Header';
 
 export default function MonitorPage({ appName }: { appName: string }) {
   const { toast } = useToast();
-  const { appDetail } = useAppStore();
+  const { appDetail, appDetailPods } = useAppStore();
   const { t } = useTranslation();
+
+  console.log(appName, 'appName', appDetail, appDetailPods);
 
   const { data: monitorData } = useQuery(
     ['monitor-data', appName],
