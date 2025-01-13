@@ -29,9 +29,6 @@ const DevboxList = ({
   const router = useRouter();
   const t = useTranslations();
   const { message: toast } = useMessage();
-  const duplicatedDevboxList = Array(20)
-    .fill(0)
-    .flatMap(() => [...devboxList]);
 
   // TODO: Unified Loading Behavior
   const { setLoading } = useGlobalStore();
@@ -347,7 +344,7 @@ const DevboxList = ({
   ];
   return (
     <>
-      <AdvancedTable columns={columns} data={duplicatedDevboxList} itemClass="devboxListItem" />
+      <AdvancedTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}
