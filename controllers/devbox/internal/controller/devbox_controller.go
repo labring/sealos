@@ -616,44 +616,13 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 }
 
 func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	servicePorts, err := r.getServicePort(ctx, devbox, recLabels)
-	if err != nil {
-		return err
-	}
 	switch devbox.Spec.NetworkSpec.Type {
 	case devboxv1alpha1.NetworkTypeNodePort:
 		return r.syncNodePortNetwork(ctx, devbox, recLabels)
 	case devboxv1alpha1.NetworkTypeWebSocket:
-		return r.syncWebSocketNetwork(ctx, devbox, recLabels, servicePorts)
+		return r.syncWebSocketNetwork(ctx, devbox, recLabels )
 	}
 	return nil
-}
-
-func (r *DevboxReconciler) getServicePort(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) ([]corev1.ServicePort, error) {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return nil, err
-	}
-	var servicePorts []corev1.ServicePort
-	for _, port := range runtimecr.Spec.Config.Ports {
-		servicePorts = append(servicePorts, corev1.ServicePort{
-			Name:       port.Name,
-			Port:       port.ContainerPort,
-			TargetPort: intstr.FromInt32(port.ContainerPort),
-			Protocol:   port.Protocol,
-		})
-	}
-	if len(servicePorts) == 0 {
-		servicePorts = []corev1.ServicePort{
-			{
-				Name:       "devbox-ssh-port",
-				Port:       22,
-				TargetPort: intstr.FromInt32(22),
-				Protocol:   corev1.ProtocolTCP,
-			},
-		}
-	}
-	return servicePorts, nil
 }
 
 func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
