@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { useLoading } from '@/hooks/useLoading';
 import { downLoadBold } from '@/utils/tools';
-import styles from '../index.module.scss';
+import styles from '@/components/app/detail/index/index.module.scss';
 import { SealosMenu } from '@sealos/ui';
 import Empty from './empty';
 import { ChevronDownIcon } from '@chakra-ui/icons';

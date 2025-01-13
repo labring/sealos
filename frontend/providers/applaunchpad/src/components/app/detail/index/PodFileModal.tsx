@@ -48,7 +48,7 @@ import { MyTooltip, SealosMenu, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { MouseEvent, useMemo, useState } from 'react';
-import styles from '../index.module.scss';
+import styles from '@/components/app/detail/index/index.module.scss';
 
 type HandleType = 'delete' | 'rename' | 'mkdir-file' | 'mkdir' | 'download';
 

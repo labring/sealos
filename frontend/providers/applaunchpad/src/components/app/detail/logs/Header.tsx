@@ -71,7 +71,9 @@ export const Header = () => {
           Pods
         </Text>
         <AdvancedSelect
+          placeholder={t('please_select')}
           height="32px"
+          minW={'200px'}
           checkBoxMode
           leftIcon={<MyIcon name="pods" w={'16px'} h={'16px'} color={'grayModern.500'} />}
           width={'fit-content'}
@@ -88,6 +90,8 @@ export const Header = () => {
           Containers
         </Text>
         <AdvancedSelect
+          minW={'200px'}
+          placeholder={t('please_select')}
           height="32px"
           checkBoxMode
           leftIcon={<MyIcon name="container" w={'16px'} h={'16px'} color={'grayModern.500'} />}

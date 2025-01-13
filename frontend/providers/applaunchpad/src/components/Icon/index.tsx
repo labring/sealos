@@ -59,6 +59,7 @@ export const IconMap = {
   refresh: require('./icons/refresh.svg').default,
   container: require('./icons/container.svg').default,
   arrowRight: require('./icons/arrowRight.svg').default,
+  chart: require('./icons/chart.svg').default,
   export: require('./icons/export.svg').default
 };
 

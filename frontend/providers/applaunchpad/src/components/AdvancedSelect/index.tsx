@@ -66,14 +66,10 @@ const AdvancedSelect = (
     }
   });
 
-  const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
-
-  const selectedCount = useMemo(
-    () => (checkBoxMode ? list.filter((item) => item.checked).length : 0),
-    [list, checkBoxMode]
-  );
-
   const displayText = useMemo(() => {
+    const selectedCount = checkBoxMode ? list.filter((item) => item.checked).length : 0;
+    const activeMenu = list.find((item) => item.value === value);
+
     if (!checkBoxMode) {
       return activeMenu ? activeMenu.label : placeholder;
     }
@@ -84,7 +80,7 @@ const AdvancedSelect = (
       return t('all');
     }
     return `${t('selected')} ${selectedCount}`;
-  }, [activeMenu, placeholder, selectedCount, list.length, checkBoxMode, t]);
+  }, [checkBoxMode, list, t, value, placeholder]);
 
   return (
     <Menu
@@ -267,4 +263,4 @@ const AdvancedSelect = (
   );
 };
 
-export default React.memo(forwardRef(AdvancedSelect));
+export default forwardRef(AdvancedSelect);
