@@ -10,12 +10,12 @@ import { useRouter } from '@/i18n';
 import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag';
 import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
-import ReleaseModal from '@/components/modals/releaseModal';
 import PodLineChart from '@/components/PodLineChart';
 import { AdvancedTable } from '@/components/AdvancedTable';
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import ReleaseModal from '@/components/modals/ReleaseModal';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
