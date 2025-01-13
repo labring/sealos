@@ -125,20 +125,12 @@ const SshConnectModal = ({
           top={'5%'}
           maxWidth={'800px'}
           w={'700px'}
-          h={activeStep === stepEnum.OneClick ? '60%' : '80%'}
+          h={'80%'}
           transition={'height 0.2s ease-in-out'}
           position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
-          <ModalBody
-            pb={6}
-            overflowY={'auto'}
-            sx={{
-              '&::-webkit-scrollbar': {
-                width: '0',
-                background: 'transparent'
-              }
-            }}>
+          <ModalBody pb={6} overflowY={'auto'}>
             <Tabs
               onChange={(index) => setActiveTab(index)}
               mb={4}
@@ -172,7 +164,7 @@ const SshConnectModal = ({
                         borderColor={'grayModern.100'}>
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
-                      <Flex flexDirection={'column'} gap={4} mt={1} ml={2} mb={5} flex={1}>
+                      <Flex flexDirection={'column'} gap={12} mt={1} ml={2} mb={5} flex={1}>
                         <Box
                           fontSize={'14px'}
                           color={'grayModern.900'}
@@ -256,7 +248,7 @@ const SshConnectModal = ({
                         borderColor={'grayModern.100'}>
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
-                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={12} flex={1}>
                         <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                         <ScriptCode
                           oneLine={true}
@@ -279,7 +271,7 @@ const SshConnectModal = ({
                     />
                   </Step>
                 </Stepper>
-                <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
+                <Box position={'relative'} w={'100%'} h={'30px'} mt={8}>
                   <Button
                     w={'100%'}
                     bg={'white'}
