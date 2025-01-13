@@ -68,6 +68,24 @@ const AdvancedSelect = (
 
   const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
 
+  const selectedCount = useMemo(
+    () => (checkBoxMode ? list.filter((item) => item.checked).length : 0),
+    [list, checkBoxMode]
+  );
+
+  const displayText = useMemo(() => {
+    if (!checkBoxMode) {
+      return activeMenu ? activeMenu.label : placeholder;
+    }
+    if (selectedCount === 0) {
+      return placeholder;
+    }
+    if (selectedCount === list.length) {
+      return t('all');
+    }
+    return `${t('selected')} ${selectedCount}`;
+  }, [activeMenu, placeholder, selectedCount, list.length, checkBoxMode, t]);
+
   return (
     <Menu
       autoSelect={false}
@@ -121,7 +139,7 @@ const AdvancedSelect = (
             alignItems={'center'}
             {...(placeholder ? { color: 'grayModern.500' } : {})}
           >
-            {activeMenu ? activeMenu.label : placeholder}
+            {displayText}
           </Flex>
         </MenuButton>
 

@@ -5,10 +5,9 @@ import { serviceSideProps } from '@/utils/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-
 import { RequestController, isElementInViewport } from '@/utils/tools';
-import AppList from './components/appList';
-import Empty from './components/empty';
+import AppList from '@/components/apps/appList';
+import Empty from '@/components/apps/empty';
 
 const Home = () => {
   const router = useRouter();

@@ -313,5 +313,7 @@
   "all": "All",
   "hour-singular": "hour",
   "not_equal": "is not",
-  "field_settings": "Field Setting"
+  "field_settings": "Field Setting",
+  "selected": "Selected",
+  "please_select": "Please Select"
 }

@@ -313,5 +313,7 @@
   "all": "全部",
   "hour-singular": "小时",
   "not_equal": "不等于",
-  "field_settings": "字段设置"
+  "field_settings": "字段设置",
+  "selected": "已选中",
+  "please_select": "请选择"
 }

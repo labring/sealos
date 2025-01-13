@@ -17,6 +17,7 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const { toast } = useToast();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
+
   const {
     appDetail = MOCK_APP_DETAIL,
     setAppDetail,
@@ -34,6 +35,18 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
       });
     }
   });
+
+  useQuery(
+    ['app-detail-pod'],
+    () => {
+      if (appDetail?.isPause) return null;
+      return intervalLoadPods(appName, true);
+    },
+    {
+      refetchOnMount: true,
+      refetchInterval: 3000
+    }
+  );
 
   useQuery(
     ['loadDetailMonitorData', appName, appDetail?.isPause],
