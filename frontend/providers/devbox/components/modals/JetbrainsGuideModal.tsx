@@ -130,7 +130,14 @@ const JetBrainsGuideModal = ({
     <Box>
       <Modal isOpen onClose={onConnecting ? () => {} : onClose} lockFocusAcrossFrames={false}>
         <ModalOverlay />
-        <ModalContent top={'5%'} maxWidth={'800px'} w={'700px'} h={'80%'} position={'relative'}>
+        <ModalContent
+          top={'1%'}
+          maxWidth={'800px'}
+          w={'700px'}
+          h={'80%'}
+          position={'relative'}
+          minH={'785px'}
+        >
           <ModalHeader pl={10}>{t('use_jetbrains')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} isDisabled={onConnecting} />
           <ModalBody pb={6} overflowY={'auto'}>

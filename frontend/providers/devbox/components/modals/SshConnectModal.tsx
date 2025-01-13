@@ -122,10 +122,11 @@ const SshConnectModal = ({
       <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'4xl'}>
         <ModalOverlay />
         <ModalContent
-          top={'5%'}
+          top={'1%'}
           maxWidth={'800px'}
           w={'700px'}
           h={'80%'}
+          minH={'785px'}
           transition={'height 0.2s ease-in-out'}
           position={'relative'}
         >
@@ -469,7 +470,7 @@ const SshConnectModal = ({
                     />
                   </Step>
                 </Stepper>
-                <Box position={'relative'} w={'100%'} h={'30px'} my={4}>
+                <Box position={'relative'} w={'100%'} h={'30px'} mt={4}>
                   <Button
                     w={'100%'}
                     bg={'white'}
