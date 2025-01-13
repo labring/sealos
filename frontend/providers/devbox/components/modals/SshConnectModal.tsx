@@ -119,17 +119,16 @@ const SshConnectModal = ({
 
   return (
     <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'4xl'}>
+      <Modal
+        isOpen
+        onClose={onClose}
+        lockFocusAcrossFrames={false}
+        size={'4xl'}
+        isCentered
+        scrollBehavior={'inside'}
+      >
         <ModalOverlay />
-        <ModalContent
-          top={'1%'}
-          maxWidth={'800px'}
-          w={'700px'}
-          h={'80%'}
-          minH={'785px'}
-          transition={'height 0.2s ease-in-out'}
-          position={'relative'}
-        >
+        <ModalContent maxWidth={'800px'} w={'700px'} minH={'785px'} position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
