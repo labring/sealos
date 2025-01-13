@@ -349,27 +349,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	return nil
 }
 
-func (r *DevboxReconciler) syncNodePortNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	var servicePorts []corev1.ServicePort
-	for _, port := range devbox.Spec.Config.Ports {
-		servicePorts = append(servicePorts, corev1.ServicePort{
-			Name:       port.Name,
-			Port:       port.ContainerPort,
-			TargetPort: intstr.FromInt32(port.ContainerPort),
-			Protocol:   port.Protocol,
-		})
-	}
-	if len(servicePorts) == 0 {
-		//use the default value
-		servicePorts = []corev1.ServicePort{
-			{
-				Name:       "devbox-ssh-port",
-				Port:       22,
-				TargetPort: intstr.FromInt32(22),
-				Protocol:   corev1.ProtocolTCP,
-			},
-		}
-	}
+func (r *DevboxReconciler) syncNodePortNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeNodePort,
@@ -616,13 +596,38 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 }
 
 func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+	servicePorts := r.generateServicePorts(ctx, devbox)
 	switch devbox.Spec.NetworkSpec.Type {
 	case devboxv1alpha1.NetworkTypeNodePort:
-		return r.syncNodePortNetwork(ctx, devbox, recLabels)
+		return r.syncNodePortNetwork(ctx, devbox, recLabels, servicePorts)
 	case devboxv1alpha1.NetworkTypeWebSocket:
-		return r.syncWebSocketNetwork(ctx, devbox, recLabels )
+		return r.syncWebSocketNetwork(ctx, devbox, recLabels, servicePorts)
 	}
 	return nil
+}
+
+func (r *DevboxReconciler) generateServicePorts(ctx context.Context, devbox *devboxv1alpha1.Devbox) []corev1.ServicePort {
+	var servicePorts []corev1.ServicePort
+	for _, port := range devbox.Spec.Config.Ports {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.ContainerPort,
+			TargetPort: intstr.FromInt32(port.ContainerPort),
+			Protocol:   port.Protocol,
+		})
+	}
+	if len(servicePorts) == 0 {
+		//use the default value
+		servicePorts = []corev1.ServicePort{
+			{
+				Name:       "devbox-ssh-port",
+				Port:       22,
+				TargetPort: intstr.FromInt32(22),
+				Protocol:   corev1.ProtocolTCP,
+			},
+		}
+	}
+	return servicePorts
 }
 
 func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
@@ -654,10 +659,6 @@ type DevboxClaims struct {
 }
 
 func (r *DevboxReconciler) syncPodSvc(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return err
-	}
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeClusterIP,
@@ -667,7 +668,7 @@ func (r *DevboxReconciler) syncPodSvc(ctx context.Context, devbox *devboxv1alpha
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devbox.Name + "-pod-svc",
 			Namespace: devbox.Namespace,
-			Labels:    helper.GenerateProxyPodLabels(devbox, runtimecr),
+			Labels:    helper.GenerateProxyPodLabels(devbox),
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
@@ -694,11 +695,6 @@ func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1
 }
 
 func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) (*appsv1.Deployment, error) {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return nil, err
-	}
-
 	podEnv, err := r.generateProxyPodEnv(ctx, devbox, servicePorts)
 	if err != nil {
 		return nil, err
@@ -720,20 +716,20 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        r.generateProxyPodDeploymentName(devbox),
 			Namespace:   devbox.Namespace,
-			Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
-			Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
+			Labels:      helper.GenerateProxyPodLabels(devbox),
+			Annotations: helper.GeneratePodAnnotations(devbox),
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: helper.GenerateProxyPodLabels(devbox, runtimecr),
+				MatchLabels: helper.GenerateProxyPodLabels(devbox),
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        r.generateProxyPodName(devbox),
 					Namespace:   devbox.Namespace,
-					Labels:      helper.GenerateProxyPodLabels(devbox, runtimecr),
-					Annotations: helper.GeneratePodAnnotations(devbox, runtimecr),
+					Labels:      helper.GenerateProxyPodLabels(devbox),
+					Annotations: helper.GeneratePodAnnotations(devbox),
 				},
 				Spec: podSpec,
 			},
@@ -747,7 +743,7 @@ func (r *DevboxReconciler) generateProxyPodName(devbox *devboxv1alpha1.Devbox) s
 
 func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) ([]corev1.EnvVar, error) {
 	var envVars []corev1.EnvVar
-	autoShutdownEnabled := devbox.Spec..Enable && r.EnableAutoShutdown
+	autoShutdownEnabled := devbox.Spec.AutoShutdownSpec.Enable && r.EnableAutoShutdown
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "ENABLE_AUTO_SHUTDOWN",
 		Value: strconv.FormatBool(autoShutdownEnabled),
@@ -759,17 +755,14 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 			Value: devbox.Spec.AutoShutdownSpec.Time,
 		})
 	}
-
 	token, err := r.generateProxyPodJWT(ctx, devbox)
 	if err != nil {
 		return nil, err
 	}
-
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "JWT_TOKEN",
 		Value: token,
 	})
-
 	sshPort := "22"
 	for _, port := range servicePorts {
 		if port.Name == "devbox-ssh-port" {
@@ -781,17 +774,14 @@ func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devb
 		Name:  "TARGET",
 		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
 	})
-
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "LISTEN",
 		Value: "0.0.0.0:80",
 	})
-
 	envVars = append(envVars, corev1.EnvVar{
 		Name:  "AUTO_SHUTDOWN_SERVICE_URL",
 		Value: r.ShutdownServerAddr,
 	})
-
 	return envVars, nil
 }
 
@@ -844,10 +834,6 @@ func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alp
 }
 
 func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return err
-	}
 	servicePort := []corev1.ServicePort{
 		{
 			Name:       "devbox-ssh-port",
@@ -857,7 +843,7 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 		},
 	}
 	expectServiceSpec := corev1.ServiceSpec{
-		Selector: helper.GenerateProxyPodLabels(devbox, runtimecr),
+		Selector: helper.GenerateProxyPodLabels(devbox),
 		Type:     corev1.ServiceTypeClusterIP,
 		Ports:    servicePort,
 	}
@@ -865,7 +851,7 @@ func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alp
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      devbox.Name + "-proxy-svc",
 			Namespace: devbox.Namespace,
-			Labels:    helper.GenerateProxyPodLabels(devbox, runtimecr),
+			Labels:    helper.GenerateProxyPodLabels(devbox),
 		},
 		Spec: expectServiceSpec,
 	}

@@ -62,14 +62,6 @@ type NetworkSpec struct {
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
 }
 
-type AutoShutdownSpec struct {
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	Enable bool `json:"type"`
-	// +kubebuilder:validation:Optional
-	Time string `json:"time"`
-}
-
 type Config struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=devbox
@@ -111,6 +103,14 @@ type Config struct {
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
+type AutoShutdownSpec struct {
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
+	Enable bool `json:"type"`
+	// +kubebuilder:validation:Optional
+	Time string `json:"time"`
+}
+
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
@@ -143,6 +143,9 @@ type DevboxSpec struct {
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 	// +kubebuilder:validation:Optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	AutoShutdownSpec AutoShutdownSpec `json:"autoShutdown,omitempty"`
 }
 
 type NetworkStatus struct {
@@ -217,8 +220,6 @@ type DevboxStatus struct {
 	State corev1.ContainerState `json:"state"`
 	// +kubebuilder:validation:Optional
 	LastTerminationState corev1.ContainerState `json:"lastState"`
-	// +kubebuilder:validation:Optional
-	AutoShutdownSpec AutoShutdownSpec `json:"autoShutdown,omitempty"`
 }
 
 // +kubebuilder:object:root=true

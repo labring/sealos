@@ -58,15 +58,11 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	return labels
 }
 
-func GenerateProxyPodLabels(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime) map[string]string {
+func GenerateProxyPodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	labels := make(map[string]string)
-	if runtime.Spec.Config.Labels != nil {
-		for k, v := range runtime.Spec.Config.Labels {
-			labels[k] = v
-		}
-	}
-	if devbox.Spec.ExtraLabels != nil {
-		for k, v := range devbox.Spec.ExtraLabels {
+
+	if devbox.Spec.Config.Labels != nil {
+		for k, v := range devbox.Spec.Config.Labels {
 			labels[k] = v
 		}
 	}
