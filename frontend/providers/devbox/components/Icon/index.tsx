@@ -81,7 +81,8 @@ const map = {
   rider: require('./icons/jetbrains/rider.svg').default,
   rubymine: require('./icons/jetbrains/rubymine.svg').default,
   rustover: require('./icons/jetbrains/rustover.svg').default,
-  webstorm: require('./icons/jetbrains/webstorm.svg').default
+  webstorm: require('./icons/jetbrains/webstorm.svg').default,
+  gift: require('./icons/gift.svg').default
 }
 
 const MyIcon = ({

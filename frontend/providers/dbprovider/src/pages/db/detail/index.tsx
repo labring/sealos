@@ -22,7 +22,7 @@ import ErrorLog from '@/pages/db/detail/components/ErrorLog';
 import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
-import { getDBByName } from '@/api/db';
+import OperationLog from './components/OperationLog';
 
 enum TabEnum {
   pod = 'pod',
@@ -33,7 +33,8 @@ enum TabEnum {
   Reconfigure = 'reconfigure',
   DataImport = 'dataImport',
   ErrorLog = 'errorLog',
-  Overview = 'overview'
+  Overview = 'overview',
+  OperationLog = 'operationLog'
 }
 
 const AppDetail = ({
@@ -65,11 +66,15 @@ const AppDetail = ({
         value: TabEnum.Overview,
         icon: <MyIcon name="overview" w={'16px'} h={'16px'} />
       },
-
       {
         label: 'monitor_list',
         value: TabEnum.monitor,
         icon: <MyIcon name="monitor" w={'16px'} h={'16px'} />
+      },
+      {
+        label: 'change_log',
+        value: TabEnum.OperationLog,
+        icon: <MyIcon name="restore" w={'16px'} h={'16px'} />
       },
       ...(PublicNetMigration
         ? [
@@ -233,6 +238,8 @@ const AppDetail = ({
             )}
 
             {listType === TabEnum.ErrorLog && <ErrorLog ref={ReconfigureTableRef} db={dbDetail} />}
+
+            {listType === TabEnum.OperationLog && <OperationLog db={dbDetail} />}
           </Box>
         )}
       </Flex>
@@ -255,16 +262,9 @@ const AppDetail = ({
 export default AppDetail;
 
 export async function getServerSideProps(context: any) {
-  let dbType = context.query?.dbType || '';
-
+  const dbType = context.query?.dbType || '';
   const dbName = context.query?.name || '';
   const listType = context.query?.listType || TabEnum.Overview;
-
-  if (!dbType) {
-    const baseURL = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-    const db = await getDBByName(dbName, { baseURL });
-    dbType = db.dbType;
-  }
 
   return {
     props: { ...(await serviceSideProps(context)), dbName, listType, dbType }

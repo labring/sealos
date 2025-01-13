@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let totalMemoryLimits = 0;
     let totalStorageRequests = 0;
     let runningPodCount = 0;
+    let totalGpuCount = 0;
     let totalPodCount = 0;
 
     for (const pod of result.body.items) {
@@ -40,9 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const limits = container?.resources.limits as {
           cpu: string;
           memory: string;
+          ['nvidia.com/gpu']?: string;
         };
         totalCpuLimits += parseResourceValue(limits.cpu);
         totalMemoryLimits += parseResourceValue(limits.memory);
+
+        totalGpuCount += Number(limits['nvidia.com/gpu'] || 0);
       }
 
       if (!pod?.spec?.volumes) continue;
@@ -65,7 +69,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         totalMemory: totalMemoryLimits.toFixed(2),
         totalStorage: totalStorageRequests.toFixed(2),
         runningPodCount,
-        totalPodCount
+        totalPodCount,
+        totalGpuCount
         // result: result.body.items
       }
     });

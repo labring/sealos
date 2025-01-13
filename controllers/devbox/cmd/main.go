@@ -27,6 +27,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -42,7 +43,9 @@ import (
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
+	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -65,19 +68,24 @@ func main() {
 	var secureMetrics bool
 	var enableHTTP2 bool
 	var tlsOpts []func(*tls.Config)
+	// debug flag
+	var debugMode bool
+	// registry flag
 	var registryAddr string
 	var registryUser string
 	var registryPassword string
-	var authAddr string
+	// resource flag
 	var requestCPURate float64
 	var requestMemoryRate float64
 	var requestEphemeralStorage string
 	var limitEphemeralStorage string
-	var debugMode bool
-	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
-	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
-	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
-	flag.StringVar(&authAddr, "auth-addr", "sealos.hub:5000", "The address of the auth")
+	var maximumLimitEphemeralStorage string
+	// pod matcher flag
+	var enablePodResourceMatcher bool
+	var enablePodEnvMatcher bool
+	var enablePodPortMatcher bool
+	var enablePodEphemeralStorageMatcher bool
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -88,11 +96,24 @@ func main() {
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	// debug flag
 	flag.BoolVar(&debugMode, "debug", false, "If set, debug mode will be enabled")
+	// registry flag
+	flag.StringVar(&registryAddr, "registry-addr", "sealos.hub:5000", "The address of the registry")
+	flag.StringVar(&registryUser, "registry-user", "admin", "The user of the registry")
+	flag.StringVar(&registryPassword, "registry-password", "passw0rd", "The password of the registry")
+	// resource flag
 	flag.Float64Var(&requestCPURate, "request-cpu-rate", 10, "The request rate of cpu limit in devbox.")
 	flag.Float64Var(&requestMemoryRate, "request-memory-rate", 10, "The request rate of memory limit in devbox.")
-	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The request value of ephemeral storage in devbox.")
-	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The limit value of ephemeral storage in devbox.")
+	flag.StringVar(&requestEphemeralStorage, "request-ephemeral-storage", "500Mi", "The default request value of ephemeral storage in devbox.")
+	flag.StringVar(&limitEphemeralStorage, "limit-ephemeral-storage", "10Gi", "The default limit value of ephemeral storage in devbox.")
+	flag.StringVar(&maximumLimitEphemeralStorage, "maximum-limit-ephemeral-storage", "50Gi", "The maximum limit value of ephemeral storage in devbox.")
+	// pod matcher flag, pod resource matcher, env matcher, port matcher will be enabled by default, ephemeral storage matcher will be disabled by default
+	flag.BoolVar(&enablePodResourceMatcher, "enable-pod-resource-matcher", true, "If set, pod resource matcher will be enabled")
+	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
+	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
+	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
+
 	opts := zap.Options{
 		Development: true,
 	}
@@ -182,16 +203,36 @@ func main() {
 		os.Exit(1)
 	}
 
+	podMatchers := []matcher.PodMatcher{}
+	if enablePodResourceMatcher {
+		podMatchers = append(podMatchers, matcher.ResourceMatcher{})
+	}
+	if enablePodEnvMatcher {
+		podMatchers = append(podMatchers, matcher.EnvVarMatcher{})
+	}
+	if enablePodPortMatcher {
+		podMatchers = append(podMatchers, matcher.PortMatcher{})
+	}
+	if enablePodEphemeralStorageMatcher {
+		podMatchers = append(podMatchers, matcher.EphemeralStorageMatcher{})
+	}
+
 	if err = (&controller.DevboxReconciler{
-		Client:                  mgr.GetClient(),
-		Scheme:                  mgr.GetScheme(),
-		CommitImageRegistry:     registryAddr,
-		Recorder:                mgr.GetEventRecorderFor("devbox-controller"),
-		RequestCPURate:          requestCPURate,
-		RequestMemoryRate:       requestMemoryRate,
-		RequestEphemeralStorage: requestEphemeralStorage,
-		LimitEphemeralStorage:   limitEphemeralStorage,
-		DebugMode:               debugMode,
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		CommitImageRegistry: registryAddr,
+		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
+		RequestRate: utilresource.RequestRate{
+			CPU:    requestCPURate,
+			Memory: requestMemoryRate,
+		},
+		EphemeralStorage: utilresource.EphemeralStorage{
+			DefaultRequest: resource.MustParse(requestEphemeralStorage),
+			DefaultLimit:   resource.MustParse(limitEphemeralStorage),
+			MaximumLimit:   resource.MustParse(maximumLimitEphemeralStorage),
+		},
+		PodMatchers: podMatchers,
+		DebugMode:   debugMode,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)

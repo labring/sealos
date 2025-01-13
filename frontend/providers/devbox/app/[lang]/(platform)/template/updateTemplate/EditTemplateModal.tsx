@@ -69,8 +69,8 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       name: string;
       config: string;
       image: string;
-      createAt: Date;
-      updateAt: Date;
+      createdAt: Date;
+      updatedAt: Date;
     }) => JSX.Element
   }[] = [
       {
@@ -93,14 +93,14 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
         dataIndex: 'createAt',
         key: 'createAt',
         render: (item) => {
-          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD mm:ss')}</Text>
+          return <Text color={'grayModern.600'}>{dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')}</Text>
         }
       }, {
         title: t('update_time'),
-        dataIndex: 'createAt',
-        key: 'createAt',
+        dataIndex: 'updateAt',
+        key: 'updateAt',
         render: (item) => {
-          return <Text color={'grayModern.600'}>{dayjs().format('YYYY-MM-DD mm:ss')}</Text>
+          return <Text color={'grayModern.600'}>{dayjs(item.updatedAt).format('YYYY-MM-DD HH:mm')}</Text>
         }
       },
       {
@@ -133,16 +133,6 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
         )
       }
     ]
-  // const mock = [
-  //   {
-  //     "uid": "741bc275-107a-43a7-ac01-2d26a0f64297",
-  //     "name": "v1",
-  //     "config": "{\"appPorts\":[{\"name\":\"devbox-app-port\",\"port\":8080,\"protocol\":\"TCP\",\"targetPort\":0}],\"ports\":[{\"containerPort\":22,\"name\":\"devbox-ssh-port\",\"protocol\":\"TCP\"}],\"releaseArgs\":[\"/home/devbox/project/entrypoint.sh\"],\"releaseCommand\":[\"/bin/bash\",\"-c\"],\"user\":\"devbox\",\"workingDir\":\"/home/devbox/project\"}",
-  //     "image": "sealos.hub:5000/vfwsepe/devbox4:v1",
-  //     "createdAt": "2024-12-13T08:29:26.171Z",
-  //     "updatedAt": "2024-12-13T08:29:26.171Z"
-  //   },
-  // ]
   const templateList =
     templateRepositoryQuery.data?.templateList || []
   return (<>

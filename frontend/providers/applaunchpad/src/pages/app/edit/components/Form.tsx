@@ -84,6 +84,7 @@ const Form = ({
     control,
     setValue,
     getValues,
+    watch,
     formState: { errors }
   } = formHook;
 
@@ -281,13 +282,17 @@ const Form = ({
     const cpuList = formSliderListConfig[key].cpu;
     const memoryList = formSliderListConfig[key].memory;
 
-    const sortedCpuList =
-      cpu !== undefined ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b) : cpuList;
+    const sortedCpuList = !!gpuType
+      ? cpuList
+      : cpu !== undefined
+      ? [...new Set([...cpuList, cpu])].sort((a, b) => a - b)
+      : cpuList;
 
-    const sortedMemoryList =
-      memory !== undefined
-        ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
-        : memoryList;
+    const sortedMemoryList = !!gpuType
+      ? memoryList
+      : memory !== undefined
+      ? [...new Set([...memoryList, memory])].sort((a, b) => a - b)
+      : memoryList;
 
     return {
       cpu: sliderNumber2MarkList({
@@ -304,7 +309,31 @@ const Form = ({
   }, [formSliderListConfig, getValues]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const SliderList = useMemo(() => countSliderList(), [already]);
+  const SliderList = useMemo(() => countSliderList(), [already, refresh]);
+
+  const persistentVolumes = useMemo(() => {
+    return getValues('volumes')
+      .filter((item) => 'persistentVolumeClaim' in item)
+      .reduce(
+        (
+          acc: {
+            path: string;
+            name: string;
+          }[],
+          volume
+        ) => {
+          const mount = getValues('volumeMounts').find((m) => m.name === volume.name);
+          if (mount) {
+            acc.push({
+              path: mount.mountPath,
+              name: volume.name
+            });
+          }
+          return acc;
+        },
+        []
+      );
+  }, [getValues, refresh]);
 
   return (
     <>
@@ -600,7 +629,7 @@ const Form = ({
                             }
                           })}
                         />
-                        <Box>%</Box>
+                        <Box>{getValues('hpa.target') === 'gpu' ? '' : '%'}</Box>
                         <Tip
                           ml={4}
                           icon={<InfoOutlineIcon />}
@@ -675,6 +704,9 @@ const Form = ({
                         const inventory = countGpuInventory(type);
                         if (type === '' || (selected && inventory > 0)) {
                           setValue('gpu.type', type);
+                          const sliderList = countSliderList();
+                          setValue('cpu', sliderList.cpu[1].value);
+                          setValue('memory', sliderList.memory[1].value);
                         }
                       }}
                     />
@@ -1185,6 +1217,31 @@ const Form = ({
                               }
                             }}
                           />
+                        </Flex>
+                      ))}
+                      {persistentVolumes.map((item) => (
+                        <Flex key={item.path} _notLast={{ mb: 5 }} alignItems={'center'}>
+                          <Flex
+                            alignItems={'center'}
+                            px={4}
+                            py={1}
+                            border={theme.borders.base}
+                            flex={'0 0 320px'}
+                            w={0}
+                            borderRadius={'md'}
+                            cursor={'not-allowed'}
+                            bg={'grayModern.25'}
+                          >
+                            <MyIcon name={'store'} />
+                            <Box ml={4} flex={'1 0 0'} w={0}>
+                              <Box color={'myGray.900'} fontWeight={'bold'}>
+                                {item.path}
+                              </Box>
+                            </Box>
+                            <Box fontSize={'12px'} color={'grayModern.600'}>
+                              {t('shared')}
+                            </Box>
+                          </Flex>
                         </Flex>
                       ))}
                     </Box>

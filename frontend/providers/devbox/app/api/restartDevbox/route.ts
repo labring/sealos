@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         }
       }
     )
+
     // 2.get devbox pod and ensure the devbox pod is deleted,when the devbox pod is deleted,the devbox will be restarted
     let pods
     const maxRetries = 10

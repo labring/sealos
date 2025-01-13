@@ -118,7 +118,7 @@ const IDEButton = ({
   )
 
   return (
-    <Flex {...props}>
+    <Flex className="guide-ide-button" {...props}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}

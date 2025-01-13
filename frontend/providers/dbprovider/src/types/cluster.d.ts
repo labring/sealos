@@ -149,8 +149,47 @@ export type KubeBlockOpsRequestType = {
     };
     ttlSecondsBeforeAbort: number;
     type: string;
+    verticalScaling?: {
+      componentName: string;
+      limits: {
+        cpu: string;
+        memory: string;
+      };
+      requests: {
+        cpu: string;
+        memory: string;
+      };
+    }[];
+    horizontalScaling?: {
+      componentName: string;
+      replicas: number;
+    }[];
+    volumeExpansion?: {
+      componentName: string;
+      volumeClaimTemplates: {
+        storage: string;
+      }[];
+    }[];
   };
   status: {
+    lastConfiguration: {
+      components: {
+        [key: string]: {
+          limits: {
+            cpu: string;
+            memory: string;
+          };
+          requests: {
+            cpu: string;
+            memory: string;
+          };
+          replicas: number;
+          volumeClaimTemplates: {
+            storage: string;
+          }[];
+        };
+      };
+    };
     clusterGeneration: number;
     completionTimestamp: string;
     conditions: {

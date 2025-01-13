@@ -263,7 +263,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                       }
                     />
                   )}
-                  {conf.authConfig?.idp.sms.enabled && (
+                  {conf.authConfig?.idp.sms.enabled && conf.authConfig.idp.sms.ali.enabled && (
                     <ConfigItem
                       LeftElement={<Text>{t('common:phone')}</Text>}
                       RightElement={
@@ -299,40 +299,42 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                       }
                     />
                   )}
-                  <ConfigItem
-                    LeftElement={<Text>{t('common:email')}</Text>}
-                    RightElement={
-                      <>
-                        <Text>
-                          {providerState.EMAIL.isBinding
-                            ? providerState.EMAIL.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
-                            : t('common:unbound')}
-                        </Text>
-                        <Flex gap={'5px'}>
-                          <BindingModifyButton
-                            modifyBehavior={
-                              providerState.EMAIL.isBinding
-                                ? BINDING_STATE_MODIFY_BEHAVIOR.CHANGE_BINDING
-                                : BINDING_STATE_MODIFY_BEHAVIOR.BINDING
-                            }
-                            onClick={() => {
-                              providerState.EMAIL.isBinding
-                                ? setPageState(PageState.EMAIL_CHANGE_BIND)
-                                : setPageState(PageState.EMAIL_BIND);
-                            }}
-                          />
-                          {providerState.EMAIL.isBinding && providerState.total > 1 && (
+                  {conf.authConfig?.idp.sms.enabled && conf.authConfig.idp.sms.email.enabled && (
+                    <ConfigItem
+                      LeftElement={<Text>{t('common:email')}</Text>}
+                      RightElement={
+                        <>
+                          <Text>
+                            {providerState.EMAIL.isBinding
+                              ? providerState.EMAIL.id.replace(/(\d{3})\d+(\d{4})/, '$1****$2')
+                              : t('common:unbound')}
+                          </Text>
+                          <Flex gap={'5px'}>
                             <BindingModifyButton
-                              modifyBehavior={BINDING_STATE_MODIFY_BEHAVIOR.UNBINDING}
+                              modifyBehavior={
+                                providerState.EMAIL.isBinding
+                                  ? BINDING_STATE_MODIFY_BEHAVIOR.CHANGE_BINDING
+                                  : BINDING_STATE_MODIFY_BEHAVIOR.BINDING
+                              }
                               onClick={() => {
-                                setPageState(PageState.EMAIL_UNBIND);
+                                providerState.EMAIL.isBinding
+                                  ? setPageState(PageState.EMAIL_CHANGE_BIND)
+                                  : setPageState(PageState.EMAIL_BIND);
                               }}
                             />
-                          )}
-                        </Flex>
-                      </>
-                    }
-                  />
+                            {providerState.EMAIL.isBinding && providerState.total > 1 && (
+                              <BindingModifyButton
+                                modifyBehavior={BINDING_STATE_MODIFY_BEHAVIOR.UNBINDING}
+                                onClick={() => {
+                                  setPageState(PageState.EMAIL_UNBIND);
+                                }}
+                              />
+                            )}
+                          </Flex>
+                        </>
+                      }
+                    />
+                  )}
                   <AuthModifyList
                     avatarUrl={infoData.data.avatarUri}
                     isOnlyOne={providerState.total === 1}

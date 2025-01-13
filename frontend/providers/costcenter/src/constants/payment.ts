@@ -94,7 +94,7 @@ export const valuationMap = new Map([
   ['gpu', { unit: 'GPU Unit', scale: 1000, bg: '#6FCA88', idx: 3 }],
   ['network', { unit: 'M', scale: 1, bg: '#F182AA', idx: 4 }],
   ['services.nodeports', { unit: 'port_unit', scale: 1000, bg: '#F182AA', idx: 5 }]
-]);
+] as const);
 // export const BillingUnitMap = new Map([
 // 	['cpu', { unit: ''}]
 // 	['port', { unit: ''}]

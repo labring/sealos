@@ -92,6 +92,7 @@ export const getResource = () => {
       totalMemory: string;
       totalStorage: string;
       runningPodCount: string;
+      totalGpuCount: string;
       totalPodCount: string;
     }>
   >('/api/desktop/getResource');

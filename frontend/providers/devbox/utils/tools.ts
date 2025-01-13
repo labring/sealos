@@ -312,6 +312,10 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
   return `${seconds}s`
 }
 
+export const formatMoney = (mone: number) => {
+  return mone / 1000000
+}
+
 export function calculateUptime(createdTime: Date): string {
   const now = dayjs()
   const created = dayjs(createdTime)

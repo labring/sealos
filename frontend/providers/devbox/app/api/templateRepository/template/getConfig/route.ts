@@ -1,6 +1,7 @@
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { getRegionUid } from '@/utils/env'
 import { NextRequest } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +19,6 @@ export async function GET(req: NextRequest) {
     const template = await devboxDB.template.findUnique({
       where: {
         uid,
-        isDeleted: false,
       },
       select: {
         config: true,
@@ -32,16 +32,21 @@ export async function GET(req: NextRequest) {
                 isDeleted: true
               }
             },
+            regionUid: true,
             isDeleted: true,
             isPublic: true,
+            
           }
-        }
+        },
+        isDeleted: true
       }
     })
+    const regionUid = getRegionUid()
     if (!template ||
       !(template.templateRepository.organization.uid === payload.organizationUid
         || template.templateRepository.isPublic === true
-      )
+      ) ||
+      template.templateRepository.regionUid !== regionUid
     ) {
       return jsonRes({
         code: 404,

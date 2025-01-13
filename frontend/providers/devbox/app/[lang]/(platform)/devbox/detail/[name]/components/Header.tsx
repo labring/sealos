@@ -206,6 +206,7 @@ const Header = ({
         </Button>
         {devboxDetail.status.value === 'Running' && (
           <Button
+            className="guide-close-button"
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}

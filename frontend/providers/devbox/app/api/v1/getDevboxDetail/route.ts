@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
 
     const devbox = {
       status:
-        body.status.phase && devboxStatusMap[body.status.phase]
+        body.status?.phase && devboxStatusMap[body.status.phase]
           ? devboxStatusMap[body.status.phase]
           : devboxStatusMap.Error,
     }

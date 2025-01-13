@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl'
 import MyIcon from '@/components/Icon'
 import { useRouter } from '@/i18n'
 
-
 const Empty = () => {
   const router = useRouter()
   const t = useTranslations()

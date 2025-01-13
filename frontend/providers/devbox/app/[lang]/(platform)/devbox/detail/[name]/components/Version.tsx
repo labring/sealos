@@ -1,8 +1,11 @@
+'use client'
+
 import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react'
 import { SealosMenu, useMessage } from '@sealos/ui'
 import { useQuery } from '@tanstack/react-query'
+import { customAlphabet } from 'nanoid'
 import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { sealosApp } from 'sealos-desktop-sdk/app'
 
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox'
@@ -10,7 +13,7 @@ import DevboxStatusTag from '@/components/DevboxStatusTag'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
 import ReleaseModal from '@/components/modals/ReleaseModal'
 import MyTable from '@/components/MyTable'
-import { DevboxReleaseStatusEnum, devboxIdKey } from '@/constants/devbox'
+import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
 
 import { useConfirm } from '@/hooks/useConfirm'
@@ -21,13 +24,17 @@ import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate
 import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal'
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal'
 import AppSelectModal from '@/components/modals/AppSelectModal'
+import useReleaseDriver from '@/hooks/useReleaseDriver'
 import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
 import { parseTemplateConfig } from '@/utils/tools'
 import MyIcon from '@/components/Icon'
 
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
+
 const Version = () => {
+  const { startReleaseGuide } = useReleaseDriver()
   const t = useTranslations()
   const { message: toast } = useMessage()
   const { Loading, setIsLoading } = useLoading()
@@ -70,6 +77,13 @@ const Version = () => {
       enabled: !!devbox
     }
   )
+
+  useEffect(() => {
+    if (devboxVersionList?.length && devboxVersionList.length > 0) {
+      startReleaseGuide()
+    }
+  }, [devboxVersionList.length])
+
   const listPrivateTemplateRepositoryQuery = useQuery(
     ['template-repository-list', 'template-repository-private'],
     () => {
@@ -100,7 +114,7 @@ const Version = () => {
       const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`
 
       const transformData = {
-        appName: `${name}-release`,
+        appName: `${name}-release-${nanoid()}`,
         cpu: cpu,
         memory: memory,
         imageName: imageName,
@@ -226,6 +240,7 @@ const Version = () => {
       render: (item: DevboxVersionListItemType) => (
         <Flex alignItems={'center'}>
           <Button
+            className="guide-online-button"
             mr={5}
             height={'27px'}
             w={'60px'}
@@ -244,7 +259,12 @@ const Version = () => {
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+              <MenuButton
+                as={Button}
+                variant={'square'}
+                boxSize={'32px'}
+                data-group
+                isDisabled={item?.status?.value !== 'Success'}>
                 <MyIcon
                   name={'more'}
                   color={'grayModern.600'}
@@ -325,6 +345,7 @@ const Version = () => {
           </Text>
         </Flex>
         <Button
+          className="guide-release-button"
           onClick={() => setOnOpenRelease(true)}
           bg={'white'}
           color={'grayModern.600'}

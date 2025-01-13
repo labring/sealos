@@ -1,6 +1,7 @@
 import { authSessionWithJWT } from '@/services/backend/auth'
 import { jsonRes } from '@/services/backend/response'
 import { devboxDB } from '@/services/db/init'
+import { getRegionUid } from '@/utils/env'
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
 
@@ -19,10 +20,12 @@ export async function GET(req: NextRequest) {
       })
     }
     const uid = uidResult.data
+    const regionUid = getRegionUid()
     const templateRepository = await devboxDB.templateRepository.findUnique({
       where: {
         uid,
-        isDeleted: false
+        isDeleted: false,
+        regionUid
       },
       select: {
         templates: {

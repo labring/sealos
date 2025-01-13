@@ -31,11 +31,8 @@ export default function SigninComponent() {
   const conf = useConfigStore();
   const hasBaiduToken = conf.authConfig?.hasBaiduToken;
   const needPassword = conf.authConfig?.idp.password?.enabled;
-  const needSms = conf.authConfig?.idp.sms?.enabled;
-  const needTabsCount =
-    0 +
-    (conf.authConfig?.idp.password?.enabled ? 1 : 0) +
-    (conf.authConfig?.idp.sms?.enabled ? 1 : 0);
+  const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
+  const needTabsCount = 0 + (conf.authConfig?.idp.password?.enabled ? 1 : 0) + (needPhone ? 1 : 0);
   const disclosure = useDisclosure();
   const { t, i18n } = useTranslation();
   const [tabIndex, setTabIndex] = useState<LoginType>(LoginType.NONE);
@@ -113,8 +110,8 @@ export default function SigninComponent() {
   ]);
 
   useEffect(() => {
-    setTabIndex(needSms ? LoginType.SMS : needPassword ? LoginType.PASSWORD : LoginType.NONE);
-  }, [needPassword, needSms]);
+    setTabIndex(needPhone ? LoginType.SMS : needPassword ? LoginType.PASSWORD : LoginType.NONE);
+  }, [needPassword, needPhone]);
 
   const LoginComponent = useMemo(
     () => (tabIndex !== LoginType.NONE ? loginConfig[tabIndex].component : null),

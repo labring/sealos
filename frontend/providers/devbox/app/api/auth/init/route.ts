@@ -1,6 +1,7 @@
 import { authSessionWithDesktopJWT, generateDevboxToken } from "@/services/backend/auth"
 import { jsonRes } from "@/services/backend/response"
 import { devboxDB } from "@/services/db/init"
+import { getRegionUid } from "@/utils/env"
 import { makeOrganizationName } from "@/utils/user"
 
 import { NextRequest } from "next/server"
@@ -109,9 +110,9 @@ const findOrCreateUser = async (regionUid: string, namespaceId: string) => {
   })
 }
 export async function POST(req: NextRequest) {
-  const regionUid = process.env.REGION_UID
+  const regionUid = getRegionUid()
   if (!regionUid) {
-    console.log("REGIONUID is not set")
+    console.log("REGION_UID is not set")
     return jsonRes({
       code: 500,
     })

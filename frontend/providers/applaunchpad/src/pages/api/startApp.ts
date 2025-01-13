@@ -3,9 +3,10 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { pauseKey, minReplicasKey, maxReplicasKey } from '@/constants/app';
+import { pauseKey, minReplicasKey, maxReplicasKey, appDeployKey } from '@/constants/app';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { AppEditType } from '@/types/app';
+import { PatchUtils } from '@kubernetes/client-node';
 
 /* start app. */
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -14,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (!appName) {
       throw new Error('appName is empty');
     }
-    const { apiClient, getDeployApp, applyYamlList } = await getK8s({
+    const { apiClient, getDeployApp, applyYamlList, namespace, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -58,6 +59,57 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       } as unknown as AppEditType);
 
       requestQueue.push(applyYamlList([hpaYaml], 'create'));
+    }
+
+    // handle ingress
+    try {
+      const { body: ingress } = await k8sNetworkingApp.listNamespacedIngress(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${appDeployKey}=${appName}`
+      );
+      if (ingress?.items?.length > 0) {
+        for (const ingressItem of ingress.items) {
+          if (ingressItem?.metadata?.name) {
+            const patchData: Record<string, any> = {};
+            if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'pause') {
+              patchData.metadata = {
+                annotations: {
+                  'kubernetes.io/ingress.class': 'nginx'
+                }
+              };
+            }
+            if (ingressItem.spec?.ingressClassName === 'pause') {
+              patchData.spec = {
+                ingressClassName: 'nginx'
+              };
+            }
+
+            if (Object.keys(patchData).length > 0) {
+              requestQueue.push(
+                k8sNetworkingApp.patchNamespacedIngress(
+                  ingressItem.metadata.name,
+                  namespace,
+                  patchData,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+                )
+              );
+            }
+          }
+        }
+      }
+    } catch (error: any) {
+      if (error?.statusCode !== 404) {
+        return Promise.reject('无法读取到ingress');
+      }
     }
 
     await Promise.all(requestQueue);

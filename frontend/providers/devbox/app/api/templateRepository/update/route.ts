@@ -2,6 +2,7 @@ import { TagType } from "@/prisma/generated/client"
 import { authSessionWithJWT } from "@/services/backend/auth"
 import { jsonRes } from "@/services/backend/response"
 import { devboxDB } from "@/services/db/init"
+import { getRegionUid } from "@/utils/env"
 import { updateTemplateRepositorySchema } from "@/utils/vaildate"
 import { NextRequest } from "next/server"
 import { z } from "zod"
@@ -66,7 +67,8 @@ export async function POST(req: NextRequest) {
       )
     const isExist = await devboxDB.templateRepository.findUnique({
       where: {
-        isDeleted_name: {
+        isDeleted_regionUid_name: {
+          regionUid: getRegionUid(),
           name: query.templateRepositoryName,
           isDeleted: false,
         }

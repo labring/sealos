@@ -6,6 +6,7 @@ import { devboxDB } from "@/services/db/init"
 import { ERROR_ENUM } from "@/services/error"
 import { retagSvcClient } from "@/services/retag"
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from "@/types/k8s"
+import { getRegionUid } from "@/utils/env"
 import { createTemplateRepositorySchema } from "@/utils/vaildate"
 import { NextRequest } from "next/server"
 import { z } from "zod"
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
     }
     const isExist = await devboxDB.templateRepository.findUnique({
       where: {
-        isDeleted_name: {
+        isDeleted_regionUid_name: {
+          regionUid: getRegionUid(),
           name: query.templateRepositoryName,
           isDeleted: false
         },
@@ -139,6 +141,7 @@ export async function POST(req: NextRequest) {
             parentUid: devboxBody.spec.templateID,
           }
         },
+        regionUid: getRegionUid(),
         organizationUid: payload.organizationUid,
         iconId: origionalTemplate?.templateRepository.iconId,
         kind: TemplateRepositoryKind.CUSTOM,
