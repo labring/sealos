@@ -694,7 +694,6 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 	if err != nil {
 		return nil, err
 	}
-
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
@@ -705,8 +704,22 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 			},
 		},
 	}
-
 	replicas := int32(1)
+	deploymentSpec := appsv1.DeploymentSpec{
+		Replicas: &replicas,
+		Selector: &metav1.LabelSelector{
+			MatchLabels: helper.GenerateProxyPodLabels(devbox),
+		},
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        r.generateProxyPodName(devbox),
+				Namespace:   devbox.Namespace,
+				Labels:      helper.GenerateProxyPodLabels(devbox),
+				Annotations: helper.GeneratePodAnnotations(devbox),
+			},
+			Spec: podSpec,
+		},
+	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        r.generateProxyPodDeploymentName(devbox),
@@ -714,21 +727,7 @@ func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbo
 			Labels:      helper.GenerateProxyPodLabels(devbox),
 			Annotations: helper.GeneratePodAnnotations(devbox),
 		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &replicas,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: helper.GenerateProxyPodLabels(devbox),
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:        r.generateProxyPodName(devbox),
-					Namespace:   devbox.Namespace,
-					Labels:      helper.GenerateProxyPodLabels(devbox),
-					Annotations: helper.GeneratePodAnnotations(devbox),
-				},
-				Spec: podSpec,
-			},
-		},
+		Spec: deploymentSpec,
 	}, nil
 }
 
