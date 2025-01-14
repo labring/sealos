@@ -106,6 +106,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 400, message: 'User real name info not found' });
     }
 
+    if (userRealNameInfo.isVerified) {
+      return jsonRes(res, { code: 400, message: 'User real name info already verified' });
+    }
+
     let additionalInfo: AdditionalInfo = userRealNameInfo.additionalInfo;
 
     additionalInfo.faceRecognition.callback.isUsed = true;
@@ -351,16 +355,16 @@ async function getUserRealNameInfo(
     credential: {
       secretId: config.secretId,
       secretKey: config.secretKey
-    },
-    region: '',
-    profile: {
-      signMethod: 'HmacSHA256',
-      httpProfile: {
-        endpoint: 'faceid.tencentcloudapi.com',
-        reqMethod: 'POST',
-        reqTimeout: 30 // Request timeout, default 60s
-      }
     }
+    // region: '',
+    // profile: {
+    //   signMethod: 'HmacSHA256',
+    //   httpProfile: {
+    //     endpoint: 'faceid.tencentcloudapi.com',
+    //     reqMethod: 'POST',
+    //     reqTimeout: 30 // Request timeout, default 60s
+    //   }
+    // }
   });
 
   const params = {

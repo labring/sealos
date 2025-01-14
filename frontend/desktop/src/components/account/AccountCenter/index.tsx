@@ -222,14 +222,34 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                     <ConfigItem
                       LeftElement={<Text>{t('common:realname_info')}</Text>}
                       RightElement={
-                        infoData.data.enterpriseVerificationStatus === 'Success' ||
-                        infoData.data.realName ? (
-                          <Flex flex={1}>
+                        infoData.data.enterpriseRealName || infoData.data.realName ? (
+                          <Flex flex={1} alignItems="center" gap="4px">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="17"
+                              viewBox="0 0 16 17"
+                              fill="none"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M12.6667 4.43778L8.41778 2.98243C8.13698 2.88625 7.83213 2.88651 7.55151 2.98317L3.33333 4.43606V9.42245C3.33333 11.9998 5.42267 14.0891 8 14.0891C10.5773 14.0891 12.6667 11.9998 12.6667 9.42245V4.43778ZM2.31306 3.37727C2.12574 3.44179 2 3.61808 2 3.81621V9.42245C2 12.7362 4.68629 15.4225 8 15.4225C11.3137 15.4225 14 12.7362 14 9.42245V3.81679C14 3.61838 13.8739 3.44191 13.6862 3.37761L8.84983 1.72104C8.28825 1.52868 7.67854 1.5292 7.11729 1.72252L2.31306 3.37727ZM5.10471 7.85479C5.36506 7.59444 5.78717 7.59444 6.04752 7.85479L7.58137 9.38864L10.4987 6.47126C10.7591 6.21091 11.1812 6.21091 11.4416 6.47126C11.7019 6.73161 11.7019 7.15372 11.4416 7.41407L8.05518 10.8005C8.04844 10.8072 8.0416 10.8137 8.03465 10.8201C7.7732 11.063 7.3643 11.0572 7.10987 10.8028L5.10471 8.7976C4.84436 8.53725 4.84436 8.11514 5.10471 7.85479Z"
+                                fill="#039855"
+                              />
+                            </svg>
                             <Text
                               maxWidth="200px"
                               whiteSpace="nowrap"
                               overflow="hidden"
                               textOverflow="ellipsis"
+                              color="var(--light-general-on-surface-lowest, var(--Gray-Modern-500, #667085))"
+                              fontFamily="PingFang SC"
+                              fontSize="14px"
+                              fontStyle="normal"
+                              fontWeight={500}
+                              lineHeight="20px"
+                              letterSpacing="0.1px"
                             >
                               {infoData?.data.enterpriseRealName || infoData?.data.realName}
                             </Text>
@@ -240,8 +260,36 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                             _active={{ transform: 'scale(0.95)' }}
                             colorScheme="red"
                             onClick={() => setPageState(PageState.REALNAME_AUTH)}
+                            display="flex"
+                            padding="4px 4px 4px 8px"
+                            justifyContent="center"
+                            alignItems="center"
+                            gap="2px"
+                            borderRadius="6px"
+                            bg="var(--Red-50, #FEF3F2)"
+                            color="var(--Red-500, #F04438)"
+                            fontFamily="PingFang SC"
+                            fontSize="14px"
+                            fontStyle="normal"
+                            fontWeight="500"
+                            lineHeight="20px"
+                            letterSpacing="0.1px"
                           >
-                            {t('common:no_realname_auth')} <CloseIcon boxSize={3} ml={1} />
+                            {t('common:no_realname_auth')}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="17"
+                              viewBox="0 0 16 17"
+                              fill="none"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                clipRule="evenodd"
+                                d="M5.52876 4.02876C5.26841 4.28911 5.26841 4.71122 5.52876 4.97157L9.05735 8.50016L5.52876 12.0288C5.26841 12.2891 5.26841 12.7112 5.52876 12.9716C5.78911 13.2319 6.21122 13.2319 6.47157 12.9716L10.4716 8.97157C10.7319 8.71122 10.7319 8.28911 10.4716 8.02876L6.47157 4.02876C6.21122 3.76841 5.78911 3.76841 5.52876 4.02876Z"
+                                fill="#F04438"
+                              />
+                            </svg>
                           </Badge>
                         )
                       }

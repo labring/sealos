@@ -9,7 +9,6 @@ export type CloudConfigType = {
 
 export type CommonConfigType = {
   enterpriseRealNameAuthEnabled: boolean;
-  enterpriseSupportingMaterials: string;
   realNameAuthEnabled: boolean;
   realNameReward: number;
   guideEnabled: boolean;
@@ -220,7 +219,6 @@ export type AppClientConfigType = {
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
   enterpriseRealNameAuthEnabled: false,
-  enterpriseSupportingMaterials: '',
   realNameAuthEnabled: false,
   realNameReward: 0,
   guideEnabled: false,

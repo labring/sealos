@@ -73,7 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       id: string;
       name: string;
       realName?: string;
-      enterpriseVerificationStatus?: string;
       enterpriseRealName?: string;
       userRestrictedLevel?: number;
     } = {
@@ -110,8 +109,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (enterpriseRealNameInfo) {
-      info.enterpriseVerificationStatus = enterpriseRealNameInfo.verificationStatus || undefined;
-      info.enterpriseRealName = enterpriseRealNameInfo.enterpriseName || undefined;
+      info.enterpriseRealName = enterpriseRealNameInfo.isVerified
+        ? enterpriseRealNameInfo.enterpriseName || undefined
+        : '';
     }
 
     if (restrictedUser) {
