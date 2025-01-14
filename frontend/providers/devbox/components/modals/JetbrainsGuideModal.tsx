@@ -326,7 +326,7 @@ const JetBrainsGuideModal = ({
                       }}
                       cursor={'pointer'}
                       color={'brightBlue.600'}
-                      ml={1}
+                      ml={6}
                       onClick={(e) => {
                         e.stopPropagation();
                         controllerRef.current?.abort();
