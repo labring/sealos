@@ -53,6 +53,22 @@ const JetBrainsGuideModal = ({
   const [onConnecting, setOnConnecting] = useState(false);
   const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false);
 
+  const connectIDE = useCallback(
+    async (idePathName: string, version: string) => {
+      window.open(
+        `jetbrains-gateway://connect#host=${
+          jetbrainsGuideData.configHost
+        }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
+          jetbrainsGuideData.workingDir
+        )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
+          jetbrainsGuideData.port
+        )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
+        '_blank'
+      );
+    },
+    [jetbrainsGuideData]
+  );
+
   const handleConnectIDE = useCallback(async () => {
     const res = await fetch(
       `https://data.services.jetbrains.com/products/releases?code=${selectedIDE.productCode}&type=release&latest=true&build=`,
@@ -96,35 +112,18 @@ const JetBrainsGuideModal = ({
       });
       setOnConnecting(false);
       setProgress(0);
-      console.log('execDownloadCommand', execDownloadCommand);
     } catch (error: any) {
-      console.log('error', error);
       if (
         !error ||
-        error.startsWith('nvidia driver modules are not yet loaded, invoking runc directly')
+        error.startsWith('nvidia driver modules are not yet loaded, invoking runc directly') ||
+        error.includes('100%')
       ) {
-        window.open(
-          `jetbrains-gateway://connect#host=${
-            jetbrainsGuideData.configHost
-          }&type=ssh&deploy=false&projectPath=${encodeURIComponent(
-            jetbrainsGuideData.workingDir
-          )}&user=${encodeURIComponent(jetbrainsGuideData.userName)}&port=${encodeURIComponent(
-            jetbrainsGuideData.port
-          )}&idePath=%2Fhome%2Fdevbox%2F.cache%2FJetBrains%2F${idePathName}${version}`,
-          '_blank'
-        );
+        connectIDE(idePathName, version);
       }
       setProgress(0);
       setOnConnecting(false);
     }
-  }, [
-    selectedIDE,
-    jetbrainsGuideData.devboxName,
-    jetbrainsGuideData.configHost,
-    jetbrainsGuideData.port,
-    jetbrainsGuideData.userName,
-    jetbrainsGuideData.workingDir
-  ]);
+  }, [selectedIDE, jetbrainsGuideData.devboxName, connectIDE]);
 
   return (
     <Box>

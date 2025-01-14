@@ -152,10 +152,6 @@ export async function POST(req: NextRequest) {
         isStreamClosed = true;
         await writer.close();
       }
-      return jsonRes({
-        code: 500,
-        error: 'Process stream error'
-      });
     });
 
     execPromise.finally(async () => {
