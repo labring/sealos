@@ -87,7 +87,8 @@ const JetBrainsGuideModal = ({
     const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link'];
     const idePathName = selectedIDE.value;
 
-    const basePath = jetbrainsGuideData.workingDir.replace('/project', '');
+    // NOTE: workingDir /home/devbox/project -> /home/devbox, workingDir maybe change in the future
+    const basePath = jetbrainsGuideData.workingDir.split('/').slice(0, -1).join('/');
 
     const execDownloadCommand = `
     IDE_DIR="${basePath}/.cache/JetBrains/${idePathName}${version}";
