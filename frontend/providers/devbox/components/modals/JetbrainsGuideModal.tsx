@@ -87,12 +87,14 @@ const JetBrainsGuideModal = ({
     const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link'];
     const idePathName = selectedIDE.value;
 
+    const basePath = jetbrainsGuideData.workingDir.replace('/project', '');
+
     const execDownloadCommand = `
-    IDE_DIR="/home/devbox/.cache/JetBrains/${idePathName}${version}";
+    IDE_DIR="${basePath}/.cache/JetBrains/${idePathName}${version}";
     if [ -d "$IDE_DIR" ] && [ ! -f "$IDE_DIR/${selectedIDE.binName}" ]; then
       rm -rf "$IDE_DIR";
     fi;
-    [ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`;
+    [ ! -d ${basePath}/.cache/JetBrains/${idePathName}${version} ] && mkdir -p ${basePath}/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC ${basePath}/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 ${basePath}/.cache && chown -R devbox:devbox ${basePath}/.cache`;
 
     try {
       await execCommandInDevboxPod({
