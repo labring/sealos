@@ -576,7 +576,10 @@ function EnterpriseVerification(
     accountNo: z.string().min(1, { message: t('common:account_number_required') }),
     keyName: z.string().min(1, { message: t('common:enterprise_name_required') }),
     usrName: z.string().min(1, { message: t('common:user_name_required') }),
-    contactInfo: z.string().min(1, { message: t('common:contact_info_required') })
+    contactInfo: z
+      .string()
+      .min(1, { message: t('common:contact_info_required') })
+      .regex(/^\d+$/, { message: t('common:contact_info_must_be_numeric') })
   });
 
   const { data: enterpriseRealNameAuthInfo, isLoading: enterpriseRealNameAuthInfoLoading } =

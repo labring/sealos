@@ -62,7 +62,7 @@ const schema = z.object({
   accountNo: z.string().min(1),
   keyName: z.string().min(1),
   usrName: z.string().min(1),
-  contactInfo: z.string().min(1)
+  contactInfo: z.string().min(1).regex(/^\d+$/, 'Contact info must contain only numbers')
 });
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
