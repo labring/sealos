@@ -49,7 +49,7 @@ const ScriptCode = ({
               color={'grayModern.900'}
               fontWeight={400}
               _hover={{
-                cursor: 'default'
+                cursor: 'pointer'
               }}
               leftIcon={
                 <MyIcon
