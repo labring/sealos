@@ -2,11 +2,10 @@ import DetailLayout from '@/components/layouts/DetailLayout';
 import { useToast } from '@/hooks/useToast';
 import { useAppStore } from '@/store/app';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Center, Flex, Skeleton, SkeletonText, Stack, Text } from '@chakra-ui/react';
+import { Box, Center, Skeleton, SkeletonText, Stack, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import Header from '@/components/Monitor/Header';
-import PodLineChart from '@/components/PodLineChart';
 import MonitorChart from '@/components/MonitorChart';
 import { useEffect, useMemo, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
@@ -20,6 +19,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
   const { t } = useTranslation();
   const { startDateTime, endDateTime } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
+  const { refreshInterval } = useDateTimeStore();
 
   useEffect(() => {
     if (appDetailPods?.length > 0 && podList.length === 0) {
@@ -33,7 +33,11 @@ export default function MonitorPage({ appName }: { appName: string }) {
     }
   }, [appDetailPods, podList]);
 
-  const { data: memoryData, isLoading } = useQuery(
+  const {
+    data: memoryData,
+    isLoading,
+    refetch: refetchMemoryData
+  } = useQuery(
     ['monitor-data-memory', appName, appDetailPods?.[0]?.podName, startDateTime, endDateTime],
     () =>
       getAppMonitorData({
@@ -42,7 +46,10 @@ export default function MonitorPage({ appName }: { appName: string }) {
         step: '2m',
         start: startDateTime.getTime(),
         end: endDateTime.getTime()
-      })
+      }),
+    {
+      refetchInterval: refreshInterval
+    }
   );
 
   const memoryLatestAvg = useMemo(() => {
@@ -56,7 +63,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
     return (sum / memoryData.length).toFixed(2);
   }, [memoryData]);
 
-  const { data: cpuData } = useQuery(
+  const { data: cpuData, refetch: refetchCpuData } = useQuery(
     ['monitor-data-cpu', appName, appDetailPods?.[0]?.podName, startDateTime, endDateTime],
     () =>
       getAppMonitorData({
@@ -65,7 +72,10 @@ export default function MonitorPage({ appName }: { appName: string }) {
         step: '2m',
         start: startDateTime.getTime(),
         end: endDateTime.getTime()
-      })
+      }),
+    {
+      refetchInterval: refreshInterval
+    }
   );
 
   const cpuLatestAvg = useMemo(() => {
@@ -134,10 +144,15 @@ export default function MonitorPage({ appName }: { appName: string }) {
     };
   }, [cpuData, podList]);
 
+  const refetchData = () => {
+    refetchCpuData();
+    refetchMemoryData();
+  };
+
   return (
     <DetailLayout appName={appName} key={'monitor'}>
       <Box flex={1} bg="white" borderRadius="8px" py={'16px'} px={'24px'}>
-        <Header podList={podList} setPodList={setPodList} />
+        <Header podList={podList} setPodList={setPodList} refetchData={refetchData} />
         {!isLoading ? (
           <>
             <Box mt={'20px'} fontSize={'14px'} fontWeight={'bold'} color={'#000000'}>
@@ -147,8 +162,11 @@ export default function MonitorPage({ appName }: { appName: string }) {
               {cpuChartData?.yData?.length > 0 ? (
                 <MonitorChart data={cpuChartData} title={'chartTitle'} unit="%" />
               ) : (
-                <Center height={'100%'}>
+                <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
                   <EmptyChart />
+                  <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                    {t('no_data_available')}
+                  </Text>
                 </Center>
               )}
             </Box>
@@ -159,8 +177,11 @@ export default function MonitorPage({ appName }: { appName: string }) {
               {memoryChartData?.yData?.length > 0 ? (
                 <MonitorChart data={memoryChartData} title={'chartTitle'} unit="%" />
               ) : (
-                <Center height={'100%'}>
+                <Center height={'100%'} flexDirection={'column'} gap={'12px'}>
                   <EmptyChart />
+                  <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                    {t('no_data_available')}
+                  </Text>
                 </Center>
               )}
             </Box>

@@ -17,36 +17,26 @@ import { ChevronDownIcon } from '@chakra-ui/icons';
 import MyIcon from '@/components/Icon';
 import { useAppStore } from '@/store/app';
 import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
+import useDateTimeStore from '@/store/date';
+import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
-export const Header = () => {
+export const Header = ({
+  podList,
+  setPodList,
+  refetchData,
+  containerList,
+  setContainerList
+}: {
+  podList: ListItem[];
+  setPodList: (podList: ListItem[]) => void;
+  refetchData: () => void;
+  containerList: ListItem[];
+  setContainerList: (containerList: ListItem[]) => void;
+}) => {
   const { t } = useTranslation();
-  const { appDetailPods } = useAppStore();
-
-  const currentPodList = appDetailPods.map((pod) => ({
-    value: pod.podName,
-    label: pod.podName
-  }));
-  const currentContainerList = appDetailPods
-    .flatMap((pod) => pod.spec?.containers || [])
-    .map((container) => ({
-      value: container.name,
-      label: container.name
-    }));
-
-  const [refreshInterval, setRefreshInterval] = useState(0);
-
-  const [podList, setPodList] = useState<ListItem[]>(currentPodList);
-  const [containerList, setContainerList] = useState<ListItem[]>(currentContainerList);
-
-  const refreshIntervalList = [
-    { value: 0, label: t('close') },
-    { value: 1000, label: '1s' },
-    { value: 2000, label: '2s' },
-    { value: 5000, label: '5s' },
-    { value: 10000, label: '10s' }
-  ];
+  const { refreshInterval, setRefreshInterval } = useDateTimeStore();
 
   return (
     <Flex
@@ -167,7 +157,7 @@ export const Header = () => {
               overflow={'overlay'}
               maxH={'300px'}
             >
-              {refreshIntervalList.map((item) => (
+              {REFRESH_INTERVAL_OPTIONS.map((item) => (
                 <MenuItem
                   key={item.value}
                   value={item.value}

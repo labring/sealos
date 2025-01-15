@@ -21,10 +21,12 @@ const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false
 
 export default function Header({
   podList,
-  setPodList
+  setPodList,
+  refetchData
 }: {
   podList: ListItem[];
   setPodList: (val: ListItem[]) => void;
+  refetchData: () => void;
 }) {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
@@ -71,6 +73,9 @@ export default function Header({
           bg={'grayModern.50'}
           _hover={{
             bg: 'grayModern.50'
+          }}
+          onClick={() => {
+            refetchData();
           }}
         >
           <MyIcon
