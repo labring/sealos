@@ -44,11 +44,8 @@ const JetBrainsGuideModal = ({
 
   const recommendIDE = runtimeTypeToIDEType(jetbrainsGuideData.runtimeType);
 
-  const [selectedIDE, setSelectedIDE] = useState<{
-    label: string;
-    value: string;
-    productCode: string;
-  }>(recommendIDE);
+  const [selectedIDE, setSelectedIDE] = useState<JetbrainsIDEObj>(recommendIDE);
+
   const [progress, setProgress] = useState(0);
   const [onConnecting, setOnConnecting] = useState(false);
   const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false);
@@ -90,7 +87,12 @@ const JetBrainsGuideModal = ({
     const downloadLink = data[selectedIDE.productCode][0].downloads['linux']['link'];
     const idePathName = selectedIDE.value;
 
-    const execDownloadCommand = `[ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`;
+    const execDownloadCommand = `
+    IDE_DIR="/home/devbox/.cache/JetBrains/${idePathName}${version}";
+    if [ -d "$IDE_DIR" ] && [ ! -f "$IDE_DIR/${selectedIDE.binName}" ]; then
+      rm -rf "$IDE_DIR";
+    fi;
+    [ ! -d /home/devbox/.cache/JetBrains/${idePathName}${version} ] && mkdir -p /home/devbox/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC /home/devbox/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 /home/devbox/.cache && chown -R devbox:devbox /home/devbox/.cache`;
 
     try {
       await execCommandInDevboxPod({
@@ -381,50 +383,66 @@ const JetBrainsGuideModal = ({
     </Box>
   );
 };
-const jetbrainsIDEObj = {
+
+interface JetbrainsIDEObj {
+  label: string;
+  value: string;
+  binName: string;
+  productCode: string;
+}
+const jetbrainsIDEObj: { [key: string]: JetbrainsIDEObj } = {
   IntelliJ: {
     label: 'IntelliJ IDEA',
     value: 'intellij',
+    binName: 'idea.sh',
     productCode: 'IIU'
   },
   PyCharm: {
     label: 'PyCharm',
     value: 'pycharm',
+    binName: 'pycharm.sh',
     productCode: 'PCP'
   },
   WebStorm: {
     label: 'WebStorm',
     value: 'webstorm',
+    binName: 'webstorm.sh',
     productCode: 'WS'
   },
   Rider: {
     label: 'Rider',
     value: 'rider',
+    binName: 'rider.sh',
     productCode: 'RD'
   },
   CLion: {
     label: 'CLion',
     value: 'clion',
+    binName: 'clion.sh',
     productCode: 'CL'
   },
   GoLand: {
     label: 'GoLand',
     value: 'goland',
+    binName: 'goland.sh',
     productCode: 'GO'
   },
   RubyMine: {
     label: 'RubyMine',
     value: 'rubymine',
+    binName: 'rubymine.sh',
     productCode: 'RM'
   },
   PhpStorm: {
     label: 'PhpStorm',
     value: 'phpstorm',
+    binName: 'phpstorm.sh',
     productCode: 'PS'
   },
   RustRover: {
     label: 'RustRover',
     value: 'rustover',
+    binName: 'rustover.sh',
     productCode: 'RR'
   }
 };
