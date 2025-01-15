@@ -1,10 +1,10 @@
-import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox';
+import { DevboxDetailType, DevboxEditType, DevboxEditTypeV2 } from '@/types/devbox'
 
-export const crLabelKey = 'sealos-devbox-cr';
-export const devboxKey = 'cloud.sealos.io/devbox-manager';
-export const devboxIdKey = 'cloud.sealos.io/app-devbox-id';
-export const ingressProtocolKey = 'nginx.ingress.kubernetes.io/backend-protocol';
-export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
+export const crLabelKey = 'sealos-devbox-cr'
+export const devboxKey = 'cloud.sealos.io/devbox-manager'
+export const devboxIdKey = 'cloud.sealos.io/app-devbox-id'
+export const ingressProtocolKey = 'nginx.ingress.kubernetes.io/backend-protocol'
+export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`
 
 export enum LanguageTypeEnum {
   java = 'java',
@@ -64,7 +64,7 @@ export const CpuSlideMarkList = [
   { label: 4, value: 4000 },
   { label: 8, value: 8000 },
   { label: 16, value: 16000 }
-];
+]
 
 export const MemorySlideMarkList = [
   // { label: '512Mi', value: 512 },
@@ -76,7 +76,7 @@ export const MemorySlideMarkList = [
   // { label: '12G', value: 12288 },
   { label: '16G', value: 16384 },
   { label: '32G', value: 32768 }
-];
+]
 
 export const defaultDevboxEditValue: DevboxEditType = {
   name: 'devbox',
@@ -85,7 +85,7 @@ export const defaultDevboxEditValue: DevboxEditType = {
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
   networks: []
-};
+}
 export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   name: 'devbox',
   image: '',
@@ -95,7 +95,7 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   cpu: CpuSlideMarkList[1].value,
   memory: MemorySlideMarkList[1].value,
   networks: []
-};
+}
 export const devboxStatusMap = {
   [DevboxStatusEnum.Stopping]: {
     label: 'Stopping',
@@ -146,7 +146,7 @@ export const devboxStatusMap = {
     backgroundColor: '#F5F5F8',
     dotColor: '#787A90'
   }
-};
+}
 
 export const devboxReleaseStatusMap = {
   [DevboxReleaseStatusEnum.Success]: {
@@ -170,10 +170,10 @@ export const devboxReleaseStatusMap = {
     backgroundColor: '#FEF3F2',
     dotColor: '#F04438'
   }
-};
+}
 
 export const editModeMap: (isEdit: boolean) => {
-  [key: string]: string;
+  [key: string]: string
 } = (isEdit: boolean) => {
   if (isEdit) {
     return {
@@ -182,7 +182,7 @@ export const editModeMap: (isEdit: boolean) => {
       applyMessage: 'confirm_update_devbox',
       applySuccess: 'update_success',
       applyError: 'update_failed'
-    };
+    }
   }
 
   return {
@@ -191,8 +191,8 @@ export const editModeMap: (isEdit: boolean) => {
     applyMessage: 'confirm_create_devbox',
     applySuccess: 'create_success',
     applyError: 'create_failed'
-  };
-};
+  }
+}
 
 export const defaultDevboxDetail: DevboxDetailType = {
   ...defaultDevboxEditValue,
@@ -229,13 +229,13 @@ export const defaultDevboxDetail: DevboxDetailType = {
     sshPort: 0,
     sshPrivateKey: ''
   }
-};
+}
 
 export const ProtocolList = [
   { value: 'HTTP', label: 'https://' },
   { value: 'GRPC', label: 'grpcs://' },
   { value: 'WS', label: 'wss://' }
-];
+]
 
 export enum YamlKindEnum {
   Devbox = 'Devbox',
@@ -271,4 +271,4 @@ export const podStatusMap = {
     reason: '',
     message: ''
   }
-};
+}

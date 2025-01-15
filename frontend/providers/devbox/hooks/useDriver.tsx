@@ -1,10 +1,10 @@
-import { getUserTasks } from '@/api/platform';
-import { useGuideStore } from '@/stores/guide';
-import { formatMoney } from '@/utils/tools';
-import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
-import { driver } from '@sealos/driver';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { getUserTasks } from '@/api/platform'
+import { useGuideStore } from '@/stores/guide'
+import { formatMoney } from '@/utils/tools'
+import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
+import { driver } from '@sealos/driver'
+import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 
 export function DriverStarIcon() {
   return (
@@ -22,20 +22,19 @@ export function DriverStarIcon() {
           y1="2.16659"
           x2="10.5"
           y2="18.8333"
-          gradientUnits="userSpaceOnUse"
-        >
+          gradientUnits="userSpaceOnUse">
           <stop stopColor="#69AEFF" />
           <stop offset="0.432292" stopColor="#6096FF" />
           <stop offset="1" stopColor="#6C7FFF" />
         </linearGradient>
       </defs>
     </Icon>
-  );
+  )
 }
 
 export default function useDriver() {
-  const t = useTranslations();
-  const { createCompleted, setCreateCompleted, setGuideEnabled } = useGuideStore();
+  const t = useTranslations()
+  const { createCompleted, setCreateCompleted, setGuideEnabled } = useGuideStore()
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -46,8 +45,7 @@ export default function useDriver() {
         bottom={'-30px'}
         color={'white'}
         alignItems={'center'}
-        {...props}
-      >
+        {...props}>
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
           {t('guide.click_shadow_skip')}
         </Text>
@@ -56,8 +54,7 @@ export default function useDriver() {
           width="20"
           height="20"
           viewBox="0 0 20 20"
-          fill="white"
-        >
+          fill="white">
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -65,8 +62,8 @@ export default function useDriver() {
           />
         </Icon>
       </Flex>
-    );
-  };
+    )
+  }
 
   const driverObj = driver({
     showProgress: false,
@@ -145,36 +142,36 @@ export default function useDriver() {
       }
     ],
     onDestroyed: () => {
-      setCreateCompleted(true);
+      setCreateCompleted(true)
     }
-  });
+  })
 
   const startGuide = useCallback(() => {
-    driverObj.drive();
-  }, [driverObj]);
+    driverObj.drive()
+  }, [driverObj])
 
   const closeGuide = () => {
-    driverObj.destroy();
-  };
+    driverObj.destroy()
+  }
 
   const handleUserGuide = async () => {
     try {
-      const data = await getUserTasks();
-      console.log('data handleUserGuide', data);
+      const data = await getUserTasks()
+      console.log('data handleUserGuide', data)
 
       if (data.needGuide) {
-        setGuideEnabled(true);
+        setGuideEnabled(true)
       }
 
       if (!createCompleted) {
         requestAnimationFrame(() => {
-          startGuide();
-        });
+          startGuide()
+        })
       }
     } catch (error) {
-      setGuideEnabled(false);
+      setGuideEnabled(false)
     }
-  };
+  }
 
-  return { startGuide, closeGuide, handleUserGuide };
+  return { startGuide, closeGuide, handleUserGuide }
 }

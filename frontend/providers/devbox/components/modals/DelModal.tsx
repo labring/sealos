@@ -11,15 +11,15 @@ import {
   ModalHeader,
   ModalOverlay,
   Text
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+} from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui'
+import { useTranslations } from 'next-intl'
+import { useCallback, useState } from 'react'
 
-import { delDevbox } from '@/api/devbox';
-import MyIcon from '@/components/Icon';
-import { useIDEStore } from '@/stores/ide';
-import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
+import { delDevbox } from '@/api/devbox'
+import MyIcon from '@/components/Icon'
+import { useIDEStore } from '@/stores/ide'
+import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox'
 
 const DelModal = ({
   devbox,
@@ -27,51 +27,51 @@ const DelModal = ({
   refetchDevboxList,
   onSuccess
 }: {
-  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
-  onClose: () => void;
-  onSuccess: () => void;
-  refetchDevboxList: () => void;
+  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2
+  onClose: () => void
+  onSuccess: () => void
+  refetchDevboxList: () => void
 }) => {
-  const t = useTranslations();
-  const { message: toast } = useMessage();
-  const { removeDevboxIDE } = useIDEStore();
+  const t = useTranslations()
+  const { message: toast } = useMessage()
+  const { removeDevboxIDE } = useIDEStore()
 
-  const [loading, setLoading] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false)
+  const [inputValue, setInputValue] = useState('')
 
   const handleDelDevbox = useCallback(async () => {
     try {
-      setLoading(true);
-      await delDevbox(devbox.name);
-      removeDevboxIDE(devbox.name);
+      setLoading(true)
+      await delDevbox(devbox.name)
+      removeDevboxIDE(devbox.name)
       toast({
         title: t('delete_successful'),
         status: 'success'
-      });
-      onSuccess();
-      onClose();
+      })
+      onSuccess()
+      onClose()
 
-      let retryCount = 0;
-      const maxRetries = 3;
-      const retryInterval = 3000;
+      let retryCount = 0
+      const maxRetries = 3
+      const retryInterval = 3000
 
       const retry = async () => {
         if (retryCount < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, retryInterval));
-          await refetchDevboxList();
-          retryCount++;
+          await new Promise((resolve) => setTimeout(resolve, retryInterval))
+          await refetchDevboxList()
+          retryCount++
         }
-      };
-      retry();
+      }
+      retry()
     } catch (error: any) {
       toast({
         title: typeof error === 'string' ? error : error.message || t('delete_failed'),
         status: 'error'
-      });
-      console.error(error);
+      })
+      console.error(error)
     }
-    setLoading(false);
-  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, refetchDevboxList]);
+    setLoading(false)
+  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, refetchDevboxList])
 
   return (
     <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
@@ -92,8 +92,7 @@ const DelModal = ({
             mt={2}
             bg={'grayModern.50'}
             borderRadius={'4px'}
-            p={2}
-          >
+            p={2}>
             {t('delete_warning_content_2')}
           </Box>
           <Box mt={4}>
@@ -127,14 +126,13 @@ const DelModal = ({
             variant={'solid'}
             isLoading={loading}
             onClick={handleDelDevbox}
-            isDisabled={inputValue !== devbox.name}
-          >
+            isDisabled={inputValue !== devbox.name}>
             {t('confirm_delete')}
           </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
-  );
-};
+  )
+}
 
-export default DelModal;
+export default DelModal

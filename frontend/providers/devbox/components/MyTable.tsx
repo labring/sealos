@@ -1,18 +1,18 @@
-import { Box, BoxProps, Flex, Grid } from '@chakra-ui/react';
+import { Box, BoxProps, Flex, Grid } from '@chakra-ui/react'
 
 interface Props extends BoxProps {
   columns: {
-    title: string;
-    dataIndex?: string;
-    key: string;
-    render?: (item: any) => JSX.Element;
-    minWidth?: string;
-    width?: string;
-  }[];
-  data: any[];
-  itemClass?: string;
-  alternateRowColors?: boolean;
-  needRadius?: boolean;
+    title: string
+    dataIndex?: string
+    key: string
+    render?: (item: any) => JSX.Element
+    minWidth?: string
+    width?: string
+  }[]
+  data: any[]
+  itemClass?: string
+  alternateRowColors?: boolean
+  needRadius?: boolean
 }
 
 const MyTable = ({
@@ -37,8 +37,7 @@ const MyTable = ({
         fontSize={'base'}
         color={'grayModern.600'}
         fontWeight={'bold'}
-        backgroundColor={'grayModern.100'}
-      >
+        backgroundColor={'grayModern.100'}>
         {columns.map((item) => (
           <Box
             px={3}
@@ -48,8 +47,7 @@ const MyTable = ({
             _first={{ pl: 7 }}
             minWidth={item.minWidth || '100px'}
             overflow={'hidden'}
-            textOverflow={'ellipsis'}
-          >
+            textOverflow={'ellipsis'}>
             {item.title}
           </Box>
         ))}
@@ -67,8 +65,7 @@ const MyTable = ({
           _hover={{ bg: '#FBFBFC' }}
           borderBottomRadius={index1 === data.length - 1 ? 'md' : '0px'}
           borderBottom={'1px solid'}
-          borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}
-        >
+          borderBottomColor={index1 !== data.length - 1 ? 'grayModern.150' : 'transparent'}>
           {columns.map((col, index2) => (
             <Flex
               className={index2 === 0 ? itemClass : ''}
@@ -80,15 +77,14 @@ const MyTable = ({
               fontSize={'base'}
               fontWeight={'bold'}
               color={'grayModern.900'}
-              minWidth={col.minWidth || '100px'}
-            >
+              minWidth={col.minWidth || '100px'}>
               {col.render ? col.render(item) : col.dataIndex ? `${item[col.dataIndex]}` : ''}
             </Flex>
           ))}
         </Grid>
       ))}
     </>
-  );
-};
+  )
+}
 
-export default MyTable;
+export default MyTable

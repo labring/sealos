@@ -1,1 +1,1 @@
-export const getRegionUid = () => process.env.REGION_UID || '';
+export const getRegionUid = () => process.env.REGION_UID || ''

@@ -1,18 +1,18 @@
-import { useMemo } from 'react';
-import { Box } from '@chakra-ui/react';
-import ReactMarkdown from 'react-markdown';
-import SyntaxHighlighter from 'react-syntax-highlighter';
+import { useMemo } from 'react'
+import { Box } from '@chakra-ui/react'
+import ReactMarkdown from 'react-markdown'
+import SyntaxHighlighter from 'react-syntax-highlighter'
 
-import { codeTheme } from '@/constants/hljs';
+import { codeTheme } from '@/constants/hljs'
 
 type TMarkDown = {
-  content: string;
-  language: string;
-  [key: string]: any;
-};
+  content: string
+  language: string
+  [key: string]: any
+}
 
 const Code = ({ content, language, ...props }: TMarkDown) => {
-  const code = useMemo(() => '```' + language + '\n' + content + '```', [content, language]);
+  const code = useMemo(() => '```' + language + '\n' + content + '```', [content, language])
 
   return (
     <Box
@@ -21,15 +21,14 @@ const Code = ({ content, language, ...props }: TMarkDown) => {
         '& div': {
           overflow: 'auto !important'
         }
-      }}
-    >
+      }}>
       <ReactMarkdown
         {...props}
         // eslint-disable-next-line react/no-children-prop
         children={code}
         components={{
           code({ node, inline, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
+            const match = /language-(\w+)/.exec(className || '')
             return !inline && match ? (
               <SyntaxHighlighter
                 // eslint-disable-next-line react/no-children-prop
@@ -45,12 +44,12 @@ const Code = ({ content, language, ...props }: TMarkDown) => {
               <code className={className} {...props}>
                 {children}
               </code>
-            );
+            )
           }
         }}
       />
     </Box>
-  );
-};
+  )
+}
 
-export default Code;
+export default Code
