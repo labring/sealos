@@ -633,7 +633,7 @@ func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *dev
 	if err := r.syncPodSvc(ctx, devbox, recLabels, servicePorts); err != nil {
 		return err
 	}
-	if err := r.syncProxyPod(ctx, devbox); err != nil {
+	if err := r.syncProxyPod(ctx, devbox, servicePorts); err != nil {
 		return err
 	}
 	if err := r.syncProxySvc(ctx, devbox); err != nil {
@@ -683,12 +683,34 @@ func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1
 	return devbox.Name + "-proxy-deployment"
 }
 
-func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox) *appsv1.Deployment {
+func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) []corev1.EnvVar {
+	var envVars []corev1.EnvVar
+	sshPort := "22"
+	for _, port := range servicePorts {
+		if port.Name == "devbox-ssh-port" {
+			sshPort = port.TargetPort.String()
+			break
+		}
+	}
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "TARGET",
+		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
+	})
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "LISTEN",
+		Value: "0.0.0.0:80",
+	})
+	return envVars
+}
+
+func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) *appsv1.Deployment {
+	podEnv := r.generateProxyPodEnv(ctx, devbox, servicePorts)
 	podSpec := corev1.PodSpec{
 		Containers: []corev1.Container{
 			{
 				Name:      "ws-proxy",
 				Image:     r.WebSocketImage,
+				Env:       podEnv,
 				Resources: helper.GenerateProxyPodResourceRequirements(),
 			},
 		},
@@ -724,13 +746,13 @@ func (r *DevboxReconciler) generateProxyPodName(devbox *devboxv1alpha1.Devbox) s
 	return devbox.Name + "-proxy-pod" + "-" + rand.String(5)
 }
 
-func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) error {
 	wsDeployment := &appsv1.Deployment{}
 	err := r.Client.Get(ctx, types.NamespacedName{Name: r.generateProxyPodDeploymentName(devbox), Namespace: devbox.Namespace}, wsDeployment)
 
 	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
 		if errors.IsNotFound(err) {
-			wsDeployment = r.generateProxyPodDeployment(ctx, devbox)
+			wsDeployment = r.generateProxyPodDeployment(ctx, devbox, servicePorts)
 			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsDeployment, func() error {
 				return controllerutil.SetControllerReference(devbox, wsDeployment, r.Scheme)
 			}); err != nil {
