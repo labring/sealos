@@ -279,7 +279,7 @@ const SshConnectModal = ({
                       >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
-                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={12} flex={1}>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={6} flex={1}>
                         <Box fontSize={'14px'}>{t('jetbrains_guide_command')}</Box>
                         <ScriptCode
                           oneLine={true}
