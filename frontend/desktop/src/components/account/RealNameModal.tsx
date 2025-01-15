@@ -545,6 +545,7 @@ function EnterpriseVerification(
   const { session } = useSessionStore((s) => s);
   const { setSessionProp } = useSessionStore();
   const queryClient = useQueryClient();
+  const domain = useConfigStore((state) => state.cloudConfig?.domain);
 
   const schema = z.object({
     key: z.string().min(1, { message: t('common:enterprise_key_required') }),
@@ -1213,7 +1214,7 @@ function EnterpriseVerification(
           >
             {t('common:verification_amount_tips')}
             <Link
-              href="https://hzh.sealos.run/?openapp=system-workorder"
+              href={`https://${domain}/?openapp=system-workorder`}
               color="brightBlue.600"
               textDecoration="underline"
             >
