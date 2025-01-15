@@ -128,7 +128,13 @@ const SshConnectModal = ({
         scrollBehavior={'inside'}
       >
         <ModalOverlay />
-        <ModalContent maxWidth={'800px'} w={'700px'} minH={'785px'} position={'relative'}>
+        <ModalContent
+          maxWidth={'800px'}
+          w={'700px'}
+          minH={'785px'}
+          h={'785px'}
+          position={'relative'}
+        >
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={6} overflowY={'auto'}>
@@ -167,63 +173,20 @@ const SshConnectModal = ({
                       >
                         <StepStatus incomplete={<StepNumber />} />
                       </StepIndicator>
-                      <Flex flexDirection={'column'} gap={12} mt={1} ml={2} mb={5} flex={1}>
-                        <Box
-                          fontSize={'14px'}
-                          color={'grayModern.900'}
-                          fontWeight={400}
-                          lineHeight={'20px'}
-                        >
-                          {script.platform === 'Windows'
-                            ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
-                                blue: (chunks) => (
-                                  <Text
-                                    fontWeight={'bold'}
-                                    display={'inline-block'}
-                                    color={'brightBlue.600'}
-                                  >
-                                    {chunks}
-                                  </Text>
-                                ),
-                                lightColor: (chunks) => (
-                                  <Text color={'grayModern.600'} display={'inline-block'}>
-                                    {chunks}
-                                  </Text>
-                                )
-                              })
-                            : t.rich('jetbrains_guide_one_click_setup_desc', {
-                                blue: (chunks) => (
-                                  <Text
-                                    fontWeight={'bold'}
-                                    display={'inline-block'}
-                                    color={'brightBlue.600'}
-                                  >
-                                    {chunks}
-                                  </Text>
-                                ),
-                                lightColor: (chunks) => (
-                                  <Text color={'grayModern.600'} display={'inline-block'}>
-                                    {chunks}
-                                  </Text>
-                                )
-                              })}
-                        </Box>
-                        <Button
-                          leftIcon={<MyIcon name="download" color={'grayModern.500'} w={'16px'} />}
-                          bg={'white'}
-                          w={'fit-content'}
-                          size={'sm'}
-                          py={4}
-                          color={'grayModern.600'}
-                          border={'1px solid'}
-                          borderColor={'grayModern.200'}
+                      <Flex flexDirection={'column'} gap={6} mt={1} ml={2} mb={5} flex={1}>
+                        <Flex
                           borderRadius={'6px'}
+                          p={2}
+                          h={'96px'}
+                          borderWidth={1}
+                          borderColor={'brightBlue.500'}
+                          flexDirection={'column'}
+                          alignItems={'center'}
+                          justifyContent={'center'}
                           _hover={{
-                            color: 'brightBlue.600',
-                            '& svg': {
-                              color: 'brightBlue.600'
-                            }
+                            bg: 'brightBlue.50'
                           }}
+                          cursor={'pointer'}
                           onClick={() => {
                             if (script.platform === 'Windows') {
                               downLoadBlob(
@@ -240,8 +203,60 @@ const SshConnectModal = ({
                             }
                           }}
                         >
-                          {t('download_scripts')}
-                        </Button>
+                          <MyIcon
+                            name="fileConfig"
+                            color={'brightBlue.600'}
+                            w={'24px'}
+                            h={'24px'}
+                          />
+                          <Text fontSize={'14px'} color={'brightBlue.600'} fontWeight={'500'}>
+                            {t('jetbrains_guide_click_to_download')}
+                          </Text>
+                        </Flex>
+                        <Box
+                          fontSize={'14px'}
+                          color={'grayModern.900'}
+                          fontWeight={400}
+                          lineHeight={'20px'}
+                        >
+                          {script.platform === 'Windows'
+                            ? t.rich('jetbrains_guide_one_click_setup_desc_windows', {
+                                blue: (chunks) => (
+                                  <Text
+                                    fontWeight={'bold'}
+                                    display={'inline-block'}
+                                    color={'brightBlue.600'}
+                                  >
+                                    {chunks}
+                                  </Text>
+                                )
+                              })
+                            : t.rich('jetbrains_guide_one_click_setup_desc', {
+                                blue: (chunks) => (
+                                  <Text
+                                    fontWeight={'bold'}
+                                    display={'inline-block'}
+                                    color={'brightBlue.600'}
+                                  >
+                                    {chunks}
+                                  </Text>
+                                )
+                              })}
+                        </Box>
+                        <Box
+                          fontSize={'14px'}
+                          color={'grayModern.900'}
+                          fontWeight={400}
+                          lineHeight={'20px'}
+                        >
+                          {t.rich('jetbrains_guide_one_click_setup_desc_2', {
+                            lightColor: (chunks) => (
+                              <Text color={'grayModern.600'} display={'inline-block'}>
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
                         <ScriptCode platform={script.platform} script={script.script} />
                       </Flex>
                       <StepSeparator />
