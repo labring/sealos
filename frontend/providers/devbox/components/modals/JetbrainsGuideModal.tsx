@@ -140,7 +140,7 @@ const JetBrainsGuideModal = ({
         scrollBehavior={'inside'}
       >
         <ModalOverlay />
-        <ModalContent maxWidth={'800px'} w={'700px'} position={'relative'} minH={'785px'}>
+        <ModalContent maxWidth={'800px'} w={'700px'} position={'relative'} h={'785px'}>
           <ModalHeader pl={10}>{t('use_jetbrains')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} isDisabled={onConnecting} />
           <ModalBody pb={6} overflowY={'auto'}>

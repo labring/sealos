@@ -22,7 +22,8 @@ const ScriptCode = ({
 
   return (
     <Flex
-      p={2}
+      px={2}
+      py={1}
       borderRadius={'6px'}
       border={'1px solid'}
       borderColor={'grayModern.200'}
@@ -66,7 +67,7 @@ const ScriptCode = ({
           </Box>
         )}
         {oneLine && (
-          <Box py={2} overflowY={'auto'} h={'100%'}>
+          <Box py={2} overflowY={'auto'} h={'100%'} pl={4}>
             <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
           </Box>
         )}

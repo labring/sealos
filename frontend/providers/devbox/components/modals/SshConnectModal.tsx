@@ -128,13 +128,7 @@ const SshConnectModal = ({
         scrollBehavior={'inside'}
       >
         <ModalOverlay />
-        <ModalContent
-          maxWidth={'800px'}
-          w={'700px'}
-          minH={'785px'}
-          h={'785px'}
-          position={'relative'}
-        >
+        <ModalContent maxWidth={'800px'} w={'700px'} h={'785px'} position={'relative'}>
           <ModalHeader pl={10}>{t('jetbrains_guide_config_ssh')}</ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody
