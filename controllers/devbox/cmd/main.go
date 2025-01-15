@@ -92,10 +92,6 @@ func main() {
 	var webSocketImage string
 	var websocketProxyDomain string
 	var ingressClass string
-	//auto shutdown flag
-	var enableAutoShutdown bool
-	var shutdownServerKey string
-	var shutdownServerAddr string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -131,10 +127,6 @@ func main() {
 	flag.StringVar(&webSocketImage, "websocket-image", "cbluebird/wst:v0.0.4", "The image name of devbox websocket proxy pod.")
 	flag.StringVar(&websocketProxyDomain, "websocket-proxy-domain", "sealoshzh.site", "The websocket proxy domain of devbox ingress.")
 	flag.StringVar(&ingressClass, "ingress-class", "nginx", "The ingress class name.")
-	//auto shutdown flag
-	flag.BoolVar(&enableAutoShutdown, "enable-auto-shutdown", false, "If set, Devbox auto shutdown will be enabled.")
-	flag.StringVar(&shutdownServerKey, "shutdown-server-key", "sealos-devbox-shutdown", "The server key used to shutdown the server.")
-	flag.StringVar(&shutdownServerAddr, "shutdown-server-addr", "", "The shutdown server address.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -257,9 +249,6 @@ func main() {
 		WebSocketImage:       webSocketImage,
 		WebsocketProxyDomain: websocketProxyDomain,
 		IngressClass:         ingressClass,
-		EnableAutoShutdown:   enableAutoShutdown,
-		ShutdownServerKey:    shutdownServerKey,
-		ShutdownServerAddr:   shutdownServerAddr,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
