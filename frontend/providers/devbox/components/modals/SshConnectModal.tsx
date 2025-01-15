@@ -185,6 +185,7 @@ const SshConnectModal = ({
                         <Flex
                           borderRadius={'6px'}
                           p={2}
+                          gap={2}
                           h={'96px'}
                           borderWidth={1}
                           borderColor={'brightBlue.500'}
@@ -224,7 +225,7 @@ const SshConnectModal = ({
                         <Box
                           fontSize={'14px'}
                           color={'grayModern.900'}
-                          fontWeight={400}
+                          fontWeight={500}
                           lineHeight={'20px'}
                         >
                           {script.platform === 'Windows'

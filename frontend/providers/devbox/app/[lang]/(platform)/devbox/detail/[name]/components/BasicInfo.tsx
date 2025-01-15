@@ -1,40 +1,40 @@
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import React, { useCallback, useState } from 'react'
-import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react'
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import React, { useCallback, useState } from 'react';
+import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react';
 
-import MyIcon from '@/components/Icon'
-import { useEnvStore } from '@/stores/env'
-import { useDevboxStore } from '@/stores/devbox'
-import { getTemplateConfig } from '@/api/template'
-import { getSSHConnectionInfo } from '@/api/devbox'
-import { JetBrainsGuideData } from '@/components/IDEButton'
-import { downLoadBlob, parseTemplateConfig } from '@/utils/tools'
-import SshConnectModal from '@/components/modals/SshConnectModal'
+import MyIcon from '@/components/Icon';
+import { useEnvStore } from '@/stores/env';
+import { useDevboxStore } from '@/stores/devbox';
+import { getTemplateConfig } from '@/api/template';
+import { getSSHConnectionInfo } from '@/api/devbox';
+import { JetBrainsGuideData } from '@/components/IDEButton';
+import { downLoadBlob, parseTemplateConfig } from '@/utils/tools';
+import SshConnectModal from '@/components/modals/SshConnectModal';
 
 const BasicInfo = () => {
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const t = useTranslations();
+  const { message: toast } = useMessage();
 
-  const { env } = useEnvStore()
-  const { devboxDetail } = useDevboxStore()
+  const { env } = useEnvStore();
+  const { devboxDetail } = useDevboxStore();
 
-  const [loading, setLoading] = useState(false)
-  const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false)
-  const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false);
+  const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null);
 
   const handleOneClickConfig = useCallback(async () => {
     const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
       devboxName: devboxDetail?.name as string
-    })
+    });
 
-    const result = await getTemplateConfig(devboxDetail?.templateUid as string)
-    const config = parseTemplateConfig(result.template.config)
-    console.log('config', config)
+    const result = await getTemplateConfig(devboxDetail?.templateUid as string);
+    const config = parseTemplateConfig(result.template.config);
+    console.log('config', config);
 
-    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8')
+    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
 
-    if (!devboxDetail?.sshPort) return
+    if (!devboxDetail?.sshPort) return;
 
     setSshConfigData({
       devboxName: devboxDetail?.name,
@@ -46,9 +46,9 @@ const BasicInfo = () => {
       host: env.sealosDomain,
       port: devboxDetail?.sshPort.toString(),
       configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
-    })
+    });
 
-    setOnOpenSsHConnect(true)
+    setOnOpenSsHConnect(true);
   }, [
     devboxDetail?.name,
     devboxDetail?.templateUid,
@@ -56,19 +56,19 @@ const BasicInfo = () => {
     devboxDetail?.templateRepositoryName,
     env.sealosDomain,
     env.namespace
-  ])
+  ]);
 
   const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`
+    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`;
     navigator.clipboard.writeText(sshCommand).then(() => {
       toast({
         title: t('copy_success'),
         status: 'success',
         duration: 2000,
         isClosable: true
-      })
-    })
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t])
+      });
+    });
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t]);
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
@@ -91,7 +91,7 @@ const BasicInfo = () => {
               width={'20px'}
               height={'20px'}
               onError={(e) => {
-                e.currentTarget.src = '/images/custom.svg'
+                e.currentTarget.src = '/images/custom.svg';
               }}
               alt={devboxDetail?.iconId}
               src={`/images/${devboxDetail?.iconId}.svg`}
@@ -105,7 +105,8 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text
               fontSize={'12px'}
-              w={'full'}>{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
+              w={'full'}
+            >{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -180,7 +181,8 @@ const BasicInfo = () => {
           _hover={{
             color: 'brightBlue.600'
           }}
-          onClick={() => handleOneClickConfig()}>
+          onClick={() => handleOneClickConfig()}
+        >
           {t('one_click_config')}
         </Button>
       </Flex>
@@ -200,13 +202,15 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Text
                 cursor="pointer"
                 fontSize={'12px'}
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
-                w={'full'}>
+                w={'full'}
+              >
                 {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
               </Text>
             </Tooltip>
@@ -228,13 +232,15 @@ const BasicInfo = () => {
                 fontSize={'12px'}
                 fontWeight={400}
                 py={2}
-                borderRadius={'md'}>
+                borderRadius={'md'}
+              >
                 <Flex
                   p={1}
                   borderRadius={'6px'}
                   _hover={{
                     bg: 'rgba(17, 24, 36, 0.05)'
-                  }}>
+                  }}
+                >
                   <MyIcon
                     cursor={'pointer'}
                     name="download"
@@ -292,14 +298,16 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Flex
                 ml={3}
                 p={1}
                 borderRadius={'6px'}
                 _hover={{
                   bg: 'rgba(17, 24, 36, 0.05)'
-                }}>
+                }}
+              >
                 <MyIcon
                   cursor={'pointer'}
                   name="maximize"
@@ -317,15 +325,15 @@ const BasicInfo = () => {
         <SshConnectModal
           jetbrainsGuideData={sshConfigData}
           onSuccess={() => {
-            setOnOpenSsHConnect(false)
+            setOnOpenSsHConnect(false);
           }}
           onClose={() => {
-            setOnOpenSsHConnect(false)
+            setOnOpenSsHConnect(false);
           }}
         />
       )}
     </Flex>
-  )
-}
+  );
+};
 
-export default BasicInfo
+export default BasicInfo;
