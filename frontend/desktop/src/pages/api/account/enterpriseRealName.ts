@@ -25,6 +25,37 @@ type UnionPay3060Config = {
   api: string;
 };
 
+interface ApiError {
+  detail: any;
+  errorId: string;
+  message: string;
+  timestamp: number;
+  code: string;
+}
+
+interface EnterpriseAuthResponse {
+  subBank: string;
+  transAmt: string;
+  orderId: string;
+  isCharged: boolean;
+  legalPersonName: string;
+  isTransactionSuccess: boolean;
+  key: string;
+  enterpriseName: string;
+  accountCity: string;
+  respCode: string;
+  respMsg: string;
+  accountProv: string;
+  accountBank: string;
+  accountNo: string;
+}
+
+interface ApiResponse {
+  error?: ApiError;
+  data?: EnterpriseAuthResponse;
+  success: boolean;
+}
+
 const schema = z.object({
   key: z.string().min(1),
   accountBank: z.string().min(1),
@@ -105,37 +136,6 @@ async function handlePost(
   payload: AccessTokenPayload
 ) {
   try {
-    interface ApiError {
-      detail: any;
-      errorId: string;
-      message: string;
-      timestamp: number;
-      code: string;
-    }
-
-    interface EnterpriseAuthResponse {
-      subBank: string;
-      transAmt: string;
-      orderId: string;
-      isCharged: boolean;
-      legalPersonName: string;
-      isTransactionSuccess: boolean;
-      key: string;
-      enterpriseName: string;
-      accountCity: string;
-      respCode: string;
-      respMsg: string;
-      accountProv: string;
-      accountBank: string;
-      accountNo: string;
-    }
-
-    interface ApiResponse {
-      error?: ApiError;
-      data?: EnterpriseAuthResponse;
-      success: boolean;
-    }
-
     const realNameAuthProvider: RealNameAuthProvider | null =
       await globalPrisma.realNameAuthProvider.findFirst({
         where: {

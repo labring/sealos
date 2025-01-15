@@ -104,14 +104,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }))
     };
 
-    if (realNameInfo && realNameInfo.isVerified) {
-      info.realName = realNameInfo.realName || undefined;
+    if (realNameInfo && realNameInfo.isVerified && realNameInfo.realName) {
+      info.realName = realNameInfo.realName;
     }
 
-    if (enterpriseRealNameInfo) {
-      info.enterpriseRealName = enterpriseRealNameInfo.isVerified
-        ? enterpriseRealNameInfo.enterpriseName || undefined
-        : '';
+    if (
+      enterpriseRealNameInfo &&
+      enterpriseRealNameInfo.isVerified &&
+      enterpriseRealNameInfo.enterpriseName
+    ) {
+      info.enterpriseRealName = enterpriseRealNameInfo.enterpriseName;
     }
 
     if (restrictedUser) {

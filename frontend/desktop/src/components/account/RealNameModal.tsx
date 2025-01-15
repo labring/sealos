@@ -85,7 +85,6 @@ export function useRealNameAuthNotification(props?: UseToastOptions) {
                   color="yellow.600"
                   fontSize="16px"
                   fontWeight={500}
-                  fontFamily="PingFang SC"
                   lineHeight="24px"
                   letterSpacing="0.15px"
                   fontStyle="normal"
@@ -115,7 +114,6 @@ export function useRealNameAuthNotification(props?: UseToastOptions) {
               <Text
                 flex="1 0 0"
                 color="grayModern.900"
-                fontFamily="PingFang SC"
                 fontSize="14px"
                 fontWeight={400}
                 lineHeight="20px"
@@ -131,7 +129,6 @@ export function useRealNameAuthNotification(props?: UseToastOptions) {
                     as="span"
                     cursor="pointer"
                     color="yellow.600"
-                    fontFamily="PingFang SC"
                     fontSize="14px"
                     fontWeight={500}
                     lineHeight="20px"
@@ -194,7 +191,7 @@ const RealNameModal = forwardRef<
         <ModalContent
           borderRadius={'12px'}
           maxW={'540px'}
-          bgColor={'#FFF'}
+          bgColor="white"
           backdropFilter="blur(150px)"
           containerProps={{
             zIndex: '5500'
@@ -232,7 +229,6 @@ const RealNameModal = forwardRef<
                     alignItems: 'center',
                     gap: '6px',
                     borderRadius: '4px',
-                    fontFamily: 'PingFang SC',
                     fontSize: '14px',
                     fontStyle: 'normal',
                     fontWeight: 500,
@@ -259,7 +255,6 @@ const RealNameModal = forwardRef<
                     alignItems: 'center',
                     gap: '6px',
                     borderRadius: '4px',
-                    fontFamily: 'PingFang SC',
                     fontSize: '14px',
                     fontStyle: 'normal',
                     fontWeight: 500,
@@ -337,7 +332,6 @@ export function RealNameAuthForm(
             alignItems: 'center',
             gap: '6px',
             borderRadius: '4px',
-            fontFamily: 'PingFang SC',
             fontSize: '14px',
             fontStyle: 'normal',
             fontWeight: 500,
@@ -364,7 +358,6 @@ export function RealNameAuthForm(
             alignItems: 'center',
             gap: '6px',
             borderRadius: '4px',
-            fontFamily: 'PingFang SC',
             fontSize: '14px',
             fontStyle: 'normal',
             fontWeight: 500,
@@ -534,7 +527,6 @@ export function FaceIdRealNameAuthORcode(
           <Flex flexDirection="column" alignItems="center" gap="16px" alignSelf="stretch">
             <Text
               color="grayModern.600"
-              fontFamily="PingFang SC"
               fontSize="14px"
               fontStyle="normal"
               fontWeight={500}
@@ -550,7 +542,6 @@ export function FaceIdRealNameAuthORcode(
             {isPolling && (
               <Text
                 color="grayModern.600"
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontStyle="normal"
                 fontWeight={500}
@@ -768,7 +759,6 @@ function EnterpriseVerification(
           <Text
             alignSelf="stretch"
             color="grayModern.500"
-            fontFamily="PingFang SC"
             fontSize="12px"
             fontWeight={400}
             lineHeight="16px"
@@ -794,7 +784,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -821,7 +810,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -849,7 +837,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -876,7 +863,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -904,7 +890,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -931,7 +916,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -959,7 +943,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -986,7 +969,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -1014,7 +996,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -1041,7 +1022,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -1069,7 +1049,6 @@ function EnterpriseVerification(
             >
               <FormLabel
                 color={!canInput ? 'grayModern.400' : 'grayModern.900'}
-                fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
@@ -1096,7 +1075,6 @@ function EnterpriseVerification(
             <FormErrorMessage
               w="full"
               color="red.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={400}
               lineHeight="16px"
@@ -1122,17 +1100,12 @@ function EnterpriseVerification(
                 ? '1px solid var(--Red-600, #D92D20)'
                 : '1px solid var(--Green-600, #039855)'
             }
-            background={errorMessage ? 'var(--Red-50, #FEF3F2)' : 'var(--White, #FFF)'}
+            background={errorMessage ? 'red.50' : 'white'}
             maxH="100px"
             overflowY="auto"
           >
             <Text
-              color={
-                errorMessage
-                  ? 'var(--light-general-error, var(--Red-600, #D92D20))'
-                  : 'var(--light-general-success, var(--Green-600, #039855))'
-              }
-              fontFamily="PingFang SC"
+              color={errorMessage ? 'red.600' : 'green.600'}
               fontSize="12px"
               fontStyle="normal"
               fontWeight={500}
@@ -1147,7 +1120,6 @@ function EnterpriseVerification(
         <Flex flexDirection="column" alignItems="flex-start" gap="8px" mt="16px">
           <Text
             color="grayModern.900"
-            fontFamily="PingFang SC"
             fontSize="12px"
             fontStyle="normal"
             fontWeight={500}
@@ -1192,7 +1164,6 @@ function EnterpriseVerification(
               background="var(--White, #FFF)"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               color="grayModern.600"
-              fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={500}
               lineHeight="16px"
@@ -1205,7 +1176,6 @@ function EnterpriseVerification(
           </Flex>
           <Text
             color="grayModern.500"
-            fontFamily="PingFang SC"
             fontSize="12px"
             fontWeight={400}
             lineHeight="16px"
@@ -1237,13 +1207,12 @@ function EnterpriseVerification(
             justifyContent="center"
             alignItems="center"
             borderRadius="6px"
-            border="1px solid var(--Gray-Modern-250, #DFE2EA)"
-            background="var(--White, #FFF)"
+            border="grayModern.250"
+            background="white"
             boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
           >
             <Text
-              color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
-              fontFamily="PingFang SC"
+              color="grayModern.600"
               fontSize="14px"
               fontStyle="normal"
               fontWeight={500}
