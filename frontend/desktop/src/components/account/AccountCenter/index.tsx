@@ -274,6 +274,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                             fontWeight="500"
                             lineHeight="20px"
                             letterSpacing="0.1px"
+                            textTransform="none"
                           >
                             {t('common:no_realname_auth')}
                             <svg

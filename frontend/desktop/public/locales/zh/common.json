@@ -125,6 +125,7 @@
   "invalid_phone_number": "无效的手机号",
   "invalid_user_id": "用户的 ID 不合法",
   "invalid_username_or_password": "用户名或密码错误",
+  "invalid_verification_amount": "验证金额格式不合法",
   "invalid_verification_code": "无效的验证码",
   "invitation_reminder": "受邀提醒",
   "invite_member": "邀请成员",
@@ -272,6 +273,7 @@
     "task_launchpad_title": "部署应用"
   },
   "verification_amount": "验证金额",
+  "verification_amount_required": "验证金额不能为空",
   "verification_amount_tips": "验证金额将由上海银联打入你提交的对公账号, 金额随机, 一般实时到账。若三个工作日内未收到, 请",
   "verification_amount_tips2": "请联系公司财务确认企业银行账户收到的验证金额, 一般实时到账, 长期有效。",
   "verification_code_login": "手机号登录",

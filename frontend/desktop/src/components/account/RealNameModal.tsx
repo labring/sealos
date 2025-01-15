@@ -20,20 +20,11 @@ import {
   Spinner,
   Link,
   FormErrorMessage,
-  HStack,
-  TabIndicator,
   FlexProps
 } from '@chakra-ui/react';
 import { CloseIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
-import React, {
-  forwardRef,
-  ReactElement,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useState
-} from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -50,9 +41,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import QRCode from 'qrcode.react';
-import { useDropzone } from 'react-dropzone';
 import { useConfigStore } from '@/stores/config';
-import { DeleteIcon, PictureIcon, UploadIcon, AttachmentIcon } from '../icons';
 import { PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
 
 export function useRealNameAuthNotification(props?: UseToastOptions) {
@@ -521,7 +510,7 @@ export function FaceIdRealNameAuthORcode(
   }
 
   return (
-    <Box mt="32px">
+    <Box mt="32px" mb="16px">
       {data?.data?.url && (
         <>
           <Flex flexDirection="column" alignItems="center" gap="16px" alignSelf="stretch">
@@ -539,19 +528,6 @@ export function FaceIdRealNameAuthORcode(
             <Center>
               <QRCode value={data.data.url} size={200} />
             </Center>
-            {isPolling && (
-              <Text
-                color="grayModern.600"
-                fontSize="12px"
-                fontStyle="normal"
-                fontWeight={500}
-                lineHeight="20px" // 142.857%
-                letterSpacing="0.1px"
-                textAlign="center"
-              >
-                {t('common:waiting_for_face_recognition')}
-              </Text>
-            )}
           </Flex>
         </>
       )}
@@ -582,6 +558,12 @@ function EnterpriseVerification(
       .regex(/^\d+$/, { message: t('common:contact_info_must_be_numeric') })
   });
 
+  const verificationSchema = z.object({
+    transAmt: z
+      .string()
+      .refine((val) => /^\d{1,3}$/.test(val), { message: t('common:invalid_verification_amount') })
+  });
+
   const { data: enterpriseRealNameAuthInfo, isLoading: enterpriseRealNameAuthInfoLoading } =
     useQuery(['enterpriseRealNameAuthInfo'], enterpriseRealNameAuthInfoRequest, {
       refetchOnWindowFocus: false
@@ -590,13 +572,26 @@ function EnterpriseVerification(
   type FormData = z.infer<typeof schema>;
 
   const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors }
-  } = useForm<FormData>({
-    resolver: zodResolver(schema)
+    register: registerMain,
+    handleSubmit: handleMainSubmit,
+    reset: resetMain,
+    formState: { errors: mainErrors }
+  } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    mode: 'onChange'
   });
+
+  const {
+    register: registerVerification,
+    watch: watchVerification,
+    reset: resetVerification,
+    formState: { errors: verificationErrors }
+  } = useForm<z.infer<typeof verificationSchema>>({
+    resolver: zodResolver(verificationSchema),
+    mode: 'onChange'
+  });
+
+  const transAmt = watchVerification('transAmt');
 
   useEffect(() => {
     if (
@@ -605,7 +600,7 @@ function EnterpriseVerification(
     ) {
       const { key, accountBank, accountNo, keyName, usrName, contactInfo } =
         enterpriseRealNameAuthInfo.data;
-      reset({
+      resetMain({
         key,
         accountBank,
         accountNo,
@@ -614,7 +609,7 @@ function EnterpriseVerification(
         contactInfo
       });
     }
-  }, [enterpriseRealNameAuthInfo?.data, reset]);
+  }, [enterpriseRealNameAuthInfo?.data, resetMain]);
 
   const canPayment = enterpriseRealNameAuthInfo?.data?.paymentStatus !== PAYMENTSTATUS.PROCESSING;
 
@@ -679,7 +674,8 @@ function EnterpriseVerification(
 
         queryClient.invalidateQueries([session?.token, 'UserInfo']);
         queryClient.invalidateQueries(['enterpriseRealNameAuthInfo']);
-        reset();
+        resetMain();
+        resetVerification();
 
         if (props.onFormSuccess) {
           props.onFormSuccess();
@@ -707,7 +703,6 @@ function EnterpriseVerification(
     }
   });
 
-  // 取消验证
   const enterpriseRealNameAuthCancelMutation = useMutation(enterpriseRealNameAuthCancelRequest, {
     onSuccess: (data) => {
       if (data.code === 200 && data.data?.paymentStatus === PAYMENTSTATUS.CANCEL) {
@@ -740,7 +735,20 @@ function EnterpriseVerification(
     }
   });
 
-  const [transAmt, setTransAmt] = useState<string>('');
+  const handleVerifyClick = () => {
+    if (!transAmt || !/^\d{1,3}$/.test(transAmt)) {
+      message({
+        title: t('common:invalid_verification_amount'),
+        status: 'error',
+        duration: 2000,
+        isClosable: true
+      });
+      setErrorMessage(t('common:invalid_verification_amount'));
+      return;
+    }
+
+    enterpriseRealNameAuthVerifyMutation.mutate({ transAmt });
+  };
 
   if (enterpriseRealNameAuthInfoLoading) {
     return (
@@ -756,7 +764,9 @@ function EnterpriseVerification(
       <Box
         as="form"
         w="full"
-        onSubmit={handleSubmit((data) => enterpriseRealNameAuthPaymentMutation.mutate(data))}
+        onSubmit={handleMainSubmit((data: FormData) => {
+          enterpriseRealNameAuthPaymentMutation.mutate(data);
+        })}
       >
         <Flex py="16px" px="0" w="full">
           <Text
@@ -772,7 +782,7 @@ function EnterpriseVerification(
         </Flex>
         <VStack spacing="24px" w="full">
           <FormControl
-            isInvalid={!!errors.keyName}
+            isInvalid={!!mainErrors.keyName}
             w="full"
             display="flex"
             flexDirection="column"
@@ -798,7 +808,7 @@ function EnterpriseVerification(
                 {t('common:enterprise_keyname')}
               </FormLabel>
               <Input
-                {...register('keyName')}
+                {...registerMain('keyName')}
                 isDisabled={!canInput}
                 placeholder={t('common:enterprise_keyname_placeholder')}
                 h="32px"
@@ -820,12 +830,12 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.keyName?.message}
+              {mainErrors.keyName?.message}
             </FormErrorMessage>
           </FormControl>
 
           <FormControl
-            isInvalid={!!errors.key}
+            isInvalid={!!mainErrors.key}
             w="full"
             display="flex"
             flexDirection="column"
@@ -851,7 +861,7 @@ function EnterpriseVerification(
                 {t('common:enterprise_key')}
               </FormLabel>
               <Input
-                {...register('key')}
+                {...registerMain('key')}
                 isDisabled={!canInput}
                 placeholder={t('common:please_enter_enterprise_key')}
                 h="32px"
@@ -873,12 +883,12 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.keyName?.message}
+              {mainErrors.key?.message}
             </FormErrorMessage>
           </FormControl>
 
           <FormControl
-            isInvalid={!!errors.usrName}
+            isInvalid={!!mainErrors.usrName}
             w="full"
             display="flex"
             flexDirection="column"
@@ -904,7 +914,7 @@ function EnterpriseVerification(
                 {t('common:legal_person')}
               </FormLabel>
               <Input
-                {...register('usrName')}
+                {...registerMain('usrName')}
                 isDisabled={!canInput}
                 placeholder={t('common:please_enter_legal_person')}
                 h="32px"
@@ -926,12 +936,12 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.usrName?.message}
+              {mainErrors.usrName?.message}
             </FormErrorMessage>
           </FormControl>
 
           <FormControl
-            isInvalid={!!errors.accountNo}
+            isInvalid={!!mainErrors.accountNo}
             w="full"
             display="flex"
             flexDirection="column"
@@ -957,7 +967,7 @@ function EnterpriseVerification(
                 {t('common:account_number')}
               </FormLabel>
               <Input
-                {...register('accountNo')}
+                {...registerMain('accountNo')}
                 isDisabled={!canInput}
                 placeholder={t('common:please_enter_account_number')}
                 h="32px"
@@ -979,12 +989,12 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.accountNo?.message}
+              {mainErrors.accountNo?.message}
             </FormErrorMessage>
           </FormControl>
 
           <FormControl
-            isInvalid={!!errors.accountBank}
+            isInvalid={!!mainErrors.accountBank}
             w="full"
             display="flex"
             flexDirection="column"
@@ -1010,7 +1020,7 @@ function EnterpriseVerification(
                 {t('common:bank_name')}
               </FormLabel>
               <Input
-                {...register('accountBank')}
+                {...registerMain('accountBank')}
                 isDisabled={!canInput}
                 placeholder={t('common:please_enter_bank_name')}
                 h="32px"
@@ -1032,12 +1042,12 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.accountBank?.message}
+              {mainErrors.accountBank?.message}
             </FormErrorMessage>
           </FormControl>
 
           <FormControl
-            isInvalid={!!errors.contactInfo}
+            isInvalid={!!mainErrors.contactInfo}
             w="full"
             display="flex"
             flexDirection="column"
@@ -1063,7 +1073,7 @@ function EnterpriseVerification(
                 {t('common:contact_info')}
               </FormLabel>
               <Input
-                {...register('contactInfo')}
+                {...registerMain('contactInfo')}
                 isDisabled={!canInput}
                 placeholder={t('common:please_enter_contact_info')}
                 h="32px"
@@ -1085,7 +1095,7 @@ function EnterpriseVerification(
               p="0"
               m="0"
             >
-              {errors.contactInfo?.message}
+              {mainErrors.contactInfo?.message}
             </FormErrorMessage>
           </FormControl>
         </VStack>
@@ -1131,52 +1141,69 @@ function EnterpriseVerification(
           >
             {t('common:verification_amount')}
           </Text>
-          <Flex
+          <FormControl
+            isInvalid={!!verificationErrors.transAmt}
+            w="full"
             display="flex"
-            alignItems="center"
-            gap="8px"
-            alignSelf="stretch"
-            justify="flex-end"
-            w="100%"
+            flexDirection="column"
+            gap="4px"
           >
-            <Input
-              isDisabled={!canVerify}
-              value={transAmt}
-              onChange={(e) => setTransAmt(e.target.value)}
-              placeholder={t('common:please_enter_verification_amount')}
-              h="32px"
-              px="12px"
+            <Flex
+              display="flex"
               alignItems="center"
-              w="full"
-              borderRadius="6px"
-              borderColor="grayModern.200"
-              bg="grayModern.50"
-            />
-
-            <Button
-              type="submit"
-              variant="unstyled"
-              h="32px"
-              isDisabled={!canPayment || remainingAttempts === 0}
-              isLoading={enterpriseRealNameAuthPaymentMutation.isLoading}
-              px="14px"
-              justifyContent="center"
-              alignItems="center"
-              borderRadius="6px"
-              border="1px solid var(--Gray-Modern-250, #DFE2EA)"
-              background="var(--White, #FFF)"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-              color="grayModern.600"
-              fontSize="12px"
-              fontWeight={500}
-              lineHeight="16px"
-              letterSpacing="0.5px"
-              whiteSpace="nowrap"
-              minW="fit-content"
+              gap="8px"
+              alignSelf="stretch"
+              justify="flex-end"
+              w="100%"
             >
-              {t('common:get_verification_amount')}
-            </Button>
-          </Flex>
+              <Input
+                {...registerVerification('transAmt')}
+                isDisabled={!canVerify}
+                placeholder={t('common:please_enter_verification_amount')}
+                h="32px"
+                px="12px"
+                alignItems="center"
+                w="full"
+                borderRadius="6px"
+                bg="grayModern.50"
+              />
+              <Button
+                type="submit"
+                variant="unstyled"
+                h="32px"
+                isDisabled={!canPayment || remainingAttempts === 0}
+                isLoading={enterpriseRealNameAuthPaymentMutation.isLoading}
+                px="14px"
+                justifyContent="center"
+                alignItems="center"
+                borderRadius="6px"
+                border="1px solid var(--Gray-Modern-250, #DFE2EA)"
+                background="var(--White, #FFF)"
+                boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+                color="grayModern.600"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                whiteSpace="nowrap"
+                minW="fit-content"
+              >
+                {t('common:get_verification_amount')}
+              </Button>
+            </Flex>
+            <FormErrorMessage
+              w="full"
+              color="red.600"
+              fontSize="12px"
+              fontWeight={400}
+              lineHeight="16px"
+              letterSpacing="0.048px"
+              p="0"
+              m="0"
+            >
+              {verificationErrors.transAmt?.message}
+            </FormErrorMessage>
+          </FormControl>
           <Text
             color="grayModern.500"
             fontSize="12px"
@@ -1187,7 +1214,7 @@ function EnterpriseVerification(
             {t('common:verification_amount_tips')}
             <Link
               href="https://hzh.sealos.run/?openapp=system-workorder"
-              color="blue.600"
+              color="brightBlue.600"
               textDecoration="underline"
             >
               {t('common:link_to_workorder')}
@@ -1229,7 +1256,7 @@ function EnterpriseVerification(
             minW="fit-content"
             h="36px"
             variant="primary"
-            onClick={() => enterpriseRealNameAuthVerifyMutation.mutate({ transAmt: transAmt })}
+            onClick={handleVerifyClick}
             isDisabled={!canVerify || remainingAttempts === 0}
             isLoading={enterpriseRealNameAuthVerifyMutation.isLoading}
             px="14px"
