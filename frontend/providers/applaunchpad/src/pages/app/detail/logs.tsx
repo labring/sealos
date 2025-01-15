@@ -11,13 +11,38 @@ import { Header } from '@/components/app/detail/logs/Header';
 import { Filter } from '@/components/app/detail/logs/Filter';
 import { LogTable } from '@/components/app/detail/logs/LogTable';
 import { LogCounts } from '@/components/app/detail/logs/LogCounts';
+import { useEffect, useState } from 'react';
+import { ListItem } from '@/components/AdvancedSelect';
+import useDateTimeStore from '@/store/date';
 
 export default function LogsPage({ appName }: { appName: string }) {
+  const theme = useTheme();
   const { toast } = useToast();
   const { t } = useTranslation();
-  const { appDetail } = useAppStore();
+  const { appDetail, appDetailPods } = useAppStore();
+  const [podList, setPodList] = useState<ListItem[]>([]);
+  const [containerList, setContainerList] = useState<ListItem[]>([]);
+  const { refreshInterval } = useDateTimeStore();
 
-  const theme = useTheme();
+  useEffect(() => {
+    if (appDetailPods?.length > 0 && podList.length === 0) {
+      setPodList(
+        appDetailPods.map((pod) => ({
+          value: pod.podName,
+          label: pod.podName,
+          checked: true
+        }))
+      );
+      setContainerList(
+        appDetailPods
+          .flatMap((pod) => pod.spec?.containers || [])
+          .map((container) => ({
+            value: container.name,
+            label: container.name
+          }))
+      );
+    }
+  }, [appDetailPods, podList]);
 
   const { data: monitorData } = useQuery(
     ['monitor-data', appName],
@@ -34,6 +59,8 @@ export default function LogsPage({ appName }: { appName: string }) {
     }
   );
 
+  const refetchData = () => {};
+
   return (
     <DetailLayout appName={appName}>
       <Box flex={1} borderRadius="lg" overflowY={'auto'}>
@@ -46,7 +73,13 @@ export default function LogsPage({ appName }: { appName: string }) {
             border={theme.borders.base}
             borderRadius={'lg'}
           >
-            <Header />
+            <Header
+              podList={podList}
+              setPodList={setPodList}
+              refetchData={refetchData}
+              containerList={containerList}
+              setContainerList={setContainerList}
+            />
             <Divider />
             <Filter />
           </Flex>
