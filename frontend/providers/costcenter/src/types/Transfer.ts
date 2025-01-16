@@ -15,3 +15,14 @@ export type transferStatus = {
     to: string;
   };
 };
+export type TransferModalRef = {
+  onOpen: () => void;
+  onClose: () => void;
+};
+export type TransferModalProps = {
+  onTransferSuccess?: () => void;
+  onTransferError?: () => void;
+  onCancel?: () => void;
+  balance: number;
+  k8s_username: string;
+};
