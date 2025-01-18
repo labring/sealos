@@ -183,7 +183,7 @@ jobs:
 
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
-    if: ${{ inputs.save-sealos == '' && true || inputs.save-sealos  }}
+    if: ${{ inputs.save-sealos }}
     with:
       artifact_name: sealos-frontend
 
