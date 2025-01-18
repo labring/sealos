@@ -188,9 +188,9 @@ jobs:
       artifact_name: sealos-frontend
 
   cluster-image-build:
-    if: ${{ inputs.push_image  }}
+    if: ${{ inputs.push_image }}
     needs:
-      - image-build
+      - image-release
       - save-sealos
     runs-on: ubuntu-latest
     steps:
