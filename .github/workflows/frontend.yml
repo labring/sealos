@@ -22,6 +22,22 @@ on:
         default: "latest"
         required: false
         type: string
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Module"
+        required: true
+        type: string
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
 
 env:
   # Common versions
@@ -167,7 +183,7 @@ jobs:
 
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
-    if: ${{ inputs.save-sealos }}
+    if: ${{ inputs.save-sealos != '' && inputs.save-sealos || true }}
     with:
       artifact_name: sealos-frontend
 

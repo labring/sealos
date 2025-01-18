@@ -58,6 +58,7 @@ jobs:
     needs: save-sealos
     secrets: inherit
     strategy:
+      fail-fast: false
       matrix:
         module:
           [
