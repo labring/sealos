@@ -3,6 +3,11 @@ name: Build Frontend Image
 on:
   workflow_call:
     inputs:
+      save-sealos:
+        description: "Save sealos"
+        required: false
+        type: boolean
+        default: true
       module:
         description: "Module"
         required: true
@@ -168,8 +173,10 @@ jobs:
 
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
+    if: ${{ inputs.save-sealos }}
     with:
       artifact_name: sealos-frontend
+
   cluster-image-build:
     if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
     needs:
