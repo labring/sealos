@@ -1,0 +1,74 @@
+name: Build Frontends Image
+
+on:
+  workflow_call:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
+  push:
+    branches: ["main"]
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - ".github/workflows/frontend.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - ".github/workflows/frontend.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
+
+jobs:
+  image-build:
+    uses: ./.github/workflows/frontend.yml
+    strategy:
+      matrix:
+        module:
+          [
+            providers/license,
+            providers/cronjob,
+            providers/template,
+            providers/adminer,
+            providers/applaunchpad,
+            providers/terminal,
+            providers/dbprovider,
+            providers/costcenter,
+            providers/objectstorage,
+            providers/kubepanel,
+            providers/workorder,
+            providers/devbox,
+            desktop,
+          ]
+    with:
+      module: ${{ matrix.module }}
+      push_image: ${{ inputs.push_image }}
+      push_image_tag: ${{ inputs.push_image_tag }}

@@ -1,120 +1,64 @@
 name: Build Frontend Image
 
 on:
-  create:
-    tags:
   workflow_call:
     inputs:
+      module:
+        description: "Module"
+        required: true
+        type: string
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
-        default: 'latest'
+        description: "Push image tag"
+        default: "latest"
         required: false
         type: string
-  workflow_dispatch:
-    inputs:
-      push_image:
-        description: 'Push image'
-        required: false
-        type: boolean
-        default: false
-      push_image_tag:
-        description: 'Push image tag'
-        default: 'latest'
-        required: false
-        type: string
-  push:
-    branches: ['main']
-    paths:
-      - 'frontend/desktop/**'
-      - 'frontend/providers/**'
-      - '.github/workflows/frontend.yml'
-      - '!**/*.md'
-      - '!**/*.yaml'
-  pull_request:
-    branches: ['*']
-    paths:
-      - 'frontend/desktop/**'
-      - 'frontend/providers/**'
-      - '.github/workflows/frontend.yml'
-      - '!**/*.md'
-      - '!**/*.yaml'
 
 env:
   # Common versions
-  GO_VERSION: '1.20'
-  DEFAULT_OWNER: 'labring'
+  push: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
 
 jobs:
   image-build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
+        include:
+          - arch: amd64
+          - arch: arm64
+            runs-on: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-      - name: Check if tag
-        id: check_tag
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "isTag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "isTag=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Prepare
-        id: prepare
-        run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
       - name: Extract module name
         id: module_name
         run: |
-          MODULE_NAME=$(basename ${{ matrix.module }})
+          MODULE_NAME=$(basename ${{ inputs.module }})
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${{ github.repository_owner }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend
-          tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
-            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+            ${{ env.GHCR_REPO }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Github Container Hub
-        if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
-        uses: docker/login-action@v2
+        if: ${{ env.push }}
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -128,21 +72,101 @@ jobs:
         uses: reproducible-containers/buildkit-cache-dance@v2.1.2
         with:
           cache-source: pnpm-store
-      - name: Build And Push
+      - name: Build
+        id: build
         uses: docker/build-push-action@v4
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ matrix.arch }}
           build-args: |
             name=${{ env.MODULE_NAME }}
-            path=${{ matrix.module }}
-          # Push if it's a push event or if push_image is true
-          push: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
-          tags: ${{ steps.meta.outputs.tags }}
+            path=${{ inputs.module }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=image,"name=${{ env.GHCR_REPO }}",name-canonical=true,push-by-digest=${{ env.push }},push=${{ env.push }}
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  image-release:
+    name: Push Docker Images
+    needs: image-build
+    runs-on: ubuntu-24.04
+    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
+    steps:
+      - name: Login to Github Container Hub
+        if: ${{ env.push }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Check if tag
+        id: check_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "isTag=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "isTag=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Prepare
+        id: prepare
+        run: |
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+
+      - name: Extract module name
+        id: module_name
+        run: |
+          MODULE_NAME=$(basename ${{ inputs.module }})
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${{ github.repository_owner }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ${{ env.GHCR_REPO }}
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            $(printf '${{ env.GHCR_REPO }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          docker buildx imagetools inspect ${{ env.GHCR_REPO }}:${{ steps.meta.outputs.version }}
+
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
     with:
@@ -153,24 +177,6 @@ jobs:
       - image-build
       - save-sealos
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module:
-          [
-            providers/license,
-            providers/cronjob,
-            providers/template,
-            providers/adminer,
-            providers/applaunchpad,
-            providers/terminal,
-            providers/dbprovider,
-            providers/costcenter,
-            providers/objectstorage,
-            providers/kubepanel,
-            providers/workorder,
-            providers/devbox,
-            desktop,
-          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -179,7 +185,7 @@ jobs:
       - name: Extract module name
         id: module_name
         run: |
-          MODULE_NAME=$(basename ${{ matrix.module }})
+          MODULE_NAME=$(basename ${{ inputs.module }})
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
 
       - name: Expose git commit data
@@ -220,7 +226,7 @@ jobs:
           sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
 
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
-        working-directory: frontend/${{ matrix.module }}/deploy
+        working-directory: frontend/${{ inputs.module }}/deploy
         run: |
           sudo sed -i "s;${{ steps.prepare.outputs.old_docker_image }};${{ steps.prepare.outputs.new_docker_image }};" manifests/*
           sudo sealos build -t ${{ steps.prepare.outputs.cluster_image }}-amd64 --platform linux/amd64 -f Kubefile
@@ -244,14 +250,14 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: '${{ secrets.GH_PAT }}'
-          SEALOS_TYPE: 'issue_renew'
-          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
-          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
-          SEALOS_ISSUE_LABEL: 'dayly-report'
-          SEALOS_ISSUE_TYPE: 'day'
-          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
-          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.cluster_image }}'
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
         uses: labring/gh-rebot@v0.0.6
@@ -259,11 +265,11 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: '${{ secrets.GH_PAT }}'
-          SEALOS_TYPE: 'issue_renew'
-          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
-          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
-          SEALOS_ISSUE_LABEL: 'dayly-report'
-          SEALOS_ISSUE_TYPE: 'day'
-          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
-          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}'
+          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          SEALOS_TYPE: "issue_renew"
+          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
+          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
+          SEALOS_ISSUE_LABEL: "dayly-report"
+          SEALOS_ISSUE_TYPE: "day"
+          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
+          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"
