@@ -6,7 +6,7 @@ jobs:
   cherry-pick:
     name: Cherry Pick
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/cherry-pick') && github.event.comment.user.login=='sealos-ci-robot'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Write vars
         id: set-target
@@ -26,7 +26,7 @@ jobs:
           fi
           echo "prNumber=$PR_NUMBER" >> $GITHUB_OUTPUT
       - name: Checkout the latest code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0

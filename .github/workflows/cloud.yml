@@ -65,10 +65,10 @@ jobs:
     if: ${{ (github.event_name == 'release') ||(github.event_name == 'push')  || (inputs.push_image == true) }}
     needs:
       - save-sealos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Expose git commit data

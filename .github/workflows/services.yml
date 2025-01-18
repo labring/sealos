@@ -50,12 +50,12 @@ env:
 
 jobs:
   resolve-modules:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Resolve Modules
         id: set-matrix
@@ -63,39 +63,39 @@ jobs:
 
   golangci-lint:
     needs: [  resolve-modules ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
+        uses: magnetikonline/action-golang-cache@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
           version: v1.54.2
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   image-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         ## TODO: add more modules
         module: [ database, pay, account, minio, launchpad, exceptionmonitor, aiproxy, devbox ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
+        uses: magnetikonline/action-golang-cache@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -138,12 +138,12 @@ jobs:
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
         with:
           registry: ghcr.io
@@ -152,7 +152,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
@@ -161,7 +161,7 @@ jobs:
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
       - name: build (and publish) ${{ matrix.module }} main image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./service/${{ matrix.module }}
           file: ./service/${{ matrix.module }}/Dockerfile
@@ -180,14 +180,14 @@ jobs:
     needs:
       - image-build
       - save-sealos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         ## TODO: add more modules
         module: [ database, pay, account, minio, launchpad, exceptionmonitor, aiproxy, devbox ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 

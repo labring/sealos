@@ -60,7 +60,7 @@ jobs:
             E2E_sealos_runtime_version_docker_127_test,
             E2E_sealos_runtime_version_docker_128_test
           ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Download image-cri-shim
         uses: actions/download-artifact@v4

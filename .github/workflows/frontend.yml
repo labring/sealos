@@ -39,7 +39,7 @@ jobs:
     runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -52,7 +52,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.GHCR_REPO }}
@@ -70,7 +70,7 @@ jobs:
 
       - name: Build
         id: build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
@@ -101,7 +101,7 @@ jobs:
     if: ${{ inputs.push_image }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -147,7 +147,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: |
             ${{ env.GHCR_REPO }}
@@ -176,10 +176,10 @@ jobs:
       - image-release
       - save-sealos
     if: ${{ !failure() && inputs.push_image }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Extract module name
