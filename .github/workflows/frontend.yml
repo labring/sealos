@@ -62,7 +62,7 @@ jobs:
 
       - name: Login to Github Container Hub
         if: ${{ inputs.push_image }}
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -99,7 +99,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          name: digests-${{ matrix.arch }}
+          name: digests-${{ env.MODULE_NAME }}-${{ matrix.arch }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -108,21 +108,27 @@ jobs:
     name: Push Docker Images
     needs: image-build
     runs-on: ubuntu-24.04
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true) }}
+    if: ${{ inputs.push_image }}
     steps:
       - name: Login to Github Container Hub
-        if: ${{ inputs.push_image }}
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_PAT }}
 
+      - name: Extract module name
+        id: module_name
+        run: |
+          MODULE_NAME=$(basename ${{ inputs.module }})
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
+          echo "GHCR_REPO=ghcr.io/${{ github.repository_owner }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
           path: ${{ runner.temp }}/digests
-          pattern: digests-*
+          pattern: digests-${{ env.MODULE_NAME }}-*
           merge-multiple: true
 
       - name: Set up Docker Buildx
@@ -143,13 +149,6 @@ jobs:
         id: prepare
         run: |
           bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
-
-      - name: Extract module name
-        id: module_name
-        run: |
-          MODULE_NAME=$(basename ${{ inputs.module }})
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
-          echo "GHCR_REPO=ghcr.io/${{ github.repository_owner }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
@@ -178,7 +177,7 @@ jobs:
       artifact_name: sealos-frontend
 
   cluster-image-build:
-    if: ${{ (github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)  }}
+    if: ${{ inputs.push_image  }}
     needs:
       - image-build
       - save-sealos
