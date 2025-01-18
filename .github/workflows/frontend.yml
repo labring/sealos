@@ -172,10 +172,10 @@ jobs:
       artifact_name: sealos-frontend
 
   cluster-image-build:
-    if: ${{ inputs.push_image }}
     needs:
       - image-release
       - save-sealos
+    if: ${{ !failure() && inputs.push_image }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
