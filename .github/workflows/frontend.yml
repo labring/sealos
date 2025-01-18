@@ -67,15 +67,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_PAT }}
-      - name: Cache pnpm-store
-        uses: actions/cache@v3
-        with:
-          path: pnpm-store
-          key: pnpm-store-${{ hashFiles('Dockerfile') }}
-      - name: inject pnpm-store into docker
-        uses: reproducible-containers/buildkit-cache-dance@v2.1.2
-        with:
-          cache-source: pnpm-store
+
       - name: Build
         id: build
         uses: docker/build-push-action@v4
@@ -87,8 +79,6 @@ jobs:
             name=${{ env.MODULE_NAME }}
             path=${{ inputs.module }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           outputs: type=image,"name=${{ env.GHCR_REPO }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
       - name: Export digest
         run: |
@@ -110,6 +100,11 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ inputs.push_image }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Login to Github Container Hub
         uses: docker/login-action@v3
         with:
@@ -148,7 +143,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}"
 
       - name: Docker meta
         id: meta
