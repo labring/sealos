@@ -36,7 +36,7 @@ jobs:
 
   release-frontends:
     if: ${{ github.event.inputs.build_offline_tar_only == false }}
-    uses: ./.github/workflows/frontend.yml
+    uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
       push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
