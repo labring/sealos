@@ -55,6 +55,7 @@ jobs:
 
   image-build:
     uses: ./.github/workflows/frontend.yml
+    needs: save-sealos
     strategy:
       matrix:
         module:
