@@ -15,8 +15,12 @@ func MessageWithRequestID(message string, id string) string {
 	return fmt.Sprintf("%s (request id: %s)", message, id)
 }
 
-func abortWithMessage(c *gin.Context, statusCode int, message string) {
+func abortLogWithMessage(c *gin.Context, statusCode int, message string) {
 	GetLogger(c).Error(message)
+	abortWithMessage(c, statusCode, message)
+}
+
+func abortWithMessage(c *gin.Context, statusCode int, message string) {
 	c.JSON(statusCode, gin.H{
 		"error": &model.Error{
 			Message: MessageWithRequestID(message, GetRequestID(c)),
