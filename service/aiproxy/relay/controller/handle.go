@@ -20,7 +20,6 @@ import (
 
 func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBalanceReq, error)) *relaymodel.ErrorWithStatusCode {
 	log := middleware.GetLogger(c)
-	ctx := c.Request.Context()
 
 	// 1. Get adaptor
 	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
@@ -31,7 +30,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	}
 
 	// 2. Get group balance
-	groupRemainBalance, postGroupConsumer, err := getGroupBalance(ctx, meta)
+	groupRemainBalance, postGroupConsumer, err := getGroupBalance(c, meta)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
 		errMsg := fmt.Sprintf("get group (%s) balance failed", meta.Group.ID)
@@ -50,6 +49,10 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			"get_group_quota_failed",
 			http.StatusInternalServerError,
 		)
+	}
+
+	if groupRemainBalance <= 0 {
+		return openai.ErrorWrapperWithMessage("group balance not enough", "insufficient_group_balance", http.StatusForbidden)
 	}
 
 	// 3. Pre-process request

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
@@ -110,6 +111,21 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 	return nil
 }
 
+func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+	groupBalance, _, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group.ID)
+	if err != nil {
+		GetLogger(c).Errorf("get group (%s) balance error: %v", group.ID, err)
+		abortWithMessage(c, http.StatusInternalServerError, "get group balance error")
+		return false
+	}
+	if groupBalance <= 0 {
+		abortLogWithMessage(c, http.StatusForbidden, "group balance not enough")
+		return false
+	}
+	c.Set(ctxkey.GroupBalance, groupBalance)
+	return true
+}
+
 func NewDistribute(mode int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		distribute(c, mode)
@@ -118,7 +134,7 @@ func NewDistribute(mode int) gin.HandlerFunc {
 
 func distribute(c *gin.Context, mode int) {
 	if config.GetDisableServe() {
-		abortWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
+		abortLogWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
 		return
 	}
 
@@ -126,13 +142,17 @@ func distribute(c *gin.Context, mode int) {
 
 	group := GetGroup(c)
 
+	if !checkGroupBalance(c, group) {
+		return
+	}
+
 	requestModel, err := getRequestModel(c)
 	if err != nil {
-		abortWithMessage(c, http.StatusBadRequest, err.Error())
+		abortLogWithMessage(c, http.StatusBadRequest, err.Error())
 		return
 	}
 	if requestModel == "" {
-		abortWithMessage(c, http.StatusBadRequest, "no model provided")
+		abortLogWithMessage(c, http.StatusBadRequest, "no model provided")
 		return
 	}
 
@@ -142,7 +162,7 @@ func distribute(c *gin.Context, mode int) {
 
 	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
 	if !ok {
-		abortWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
+		abortLogWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
 		return
 	}
 
@@ -151,7 +171,7 @@ func distribute(c *gin.Context, mode int) {
 	token := GetToken(c)
 
 	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
-		abortWithMessage(c,
+		abortLogWithMessage(c,
 			http.StatusForbidden,
 			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
 				token.Name, token.ID, requestModel,
@@ -172,7 +192,7 @@ func distribute(c *gin.Context, mode int) {
 			errMsg,
 			nil,
 		)
-		abortWithMessage(c, http.StatusTooManyRequests, errMsg)
+		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg)
 		return
 	}
 

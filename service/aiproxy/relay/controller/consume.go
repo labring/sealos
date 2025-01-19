@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"context"
-
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/shopspring/decimal"
@@ -35,19 +35,21 @@ func checkGroupBalance(req *PreCheckGroupBalanceReq, meta *meta.Meta, groupRemai
 	if meta.IsChannelTest {
 		return true
 	}
-	if groupRemainBalance <= 0 {
-		return false
-	}
 
 	preConsumedAmount := getPreConsumedAmount(req)
 
 	return groupRemainBalance > preConsumedAmount
 }
 
-func getGroupBalance(ctx context.Context, meta *meta.Meta) (float64, balance.PostGroupConsumer, error) {
+func getGroupBalance(ctx *gin.Context, meta *meta.Meta) (float64, balance.PostGroupConsumer, error) {
 	if meta.IsChannelTest {
 		return 0, nil, nil
 	}
 
-	return balance.Default.GetGroupRemainBalance(ctx, meta.Group.ID)
+	groupBalance, ok := ctx.Get(ctxkey.GroupBalance)
+	if ok {
+		return groupBalance.(float64), nil, nil
+	}
+
+	return balance.Default.GetGroupRemainBalance(ctx.Request.Context(), meta.Group.ID)
 }

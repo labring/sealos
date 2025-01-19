@@ -144,10 +144,12 @@ func (m *Meta) GetString(key string) string {
 }
 
 func (m *Meta) GetBool(key string) bool {
-	if v, ok := m.Get(key); ok {
-		return v.(bool)
+	v, ok := m.Get(key)
+	if !ok {
+		return false
 	}
-	return false
+	b, _ := v.(bool)
+	return b
 }
 
 //nolint:unparam
