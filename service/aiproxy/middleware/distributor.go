@@ -111,8 +111,13 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 	return nil
 }
 
+type GroupBalanceConsumer struct {
+	GroupBalance float64
+	Consumer     balance.PostGroupConsumer
+}
+
 func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
-	groupBalance, _, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group.ID)
+	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group.ID)
 	if err != nil {
 		GetLogger(c).Errorf("get group (%s) balance error: %v", group.ID, err)
 		abortWithMessage(c, http.StatusInternalServerError, "get group balance error")
@@ -122,7 +127,10 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 		abortLogWithMessage(c, http.StatusForbidden, "group balance not enough")
 		return false
 	}
-	c.Set(ctxkey.GroupBalance, groupBalance)
+	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
+		GroupBalance: groupBalance,
+		Consumer:     consumer,
+	})
 	return true
 }
 
