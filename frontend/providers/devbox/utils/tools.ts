@@ -91,25 +91,38 @@ export const useCopyData = () => {
   const t = useTranslations()
 
   return {
-    copyData: (data: string, title: string = 'copy_success') => {
+    copyData: async (data: string, title: string = 'copy_success') => {
       try {
-        const textarea = document.createElement('textarea')
-        textarea.value = data
-        document.body.appendChild(textarea)
-        textarea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textarea)
+        await navigator.clipboard.writeText(data)
+
         toast({
           title: t(title),
           status: 'success',
           duration: 1000
         })
       } catch (error) {
-        console.error(error)
-        toast({
-          title: t('copy_failed'),
-          status: 'error'
-        })
+        try {
+          const textarea = document.createElement('textarea')
+          textarea.value = data
+          textarea.style.position = 'fixed'
+          textarea.style.opacity = '0'
+          document.body.appendChild(textarea)
+          textarea.select()
+          document.execCommand('copy')
+          document.body.removeChild(textarea)
+
+          toast({
+            title: t(title),
+            status: 'success',
+            duration: 1000
+          })
+        } catch (fallbackError) {
+          console.error('Copy failed:', fallbackError)
+          toast({
+            title: t('copy_failed'),
+            status: 'error'
+          })
+        }
       }
     }
   }

@@ -1,58 +1,74 @@
-import { Box, Flex, Image, Spinner, Text, Tooltip } from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import React, { useCallback, useState } from 'react';
+import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react';
 
-import MyIcon from '@/components/Icon'
-
-import { DevboxDetailType } from '@/types/devbox'
-
-import { useDevboxStore } from '@/stores/devbox'
-import { useEnvStore } from '@/stores/env'
+import MyIcon from '@/components/Icon';
+import { useEnvStore } from '@/stores/env';
+import { useDevboxStore } from '@/stores/devbox';
+import { getTemplateConfig } from '@/api/template';
+import { getSSHConnectionInfo } from '@/api/devbox';
+import { JetBrainsGuideData } from '@/components/IDEButton';
+import { downLoadBlob, parseTemplateConfig } from '@/utils/tools';
+import SshConnectModal from '@/components/modals/SshConnectModal';
 
 const BasicInfo = () => {
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  const t = useTranslations();
+  const { message: toast } = useMessage();
 
-  const { env } = useEnvStore()
-  const { devboxDetail } = useDevboxStore()
-  // const { getRuntimeDetailLabel } = useRuntimeStore()
+  const { env } = useEnvStore();
+  const { devboxDetail } = useDevboxStore();
 
-  const [loading, setLoading] = useState(false)
-  
+  const [loading, setLoading] = useState(false);
+  const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false);
+  const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null);
+
+  const handleOneClickConfig = useCallback(async () => {
+    const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
+      devboxName: devboxDetail?.name as string
+    });
+
+    const result = await getTemplateConfig(devboxDetail?.templateUid as string);
+    const config = parseTemplateConfig(result.template.config);
+    console.log('config', config);
+
+    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
+
+    if (!devboxDetail?.sshPort) return;
+
+    setSshConfigData({
+      devboxName: devboxDetail?.name,
+      runtimeType: devboxDetail?.templateRepositoryName,
+      privateKey: sshPrivateKey,
+      userName,
+      token,
+      workingDir: config.workingDir,
+      host: env.sealosDomain,
+      port: devboxDetail?.sshPort.toString(),
+      configHost: `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+    });
+
+    setOnOpenSsHConnect(true);
+  }, [
+    devboxDetail?.name,
+    devboxDetail?.templateUid,
+    devboxDetail?.sshPort,
+    devboxDetail?.templateRepositoryName,
+    env.sealosDomain,
+    env.namespace
+  ]);
+
   const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`
+    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`;
     navigator.clipboard.writeText(sshCommand).then(() => {
       toast({
         title: t('copy_success'),
         status: 'success',
         duration: 2000,
         isClosable: true
-      })
-    })
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t])
-
-  const handleDownloadConfig = useCallback(
-    async (config: DevboxDetailType['sshConfig']) => {
-      setLoading(true)
-
-      const privateKey = config?.sshPrivateKey as string
-
-      const blob = new Blob([privateKey], { type: 'application/octet-stream' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = url
-      a.download = devboxDetail?.name || ''
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      setLoading(false)
-    },
-    [devboxDetail?.name]
-  )
+      });
+    });
+  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t]);
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
@@ -75,7 +91,7 @@ const BasicInfo = () => {
               width={'20px'}
               height={'20px'}
               onError={(e) => {
-                e.currentTarget.src = '/images/custom.svg'
+                e.currentTarget.src = '/images/custom.svg';
               }}
               alt={devboxDetail?.iconId}
               src={`/images/${devboxDetail?.iconId}.svg`}
@@ -89,7 +105,8 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text
               fontSize={'12px'}
-              w={'full'}>{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
+              w={'full'}
+            >{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
           </Flex>
         </Flex>
         <Flex>
@@ -105,14 +122,10 @@ const BasicInfo = () => {
             {t('start_runtime')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            <Text 
-            fontSize={'12px'}
-            w={'full'}
-            textOverflow={'ellipsis'}
-            >
+            <Text fontSize={'12px'} w={'full'} textOverflow={'ellipsis'}>
               {
-              // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
-              `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`
+                // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
+                `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`
               }
             </Text>
           </Flex>
@@ -143,19 +156,35 @@ const BasicInfo = () => {
         </Flex>
       </Flex>
       {/* ssh config */}
-      <Flex mb={3} mt={4}>
-        <MyIcon
-          name="link"
-          w={'15px'}
-          h={'15px'}
-          mr={'4px'}
+      <Flex mb={3} mt={4} alignItems={'center'} justify={'space-between'}>
+        <Flex>
+          <MyIcon
+            name="link"
+            w={'15px'}
+            h={'15px'}
+            mr={'4px'}
+            color={'grayModern.600'}
+            mt={'1px'}
+            ml={'1px'}
+          />
+          <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
+            {t('ssh_config')}
+          </Box>
+        </Flex>
+        <Button
+          size={'sm'}
+          leftIcon={<MyIcon name="settings" w={'16px'} />}
+          bg={'white'}
           color={'grayModern.600'}
-          mt={'1px'}
-          ml={'1px'}
-        />
-        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
-          {t('ssh_config')}
-        </Box>
+          border={'1px solid'}
+          borderColor={'grayModern.200'}
+          _hover={{
+            color: 'brightBlue.600'
+          }}
+          onClick={() => handleOneClickConfig()}
+        >
+          {t('one_click_config')}
+        </Button>
       </Flex>
       <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
         <Flex>
@@ -173,13 +202,15 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Text
                 cursor="pointer"
                 fontSize={'12px'}
                 _hover={{ color: 'blue.500' }}
                 onClick={handleCopySSHCommand}
-                w={'full'}>
+                w={'full'}
+              >
                 {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
               </Text>
             </Tooltip>
@@ -201,19 +232,28 @@ const BasicInfo = () => {
                 fontSize={'12px'}
                 fontWeight={400}
                 py={2}
-                borderRadius={'md'}>
+                borderRadius={'md'}
+              >
                 <Flex
                   p={1}
                   borderRadius={'6px'}
                   _hover={{
                     bg: 'rgba(17, 24, 36, 0.05)'
-                  }}>
+                  }}
+                >
                   <MyIcon
                     cursor={'pointer'}
                     name="download"
+                    color={'grayModern.600'}
                     w={'16px'}
                     h={'16px'}
-                    onClick={() => handleDownloadConfig(devboxDetail?.sshConfig)}
+                    onClick={() =>
+                      downLoadBlob(
+                        devboxDetail?.sshConfig?.sshPrivateKey as string,
+                        'application/octet-stream',
+                        `${devboxDetail?.name}`
+                      )
+                    }
                   />
                 </Flex>
               </Tooltip>
@@ -258,14 +298,16 @@ const BasicInfo = () => {
               fontSize={'12px'}
               fontWeight={400}
               py={2}
-              borderRadius={'md'}>
+              borderRadius={'md'}
+            >
               <Flex
                 ml={3}
                 p={1}
                 borderRadius={'6px'}
                 _hover={{
                   bg: 'rgba(17, 24, 36, 0.05)'
-                }}>
+                }}
+              >
                 <MyIcon
                   cursor={'pointer'}
                   name="maximize"
@@ -279,8 +321,19 @@ const BasicInfo = () => {
           </Flex>
         </Flex>
       </Flex>
+      {onOpenSsHConnect && sshConfigData && (
+        <SshConnectModal
+          jetbrainsGuideData={sshConfigData}
+          onSuccess={() => {
+            setOnOpenSsHConnect(false);
+          }}
+          onClose={() => {
+            setOnOpenSsHConnect(false);
+          }}
+        />
+      )}
     </Flex>
-  )
-}
+  );
+};
 
-export default BasicInfo
+export default BasicInfo;

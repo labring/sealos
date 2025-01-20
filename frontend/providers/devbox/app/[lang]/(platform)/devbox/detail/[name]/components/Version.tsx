@@ -10,9 +10,8 @@ import { sealosApp } from 'sealos-desktop-sdk/app'
 
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox'
 import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
-import ReleaseModal from '@/components/modals/releaseModal'
+import ReleaseModal from '@/components/modals/ReleaseModal'
 import MyTable from '@/components/MyTable'
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox'
 import { DevboxVersionListItemType } from '@/types/devbox'
@@ -30,6 +29,7 @@ import { useDevboxStore } from '@/stores/devbox'
 import { useEnvStore } from '@/stores/env'
 import { AppListItemType } from '@/types/app'
 import { parseTemplateConfig } from '@/utils/tools'
+import MyIcon from '@/components/Icon'
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
 
@@ -97,7 +97,6 @@ const Version = () => {
     listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
       if (!devbox) return
       const result = await getTemplateConfig(devbox.templateUid)
       const config = parseTemplateConfig(result.template.config)
@@ -260,7 +259,12 @@ const Version = () => {
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group isDisabled={item?.status?.value !== 'Success'}>
+              <MenuButton
+                as={Button}
+                variant={'square'}
+                boxSize={'32px'}
+                data-group
+                isDisabled={item?.status?.value !== 'Success'}>
                 <MyIcon
                   name={'more'}
                   color={'grayModern.600'}

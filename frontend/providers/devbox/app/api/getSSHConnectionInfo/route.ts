@@ -13,11 +13,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
     const devboxName = searchParams.get('devboxName') as string
-    // const runtimeName = searchParams.get('runtimeName') as string
 
     const headerList = req.headers
-
-    const { ROOT_RUNTIME_NAMESPACE } = process.env
 
     const { k8sCore, namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
@@ -46,12 +43,18 @@ export async function GET(req: NextRequest) {
       }
     })
     if (!template) throw new Error(`Template ${devboxBody.spec.templateID} is not found`)
-      const config = parseTemplateConfig(template.config)
-    return jsonRes({ data: { base64PublicKey, base64PrivateKey, token, 
-      userName: config.user,
-      workingDir: config.workingDir,
-      releaseCommand: config.releaseCommand.join(' '),
-      releaseArgs: config.releaseArgs.join(' ') } })
+    const config = parseTemplateConfig(template.config)
+    return jsonRes({
+      data: {
+        base64PublicKey,
+        base64PrivateKey,
+        token,
+        userName: config.user,
+        workingDir: config.workingDir,
+        releaseCommand: config.releaseCommand.join(' '),
+        releaseArgs: config.releaseArgs.join(' ')
+      }
+    })
   } catch (err: any) {
     return jsonRes({
       code: 500,

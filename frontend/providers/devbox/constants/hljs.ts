@@ -118,4 +118,4 @@ export const codeTheme = {
   '-moz-user-select': 'none' /* Old versions of Firefox */,
   '-ms-user-select': 'none' /* Internet Explorer/Edge */,
   'user-select': 'none' /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
-};
+}
