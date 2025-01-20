@@ -1,43 +1,43 @@
-'use client'
+'use client';
 
-import NProgress from 'nprogress'
-import { useEffect } from 'react'
+import NProgress from 'nprogress';
+import { useEffect } from 'react';
 
-import { usePathname } from '@/i18n'
-import { useGlobalStore } from '@/stores/global'
+import { usePathname } from '@/i18n';
+import { useGlobalStore } from '@/stores/global';
 
-import { useSearchParams } from 'next/navigation'
-import 'nprogress/nprogress.css'
+import { useSearchParams } from 'next/navigation';
+import 'nprogress/nprogress.css';
 
 const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
-  const pathname = usePathname()
-  const search = useSearchParams()
-  const { setLastRoute } = useGlobalStore()
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const { setLastRoute } = useGlobalStore();
 
   useEffect(() => {
     return () => {
-      setLastRoute(pathname)
-    }
+      setLastRoute(pathname);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname])
+  }, [pathname]);
 
   useEffect(() => {
-    const handleRouteChangeStart = () => NProgress.start()
-    const handleRouteChangeComplete = () => NProgress.done()
-    const handleRouteChangeError = () => NProgress.done()
+    const handleRouteChangeStart = () => NProgress.start();
+    const handleRouteChangeComplete = () => NProgress.done();
+    const handleRouteChangeError = () => NProgress.done();
 
-    document.addEventListener('routeChangeStart', handleRouteChangeStart)
-    document.addEventListener('routeChangeComplete', handleRouteChangeComplete)
-    document.addEventListener('routeChangeError', handleRouteChangeError)
+    document.addEventListener('routeChangeStart', handleRouteChangeStart);
+    document.addEventListener('routeChangeComplete', handleRouteChangeComplete);
+    document.addEventListener('routeChangeError', handleRouteChangeError);
 
     return () => {
-      document.removeEventListener('routeChangeStart', handleRouteChangeStart)
-      document.removeEventListener('routeChangeComplete', handleRouteChangeComplete)
-      document.removeEventListener('routeChangeError', handleRouteChangeError)
-    }
-  }, [])
+      document.removeEventListener('routeChangeStart', handleRouteChangeStart);
+      document.removeEventListener('routeChangeComplete', handleRouteChangeComplete);
+      document.removeEventListener('routeChangeError', handleRouteChangeError);
+    };
+  }, []);
 
-  return <div>{children}</div>
-}
+  return <div>{children}</div>;
+};
 
-export default RouteHandlerProvider
+export default RouteHandlerProvider;
