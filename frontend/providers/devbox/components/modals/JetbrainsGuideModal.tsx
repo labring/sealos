@@ -95,8 +95,6 @@ const JetBrainsGuideModal = ({
     fi;
     [ ! -d ${basePath}/.cache/JetBrains/${idePathName}${version} ] && mkdir -p ${basePath}/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC ${basePath}/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 ${basePath}/.cache && chown -R devbox:devbox ${basePath}/.cache`;
 
-    console.log('execDownloadCommand', execDownloadCommand);
-
     try {
       await execCommandInDevboxPod({
         devboxName: jetbrainsGuideData.devboxName,
