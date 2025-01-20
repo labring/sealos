@@ -78,8 +78,6 @@ const JetBrainsGuideModal = ({
     );
     const data = await res.json();
 
-    setOnConnecting(true);
-
     const controller = new AbortController();
     controllerRef.current = controller;
 
@@ -92,10 +90,12 @@ const JetBrainsGuideModal = ({
 
     const execDownloadCommand = `
     IDE_DIR="${basePath}/.cache/JetBrains/${idePathName}${version}";
-    if [ -d "$IDE_DIR" ] && [ ! -f "$IDE_DIR/${selectedIDE.binName}" ]; then
+    if [ -d "$IDE_DIR" ] && [ ! -f "$IDE_DIR/bin/${selectedIDE.binName}" ]; then
       rm -rf "$IDE_DIR";
     fi;
     [ ! -d ${basePath}/.cache/JetBrains/${idePathName}${version} ] && mkdir -p ${basePath}/.cache/JetBrains/${idePathName}${version} && wget -q --show-progress --progress=bar:force -O- ${downloadLink} | tar -xzC ${basePath}/.cache/JetBrains/${idePathName}${version} --strip-components=1 && chmod -R 776 ${basePath}/.cache && chown -R devbox:devbox ${basePath}/.cache`;
+
+    console.log('execDownloadCommand', execDownloadCommand);
 
     try {
       await execCommandInDevboxPod({
@@ -111,6 +111,9 @@ const JetBrainsGuideModal = ({
 
           if (progress) {
             setProgress(progress);
+          }
+          if (progress && progress === 1) {
+            setOnConnecting(true);
           }
         },
         signal: controller.signal
@@ -128,7 +131,7 @@ const JetBrainsGuideModal = ({
       setProgress(0);
       setOnConnecting(false);
     }
-  }, [selectedIDE, jetbrainsGuideData.devboxName, connectIDE]);
+  }, [selectedIDE, jetbrainsGuideData.devboxName, connectIDE, jetbrainsGuideData.workingDir]);
 
   return (
     <Box>
