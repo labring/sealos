@@ -4,20 +4,16 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
+import { UseFormReturn } from 'react-hook-form';
+import { LogsFormData, JsonFilterItem } from '@/pages/app/detail/logs';
 
-interface JsonModeFormItem {
-  jsonKey: string;
-  jsonValue: string;
-  jsonOperator: '=' | '>' | '<' | 'contains' | 'not_contains';
-}
-
-export const Filter = () => {
+export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) => {
   const { t } = useTranslation();
-
   const [activeId, setActiveId] = useState('normal_filter');
-  const [openJsonMode, setOpenJsonMode] = useState(false);
-  const [openOnlyStderr, setOpenOnlyStderr] = useState(false);
-  const [jsonFormList, setJsonFormList] = useState<JsonModeFormItem[]>([]);
+
+  const isJsonMode = formHook.watch('isJsonMode');
+  const isOnlyStderr = formHook.watch('isOnlyStderr');
+  const jsonFilters = formHook.watch('jsonFilters');
 
   return (
     <Flex p={'12px'} w={'100%'} flexDir={'column'}>
@@ -38,20 +34,26 @@ export const Filter = () => {
         <Flex
           alignItems={'center'}
           gap={'12px'}
-          bg={openJsonMode ? 'grayModern.50' : 'white'}
+          bg={isJsonMode ? 'grayModern.50' : 'white'}
           borderRadius={'8px 8px 0px 0px'}
           p={'12px'}
         >
           <Text fontSize={'12px'} fontWeight={'500'} lineHeight={'16px'} color={'grayModern.900'}>
             {t('json_mode')}
           </Text>
-          <Switch isChecked={openJsonMode} onChange={() => setOpenJsonMode(!openJsonMode)} />
+          <Switch
+            isChecked={isJsonMode}
+            onChange={() => formHook.setValue('isJsonMode', !isJsonMode)}
+          />
         </Flex>
         <Flex alignItems={'center'} gap={'12px'}>
           <Text fontSize={'12px'} fontWeight={'500'} lineHeight={'16px'} color={'grayModern.900'}>
             {t('only_stderr')}
           </Text>
-          <Switch isChecked={openOnlyStderr} onChange={() => setOpenOnlyStderr(!openOnlyStderr)} />
+          <Switch
+            isChecked={isOnlyStderr}
+            onChange={() => formHook.setValue('isOnlyStderr', !isOnlyStderr)}
+          />
         </Flex>
         <Flex alignItems={'center'} gap={'12px'}>
           <Input placeholder={t('keyword')} />
@@ -65,7 +67,7 @@ export const Filter = () => {
         </Flex>
       </Flex>
       {/* json mode */}
-      {openJsonMode && (
+      {isJsonMode && (
         <Flex
           w={'100%'}
           bg={'grayModern.50'}
@@ -75,11 +77,11 @@ export const Filter = () => {
           flexWrap={'wrap'}
           borderRadius={'0px 8px 8px 8px'}
         >
-          {jsonFormList.length === 0 && (
+          {jsonFilters.length === 0 && (
             <AppendJSONFormItemButton
               onClick={() =>
-                setJsonFormList([
-                  ...jsonFormList,
+                formHook.setValue('jsonFilters', [
+                  ...jsonFilters,
                   {
                     jsonKey: '',
                     jsonValue: '',
@@ -89,7 +91,7 @@ export const Filter = () => {
               }
             />
           )}
-          {jsonFormList.map((item, index) => (
+          {jsonFilters.map((item, index) => (
             <Flex key={index} w={'fit-content'} gap={'12px'}>
               <MySelect
                 height="32px"
@@ -97,26 +99,26 @@ export const Filter = () => {
                 bg={'white'}
                 color={'grayModern.600'}
                 placeholder={t('field_name')}
-                value={jsonFormList[0]?.jsonKey}
+                value={jsonFilters[0]?.jsonKey}
                 list={[
                   { value: 'test', label: 'test' },
                   { value: 'test2', label: 'test2' }
                 ]}
-                onchange={(val: any) => setJsonFormList(val)}
+                onchange={(val: any) => formHook.setValue('jsonFilters', val)}
               />
               <MySelect
                 height="32px"
                 minW={'60px'}
                 bg={'white'}
                 color={'grayModern.600'}
-                value={jsonFormList[0]?.jsonOperator || '='}
+                value={jsonFilters[0]?.jsonOperator || '='}
                 list={[
                   { value: '=', label: t('equal') },
                   { value: '!=', label: t('not_equal') },
                   { value: 'contains', label: t('contains') },
                   { value: 'not_contains', label: t('not_contains') }
                 ]}
-                onchange={(val: any) => setJsonFormList(val)}
+                onchange={(val: any) => formHook.setValue('jsonFilters', val)}
               />
               <Input
                 placeholder={t('value')}
@@ -134,9 +136,9 @@ export const Filter = () => {
                   bg: 'grayModern.50'
                 }}
                 onClick={() => {
-                  const newList = [...jsonFormList];
+                  const newList = [...jsonFilters];
                   newList.splice(index, 1);
-                  setJsonFormList(newList);
+                  formHook.setValue('jsonFilters', newList);
                 }}
               >
                 <MyIcon
@@ -149,11 +151,11 @@ export const Filter = () => {
                   }}
                 />
               </Button>
-              {index === jsonFormList.length - 1 && (
+              {index === jsonFilters.length - 1 && (
                 <AppendJSONFormItemButton
                   onClick={() =>
-                    setJsonFormList([
-                      ...jsonFormList,
+                    formHook.setValue('jsonFilters', [
+                      ...jsonFilters,
                       {
                         jsonKey: '',
                         jsonValue: '',

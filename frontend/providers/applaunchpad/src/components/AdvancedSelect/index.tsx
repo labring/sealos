@@ -20,7 +20,7 @@ import type { BoxProps, ButtonProps } from '@chakra-ui/react';
 export interface ListItem {
   label: string | React.ReactNode;
   value: string;
-  checked?: boolean;
+  checked: boolean;
 }
 
 interface Props extends ButtonProps {
@@ -201,9 +201,9 @@ const AdvancedSelect = (
             </MenuItem>
           )}
 
-          {list.map((item) => (
+          {list.map((item, index) => (
             <MenuItem
-              key={item.value}
+              key={item.value + index}
               {...(!checkBoxMode && value === item.value
                 ? {
                     color: 'brightBlue.600'
