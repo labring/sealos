@@ -1,3 +1,3 @@
-import { DBTypeEnum } from '@/constants/db'
+import { DBTypeEnum } from '@/constants/db';
 
-export type DBType = `${DBTypeEnum}`
+export type DBType = `${DBTypeEnum}`;
