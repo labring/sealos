@@ -168,6 +168,7 @@ const Header = ({
       <Flex gap={5}>
         <Box>
           <IDEButton
+            runtimeType={devboxDetail.iconId}
             devboxName={devboxDetail.name}
             sshPort={devboxDetail.sshPort as number}
             status={devboxDetail.status}

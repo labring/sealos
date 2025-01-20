@@ -313,6 +313,7 @@ export async function getK8s({
     k8sAuth: kc.makeApiClient(k8s.RbacAuthorizationV1Api),
     metricsClient: new k8s.Metrics(kc),
     k8sBatch: kc.makeApiClient(k8s.BatchV1Api),
+    k8sExec: new k8s.Exec(kc),
     kube_user,
     namespace,
     applyYamlList,

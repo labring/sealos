@@ -10,12 +10,12 @@ import { useRouter } from '@/i18n';
 import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag';
 import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
-import ReleaseModal from '@/components/modals/releaseModal';
 import PodLineChart from '@/components/PodLineChart';
 import { AdvancedTable } from '@/components/AdvancedTable';
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import ReleaseModal from '@/components/modals/ReleaseModal';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
@@ -29,9 +29,6 @@ const DevboxList = ({
   const router = useRouter();
   const t = useTranslations();
   const { message: toast } = useMessage();
-  const duplicatedDevboxList = Array(20)
-    .fill(0)
-    .flatMap(() => [...devboxList]);
 
   // TODO: Unified Loading Behavior
   const { setLoading } = useGlobalStore();
@@ -224,6 +221,7 @@ const DevboxList = ({
             sshPort={item.sshPort}
             status={item.status}
             mr={'8px'}
+            runtimeType={item.template.templateRepository.iconId as string}
           />
           <Button
             mr={'8px'}
@@ -347,7 +345,7 @@ const DevboxList = ({
   ];
   return (
     <>
-      <AdvancedTable columns={columns} data={duplicatedDevboxList} itemClass="devboxListItem" />
+      <AdvancedTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}

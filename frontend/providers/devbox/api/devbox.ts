@@ -9,7 +9,6 @@ import {
   DevboxVersionListItemType
 } from '@/types/devbox'
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s'
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
 import {
   adaptAppListItem,
   adaptDevboxDetailV2,
@@ -17,14 +16,21 @@ import {
   adaptDevboxVersionListItem,
   adaptPod
 } from '@/utils/adapt'
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor'
+import { AxiosProgressEvent } from 'axios'
 
 export const getMyDevboxList = () =>
-  GET<[KBDevboxTypeV2, {
-    templateRepository: {
-      iconId: string | null;
-    };
-    uid: string;
-  }][]>('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
+  GET<
+    [
+      KBDevboxTypeV2,
+      {
+        templateRepository: {
+          iconId: string | null
+        }
+        uid: string
+      }
+    ][]
+  >('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
     data.map(adaptDevboxListItemV2).sort((a, b) => {
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
     })
@@ -35,9 +41,8 @@ export const getDevboxByName = (devboxName: string) =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type })
 
-export const createDevbox = (payload: {
-  devboxForm: DevboxEditTypeV2
-}) => POST(`/api/createDevbox`, payload)
+export const createDevbox = (payload: { devboxForm: DevboxEditTypeV2 }) =>
+  POST(`/api/createDevbox`, payload)
 
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload)
@@ -73,14 +78,14 @@ export const delDevboxVersionByName = (versionName: string) =>
 
 export const getSSHConnectionInfo = (data: { devboxName: string }) =>
   GET<{
-    base64PublicKey: string;
-    base64PrivateKey: string;
-    token: string;
-    userName: string;
-    workingDir: string;
-    releaseCommand: string;
-    releaseArgs: string;
-}>('/api/getSSHConnectionInfo', data)
+    base64PublicKey: string
+    base64PrivateKey: string
+    token: string
+    userName: string
+    workingDir: string
+    releaseCommand: string
+    releaseArgs: string
+  }>('/api/getSSHConnectionInfo', data)
 
 export const getDevboxPodsByDevboxName = (name: string) =>
   GET<V1Pod[]>('/api/getDevboxPodsByDevboxName', { name }).then((item) => item.map(adaptPod))
@@ -95,3 +100,17 @@ export const getAppsByDevboxId = (devboxId: string) =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
     res.map(adaptAppListItem)
   )
+
+export const execCommandInDevboxPod = (data: {
+  devboxName: string
+  command: string
+  idePath: string
+  onDownloadProgress: (progressEvent: AxiosProgressEvent) => void
+  signal: AbortSignal
+}) =>
+  POST('/api/execCommandInDevboxPod', data, {
+    // responseType: 'stream',
+    timeout: 0,
+    onDownloadProgress: data.onDownloadProgress,
+    signal: data.signal
+  })

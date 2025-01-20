@@ -41,33 +41,32 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   // init session
   useEffect(() => {
     const response = createSealosApp()
-      ; (async () => {
-        try {
-          
-          const newSession = JSON.stringify(await sealosApp.getSession())
-          const oldSession = sessionStorage.getItem('session')
-          if(newSession && newSession !== oldSession) {
-            sessionStorage.setItem('session', newSession)
-            return window.location.reload()
-          }
-          // init user 
-          console.log('devbox: app init success')
-          const token = (await initUser())
-          if (!!token) {
-            setSessionToSessionStorage(token)
-            setInit(true)
-          }
-          queryClient.clear()
-        } catch (err) {
-          console.log('devbox: app is not running in desktop')
-          if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-            cleanSession()
-            openConfirm(() => {
-              window.open(`https://${env.sealosDomain}`, '_self')
-            })()
-          }
+    ;(async () => {
+      try {
+        const newSession = JSON.stringify(await sealosApp.getSession())
+        const oldSession = sessionStorage.getItem('session')
+        if (newSession && newSession !== oldSession) {
+          sessionStorage.setItem('session', newSession)
+          return window.location.reload()
         }
-      })()
+        // init user
+        console.log('devbox: app init success')
+        const token = await initUser()
+        if (!!token) {
+          setSessionToSessionStorage(token)
+          setInit(true)
+        }
+        queryClient.clear()
+      } catch (err) {
+        console.log('devbox: app is not running in desktop')
+        if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+          cleanSession()
+          openConfirm(() => {
+            window.open(`https://${env.sealosDomain}`, '_self')
+          })()
+        }
+      }
+    })()
     return response
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -87,18 +86,18 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       }
     }
 
-      ; (async () => {
-        try {
-          const lang = await sealosApp.getLanguage()
-          changeI18n({
-            currentLanguage: lang.lng
-          })
-        } catch (error) {
-          changeI18n({
-            currentLanguage: 'zh'
-          })
-        }
-      })()
+    ;(async () => {
+      try {
+        const lang = await sealosApp.getLanguage()
+        changeI18n({
+          currentLanguage: lang.lng
+        })
+      } catch (error) {
+        changeI18n({
+          currentLanguage: 'en'
+        })
+      }
+    })()
 
     return sealosApp?.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n)
     // eslint-disable-next-line react-hooks/exhaustive-deps
