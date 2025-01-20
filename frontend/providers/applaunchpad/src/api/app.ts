@@ -9,6 +9,7 @@ import {
 } from '@/utils/adapt';
 import type { AppPatchPropsType, PodDetailType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
+import { LogQueryPayload } from '@/pages/api/log/get';
 
 export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
 
@@ -62,5 +63,9 @@ export const getAppMonitorData = (payload: {
   end?: number;
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
-export const getAppLogs = (payload: { appName: string; podName: string; containerName: string }) =>
-  GET<string[]>(`/api/log/getAppLogs`, payload);
+export const getAppLogs = (payload: LogQueryPayload) =>
+  POST<{
+    code: number;
+    data: string[];
+    error?: string;
+  }>('/api/log/get', payload);

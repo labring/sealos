@@ -19,22 +19,12 @@ import { useAppStore } from '@/store/app';
 import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
+import { UseFormReturn } from 'react-hook-form';
+import { LogsFormData } from '@/pages/app/detail/logs';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
-export const Header = ({
-  podList,
-  setPodList,
-  refetchData,
-  containerList,
-  setContainerList
-}: {
-  podList: ListItem[];
-  setPodList: (podList: ListItem[]) => void;
-  refetchData: () => void;
-  containerList: ListItem[];
-  setContainerList: (containerList: ListItem[]) => void;
-}) => {
+export const Header = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) => {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
 
@@ -69,9 +59,9 @@ export const Header = ({
           width={'fit-content'}
           value={'hello-sql-postgresql-0'}
           onCheckboxChange={(val) => {
-            setPodList(val);
+            formHook.setValue('pods', val);
           }}
-          list={podList}
+          list={formHook.watch('pods')}
         />
       </Flex>
       {/* container */}
@@ -87,9 +77,9 @@ export const Header = ({
           leftIcon={<MyIcon name="container" w={'16px'} h={'16px'} color={'grayModern.500'} />}
           width={'fit-content'}
           value={'hello-sql-postgresql-0'}
-          list={containerList}
+          list={formHook.watch('containers')}
           onCheckboxChange={(val) => {
-            setContainerList(val);
+            formHook.setValue('containers', val);
           }}
         />
       </Flex>
@@ -101,9 +91,18 @@ export const Header = ({
         <Input
           height="32px"
           width={'fit-content'}
-          value={'100'}
+          value={formHook.watch('limit')}
           onChange={(e) => {
-            console.log(e.target.value);
+            const val = Number(e.target.value);
+            if (isNaN(val)) {
+              formHook.setValue('limit', 1);
+            } else if (val > 500) {
+              formHook.setValue('limit', 500);
+            } else if (val < 1) {
+              formHook.setValue('limit', 1);
+            } else {
+              formHook.setValue('limit', val);
+            }
           }}
         />
         <ButtonGroup isAttached variant={'outline'} size={'sm'}>

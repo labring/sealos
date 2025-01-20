@@ -14,50 +14,85 @@ import { LogCounts } from '@/components/app/detail/logs/LogCounts';
 import { useEffect, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
+import { getAppLogs } from '@/api/app';
+import { useForm } from 'react-hook-form';
+
+export interface JsonFilterItem {
+  jsonKey: string;
+  jsonValue: string;
+  jsonOperator: '=' | '>' | '<' | 'contains' | 'not_contains';
+}
+
+export interface LogsFormData {
+  pods: ListItem[];
+  containers: ListItem[];
+  limit: number;
+  keyword: string;
+  isJsonMode: boolean;
+  isOnlyStderr: boolean;
+  jsonFilters: JsonFilterItem[];
+  refreshInterval: number;
+}
 
 export default function LogsPage({ appName }: { appName: string }) {
   const theme = useTheme();
   const { toast } = useToast();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
-  const [podList, setPodList] = useState<ListItem[]>([]);
-  const [containerList, setContainerList] = useState<ListItem[]>([]);
-  const { refreshInterval } = useDateTimeStore();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const { refreshInterval, setRefreshInterval, startDateTime, endDateTime } = useDateTimeStore();
+
+  const formHook = useForm<LogsFormData>({
+    defaultValues: {
+      pods: [],
+      containers: [],
+      limit: 100,
+      keyword: '',
+      isJsonMode: false,
+      isOnlyStderr: false,
+      jsonFilters: [],
+      refreshInterval: 0
+    }
+  });
 
   useEffect(() => {
-    if (appDetailPods?.length > 0 && podList.length === 0) {
-      setPodList(
-        appDetailPods.map((pod) => ({
-          value: pod.podName,
-          label: pod.podName,
+    if (!isInitialized && appDetailPods?.length > 0) {
+      const pods = appDetailPods.map((pod) => ({
+        value: pod.podName,
+        label: pod.podName,
+        checked: true
+      }));
+      const containers = appDetailPods
+        .flatMap((pod) => pod.spec?.containers || [])
+        .map((container) => ({
+          value: container.name,
+          label: container.name,
           checked: true
         }))
-      );
-      setContainerList(
-        appDetailPods
-          .flatMap((pod) => pod.spec?.containers || [])
-          .map((container) => ({
-            value: container.name,
-            label: container.name
-          }))
-      );
-    }
-  }, [appDetailPods, podList]);
+        .filter((item, index, self) => index === self.findIndex((t) => t.value === item.value));
 
-  const { data: monitorData } = useQuery(
-    ['monitor-data', appName],
-    async () => {
-      return [];
-    },
+      formHook.setValue('pods', pods);
+      formHook.setValue('containers', containers);
+
+      setIsInitialized(true);
+    }
+  }, [appDetailPods, isInitialized, formHook]);
+
+  const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
+  const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
+
+  const { data: logsData } = useQuery(
+    ['logs-data', appName],
+    () =>
+      getAppLogs({
+        app: appName
+      }),
     {
-      onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
-      }
+      refetchInterval: refreshInterval
     }
   );
+
+  console.log(logsData, 'logsData');
 
   const refetchData = () => {};
 
@@ -66,31 +101,24 @@ export default function LogsPage({ appName }: { appName: string }) {
       <Box flex={1} borderRadius="lg" overflowY={'auto'}>
         <>
           <Flex
-            mb={4}
+            mb={'6px'}
             bg={'white'}
             gap={'12px'}
             flexDir={'column'}
             border={theme.borders.base}
             borderRadius={'lg'}
           >
-            <Header
-              podList={podList}
-              setPodList={setPodList}
-              refetchData={refetchData}
-              containerList={containerList}
-              setContainerList={setContainerList}
-            />
+            <Header formHook={formHook} />
             <Divider />
-            <Filter />
+            <Filter formHook={formHook} />
           </Flex>
           <Box
-            mb={4}
-            p={4}
+            mb={'6px'}
+            p={'20px 24px'}
             bg={'white'}
             border={theme.borders.base}
             borderRadius={'lg'}
             flexShrink={0}
-            minH={'257px'}
           >
             <LogCounts />
           </Box>

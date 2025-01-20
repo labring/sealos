@@ -15,6 +15,7 @@ export const LogCounts = () => {
     <Flex flexDir={'column'}>
       <Box>
         <Button
+          px={'0px'}
           onClick={() => setOnOpenChart(!onOpenChart)}
           bg={'transparent'}
           border={'none'}
@@ -23,6 +24,7 @@ export const LogCounts = () => {
           fontWeight={500}
           fontSize={'14px'}
           lineHeight={'20px'}
+          mb={onOpenChart ? '12px' : '0px'}
           leftIcon={
             <MyIcon
               name="arrowRight"
@@ -44,7 +46,7 @@ export const LogCounts = () => {
       </Box>
       {/* charts */}
       <Collapse in={onOpenChart} animateOpacity>
-        <Box p={4} position={'relative'} h={'100%'} w={'100%'}>
+        <Box position={'relative'} h={'100%'} w={'100%'}>
           <LogBarChart type="blue" data={mockData} isShowLabel />
         </Box>
       </Collapse>
@@ -55,5 +57,5 @@ export const LogCounts = () => {
 const mockData: MonitorDataResult = {
   name: 'log',
   xData: [1, 2, 3, 4, 5, 6, 7, 8],
-  yData: ['50', '80', '70', '60', '50', '60', '70', '80']
+  yData: ['50', '800', '70', '60', '50', '60', '70', '80']
 };

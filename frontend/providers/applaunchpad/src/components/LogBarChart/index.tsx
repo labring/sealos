@@ -131,36 +131,32 @@ const LogBarChart = ({
   const option = useRef({
     xAxis: {
       type: 'category',
-      show: isShowLabel,
-      boundaryGap: false,
       data: xData,
-      axisLabel: {
-        show: isShowLabel
-      },
-      axisTick: {
-        show: false
-      },
-      axisLine: {
-        show: false
-      }
+      boundaryGap: true
     },
     yAxis: {
       type: 'value',
-      boundaryGap: false,
-      splitNumber: 3,
-      max: 150,
-      min: 0,
-      axisLabel: {
-        show: isShowLabel
+      splitLine: {
+        lineStyle: {
+          type: 'dashed',
+          color: '#E4E7EC'
+        }
       }
     },
+    series: [
+      {
+        data: yData,
+        type: 'bar',
+        animationDuration: 300,
+        ...optionStyle
+      }
+    ],
     grid: {
-      containLabel: isShowLabel,
-      show: false,
       left: 0,
-      right: isShowLabel ? 20 : 0,
-      top: 10,
-      bottom: 2
+      right: 0,
+      bottom: 0,
+      top: 5,
+      containLabel: true
     },
     tooltip: {
       trigger: 'axis',
@@ -171,22 +167,7 @@ const LogBarChart = ({
         const axisValue = params[0]?.axisValue;
         return `${axisValue} ${params[0]?.value || 0}%`;
       }
-    },
-    series: [
-      {
-        data: yData,
-        type: 'bar',
-        showSymbol: false,
-        smooth: true,
-        animationDuration: 300,
-        barCategoryGap: '5%',
-        animationEasingUpdate: 'linear',
-        ...optionStyle,
-        emphasis: {
-          disabled: true
-        }
-      }
-    ]
+    }
   });
 
   // init chart
@@ -220,7 +201,7 @@ const LogBarChart = ({
     myChart.current.resize();
   }, [screenWidth]);
 
-  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />;
+  return <div ref={Dom} style={{ width: '100%', height: '140px' }} />;
 };
 
 export default LogBarChart;
