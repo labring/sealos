@@ -316,15 +316,15 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
             <MyIcon name="calendar" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent zIndex={99} w={'fit-content'}>
+        <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
           <Grid
             templateColumns="repeat(9,1fr)"
             templateRows={'repeat(10,1fr)'}
-            w={'500px'}
+            w={'460px'}
             h={'fit-content'}
           >
             <GridItem colSpan={6} rowSpan={9}>
-              <Flex flexDir={'column'} gap={'5px'} mb={'-1px'} pl={'10px'}>
+              <Flex flexDir={'column'} gap={'5px'} mb={'-1px'}>
                 <DayPicker
                   mode="range"
                   selected={selectedRange}
@@ -380,7 +380,7 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
             <GridItem colSpan={3} rowSpan={9}>
               <Flex h={'100%'}>
                 <Divider orientation="vertical" />
-                <Flex flexDir={'column'} gap={'4px'} p={'12px'} w={'100%'}>
+                <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
                   {recentDateList.map((item) => (
                     <Button
                       key={JSON.stringify(item.value)}
@@ -393,6 +393,9 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                         bg: 'brightBlue.50',
                         color: 'brightBlue.600'
                       })}
+                      _hover={{
+                        bg: 'rgba(17, 24, 36, 0.05)'
+                      }}
                       onClick={() => handleRecentDateClick(item)}
                     >
                       {item.label}

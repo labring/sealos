@@ -84,7 +84,14 @@ export function BaseTable<T extends unknown>({
                       <Td
                         key={cell.id}
                         p={'10px 24px'}
-                        bg={isPinned ? 'white' : ''}
+                        bg={
+                          // @ts-ignore
+                          cell.column.columnDef.meta?.isError?.(item.original)
+                            ? '#FFFAEB'
+                            : isPinned
+                            ? 'white'
+                            : ''
+                        }
                         borderBottom={'1px solid'}
                         borderBottomColor={
                           index !== table.getRowModel().rows.length - 1 ? '#F0F1F6' : 'transparent'

@@ -15,7 +15,7 @@ export const LogCounts = ({
   const [onOpenChart, setOnOpenChart] = useState(true);
 
   const processChartData = (rawData: Array<{ _time: string; logs_total: string }>) => {
-    const sortedData = rawData.sort(
+    const sortedData = [...rawData].sort(
       (a, b) => new Date(a._time).getTime() - new Date(b._time).getTime()
     );
     const xData = sortedData.map((item) => Math.floor(new Date(item._time).getTime() / 1000));

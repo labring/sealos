@@ -23,12 +23,22 @@ import MyIcon from '@/components/Icon';
 import { formatTime } from '@/utils/tools';
 import { LogsFormData } from '@/pages/app/detail/logs';
 import { UseFormReturn } from 'react-hook-form';
+import { useLogStore } from '@/store/logStore';
 
 interface FieldItem {
   value: string;
   label: string;
   checked: boolean;
   accessorKey: string;
+}
+
+interface LogData {
+  stream: string;
+  [key: string]: any;
+}
+
+interface LogColumnMeta {
+  isError?: (row: LogData) => boolean;
 }
 
 export const LogTable = ({
@@ -47,7 +57,7 @@ export const LogTable = ({
   const [hiddenFieldCount, setHiddenFieldCount] = useState(0);
   const [visibleFieldCount, setVisibleFieldCount] = useState(0);
   const isJsonMode = formHook.watch('isJsonMode');
-  const globalFilter = formHook.watch('keyword');
+  const { exportLogs } = useLogStore();
 
   const generateFieldList = useCallback(
     (data: any[]) => {
@@ -85,7 +95,7 @@ export const LogTable = ({
         .map((key) => ({
           value: key,
           label: key,
-          checked: ['_time', 'stream', 'id', 'ctx'].includes(key),
+          checked: true,
           accessorKey: key
         }));
     },
@@ -122,10 +132,18 @@ export const LogTable = ({
           }
 
           return (
-            <Text color={'grayModern.600'} fontSize={'12px'} fontWeight={400} lineHeight={'16px'}>
+            <Text
+              color={row.original.stream === 'stderr' ? '#B42318' : 'grayModern.600'}
+              fontSize={'12px'}
+              fontWeight={400}
+              lineHeight={'16px'}
+            >
               {value?.toString() || ''}
             </Text>
           );
+        },
+        meta: {
+          isError: (row: any) => row.stream === 'stderr'
         }
       }));
   }, [fieldList]);
@@ -134,10 +152,7 @@ export const LogTable = ({
     data: data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    state: {
-      globalFilter: globalFilter
-    }
+    getFilteredRowModel: getFilteredRowModel()
   });
 
   return (
@@ -222,6 +237,7 @@ export const LogTable = ({
           variant={'outline'}
           h={'28px'}
           leftIcon={<MyIcon name="export" />}
+          onClick={() => exportLogs()}
         >
           {t('export_log')}
         </Button>
@@ -277,8 +293,7 @@ export const LogTable = ({
         maxH={'500px'}
         tdStyle={{
           p: '10px 24px',
-          borderBottom: '1px solid',
-          borderBottomColor: '#F0F1F6'
+          borderBottom: 'none'
         }}
       />
     </Flex>
