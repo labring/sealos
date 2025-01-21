@@ -83,7 +83,8 @@ const map = {
   rustover: require('./icons/jetbrains/rustover.svg').default,
   webstorm: require('./icons/jetbrains/webstorm.svg').default,
   gift: require('./icons/gift.svg').default,
-  fileConfig: require('./icons/fileConfig.svg').default
+  fileConfig: require('./icons/fileConfig.svg').default,
+  trae: require('./icons/trae.svg').default
 };
 
 const MyIcon = ({
