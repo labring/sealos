@@ -123,7 +123,6 @@ export class DBViewProvider
     await this.refreshDatabases()
   }
   private async openWebTerminal(dbInfo: Database) {
-    console.log('dbInfo', dbInfo)
     const commandMap = {
       postgresql: `psql '${dbInfo.connection}'`,
       mongodb: `mongosh '${dbInfo.connection}'`,
