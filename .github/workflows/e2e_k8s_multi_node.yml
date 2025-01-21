@@ -19,7 +19,7 @@ jobs:
       target_pull: true
   e2e_apply_test:
     needs: [ call_ci_workflow ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     strategy:
@@ -80,7 +80,7 @@ jobs:
           echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     if: ${{ always() && github.event.label.name == 'need-e2e-apply-test' }} #success() || failure()

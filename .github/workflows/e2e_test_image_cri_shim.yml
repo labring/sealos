@@ -26,7 +26,7 @@ jobs:
       image: false
   verify-image_cri_shim:
     needs: [ call_ci_workflow ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev

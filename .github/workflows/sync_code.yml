@@ -8,10 +8,10 @@ on:
   workflow_dispatch:
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run GitHub File Sync
         # Can update to v1 when https://github.com/BetaHuhn/repo-file-sync-action/issues/168 is resolved

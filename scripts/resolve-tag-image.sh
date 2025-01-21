@@ -7,7 +7,7 @@ push_image=${1:-false}
 release=${2:-false}
 
 if [[ "$push_image" == true ]]; then
-  tag_name=${3}
+  tag_name=${3:-latest}
 elif [[ "$release" == true ]]; then
   tag_name=${GITHUB_REF#refs/tags/}
 fi
