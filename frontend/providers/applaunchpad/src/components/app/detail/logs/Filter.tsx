@@ -76,11 +76,8 @@ export const Filter = ({
             variant={'primary'}
             leftIcon={<MyIcon name={'search'} color={'white'} w={'16px'} h={'16px'} />}
             onClick={() => {
-              if (isJsonMode) {
-                formHook.setValue('keyword', inputKeyword);
-              } else {
-                refetchData();
-              }
+              formHook.setValue('keyword', inputKeyword);
+              refetchData();
             }}
           >
             {t('search')}

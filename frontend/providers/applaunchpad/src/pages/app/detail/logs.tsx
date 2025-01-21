@@ -17,6 +17,8 @@ import useDateTimeStore from '@/store/date';
 import { getAppLogs } from '@/api/app';
 import { useForm } from 'react-hook-form';
 import { formatTimeRange } from '@/utils/timeRange';
+import { downLoadBold } from '@/utils/tools';
+import { useLogStore } from '@/store/logStore';
 
 export interface JsonFilterItem {
   key: string;
@@ -46,6 +48,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   const { appDetail, appDetailPods } = useAppStore();
   const [isInitialized, setIsInitialized] = useState(false);
   const { refreshInterval, setRefreshInterval, startDateTime, endDateTime } = useDateTimeStore();
+  const { setLogs, exportLogs, parsedLogs, logCounts, setLogCounts } = useLogStore();
 
   const formHook = useForm<LogsFormData>({
     defaultValues: {
@@ -88,11 +91,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
   const timeRange = formatTimeRange(startDateTime, endDateTime);
 
-  const {
-    data: logsData,
-    isLoading,
-    refetch: refetchLogsData
-  } = useQuery(
+  const { isLoading, refetch: refetchLogsData } = useQuery(
     [
       'logs-data',
       appName,
@@ -100,7 +99,7 @@ export default function LogsPage({ appName }: { appName: string }) {
       formHook.watch('isOnlyStderr'),
       formHook.watch('limit'),
       formHook.watch('isJsonMode'),
-      formHook.watch('jsonFilters')
+      formHook.watch('keyword')
     ],
     () =>
       getAppLogs({
@@ -109,7 +108,10 @@ export default function LogsPage({ appName }: { appName: string }) {
         limit: formHook.watch('limit').toString(),
         jsonMode: formHook.watch('isJsonMode').toString(),
         stderrMode: formHook.watch('isOnlyStderr').toString(),
-        jsonQuery: formHook.watch('jsonFilters')
+        jsonQuery: formHook
+          .watch('jsonFilters')
+          .filter((item) => item.key && item.key.trim() !== ''),
+        keyword: formHook.watch('keyword')
       }),
     {
       refetchInterval: refreshInterval,
@@ -117,27 +119,45 @@ export default function LogsPage({ appName }: { appName: string }) {
         console.log(error, 'error');
         setRefreshInterval(0);
       },
+      onSuccess: (data) => {
+        setLogs(data);
+      },
       retry: 1
     }
   );
 
-  const {
-    data: logCountsData,
-    refetch: refetchLogCountsData,
-    isLoading: isLogCountsLoading
-  } = useQuery(['log-counts-data', appName, timeRange, formHook.watch('isOnlyStderr')], () =>
-    getAppLogs({
-      app: appName,
-      numberMode: 'true',
-      numberLevel: timeRange.slice(-1),
-      time: timeRange,
-      stderrMode: formHook.watch('isOnlyStderr').toString()
-    })
+  const { refetch: refetchLogCountsData, isLoading: isLogCountsLoading } = useQuery(
+    [
+      'log-counts-data',
+      appName,
+      timeRange,
+      formHook.watch('isOnlyStderr'),
+      formHook.watch('jsonFilters'),
+      formHook.watch('keyword')
+    ],
+    () =>
+      getAppLogs({
+        app: appName,
+        numberMode: 'true',
+        numberLevel: timeRange.slice(-1),
+        time: timeRange,
+        stderrMode: formHook.watch('isOnlyStderr').toString()
+        // jsonQuery: formHook
+        //   .watch('jsonFilters')
+        //   .filter((item) => item.key && item.key.trim() !== ''),
+        // keyword: formHook.watch('keyword')
+      }),
+    {
+      onSuccess: (data) => {
+        setLogCounts(data);
+      }
+    }
   );
 
-  console.log(formHook.getValues(), logsData, logCountsData, 'logsData');
+  console.log(formHook.getValues(), logCounts, parsedLogs, 'logsData');
 
   const refetchData = () => {
+    console.log('refetchData');
     refetchLogsData();
     refetchLogCountsData();
   };
@@ -165,10 +185,7 @@ export default function LogsPage({ appName }: { appName: string }) {
             borderRadius={'lg'}
             flexShrink={0}
           >
-            <LogCounts
-              logCountsData={logCountsData || []}
-              isLogCountsLoading={isLogCountsLoading}
-            />
+            <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
           </Box>
           <Box
             bg={'white'}
@@ -178,7 +195,7 @@ export default function LogsPage({ appName }: { appName: string }) {
             flex={1}
             minH={'400px'}
           >
-            <LogTable data={logsData || []} isLoading={isLoading} formHook={formHook} />
+            <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
           </Box>
         </>
       </Box>
