@@ -24,7 +24,13 @@ import { LogsFormData } from '@/pages/app/detail/logs';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
-export const Header = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) => {
+export const Header = ({
+  formHook,
+  refetchData
+}: {
+  formHook: UseFormReturn<LogsFormData>;
+  refetchData: () => void;
+}) => {
   const { t } = useTranslation();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
 
@@ -111,6 +117,9 @@ export const Header = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) 
             bg={'grayModern.50'}
             _hover={{
               bg: 'grayModern.50'
+            }}
+            onClick={() => {
+              refetchData();
             }}
           >
             <MyIcon

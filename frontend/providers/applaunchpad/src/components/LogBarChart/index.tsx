@@ -25,7 +25,7 @@ const map = {
       ],
       global: false // 缺省为 false
     },
-    lineColor: '#36ADEF'
+    lineColor: '#85CCFF'
   },
   deepBlue: {
     backgroundColor: {
@@ -96,20 +96,25 @@ const map = {
 const LogBarChart = ({
   type,
   data,
-  isShowLabel = false
+  isShowLabel = false,
+  visible = true
 }: {
   type: 'blue' | 'deepBlue' | 'green' | 'purple';
   data?: MonitorDataResult;
   isShowLabel?: boolean;
+  visible?: boolean;
 }) => {
   const { screenWidth } = useGlobalStore();
-  const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
-    new Array(30).fill(0);
+  const xData = useMemo(
+    () =>
+      data?.xData?.map((time) => dayjs(time * 1000).format('MM-DD HH:mm')) || new Array(30).fill(0),
+    [data?.xData]
+  );
   const yData = data?.yData || new Array(30).fill('');
 
   const Dom = useRef<HTMLDivElement>(null);
   const myChart = useRef<echarts.ECharts>();
+  const resizeObserver = useRef<ResizeObserver>();
 
   const optionStyle = useMemo(
     () => ({
@@ -132,7 +137,15 @@ const LogBarChart = ({
     xAxis: {
       type: 'category',
       data: xData,
-      boundaryGap: true
+      boundaryGap: true,
+      axisLine: {
+        lineStyle: {
+          color: '#E8EBF0'
+        }
+      },
+      axisLabel: {
+        color: '#667085'
+      }
     },
     yAxis: {
       type: 'value',
@@ -148,6 +161,7 @@ const LogBarChart = ({
         data: yData,
         type: 'bar',
         animationDuration: 300,
+        barWidth: '90%',
         ...optionStyle
       }
     ],
@@ -165,25 +179,25 @@ const LogBarChart = ({
       },
       formatter: (params: any[]) => {
         const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}%`;
+        return `${axisValue} ${params[0]?.value || 0}`;
       }
     }
   });
 
   // init chart
   useEffect(() => {
-    if (!Dom.current || myChart?.current?.getOption()) return;
+    if (!Dom.current || myChart?.current?.getOption() || !visible) return;
     myChart.current = echarts.init(Dom.current);
     myChart.current && myChart.current.setOption(option.current);
-  }, [Dom]);
+  }, [Dom, visible]);
 
   // data changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return;
+    if (!myChart.current || !myChart?.current?.getOption() || !visible) return;
     option.current.xAxis.data = xData;
     option.current.series[0].data = yData;
     myChart.current.setOption(option.current);
-  }, [xData, yData]);
+  }, [xData, yData, visible]);
 
   // type changed, update
   useEffect(() => {
@@ -200,6 +214,36 @@ const LogBarChart = ({
     if (!myChart.current || !myChart.current.getOption()) return;
     myChart.current.resize();
   }, [screenWidth]);
+
+  useEffect(() => {
+    if (!Dom.current || !visible) return;
+
+    resizeObserver.current = new ResizeObserver((entries) => {
+      console.log(entries, 'entries');
+
+      const entry = entries[0];
+      if (entry?.contentRect && myChart.current) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          myChart.current.resize();
+        }
+      }
+    });
+
+    resizeObserver.current.observe(Dom.current);
+
+    return () => {
+      resizeObserver.current?.disconnect();
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    return () => {
+      if (myChart.current) {
+        myChart.current.dispose();
+      }
+      resizeObserver.current?.disconnect();
+    };
+  }, []);
 
   return <div ref={Dom} style={{ width: '100%', height: '140px' }} />;
 };

@@ -1,3 +1,4 @@
+import { JsonFilterItem } from '@/pages/app/detail/logs';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -17,7 +18,7 @@ export interface LogQueryPayload {
   pod?: string[]; // 可选，默认 []
   container?: string[]; // 可选，默认 []
   keyword?: string; // 可选，默认 ""
-  jsonQuery?: any[]; // 可选，默认 []
+  jsonQuery?: JsonFilterItem[]; // 可选，默认 []
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -45,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const {
       time = '30d',
       app = '',
-      limit = '1',
+      limit = '10',
       jsonMode = 'true',
       stderrMode = 'false',
       numberMode = 'false',
@@ -77,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     console.log(params, 'params');
 
-    const result = await fetch('http://192.168.10.63:8428/queryLogsByParams', {
+    const result = await fetch('http://tipmjzasbtqv.sealoshzh.site/queryLogsByParams', {
       method: 'POST',
       body: JSON.stringify(params),
       headers: {
@@ -90,22 +91,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const data = await result.text();
     // 按行分割并过滤空行
     const logLines = data.split('\n').filter((line) => line.trim());
+    console.log(logLines, 'logLines');
 
     // 解析每行日志
     const parsedLogs = logLines.map((line) => {
       try {
         const logEntry = JSON.parse(line);
         // 如果_msg是JSON字符串，也将其解析
-        if (logEntry._msg) {
-          try {
-            logEntry._msg = JSON.parse(logEntry._msg);
-          } catch (e) {
-            // 如果_msg不是JSON格式，保持原样
-          }
-        }
+        // if (logEntry._msg) {
+        //   try {
+        //     logEntry._msg = JSON.parse(logEntry._msg);
+        //   } catch (e) {
+        //     // 如果_msg不是JSON格式，保持原样
+        //   }
+        // }
         return logEntry;
       } catch (e) {
-        return line; // 如果解析失败，返回原始行
+        throw new Error('parse log error');
       }
     });
 

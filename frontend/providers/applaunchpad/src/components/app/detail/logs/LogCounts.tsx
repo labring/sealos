@@ -1,15 +1,31 @@
-import { useState } from 'react';
-import { useTranslation } from 'next-i18next';
-import { Box, Button, Collapse, Flex } from '@chakra-ui/react';
-
 import MyIcon from '@/components/Icon';
 import LogBarChart from '@/components/LogBarChart';
-import { MonitorDataResult } from '@/types/monitor';
+import { Box, Button, Center, Collapse, Flex, Spinner } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import { useState } from 'react';
 
-export const LogCounts = () => {
+export const LogCounts = ({
+  logCountsData,
+  isLogCountsLoading
+}: {
+  logCountsData: { logs_total: string; _time: string }[];
+  isLogCountsLoading: boolean;
+}) => {
   const { t } = useTranslation();
-
   const [onOpenChart, setOnOpenChart] = useState(true);
+
+  const processChartData = (rawData: Array<{ _time: string; logs_total: string }>) => {
+    const sortedData = rawData.sort(
+      (a, b) => new Date(a._time).getTime() - new Date(b._time).getTime()
+    );
+    const xData = sortedData.map((item) => Math.floor(new Date(item._time).getTime() / 1000));
+    const yData = sortedData.map((item) => item.logs_total);
+
+    return {
+      xData,
+      yData
+    };
+  };
 
   return (
     <Flex flexDir={'column'}>
@@ -47,15 +63,15 @@ export const LogCounts = () => {
       {/* charts */}
       <Collapse in={onOpenChart} animateOpacity>
         <Box position={'relative'} h={'100%'} w={'100%'}>
-          <LogBarChart type="blue" data={mockData} isShowLabel />
+          {isLogCountsLoading ? (
+            <Center height={'140px'} w={'100%'}>
+              <Spinner size="xl" />
+            </Center>
+          ) : (
+            <LogBarChart type="blue" data={processChartData(logCountsData)} visible={onOpenChart} />
+          )}
         </Box>
       </Collapse>
     </Flex>
   );
-};
-
-const mockData: MonitorDataResult = {
-  name: 'log',
-  xData: [1, 2, 3, 4, 5, 6, 7, 8],
-  yData: ['50', '800', '70', '60', '50', '60', '70', '80']
 };
