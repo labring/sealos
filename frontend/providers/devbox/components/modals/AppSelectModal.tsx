@@ -9,38 +9,38 @@ import {
   ModalHeader,
   Text,
   Divider
-} from '@chakra-ui/react'
-import { useTranslations } from 'next-intl'
-import { useCallback } from 'react'
-import { customAlphabet } from 'nanoid'
-import { sealosApp } from 'sealos-desktop-sdk/app'
+} from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { useCallback } from 'react';
+import { customAlphabet } from 'nanoid';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
-import { AppListItemType } from '@/types/app'
+import { AppListItemType } from '@/types/app';
 
-import MyIcon from '../Icon'
-import MyTable from '../MyTable'
-import { useEnvStore } from '@/stores/env'
+import MyIcon from '../Icon';
+import MyTable from '../MyTable';
+import { useEnvStore } from '@/stores/env';
 
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 interface NetworkConfig {
-  port: number
-  protocol: string
-  openPublicDomain: boolean
-  domain: string
+  port: number;
+  protocol: string;
+  openPublicDomain: boolean;
+  domain: string;
 }
 
 interface DeployData {
-  appName: string
-  cpu: number
-  memory: number
-  imageName: string
-  networks: NetworkConfig[]
-  runCMD: string
-  cmdParam: string[]
+  appName: string;
+  cpu: number;
+  memory: number;
+  imageName: string;
+  networks: NetworkConfig[];
+  runCMD: string;
+  cmdParam: string[];
   labels: {
-    [key: string]: string
-  }
+    [key: string]: string;
+  };
 }
 
 const AppSelectModal = ({
@@ -50,18 +50,18 @@ const AppSelectModal = ({
   onSuccess,
   onClose
 }: {
-  apps: AppListItemType[]
-  devboxName: string
-  deployData: DeployData
-  onSuccess: () => void
-  onClose: () => void
+  apps: AppListItemType[];
+  devboxName: string;
+  deployData: DeployData;
+  onSuccess: () => void;
+  onClose: () => void;
 }) => {
-  const t = useTranslations()
-  const { env } = useEnvStore()
+  const t = useTranslations();
+  const { env } = useEnvStore();
 
   const handleCreate = useCallback(() => {
-    const tempFormData = { ...deployData, appName: `${deployData.appName}-${nanoid()}` }
-    const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData))
+    const tempFormData = { ...deployData, appName: `${deployData.appName}-${nanoid()}` };
+    const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData));
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-applaunchpad',
       pathname: '/redirect',
@@ -70,16 +70,16 @@ const AppSelectModal = ({
         type: 'InternalAppCall',
         formData: tempFormDataStr
       }
-    })
-  }, [deployData])
+    });
+  }, [deployData]);
 
   const handleUpdate = useCallback(
     (item: AppListItemType) => {
       const tempFormData = {
         appName: item.name,
         imageName: deployData.imageName
-      }
-      const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData))
+      };
+      const tempFormDataStr = encodeURIComponent(JSON.stringify(tempFormData));
       sealosApp.runEvents('openDesktopApp', {
         appKey: 'system-applaunchpad',
         pathname: '/redirect',
@@ -88,18 +88,18 @@ const AppSelectModal = ({
           type: 'InternalAppCall',
           formData: tempFormDataStr
         }
-      })
-      onSuccess()
+      });
+      onSuccess();
     },
     [deployData, onSuccess]
-  )
+  );
 
   const columns: {
-    title: string
-    dataIndex?: keyof AppListItemType
-    key: string
-    width?: string
-    render?: (item: AppListItemType) => JSX.Element
+    title: string;
+    dataIndex?: keyof AppListItemType;
+    key: string;
+    width?: string;
+    render?: (item: AppListItemType) => JSX.Element;
   }[] = [
     {
       title: t('app_name'),
@@ -110,7 +110,7 @@ const AppSelectModal = ({
           <Text ml={4} color={'grayModern.600'}>
             {item.name}
           </Text>
-        )
+        );
       }
     },
     {
@@ -123,8 +123,8 @@ const AppSelectModal = ({
           `${env.registryAddr}/${env.namespace}/${devboxName}`
         )
           ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
-          : '-'
-        return <Text color={'grayModern.600'}>{dealImageName}</Text>
+          : '-';
+        return <Text color={'grayModern.600'}>{dealImageName}</Text>;
       }
     },
     {
@@ -132,7 +132,7 @@ const AppSelectModal = ({
       dataIndex: 'createTime',
       key: 'createTime',
       render: (item: AppListItemType) => {
-        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>;
       }
     },
     {
@@ -151,13 +151,14 @@ const AppSelectModal = ({
             _hover={{
               color: 'brightBlue.600'
             }}
-            onClick={() => handleUpdate(item)}>
+            onClick={() => handleUpdate(item)}
+          >
             {t('to_update')}
           </Button>
         </Flex>
       )
     }
-  ]
+  ];
 
   return (
     <Box>
@@ -171,7 +172,8 @@ const AppSelectModal = ({
               direction={'column'}
               mb={2}
               justifyContent={'space-between'}
-              p={4}>
+              p={4}
+            >
               <Text fontSize={'lg'} fontWeight={'medium'}>
                 {t('create_directly')}
               </Text>
@@ -182,7 +184,8 @@ const AppSelectModal = ({
                 size={'md'}
                 px={8}
                 fontSize={'base'}
-                leftIcon={<MyIcon name="rocket" w={'15px'} h={'15px'} color={'white'} />}>
+                leftIcon={<MyIcon name="rocket" w={'15px'} h={'15px'} color={'white'} />}
+              >
                 {t('deploy')}
               </Button>
             </Flex>
@@ -199,7 +202,7 @@ const AppSelectModal = ({
         </ModalContent>
       </Modal>
     </Box>
-  )
-}
+  );
+};
 
-export default AppSelectModal
+export default AppSelectModal;

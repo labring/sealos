@@ -1,8 +1,8 @@
-import React from 'react'
-import { Box, useTab } from '@chakra-ui/react'
+import React from 'react';
+import { Box, useTab } from '@chakra-ui/react';
 
 const Tab = React.forwardRef((props: { children: React.ReactNode }, ref) => {
-  const tabProps = useTab({ ...props, ref: ref as React.Ref<HTMLElement> })
+  const tabProps = useTab({ ...props, ref: ref as React.Ref<HTMLElement> });
 
   return (
     <Box
@@ -29,12 +29,13 @@ const Tab = React.forwardRef((props: { children: React.ReactNode }, ref) => {
           height: '2px',
           backgroundColor: 'brightBlue.600'
         }
-      }}>
+      }}
+    >
       {tabProps.children}
     </Box>
-  )
-})
+  );
+});
 
-Tab.displayName = 'Tab'
+Tab.displayName = 'Tab';
 
-export default Tab
+export default Tab;

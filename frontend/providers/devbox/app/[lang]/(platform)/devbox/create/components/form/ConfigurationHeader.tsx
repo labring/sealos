@@ -1,5 +1,5 @@
-import { Box, BoxProps } from "@chakra-ui/react";
-import { ReactNode } from "react";
+import { Box, BoxProps } from '@chakra-ui/react';
+import { ReactNode } from 'react';
 
 export default function ConfigurationHeader({ children }: { children: ReactNode }) {
   const headerStyles: BoxProps = {
@@ -12,8 +12,6 @@ export default function ConfigurationHeader({ children }: { children: ReactNode 
     display: 'flex',
     alignItems: 'center',
     backgroundColor: 'grayModern.50'
-  }
-  return <Box {...headerStyles}>
-    {children}
-  </Box>
+  };
+  return <Box {...headerStyles}>{children}</Box>;
 }
