@@ -17,7 +17,7 @@ type DateTimeState = {
 const useDateTimeStore = create<DateTimeState>()(
   devtools(
     immer((set, get) => ({
-      startDateTime: subDays(new Date(), 7),
+      startDateTime: subDays(new Date(), 3),
       endDateTime: new Date(),
       timeZone: 'local',
       refreshInterval: 0,

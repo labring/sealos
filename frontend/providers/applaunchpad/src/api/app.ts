@@ -64,8 +64,10 @@ export const getAppMonitorData = (payload: {
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
 export const getAppLogs = (payload: LogQueryPayload) =>
-  POST<{
-    code: number;
-    data: string[];
-    error?: string;
-  }>('/api/log/get', payload);
+  POST<
+    {
+      logs_total: string;
+      _msg: string;
+      _time: string;
+    }[]
+  >('/api/log/get', payload);

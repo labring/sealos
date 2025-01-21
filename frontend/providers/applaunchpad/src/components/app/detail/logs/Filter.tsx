@@ -4,16 +4,26 @@ import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import MyIcon from '@/components/Icon';
 import { MySelect } from '@sealos/ui';
-import { UseFormReturn } from 'react-hook-form';
+import { UseFormReturn, useFieldArray } from 'react-hook-form';
 import { LogsFormData, JsonFilterItem } from '@/pages/app/detail/logs';
 
-export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) => {
+export const Filter = ({
+  formHook,
+  refetchData
+}: {
+  formHook: UseFormReturn<LogsFormData>;
+  refetchData: () => void;
+}) => {
   const { t } = useTranslation();
   const [activeId, setActiveId] = useState('normal_filter');
+  const [inputKeyword, setInputKeyword] = useState(formHook.watch('keyword'));
 
   const isJsonMode = formHook.watch('isJsonMode');
   const isOnlyStderr = formHook.watch('isOnlyStderr');
-  const jsonFilters = formHook.watch('jsonFilters');
+  const { fields, append, remove } = useFieldArray({
+    control: formHook.control,
+    name: 'jsonFilters'
+  });
 
   return (
     <Flex p={'12px'} w={'100%'} flexDir={'column'}>
@@ -56,11 +66,22 @@ export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) 
           />
         </Flex>
         <Flex alignItems={'center'} gap={'12px'}>
-          <Input placeholder={t('keyword')} />
+          <Input
+            placeholder={t('keyword')}
+            value={inputKeyword}
+            onChange={(e) => setInputKeyword(e.target.value)}
+          />
           <Button
             size={'sm'}
             variant={'primary'}
             leftIcon={<MyIcon name={'search'} color={'white'} w={'16px'} h={'16px'} />}
+            onClick={() => {
+              if (isJsonMode) {
+                formHook.setValue('keyword', inputKeyword);
+              } else {
+                refetchData();
+              }
+            }}
           >
             {t('search')}
           </Button>
@@ -77,52 +98,49 @@ export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) 
           flexWrap={'wrap'}
           borderRadius={'0px 8px 8px 8px'}
         >
-          {jsonFilters.length === 0 && (
+          {fields.length === 0 && (
             <AppendJSONFormItemButton
               onClick={() =>
-                formHook.setValue('jsonFilters', [
-                  ...jsonFilters,
-                  {
-                    jsonKey: '',
-                    jsonValue: '',
-                    jsonOperator: '='
-                  }
-                ])
+                append({
+                  key: '',
+                  value: '',
+                  mode: '='
+                })
               }
             />
           )}
-          {jsonFilters.map((item, index) => (
-            <Flex key={index} w={'fit-content'} gap={'12px'}>
+          {fields.map((field, index) => (
+            <Flex key={field.id} w={'fit-content'} gap={'12px'}>
               <MySelect
                 height="32px"
                 minW={'200px'}
                 bg={'white'}
                 color={'grayModern.600'}
                 placeholder={t('field_name')}
-                value={jsonFilters[0]?.jsonKey}
-                list={[
-                  { value: 'test', label: 'test' },
-                  { value: 'test2', label: 'test2' }
-                ]}
-                onchange={(val: any) => formHook.setValue('jsonFilters', val)}
+                value={formHook.watch(`jsonFilters.${index}.key`)}
+                list={formHook.watch('filterKeys')}
+                onchange={(val: string) => formHook.setValue(`jsonFilters.${index}.key`, val)}
               />
               <MySelect
                 height="32px"
                 minW={'60px'}
                 bg={'white'}
                 color={'grayModern.600'}
-                value={jsonFilters[0]?.jsonOperator || '='}
+                value={formHook.watch(`jsonFilters.${index}.mode`)}
                 list={[
                   { value: '=', label: t('equal') },
                   { value: '!=', label: t('not_equal') },
-                  { value: 'contains', label: t('contains') },
-                  { value: 'not_contains', label: t('not_contains') }
+                  { value: '~', label: t('contains') }
                 ]}
-                onchange={(val: any) => formHook.setValue('jsonFilters', val)}
+                onchange={(val: string) =>
+                  formHook.setValue(`jsonFilters.${index}.mode`, val as JsonFilterItem['mode'])
+                }
               />
               <Input
                 placeholder={t('value')}
                 bg={'white'}
+                value={formHook.watch(`jsonFilters.${index}.value`)}
+                onChange={(e) => formHook.setValue(`jsonFilters.${index}.value`, e.target.value)}
                 border={'1px solid #E8EBF0'}
                 boxShadow={
                   '0px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
@@ -135,11 +153,7 @@ export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) 
                 _hover={{
                   bg: 'grayModern.50'
                 }}
-                onClick={() => {
-                  const newList = [...jsonFilters];
-                  newList.splice(index, 1);
-                  formHook.setValue('jsonFilters', newList);
-                }}
+                onClick={() => remove(index)}
               >
                 <MyIcon
                   name={'delete'}
@@ -151,17 +165,14 @@ export const Filter = ({ formHook }: { formHook: UseFormReturn<LogsFormData> }) 
                   }}
                 />
               </Button>
-              {index === jsonFilters.length - 1 && (
+              {index === fields.length - 1 && (
                 <AppendJSONFormItemButton
                   onClick={() =>
-                    formHook.setValue('jsonFilters', [
-                      ...jsonFilters,
-                      {
-                        jsonKey: '',
-                        jsonValue: '',
-                        jsonOperator: '='
-                      }
-                    ])
+                    append({
+                      key: '',
+                      value: '',
+                      mode: '='
+                    })
                   }
                 />
               )}

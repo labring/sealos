@@ -16,11 +16,12 @@ import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppLogs } from '@/api/app';
 import { useForm } from 'react-hook-form';
+import { formatTimeRange } from '@/utils/timeRange';
 
 export interface JsonFilterItem {
-  jsonKey: string;
-  jsonValue: string;
-  jsonOperator: '=' | '>' | '<' | 'contains' | 'not_contains';
+  key: string;
+  value: string;
+  mode: '=' | '!=' | '~';
 }
 
 export interface LogsFormData {
@@ -32,6 +33,10 @@ export interface LogsFormData {
   isOnlyStderr: boolean;
   jsonFilters: JsonFilterItem[];
   refreshInterval: number;
+  filterKeys: {
+    value: string;
+    label: string;
+  }[];
 }
 
 export default function LogsPage({ appName }: { appName: string }) {
@@ -46,7 +51,7 @@ export default function LogsPage({ appName }: { appName: string }) {
     defaultValues: {
       pods: [],
       containers: [],
-      limit: 100,
+      limit: 10,
       keyword: '',
       isJsonMode: false,
       isOnlyStderr: false,
@@ -55,6 +60,7 @@ export default function LogsPage({ appName }: { appName: string }) {
     }
   });
 
+  // init pods and containers
   useEffect(() => {
     if (!isInitialized && appDetailPods?.length > 0) {
       const pods = appDetailPods.map((pod) => ({
@@ -80,21 +86,61 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
   const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
+  const timeRange = formatTimeRange(startDateTime, endDateTime);
 
-  const { data: logsData } = useQuery(
-    ['logs-data', appName],
+  const {
+    data: logsData,
+    isLoading,
+    refetch: refetchLogsData
+  } = useQuery(
+    [
+      'logs-data',
+      appName,
+      timeRange,
+      formHook.watch('isOnlyStderr'),
+      formHook.watch('limit'),
+      formHook.watch('isJsonMode'),
+      formHook.watch('jsonFilters')
+    ],
     () =>
       getAppLogs({
-        app: appName
+        time: timeRange,
+        app: appName,
+        limit: formHook.watch('limit').toString(),
+        jsonMode: formHook.watch('isJsonMode').toString(),
+        stderrMode: formHook.watch('isOnlyStderr').toString(),
+        jsonQuery: formHook.watch('jsonFilters')
       }),
     {
-      refetchInterval: refreshInterval
+      refetchInterval: refreshInterval,
+      onError: (error: any) => {
+        console.log(error, 'error');
+        setRefreshInterval(0);
+      },
+      retry: 1
     }
   );
 
-  console.log(logsData, 'logsData');
+  const {
+    data: logCountsData,
+    refetch: refetchLogCountsData,
+    isLoading: isLogCountsLoading
+  } = useQuery(['log-counts-data', appName, timeRange, formHook.watch('isOnlyStderr')], () =>
+    getAppLogs({
+      app: appName,
+      numberMode: 'true',
+      numberLevel: timeRange.slice(-1),
+      time: timeRange,
+      stderrMode: formHook.watch('isOnlyStderr').toString()
+    })
+  );
 
-  const refetchData = () => {};
+  console.log(formHook.getValues(), logsData, logCountsData, 'logsData');
+
+  const refetchData = () => {
+    refetchLogsData();
+    refetchLogCountsData();
+  };
 
   return (
     <DetailLayout appName={appName}>
@@ -103,14 +149,13 @@ export default function LogsPage({ appName }: { appName: string }) {
           <Flex
             mb={'6px'}
             bg={'white'}
-            gap={'12px'}
             flexDir={'column'}
             border={theme.borders.base}
             borderRadius={'lg'}
           >
-            <Header formHook={formHook} />
+            <Header formHook={formHook} refetchData={refetchData} />
             <Divider />
-            <Filter formHook={formHook} />
+            <Filter formHook={formHook} refetchData={refetchData} />
           </Flex>
           <Box
             mb={'6px'}
@@ -120,17 +165,20 @@ export default function LogsPage({ appName }: { appName: string }) {
             borderRadius={'lg'}
             flexShrink={0}
           >
-            <LogCounts />
+            <LogCounts
+              logCountsData={logCountsData || []}
+              isLogCountsLoading={isLogCountsLoading}
+            />
           </Box>
           <Box
             bg={'white'}
-            p={4}
+            p={'20px 24px'}
             border={theme.borders.base}
             borderRadius={'lg'}
             flex={1}
             minH={'400px'}
           >
-            <LogTable />
+            <LogTable data={logsData || []} isLoading={isLoading} formHook={formHook} />
           </Box>
         </>
       </Box>

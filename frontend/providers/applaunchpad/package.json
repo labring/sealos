@@ -23,6 +23,7 @@
     "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
+    "@tanstack/react-table": "^8.10.7",
     "ansi_up": "^5.2.1",
     "axios": "^1.5.1",
     "base64-stream": "^1.0.0",
