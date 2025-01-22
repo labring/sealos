@@ -219,8 +219,6 @@ const LogBarChart = ({
     if (!Dom.current || !visible) return;
 
     resizeObserver.current = new ResizeObserver((entries) => {
-      console.log(entries, 'entries');
-
       const entry = entries[0];
       if (entry?.contentRect && myChart.current) {
         if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {

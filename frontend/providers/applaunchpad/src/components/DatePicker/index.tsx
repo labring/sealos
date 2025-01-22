@@ -2,28 +2,28 @@
 
 import {
   Button,
+  ButtonGroup,
+  Divider,
   Flex,
-  Text,
   FlexProps,
+  Grid,
+  GridItem,
   Input,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Divider,
-  Grid,
-  GridItem,
-  ButtonGroup
+  Text,
+  useDisclosure
 } from '@chakra-ui/react';
+import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
-import { ChangeEvent, ChangeEventHandler, useState } from 'react';
+import { ChangeEventHandler, useMemo, useState } from 'react';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
-import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
-import { useDisclosure } from '@chakra-ui/react';
-
-import MyIcon from '../Icon';
 import useDateTimeStore from '@/store/date';
+import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 import { MySelect } from '@sealos/ui';
+import MyIcon from '../Icon';
 
 interface DatePickerProps extends FlexProps {
   isDisabled?: boolean;
@@ -48,11 +48,70 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     to: endDateTime
   };
 
-  const defaultRecentDate = {
-    label: `${t('recently')} 7 ${t('day')}`,
-    value: getDateRange('7d'),
-    compareValue: '7d'
-  };
+  const recentDateList = useMemo(
+    () => [
+      {
+        label: `${t('recently')} 5 ${t('minute')}`,
+        value: getDateRange('5m'),
+        compareValue: '5m'
+      },
+      {
+        label: `${t('recently')} 15 ${t('minute')}`,
+        value: getDateRange('15m'),
+        compareValue: '15m'
+      },
+      {
+        label: `${t('recently')} 30 ${t('minute')}`,
+        value: getDateRange('30m'),
+        compareValue: '30m'
+      },
+      {
+        label: `${t('recently')} 1 ${t('hour-singular')}`,
+        value: getDateRange('1h'),
+        compareValue: '1h'
+      },
+      {
+        label: `${t('recently')} 3 ${t('hour')}`,
+        value: getDateRange('3h'),
+        compareValue: '3h'
+      },
+      {
+        label: `${t('recently')} 6 ${t('hour')}`,
+        value: getDateRange('6h'),
+        compareValue: '6h'
+      },
+      {
+        label: `${t('recently')} 24 ${t('hour')}`,
+        value: getDateRange('24h'),
+        compareValue: '24h'
+      },
+      {
+        label: `${t('recently')} 2 ${t('day')}`,
+        value: getDateRange('2d'),
+        compareValue: '2d'
+      },
+      {
+        label: `${t('recently')} 3 ${t('day')}`,
+        value: getDateRange('3d'),
+        compareValue: '3d'
+      },
+      {
+        label: `${t('recently')} 7 ${t('day')}`,
+        value: getDateRange('7d'),
+        compareValue: '7d'
+      }
+    ],
+    [t]
+  );
+
+  const defaultRecentDate = useMemo(() => {
+    const currentTimeRange = formatTimeRange(startDateTime, endDateTime);
+    return (
+      recentDateList.find((item) => item.compareValue === currentTimeRange) ||
+      recentDateList.find((item) => item.compareValue === '7d') ||
+      recentDateList[0]
+    );
+  }, [startDateTime, endDateTime, recentDateList]);
 
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
@@ -234,59 +293,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       setToTimeString(format(item.value.to, 'HH:mm:ss'));
     }
   };
-
-  const recentDateList = [
-    {
-      label: `${t('recently')} 5 ${t('minute')}`,
-      value: getDateRange('5m'),
-      compareValue: '5m'
-    },
-    {
-      label: `${t('recently')} 15 ${t('minute')}`,
-      value: getDateRange('15m'),
-      compareValue: '15m'
-    },
-    {
-      label: `${t('recently')} 30 ${t('minute')}`,
-      value: getDateRange('30m'),
-      compareValue: '30m'
-    },
-    {
-      label: `${t('recently')} 1 ${t('hour-singular')}`,
-      value: getDateRange('1h'),
-      compareValue: '1h'
-    },
-    {
-      label: `${t('recently')} 3 ${t('hour')}`,
-      value: getDateRange('3h'),
-      compareValue: '3h'
-    },
-    {
-      label: `${t('recently')} 6 ${t('hour')}`,
-      value: getDateRange('6h'),
-      compareValue: '6h'
-    },
-    {
-      label: `${t('recently')} 24 ${t('hour')}`,
-      value: getDateRange('24h'),
-      compareValue: '24h'
-    },
-    {
-      label: `${t('recently')} 2 ${t('day')}`,
-      value: getDateRange('2d'),
-      compareValue: '2d'
-    },
-    {
-      label: `${t('recently')} 3 ${t('day')}`,
-      value: getDateRange('3d'),
-      compareValue: '3d'
-    },
-    {
-      label: `${t('recently')} 7 ${t('day')}`,
-      value: getDateRange('7d'),
-      compareValue: '7d'
-    }
-  ];
 
   return (
     <Flex
@@ -489,24 +495,7 @@ const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputP
 };
 
 const getDateRange = (value: string): DateRange => {
-  const now = new Date();
-  const to = now;
-  const from = new Date();
-
-  const [amount, unit] = [parseInt(value), value.slice(-1)];
-
-  switch (unit) {
-    case 'm':
-      from.setMinutes(now.getMinutes() - amount);
-      break;
-    case 'h':
-      from.setHours(now.getHours() - amount);
-      break;
-    case 'd':
-      from.setDate(now.getDate() - amount);
-      break;
-  }
-
+  const { startTime: from, endTime: to } = parseTimeRange(value);
   return { from, to };
 };
 

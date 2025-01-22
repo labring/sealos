@@ -1,11 +1,10 @@
-import { Tabs } from '@sealos/ui';
-import { Box, Button, ButtonProps, Flex, Input, Switch, Text } from '@chakra-ui/react';
+import MyIcon from '@/components/Icon';
+import { JsonFilterItem, LogsFormData } from '@/pages/app/detail/logs';
+import { Button, ButtonProps, Flex, Input, Switch, Text } from '@chakra-ui/react';
+import { MySelect } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
-import MyIcon from '@/components/Icon';
-import { MySelect } from '@sealos/ui';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
-import { LogsFormData, JsonFilterItem } from '@/pages/app/detail/logs';
 
 export const Filter = ({
   formHook,

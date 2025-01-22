@@ -1,15 +1,16 @@
 import MyIcon from '@/components/Icon';
 import LogBarChart from '@/components/LogBarChart';
-import { Box, Button, Center, Collapse, Flex, Spinner } from '@chakra-ui/react';
+import { Box, Button, Center, Collapse, Flex, Spinner, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
+import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
 
 export const LogCounts = ({
   logCountsData,
   isLogCountsLoading
 }: {
   logCountsData: { logs_total: string; _time: string }[];
-  isLogCountsLoading: boolean;
+  isLogCountsLoading?: boolean;
 }) => {
   const { t } = useTranslation();
   const [onOpenChart, setOnOpenChart] = useState(true);
@@ -67,8 +68,15 @@ export const LogCounts = ({
             <Center height={'140px'} w={'100%'}>
               <Spinner size="xl" />
             </Center>
-          ) : (
+          ) : logCountsData.length > 0 ? (
             <LogBarChart type="blue" data={processChartData(logCountsData)} visible={onOpenChart} />
+          ) : (
+            <Center height={'140px'} w={'100%'} flexDirection={'column'} gap={'12px'}>
+              <EmptyChart />
+              <Text fontSize={'12px'} fontWeight={500} color={'grayModern.500'}>
+                {t('no_data_available')}
+              </Text>
+            </Center>
           )}
         </Box>
       </Collapse>

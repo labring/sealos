@@ -37,10 +37,6 @@ interface LogData {
   [key: string]: any;
 }
 
-interface LogColumnMeta {
-  isError?: (row: LogData) => boolean;
-}
-
 export const LogTable = ({
   data,
   isLoading,
@@ -80,29 +76,28 @@ export const LogTable = ({
         ];
       }
 
-      const firstItem = data[0];
-      if (Array.isArray(firstItem)) {
-        return firstItem.map((_, index) => ({
-          value: `column${index}`,
-          label: `Column ${index + 1}`,
-          checked: index === 0,
-          accessorKey: index.toString()
-        }));
-      }
+      const uniqueKeys = new Set<string>();
 
-      return Object.keys(firstItem)
-        .filter((key) => key !== '_msg')
-        .map((key) => ({
-          value: key,
-          label: key,
-          checked: true,
-          accessorKey: key
-        }));
+      data.forEach((item) => {
+        Object.keys(item).forEach((key) => {
+          if (key !== '_msg') {
+            uniqueKeys.add(key);
+          }
+        });
+      });
+
+      return Array.from(uniqueKeys).map((key) => ({
+        value: key,
+        label: key,
+        checked: true,
+        accessorKey: key
+      }));
     },
     [isJsonMode]
   );
 
   const [fieldList, setFieldList] = useState<FieldItem[]>(() => generateFieldList(data));
+  console.log(fieldList, 'fieldList');
 
   useEffect(() => {
     setFieldList(generateFieldList(data));

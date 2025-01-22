@@ -11,7 +11,7 @@ import { Header } from '@/components/app/detail/logs/Header';
 import { Filter } from '@/components/app/detail/logs/Filter';
 import { LogTable } from '@/components/app/detail/logs/LogTable';
 import { LogCounts } from '@/components/app/detail/logs/LogCounts';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppLogs } from '@/api/app';
@@ -89,6 +89,9 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
   const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
+  const jsonFilters = formHook
+    .watch('jsonFilters')
+    .filter((item) => item.key && item.key.trim() !== '');
   const timeRange = formatTimeRange(startDateTime, endDateTime);
 
   const { isLoading, refetch: refetchLogsData } = useQuery(
@@ -99,21 +102,26 @@ export default function LogsPage({ appName }: { appName: string }) {
       formHook.watch('isOnlyStderr'),
       formHook.watch('limit'),
       formHook.watch('isJsonMode'),
-      formHook.watch('keyword')
+      formHook.watch('keyword'),
+      selectedPods,
+      selectedContainers
     ],
     () =>
       getAppLogs({
         time: timeRange,
         app: appName,
+        stderrMode: formHook.watch('isOnlyStderr').toString(),
         limit: formHook.watch('limit').toString(),
         jsonMode: formHook.watch('isJsonMode').toString(),
-        stderrMode: formHook.watch('isOnlyStderr').toString(),
-        jsonQuery: formHook
-          .watch('jsonFilters')
-          .filter((item) => item.key && item.key.trim() !== ''),
-        keyword: formHook.watch('keyword')
+        keyword: formHook.watch('keyword'),
+        pod: selectedPods.map((pod) => pod.value),
+        container: selectedContainers.map((container) => container.value),
+        jsonQuery: jsonFilters
       }),
     {
+      retry: 1,
+      staleTime: 3000,
+      cacheTime: 3000,
       refetchInterval: refreshInterval,
       onError: (error: any) => {
         console.log(error, 'error');
@@ -121,19 +129,19 @@ export default function LogsPage({ appName }: { appName: string }) {
       },
       onSuccess: (data) => {
         setLogs(data);
-      },
-      retry: 1
+      }
     }
   );
 
+  // log counts
   const { refetch: refetchLogCountsData, isLoading: isLogCountsLoading } = useQuery(
     [
       'log-counts-data',
       appName,
       timeRange,
       formHook.watch('isOnlyStderr'),
-      formHook.watch('jsonFilters'),
-      formHook.watch('keyword')
+      selectedPods,
+      selectedContainers
     ],
     () =>
       getAppLogs({
@@ -141,20 +149,19 @@ export default function LogsPage({ appName }: { appName: string }) {
         numberMode: 'true',
         numberLevel: timeRange.slice(-1),
         time: timeRange,
-        stderrMode: formHook.watch('isOnlyStderr').toString()
-        // jsonQuery: formHook
-        //   .watch('jsonFilters')
-        //   .filter((item) => item.key && item.key.trim() !== ''),
-        // keyword: formHook.watch('keyword')
+        stderrMode: formHook.watch('isOnlyStderr').toString(),
+        pod: selectedPods.map((pod) => pod.value),
+        container: selectedContainers.map((container) => container.value)
       }),
     {
+      refetchInterval: refreshInterval,
+      staleTime: 3000,
+      cacheTime: 3000,
       onSuccess: (data) => {
         setLogCounts(data);
       }
     }
   );
-
-  console.log(formHook.getValues(), logCounts, parsedLogs, 'logsData');
 
   const refetchData = () => {
     console.log('refetchData');

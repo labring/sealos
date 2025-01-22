@@ -1,5 +1,4 @@
-import dynamic from 'next/dynamic';
-import { useTranslation } from 'next-i18next';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import {
   Button,
   ButtonGroup,
@@ -11,16 +10,15 @@ import {
   MenuList,
   Text
 } from '@chakra-ui/react';
-import { useState } from 'react';
-import { ChevronDownIcon } from '@chakra-ui/icons';
+import { useTranslation } from 'next-i18next';
+import dynamic from 'next/dynamic';
 
+import AdvancedSelect from '@/components/AdvancedSelect';
 import MyIcon from '@/components/Icon';
-import { useAppStore } from '@/store/app';
-import AdvancedSelect, { ListItem } from '@/components/AdvancedSelect';
-import useDateTimeStore from '@/store/date';
 import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
-import { UseFormReturn } from 'react-hook-form';
 import { LogsFormData } from '@/pages/app/detail/logs';
+import useDateTimeStore from '@/store/date';
+import { UseFormReturn } from 'react-hook-form';
 
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
@@ -35,23 +33,14 @@ export const Header = ({
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
 
   return (
-    <Flex
-      p={'12px'}
-      justify={'space-between'}
-      gap={'12px'}
-      alignItems={'center'}
-      w={'100%'}
-      flexWrap={'wrap'}
-      justifyContent={{ base: 'flex-start', lg: 'space-between' }}
-    >
-      {/* time */}
+    <Flex p={'12px'} gap={'32px'} alignItems={'center'} w={'100%'} flexWrap={'wrap'}>
       <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           {t('time')}
         </Text>
         <DatePicker />
       </Flex>
-      {/* pod */}
+
       <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           Pods
@@ -70,18 +59,17 @@ export const Header = ({
           list={formHook.watch('pods')}
         />
       </Flex>
-      {/* container */}
-      <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
+
+      <Flex alignItems={'center'} gap={'12px'}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           Containers
         </Text>
         <AdvancedSelect
-          minW={'200px'}
+          minW={{ lg: '322px', xl: '200px' }}
           placeholder={t('please_select')}
           height="32px"
           checkBoxMode
           leftIcon={<MyIcon name="container" w={'16px'} h={'16px'} color={'grayModern.500'} />}
-          width={'fit-content'}
           value={'hello-sql-postgresql-0'}
           list={formHook.watch('containers')}
           onCheckboxChange={(val) => {
@@ -89,7 +77,7 @@ export const Header = ({
           }}
         />
       </Flex>
-      {/* log number */}
+
       <Flex alignItems={'center'} gap={'12px'} minW={{ base: '45%', lg: 'auto' }}>
         <Text fontSize={'12px'} fontWeight={'400'} lineHeight={'16px'} color={'grayModern.900'}>
           {t('log_number')}

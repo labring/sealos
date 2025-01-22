@@ -106,7 +106,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
     const xData = filteredData?.[0]?.xData.map(String) || [];
     const yData =
       filteredData?.map((item) => ({
-        name: item.name,
+        name: item.name || 'unknown',
         type: 'line',
         data: item.yData.map(Number)
       })) || [];
@@ -133,7 +133,7 @@ export default function MonitorPage({ appName }: { appName: string }) {
     const xData = filteredData?.[0]?.xData.map(String) || [];
     const yData =
       filteredData?.map((item) => ({
-        name: item.name,
+        name: item.name || 'unknown',
         type: 'line',
         data: item.yData.map(Number)
       })) || [];
