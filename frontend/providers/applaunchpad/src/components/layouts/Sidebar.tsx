@@ -3,7 +3,7 @@ import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 
-const ROUTES = {
+export const ROUTES = {
   OVERVIEW: '/app/detail',
   MONITOR: '/app/detail/monitor',
   LOGS: '/app/detail/logs'

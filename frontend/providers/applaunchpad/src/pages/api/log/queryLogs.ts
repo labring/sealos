@@ -23,6 +23,15 @@ export interface LogQueryPayload {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+  const logUrl = global.AppConfig.launchpad.components.log.url;
+
+  if (!logUrl) {
+    return jsonRes(res, {
+      code: 400,
+      error: 'logUrl is not set'
+    });
+  }
+
   if (req.method !== 'POST') {
     return jsonRes(res, {
       code: 405,
@@ -61,10 +70,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const params: LogQueryPayload = {
       time: time,
-      // dev
+      // // dev
       namespace: 'sealos',
-      app: '',
-      // ===
       // namespace: namespace,
       // app: app,
       limit: limit,
@@ -72,15 +79,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       stderrMode: stderrMode,
       numberMode: numberMode,
       ...(numberLevel && { numberLevel: numberLevel }),
-      pod: Array.isArray(pod) ? pod : [],
-      container: Array.isArray(container) ? container : [],
+      // pod: Array.isArray(pod) ? pod : [],
+      // container: Array.isArray(container) ? container : [],
       keyword: keyword,
       jsonQuery: Array.isArray(jsonQuery) ? jsonQuery : []
     };
 
-    console.log(params, 'params');
-
-    const result = await fetch('http://tipmjzasbtqv.sealoshzh.site/queryLogsByParams', {
+    console.log('numberMode:', numberMode, 'params', params);
+    const result = await fetch(logUrl + '/queryLogsByParams', {
       method: 'POST',
       body: JSON.stringify(params),
       headers: {
@@ -88,9 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         // Authorization: encodeURIComponent(kubeconfig)
       }
     });
-    const contentType = result.headers.get('content-type');
-
-    console.log(result.status, contentType);
+    console.log('fetch log result: ', result.status);
     const data = await result.text();
 
     jsonRes(res, {

@@ -24,6 +24,11 @@ export const useLogStore = create<LogState>()(
       logCounts: [],
       setLogs: (data: string) =>
         set((state) => {
+          if (!data) {
+            state.rawLogs = '';
+            state.parsedLogs = [];
+            return;
+          }
           state.rawLogs = data;
           const logLines = data.split('\n').filter((line) => line.trim());
           state.parsedLogs = logLines.map((line) => {
@@ -36,6 +41,10 @@ export const useLogStore = create<LogState>()(
         }),
       setLogCounts: (data: string) =>
         set((state) => {
+          if (!data) {
+            state.logCounts = [];
+            return;
+          }
           const logLines = data.split('\n').filter((line) => line.trim());
           console.log(
             logLines.map((line) => {

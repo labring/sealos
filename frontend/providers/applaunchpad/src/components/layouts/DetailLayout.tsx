@@ -1,4 +1,4 @@
-import Sidebar from '@/components/layouts/Sidebar';
+import Sidebar, { ROUTES } from '@/components/layouts/Sidebar';
 import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import Header from '@/components/app/detail/index/Header';
@@ -7,6 +7,7 @@ import { useGlobalStore } from '@/store/global';
 import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
 
 interface DetailLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface DetailLayoutProps {
 
 export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
 
@@ -44,7 +46,8 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
     },
     {
       refetchOnMount: true,
-      refetchInterval: 3000
+      refetchInterval: router.pathname === ROUTES.OVERVIEW ? 3000 : 10000,
+      staleTime: router.pathname === ROUTES.OVERVIEW ? 3000 : 10000
     }
   );
 
