@@ -56,7 +56,7 @@ export const LogTable = ({
   const { exportLogs } = useLogStore();
 
   const generateFieldList = useCallback(
-    (data: any[]) => {
+    (data: any[], prevFieldList: FieldItem[] = []) => {
       if (!data.length) return [];
 
       if (!isJsonMode) {
@@ -77,7 +77,6 @@ export const LogTable = ({
       }
 
       const uniqueKeys = new Set<string>();
-
       data.forEach((item) => {
         Object.keys(item).forEach((key) => {
           if (key !== '_msg') {
@@ -86,21 +85,25 @@ export const LogTable = ({
         });
       });
 
+      const prevFieldStates = prevFieldList.reduce((acc, field) => {
+        acc[field.value] = field.checked;
+        return acc;
+      }, {} as Record<string, boolean>);
+
       return Array.from(uniqueKeys).map((key) => ({
         value: key,
         label: key,
-        checked: true,
+        checked: key in prevFieldStates ? prevFieldStates[key] : true,
         accessorKey: key
       }));
     },
     [isJsonMode]
   );
 
-  const [fieldList, setFieldList] = useState<FieldItem[]>(() => generateFieldList(data));
-  console.log(fieldList, 'fieldList');
+  const [fieldList, setFieldList] = useState<FieldItem[]>(() => generateFieldList(data, []));
 
   useEffect(() => {
-    setFieldList(generateFieldList(data));
+    setFieldList((prevFieldList) => generateFieldList(data, prevFieldList));
     formHook.setValue(
       'filterKeys',
       generateFieldList(data).map((field) => ({ value: field.value, label: field.label }))

@@ -52,7 +52,10 @@ export const Filter = ({
           </Text>
           <Switch
             isChecked={isJsonMode}
-            onChange={() => formHook.setValue('isJsonMode', !isJsonMode)}
+            onChange={() => {
+              formHook.setValue('isJsonMode', !isJsonMode);
+              formHook.setValue('jsonFilters', []);
+            }}
           />
         </Flex>
         <Flex alignItems={'center'} gap={'12px'}>
