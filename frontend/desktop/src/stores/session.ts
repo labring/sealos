@@ -13,9 +13,11 @@ type SessionState = {
   token: string;
   provider?: OauthProvider;
   oauth_state: string;
+  firstUse: Date | null;
   setSession: (ss: Session) => void;
   setSessionProp: <T extends keyof Session>(key: T, value: Session[T]) => void;
   delSession: () => void;
+  setFirstUse: (d: Date | null) => void;
   isUserLogin: () => boolean;
   /*
 			when proxy oauth2.0 ,the domainState need to be used 
@@ -26,6 +28,7 @@ type SessionState = {
     action: string;
     statePayload: string[];
   };
+
   setProvider: (provider?: OauthProvider) => void;
   setToken: (token: string) => void;
   lastWorkSpaceId: string;
@@ -37,9 +40,15 @@ const useSessionStore = create<SessionState>()(
     immer((set, get) => ({
       session: undefined,
       provider: undefined,
+      firstUse: null,
       oauth_state: '',
       token: '',
       lastWorkSpaceId: '',
+      setFirstUse(d) {
+        set({
+          firstUse: d
+        });
+      },
       setSession: (ss: Session) => set({ session: ss }),
       setSessionProp: (key: keyof Session, value: any) => {
         set((state) => {
