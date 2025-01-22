@@ -283,17 +283,31 @@ export const LogTable = ({
         </Collapse>
       )}
 
-      <BaseTable
-        mt={'12px'}
-        table={table}
-        isLoading={isLoading}
-        overflowY={'auto'}
-        maxH={'500px'}
-        tdStyle={{
-          p: '10px 24px',
-          borderBottom: 'none'
-        }}
-      />
+      {data.length > 0 ? (
+        <BaseTable
+          mt={'12px'}
+          table={table}
+          isLoading={isLoading}
+          overflowY={'auto'}
+          maxH={'500px'}
+          tdStyle={{
+            p: '10px 24px',
+            borderBottom: 'none'
+          }}
+        />
+      ) : (
+        <Flex
+          justifyContent={'center'}
+          alignItems={'center'}
+          flexDirection={'column'}
+          height={'240px'}
+        >
+          <MyIcon name={'noEvents'} color={'transparent'} width={'36px'} height={'36px'} />
+          <Box fontSize={'14px'} fontWeight={500} color={'grayModern.500'} pt={'8px'}>
+            {t('no_data_available')}
+          </Box>
+        </Flex>
+      )}
     </Flex>
   );
 };
