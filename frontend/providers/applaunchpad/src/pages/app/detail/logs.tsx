@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { formatTimeRange } from '@/utils/timeRange';
 import { downLoadBold } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
+import { useRouter } from 'next/router';
 
 export interface JsonFilterItem {
   key: string;
@@ -43,6 +44,7 @@ export interface LogsFormData {
 
 export default function LogsPage({ appName }: { appName: string }) {
   const theme = useTheme();
+  const router = useRouter();
   const { toast } = useToast();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
@@ -66,11 +68,13 @@ export default function LogsPage({ appName }: { appName: string }) {
   // init pods and containers
   useEffect(() => {
     if (!isInitialized && appDetailPods?.length > 0) {
+      const urlPodName = router.query.pod as string;
       const pods = appDetailPods.map((pod) => ({
         value: pod.podName,
         label: pod.podName,
-        checked: true
+        checked: urlPodName ? pod.podName === urlPodName : true
       }));
+
       const containers = appDetailPods
         .flatMap((pod) => pod.spec?.containers || [])
         .map((container) => ({
@@ -85,7 +89,7 @@ export default function LogsPage({ appName }: { appName: string }) {
 
       setIsInitialized(true);
     }
-  }, [appDetailPods, isInitialized, formHook]);
+  }, [appDetailPods, isInitialized, formHook, router.query.pod]);
 
   const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
   const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
