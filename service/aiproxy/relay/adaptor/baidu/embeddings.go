@@ -41,7 +41,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	if err != nil {
 		return &baiduResponse.Usage, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
-	respMap["model"] = meta.OriginModelName
+	respMap["model"] = meta.OriginModel
 	respMap["object"] = "list"
 
 	data, err := json.Marshal(respMap)
@@ -50,7 +50,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	}
 	_, err = c.Writer.Write(data)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return &baiduResponse.Usage, nil
 }

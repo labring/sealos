@@ -64,9 +64,9 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		pathSuffix = "text2image"
 	}
 
-	modelEndpoint, ok := modelEndpointMap[meta.ActualModelName]
+	modelEndpoint, ok := modelEndpointMap[meta.ActualModel]
 	if !ok {
-		modelEndpoint = strings.ToLower(meta.ActualModelName)
+		modelEndpoint = strings.ToLower(meta.ActualModel)
 	}
 
 	// Construct full URL
@@ -86,7 +86,7 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
 		meta.Set(openai.MetaEmbeddingsPatchInputToSlices, true)

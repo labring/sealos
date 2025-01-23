@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net/http"
 	"slices"
+	"time"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -12,9 +13,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -26,10 +27,8 @@ func stopReasonClaude2OpenAI(reason *string) string {
 		return ""
 	}
 	switch *reason {
-	case "end_turn":
-		return "stop"
-	case "stop_sequence":
-		return "stop"
+	case "end_turn", "stop_sequence":
+		return constant.StopFinishReason
 	case "max_tokens":
 		return "length"
 	case toolUseType:
@@ -45,7 +44,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	textRequest.Model = meta.ActualModelName
+	textRequest.Model = meta.ActualModel
 	meta.Set("stream", textRequest.Stream)
 	claudeTools := make([]Tool, 0, len(textRequest.Tools))
 
@@ -256,7 +255,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + claudeResponse.ID,
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
@@ -267,7 +266,7 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 
 	log := middleware.GetLogger(c)
 
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
@@ -373,7 +372,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(&claudeResponse)
-	fullTextResponse.Model = meta.OriginModelName
+	fullTextResponse.Model = meta.OriginModel
 	usage := model.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,

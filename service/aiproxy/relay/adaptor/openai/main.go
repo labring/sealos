@@ -82,8 +82,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
-			if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
-				respMap["model"] = meta.OriginModelName
+			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
+				respMap["model"] = meta.OriginModel
 			}
 			err = render.ObjectData(c, respMap)
 			if err != nil {
@@ -111,12 +111,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	render.Done(c)
 
 	if usage == nil || (usage.TotalTokens == 0 && responseText != "") {
-		usage = ResponseText2Usage(responseText, meta.ActualModelName, meta.PromptTokens)
+		usage = ResponseText2Usage(responseText, meta.ActualModel, meta.InputTokens)
 	}
 
 	if usage.TotalTokens != 0 && usage.PromptTokens == 0 { // some channels don't return prompt tokens & completion tokens
-		usage.PromptTokens = meta.PromptTokens
-		usage.CompletionTokens = usage.TotalTokens - meta.PromptTokens
+		usage.PromptTokens = meta.InputTokens
+		usage.CompletionTokens = usage.TotalTokens - meta.InputTokens
 	}
 
 	return usage, nil
@@ -143,10 +143,10 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
 		completionTokens := 0
 		for _, choice := range textResponse.Choices {
-			completionTokens += CountTokenText(choice.Message.StringContent(), meta.ActualModelName)
+			completionTokens += CountTokenText(choice.Message.StringContent(), meta.ActualModel)
 		}
 		textResponse.Usage = model.Usage{
-			PromptTokens:     meta.PromptTokens,
+			PromptTokens:     meta.InputTokens,
 			CompletionTokens: completionTokens,
 		}
 	}
@@ -158,8 +158,8 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return &textResponse.Usage, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
-	if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
-		respMap["model"] = meta.OriginModelName
+	if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
+		respMap["model"] = meta.OriginModel
 	}
 
 	newData, err := stdjson.Marshal(respMap)
@@ -169,7 +169,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 
 	_, err = c.Writer.Write(newData)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return &textResponse.Usage, nil
 }
