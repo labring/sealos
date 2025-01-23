@@ -51,7 +51,7 @@
   "ConfigMap Path Conflict": "配置文件路径冲突",
   "ConfigMap Tip": "配置文件",
   "Configurable number of instances or automatic horizontal scaling": "可配置实例数或自动横向伸缩",
-  "Configuration File": "配置文件",
+  "Configuration File": "Configmap 配置文件",
   "Confirm": "确认",
   "Confirm deletion": "确认删除",
   "Confirm Deploy Application?": "确认部署应用？",

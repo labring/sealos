@@ -74,7 +74,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 mx={'16px'}
                 borderColor={'grayModern.300'}
               />
-              <Text>ConfigMap: {app.configMapList?.length}</Text>
+              <Text>ConfigMaps: {app.configMapList?.length}</Text>
               <Divider
                 orientation="vertical"
                 h={'12px'}
@@ -189,7 +189,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
               </Box>
               <Box flex={'1 0 0'}>
                 <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                  <Text>ConfigMap {t('Configuration File')}</Text>
+                  <Text>{t('Configuration File')}</Text>
                   <Box
                     borderRadius={'4px'}
                     border={'1px solid #F4F4F7'}

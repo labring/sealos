@@ -46,7 +46,8 @@ export default function Header({
         fontWeight={'400'}
         alignItems={'center'}
       >
-        ({t('Update Time')} <DynamicTime />)
+        ({t('Update Time')} &ensp;
+        <DynamicTime />)
       </Flex>
 
       <Flex alignItems={'center'} gap={'12px'} ml={'auto'}>
