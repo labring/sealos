@@ -96,12 +96,18 @@ func TokenAuth(c *gin.Context) {
 
 	var group *model.GroupCache
 	if useInternalToken {
-		group = &model.GroupCache{}
+		group = &model.GroupCache{
+			Status: model.GroupStatusEnabled,
+		}
 	} else {
 		var err error
 		group, err = model.CacheGetGroup(token.Group)
 		if err != nil {
 			abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
+			return
+		}
+		if group.Status != model.GroupStatusEnabled {
+			abortLogWithMessage(c, http.StatusForbidden, "group is disabled")
 			return
 		}
 	}
