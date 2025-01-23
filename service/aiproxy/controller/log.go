@@ -43,6 +43,7 @@ func GetLogs(c *gin.Context) {
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
 	result, err := model.GetLogs(
 		group,
 		startTimestampTime,
@@ -59,6 +60,7 @@ func GetLogs(c *gin.Context) {
 		mode,
 		model.CodeType(codeType),
 		withBody,
+		ip,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -104,6 +106,7 @@ func GetGroupLogs(c *gin.Context) {
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
 	result, err := model.GetGroupLogs(
 		group,
 		startTimestampTime,
@@ -120,6 +123,7 @@ func GetGroupLogs(c *gin.Context) {
 		mode,
 		model.CodeType(codeType),
 		withBody,
+		ip,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -158,6 +162,7 @@ func SearchLogs(c *gin.Context) {
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
 	result, err := model.SearchLogs(
 		group,
 		keyword,
@@ -175,6 +180,7 @@ func SearchLogs(c *gin.Context) {
 		mode,
 		model.CodeType(codeType),
 		withBody,
+		ip,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -217,6 +223,7 @@ func SearchGroupLogs(c *gin.Context) {
 	mode, _ := strconv.Atoi(c.Query("mode"))
 	codeType := c.Query("code_type")
 	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
 	result, err := model.SearchGroupLogs(
 		group,
 		keyword,
@@ -234,6 +241,7 @@ func SearchGroupLogs(c *gin.Context) {
 		mode,
 		model.CodeType(codeType),
 		withBody,
+		ip,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())

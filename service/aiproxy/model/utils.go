@@ -59,6 +59,7 @@ func BatchRecordConsume(
 	endpoint string,
 	content string,
 	mode int,
+	ip string,
 	requestDetail *RequestDetail,
 ) error {
 	errs := []error{}
@@ -79,6 +80,7 @@ func BatchRecordConsume(
 		endpoint,
 		content,
 		mode,
+		ip,
 		requestDetail,
 	)
 	if err != nil {

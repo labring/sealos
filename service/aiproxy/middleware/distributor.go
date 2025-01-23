@@ -200,6 +200,7 @@ func distribute(c *gin.Context, mode int) {
 			0,
 			0,
 			errMsg,
+			c.ClientIP(),
 			nil,
 		)
 		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg)
