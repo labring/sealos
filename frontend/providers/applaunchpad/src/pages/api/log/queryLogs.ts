@@ -84,8 +84,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       jsonQuery: Array.isArray(jsonQuery) ? jsonQuery : []
     };
 
-    console.log('numberMode:', numberMode, 'params', params);
-
     const result = await fetch(logUrl + '/queryLogsByParams', {
       method: 'POST',
       body: JSON.stringify(params),
