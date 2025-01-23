@@ -69,8 +69,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const params: LogQueryPayload = {
       time: time,
-      // dev
-      // namespace: 'sealos',
       namespace: namespace,
       app: app,
       limit: limit,
