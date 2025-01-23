@@ -112,7 +112,6 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       recentDateList[0]
     );
   }, [startDateTime, endDateTime, recentDateList]);
-  console.log(defaultRecentDate, 'defaultRecentDate');
 
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
