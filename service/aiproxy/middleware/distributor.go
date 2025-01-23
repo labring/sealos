@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -117,18 +118,19 @@ type GroupBalanceConsumer struct {
 }
 
 func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+	log := GetLogger(c)
 	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group.ID)
 	if err != nil {
-		GetLogger(c).Errorf("get group (%s) balance error: %v", group.ID, err)
+		log.Errorf("get group (%s) balance error: %v", group.ID, err)
 		abortWithMessage(c, http.StatusInternalServerError, "get group balance error")
 		return false
 	}
+	log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
+
 	if groupBalance <= 0 {
 		abortLogWithMessage(c, http.StatusForbidden, "group balance not enough")
 		return false
 	}
-	log := GetLogger(c)
-	log.Data["balance"] = groupBalance
 	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
 		GroupBalance: groupBalance,
 		Consumer:     consumer,
