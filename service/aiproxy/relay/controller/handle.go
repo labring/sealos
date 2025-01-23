@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -121,7 +122,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 
 	amount := consume.CalculateAmount(usage, preCheckReq.InputPrice, preCheckReq.OutputPrice)
 	if amount > 0 {
-		log.Data["amount"] = amount
+		log.Data["amount"] = strconv.FormatFloat(amount, 'f', -1, 64)
 	}
 
 	// 6. Post consume
