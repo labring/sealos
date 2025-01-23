@@ -1108,7 +1108,7 @@ const Form = ({
                             onClick={() => setConfigEdit(item)}
                             bg={'grayModern.25'}
                           >
-                            <MyIcon name={'configMap'} />
+                            <MyIcon name={'configMap'} w={'20px'} />
                             <Box ml={4} flex={'1 0 0'} w={0}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.mountPath}
@@ -1180,7 +1180,7 @@ const Form = ({
                             bg={'grayModern.25'}
                             onClick={() => setStoreEdit(item)}
                           >
-                            <MyIcon name={'store'} />
+                            <MyIcon name={'store'} w={'20px'} />
                             <Box ml={4} flex={'1 0 0'} w={0}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
@@ -1232,7 +1232,7 @@ const Form = ({
                             cursor={'not-allowed'}
                             bg={'grayModern.25'}
                           >
-                            <MyIcon name={'store'} />
+                            <MyIcon name={'store'} w={'20px'} />
                             <Box ml={4} flex={'1 0 0'} w={0}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
