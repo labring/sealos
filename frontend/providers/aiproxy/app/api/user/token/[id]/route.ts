@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
+import { getSealosUserUid, parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { validateSealosUserRealNameInfo } from '@/utils/backend/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -125,6 +126,20 @@ export async function POST(
           code: 400,
           message: 'Token ID is required',
           error: 'Bad Request'
+        },
+        { status: 400 }
+      )
+    }
+
+    const sealosUserUid = await getSealosUserUid(request.headers)
+    const isRealName = await validateSealosUserRealNameInfo(sealosUserUid)
+
+    if (!isRealName) {
+      return NextResponse.json(
+        {
+          code: 400,
+          message: 'user not real name',
+          error: 'user not real name'
         },
         { status: 400 }
       )
