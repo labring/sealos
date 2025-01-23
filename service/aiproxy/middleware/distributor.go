@@ -127,6 +127,8 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 		abortLogWithMessage(c, http.StatusForbidden, "group balance not enough")
 		return false
 	}
+	log := GetLogger(c)
+	log.Data["balance"] = groupBalance
 	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
 		GroupBalance: groupBalance,
 		Consumer:     consumer,
