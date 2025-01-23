@@ -151,7 +151,15 @@ export default function MonitorPage({ appName }: { appName: string }) {
 
   return (
     <DetailLayout appName={appName} key={'monitor'}>
-      <Box flex={1} bg="white" borderRadius="8px" py={'16px'} px={'24px'}>
+      <Box
+        minH={'100%'}
+        flex={'1 0 0'}
+        bg="white"
+        borderRadius="8px"
+        py={'16px'}
+        px={'24px'}
+        overflow={'auto'}
+      >
         <Header podList={podList} setPodList={setPodList} refetchData={refetchData} />
         {!isLoading ? (
           <>

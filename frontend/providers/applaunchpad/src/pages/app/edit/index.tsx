@@ -328,6 +328,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         h={'100%'}
         minWidth={'1024px'}
         backgroundColor={'grayModern.100'}
+        overflowY={'auto'}
       >
         <Header
           appName={formHook.getValues('appName')}
