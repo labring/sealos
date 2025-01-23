@@ -46,7 +46,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	_, err = c.Writer.Write(responseBody)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 
 	if rerankResponse.Meta.Tokens == nil {

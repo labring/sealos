@@ -53,8 +53,10 @@ func UnmarshalMap(req *http.Request) (map[string]any, error) {
 	return request, nil
 }
 
+var defaultClient = &http.Client{}
+
 func DoRequest(req *http.Request) (*http.Response, error) {
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := defaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

@@ -97,7 +97,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		log.Error("aliImageHandler write response body failed: " + err.Error())
+		log.Warnf("aliImageHandler write response body failed: %v", err)
 	}
 	return &model.Usage{}, nil
 }

@@ -137,7 +137,7 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 
 	_, err = c.Writer.Write(audioBytes)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 
 	usageCharacters := meta.InputTokens
@@ -190,7 +190,7 @@ func ttsStreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 
 		_, err = c.Writer.Write(audioBytes)
 		if err != nil {
-			log.Error("write response body failed: " + err.Error())
+			log.Warnf("write response body failed: %v", err)
 		}
 	}
 
