@@ -26,6 +26,7 @@ func AsyncConsume(
 	inputPrice,
 	outputPrice float64,
 	content string,
+	ip string,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -49,6 +50,7 @@ func AsyncConsume(
 		inputPrice,
 		outputPrice,
 		content,
+		ip,
 		requestDetail,
 	)
 }
@@ -62,6 +64,7 @@ func Consume(
 	inputPrice,
 	outputPrice float64,
 	content string,
+	ip string,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -70,7 +73,7 @@ func Consume(
 
 	amount := calculateAmount(ctx, usage, inputPrice, outputPrice, postGroupConsumer, meta)
 
-	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, requestDetail, amount)
+	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount)
 	if err != nil {
 		log.Error("error batch record consume: " + err.Error())
 	}
@@ -136,7 +139,7 @@ func processGroupConsume(
 	return consumedAmount
 }
 
-func recordConsume(meta *meta.Meta, code int, usage *relaymodel.Usage, inputPrice, outputPrice float64, content string, requestDetail *model.RequestDetail, amount float64) error {
+func recordConsume(meta *meta.Meta, code int, usage *relaymodel.Usage, inputPrice, outputPrice float64, content string, ip string, requestDetail *model.RequestDetail, amount float64) error {
 	promptTokens := 0
 	completionTokens := 0
 	if usage != nil {
@@ -166,6 +169,7 @@ func recordConsume(meta *meta.Meta, code int, usage *relaymodel.Usage, inputPric
 		meta.Endpoint,
 		content,
 		meta.Mode,
+		ip,
 		requestDetail,
 	)
 }

@@ -44,6 +44,7 @@ type Log struct {
 	ChannelID        int            `gorm:"index"                                                                                                                  json:"channel"`
 	Code             int            `gorm:"index"                                                                                                                  json:"code"`
 	Mode             int            `json:"mode"`
+	IP               string         `json:"ip"`
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
@@ -118,6 +119,7 @@ func RecordConsumeLog(
 	endpoint string,
 	content string,
 	mode int,
+	ip string,
 	requestDetail *RequestDetail,
 ) error {
 	defer func() {
@@ -141,6 +143,7 @@ func RecordConsumeLog(
 		TokenName:        tokenName,
 		Model:            modelName,
 		Mode:             mode,
+		IP:               ip,
 		UsedAmount:       amount,
 		Price:            price,
 		CompletionPrice:  completionPrice,
@@ -203,6 +206,7 @@ func getLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (int64, []*Log, error) {
 	tx := LogDB.Model(&Log{})
 	if group != "" {
@@ -234,6 +238,9 @@ func getLogs(
 	}
 	if endpoint != "" {
 		tx = tx.Where("endpoint = ?", endpoint)
+	}
+	if ip != "" {
+		tx = tx.Where("ip = ?", ip)
 	}
 	switch codeType {
 	case CodeTypeSuccess:
@@ -287,8 +294,9 @@ func GetLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (*GetLogsResult, error) {
-	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody)
+	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -323,11 +331,12 @@ func GetGroupLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (*GetGroupLogsResult, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
-	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody)
+	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -366,6 +375,7 @@ func searchLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (int64, []*Log, error) {
 	tx := LogDB.Model(&Log{})
 	if group != "" {
@@ -399,6 +409,9 @@ func searchLogs(
 	}
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
+	}
+	if ip != "" {
+		tx = tx.Where("ip = ?", ip)
 	}
 	switch codeType {
 	case CodeTypeSuccess:
@@ -470,6 +483,11 @@ func searchLogs(
 		}
 		values = append(values, "%"+keyword+"%")
 
+		if ip != "" {
+			conditions = append(conditions, "ip = ?")
+			values = append(values, ip)
+		}
+
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
 		}
@@ -526,8 +544,9 @@ func SearchLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (*GetLogsResult, error) {
-	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody)
+	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip)
 	if err != nil {
 		return nil, err
 	}
@@ -563,11 +582,12 @@ func SearchGroupLogs(
 	mode int,
 	codeType CodeType,
 	withBody bool,
+	ip string,
 ) (*GetGroupLogsResult, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
-	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody)
+	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip)
 	if err != nil {
 		return nil, err
 	}

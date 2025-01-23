@@ -42,6 +42,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			0,
 			0,
 			errMsg,
+			c.ClientIP(),
 			nil,
 		)
 		return openai.ErrorWrapperWithMessage(
@@ -76,6 +77,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			0,
 			0,
 			err.Error(),
+			c.ClientIP(),
 			detail,
 		)
 		return openai.ErrorWrapper(err, "invalid_request", http.StatusBadRequest)
@@ -111,6 +113,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			preCheckReq.InputPrice,
 			preCheckReq.OutputPrice,
 			respErr.Error.JSONOrEmpty(),
+			c.ClientIP(),
 			detail,
 		)
 		return respErr
@@ -125,6 +128,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		preCheckReq.InputPrice,
 		preCheckReq.OutputPrice,
 		"",
+		c.ClientIP(),
 		nil,
 	)
 
