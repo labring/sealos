@@ -6,6 +6,7 @@ import { LineStyleMap } from '@/constants/monitor';
 import { Flex, FlexProps, Text } from '@chakra-ui/react';
 import MyIcon from '../Icon';
 import { useTranslation } from 'next-i18next';
+import styles from './index.module.css';
 
 type MonitorChart = FlexProps & {
   data: {
@@ -45,58 +46,26 @@ const MonitorChart = ({
       tooltip: {
         trigger: 'axis',
         enterable: true,
+        triggerOn: 'click',
+        extraCssText: `
+          box-shadow: none; 
+          padding: 0; 
+          background-color: transparent; 
+          border: none;
+        `,
         formatter: (params: any) => {
           let axisValue = params[0]?.axisValue;
           return `
-            <div style="
-              background: white;
-              border-radius: 4px;
-              padding: 12px;
-            ">
-              <div style="
-                font-size: 12px;
-                color: #666;
-                margin-bottom: 8px;
-                border-bottom: 1px solid #eee;
-                padding-bottom: 8px;
-              ">${axisValue}</div>
+            <div class="${styles.tooltip}">
+              <div class="${styles.tooltipHeader}">${axisValue}</div>
               ${params
                 .map(
                   (item: any) => `
-                    <div style="
-                      display: flex;
-                      align-items: center;
-                      margin-bottom: 6px;
-                    ">
-                      <span style="
-                        display: inline-block;
-                        width: 8px;
-                        height: 8px;
-                        border-radius: 50%;
-                        background: ${item.color};
-                        margin-right: 8px;
-                      "></span>
-                      <span style="
-                        color: #333;
-                        margin-right: 12px;
-                      ">${item.seriesName}</span>
-                      <span style="
-                        font-weight: 500;
-                        margin-right: 12px;
-                      ">${item.value}${unit || ''}</span>
-                      <button style="
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                        margin-left: auto;
-                        background: #F4F4F7;
-                        color: #485264;
-                        border: none;
-                        padding: 2px 8px;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 12px;
-                      " onclick="(() => {
+                    <div class="${styles.tooltipItem}">
+                      <span class="${styles.tooltipDot}" style="background: ${item.color}"></span>
+                      <span class="${styles.tooltipName}">${item.seriesName}</span>
+                      <span class="${styles.tooltipValue}">${item.value}${unit || ''}</span>
+                      <button class="${styles.tooltipButton}" onclick="(() => {
                         const currentUrl = window.location.href;
                         const urlParams = currentUrl.split('?')[1] || '';
                         const baseUrl = window.location.pathname.replace('/monitor', '/logs');
@@ -104,10 +73,11 @@ const MonitorChart = ({
                         window.location.href = baseUrl + separator + urlParams + (urlParams ? '&' : '?') + 'pod=${
                           item.seriesName
                         }';
-                      })()">${t('logs')} 
-<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M6.64645 2.64645C6.45118 2.84171 6.45118 3.15829 6.64645 3.35355L8.79289 5.5H2C1.72386 5.5 1.5 5.72386 1.5 6C1.5 6.27614 1.72386 6.5 2 6.5H8.79289L6.64645 8.64645C6.45118 8.84171 6.45118 9.15829 6.64645 9.35355C6.84171 9.54882 7.15829 9.54882 7.35355 9.35355L10.3536 6.35355C10.5488 6.15829 10.5488 5.84171 10.3536 5.64645L7.35355 2.64645C7.15829 2.45118 6.84171 2.45118 6.64645 2.64645Z" fill="#667085"/>
-</svg></button>
+                      })()">${t('logs')}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path fill-rule="evenodd" clip-rule="evenodd" d="M6.64645 2.64645C6.45118 2.84171 6.45118 3.15829 6.64645 3.35355L8.79289 5.5H2C1.72386 5.5 1.5 5.72386 1.5 6C1.5 6.27614 1.72386 6.5 2 6.5H8.79289L6.64645 8.64645C6.45118 8.84171 6.45118 9.15829 6.64645 9.35355C6.84171 9.54882 7.15829 9.54882 7.35355 9.35355L10.3536 6.35355C10.5488 6.15829 10.5488 5.84171 10.3536 5.64645L7.35355 2.64645C7.15829 2.45118 6.84171 2.45118 6.64645 2.64645Z" fill="#667085"/>
+                        </svg>
+                      </button>
                     </div>
                   `
                 )
@@ -115,6 +85,7 @@ const MonitorChart = ({
             </div>
           `;
         },
+
         // @ts-ignore
         position: (point, params, dom, rect, size) => {
           let xPos = point[0];
