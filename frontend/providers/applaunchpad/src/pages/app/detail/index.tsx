@@ -75,7 +75,7 @@ const AppDetail = ({ appName }: { appName: string }) => {
         <Box bg={'white'} borderRadius={'8px'} mb={'6px'}>
           <AdvancedInfo app={appDetail} />
         </Box>
-        <Box bg={'white'} borderRadius={'lg'} h={0} flex={1} minH={'300px'}>
+        <Box bg={'white'} borderRadius={'lg'} flex={1}>
           <Pods pods={appDetailPods} appName={appName} />
         </Box>
       </Flex>

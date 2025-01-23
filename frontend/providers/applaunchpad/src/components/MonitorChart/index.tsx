@@ -46,7 +46,6 @@ const MonitorChart = ({
       tooltip: {
         trigger: 'axis',
         enterable: true,
-        triggerOn: 'click',
         extraCssText: `
           box-shadow: none; 
           padding: 0; 

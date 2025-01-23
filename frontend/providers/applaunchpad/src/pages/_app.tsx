@@ -186,7 +186,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          {/* <button
+          <button
             onClick={() => {
               const lastLang = getLangStore();
               let lang = lastLang === 'en' ? 'zh' : 'en';
@@ -198,7 +198,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             }}
           >
             changeLanguage
-          </button> */}
+          </button>
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />

@@ -435,7 +435,7 @@ const Form = ({
           pr={`${pxVal}px`}
           height={'100%'}
           position={'relative'}
-          overflowY={'scroll'}
+          // overflowY={'scroll'}
         >
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
