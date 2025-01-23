@@ -1,4 +1,4 @@
-import { subDays } from 'date-fns';
+import { subDays, subMinutes } from 'date-fns';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
@@ -15,7 +15,7 @@ type DateTimeState = {
 
 const useDateTimeStore = create<DateTimeState>()(
   immer((set, get) => ({
-    startDateTime: subDays(new Date(), 7),
+    startDateTime: subMinutes(new Date(), 30),
     endDateTime: new Date(),
     timeZone: 'local',
     refreshInterval: 0,

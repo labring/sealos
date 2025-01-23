@@ -108,10 +108,11 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
     const currentTimeRange = formatTimeRange(startDateTime, endDateTime);
     return (
       recentDateList.find((item) => item.compareValue === currentTimeRange) ||
-      recentDateList.find((item) => item.compareValue === '7d') ||
+      recentDateList.find((item) => item.compareValue === '30m') ||
       recentDateList[0]
     );
   }, [startDateTime, endDateTime, recentDateList]);
+  console.log(defaultRecentDate, 'defaultRecentDate');
 
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
