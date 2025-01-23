@@ -137,15 +137,16 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 		return nil, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
 	}
 
+	ctx := context.Background()
 	if timeout := config.GetTimeoutWithModelType()[meta.Mode]; timeout > 0 {
-		rawRequest := c.Request
-		ctx, cancel := context.WithTimeout(rawRequest.Context(), time.Duration(timeout)*time.Second)
+		// donot use c.Request.Context() because it will be canceled by the client
+		// which will cause the usage of non-streaming requests to be unable to be recorded
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
 		defer cancel()
-		c.Request = rawRequest.WithContext(ctx)
-		defer func() { c.Request = rawRequest }()
 	}
 
-	req, err := http.NewRequestWithContext(c.Request.Context(), method, fullRequestURL, body)
+	req, err := http.NewRequestWithContext(ctx, method, fullRequestURL, body)
 	if err != nil {
 		return nil, openai.ErrorWrapperWithMessage("new request failed: "+err.Error(), "new_request_failed", http.StatusBadRequest)
 	}

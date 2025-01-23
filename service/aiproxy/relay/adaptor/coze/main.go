@@ -171,7 +171,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	var responseText string
 	if len(fullTextResponse.Choices) > 0 {

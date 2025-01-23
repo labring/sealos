@@ -103,7 +103,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 	}
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return usage, nil
 }
