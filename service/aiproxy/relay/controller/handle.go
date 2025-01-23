@@ -119,6 +119,11 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		return respErr
 	}
 
+	amount := consume.CalculateAmount(usage, preCheckReq.InputPrice, preCheckReq.OutputPrice)
+	if amount > 0 {
+		log.Data["amount"] = amount
+	}
+
 	// 6. Post consume
 	consume.AsyncConsume(
 		postGroupConsumer,

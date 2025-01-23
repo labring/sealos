@@ -71,7 +71,9 @@ func Consume(
 		return
 	}
 
-	amount := calculateAmount(ctx, usage, inputPrice, outputPrice, postGroupConsumer, meta)
+	amount := CalculateAmount(usage, inputPrice, outputPrice)
+
+	amount = consumeAmount(ctx, amount, postGroupConsumer, meta)
 
 	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount)
 	if err != nil {
@@ -79,12 +81,21 @@ func Consume(
 	}
 }
 
-func calculateAmount(
+func consumeAmount(
 	ctx context.Context,
-	usage *relaymodel.Usage,
-	inputPrice, outputPrice float64,
+	amount float64,
 	postGroupConsumer balance.PostGroupConsumer,
 	meta *meta.Meta,
+) float64 {
+	if amount > 0 {
+		return processGroupConsume(ctx, amount, postGroupConsumer, meta)
+	}
+	return 0
+}
+
+func CalculateAmount(
+	usage *relaymodel.Usage,
+	inputPrice, outputPrice float64,
 ) float64 {
 	if usage == nil {
 		return 0
@@ -104,13 +115,8 @@ func calculateAmount(
 	completionAmount := decimal.NewFromInt(int64(completionTokens)).
 		Mul(decimal.NewFromFloat(outputPrice)).
 		Div(decimal.NewFromInt(model.PriceUnit))
-	amount := promptAmount.Add(completionAmount).InexactFloat64()
 
-	if amount > 0 {
-		return processGroupConsume(ctx, amount, postGroupConsumer, meta)
-	}
-
-	return 0
+	return promptAmount.Add(completionAmount).InexactFloat64()
 }
 
 func processGroupConsume(
