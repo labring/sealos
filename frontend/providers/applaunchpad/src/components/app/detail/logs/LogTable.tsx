@@ -55,58 +55,56 @@ export const LogTable = ({
   const isJsonMode = formHook.watch('isJsonMode');
   const { exportLogs } = useLogStore();
 
-  const generateFieldList = useCallback(
-    (data: any[], prevFieldList: FieldItem[] = []) => {
-      if (!data.length) return [];
+  const generateFieldList = useCallback((data: any[], prevFieldList: FieldItem[] = []) => {
+    if (!data.length) return [];
 
-      if (!isJsonMode) {
-        return [
-          {
-            value: 'time',
-            label: 'Time',
-            checked: true,
-            accessorKey: '_time'
-          },
-          {
-            value: 'message',
-            label: 'Message',
-            checked: true,
-            accessorKey: '_msg'
-          }
-        ];
-      }
+    // if (!isJsonMode) {
+    //   return [
+    //     {
+    //       value: 'time',
+    //       label: 'Time',
+    //       checked: true,
+    //       accessorKey: '_time'
+    //     },
+    //     {
+    //       value: 'message',
+    //       label: 'Message',
+    //       checked: true,
+    //       accessorKey: '_msg'
+    //     }
+    //   ];
+    // }
 
-      const uniqueKeys = new Set<string>();
-      data.forEach((item) => {
-        Object.keys(item).forEach((key) => {
-          if (key !== '_msg') {
-            uniqueKeys.add(key);
-          }
-        });
+    const uniqueKeys = new Set<string>();
+    data.forEach((item) => {
+      Object.keys(item).forEach((key) => {
+        uniqueKeys.add(key);
       });
+    });
 
-      const prevFieldStates = prevFieldList.reduce((acc, field) => {
-        acc[field.value] = field.checked;
-        return acc;
-      }, {} as Record<string, boolean>);
+    const prevFieldStates = prevFieldList.reduce((acc, field) => {
+      acc[field.value] = field.checked;
+      return acc;
+    }, {} as Record<string, boolean>);
 
-      return Array.from(uniqueKeys).map((key) => ({
-        value: key,
-        label: key,
-        checked: key in prevFieldStates ? prevFieldStates[key] : true,
-        accessorKey: key
-      }));
-    },
-    [isJsonMode]
-  );
+    return Array.from(uniqueKeys).map((key) => ({
+      value: key,
+      label: key,
+      checked: key in prevFieldStates ? prevFieldStates[key] : true,
+      accessorKey: key
+    }));
+  }, []);
 
   const [fieldList, setFieldList] = useState<FieldItem[]>(() => generateFieldList(data, []));
 
   useEffect(() => {
     setFieldList((prevFieldList) => generateFieldList(data, prevFieldList));
+    const excludeFields = ['_time', '_msg', 'container', 'pod', 'stream'];
     formHook.setValue(
       'filterKeys',
-      generateFieldList(data).map((field) => ({ value: field.value, label: field.label }))
+      generateFieldList(data)
+        .filter((field) => !excludeFields.includes(field.value))
+        .map((field) => ({ value: field.value, label: field.label }))
     );
   }, [data, generateFieldList, isJsonMode, formHook]);
 
@@ -290,6 +288,7 @@ export const LogTable = ({
           isLoading={isLoading}
           overflowY={'auto'}
           maxH={'500px'}
+          isHeaderFixed={true}
           tdStyle={{
             p: '10px 24px',
             borderBottom: 'none'

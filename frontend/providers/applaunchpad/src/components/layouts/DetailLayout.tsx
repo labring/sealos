@@ -46,8 +46,8 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
     },
     {
       refetchOnMount: true,
-      refetchInterval: router.pathname === ROUTES.OVERVIEW ? 3000 : 10000,
-      staleTime: router.pathname === ROUTES.OVERVIEW ? 3000 : 10000
+      refetchInterval: router.pathname === ROUTES.OVERVIEW ? 3000 : 5000,
+      staleTime: router.pathname === ROUTES.OVERVIEW ? 3000 : 5000
     }
   );
 

@@ -56,7 +56,7 @@ export default function LogsPage({ appName }: { appName: string }) {
     defaultValues: {
       pods: [],
       containers: [],
-      limit: 10,
+      limit: 100,
       keyword: '',
       isJsonMode: false,
       isOnlyStderr: false,
@@ -118,8 +118,14 @@ export default function LogsPage({ appName }: { appName: string }) {
         limit: formHook.watch('limit').toString(),
         jsonMode: formHook.watch('isJsonMode').toString(),
         keyword: formHook.watch('keyword'),
-        pod: selectedPods.map((pod) => pod.value),
-        container: selectedContainers.map((container) => container.value),
+        pod:
+          selectedPods.length === formHook.watch('pods').length
+            ? []
+            : selectedPods.map((pod) => pod.value),
+        container:
+          selectedContainers.length === formHook.watch('containers').length
+            ? []
+            : selectedContainers.map((container) => container.value),
         jsonQuery: jsonFilters
       }),
     {
@@ -154,8 +160,14 @@ export default function LogsPage({ appName }: { appName: string }) {
         numberLevel: timeRange.slice(-1),
         time: timeRange,
         stderrMode: formHook.watch('isOnlyStderr').toString(),
-        pod: selectedPods.map((pod) => pod.value),
-        container: selectedContainers.map((container) => container.value)
+        pod:
+          selectedPods.length === formHook.watch('pods').length
+            ? []
+            : selectedPods.map((pod) => pod.value),
+        container:
+          selectedContainers.length === formHook.watch('containers').length
+            ? []
+            : selectedContainers.map((container) => container.value)
       }),
     {
       refetchInterval: refreshInterval,
