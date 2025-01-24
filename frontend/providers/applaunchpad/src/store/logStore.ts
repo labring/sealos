@@ -5,6 +5,8 @@ import { devtools } from 'zustand/middleware';
 interface LogState {
   rawLogs: string;
   parsedLogs: {
+    container: string;
+    pod: string;
     logs_total: string;
     _msg: string;
     _time: string;

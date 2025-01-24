@@ -58,23 +58,6 @@ export const LogTable = ({
   const generateFieldList = useCallback((data: any[], prevFieldList: FieldItem[] = []) => {
     if (!data.length) return [];
 
-    // if (!isJsonMode) {
-    //   return [
-    //     {
-    //       value: 'time',
-    //       label: 'Time',
-    //       checked: true,
-    //       accessorKey: '_time'
-    //     },
-    //     {
-    //       value: 'message',
-    //       label: 'Message',
-    //       checked: true,
-    //       accessorKey: '_msg'
-    //     }
-    //   ];
-    // }
-
     const uniqueKeys = new Set<string>();
     data.forEach((item) => {
       Object.keys(item).forEach((key) => {
@@ -95,7 +78,7 @@ export const LogTable = ({
     }));
   }, []);
 
-  const [fieldList, setFieldList] = useState<FieldItem[]>(() => generateFieldList(data, []));
+  const [fieldList, setFieldList] = useState<FieldItem[]>([]);
 
   useEffect(() => {
     setFieldList((prevFieldList) => generateFieldList(data, prevFieldList));
@@ -106,7 +89,7 @@ export const LogTable = ({
         .filter((field) => !excludeFields.includes(field.value))
         .map((field) => ({ value: field.value, label: field.label }))
     );
-  }, [data, generateFieldList, isJsonMode, formHook]);
+  }, [data, generateFieldList, formHook]);
 
   useEffect(() => {
     const visibleCount = fieldList.filter((field) => field.checked).length;
@@ -133,6 +116,11 @@ export const LogTable = ({
               fontSize={'12px'}
               fontWeight={400}
               lineHeight={'16px'}
+              {...(field.accessorKey === '_msg' && {
+                maxW: '600px',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word'
+              })}
             >
               {value?.toString() || ''}
             </Text>
