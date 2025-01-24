@@ -63,6 +63,8 @@ export function formatTimeRange(startTime: Date, endTime: Date): string {
     return `${diffMinutes}m`;
   } else if (diffHours < 24) {
     return `${diffHours}h`;
+  } else if (diffDays === 1) {
+    return '24h';
   } else if (diffDays < 30) {
     return `${diffDays}d`;
   } else {

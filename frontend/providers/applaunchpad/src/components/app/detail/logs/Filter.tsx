@@ -1,6 +1,6 @@
 import MyIcon from '@/components/Icon';
 import { JsonFilterItem, LogsFormData } from '@/pages/app/detail/logs';
-import { Button, ButtonProps, Flex, Input, Switch, Text } from '@chakra-ui/react';
+import { Button, ButtonProps, Center, Flex, Input, Switch, Text } from '@chakra-ui/react';
 import { MySelect } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
@@ -75,7 +75,6 @@ export const Filter = ({
           />
           <Button
             size={'sm'}
-            variant={'primary'}
             leftIcon={<MyIcon name={'search'} color={'white'} w={'16px'} h={'16px'} />}
             onClick={() => {
               formHook.setValue('keyword', inputKeyword);
@@ -86,6 +85,7 @@ export const Filter = ({
           </Button>
         </Flex>
       </Flex>
+
       {/* json mode */}
       {isJsonMode && (
         <Flex
@@ -97,7 +97,7 @@ export const Filter = ({
           flexWrap={'wrap'}
           borderRadius={'0px 8px 8px 8px'}
         >
-          {fields.length === 0 && (
+          {fields.length > 0 ? (
             <AppendJSONFormItemButton
               onClick={() =>
                 append({
@@ -107,7 +107,20 @@ export const Filter = ({
                 })
               }
             />
+          ) : (
+            <Center flex={1}>
+              <Text
+                fontSize={'12px'}
+                fontWeight={'400'}
+                lineHeight={'16px'}
+                color={'grayModern.500'}
+                py={'4px'}
+              >
+                {t('no_data_available')}
+              </Text>
+            </Center>
           )}
+
           {fields.map((field, index) => (
             <Flex key={field.id} w={'fit-content'} gap={'12px'}>
               <MySelect
@@ -126,11 +139,14 @@ export const Filter = ({
                 bg={'white'}
                 color={'grayModern.600'}
                 value={formHook.watch(`jsonFilters.${index}.mode`)}
-                list={[
-                  { value: '=', label: t('equal') },
-                  { value: '!=', label: t('not_equal') },
-                  { value: '~', label: t('contains') }
-                ]}
+                list={
+                  [
+                    { value: '=', label: t('equal') },
+                    { value: '!=', label: t('not_equal') },
+                    { value: '~', label: t('contains') },
+                    { value: '!~', label: t('not_contains') }
+                  ] as { value: JsonFilterItem['mode']; label: string }[]
+                }
                 onchange={(val: string) =>
                   formHook.setValue(`jsonFilters.${index}.mode`, val as JsonFilterItem['mode'])
                 }

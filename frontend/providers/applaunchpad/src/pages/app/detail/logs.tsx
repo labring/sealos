@@ -1,12 +1,9 @@
 import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { Box, useTheme, Flex, Divider } from '@chakra-ui/react';
-
 import { useAppStore } from '@/store/app';
-import { useToast } from '@/hooks/useToast';
 import { serviceSideProps } from '@/utils/i18n';
 import DetailLayout from '@/components/layouts/DetailLayout';
-
 import { Header } from '@/components/app/detail/logs/Header';
 import { Filter } from '@/components/app/detail/logs/Filter';
 import { LogTable } from '@/components/app/detail/logs/LogTable';
@@ -20,11 +17,12 @@ import { formatTimeRange } from '@/utils/timeRange';
 import { downLoadBold } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
 import { useRouter } from 'next/router';
+import { useMessage } from '@sealos/ui';
 
 export interface JsonFilterItem {
   key: string;
   value: string;
-  mode: '=' | '!=' | '~';
+  mode: '=' | '!=' | '~' | '!~';
 }
 
 export interface LogsFormData {
@@ -45,7 +43,7 @@ export interface LogsFormData {
 export default function LogsPage({ appName }: { appName: string }) {
   const theme = useTheme();
   const router = useRouter();
-  const { toast } = useToast();
+  const { message } = useMessage();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -180,7 +178,9 @@ export default function LogsPage({ appName }: { appName: string }) {
   );
 
   const refetchData = () => {
-    console.log('refetchData');
+    message({
+      title: t('refetching_success')
+    });
     refetchLogsData();
     refetchLogCountsData();
   };
