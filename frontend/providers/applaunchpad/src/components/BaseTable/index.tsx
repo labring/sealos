@@ -28,16 +28,22 @@ export function BaseTable<T extends unknown>({
   table,
   isLoading,
   tdStyle,
+  isHeaderFixed = false,
   ...props
 }: {
   table: ReactTable<T>;
   isLoading: boolean;
   tdStyle?: HTMLChakraProps<'td'>;
+  isHeaderFixed?: boolean;
 } & TableContainerProps) {
   return (
-    <TableContainer {...props}>
+    <TableContainer {...props} position={'relative'}>
       <Table variant="unstyled" width={'full'}>
-        <Thead>
+        <Thead
+          position={isHeaderFixed ? 'sticky' : 'relative'}
+          top={0}
+          zIndex={isHeaderFixed ? 2 : 0}
+        >
           {table.getHeaderGroups().map((headers) => {
             return (
               <Tr key={headers.id}>
