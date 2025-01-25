@@ -48,7 +48,8 @@ export default function MonitorPage({ appName }: { appName: string }) {
         end: endDateTime.getTime()
       }),
     {
-      refetchInterval: refreshInterval
+      refetchInterval: refreshInterval,
+      enabled: !!appDetailPods?.[0]?.podName
     }
   );
 
@@ -74,7 +75,8 @@ export default function MonitorPage({ appName }: { appName: string }) {
         end: endDateTime.getTime()
       }),
     {
-      refetchInterval: refreshInterval
+      refetchInterval: refreshInterval,
+      enabled: !!appDetailPods?.[0]?.podName
     }
   );
 
