@@ -149,13 +149,16 @@ export default function LogsPage({ appName }: { appName: string }) {
       timeRange,
       formHook.watch('isOnlyStderr'),
       selectedPods,
-      selectedContainers
+      selectedContainers,
+      formHook.watch('isJsonMode'),
+      formHook.watch('keyword')
     ],
     () =>
       getAppLogs({
         app: appName,
         numberMode: 'true',
         numberLevel: timeRange.slice(-1),
+        jsonMode: formHook.watch('isJsonMode').toString(),
         time: timeRange,
         stderrMode: formHook.watch('isOnlyStderr').toString(),
         pod:
@@ -165,7 +168,9 @@ export default function LogsPage({ appName }: { appName: string }) {
         container:
           selectedContainers.length === formHook.watch('containers').length
             ? []
-            : selectedContainers.map((container) => container.value)
+            : selectedContainers.map((container) => container.value),
+        jsonQuery: jsonFilters,
+        keyword: formHook.watch('keyword')
       }),
     {
       refetchInterval: refreshInterval,
@@ -187,41 +192,39 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   return (
     <DetailLayout appName={appName}>
-      <Box flex={1} borderRadius="lg" overflowY={'auto'}>
-        <>
-          <Flex
-            mb={'6px'}
-            bg={'white'}
-            flexDir={'column'}
-            border={theme.borders.base}
-            borderRadius={'lg'}
-          >
-            <Header formHook={formHook} refetchData={refetchData} />
-            <Divider />
-            <Filter formHook={formHook} refetchData={refetchData} />
-          </Flex>
-          <Box
-            mb={'6px'}
-            p={'20px 24px'}
-            bg={'white'}
-            border={theme.borders.base}
-            borderRadius={'lg'}
-            flexShrink={0}
-          >
-            <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
-          </Box>
-          <Box
-            bg={'white'}
-            p={'20px 24px'}
-            border={theme.borders.base}
-            borderRadius={'lg'}
-            flex={1}
-            minH={'400px'}
-          >
-            <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
-          </Box>
-        </>
-      </Box>
+      <Flex flexDirection={'column'} flex={1} borderRadius="lg" overflowY={'auto'}>
+        <Flex
+          mb={'6px'}
+          bg={'white'}
+          flexDir={'column'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
+        >
+          <Header formHook={formHook} refetchData={refetchData} />
+          <Divider />
+          <Filter formHook={formHook} refetchData={refetchData} />
+        </Flex>
+        <Box
+          mb={'6px'}
+          p={'20px 24px'}
+          bg={'white'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
+          flexShrink={0}
+        >
+          <LogCounts logCountsData={logCounts || []} isLogCountsLoading={isLogCountsLoading} />
+        </Box>
+        <Box
+          bg={'white'}
+          p={'20px 24px'}
+          border={theme.borders.base}
+          borderRadius={'lg'}
+          flex={1}
+          height={'0px'}
+        >
+          <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
+        </Box>
+      </Flex>
     </DetailLayout>
   );
 }

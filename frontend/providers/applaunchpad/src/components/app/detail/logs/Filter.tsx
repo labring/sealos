@@ -19,6 +19,8 @@ export const Filter = ({
 
   const isJsonMode = formHook.watch('isJsonMode');
   const isOnlyStderr = formHook.watch('isOnlyStderr');
+  const filterKeys = formHook.watch('filterKeys');
+
   const { fields, append, remove } = useFieldArray({
     control: formHook.control,
     name: 'jsonFilters'
@@ -97,7 +99,7 @@ export const Filter = ({
           flexWrap={'wrap'}
           borderRadius={'0px 8px 8px 8px'}
         >
-          {fields.length > 0 ? (
+          {filterKeys.length > 0 || fields.length > 0 ? (
             <AppendJSONFormItemButton
               onClick={() =>
                 append({

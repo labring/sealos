@@ -140,7 +140,7 @@ export const LogTable = ({
   });
 
   return (
-    <Flex flexDir={'column'} w={'100%'}>
+    <Flex flexDir={'column'} w={'100%'} h={'100%'}>
       <Flex alignItems={'center'} gap={4} justifyContent={'space-between'}>
         <Flex alignItems={'center'} gap={4}>
           <Text
@@ -271,11 +271,11 @@ export const LogTable = ({
 
       {data.length > 0 ? (
         <BaseTable
+          height={'100%'}
           mt={'12px'}
           table={table}
           isLoading={isLoading}
           overflowY={'auto'}
-          maxH={'500px'}
           isHeaderFixed={true}
           tdStyle={{
             p: '10px 24px',
