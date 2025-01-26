@@ -8,7 +8,7 @@ RESET='\033[0m'
 
 # Configurations
 CLOUD_DIR="/root/.sealos/cloud"
-SEALOS_VERSION="v5.0.1"
+SEALOS_VERSION="v5.0.2"
 cloud_version="latest"
 #mongodb_version="mongodb-6.0"
 #master_ips=
