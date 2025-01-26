@@ -423,9 +423,10 @@ spec:
         type: NodePort
       kind: DaemonSet
       tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        - effect: "NoExecute"
+          operator: "Exists"
+        - effect: "NoSchedule"
+          operator: "Exists"
       resources:
         requests:
           cpu: 256m
@@ -436,11 +437,12 @@ spec:
       autoscaling:
         enabled: true
       nodeSelector:
-        node-role.kubernetes.io/control-plane: ''
+        node-role.kubernetes.io/control-plane: "true"
       tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        - effect: "NoExecute"
+          operator: "Exists"
+        - effect: "NoSchedule"
+          operator: "Exists"
       resources:
         requests:
           cpu: 256m
