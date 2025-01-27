@@ -20,7 +20,8 @@ export class UriHandler {
       uri.scheme !== 'vscode' &&
       uri.scheme !== 'cursor' &&
       uri.scheme !== 'vscode-insiders' &&
-      uri.scheme !== 'windsurf'
+      uri.scheme !== 'windsurf' &&
+      uri.scheme !== 'trae'
     ) {
       return
     }

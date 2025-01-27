@@ -254,6 +254,14 @@ export const ideObj = {
     value: 'windsurf',
     sortId: 3
   },
+  trae: {
+    label: 'Trae',
+    menuLabel: 'Trae',
+    icon: 'trae',
+    prefix: 'trae://',
+    value: 'trae',
+    sortId: 4
+  },
   jetbrains: {
     label: 'JetBrains',
     icon: 'jetbrains',
