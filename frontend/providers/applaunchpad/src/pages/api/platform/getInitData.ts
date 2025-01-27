@@ -51,6 +51,9 @@ export const defaultAppConfig: AppConfigType = {
       },
       billing: {
         url: 'http://account-service.account-system.svc:2333'
+      },
+      log: {
+        url: 'http://localhost:8080'
       }
     },
     appResourceFormSliderConfig: {

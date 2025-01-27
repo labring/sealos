@@ -54,7 +54,16 @@ const MySelect = (
     }
   });
 
-  const activeMenu = useMemo(() => list.find((item) => item.value === value), [list, value]);
+  const activeMenu = useMemo(() => {
+    const foundItem = list.find((item) => item.value === value);
+    if (!foundItem && value) {
+      return {
+        label: value,
+        value: value
+      };
+    }
+    return foundItem;
+  }, [list, value]);
 
   return (
     <Menu autoSelect={false} isOpen={isOpen} onOpen={onOpen} onClose={onClose}>
