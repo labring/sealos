@@ -170,7 +170,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
+			log.Warn("error rendering stream response: " + err.Error())
 		}
 	}
 
