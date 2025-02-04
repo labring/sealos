@@ -427,7 +427,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 		err = render.ObjectData(c, response)
 		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
+			log.Warn("error rendering stream response: " + err.Error())
 		}
 	}
 

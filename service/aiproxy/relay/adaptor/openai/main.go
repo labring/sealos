@@ -63,11 +63,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
-				continue // just ignore the error
-			}
-			if len(streamResponse.Choices) == 0 && streamResponse.Usage == nil {
-				// but for empty choice and no usage, we should not pass it to client, this is for azure
-				continue // just ignore empty choice
+				continue
 			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
@@ -75,7 +71,6 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			for _, choice := range streamResponse.Choices {
 				responseText += choice.Delta.StringContent()
 			}
-			// streamResponse.Model = meta.ActualModelName
 			respMap := make(map[string]any)
 			err = json.Unmarshal(conv.StringToBytes(data), &respMap)
 			if err != nil {
@@ -87,7 +82,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			err = render.ObjectData(c, respMap)
 			if err != nil {
-				log.Error("error rendering stream response: " + err.Error())
+				log.Warn("error rendering stream response: " + err.Error())
 				continue
 			}
 		case relaymode.Completions:

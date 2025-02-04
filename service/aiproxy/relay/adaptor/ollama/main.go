@@ -162,7 +162,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 		response := streamResponseOllama2OpenAI(&ollamaResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
+			log.Warn("error rendering stream response: " + err.Error())
 		}
 	}
 

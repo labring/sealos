@@ -160,7 +160,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
 		err = render.ObjectData(c, response)
 		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
+			log.Warn("error rendering stream response: " + err.Error())
 		}
 	}
 
