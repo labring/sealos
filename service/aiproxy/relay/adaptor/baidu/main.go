@@ -158,10 +158,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			usage.CompletionTokens = baiduResponse.Usage.TotalTokens - baiduResponse.Usage.PromptTokens
 		}
 		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Warn("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {

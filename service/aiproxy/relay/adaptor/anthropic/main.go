@@ -337,10 +337,7 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 				lastToolCallChoice = choice
 			}
 		}
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Warn("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {

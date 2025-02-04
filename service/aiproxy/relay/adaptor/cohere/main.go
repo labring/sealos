@@ -168,10 +168,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		response.Model = c.GetString("original_model")
 		response.Created = createdTime
 
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Warn("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {
