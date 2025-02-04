@@ -80,11 +80,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
 				respMap["model"] = meta.OriginModel
 			}
-			err = render.ObjectData(c, respMap)
-			if err != nil {
-				log.Warn("error rendering stream response: " + err.Error())
-				continue
-			}
+			_ = render.ObjectData(c, respMap)
 		case relaymode.Completions:
 			var streamResponse CompletionsStreamResponse
 			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
