@@ -13,6 +13,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
 
@@ -791,29 +792,46 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 		return nil, errors.New("end time is before start time")
 	}
 
-	chartData, err := getChartData("", start, end, "", modelName, timeSpan)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		chartData []*HourlyChartData
+		models    []string
+		rpm       int64
+		tpm       int64
+	)
 
-	models, err := getLogDistinctValues[string]("model", "", start, end)
-	if err != nil {
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		var err error
+		chartData, err = getChartData("", start, end, "", modelName, timeSpan)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", "", start, end)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		rpm, err = getRPM("", end, "", modelName)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tpm, err = getTPM("", end, "", modelName)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	totalCount := sumTotalCount(chartData)
 	exceptionCount := sumExceptionCount(chartData)
 	usedAmount := sumUsedAmount(chartData)
-
-	rpm, err := getRPM("", end, "", modelName)
-	if err != nil {
-		return nil, err
-	}
-
-	tpm, err := getTPM("", end, "", modelName)
-	if err != nil {
-		return nil, err
-	}
 
 	return &DashboardResponse{
 		ChartData:      chartData,
@@ -837,34 +855,53 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 		return nil, errors.New("end time is before start time")
 	}
 
-	chartData, err := getChartData(group, start, end, tokenName, modelName, timeSpan)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		chartData  []*HourlyChartData
+		tokenNames []string
+		models     []string
+		rpm        int64
+		tpm        int64
+	)
 
-	tokenNames, err := getLogDistinctValues[string]("token_name", group, start, end)
-	if err != nil {
-		return nil, err
-	}
+	g := new(errgroup.Group)
 
-	models, err := getLogDistinctValues[string]("model", group, start, end)
-	if err != nil {
+	g.Go(func() error {
+		var err error
+		chartData, err = getChartData(group, start, end, tokenName, modelName, timeSpan)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tokenNames, err = getLogDistinctValues[string]("token_name", group, start, end)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", group, start, end)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		rpm, err = getRPM(group, end, tokenName, modelName)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tpm, err = getTPM(group, end, tokenName, modelName)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	totalCount := sumTotalCount(chartData)
 	exceptionCount := sumExceptionCount(chartData)
 	usedAmount := sumUsedAmount(chartData)
-
-	rpm, err := getRPM(group, end, tokenName, modelName)
-	if err != nil {
-		return nil, err
-	}
-
-	tpm, err := getTPM(group, end, tokenName, modelName)
-	if err != nil {
-		return nil, err
-	}
 
 	return &GroupDashboardResponse{
 		DashboardResponse: DashboardResponse{
