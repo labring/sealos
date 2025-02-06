@@ -536,16 +536,18 @@ func (m *modelConfigMapCache) GetModelConfig(model string) (*ModelConfig, bool) 
 
 var _ ModelConfigCache = (*disabledModelConfigCache)(nil)
 
-type disabledModelConfigCache struct{}
+type disabledModelConfigCache struct {
+	modelConfigs ModelConfigCache
+}
 
 func (d *disabledModelConfigCache) GetModelConfig(model string) (*ModelConfig, bool) {
+	if config, ok := d.modelConfigs.GetModelConfig(model); ok {
+		return config, true
+	}
 	return NewDefaultModelConfig(model), true
 }
 
 func initializeModelConfigCache() (ModelConfigCache, error) {
-	if config.GetDisableModelConfig() {
-		return &disabledModelConfigCache{}, nil
-	}
 	modelConfigs, err := GetAllModelConfigs()
 	if err != nil {
 		return nil, err
@@ -555,7 +557,11 @@ func initializeModelConfigCache() (ModelConfigCache, error) {
 		newModelConfigMap[modelConfig.Model] = modelConfig
 	}
 
-	return &modelConfigMapCache{modelConfigMap: newModelConfigMap}, nil
+	configs := &modelConfigMapCache{modelConfigMap: newModelConfigMap}
+	if config.GetDisableModelConfig() {
+		return &disabledModelConfigCache{modelConfigs: configs}, nil
+	}
+	return configs, nil
 }
 
 func initializeChannelModels(channel *Channel) {
