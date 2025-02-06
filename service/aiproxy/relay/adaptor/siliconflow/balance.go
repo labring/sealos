@@ -7,12 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
 
-var _ adaptor.GetBalance = (*Adaptor)(nil)
+var _ adaptor.Balancer = (*Adaptor)(nil)
 
 func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 	u := channel.BaseURL
@@ -25,7 +24,7 @@ func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 		return 0, err
 	}
 	req.Header.Set("Authorization", "Bearer "+channel.Key)
-	res, err := client.HTTPClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return 0, err
 	}

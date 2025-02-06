@@ -33,6 +33,13 @@ func SetAPIRouter(router *gin.Engine) {
 			modelsRoute.GET("/default/:type", controller.ChannelDefaultModelsAndMappingByType)
 		}
 
+		dashboardRoute := apiRouter.Group("/dashboard")
+		{
+			dashboardRoute.GET("/", controller.GetDashboard)
+			dashboardRoute.GET("/:group", controller.GetGroupDashboard)
+			dashboardRoute.GET("/:group/models", controller.GetGroupDashboardModels)
+		}
+
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
@@ -41,16 +48,20 @@ func SetAPIRouter(router *gin.Engine) {
 		}
 		groupRoute := apiRouter.Group("/group")
 		{
-			groupRoute.POST("/", controller.CreateGroup)
-			groupRoute.GET("/:id", controller.GetGroup)
-			groupRoute.DELETE("/:id", controller.DeleteGroup)
-			groupRoute.POST("/:id/status", controller.UpdateGroupStatus)
-			groupRoute.POST("/:id/qpm", controller.UpdateGroupQPM)
+			groupRoute.POST("/:group", controller.CreateGroup)
+			groupRoute.GET("/:group", controller.GetGroup)
+			groupRoute.DELETE("/:group", controller.DeleteGroup)
+			groupRoute.POST("/:group/status", controller.UpdateGroupStatus)
+			groupRoute.POST("/:group/rpm_ratio", controller.UpdateGroupRPMRatio)
+			groupRoute.POST("/:group/rpm", controller.UpdateGroupRPM)
+			groupRoute.POST("/:group/tpm_ratio", controller.UpdateGroupTPMRatio)
+			groupRoute.POST("/:group/tpm", controller.UpdateGroupTPM)
 		}
 
 		optionRoute := apiRouter.Group("/option")
 		{
 			optionRoute.GET("/", controller.GetOptions)
+			optionRoute.GET("/:key", controller.GetOption)
 			optionRoute.PUT("/", controller.UpdateOption)
 			optionRoute.PUT("/batch", controller.UpdateOptions)
 		}
@@ -108,11 +119,13 @@ func SetAPIRouter(router *gin.Engine) {
 			logsRoute.DELETE("/", controller.DeleteHistoryLogs)
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
+			logsRoute.GET("/detail/:log_id", controller.GetLogDetail)
 		}
 		logRoute := apiRouter.Group("/log")
 		{
 			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
+			logRoute.GET("/:group/detail/:log_id", controller.GetGroupLogDetail)
 		}
 
 		modelConfigsRoute := apiRouter.Group("/model_configs")

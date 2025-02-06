@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -25,7 +24,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	if !ok {
 		return 0, fmt.Errorf("invalid channel type: %d", channel.Type)
 	}
-	if getBalance, ok := adaptorI.(adaptor.GetBalance); ok {
+	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
 		if err != nil {
 			return 0, err
@@ -48,7 +47,7 @@ func UpdateChannelBalance(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
+	channel, err := model.GetChannelByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
@@ -72,7 +71,7 @@ func UpdateChannelBalance(c *gin.Context) {
 }
 
 func updateAllChannelsBalance() error {
-	channels, err := model.GetAllChannels(false, false)
+	channels, err := model.GetAllChannels()
 	if err != nil {
 		return err
 	}
@@ -105,7 +104,7 @@ func AutomaticallyUpdateChannels(frequency int) {
 
 // subscription
 func GetSubscription(c *gin.Context) {
-	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
+	group := middleware.GetGroup(c)
 	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
@@ -115,19 +114,19 @@ func GetSubscription(c *gin.Context) {
 		})
 		return
 	}
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	token := middleware.GetToken(c)
 	quota := token.Quota
 	if quota <= 0 {
 		quota = b
 	}
 	c.JSON(http.StatusOK, openai.SubscriptionResponse{
-		HardLimitUSD:       quota / 7,
-		SoftLimitUSD:       b / 7,
-		SystemHardLimitUSD: quota / 7,
+		HardLimitUSD:       quota + token.UsedAmount,
+		SoftLimitUSD:       b,
+		SystemHardLimitUSD: quota + token.UsedAmount,
 	})
 }
 
 func GetUsage(c *gin.Context) {
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
-	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount / 7 * 100})
+	token := middleware.GetToken(c)
+	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount * 100})
 }

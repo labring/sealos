@@ -13,14 +13,15 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.AudioSpeech,
 		Owner:      model.ModelOwnerDoubao,
 		InputPrice: 0.5,
-		Config: map[model.ModelConfigKey]any{
-			model.ModelConfigSupportFormatsKey: []string{
+		RPM:        60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigSupportFormats([]string{
 				"pcm",
 				"mp3",
 				"wav",
 				"ogg_opus",
-			},
-			model.ModelConfigSupportVoicesKey: []string{
+			}),
+			model.WithModelConfigSupportVoices([]string{
 				"zh_female_cancan_mars_bigtts",
 				"zh_female_qingxinnvsheng_mars_bigtts",
 				"zh_female_shuangkuaisisi_moon_bigtts",
@@ -92,8 +93,8 @@ var ModelList = []*model.ModelConfig{
 				"zh_male_qingcang_mars_bigtts",
 				"zh_female_gufengshaoyu_mars_bigtts",
 				"zh_female_wenroushunv_mars_bigtts",
-			},
-		},
+			}),
+		),
 	},
 
 	// {

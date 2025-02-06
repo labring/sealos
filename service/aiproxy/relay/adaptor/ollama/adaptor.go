@@ -40,9 +40,9 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	if request == nil {
-		return nil, nil, errors.New("request is nil")
+		return "", nil, nil, errors.New("request is nil")
 	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
@@ -50,7 +50,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.H
 	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, request)
 	default:
-		return nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}
 }
 

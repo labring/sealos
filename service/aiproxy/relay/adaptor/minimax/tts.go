@@ -19,13 +19,13 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 )
 
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap, err := utils.UnmarshalMap(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 
 	reqMap["text"] = reqMap["input"]
 	delete(reqMap, "input")
@@ -79,10 +79,10 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 
 	body, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return nil, bytes.NewReader(body), nil
+	return http.MethodPost, nil, bytes.NewReader(body), nil
 }
 
 type TTSExtraInfo struct {
@@ -137,10 +137,10 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 
 	_, err = c.Writer.Write(audioBytes)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 
-	usageCharacters := meta.PromptTokens
+	usageCharacters := meta.InputTokens
 	if result.ExtraInfo.UsageCharacters > 0 {
 		usageCharacters = result.ExtraInfo.UsageCharacters
 	}
@@ -161,7 +161,7 @@ func ttsStreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
-	usageCharacters := meta.PromptTokens
+	usageCharacters := meta.InputTokens
 
 	for scanner.Scan() {
 		data := scanner.Text()
@@ -190,7 +190,7 @@ func ttsStreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 
 		_, err = c.Writer.Write(audioBytes)
 		if err != nil {
-			log.Error("write response body failed: " + err.Error())
+			log.Warnf("write response body failed: %v", err)
 		}
 	}
 
