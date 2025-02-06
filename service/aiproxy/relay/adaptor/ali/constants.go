@@ -642,6 +642,33 @@ var ModelList = []*model.ModelConfig{
 		),
 	},
 
+	{
+		Model:       "qwq-32b-preview",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.0035,
+		OutputPrice: 0.007,
+		RPM:         1200,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxInputTokens(30720),
+			model.WithModelConfigMaxOutputTokens(16384),
+		),
+	},
+	{
+		Model:       "qvq-72b-preview",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.012,
+		OutputPrice: 0.036,
+		RPM:         60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxInputTokens(16384),
+			model.WithModelConfigMaxOutputTokens(16384),
+		),
+	},
+
 	// stable-diffusion
 	{
 		Model: "stable-diffusion-xl",

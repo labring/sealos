@@ -9,6 +9,58 @@ import (
 
 var ModelList = []*model.ModelConfig{
 	{
+		Model:       "Doubao-1.5-vision-pro-32k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.003,
+		OutputPrice: 0.009,
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(32768),
+			model.WithModelConfigVision(true),
+		),
+	},
+	{
+		Model:       "Doubao-1.5-pro-32k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.0008,
+		OutputPrice: 0.0020,
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxInputTokens(32768),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
+	},
+	{
+		Model:       "Doubao-1.5-pro-256k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.005,
+		OutputPrice: 0.009,
+		RPM:         2000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(256000),
+			model.WithModelConfigMaxOutputTokens(12000),
+			model.WithModelConfigToolChoice(true),
+		),
+	},
+	{
+		Model:       "Doubao-1.5-lite-32k",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDoubao,
+		InputPrice:  0.0003,
+		OutputPrice: 0.0006,
+		RPM:         15000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigToolChoice(true),
+		),
+	},
+
+	{
 		Model:       "Doubao-vision-lite-32k",
 		Type:        relaymode.ChatCompletions,
 		Owner:       model.ModelOwnerDoubao,
