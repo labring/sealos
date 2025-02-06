@@ -174,11 +174,11 @@ func main() {
 
 	<-ctx.Done()
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
 	log.Info("shutting down http server...")
-	log.Info("max wait time: 120s")
+	log.Info("max wait time: 600s")
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("server forced to shutdown: " + err.Error())
 	} else {
