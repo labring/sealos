@@ -78,7 +78,17 @@ export const generateTransferCrd = ({
     return '';
   }
 };
-
+export enum RechargePaymentState {
+  IDLE = 0,
+  CREATING = 1,
+  PROCESSING = 2,
+  SUCCESS = 3
+}
+export enum RechargePaymentType {
+  Wechat = 'wechat',
+  Stripe = 'stripe',
+  Alipay = 'alipay'
+}
 // years mock data
 export const INIT_YEAR = 2022;
 export const CURRENT_MONTH = '本月';

@@ -5,14 +5,15 @@ import { Box, Button, Center, Flex, Image, Stack, SystemStyleObject, Text } from
 import { useQueryClient } from '@tanstack/react-query';
 
 import CurrencySymbol from '@/components/CurrencySymbol';
+import RechargeModal from '@/components/RechargeModal';
+import TransferModal from '@/components/TransferModal';
 import { RechargeContext } from '@/pages/cost_overview';
 import useEnvStore from '@/stores/env';
 import useOverviewStore from '@/stores/overview';
+import { TransferModalRef } from '@/types';
 import jsyaml from 'js-yaml';
 import { useTranslation } from 'next-i18next';
 import { memo, useContext, useEffect, useMemo, useRef } from 'react';
-import RechargeModal from '../../RechargeModal';
-import TransferModal from '../../TransferModal';
 
 export default memo(function UserCard({ balance }: { balance: number }) {
   const getSession = useSessionStore((state) => state.getSession);
@@ -34,7 +35,7 @@ export default memo(function UserCard({ balance }: { balance: number }) {
   const session = useSessionStore().getSession();
 
   const rechargeRef = useContext(RechargeContext).rechargeRef;
-  const transferRef = useRef<any>();
+  const transferRef = useRef<TransferModalRef>(null);
   const queryClient = useQueryClient();
   useEffect(() => {
     // 加锁
@@ -114,7 +115,7 @@ export default memo(function UserCard({ balance }: { balance: number }) {
                 color="black"
                 onClick={(e) => {
                   e.preventDefault();
-                  transferRef?.current!.onOpen();
+                  transferRef?.current?.onOpen();
                 }}
               >
                 {t('Transfer')}
