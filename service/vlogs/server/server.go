@@ -3,14 +3,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+
+	"github.com/labring/sealos/service/pkg/api"
 	"github.com/labring/sealos/service/pkg/auth"
+	"github.com/labring/sealos/service/vlogs/request"
+
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/labring/sealos/service/pkg/api"
-	"github.com/labring/sealos/service/vlogs/request"
 )
 
 type VLogsServer struct {
@@ -18,6 +19,9 @@ type VLogsServer struct {
 	username string
 	password string
 }
+
+const modeTrue = "true"
+const modeFalse = "false"
 
 func NewVLogsServer(config *Config) (*VLogsServer, error) {
 	vl := &VLogsServer{
@@ -90,7 +94,7 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	v.generateKeywordQuery(req)
 	v.generateStreamQuery(req)
 	v.generateCommonQuery(req)
-	err := v.generateJsonQuery(req)
+	err := v.generateJSONQuery(req)
 	if err != nil {
 		return "", err
 	}
@@ -107,8 +111,8 @@ func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
 	v.query += builder.String()
 }
 
-func (v *VLogsQuery) generateJsonQuery(req *api.VlogsRequest) error {
-	if req.JSONMode != "true" {
+func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
+	if req.JSONMode != modeTrue {
 		return nil
 	}
 	var builder strings.Builder
@@ -173,8 +177,8 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 
 func (v *VLogsQuery) generateStdQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
-	if req.StderrMode == "true" {
-		item := fmt.Sprintf(`| stream:="stderr" `)
+	if req.StderrMode == modeTrue {
+		item := `| stream:="stderr" `
 		builder.WriteString(item)
 	}
 	v.query += builder.String()
@@ -185,7 +189,7 @@ func (v *VLogsQuery) generateCommonQuery(req *api.VlogsRequest) {
 	item := fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
 	builder.WriteString(item)
 	// if query number,dont use limit param
-	if req.NumberMode == "false" {
+	if req.NumberMode == modeFalse {
 		item := fmt.Sprintf(`  | limit %s  `, req.Limit)
 		builder.WriteString(item)
 	}
@@ -200,7 +204,7 @@ func (v *VLogsQuery) generateDropQuery() {
 
 func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
-	if req.NumberMode == "true" {
+	if req.NumberMode == modeTrue {
 		item := fmt.Sprintf(" | stats by (_time:1%s) count() logs_total ", req.NumberLevel)
 		builder.WriteString(item)
 		v.query += builder.String()
