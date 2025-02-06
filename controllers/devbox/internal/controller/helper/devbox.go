@@ -36,6 +36,7 @@ import (
 
 const (
 	DevBoxPartOf = "devbox"
+	ProxyPod     = "proxy"
 )
 
 func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
@@ -50,6 +51,26 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
 		PartOf:    DevBoxPartOf,
+	})
+	for k, v := range recLabels {
+		labels[k] = v
+	}
+	return labels
+}
+
+func GenerateProxyPodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
+	labels := make(map[string]string)
+
+	if devbox.Spec.Config.Labels != nil {
+		for k, v := range devbox.Spec.Config.Labels {
+			labels[k] = v
+		}
+	}
+	recLabels := label.RecommendedLabels(&label.Recommended{
+		Name:      devbox.Name + "-proxy",
+		ManagedBy: label.DefaultManagedBy,
+		PartOf:    DevBoxPartOf,
+		Component: ProxyPod,
 	})
 	for k, v := range recLabels {
 		labels[k] = v
@@ -364,4 +385,17 @@ func GetArgs(devbox *devboxv1alpha1.Devbox) []string {
 
 func IsExceededQuotaError(err error) bool {
 	return strings.Contains(err.Error(), "exceeded quota")
+}
+
+func GenerateProxyPodResourceRequirements() corev1.ResourceRequirements {
+	return corev1.ResourceRequirements{
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("10m"),
+			corev1.ResourceMemory: resource.MustParse("10Mi"),
+		},
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse("50m"),
+			corev1.ResourceMemory: resource.MustParse("50Mi"),
+		},
+	}
 }

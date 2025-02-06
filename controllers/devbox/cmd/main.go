@@ -85,6 +85,10 @@ func main() {
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
+	// websocket flag
+	var webSocketImage string
+	var websocketProxyDomain string
+	var ingressClass string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -113,7 +117,10 @@ func main() {
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
-
+	//websocket flag
+	flag.StringVar(&webSocketImage, "websocket-image", "cbluebird/wst:v0.0.4", "The image name of devbox websocket proxy pod.")
+	flag.StringVar(&websocketProxyDomain, "websocket-proxy-domain", "sealoshzh.site", "The websocket proxy domain of devbox ingress.")
+	flag.StringVar(&ingressClass, "ingress-class", "nginx", "The ingress class name.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -231,8 +238,11 @@ func main() {
 			DefaultLimit:   resource.MustParse(limitEphemeralStorage),
 			MaximumLimit:   resource.MustParse(maximumLimitEphemeralStorage),
 		},
-		PodMatchers: podMatchers,
-		DebugMode:   debugMode,
+		PodMatchers:          podMatchers,
+		DebugMode:            debugMode,
+		WebSocketImage:       webSocketImage,
+		WebsocketProxyDomain: websocketProxyDomain,
+		IngressClass:         ingressClass,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
