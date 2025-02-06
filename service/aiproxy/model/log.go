@@ -191,7 +191,7 @@ type GetGroupLogsResult struct {
 	TokenNames []string `json:"token_names"`
 }
 
-func getLogs(
+func buildGetLogsQuery(
 	group string,
 	startTimestamp time.Time,
 	endTimestamp time.Time,
@@ -199,16 +199,12 @@ func getLogs(
 	requestID string,
 	tokenID int,
 	tokenName string,
-	startIdx int,
-	num int,
 	channelID int,
 	endpoint string,
-	order string,
 	mode int,
 	codeType CodeType,
-	withBody bool,
 	ip string,
-) (int64, []*Log, error) {
+) *gorm.DB {
 	tx := LogDB.Model(&Log{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -249,33 +245,88 @@ func getLogs(
 	case CodeTypeError:
 		tx = tx.Where("code != 200")
 	}
+	return tx
+}
 
+func getLogs(
+	group string,
+	startTimestamp time.Time,
+	endTimestamp time.Time,
+	modelName string,
+	requestID string,
+	tokenID int,
+	tokenName string,
+	channelID int,
+	endpoint string,
+	order string,
+	mode int,
+	codeType CodeType,
+	withBody bool,
+	ip string,
+	page int,
+	perPage int,
+) (int64, []*Log, error) {
 	var total int64
 	var logs []*Log
-	err := tx.Count(&total).Error
-	if err != nil {
-		return total, nil, err
-	}
-	if total <= 0 {
-		return total, nil, nil
+
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		return buildGetLogsQuery(
+			group,
+			startTimestamp,
+			endTimestamp,
+			modelName,
+			requestID,
+			tokenID,
+			tokenName,
+			channelID,
+			endpoint,
+			mode,
+			codeType,
+			ip,
+		).Count(&total).Error
+	})
+
+	g.Go(func() error {
+		page--
+		if page < 0 {
+			page = 0
+		}
+
+		query := buildGetLogsQuery(
+			group,
+			startTimestamp,
+			endTimestamp,
+			modelName,
+			requestID,
+			tokenID,
+			tokenName,
+			channelID,
+			endpoint,
+			mode,
+			codeType,
+			ip,
+		)
+		if withBody {
+			query = query.Preload("RequestDetail")
+		} else {
+			query = query.Preload("RequestDetail", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "log_id")
+			})
+		}
+
+		return query.
+			Order(getLogOrder(order)).
+			Limit(perPage).
+			Offset(page * perPage).
+			Find(&logs).Error
+	})
+
+	if err := g.Wait(); err != nil {
+		return 0, nil, err
 	}
 
-	if withBody {
-		tx = tx.Preload("RequestDetail")
-	} else {
-		tx = tx.Preload("RequestDetail", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "log_id")
-		})
-	}
-
-	err = tx.
-		Order(getLogOrder(order)).
-		Limit(num).
-		Offset(startIdx).
-		Find(&logs).Error
-	if err != nil {
-		return total, nil, err
-	}
 	return total, logs, nil
 }
 
@@ -287,8 +338,6 @@ func GetLogs(
 	requestID string,
 	tokenID int,
 	tokenName string,
-	startIdx int,
-	num int,
 	channelID int,
 	endpoint string,
 	order string,
@@ -296,14 +345,30 @@ func GetLogs(
 	codeType CodeType,
 	withBody bool,
 	ip string,
+	page int,
+	perPage int,
 ) (*GetLogsResult, error) {
-	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody, ip)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		total  int64
+		logs   []*Log
+		models []string
+	)
 
-	models, err := getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-	if err != nil {
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		var err error
+		total, logs, err = getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, channelID, endpoint, order, mode, codeType, withBody, ip, page, perPage)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -324,8 +389,6 @@ func GetGroupLogs(
 	requestID string,
 	tokenID int,
 	tokenName string,
-	startIdx int,
-	num int,
 	channelID int,
 	endpoint string,
 	order string,
@@ -333,22 +396,44 @@ func GetGroupLogs(
 	codeType CodeType,
 	withBody bool,
 	ip string,
+	page int,
+	perPage int,
 ) (*GetGroupLogsResult, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
-	total, logs, err := getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, startIdx, num, channelID, endpoint, order, mode, codeType, withBody, ip)
-	if err != nil {
+
+	var (
+		total      int64
+		logs       []*Log
+		tokenNames []string
+		models     []string
+	)
+
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		var err error
+		total, logs, err = getLogs(group, startTimestamp, endTimestamp, modelName, requestID, tokenID, tokenName, channelID, endpoint, order, mode, codeType, withBody, ip, page, perPage)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
-	tokenNames, err := getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
-	if err != nil {
-		return nil, err
-	}
-	models, err := getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-	if err != nil {
-		return nil, err
-	}
+
 	return &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
 			Logs:   logs,
@@ -359,11 +444,9 @@ func GetGroupLogs(
 	}, nil
 }
 
-func searchLogs(
+func buildSearchLogsQuery(
 	group string,
 	keyword string,
-	page int,
-	perPage int,
 	endpoint string,
 	requestID string,
 	tokenID int,
@@ -372,12 +455,10 @@ func searchLogs(
 	startTimestamp time.Time,
 	endTimestamp time.Time,
 	channelID int,
-	order string,
 	mode int,
 	codeType CodeType,
-	withBody bool,
 	ip string,
-) (int64, []*Log, error) {
+) *gorm.DB {
 	tx := LogDB.Model(&Log{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -494,45 +575,12 @@ func searchLogs(
 		}
 	}
 
-	var total int64
-	var logs []*Log
-	err := tx.Count(&total).Error
-	if err != nil {
-		return total, nil, err
-	}
-	if total <= 0 {
-		return total, logs, nil
-	}
-
-	page--
-	if page < 0 {
-		page = 0
-	}
-
-	if withBody {
-		tx = tx.Preload("RequestDetail")
-	} else {
-		tx = tx.Preload("RequestDetail", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id", "log_id")
-		})
-	}
-
-	err = tx.
-		Order(getLogOrder(order)).
-		Limit(perPage).
-		Offset(page * perPage).
-		Find(&logs).Error
-	if err != nil {
-		return total, nil, err
-	}
-	return total, logs, nil
+	return tx
 }
 
-func SearchLogs(
+func searchLogs(
 	group string,
 	keyword string,
-	page int,
-	perPage int,
 	endpoint string,
 	requestID string,
 	tokenID int,
@@ -546,14 +594,116 @@ func SearchLogs(
 	codeType CodeType,
 	withBody bool,
 	ip string,
-) (*GetLogsResult, error) {
-	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip)
-	if err != nil {
-		return nil, err
+	page int,
+	perPage int,
+) (int64, []*Log, error) {
+	var total int64
+	var logs []*Log
+
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		return buildSearchLogsQuery(
+			group,
+			keyword,
+			endpoint,
+			requestID,
+			tokenID,
+			tokenName,
+			modelName,
+			startTimestamp,
+			endTimestamp,
+			channelID,
+			mode,
+			codeType,
+			ip,
+		).Count(&total).Error
+	})
+
+	g.Go(func() error {
+		page--
+		if page < 0 {
+			page = 0
+		}
+
+		query := buildSearchLogsQuery(
+			group,
+			keyword,
+			endpoint,
+			requestID,
+			tokenID,
+			tokenName,
+			modelName,
+			startTimestamp,
+			endTimestamp,
+			channelID,
+			mode,
+			codeType,
+			ip,
+		)
+
+		if withBody {
+			query = query.Preload("RequestDetail")
+		} else {
+			query = query.Preload("RequestDetail", func(db *gorm.DB) *gorm.DB {
+				return db.Select("id", "log_id")
+			})
+		}
+
+		return query.
+			Order(getLogOrder(order)).
+			Limit(perPage).
+			Offset(page * perPage).
+			Find(&logs).Error
+	})
+
+	if err := g.Wait(); err != nil {
+		return 0, nil, err
 	}
 
-	models, err := getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-	if err != nil {
+	return total, logs, nil
+}
+
+func SearchLogs(
+	group string,
+	keyword string,
+	endpoint string,
+	requestID string,
+	tokenID int,
+	tokenName string,
+	modelName string,
+	startTimestamp time.Time,
+	endTimestamp time.Time,
+	channelID int,
+	order string,
+	mode int,
+	codeType CodeType,
+	withBody bool,
+	ip string,
+	page int,
+	perPage int,
+) (*GetLogsResult, error) {
+	var (
+		total  int64
+		logs   []*Log
+		models []string
+	)
+
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		var err error
+		total, logs, err = searchLogs(group, keyword, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip, page, perPage)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
@@ -569,8 +719,6 @@ func SearchLogs(
 func SearchGroupLogs(
 	group string,
 	keyword string,
-	page int,
-	perPage int,
 	endpoint string,
 	requestID string,
 	tokenID int,
@@ -584,22 +732,41 @@ func SearchGroupLogs(
 	codeType CodeType,
 	withBody bool,
 	ip string,
+	page int,
+	perPage int,
 ) (*GetGroupLogsResult, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
-	total, logs, err := searchLogs(group, keyword, page, perPage, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip)
-	if err != nil {
-		return nil, err
-	}
 
-	tokenNames, err := getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		total      int64
+		logs       []*Log
+		tokenNames []string
+		models     []string
+	)
 
-	models, err := getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-	if err != nil {
+	g := new(errgroup.Group)
+
+	g.Go(func() error {
+		var err error
+		total, logs, err = searchLogs(group, keyword, endpoint, requestID, tokenID, tokenName, modelName, startTimestamp, endTimestamp, channelID, order, mode, codeType, withBody, ip, page, perPage)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 

@@ -52,8 +52,6 @@ func GetLogs(c *gin.Context) {
 		requestID,
 		tokenID,
 		tokenName,
-		p*perPage,
-		perPage,
 		channelID,
 		endpoint,
 		order,
@@ -61,6 +59,8 @@ func GetLogs(c *gin.Context) {
 		model.CodeType(codeType),
 		withBody,
 		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -115,8 +115,6 @@ func GetGroupLogs(c *gin.Context) {
 		requestID,
 		tokenID,
 		tokenName,
-		p*perPage,
-		perPage,
 		channelID,
 		endpoint,
 		order,
@@ -124,6 +122,8 @@ func GetGroupLogs(c *gin.Context) {
 		model.CodeType(codeType),
 		withBody,
 		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -166,8 +166,6 @@ func SearchLogs(c *gin.Context) {
 	result, err := model.SearchLogs(
 		group,
 		keyword,
-		p,
-		perPage,
 		endpoint,
 		requestID,
 		tokenID,
@@ -181,6 +179,8 @@ func SearchLogs(c *gin.Context) {
 		model.CodeType(codeType),
 		withBody,
 		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -227,8 +227,6 @@ func SearchGroupLogs(c *gin.Context) {
 	result, err := model.SearchGroupLogs(
 		group,
 		keyword,
-		p,
-		perPage,
 		endpoint,
 		requestID,
 		tokenID,
@@ -242,6 +240,8 @@ func SearchGroupLogs(c *gin.Context) {
 		model.CodeType(codeType),
 		withBody,
 		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
