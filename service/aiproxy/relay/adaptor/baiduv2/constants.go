@@ -266,4 +266,29 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigMaxOutputTokens(2048),
 		),
 	},
+
+	{
+		Model:       "DeepSeek-V3",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDeepSeek,
+		InputPrice:  0.0008,
+		OutputPrice: 0.0016,
+		RPM:         1000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(64000),
+			model.WithModelConfigMaxOutputTokens(8192),
+		),
+	},
+	{
+		Model:       "DeepSeek-R1",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDeepSeek,
+		InputPrice:  0.002,
+		OutputPrice: 0.008,
+		RPM:         1000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(64000),
+			model.WithModelConfigMaxOutputTokens(8192),
+		),
+	},
 }

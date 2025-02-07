@@ -15,8 +15,21 @@ var ModelList = []*model.ModelConfig{
 		RPM:         10000,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxContextTokens(64000),
-			model.WithModelConfigMaxOutputTokens(4096),
+			model.WithModelConfigMaxOutputTokens(8192),
 			model.WithModelConfigToolChoice(true),
+		),
+	},
+
+	{
+		Model:       "deepseek-reasoner",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerDeepSeek,
+		InputPrice:  0.004,
+		OutputPrice: 0.016,
+		RPM:         10000,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(64000),
+			model.WithModelConfigMaxOutputTokens(8192),
 		),
 	},
 }

@@ -26,6 +26,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/novita"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/ollama"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openaithink"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/siliconflow"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/stepfun"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/tencent"
@@ -36,6 +37,7 @@ import (
 
 var ChannelAdaptor = map[int]adaptor.Adaptor{
 	1:  &openai.Adaptor{},
+	2:  &openaithink.Adaptor{},
 	3:  &azure.Adaptor{},
 	12: &geminiopenai.Adaptor{},
 	13: &baiduv2.Adaptor{},
