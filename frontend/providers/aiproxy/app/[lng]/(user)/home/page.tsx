@@ -152,7 +152,7 @@ export default function Home(): React.JSX.Element {
                 alignItems="center"
                 gap="6px"
                 borderRadius="4px"
-                color="grayModern.500"
+                color={type === item.value ? '#0884DD' : 'grayModern.500'}
                 fontFamily="PingFang SC"
                 fontSize="14px"
                 fontWeight="500"
@@ -188,7 +188,7 @@ export default function Home(): React.JSX.Element {
               bg="#EDFAFF"
               gap="16px"
               borderRadius="12px"
-              px="10px"
+              px="20px"
               py="28px"
               alignItems="center"
               alignSelf="stretch">
@@ -255,7 +255,7 @@ export default function Home(): React.JSX.Element {
               bg="yellow.50"
               gap="16px"
               borderRadius="12px"
-              px="10px"
+              px="20px"
               py="28px"
               alignItems="center"
               alignSelf="stretch">
@@ -308,7 +308,7 @@ export default function Home(): React.JSX.Element {
               bg="#F0F4FF"
               gap="16px"
               borderRadius="12px"
-              px="10px"
+              px="20px"
               py="28px"
               alignItems="center"
               alignSelf="stretch">
@@ -361,7 +361,7 @@ export default function Home(): React.JSX.Element {
               bg="purple.50"
               gap="16px"
               borderRadius="12px"
-              px="10px"
+              px="20px"
               py="28px"
               alignItems="center"
               alignSelf="stretch">
@@ -418,7 +418,7 @@ export default function Home(): React.JSX.Element {
               bg="teal.50"
               gap="16px"
               borderRadius="12px"
-              px="10px"
+              px="20px"
               py="28px"
               alignItems="center"
               alignSelf="stretch">
@@ -626,9 +626,27 @@ export default function Home(): React.JSX.Element {
                       </defs>
                     </svg>
                   ) : currencySymbol === 'cny' ? (
-                    '￥'
+                    <Text
+                      color="grayModern.600"
+                      fontFamily="PingFang SC"
+                      fontStyle="normal"
+                      fontSize="14px"
+                      fontWeight="400"
+                      lineHeight="20px"
+                      letterSpacing="0.25px">
+                      ￥
+                    </Text>
                   ) : (
-                    '$'
+                    <Text
+                      color="grayModern.600"
+                      fontFamily="PingFang SC"
+                      fontStyle="normal"
+                      fontSize="14px"
+                      fontWeight="400"
+                      lineHeight="20px"
+                      letterSpacing="0.25px">
+                      $
+                    </Text>
                   )}
                 </Flex>
                 <Text
