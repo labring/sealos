@@ -143,5 +143,14 @@ func SetAPIRouter(router *gin.Engine) {
 			modelConfigRoute.POST("/", controller.SaveModelConfig)
 			modelConfigRoute.DELETE("/:model", controller.DeleteModelConfig)
 		}
+
+		monitorRoute := apiRouter.Group("/monitor")
+		{
+			monitorRoute.GET("/", controller.GetAllChannelModelErrorRates)
+			monitorRoute.GET("/:id", controller.GetChannelModelErrorRates)
+			monitorRoute.DELETE("/", controller.ClearAllModelErrors)
+			monitorRoute.DELETE("/:id", controller.ClearChannelAllModelErrors)
+			monitorRoute.DELETE("/:id/:model", controller.ClearChannelModelErrors)
+		}
 	}
 }

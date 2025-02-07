@@ -21,40 +21,10 @@ local window = tonumber(ARGV[1])
 local current_time = tonumber(ARGV[2])
 local cutoff = current_time - window
 
-local page_size = 100
-local remove_count = 0
-
-while true do
-    local timestamps = redis.call('LRANGE', key, remove_count, remove_count + page_size - 1)
-    if #timestamps == 0 then
-        break
-    end
-
-    local found_non_expired = false
-    for i = 1, #timestamps do
-        local timestamp = tonumber(timestamps[i])
-        if timestamp < cutoff then
-            remove_count = remove_count + 1
-        else
-            found_non_expired = true
-            break
-        end
-    end
-
-    if found_non_expired then
-        break
-    end
-end
-
-if remove_count > 0 then
-    redis.call('LTRIM', key, remove_count, -1)
-end
-
-redis.call('RPUSH', key, current_time)
-
+redis.call('ZREMRANGEBYSCORE', key, '-inf', cutoff)
+redis.call('ZADD', key, current_time, current_time)
 redis.call('PEXPIRE', key, window)
-
-return redis.call('LLEN', key)
+return redis.call('ZCOUNT', key, cutoff, current_time)
 `
 
 var getRequestCountScript = `
@@ -62,42 +32,14 @@ local pattern = ARGV[1]
 local window = tonumber(ARGV[2])
 local current_time = tonumber(ARGV[3])
 local cutoff = current_time - window
-local page_size = 100
 
 local keys = redis.call('KEYS', pattern)
 local total = 0
 
 for _, key in ipairs(keys) do
-    local remove_count = 0
-
-    while true do
-        local timestamps = redis.call('LRANGE', key, remove_count, remove_count + page_size - 1)
-        if #timestamps == 0 then
-            break
-        end
-        
-        local found_non_expired = false
-        for i = 1, #timestamps do
-            local timestamp = tonumber(timestamps[i])
-            if timestamp < cutoff then
-                remove_count = remove_count + 1
-            else
-                found_non_expired = true
-                break
-            end
-        end
-        
-        if found_non_expired then
-            break
-        end
-    end
-
-    if remove_count > 0 then
-        redis.call('LTRIM', key, remove_count, -1)
-    end
-
-    local total_count = redis.call('LLEN', key)
-    total = total + total_count
+	redis.call('ZREMRANGEBYSCORE', key, '-inf', cutoff)
+    local count = redis.call('ZCOUNT', key, cutoff, current_time)
+    total = total + count
 end
 
 return total
