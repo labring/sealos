@@ -316,5 +316,6 @@
   "field_settings": "字段设置",
   "selected": "已选中",
   "please_select": "请选择",
-  "refetching_success": "刷新成功"
+  "refetching_success": "刷新成功",
+  "refresh": "刷新"
 }

@@ -49,13 +49,13 @@
 }
 
 // date picker
-
 div.rdp {
-  --rdp-cell-size: 40px;
+  --rdp-cell-size: 30px;
   --rdp-accent-color: black;
   --rdp-background-color: #f4f6f8;
   --rdp-outline: 2px solid var(--rdp-accent-color);
   --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
+  margin: 12px 16px 8px 16px;
 }
 
 button.rdp-button_reset.rdp-button.rdp-day {

@@ -102,7 +102,12 @@ export const LogTable = ({
       .filter((field) => field.checked)
       .map((field) => ({
         accessorKey: field.accessorKey,
-        header: () => field.label,
+        header: () => {
+          if (field.label === '_time' || field.label === '_msg') {
+            return field.label.substring(1);
+          }
+          return field.label;
+        },
         cell: ({ row }) => {
           let value = get(row.original, field.accessorKey, '');
 

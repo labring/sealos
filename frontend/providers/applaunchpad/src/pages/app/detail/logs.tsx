@@ -206,7 +206,7 @@ export default function LogsPage({ appName }: { appName: string }) {
         </Flex>
         <Box
           mb={'6px'}
-          p={'20px 24px'}
+          p={'20px 20px'}
           bg={'white'}
           border={theme.borders.base}
           borderRadius={'lg'}
@@ -216,11 +216,12 @@ export default function LogsPage({ appName }: { appName: string }) {
         </Box>
         <Box
           bg={'white'}
-          p={'20px 24px'}
+          p={'20px'}
           border={theme.borders.base}
           borderRadius={'lg'}
           flex={1}
           height={'0px'}
+          minH={'200px'}
         >
           <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
         </Box>

@@ -27,7 +27,7 @@ export const Filter = ({
   });
 
   return (
-    <Flex p={'12px'} w={'100%'} flexDir={'column'}>
+    <Flex py={'12px'} px={'10px'} w={'100%'} flexDir={'column'}>
       {/* tab */}
       {/* <Box w={'fit-content'} mb={'18px'}>
         <Tabs
@@ -124,10 +124,10 @@ export const Filter = ({
           )}
 
           {fields.map((field, index) => (
-            <Flex key={field.id} w={'fit-content'} gap={'12px'}>
+            <Flex key={field.id} w={'fit-content'} gap={'2px'}>
               <MySelect
                 height="32px"
-                minW={'200px'}
+                minW={'160px'}
                 bg={'white'}
                 color={'grayModern.600'}
                 placeholder={t('field_name')}
@@ -154,6 +154,7 @@ export const Filter = ({
                 }
               />
               <Input
+                maxW={'160px'}
                 placeholder={t('value')}
                 bg={'white'}
                 value={formHook.watch(`jsonFilters.${index}.value`)}
