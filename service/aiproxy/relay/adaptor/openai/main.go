@@ -9,6 +9,7 @@ import (
 	json "github.com/json-iterator/go"
 
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/common/splitter"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +33,7 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, splitThink bool) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -44,6 +45,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	var usage *model.Usage
 
 	common.SetEventStreamHeaders(c)
+
+	hasReasoningContent := false
+	var thinkSplitter *splitter.Splitter
+	if splitThink {
+		thinkSplitter = splitter.NewThinkSplitter()
+	}
 
 	for scanner.Scan() {
 		data := scanner.Text()
@@ -70,6 +77,9 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			for _, choice := range streamResponse.Choices {
 				responseText += choice.Delta.StringContent()
+				if choice.Delta.ReasoningContent != "" {
+					hasReasoningContent = true
+				}
 			}
 			respMap := make(map[string]any)
 			err = json.Unmarshal(conv.StringToBytes(data), &respMap)
@@ -79,6 +89,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
 				respMap["model"] = meta.OriginModel
+			}
+			if splitThink && !hasReasoningContent {
+				SplitThink(respMap, thinkSplitter, func(data map[string]any) {
+					_ = render.ObjectData(c, data)
+				})
+				continue
 			}
 			_ = render.ObjectData(c, respMap)
 		case relaymode.Completions:
@@ -111,6 +127,37 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	}
 
 	return usage, nil
+}
+
+// renderCallback maybe reuse data, so don't modify data
+func SplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCallback func(data map[string]any)) {
+	choices, ok := data["choices"].([]any)
+	if !ok {
+		return
+	}
+	for _, choice := range choices {
+		choiceMap, ok := choice.(map[string]any)
+		if !ok {
+			continue
+		}
+		delta, ok := choiceMap["delta"].(map[string]any)
+		if !ok {
+			continue
+		}
+		content, ok := delta["content"].(string)
+		if !ok {
+			continue
+		}
+		think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
+		delta["content"] = ""
+		delta["reasoning_content"] = conv.BytesToString(think)
+		renderCallback(data)
+		if len(remaining) > 0 {
+			delta["content"] = conv.BytesToString(remaining)
+			delta["reasoning_content"] = ""
+			renderCallback(data)
+		}
+	}
 }
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {

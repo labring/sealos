@@ -86,7 +86,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	case relaymode.Embeddings:
 		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.ChatCompletions:
-		return ConvertTextRequest(meta, req)
+		return ConvertTextRequest(meta, req, meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey))
 	case relaymode.ImagesGenerations:
 		return ConvertImageRequest(meta, req)
 	case relaymode.AudioTranscription, relaymode.AudioTranslation:
@@ -99,6 +99,8 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		return "", nil, nil, errors.New("unsupported convert request mode")
 	}
 }
+
+const SplitThinkMetaKey = "split_think"
 
 func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
@@ -116,7 +118,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		fallthrough
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			usage, err = StreamHandler(meta, c, resp)
+			usage, err = StreamHandler(meta, c, resp, meta.GetBool(SplitThinkMetaKey))
 		} else {
 			usage, err = Handler(meta, c, resp)
 		}
@@ -128,14 +130,14 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
 
-func ConvertTextRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
+func ConvertTextRequest(meta *meta.Meta, req *http.Request, doNotPatchStreamOptionsIncludeUsage bool) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}
 
-	if !meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey) {
+	if !doNotPatchStreamOptionsIncludeUsage {
 		if err := patchStreamOptions(reqMap); err != nil {
 			return "", nil, nil, err
 		}
