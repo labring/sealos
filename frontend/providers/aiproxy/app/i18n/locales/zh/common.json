@@ -37,7 +37,8 @@
     "createName": "名称",
     "modelType": "模型类型",
     "requestCount": "请求次数",
-    "usedAmount": "消耗金额"
+    "usedAmount": "消耗金额",
+    "userNotRealName": "Ai 服务需要实名认证。"
   },
   "logs": {
     "call_log": "调用日志",

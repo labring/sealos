@@ -37,7 +37,8 @@
     "createName": "Name",
     "modelType": "Type",
     "requestCount": "Request Count",
-    "usedAmount": "Amount Charged"
+    "usedAmount": "Amount Charged",
+    "userNotRealName": "AI services require real-name authentication."
   },
   "logs": {
     "call_log": "Logs",

@@ -27,6 +27,12 @@ function getAppConfig(appConfig: AppConfigType): AppConfigType {
   if (process.env.CURRENCY_SYMBOL) {
     appConfig.currencySymbol = process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd'
   }
+  if (process.env.ACCOUNT_SERVER) {
+    appConfig.backend.accountServer = process.env.ACCOUNT_SERVER
+  }
+  if (process.env.ACCOUNT_SERVER_TOKEN_JWT_KEY) {
+    appConfig.auth.accountServerTokenJwtKey = process.env.ACCOUNT_SERVER_TOKEN_JWT_KEY
+  }
   return appConfig
 }
 
@@ -35,11 +41,13 @@ function initAppConfig(): AppConfigType {
   const DefaultAppConfig: AppConfigType = {
     auth: {
       appTokenJwtKey: '',
-      aiProxyBackendKey: ''
+      aiProxyBackendKey: '',
+      accountServerTokenJwtKey: ''
     },
     backend: {
       aiproxy: '',
-      aiproxyInternal: ''
+      aiproxyInternal: '',
+      accountServer: ''
     },
     adminNameSpace: [],
     currencySymbol: 'shellCoin'

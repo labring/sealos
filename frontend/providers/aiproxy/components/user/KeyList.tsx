@@ -194,7 +194,7 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
         message({
           status: 'warning',
           title: t('key.updateFailed'),
-          description: err?.message || t('key.updateFailed'),
+          description: err?.message ? t(err.message) : t('key.updateFailed'),
           isClosable: true,
           position: 'top'
         })
@@ -906,7 +906,7 @@ function CreateKeyModal({
       message({
         status: 'warning',
         title: t('key.createFailed'),
-        description: err instanceof Error ? err.message : t('key.createFailed'),
+        description: err instanceof Error ? t(err.message as any) : t('key.createFailed'),
         isClosable: true,
         position: 'top'
       })

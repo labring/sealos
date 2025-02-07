@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TokenInfo } from '@/types/user/token'
 
-import { getSealosUserUid, parseJwtToken } from '@/utils/backend/auth'
+import { checkSealosUserIsRealName, parseJwtToken } from '@/utils/backend/auth'
 import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { validateSealosUserRealNameInfo } from '@/utils/backend/db'
 
 export const dynamic = 'force-dynamic'
 
@@ -191,15 +190,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
       )
     }
 
-    const sealosUserUid = await getSealosUserUid(request.headers)
-    const isRealName = await validateSealosUserRealNameInfo(sealosUserUid)
+    const isRealName = await checkSealosUserIsRealName(request.headers)
 
     if (!isRealName) {
       return NextResponse.json(
         {
           code: 400,
-          message: 'user not real name',
-          error: 'user not real name'
+          message: 'key.userNotRealName',
+          error: 'key.userNotRealName'
         },
         { status: 400 }
       )
