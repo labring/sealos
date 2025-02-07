@@ -1,13 +1,14 @@
 package server
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/labring/sealos/service/pkg/auth"
 	"io"
 	"io/ioutil"
 
 	"github.com/labring/sealos/service/pkg/api"
-	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/vlogs/request"
 
 	"log"
@@ -76,6 +77,7 @@ func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Reque
 	if err != nil {
 		return fmt.Errorf("query failed (%s)", err)
 	}
+	defer resp.Body.Close()
 	_, err = io.Copy(rw, resp.Body)
 	if err != nil {
 		return err
@@ -92,38 +94,41 @@ func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) e
 	if err != nil {
 		return fmt.Errorf("query failed (%s)", err)
 	}
-	// 读取响应体
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
-
-	// 解码响应体
-	var logs []api.VlogsResponse
-	if err := json.Unmarshal(body, &logs); err != nil {
-		return fmt.Errorf("failed to unmarshal response body: %v", err)
+	if len(body) == 0 {
+		return fmt.Errorf("response body is empty")
 	}
 
-	// 使用map去重
+	scanner := bufio.NewScanner(strings.NewReader(string(body)))
+	var logs []api.VlogsResponse
+
+	for scanner.Scan() {
+		var entry api.VlogsResponse
+		line := scanner.Text()
+		err := json.Unmarshal([]byte(line), &entry)
+		if err != nil {
+			continue
+		}
+		logs = append(logs, entry)
+	}
+
 	uniquePods := make(map[string]struct{})
 	for _, log := range logs {
 		uniquePods[log.Pod] = struct{}{}
 	}
-
-	// 将map的键转换为切片
 	var podList []string
 	for pod := range uniquePods {
 		podList = append(podList, pod)
 	}
 
-	// 设置响应头
 	rw.Header().Set("Content-Type", "application/json")
-
-	// 将 podList 写入响应
 	if err := json.NewEncoder(rw).Encode(podList); err != nil {
 		return fmt.Errorf("failed to write response: %v", err)
 	}
-
 	return nil
 }
 
@@ -174,9 +179,9 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 
 func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
-	item := fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+	item := fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
 	builder.WriteString(item)
-	v.generateDropQuery()
+	v.query += builder.String()
 	return v.query
 }
 

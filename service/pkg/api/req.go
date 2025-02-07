@@ -81,16 +81,16 @@ type VlogsRequest struct {
 	Time        string      `json:"time"`
 	Namespace   string      `json:"namespace"`
 	App         string      `json:"app"`
-	Limit       string      `json:"limit"`
-	JSONMode    string      `json:"jsonMode"`
-	StderrMode  string      `json:"stderrMode"`
-	NumberMode  string      `json:"numberMode"`
-	NumberLevel string      `json:"numberLevel"`
-	Pod         []string    `json:"pod"`
-	Container   []string    `json:"container"`
-	Keyword     string      `json:"keyword"`
-	JSONQuery   []JSONQuery `json:"jsonQuery"`
-	PodQuery    string      `json:"podQuery"`
+	Limit       string      `json:"limit,omitempty"`
+	JSONMode    string      `json:"jsonMode,omitempty"`
+	StderrMode  string      `json:"stderrMode,omitempty"`
+	NumberMode  string      `json:"numberMode,omitempty"`
+	NumberLevel string      `json:"numberLevel,omitempty"`
+	Pod         []string    `json:"pod,omitempty"`
+	Container   []string    `json:"container,omitempty"`
+	Keyword     string      `json:"keyword,omitempty"`
+	JSONQuery   []JSONQuery `json:"jsonQuery,omitempty"`
+	PodQuery    string      `json:"podQuery,omitempty"`
 }
 
 type VlogsResponse struct {
