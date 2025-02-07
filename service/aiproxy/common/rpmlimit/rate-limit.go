@@ -62,14 +62,13 @@ func GetRPM(ctx context.Context, group, model string) (int64, error) {
 	}
 
 	rdb := common.RDB
-	currentTime := time.Now().UnixMilli()
 	result, err := rdb.Eval(
 		ctx,
 		getRequestCountScript,
 		[]string{},
 		pattern,
-		time.Minute.Milliseconds(),
-		currentTime,
+		time.Minute.Microseconds(),
+		time.Now().UnixMicro(),
 	).Int64()
 	if err != nil {
 		return 0, err
@@ -92,8 +91,8 @@ func PushRequest(ctx context.Context, group, model string, duration time.Duratio
 		[]string{
 			fmt.Sprintf(groupModelRPMKey, group, model),
 		},
-		duration.Milliseconds(),
-		time.Now().UnixMilli(),
+		duration.Microseconds(),
+		time.Now().UnixMicro(),
 	).Int64()
 	if err != nil {
 		return 0, err
