@@ -2,6 +2,7 @@ package controller
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -55,7 +56,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	err := relayController(meta, c)
 	if err == nil {
 		if err := monitor.AddRequest(
-			c.Request.Context(),
+			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
 			false,
@@ -66,7 +67,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	}
 	if shouldRetry(c, err.StatusCode) {
 		if err := monitor.AddRequest(
-			c.Request.Context(),
+			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
 			true,

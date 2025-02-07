@@ -30,26 +30,34 @@ func isErrorHappened(resp *http.Response) bool {
 	return resp.StatusCode != http.StatusOK
 }
 
+const (
+	storeResponseBodyMaxSize = 3 * 1024 * 1024 // 3MB
+)
+
 type responseWriter struct {
 	gin.ResponseWriter
 	body *bytes.Buffer
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {
-	rw.body.Write(b)
+	if rw.body.Len() <= storeResponseBodyMaxSize {
+		rw.body.Write(b)
+	}
 	return rw.ResponseWriter.Write(b)
 }
 
 func (rw *responseWriter) WriteString(s string) (int, error) {
-	rw.body.WriteString(s)
+	if rw.body.Len() <= storeResponseBodyMaxSize {
+		rw.body.WriteString(s)
+	}
 	return rw.ResponseWriter.WriteString(s)
 }
 
 const (
 	// 0.5MB
 	defaultBufferSize = 512 * 1024
-	// 3MB
-	maxBufferSize = 3 * 1024 * 1024
+	// 2MB
+	maxBufferSize = 2 * 1024 * 1024
 )
 
 var bufferPool = sync.Pool{
