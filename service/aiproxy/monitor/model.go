@@ -135,7 +135,7 @@ var clearChannelAllModelErrorsScript = redis.NewScript(`
 	for _, key in ipairs(keys) do
 		redis.call("DEL", key)
 	end
-	redis.call("DEL", banned_key)
+	redis.call("SREM", banned_key, channel_id)
 
 	return redis.status_reply("ok")
 `)
@@ -147,6 +147,27 @@ func ClearChannelAllModelErrors(ctx context.Context, channelID int) error {
 	return clearChannelAllModelErrorsScript.Run(ctx, common.RDB, []string{}, channelID).Err()
 }
 
+var clearAllModelErrorsScript = redis.NewScript(`
+	local banned_key = "model:*:banned"
+	local channel_requests_pattern = "model:*:channel:*:requests"
+
+	local keys = redis.call("KEYS", channel_requests_pattern)
+	for _, key in ipairs(keys) do
+		redis.call("DEL", key)
+	end
+	redis.call("DEL", banned_key)
+
+	return redis.status_reply("ok")
+`)
+
+func ClearAllModelErrors(ctx context.Context) error {
+	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
+		return nil
+	}
+	return clearAllModelErrorsScript.Run(ctx, common.RDB, []string{}).Err()
+}
+
+// map[model][]channelID
 func GetAllBannedChannels(ctx context.Context) (map[string][]int64, error) {
 	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return nil, nil
