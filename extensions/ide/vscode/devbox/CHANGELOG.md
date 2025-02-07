@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.3.1] - 2025-01-21
+
+### Added
+
+- Support Windsurf and Trae.
+
 ## [1.3.0] - 2024-12-24
 
 ### Fixed

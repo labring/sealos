@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import dayjs from 'dayjs'
-import * as echarts from 'echarts'
-import React, { useEffect, useMemo, useRef } from 'react'
+import dayjs from 'dayjs';
+import * as echarts from 'echarts';
+import React, { useEffect, useMemo, useRef } from 'react';
 
-import { useGlobalStore } from '@/stores/global'
-import { MonitorDataResult } from '@/types/monitor'
+import { useGlobalStore } from '@/stores/global';
+import { MonitorDataResult } from '@/types/monitor';
 
 const map = {
   blue: {
@@ -93,25 +93,25 @@ const map = {
     lineColor: '#00A9A6',
     max: 100
   }
-}
+};
 
 const PodLineChart = ({
   type,
   data,
   isShowLabel = false
 }: {
-  type: 'blue' | 'deepBlue' | 'green' | 'purple'
-  data?: MonitorDataResult
-  isShowLabel?: boolean
+  type: 'blue' | 'deepBlue' | 'green' | 'purple';
+  data?: MonitorDataResult;
+  isShowLabel?: boolean;
 }) => {
-  const { screenWidth } = useGlobalStore()
+  const { screenWidth } = useGlobalStore();
   const xData =
     data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
-    new Array(30).fill(0)
-  const yData = data?.yData || new Array(30).fill('')
+    new Array(30).fill(0);
+  const yData = data?.yData || new Array(30).fill('');
 
-  const Dom = useRef<HTMLDivElement>(null)
-  const myChart = useRef<echarts.ECharts>()
+  const Dom = useRef<HTMLDivElement>(null);
+  const myChart = useRef<echarts.ECharts>();
 
   const optionStyle = useMemo(
     () => ({
@@ -128,7 +128,7 @@ const PodLineChart = ({
       }
     }),
     [type]
-  )
+  );
   const option = useRef({
     xAxis: {
       type: 'category',
@@ -169,8 +169,8 @@ const PodLineChart = ({
         type: 'line'
       },
       formatter: (params: any[]) => {
-        const axisValue = params[0]?.axisValue
-        return `${axisValue} ${params[0]?.value || 0}%`
+        const axisValue = params[0]?.axisValue;
+        return `${axisValue} ${params[0]?.value || 0}%`;
       }
     },
     series: [
@@ -187,40 +187,40 @@ const PodLineChart = ({
         }
       }
     ]
-  })
+  });
 
   // init chart
   useEffect(() => {
-    if (!Dom.current || myChart?.current?.getOption()) return
-    myChart.current = echarts.init(Dom.current)
-    myChart.current && myChart.current.setOption(option.current)
-  }, [Dom])
+    if (!Dom.current || myChart?.current?.getOption()) return;
+    myChart.current = echarts.init(Dom.current);
+    myChart.current && myChart.current.setOption(option.current);
+  }, [Dom]);
 
   // data changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return
-    option.current.xAxis.data = xData
-    option.current.series[0].data = yData
-    myChart.current.setOption(option.current)
-  }, [xData, yData])
+    if (!myChart.current || !myChart?.current?.getOption()) return;
+    option.current.xAxis.data = xData;
+    option.current.series[0].data = yData;
+    myChart.current.setOption(option.current);
+  }, [xData, yData]);
 
   // type changed, update
   useEffect(() => {
-    if (!myChart.current || !myChart?.current?.getOption()) return
+    if (!myChart.current || !myChart?.current?.getOption()) return;
     option.current.series[0] = {
       ...option.current.series[0],
       ...optionStyle
-    }
-    myChart.current.setOption(option.current)
-  }, [optionStyle])
+    };
+    myChart.current.setOption(option.current);
+  }, [optionStyle]);
 
   // resize chart
   useEffect(() => {
-    if (!myChart.current || !myChart.current.getOption()) return
-    myChart.current.resize()
-  }, [screenWidth])
+    if (!myChart.current || !myChart.current.getOption()) return;
+    myChart.current.resize();
+  }, [screenWidth]);
 
-  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />
-}
+  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />;
+};
 
-export default React.memo(PodLineChart)
+export default React.memo(PodLineChart);

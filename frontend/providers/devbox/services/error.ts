@@ -1,6 +1,6 @@
 export const ERROR_TEXT: Record<string, string> = {
   ETIMEDOUT: 'server timeout'
-}
+};
 export const openaiError: Record<string, string> = {
   context_length_exceeded: 'content too long, please reset the conversation',
   Unauthorized: 'API-KEY is invalid',
@@ -8,11 +8,11 @@ export const openaiError: Record<string, string> = {
   'Bad Request': 'Bad Request~ maybe content too many',
   'Too Many Requests': 'request too many, please slow down~',
   'Bad Gateway': 'gateway error, please try again'
-}
+};
 export const proxyError: Record<string, boolean> = {
   ECONNABORTED: true,
   ECONNRESET: true
-}
+};
 
 export enum ERROR_ENUM {
   unAuthorization = 'unAuthorization',
@@ -21,10 +21,10 @@ export enum ERROR_ENUM {
 export const ERROR_RESPONSE: Record<
   any,
   {
-    code: number
-    statusText: string
-    message: string
-    data?: any
+    code: number;
+    statusText: string;
+    message: string;
+    data?: any;
   }
 > = {
   [ERROR_ENUM.unAuthorization]: {
@@ -37,4 +37,4 @@ export const ERROR_RESPONSE: Record<
     statusText: ERROR_ENUM.outstandingPayment,
     message: 'outstanding payment'
   }
-}
+};

@@ -14,15 +14,15 @@ on:
 
 jobs:
   goreleaser:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
+        uses: magnetikonline/action-golang-cache@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -33,14 +33,14 @@ jobs:
             qemu-user-static binfmt-support
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_RELEASE_PAT }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v6
         with:
           args: release --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
         env:
@@ -49,12 +49,12 @@ jobs:
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
   sync:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - goreleaser
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Fetch Current version
@@ -91,12 +91,12 @@ jobs:
           SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
 
   changelog:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs:
       - goreleaser
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Fetch Current version

@@ -10,13 +10,13 @@ import {
   ModalHeader,
   ModalOverlay,
   Textarea
-} from '@chakra-ui/react'
-import { useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
+} from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
 
-import { editDevboxVersion } from '@/api/devbox'
-import { DevboxVersionListItemType } from '@/types/devbox'
+import { editDevboxVersion } from '@/api/devbox';
+import { DevboxVersionListItemType } from '@/types/devbox';
 
 const EditVersionDesModal = ({
   version,
@@ -24,37 +24,37 @@ const EditVersionDesModal = ({
   isOpen,
   onSuccess
 }: {
-  version: DevboxVersionListItemType
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+  version: DevboxVersionListItemType;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }) => {
-  const t = useTranslations()
-  const { message: toast } = useMessage()
-  const [loading, setLoading] = useState(false)
-  const [inputValue, setInputValue] = useState(version.description)
+  const t = useTranslations();
+  const { message: toast } = useMessage();
+  const [loading, setLoading] = useState(false);
+  const [inputValue, setInputValue] = useState(version.description);
   const handleEditVersionDes = useCallback(async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       await editDevboxVersion({
         name: version.name,
         releaseDes: inputValue
-      })
+      });
       toast({
         title: t('edit_successful'),
         status: 'success'
-      })
-      onSuccess()
-      onClose()
+      });
+      onSuccess();
+      onClose();
     } catch (error: any) {
       toast({
         title: typeof error === 'string' ? error : error.message || t('edit_failed'),
         status: 'error'
-      })
-      console.error(error)
+      });
+      console.error(error);
     }
-    setLoading(false)
-  }, [version.name, inputValue, toast, t, onSuccess, onClose])
+    setLoading(false);
+  }, [version.name, inputValue, toast, t, onSuccess, onClose]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
@@ -84,7 +84,7 @@ const EditVersionDesModal = ({
         </ModalFooter>
       </ModalContent>
     </Modal>
-  )
-}
+  );
+};
 
-export default EditVersionDesModal
+export default EditVersionDesModal;

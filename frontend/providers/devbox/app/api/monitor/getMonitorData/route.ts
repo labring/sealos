@@ -1,10 +1,10 @@
-import { NextRequest } from 'next/server'
+import { NextRequest } from 'next/server';
 
-import { authSession } from '@/services/backend/auth'
-import { getK8s } from '@/services/backend/kubernetes'
-import { jsonRes } from '@/services/backend/response'
-import { monitorFetch } from '@/services/monitorFetch'
-import { MonitorDataResult, MonitorQueryKey, MonitorServiceResult } from '@/types/monitor'
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
+import { monitorFetch } from '@/services/monitorFetch';
+import { MonitorDataResult, MonitorQueryKey, MonitorServiceResult } from '@/types/monitor';
 
 const AdapterChartData: Record<
   keyof MonitorQueryKey,
@@ -12,92 +12,92 @@ const AdapterChartData: Record<
 > = {
   disk: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod
-      let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2))
+      let name = item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
         yData: yData
-      }
-    })
-    return newDataArray
+      };
+    });
+    return newDataArray;
   },
   cpu: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod
-      let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2))
+      let name = item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
         yData: yData
-      }
-    })
-    return newDataArray
+      };
+    });
+    return newDataArray;
   },
   memory: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod
-      let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2))
+      let name = item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => (parseFloat(value[1]) * 100).toFixed(2));
       return {
         name: name,
         xData: xData,
         yData: yData
-      }
-    })
-    return newDataArray
+      };
+    });
+    return newDataArray;
   },
   average_cpu: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod
-      let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2))
+      let name = item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
         yData: yData
-      }
-    })
-    return newDataArray
+      };
+    });
+    return newDataArray;
   },
   average_memory: (data: MonitorServiceResult) => {
     const newDataArray = data.data.result.map((item) => {
-      let name = item.metric.pod
-      let xData = item.values.map((value) => value[0])
-      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2))
+      let name = item.metric.pod;
+      let xData = item.values.map((value) => value[0]);
+      let yData = item.values.map((value) => parseFloat(value[1]).toFixed(2));
       return {
         name: name,
         xData: xData,
         yData: yData
-      }
-    })
-    return newDataArray
+      };
+    });
+    return newDataArray;
   }
-}
+};
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = req.headers
-    const { searchParams } = req.nextUrl
-    const queryName = searchParams.get('queryName') as string
-    const queryKey = searchParams.get('queryKey') as keyof MonitorQueryKey
-    const start = searchParams.get('start') as string
-    const end = searchParams.get('end') as string
-    const step = searchParams.get('step') as string | '1m'
+    const headerList = req.headers;
+    const { searchParams } = req.nextUrl;
+    const queryName = searchParams.get('queryName') as string;
+    const queryKey = searchParams.get('queryKey') as keyof MonitorQueryKey;
+    const start = searchParams.get('start') as string;
+    const end = searchParams.get('end') as string;
+    const step = searchParams.get('step') as string | '1m';
 
-    const kubeconfig = await authSession(headerList)
+    const kubeconfig = await authSession(headerList);
 
     const { namespace } = await getK8s({
       kubeconfig: kubeconfig
-    })
+    });
 
     // One hour of monitoring data
-    const endTime = Date.now()
-    const startTime = endTime - 60 * 60 * 1000
+    const endTime = Date.now();
+    const startTime = endTime - 60 * 60 * 1000;
 
     const params = {
       type: queryKey,
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
       start: startTime / 1000,
       end: endTime / 1000,
       step: step
-    }
+    };
 
     const result: MonitorDataResult = await monitorFetch(
       {
@@ -119,17 +119,17 @@ export async function GET(req: NextRequest) {
       return AdapterChartData[queryKey]
         ? // @ts-ignore
           AdapterChartData[queryKey](res as MonitorDataResult)
-        : res
-    })
+        : res;
+    });
 
     return jsonRes({
       code: 200,
       data: result
-    })
+    });
   } catch (error) {
     return jsonRes({
       code: 500,
       error: error
-    })
+    });
   }
 }

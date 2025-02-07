@@ -25,7 +25,7 @@ import TemplateRepositoryIsPublicField from './components/TemplateRepositoryIsPu
 import TemplateRepositoryNameField from './components/TemplateRepositoryNameField';
 import TemplateRepositoryTagField from './components/TemplateRepositoryTagField';
 const tagSchema = z.object({
-  value: z.string().min(1),
+  value: z.string().min(1)
 });
 const versionSchema = z.object({
   name: z.string(),
@@ -40,18 +40,17 @@ interface CreateTemplateModalProps {
   uid: string;
 }
 
-const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
-  isOpen,
-  onClose,
-  uid
-}) => {
-  const t = useTranslations()
+const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({ isOpen, onClose, uid }) => {
+  const t = useTranslations();
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')),
     isPublic: z.boolean().default(false),
     agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),
-    tags: z.array(tagSchema).min(1, t('select_at_least_1_tag')).max(3, t('select_lest_than_3_tags')),
-    description: z.string(),
+    tags: z
+      .array(tagSchema)
+      .min(1, t('select_at_least_1_tag'))
+      .max(3, t('select_lest_than_3_tags')),
+    description: z.string()
   });
   type FormData = z.infer<typeof formSchema>;
   const methods = useForm<FormData>({
@@ -60,66 +59,66 @@ const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       isPublic: false,
       agreeTerms: false,
       tags: [],
-      description: '',
-    },
+      description: ''
+    }
   });
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-    setValue,
-  } = methods
+    setValue
+  } = methods;
 
-  const DeleteTemplateVersionHandle = useDisclosure()
-  const [deletedTemplateVersion, setDeletedTemplateVersion] = useState<VersionType | null>()
+  const DeleteTemplateVersionHandle = useDisclosure();
+  const [deletedTemplateVersion, setDeletedTemplateVersion] = useState<VersionType | null>();
   const templateRepositoryQuery = useQuery(
     ['template-repository-detail', uid],
     () => getTemplateRepository(uid),
     {
       enabled: isOpen
     }
-  )
-  const updateMutation = useMutation(
-    updateTemplateReposistory,
-    {
-      onSuccess() {
-        queryClient.invalidateQueries(['template-repository-list'])
-        queryClient.invalidateQueries(['template-repository-detail'])
-      }
+  );
+  const updateMutation = useMutation(updateTemplateReposistory, {
+    onSuccess() {
+      queryClient.invalidateQueries(['template-repository-list']);
+      queryClient.invalidateQueries(['template-repository-detail']);
     }
-  )
-  const templateRepository = templateRepositoryQuery.data?.templateRepository
-  const [publicIsDisabled, setPublicIsDisabled] = useState(false)
+  });
+  const templateRepository = templateRepositoryQuery.data?.templateRepository;
+  const [publicIsDisabled, setPublicIsDisabled] = useState(false);
   useEffect(() => {
     if (isOpen && templateRepository && templateRepositoryQuery.isSuccess) {
-      setValue('tags', templateRepository.templateRepositoryTags.map(({ tag }) => ({
-        value: tag.uid,
-      })))
+      setValue(
+        'tags',
+        templateRepository.templateRepositoryTags.map(({ tag }) => ({
+          value: tag.uid
+        }))
+      );
 
-      setValue('name', templateRepository.name)
-      setValue('description', templateRepository.description || '')
-      setValue('isPublic', templateRepository.isPublic)
+      setValue('name', templateRepository.name);
+      setValue('description', templateRepository.description || '');
+      setValue('isPublic', templateRepository.isPublic);
       if (templateRepository.isPublic) {
-        setPublicIsDisabled(true)
-        setValue('agreeTerms', true)
+        setPublicIsDisabled(true);
+        setValue('agreeTerms', true);
       }
     }
-  }, [templateRepository, isOpen])
-  const { message: toast } = useMessage()
-  const queryClient = useQueryClient()
+  }, [templateRepository, isOpen]);
+  const { message: toast } = useMessage();
+  const queryClient = useQueryClient();
   const onSubmitHandler = async (_data: FormData) => {
     try {
-      const result = formSchema.safeParse(_data)
+      const result = formSchema.safeParse(_data);
       if (!result.success) {
-        const error = result.error.errors[0]
+        const error = result.error.errors[0];
         toast({
           title: error.message,
-          status: 'error',
+          status: 'error'
         });
         return;
       }
-      const data = result.data
+      const data = result.data;
       await updateMutation.mutateAsync({
         uid,
         templateRepositoryName: data.name,
@@ -127,84 +126,78 @@ const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
         description: data.description,
         tagUidList: data.tags.map(({ value }) => value)
       });
-      queryClient.invalidateQueries(['template-repository-list'])
+      queryClient.invalidateQueries(['template-repository-list']);
       reset();
       onClose();
       toast({
         title: t('template_ssaved_successfully'),
-        status: 'success',
+        status: 'success'
       });
     } catch (error) {
       toast({
         title: error as string,
-        status: 'error',
+        status: 'error'
       });
     }
   };
-  return (<>
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="md"
-      onCloseComplete={() => reset()}
-    >
-      <ModalOverlay />
-      <ModalContent maxW="562px" margin={'auto'}>
-        <FormProvider {...methods}>
-          <form onSubmit={handleSubmit(onSubmitHandler)}>
-            <ModalHeader>
-              <Text>{t('edit_template')}</Text>
-            </ModalHeader>
-            <ModalBody pt={'32px'} pb={'24px'} px={'52px'} >
-              <ModalCloseButton />
+  return (
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} size="md" onCloseComplete={() => reset()}>
+        <ModalOverlay />
+        <ModalContent maxW="562px" margin={'auto'}>
+          <FormProvider {...methods}>
+            <form onSubmit={handleSubmit(onSubmitHandler)}>
+              <ModalHeader>
+                <Text>{t('edit_template')}</Text>
+              </ModalHeader>
+              <ModalBody pt={'32px'} pb={'24px'} px={'52px'}>
+                <ModalCloseButton />
 
-              <VStack spacing={6} align="stretch">
-                {/* 名称 */}
-                <TemplateRepositoryNameField isDisabled />
+                <VStack spacing={6} align="stretch">
+                  {/* 名称 */}
+                  <TemplateRepositoryNameField isDisabled />
 
-                {/* 公开 */}
-                <TemplateRepositoryIsPublicField isDisabled={publicIsDisabled} />
+                  {/* 公开 */}
+                  <TemplateRepositoryIsPublicField isDisabled={publicIsDisabled} />
 
-                {/* 标签 */}
-                <TemplateRepositoryTagField />
+                  {/* 标签 */}
+                  <TemplateRepositoryTagField />
 
-                {/* 简介 */}
-                <TemplateRepositoryDescriptionField />
-              </VStack>
-
-            </ModalBody>
-            <ModalFooter px={'52px'} pb={'32px'}>
-              {/* 按钮组 */}
-              <ButtonGroup variant={'outline'}>
-                <Button
-                  px={'29.5px'}
-                  py={'8px'}
-                  onClick={() => {
-                    reset();
-                    onClose();
-                  }}
-                >
-                  {t('cancel')}
-                </Button>
-                <Button
-                  type="submit"
-                  px={'29.5px'}
-                  py={'8px'}
-                  variant={'solid'}
-                  // _hover={{ bg: 'grayModern.800' }}
-                  isLoading={isSubmitting}
-                >
-                  {t('save_template')}
-                </Button>
-              </ButtonGroup>
-            </ModalFooter>
-          </form>
-        </FormProvider>
-
-      </ModalContent>
-    </Modal>
-  </>
+                  {/* 简介 */}
+                  <TemplateRepositoryDescriptionField />
+                </VStack>
+              </ModalBody>
+              <ModalFooter px={'52px'} pb={'32px'}>
+                {/* 按钮组 */}
+                <ButtonGroup variant={'outline'}>
+                  <Button
+                    px={'29.5px'}
+                    py={'8px'}
+                    onClick={() => {
+                      reset();
+                      onClose();
+                    }}
+                  >
+                    {t('cancel')}
+                  </Button>
+                  <Button
+                    type="submit"
+                    px={'29.5px'}
+                    py={'8px'}
+                    variant={'solid'}
+                    // _hover={{ bg: 'grayModern.800' }}
+                    isLoading={isSubmitting}
+                  >
+                    {t('save_template')}
+                  </Button>
+                </ButtonGroup>
+              </ModalFooter>
+            </form>
+          </FormProvider>
+        </ModalContent>
+      </Modal>
+    </>
   );
 };
 
-export default EditTemplateRepositoryModal
+export default EditTemplateRepositoryModal;

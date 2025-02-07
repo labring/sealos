@@ -1,9 +1,9 @@
-import { create } from 'zustand'
-import { devtools, persist } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 
-import { getAppEnv } from '@/api/platform'
-import { Env } from '@/types/static'
+import { getAppEnv } from '@/api/platform';
+import { Env } from '@/types/static';
 
 export const defaultEnv: Env = {
   sealosDomain: 'dev.sealos.plus',
@@ -16,12 +16,12 @@ export const defaultEnv: Env = {
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
   currencySymbol: 'shellCoin'
-}
+};
 
 type State = {
-  env: Env
-  setEnv: () => Promise<Env>
-}
+  env: Env;
+  setEnv: () => Promise<Env>;
+};
 
 export const useEnvStore = create<State>()(
   devtools(
@@ -29,11 +29,11 @@ export const useEnvStore = create<State>()(
       immer((set) => ({
         env: defaultEnv,
         async setEnv() {
-          const res = await getAppEnv()
+          const res = await getAppEnv();
           set((state) => {
-            state.env = res
-          })
-          return res
+            state.env = res;
+          });
+          return res;
         }
       })),
       {
@@ -41,4 +41,4 @@ export const useEnvStore = create<State>()(
       }
     )
   )
-)
+);

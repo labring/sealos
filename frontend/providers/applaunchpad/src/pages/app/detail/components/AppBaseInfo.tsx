@@ -100,6 +100,30 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     [app]
   );
 
+  const persistentVolumes = useMemo(() => {
+    return app.volumes
+      .filter((item) => 'persistentVolumeClaim' in item)
+      .reduce(
+        (
+          acc: {
+            path: string;
+            name: string;
+          }[],
+          volume
+        ) => {
+          const mount = app.volumeMounts.find((m) => m.name === volume.name);
+          if (mount) {
+            acc.push({
+              path: mount.mountPath,
+              name: volume.name
+            });
+          }
+          return acc;
+        },
+        []
+      );
+  }, [app.volumes, app.volumeMounts]);
+
   return (
     <Box px={6} py={7} position={'relative'}>
       {app?.source?.hasSource && (
@@ -383,7 +407,7 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                   borderRadius={'md'}
                   overflow={'hidden'}
                   bg={'#FFF'}
-                  {...(app.storeList.length > 0
+                  {...(app.storeList.length > 0 || persistentVolumes.length > 0
                     ? {
                         mb: 4,
                         border: theme.borders.base
@@ -412,6 +436,27 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                         >
                           {item.value} Gi
                         </Box>
+                      </Box>
+                    </Flex>
+                  ))}
+                  {persistentVolumes.map((item) => (
+                    <Flex
+                      key={item.path}
+                      alignItems={'center'}
+                      px={4}
+                      py={1}
+                      _notLast={{
+                        borderBottom: theme.borders.base
+                      }}
+                    >
+                      <MyIcon name={'store'} />
+                      <Box ml={4} flex={'1 0 0'} w={0}>
+                        <Box color={'grayModern.900'} fontWeight={'bold'}>
+                          {item.path}
+                        </Box>
+                      </Box>
+                      <Box fontSize={'12px'} color={'grayModern.600'}>
+                        {t('shared')}
                       </Box>
                     </Flex>
                   ))}

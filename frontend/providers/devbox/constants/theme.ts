@@ -1,5 +1,5 @@
-import { extendTheme } from '@chakra-ui/react'
-import { theme as SealosTheme } from '@sealos/ui'
+import { extendTheme } from '@chakra-ui/react';
+import { theme as SealosTheme } from '@sealos/ui';
 
 export const theme = extendTheme(SealosTheme, {
   styles: {
@@ -14,4 +14,4 @@ export const theme = extendTheme(SealosTheme, {
       }
     }
   }
-})
+});

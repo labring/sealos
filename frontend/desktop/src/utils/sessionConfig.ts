@@ -22,7 +22,6 @@ export const sessionConfig = async ({
     user: {
       userRestrictedLevel: infoData.data?.info.userRestrictedLevel || undefined,
       realName: infoData.data?.info.realName || undefined,
-      enterpriseVerificationStatus: infoData.data?.info.enterpriseVerificationStatus || undefined,
       enterpriseRealName: infoData.data?.info.enterpriseRealName || undefined,
       k8s_username: payload.userCrName,
       name: infoData.data?.info.nickname || '',

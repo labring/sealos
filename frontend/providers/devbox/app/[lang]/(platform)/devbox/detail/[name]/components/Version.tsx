@@ -1,64 +1,64 @@
-'use client'
+'use client';
 
-import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react'
-import { SealosMenu, useMessage } from '@sealos/ui'
-import { useQuery } from '@tanstack/react-query'
-import { customAlphabet } from 'nanoid'
-import { useTranslations } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
-import { sealosApp } from 'sealos-desktop-sdk/app'
+import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react';
+import { SealosMenu, useMessage } from '@sealos/ui';
+import { useQuery } from '@tanstack/react-query';
+import { customAlphabet } from 'nanoid';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
-import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox'
-import DevboxStatusTag from '@/components/DevboxStatusTag'
-import MyIcon from '@/components/Icon'
-import EditVersionDesModal from '@/components/modals/EditVersionDesModal'
-import ReleaseModal from '@/components/modals/releaseModal'
-import MyTable from '@/components/MyTable'
-import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox'
-import { DevboxVersionListItemType } from '@/types/devbox'
+import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
+import ReleaseModal from '@/components/modals/ReleaseModal';
+import MyTable from '@/components/MyTable';
+import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
+import { DevboxVersionListItemType } from '@/types/devbox';
 
-import { useConfirm } from '@/hooks/useConfirm'
-import { useLoading } from '@/hooks/useLoading'
+import { useConfirm } from '@/hooks/useConfirm';
+import { useLoading } from '@/hooks/useLoading';
 
-import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template'
-import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal'
-import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal'
-import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal'
-import AppSelectModal from '@/components/modals/AppSelectModal'
-import { useDevboxStore } from '@/stores/devbox'
-import { useEnvStore } from '@/stores/env'
-import { AppListItemType } from '@/types/app'
-import { parseTemplateConfig } from '@/utils/tools'
-import useReleaseDriver from '@/hooks/useReleaseDriver'
+import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
+import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal';
+import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal';
+import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
+import AppSelectModal from '@/components/modals/AppSelectModal';
+import useReleaseDriver from '@/hooks/useReleaseDriver';
+import { useDevboxStore } from '@/stores/devbox';
+import { useEnvStore } from '@/stores/env';
+import { AppListItemType } from '@/types/app';
+import { parseTemplateConfig } from '@/utils/tools';
+import MyIcon from '@/components/Icon';
 
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6)
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 const Version = () => {
-  const { startReleaseGuide } = useReleaseDriver()
-  const t = useTranslations()
-  const { message: toast } = useMessage()
-  const { Loading, setIsLoading } = useLoading()
-  const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure()
+  const { startReleaseGuide } = useReleaseDriver();
+  const t = useTranslations();
+  const { message: toast } = useMessage();
+  const { Loading, setIsLoading } = useLoading();
+  const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure();
 
-  const { env } = useEnvStore()
-  const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore()
+  const { env } = useEnvStore();
+  const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore();
 
-  const [initialized, setInitialized] = useState(false)
-  const [onOpenRelease, setOnOpenRelease] = useState(false)
-  const [onOpenSelectApp, setOnOpenSelectApp] = useState(false)
-  const [apps, setApps] = useState<AppListItemType[]>([])
-  const [deployData, setDeployData] = useState<any>(null)
-  const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null)
+  const [initialized, setInitialized] = useState(false);
+  const [onOpenRelease, setOnOpenRelease] = useState(false);
+  const [onOpenSelectApp, setOnOpenSelectApp] = useState(false);
+  const [apps, setApps] = useState<AppListItemType[]>([]);
+  const [deployData, setDeployData] = useState<any>(null);
+  const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null);
   const [updateTemplateRepo, setUpdateTemplateRepo] = useState<
     | null
     | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
-  >(null)
-  const createTemplateModalHandler = useDisclosure()
-  const selectTemplalteModalHandler = useDisclosure()
-  const updateTemplateModalHandler = useDisclosure()
+  >(null);
+  const createTemplateModalHandler = useDisclosure();
+  const selectTemplalteModalHandler = useDisclosure();
+  const updateTemplateModalHandler = useDisclosure();
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'delete_version_confirm_info'
-  })
+  });
   const { refetch } = useQuery(
     ['initDevboxVersionList'],
     () => setDevboxVersionList(devbox!.name, devbox!.id),
@@ -72,17 +72,17 @@ const Version = () => {
           ? 3000
           : false,
       onSettled() {
-        setInitialized(true)
+        setInitialized(true);
       },
       enabled: !!devbox
     }
-  )
+  );
 
   useEffect(() => {
     if (devboxVersionList?.length && devboxVersionList.length > 0) {
-      startReleaseGuide()
+      startReleaseGuide();
     }
-  }, [devboxVersionList.length])
+  }, [devboxVersionList.length]);
 
   const listPrivateTemplateRepositoryQuery = useQuery(
     ['template-repository-list', 'template-repository-private'],
@@ -90,29 +90,28 @@ const Version = () => {
       return listPrivateTemplateRepository({
         page: 1,
         pageSize: 100
-      })
+      });
     }
-  )
+  );
   const templateRepositoryList =
-    listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || []
+    listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || [];
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
-      // const { releaseCommand, releaseArgs } = await getSSHRuntimeInfo(devbox.runtimeVersion)
-      if (!devbox) return
-      const result = await getTemplateConfig(devbox.templateUid)
-      const config = parseTemplateConfig(result.template.config)
-      const releaseArgs = config.releaseArgs.join(' ')
-      const releaseCommand = config.releaseCommand.join(' ')
-      const { cpu, memory, networks, name } = devbox
+      if (!devbox) return;
+      const result = await getTemplateConfig(devbox.templateUid);
+      const config = parseTemplateConfig(result.template.config);
+      const releaseArgs = config.releaseArgs.join(' ');
+      const releaseCommand = config.releaseCommand.join(' ');
+      const { cpu, memory, networks, name } = devbox;
       const newNetworks = networks.map((network) => {
         return {
           port: network.port,
           protocol: network.protocol,
           openPublicDomain: network.openPublicDomain,
           domain: env.ingressDomain
-        }
-      })
-      const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`
+        };
+      });
+      const imageName = `${env.registryAddr}/${env.namespace}/${devbox.name}:${version.tag}`;
 
       const transformData = {
         appName: `${name}-release-${nanoid()}`,
@@ -135,13 +134,13 @@ const Version = () => {
         labels: {
           [devboxIdKey]: devbox.id
         }
-      }
-      setDeployData(transformData)
-      const apps = await getAppsByDevboxId(devbox.id)
+      };
+      setDeployData(transformData);
+      const apps = await getAppsByDevboxId(devbox.id);
 
       // when: there is no app,create a new app
       if (apps.length === 0) {
-        const tempFormDataStr = encodeURIComponent(JSON.stringify(transformData))
+        const tempFormDataStr = encodeURIComponent(JSON.stringify(transformData));
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-applaunchpad',
           pathname: '/redirect',
@@ -150,55 +149,55 @@ const Version = () => {
             type: 'InternalAppCall',
             formData: tempFormDataStr
           }
-        })
+        });
       }
 
       // when: there have apps,show the app select modal
       if (apps.length >= 1) {
-        setApps(apps)
-        setOnOpenSelectApp(true)
+        setApps(apps);
+        setOnOpenSelectApp(true);
       }
     },
     [devbox, env.ingressDomain, env.namespace, env.registryAddr]
-  )
+  );
   const handleDelDevboxVersion = useCallback(
     async (versionName: string) => {
       try {
-        setIsLoading(true)
-        await delDevboxVersionByName(versionName)
+        setIsLoading(true);
+        await delDevboxVersionByName(versionName);
         toast({
           title: t('delete_successful'),
           status: 'success'
-        })
-        let retryCount = 0
-        const maxRetries = 3
-        const retryInterval = 3000
+        });
+        let retryCount = 0;
+        const maxRetries = 3;
+        const retryInterval = 3000;
 
         const retry = async () => {
           if (retryCount < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, retryInterval))
-            await refetch()
-            retryCount++
+            await new Promise((resolve) => setTimeout(resolve, retryInterval));
+            await refetch();
+            retryCount++;
           }
-        }
-        retry()
+        };
+        retry();
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('delete_failed'),
           status: 'error'
-        })
-        console.error(error)
+        });
+        console.error(error);
       }
-      setIsLoading(false)
+      setIsLoading(false);
     },
     [setIsLoading, toast, t, refetch]
-  )
+  );
 
   const columns: {
-    title: string
-    dataIndex?: keyof DevboxVersionListItemType
-    key: string
-    render?: (item: DevboxVersionListItemType) => JSX.Element
+    title: string;
+    dataIndex?: keyof DevboxVersionListItemType;
+    key: string;
+    render?: (item: DevboxVersionListItemType) => JSX.Element;
   }[] = [
     {
       title: t('version_number'),
@@ -221,7 +220,7 @@ const Version = () => {
       dataIndex: 'createTime',
       key: 'createTime',
       render: (item: DevboxVersionListItemType) => {
-        return <Text color={'grayModern.600'}>{item.createTime}</Text>
+        return <Text color={'grayModern.600'}>{item.createTime}</Text>;
       }
     },
     {
@@ -254,13 +253,20 @@ const Version = () => {
               color: 'brightBlue.600'
             }}
             isDisabled={item.status.value !== DevboxReleaseStatusEnum.Success}
-            onClick={() => handleDeploy(item)}>
+            onClick={() => handleDeploy(item)}
+          >
             {t('deploy')}
           </Button>
           <SealosMenu
             width={100}
             Button={
-              <MenuButton as={Button} variant={'square'} boxSize={'32px'} data-group>
+              <MenuButton
+                as={Button}
+                variant={'square'}
+                boxSize={'32px'}
+                data-group
+                isDisabled={item?.status?.value !== 'Success'}
+              >
                 <MyIcon
                   name={'more'}
                   color={'grayModern.600'}
@@ -280,8 +286,8 @@ const Version = () => {
                   </>
                 ),
                 onClick: () => {
-                  setCurrentVersion(item)
-                  onOpenEdit()
+                  setCurrentVersion(item);
+                  onOpenEdit();
                 }
               },
               {
@@ -292,13 +298,13 @@ const Version = () => {
                   </>
                 ),
                 onClick: () => {
-                  setCurrentVersion(item)
+                  setCurrentVersion(item);
                   // onOpenEdit()
                   // openTemplateModal({templateState: })
                   if (templateRepositoryList.length > 0) {
-                    selectTemplalteModalHandler.onOpen()
+                    selectTemplalteModalHandler.onOpen();
                   } else {
-                    createTemplateModalHandler.onOpen()
+                    createTemplateModalHandler.onOpen();
                   }
                 }
               },
@@ -322,7 +328,7 @@ const Version = () => {
         </Flex>
       )
     }
-  ]
+  ];
   return (
     <Box
       borderWidth={1}
@@ -332,7 +338,8 @@ const Version = () => {
       pr={6}
       bg={'white'}
       h={'full'}
-      position={'relative'}>
+      position={'relative'}
+    >
       <Flex alignItems="center" justifyContent={'space-between'} mb={5}>
         <Flex alignItems={'center'}>
           <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
@@ -350,7 +357,8 @@ const Version = () => {
           leftIcon={<MyIcon name="version" />}
           _hover={{
             color: 'brightBlue.600'
-          }}>
+          }}
+        >
           {t('release_version')}
         </Button>
       </Flex>
@@ -361,7 +369,8 @@ const Version = () => {
           alignItems={'center'}
           mt={10}
           flexDirection={'column'}
-          gap={4}>
+          gap={4}
+        >
           <MyIcon name="empty" w={'40px'} h={'40px'} color={'white'} />
           <Box textAlign={'center'} color={'grayModern.600'}>
             {t('no_versions')}
@@ -387,7 +396,7 @@ const Version = () => {
         <ReleaseModal
           onSuccess={refetch}
           onClose={() => {
-            setOnOpenRelease(false)
+            setOnOpenRelease(false);
           }}
           devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
         />
@@ -411,9 +420,9 @@ const Version = () => {
         <SelectTemplateModal
           onOpenCreate={createTemplateModalHandler.onOpen}
           onOpenUdate={(uid) => {
-            const repo = templateRepositoryList.find((item) => item.uid === uid)
-            setUpdateTemplateRepo(repo || null)
-            updateTemplateModalHandler.onOpen()
+            const repo = templateRepositoryList.find((item) => item.uid === uid);
+            setUpdateTemplateRepo(repo || null);
+            updateTemplateModalHandler.onOpen();
           }}
           templateRepositoryList={templateRepositoryList}
           isOpen={selectTemplalteModalHandler.isOpen}
@@ -429,7 +438,7 @@ const Version = () => {
         />
       )}
     </Box>
-  )
-}
+  );
+};
 
-export default Version
+export default Version;

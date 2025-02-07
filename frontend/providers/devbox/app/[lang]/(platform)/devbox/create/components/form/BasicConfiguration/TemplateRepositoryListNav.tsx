@@ -1,21 +1,22 @@
-import MyIcon from '@/components/Icon'
-import { TemplateState } from '@/constants/template'
-import { useTemplateStore } from '@/stores/template'
-import { Box, Flex, Text } from '@chakra-ui/react'
-import { useTranslations } from 'next-intl'
-import { usePathname } from '@/i18n'
+import MyIcon from '@/components/Icon';
+import { TemplateState } from '@/constants/template';
+import { useTemplateStore } from '@/stores/template';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { useTranslations } from 'next-intl';
+import { usePathname } from '@/i18n';
 
 const TemplateRepositoryListNav = () => {
-  const t = useTranslations()
-  const { openTemplateModal, config, isOpen } = useTemplateStore()
-  const lastRoute = usePathname()
+  const t = useTranslations();
+  const { openTemplateModal, config, isOpen } = useTemplateStore();
+  const lastRoute = usePathname();
   return (
     <Flex
       // margin="0 auto"
       // width="168px"
       height="18px"
       gap="12px"
-      alignItems="center">
+      alignItems="center"
+    >
       {/* All Templates Tab */}
       <Flex
         alignItems="center"
@@ -28,8 +29,9 @@ const TemplateRepositoryListNav = () => {
           openTemplateModal({
             templateState: TemplateState.publicTemplate,
             lastRoute
-          })
-        }}>
+          });
+        }}
+      >
         <MyIcon
           name={'templateTitle'}
           width="18px"
@@ -43,7 +45,8 @@ const TemplateRepositoryListNav = () => {
           fontWeight="500"
           lineHeight="16px"
           letterSpacing="0.5px"
-          color="#485264">
+          color="#485264"
+        >
           {t('all_templates')}
         </Text>
       </Flex>
@@ -63,8 +66,9 @@ const TemplateRepositoryListNav = () => {
           openTemplateModal({
             templateState: TemplateState.privateTemplate,
             lastRoute
-          })
-        }}>
+          });
+        }}
+      >
         <MyIcon name={'user'} width="18px" height="18px" color="#0884DD" />
         <Text
           fontFamily="PingFang SC"
@@ -72,12 +76,13 @@ const TemplateRepositoryListNav = () => {
           fontWeight="500"
           lineHeight="16px"
           letterSpacing="0.5px"
-          color="#485264">
+          color="#485264"
+        >
           {t('my_templates')}
         </Text>
       </Flex>
     </Flex>
-  )
-}
+  );
+};
 
-export default TemplateRepositoryListNav
+export default TemplateRepositoryListNav;
