@@ -4,17 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/labring/sealos/service/pkg/auth"
 	"io"
-	"io/ioutil"
-
-	"github.com/labring/sealos/service/pkg/api"
-	"github.com/labring/sealos/service/vlogs/request"
-
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
+	"github.com/labring/sealos/service/vlogs/request"
 )
 
 type VLogsServer struct {
@@ -55,7 +53,7 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	http.Error(rw, "Not found", http.StatusNotFound)
 }
 
-func (vl *VLogsServer) authenticate(rw http.ResponseWriter, req *http.Request) (string, error) {
+func (vl *VLogsServer) authenticate(req *http.Request) (string, error) {
 	kubeConfig, namespace, query, err := vl.generateParamsRequest(req)
 	if err != nil {
 		return "", fmt.Errorf("bad request (%s)", err)
@@ -69,7 +67,7 @@ func (vl *VLogsServer) authenticate(rw http.ResponseWriter, req *http.Request) (
 }
 
 func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) error {
-	query, err := vl.authenticate(rw, req)
+	query, err := vl.authenticate(req)
 	if err != nil {
 		return err
 	}
@@ -86,7 +84,7 @@ func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Reque
 }
 
 func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) error {
-	query, err := vl.authenticate(rw, req)
+	query, err := vl.authenticate(req)
 	if err != nil {
 		return err
 	}
@@ -95,7 +93,7 @@ func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) e
 		return fmt.Errorf("query failed (%s)", err)
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %v", err)
 	}
