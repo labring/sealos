@@ -90,6 +90,15 @@ type VlogsRequest struct {
 	Container   []string    `json:"container"`
 	Keyword     string      `json:"keyword"`
 	JSONQuery   []JSONQuery `json:"jsonQuery"`
+	PodQuery    string      `json:"podQuery"`
+}
+
+type VlogsResponse struct {
+	Time      string `json:"_time"`
+	Message   string `json:"_msg"`
+	Container string `json:"container"`
+	Pod       string `json:"pod"`
+	Stream    string `json:"stream"`
 }
 
 var (

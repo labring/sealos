@@ -3,7 +3,6 @@ package request
 import (
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 )
@@ -25,7 +24,7 @@ func generateReq(path string, username string, password string, query string) (*
 	return req, nil
 }
 
-func QueryLogsByParams(path string, username string, password string, query string, rw http.ResponseWriter) error {
+func QueryLogsByParams(path string, username string, password string, query string) (*http.Response, error) {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -35,20 +34,16 @@ func QueryLogsByParams(path string, username string, password string, query stri
 	}
 	req, err := generateReq(path, username, password, query)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("HTTP req error: %v", err)
+		return nil, fmt.Errorf("HTTP req error: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("res error,err info: %+v", resp)
+		return nil, fmt.Errorf("res error,err info: %+v", resp)
 	}
-	_, err = io.Copy(rw, resp.Body)
-	if err != nil {
-		return err
-	}
-	return nil
+	return resp, nil
 }

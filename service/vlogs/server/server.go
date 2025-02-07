@@ -3,6 +3,8 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 
 	"github.com/labring/sealos/service/pkg/api"
 	"github.com/labring/sealos/service/pkg/auth"
@@ -41,24 +43,87 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 		return
 	}
+	if req.URL.Path == "/queryPodList" {
+		err := vl.queryPodList(rw, req)
+		if err != nil {
+			http.Error(rw, fmt.Sprintf("query pod list error: %s", err), http.StatusInternalServerError)
+			log.Printf("query pod list error: %s", err)
+		}
+		return
+	}
 	http.Error(rw, "Not found", http.StatusNotFound)
 }
 
-func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) error {
+func (vl *VLogsServer) authenticate(rw http.ResponseWriter, req *http.Request) (string, error) {
 	kubeConfig, namespace, query, err := vl.generateParamsRequest(req)
 	if err != nil {
-		return fmt.Errorf("bad request (%s)", err)
+		return "", fmt.Errorf("bad request (%s)", err)
 	}
 
 	err = auth.Authenticate(namespace, kubeConfig)
 	if err != nil {
-		return fmt.Errorf("authentication failed (%s)", err)
+		return "", fmt.Errorf("authentication failed (%s)", err)
 	}
+	return query, nil
+}
 
-	err = request.QueryLogsByParams(vl.path, vl.username, vl.password, query, rw)
+func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Request) error {
+	query, err := vl.authenticate(rw, req)
+	if err != nil {
+		return err
+	}
+	resp, err := request.QueryLogsByParams(vl.path, vl.username, vl.password, query)
 	if err != nil {
 		return fmt.Errorf("query failed (%s)", err)
 	}
+	_, err = io.Copy(rw, resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) error {
+	query, err := vl.authenticate(rw, req)
+	if err != nil {
+		return err
+	}
+	resp, err := request.QueryLogsByParams(vl.path, vl.username, vl.password, query)
+	if err != nil {
+		return fmt.Errorf("query failed (%s)", err)
+	}
+	// 读取响应体
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %v", err)
+	}
+
+	// 解码响应体
+	var logs []api.VlogsResponse
+	if err := json.Unmarshal(body, &logs); err != nil {
+		return fmt.Errorf("failed to unmarshal response body: %v", err)
+	}
+
+	// 使用map去重
+	uniquePods := make(map[string]struct{})
+	for _, log := range logs {
+		uniquePods[log.Pod] = struct{}{}
+	}
+
+	// 将map的键转换为切片
+	var podList []string
+	for pod := range uniquePods {
+		podList = append(podList, pod)
+	}
+
+	// 设置响应头
+	rw.Header().Set("Content-Type", "application/json")
+
+	// 将 podList 写入响应
+	if err := json.NewEncoder(rw).Encode(podList); err != nil {
+		return fmt.Errorf("failed to write response: %v", err)
+	}
+
 	return nil
 }
 
@@ -91,6 +156,9 @@ type VLogsQuery struct {
 }
 
 func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
+	if req.PodQuery == modeTrue {
+		return v.generatePodListQuery(req), nil
+	}
 	v.generateKeywordQuery(req)
 	v.generateStreamQuery(req)
 	v.generateCommonQuery(req)
@@ -102,6 +170,14 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	v.generateDropQuery()
 	v.generateNumberQuery(req)
 	return v.query, nil
+}
+
+func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
+	var builder strings.Builder
+	item := fmt.Sprintf(`_time:%s app:="%s" `, req.Time, req.App)
+	builder.WriteString(item)
+	v.generateDropQuery()
+	return v.query
 }
 
 func (v *VLogsQuery) generateKeywordQuery(req *api.VlogsRequest) {
