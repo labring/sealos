@@ -6,14 +6,13 @@ import (
 	"slices"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
-
-	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"

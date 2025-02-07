@@ -200,9 +200,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 
 	tokenCount, err := CountTokens(req.Context(), meta, contents)
 	if err != nil {
-		return "", nil, nil, err
+		log.Error("count tokens failed: " + err.Error())
+	} else {
+		meta.InputTokens = tokenCount
 	}
-	meta.InputTokens = tokenCount
 
 	// Build actual request
 	geminiRequest := ChatRequest{
