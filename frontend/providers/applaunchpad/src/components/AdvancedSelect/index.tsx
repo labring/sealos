@@ -114,9 +114,10 @@ const AdvancedSelect = (
           _active={{
             transform: ''
           }}
+          boxShadow={'none'}
           {...(isOpen
             ? {
-                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                // boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
                 borderColor: 'brightBlue.500',
                 bg: '#FFF'
               }

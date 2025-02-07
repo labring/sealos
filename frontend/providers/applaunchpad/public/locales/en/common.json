@@ -316,5 +316,6 @@
   "field_settings": "Field Setting",
   "selected": "Selected",
   "please_select": "Please Select",
-  "refetching_success": "Refresh Successful"
+  "refetching_success": "Refresh Successful",
+  "refresh": "refresh"
 }

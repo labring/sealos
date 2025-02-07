@@ -6,8 +6,6 @@ import {
   Divider,
   Flex,
   FlexProps,
-  Grid,
-  GridItem,
   Input,
   Popover,
   PopoverContent,
@@ -306,154 +304,139 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
       borderColor={'grayModern.200'}
       borderRadius="6px"
       color={'grayModern.900'}
+      fontSize={'12px'}
       {...props}
     >
-      <Text>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-      <MyIcon name="to" />
-      <Text>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</Text>
       <Popover isOpen={isOpen} onClose={onClose}>
         <PopoverTrigger>
-          <Button
-            variant={'unstyled'}
-            isDisabled={isDisabled}
-            minW={'fit-content'}
-            onClick={onOpen}
-          >
-            <MyIcon name="calendar" />
-          </Button>
+          <Flex cursor={'pointer'} alignItems={'center'} gap={'4px'} onClick={onOpen}>
+            <Text>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</Text>
+            <MyIcon name="to" />
+            <Text>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</Text>
+            <Button variant={'unstyled'} isDisabled={isDisabled} minW={'fit-content'}>
+              <MyIcon name="calendar" />
+            </Button>
+          </Flex>
         </PopoverTrigger>
         <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-          <Grid
-            templateColumns="repeat(9,1fr)"
-            templateRows={'repeat(10,1fr)'}
-            w={'460px'}
-            h={'fit-content'}
-          >
-            <GridItem colSpan={6} rowSpan={9}>
-              <Flex flexDir={'column'} gap={'5px'} mb={'-1px'}>
-                <DayPicker
-                  mode="range"
-                  selected={selectedRange}
-                  onSelect={handleRangeSelect}
-                  locale={currentLang === 'zh' ? zhCN : enUS}
-                  weekStartsOn={0}
-                />
-                <Divider />
-                {/* start date and time */}
-                <Flex flexDir={'column'} gap={'5px'} p={'12px'}>
-                  <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'}>
-                    {t('start')}
-                  </Text>
-                  <Flex w={'100%'} justify={'center'} gap={'10px'}>
-                    <DatePickerInput
-                      value={fromDateString}
-                      onChange={(e) => handleFromChange(e.target.value, 'date')}
-                      error={!!fromDateError}
-                      showError={fromDateShake}
-                    />
-                    <DatePickerInput
-                      value={fromTimeString}
-                      onChange={(e) => handleFromChange(e.target.value, 'time')}
-                      error={!!fromTimeError}
-                      showError={fromTimeShake}
-                    />
-                  </Flex>
-                </Flex>
-                <Divider />
-                {/* end date and time */}
-                <Flex flexDir={'column'} gap={'5px'} p={'12px'}>
-                  <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'}>
-                    {t('end')}
-                  </Text>
-                  <Flex w={'100%'} justify={'center'} gap={'10px'}>
-                    <DatePickerInput
-                      value={toDateString}
-                      onChange={(e) => handleToChange(e.target.value, 'date')}
-                      error={!!toDateError}
-                      showError={toDateShake}
-                    />
-                    <DatePickerInput
-                      value={toTimeString}
-                      onChange={(e) => handleToChange(e.target.value, 'time')}
-                      error={!!toTimeError}
-                      showError={toTimeShake}
-                    />
-                  </Flex>
-                </Flex>
-                <Divider />
-              </Flex>
-            </GridItem>
-            <GridItem colSpan={3} rowSpan={9}>
-              <Flex h={'100%'}>
-                <Divider orientation="vertical" />
-                <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
-                  {recentDateList.map((item) => (
-                    <Button
-                      key={JSON.stringify(item.value)}
-                      variant={'ghost'}
-                      color={'grayModern.900'}
-                      fontSize={'12px'}
-                      fontWeight={'400'}
-                      justifyContent={'flex-start'}
-                      {...(recentDate.compareValue === item.compareValue && {
-                        bg: 'brightBlue.50',
-                        color: 'brightBlue.600'
-                      })}
-                      _hover={{
-                        bg: 'rgba(17, 24, 36, 0.05)'
-                      }}
-                      onClick={() => handleRecentDateClick(item)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
-                </Flex>
-              </Flex>
+          <Flex w={'402px'} height={'382px'}>
+            <Flex w={'242px'} flexDir={'column'}>
+              <DayPicker
+                mode="range"
+                selected={selectedRange}
+                onSelect={handleRangeSelect}
+                locale={currentLang === 'zh' ? zhCN : enUS}
+                weekStartsOn={0}
+              />
               <Divider />
-            </GridItem>
-            <GridItem colSpan={9} rowSpan={1}>
-              <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
-                <MySelect
-                  height="32px"
-                  width={'fit-content'}
-                  border={'none'}
-                  boxShadow={'none'}
-                  backgroundColor={'transparent'}
-                  color={'grayModern.600'}
-                  value={timeZone}
-                  list={[
-                    { value: 'local', label: 'Local (Asia/Shanghai)' },
-                    { value: 'utc', label: 'UTC' }
-                  ]}
-                  onchange={(val: any) => setTimeZone(val)}
-                />
-                <ButtonGroup variant="outline" spacing="2" px={'10px'}>
-                  <Button
-                    border={'1px solid'}
-                    borderColor={'grayModern.250'}
-                    borderRadius={'6px'}
-                    onClick={() => {
-                      setRecentDate(defaultRecentDate);
-                      handleRecentDateClick(defaultRecentDate);
-                    }}
-                  >
-                    <MyIcon name="refresh" color={'grayModern.500'} />
-                  </Button>
-                  <Button
-                    border={'1px solid'}
-                    borderColor={'grayModern.250'}
-                    borderRadius={'6px'}
-                    onClick={() => onClose()}
-                  >
-                    {t('Cancel')}
-                  </Button>
-                  <Button onClick={() => onSubmit()} variant={'primary'}>
-                    {t('Confirm')}
-                  </Button>
-                </ButtonGroup>
+              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
+                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
+                  {t('start')}
+                </Text>
+                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+                  <DatePickerInput
+                    value={fromDateString}
+                    onChange={(e) => handleFromChange(e.target.value, 'date')}
+                    error={!!fromDateError}
+                    showError={fromDateShake}
+                  />
+                  <DatePickerInput
+                    value={fromTimeString}
+                    onChange={(e) => handleFromChange(e.target.value, 'time')}
+                    error={!!fromTimeError}
+                    showError={fromTimeShake}
+                  />
+                </Flex>
               </Flex>
-            </GridItem>
-          </Grid>
+
+              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
+                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
+                  {t('end')}
+                </Text>
+                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+                  <DatePickerInput
+                    value={toDateString}
+                    onChange={(e) => handleToChange(e.target.value, 'date')}
+                    error={!!toDateError}
+                    showError={toDateShake}
+                  />
+                  <DatePickerInput
+                    value={toTimeString}
+                    onChange={(e) => handleToChange(e.target.value, 'time')}
+                    error={!!toTimeError}
+                    showError={toTimeShake}
+                  />
+                </Flex>
+              </Flex>
+            </Flex>
+            <Divider orientation="vertical" flexShrink={0} />
+            <Flex flex={1}>
+              <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
+                {recentDateList.map((item) => (
+                  <Button
+                    height={'32px'}
+                    key={JSON.stringify(item.value)}
+                    variant={'ghost'}
+                    color={'grayModern.900'}
+                    fontSize={'12px'}
+                    fontWeight={'400'}
+                    justifyContent={'flex-start'}
+                    {...(recentDate.compareValue === item.compareValue && {
+                      bg: 'brightBlue.50',
+                      color: 'brightBlue.600'
+                    })}
+                    _hover={{
+                      bg: 'rgba(17, 24, 36, 0.05)'
+                    }}
+                    onClick={() => handleRecentDateClick(item)}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Flex>
+            </Flex>
+          </Flex>
+          <Divider />
+          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
+            <MySelect
+              height="32px"
+              width={'fit-content'}
+              border={'none'}
+              boxShadow={'none'}
+              backgroundColor={'transparent'}
+              color={'grayModern.600'}
+              value={timeZone}
+              list={[
+                { value: 'local', label: 'Local (Asia/Shanghai)' },
+                { value: 'utc', label: 'UTC' }
+              ]}
+              onchange={(val: any) => setTimeZone(val)}
+            />
+            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
+              <Button
+                border={'1px solid'}
+                borderColor={'grayModern.250'}
+                borderRadius={'6px'}
+                onClick={() => {
+                  setRecentDate(defaultRecentDate);
+                  handleRecentDateClick(defaultRecentDate);
+                }}
+              >
+                <MyIcon name="refresh" color={'grayModern.500'} />
+              </Button>
+              <Button
+                border={'1px solid'}
+                borderColor={'grayModern.250'}
+                borderRadius={'6px'}
+                onClick={() => onClose()}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button onClick={() => onSubmit()} variant={'solid'}>
+                {t('Confirm')}
+              </Button>
+            </ButtonGroup>
+          </Flex>
         </PopoverContent>
       </Popover>
     </Flex>

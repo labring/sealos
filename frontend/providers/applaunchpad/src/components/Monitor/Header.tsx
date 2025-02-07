@@ -1,5 +1,6 @@
 import MyIcon from '@/components/Icon';
 import {
+  Box,
   Button,
   ButtonGroup,
   Flex,
@@ -17,6 +18,7 @@ import { REFRESH_INTERVAL_OPTIONS } from '@/constants/monitor';
 import useDateTimeStore from '@/store/date';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 import dynamic from 'next/dynamic';
+import { MyTooltip } from '@sealos/ui';
 const DatePicker = dynamic(() => import('@/components/DatePicker'), { ssr: false });
 
 export default function Header({
@@ -79,15 +81,19 @@ export default function Header({
             refetchData();
           }}
         >
-          <MyIcon
-            name="refresh"
-            w={'16px'}
-            h={'16px'}
-            color={'grayModern.500'}
-            _hover={{
-              color: 'brightBlue.500'
-            }}
-          />
+          <MyTooltip label={t('refresh')} hasArrow>
+            <Box position={'relative'}>
+              <MyIcon
+                name="refresh"
+                w={'16px'}
+                h={'16px'}
+                color={'grayModern.500'}
+                _hover={{
+                  color: 'brightBlue.500'
+                }}
+              />
+            </Box>
+          </MyTooltip>
         </Button>
         <Menu>
           <MenuButton

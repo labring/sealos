@@ -149,6 +149,7 @@ const LogBarChart = ({
     },
     yAxis: {
       type: 'value',
+      splitNumber: 3,
       splitLine: {
         lineStyle: {
           type: 'dashed',
