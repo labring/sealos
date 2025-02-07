@@ -6,8 +6,8 @@ import {
   DefaultCommonClientConfig
 } from '@/types/system';
 import { readFileSync } from 'fs';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import yaml from 'js-yaml';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = await getCommonClientConfig();
@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 function genResCommonClientConfig(common: CommonConfigType): CommonClientConfigType {
   return {
+    trackingEnabled: !!common.trackingEnabled,
     enterpriseRealNameAuthEnabled: !!common.enterpriseRealNameAuthEnabled,
     realNameAuthEnabled: !!common.realNameAuthEnabled,
     realNameReward: common.realNameReward || 0,

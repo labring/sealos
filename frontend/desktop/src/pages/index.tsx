@@ -1,5 +1,6 @@
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
+import { trackEventName } from '@/constants/account';
 import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -14,6 +15,7 @@ import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -32,13 +34,13 @@ export const MoreAppsContext = createContext<IMoreAppsContext | null>(null);
 
 export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: string }) {
   const router = useRouter();
-  const { isUserLogin } = useSessionStore();
+  const { firstUse, setFirstUse, isUserLogin } = useSessionStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const init = useAppStore((state) => state.init);
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { autolaunchWorkspaceUid } = useAppStore();
   const { session } = useSessionStore();
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, commonConfig, trackingConfig } = useConfigStore();
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
 
@@ -78,6 +80,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     const is_login = isUserLogin();
     const whitelistApps = ['system-template', 'system-fastdeploy'];
     if (!is_login) {
+      // clear firstusetime
+      setFirstUse(null);
+
       const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
       // Invited new user
       if (query?.uid && typeof query?.uid === 'string') {
@@ -95,6 +100,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
       if (appkey && typeof appQuery === 'string')
         setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
+
       router.replace(destination);
     } else {
       let workspaceUid: string | undefined;
@@ -205,7 +211,31 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
       return;
     }
   }, [workspaceInviteCode]);
-
+  useEffect(() => {
+    (async (state) => {
+      try {
+        if (
+          commonConfig?.trackingEnabled &&
+          (!firstUse || !dayjs(firstUse).isSame(dayjs(), 'day'))
+        ) {
+          const umami = window.umami;
+          if (!!umami) {
+            const result = await umami.track(trackEventName.dailyLoginFirst, {
+              userId: session?.user.userId!,
+              userUid: session?.user.userUid!
+            });
+            if (result.ok && result.status === 200) {
+              setFirstUse(new Date());
+            } else {
+              console.error('Failed to update first use date');
+            }
+          }
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+  }, [commonConfig, firstUse]);
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
       <Head>
