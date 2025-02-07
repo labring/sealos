@@ -43,6 +43,7 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if req.URL.Path == "/queryPodList" {
+
 		err := vl.queryPodList(rw, req)
 		if err != nil {
 			http.Error(rw, fmt.Sprintf("query pod list error: %s", err), http.StatusInternalServerError)
@@ -160,7 +161,9 @@ type VLogsQuery struct {
 
 func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	if req.PodQuery == modeTrue {
-		return v.generatePodListQuery(req), nil
+		query := v.generatePodListQuery(req)
+		log.Println("query the pod list " + query)
+		return query, nil
 	}
 	v.generateKeywordQuery(req)
 	v.generateStreamQuery(req)
