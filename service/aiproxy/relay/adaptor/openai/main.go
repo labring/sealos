@@ -149,9 +149,11 @@ func SplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCal
 			continue
 		}
 		think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
-		delta["content"] = ""
-		delta["reasoning_content"] = conv.BytesToString(think)
-		renderCallback(data)
+		if len(think) > 0 {
+			delta["content"] = ""
+			delta["reasoning_content"] = conv.BytesToString(think)
+			renderCallback(data)
+		}
 		if len(remaining) > 0 {
 			delta["content"] = conv.BytesToString(remaining)
 			delta["reasoning_content"] = ""
