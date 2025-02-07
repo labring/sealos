@@ -1,17 +1,17 @@
-import { Flex } from '@chakra-ui/react'
+import { Box, Flex } from '@chakra-ui/react'
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import SideBar from '@/components/admin/Sidebar'
+
+export default function UserLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Flex
-      height="100vh"
-      width="100vw"
-      padding="4px 12px 12px 12px"
-      justify="center"
-      align="center"
-      bg="white">
-      <Flex borderRadius="12px" h="full" w="full" direction="column" padding="24px 32px 18px 32px">
+    <Flex height="full" width="full" direction="row">
+      <Box w="88px" h="full" minW="88px">
+        <SideBar />
+      </Box>
+      {/* Main Content */}
+      <Box w="full" h="full">
         {children}
-      </Flex>
+      </Box>
     </Flex>
   )
 }
