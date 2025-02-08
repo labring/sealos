@@ -285,6 +285,7 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	var usage model.Usage
 	var id string
 	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
+	var usageWrited bool
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -317,6 +318,8 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 				continue
 			}
 			response.Usage = &usage
+			usageWrited = true
+
 			if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 				lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 				if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
@@ -348,6 +351,16 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	}
 
 	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+
+	if !usageWrited {
+		_ = render.ObjectData(c, &openai.ChatCompletionsStreamResponse{
+			Model:   m.OriginModel,
+			Object:  "chat.completion.chunk",
+			Created: createdTime,
+			Choices: []*openai.ChatCompletionsStreamResponseChoice{},
+			Usage:   &usage,
+		})
+	}
 
 	render.Done(c)
 
