@@ -20,14 +20,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-	"golang.org/x/sync/semaphore"
+	"k8s.io/client-go/kubernetes/scheme"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,7 +34,6 @@ import (
 
 	"github.com/labring/sealos/controllers/pkg/types"
 
-	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	"github.com/go-logr/logr"
@@ -100,67 +97,90 @@ type BillingReconciler struct {
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
 	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
-	ownerList, err := r.getRecentUsedOwners()
+	ownerListMap, err := r.getRecentUsedOwners()
 	if err != nil {
-		r.Logger.Error(err, "failed to get the owner list of the recently used resource")
-		return err
+		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
 	}
-	sem := semaphore.NewWeighted(r.concurrentLimit)
-	wg := sync.WaitGroup{}
-	wg.Add(len(ownerList))
-	now := time.Now()
-	for _owner := range ownerList {
-		go func(owner string, nsList []string) {
-			defer wg.Done()
-			if err := sem.Acquire(context.Background(), 1); err != nil {
-				fmt.Printf("Failed to acquire semaphore: %v\n", err)
-				return
-			}
-			defer sem.Release(1)
-			if err := r.reconcileOwner(owner, nsList, now); err != nil {
-				r.Logger.Error(err, "reconcile owner failed", "owner", owner)
-			}
-		}(_owner, ownerList[_owner])
+	err = r.reconcileOwnerListBatch(ownerListMap, env.GetIntEnvWithDefault("BILLING_RECONCILE_BATCH_COUNT", 200), time.Now(), r.reconcileOwnerList)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile owner list batch: %w", err)
 	}
-	wg.Wait()
 	r.Logger.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
 	return nil
 }
 
-func (r *BillingReconciler) reconcileOwner(owner string, nsList []string, now time.Time) error {
-	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
-	queryTime := currentHourTime.Add(-1 * time.Hour)
-	if exist, lastUpdateTime, _ := r.DBClient.GetBillingLastUpdateTime(owner, v12.Consumption); exist {
-		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
-			return nil
-		}
-		// 24小时内的数据，从上次更新时间开始计算，否则从当前时间起算
-		if lastUpdateTime.After(currentHourTime.Add(-24 * time.Hour)) {
-			queryTime = lastUpdateTime
-		}
-	}
+func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string, now time.Time) error {
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	startHourTime := endHourTime.Add(-1 * time.Hour)
 
-	orderList := []string{}
-	consumAmount := int64(0)
-	// 计算上次billing到当前的时间之间的整点，左开右闭
-	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nsList, getUsername(owner))
-		if err != nil {
-			return fmt.Errorf("generate billing data failed: %w", err)
-		}
-		orderList = append(orderList, ids...)
-		consumAmount += amount
+	var ownerList []string
+	for _, ns := range ownerListMap {
+		ownerList = append(ownerList, ns...)
 	}
-	if consumAmount > 0 {
-		if err := r.rechargeBalance(owner, consumAmount); err != nil {
-			for i := range orderList {
-				if err := r.DBClient.UpdateBillingStatus(orderList[i], resources.Unsettled); err != nil {
-					r.Logger.Error(err, "update billing status failed", "id", orderList[i])
-				}
+	updateOwnerList, err := r.DBClient.GetOwnersWithoutRecentUpdates(ownerList, endHourTime)
+	if err != nil {
+		return fmt.Errorf("get owners without recent updates failed: %w", err)
+	}
+	r.Logger.Info("get owners without recent updates", "count", len(updateOwnerList))
+
+	ownerBillings, err := r.DBClient.GenerateBillingData(startHourTime, endHourTime, r.Properties, ownerListMap)
+	if err != nil {
+		return fmt.Errorf("generate billing data failed: %w", err)
+	}
+	r.Logger.Info("generate billing data", "count", len(ownerBillings))
+	for _, billings := range ownerBillings {
+		amount := int64(0)
+		orderIDs := make([]string, 0, len(billings))
+		for _, billing := range billings {
+			amount += billing.Amount
+			orderIDs = append(orderIDs, billing.OrderID)
+		}
+		if err = r.DBClient.SaveBillings(billings...); err != nil {
+			return fmt.Errorf("save billings failed: %w", err)
+		}
+		if err := r.rechargeBalance(billings[0].Owner, amount); err != nil {
+			if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); err != nil {
+				r.Logger.Error(err, "update billing unsettled status failed", "orderIDs", orderIDs)
 			}
 			return fmt.Errorf("recharge balance failed: %w", err)
 		}
-		r.Logger.V(1).Info("success recharge balance", "owner", owner, "amount", consumAmount)
+	}
+	return nil
+}
+
+// reconcileOwnerListBatch process ownerlistmap in batch mode
+func (r *BillingReconciler) reconcileOwnerListBatch(
+	ownerListMap map[string][]string, // The owner -> namespaces mapping needs to be handled
+	batchSize int, // number of owners processed per batch
+	now time.Time, // current time
+	reconcileFunc func(map[string][]string, time.Time) error, // processing function
+) error {
+	if batchSize <= 0 {
+		return fmt.Errorf("batch size must be greater than zero")
+	}
+
+	owners := make([]string, 0, len(ownerListMap)) // store all owners
+	for owner := range ownerListMap {
+		owners = append(owners, owner)
+	}
+
+	total := len(owners)
+	for i := 0; i < total; i += batchSize {
+		end := i + batchSize
+		if end > total {
+			end = total
+		}
+
+		batchOwners := owners[i:end] // the owner list of the current batch
+		batchOwnerMap := make(map[string][]string, len(batchOwners))
+		for _, owner := range batchOwners {
+			batchOwnerMap[owner] = ownerListMap[owner] // example retrieve a namespace
+		}
+		// call processing logic
+		if err := reconcileFunc(batchOwnerMap, now); err != nil {
+			return fmt.Errorf("failed to reconcile batch from %d to %d: %w", i, end, err)
+		}
+		r.Logger.Info("reconcile batch", "from", i, "to", end)
 	}
 	return nil
 }
@@ -183,11 +203,11 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
-	nsToOwnerMap, err := r.getAllUser()
+	r.Logger.Info("get recent used namespace", "count", len(namespaceList))
+	nsToOwnerMap, err := GetAllUser()
 	if err != nil {
 		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
-	r.Logger.V(1).Info("get all user", "count", len(nsToOwnerMap))
 	usedOwnerList := make(map[string][]string)
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
@@ -197,6 +217,7 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
 		}
 	}
+	r.Logger.Info("get all user", "count", len(usedOwnerList))
 	return usedOwnerList, nil
 }
 
@@ -214,7 +235,7 @@ func (r *BillingReconciler) Init() error {
 }
 
 // map[namespace]owner
-func (r *BillingReconciler) getAllUser() (map[string]string, error) {
+func GetAllUser() (map[string]string, error) {
 	err := userv1.AddToScheme(scheme.Scheme)
 	if err != nil {
 		return nil, fmt.Errorf("unable to add scheme: %v", err)
@@ -223,6 +244,11 @@ func (r *BillingReconciler) getAllUser() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("unable to build config: %v", err)
 	}
+	//TODO from cluster config
+	//config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
+	//if err != nil {
+	//	return nil, fmt.Errorf("unable to build config: %v", err)
+	//}
 	k8sClt, err := client.New(config, client.Options{Scheme: scheme.Scheme})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create client: %v", err)
@@ -230,7 +256,7 @@ func (r *BillingReconciler) getAllUser() (map[string]string, error) {
 	nsToOwnerMap := make(map[string]string)
 
 	listOpts := &client.ListOptions{
-		Limit: 1000,
+		Limit: 5000,
 	}
 	for {
 		userMetaList := &metav1.PartialObjectMetadataList{}

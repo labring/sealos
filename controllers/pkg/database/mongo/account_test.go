@@ -294,27 +294,6 @@ info generate billing data used {2 ns-7uyfrr47 pay-xy map[0:325 1:166 2:0]}
 	   cpu: 500m
 	   memory: 256Mi
 */
-func TestMongoDB_GenerateBillingData(t *testing.T) {
-	dbCTX := context.Background()
-
-	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGODB_URI"))
-	if err != nil {
-		t.Errorf("failed to connect mongo: error = %v", err)
-	}
-	defer func() {
-		if err = m.Disconnect(dbCTX); err != nil {
-			t.Errorf("failed to disconnect mongo: error = %v", err)
-		}
-	}()
-	queryTime := time.Now().UTC()
-
-	ids, amount, err := m.GenerateBillingData(queryTime.Add(-1*time.Hour), queryTime, resources.DefaultPropertyTypeLS, []string{"ns-7uyfrr47", "ns-1jc12uh6", "ns-ezplle8l"}, "1jc12uh6")
-	if err != nil {
-		t.Fatalf("failed to generate billing data: %v", err)
-	}
-	t.Logf("generate billing data used %v", amount)
-	t.Logf("generate billing data used %v", ids)
-}
 
 func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 	dbCTX := context.Background()

@@ -47,6 +47,7 @@ type CVM interface {
 
 type Account interface {
 	GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error)
+	GetOwnersWithoutRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error)
 	GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error
@@ -54,13 +55,13 @@ type Account interface {
 	HandlerTimeObjBucketSentTraffic(startTime, endTime time.Time, bucket string) (int64, error)
 	GetTimeObjBucketBucket(startTime, endTime time.Time) ([]string, error)
 	GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error)
-	UpdateBillingStatus(orderID string, status resources.BillingStatus) error
+	UpdateBillingStatus(orderIDs []string, status resources.BillingStatus) error
 	GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error)
 	GetAllPayment() ([]resources.Billing, error)
 	InitDefaultPropertyTypeLS() error
 	SavePropertyTypes(types []resources.PropertyType) error
 	GetBillingCount(accountType common.Type, startTime, endTime time.Time) (count, amount int64, err error)
-	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error)
+	GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, ownerToNS map[string][]string) (map[string][]*resources.Billing, error)
 	InsertMonitor(ctx context.Context, monitors ...*resources.Monitor) error
 	GetDistinctMonitorCombinations(startTime, endTime time.Time) ([]resources.Monitor, error)
 	DropMonitorCollectionsOlderThan(days int) error
