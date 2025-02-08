@@ -296,6 +296,11 @@ local function calculate_error_rate()
 end
 
 update_current_slice()
+
+if is_error == 0 then
+    return 0
+end
+
 local total_req, total_err = calculate_error_rate()
 
 if total_req >= 10 and (total_err / total_req) >= max_error_rate then
