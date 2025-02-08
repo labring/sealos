@@ -22,6 +22,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -65,7 +66,13 @@ func testSingleModel(mc *model.ModelCaches, channel *model.Channel, modelName st
 	var respStr string
 	var code int
 	if success {
-		respStr = w.Body.String()
+		switch meta.Mode {
+		case relaymode.AudioSpeech,
+			relaymode.ImagesGenerations:
+			respStr = ""
+		default:
+			respStr = w.Body.String()
+		}
 		code = w.Code
 	} else {
 		respStr = bizErr.Error.JSONOrEmpty()
