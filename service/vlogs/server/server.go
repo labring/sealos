@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/vlogs/request"
 )
 
