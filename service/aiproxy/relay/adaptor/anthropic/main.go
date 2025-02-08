@@ -260,7 +260,7 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -283,7 +283,6 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	common.SetEventStreamHeaders(c)
 
 	var usage model.Usage
-	var modelName string
 	var id string
 	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
 
@@ -313,7 +312,6 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 			usage.PromptTokens += meta.Usage.InputTokens
 			usage.CompletionTokens += meta.Usage.OutputTokens
 			if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
-				modelName = meta.Model
 				id = "chatcmpl-" + meta.ID
 				continue
 			}
@@ -328,7 +326,7 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 		}
 
 		response.ID = id
-		response.Model = modelName
+		response.Model = m.OriginModel
 		response.Created = createdTime
 
 		for _, choice := range response.Choices {
@@ -342,6 +340,20 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	if err := scanner.Err(); err != nil {
 		log.Error("error reading stream: " + err.Error())
 	}
+
+	if usage.CompletionTokens == 0 && usage.PromptTokens == 0 {
+		usage.PromptTokens = m.InputTokens
+	}
+
+	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+
+	_ = render.ObjectData(c, &openai.ChatCompletionsStreamResponse{
+		Model:   m.OriginModel,
+		Object:  "chat.completion.chunk",
+		Created: createdTime,
+		Choices: []*openai.ChatCompletionsStreamResponseChoice{},
+		Usage:   &usage,
+	})
 
 	render.Done(c)
 
