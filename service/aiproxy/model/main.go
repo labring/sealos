@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -88,8 +89,15 @@ func openMySQL(dsn string) (*gorm.DB, error) {
 }
 
 func openSQLite() (*gorm.DB, error) {
-	log.Info("SQL_DSN not set, using SQLite as database")
+	log.Info("SQL_DSN not set, using SQLite as database: ", common.SQLitePath)
 	common.UsingSQLite = true
+
+	baseDir := filepath.Dir(common.SQLitePath)
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		log.Fatal("failed to create base directory: " + err.Error())
+		return nil, err
+	}
+
 	dsn := fmt.Sprintf("%s?_busy_timeout=%d", common.SQLitePath, common.SQLiteBusyTimeout)
 	return gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		PrepareStmt:                              true, // precompile SQL
