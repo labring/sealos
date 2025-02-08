@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/pkg/api"
-	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/vlogs/request"
 )
 
@@ -43,7 +42,6 @@ func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if req.URL.Path == "/queryPodList" {
-
 		err := vl.queryPodList(rw, req)
 		if err != nil {
 			http.Error(rw, fmt.Sprintf("query pod list error: %s", err), http.StatusInternalServerError)
