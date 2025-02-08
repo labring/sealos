@@ -67,11 +67,11 @@ export default function LogsPage({ appName }: { appName: string }) {
   useEffect(() => {
     if (!isInitialized && appDetailPods?.length > 0) {
       const urlPodName = router.query.pod as string;
-      // const pods = appDetailPods.map((pod) => ({
-      //   value: pod.podName,
-      //   label: pod.podName,
-      //   checked: urlPodName ? pod.podName === urlPodName : true
-      // }));
+      const initialPods = appDetailPods.map((pod) => ({
+        value: pod.podName,
+        label: pod.podName,
+        checked: urlPodName ? pod.podName === urlPodName : true
+      }));
 
       const containers = appDetailPods
         .flatMap((pod) => pod.spec?.containers || [])
@@ -82,10 +82,8 @@ export default function LogsPage({ appName }: { appName: string }) {
         }))
         .filter((item, index, self) => index === self.findIndex((t) => t.value === item.value));
 
-      // console.log(pods, containers);
-      // formHook.setValue('pods', pods);
+      formHook.setValue('pods', initialPods);
       formHook.setValue('containers', containers);
-
       setIsInitialized(true);
     }
   }, [appDetailPods, isInitialized, formHook, router.query.pod]);
@@ -195,22 +193,24 @@ export default function LogsPage({ appName }: { appName: string }) {
       cacheTime: 3000,
       onSuccess: (data) => {
         const podList = Array.isArray(data) ? data : [];
-        const formattedPods = podList.map((podName: string) => ({
+        const urlPodName = router.query.pod as string;
+
+        const currentPodsState = new Map(
+          formHook.watch('pods').map((pod) => [pod.value, pod.checked])
+        );
+
+        const allPods = podList.map((podName: string) => ({
           value: podName,
           label: podName,
-          checked: true
-        }));
-        const urlPodName = router.query.pod as string;
-        const detailPods = appDetailPods.map((pod) => ({
-          value: pod.podName,
-          label: pod.podName,
-          checked: urlPodName ? pod.podName === urlPodName : true
+          checked: currentPodsState.has(podName)
+            ? !!currentPodsState.get(podName)
+            : urlPodName
+            ? podName === urlPodName
+            : true
         }));
 
-        const mergedPods = [...formattedPods, ...detailPods];
-        const uniquePods = Array.from(new Map(mergedPods.map((pod) => [pod.value, pod])).values());
+        const uniquePods = Array.from(new Map(allPods.map((pod) => [pod.value, pod])).values());
 
-        console.log(uniquePods, 'uniquePods');
         formHook.setValue('pods', uniquePods);
       }
     }

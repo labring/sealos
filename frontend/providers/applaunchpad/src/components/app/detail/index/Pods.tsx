@@ -80,7 +80,7 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       key: 'podName',
       render: (_: PodDetailType, i: number) => (
         <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
-          {appName}-{i + 1}
+          {_?.podName}
         </Box>
       )
     },
@@ -298,10 +298,10 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.running)
             .map((item, i) => ({
-              alias: `${appName}-${i + 1}`,
+              alias: item.podName,
               podName: item.podName
             }))}
-          podAlias={`${appName}-${logsPodIndex + 1}`}
+          podAlias={pods[logsPodIndex]?.podName || ''}
           setLogsPodName={(name: string) =>
             setLogsPodIndex(pods.findIndex((item) => item.podName === name))
           }
@@ -311,9 +311,9 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
       {detailPodIndex !== undefined && (
         <DetailModel
           pod={pods[detailPodIndex]}
-          podAlias={`${appName}-${detailPodIndex + 1}`}
+          podAlias={pods[detailPodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
-            alias: `${appName}-${i + 1}`,
+            alias: item.podName,
             podName: item.podName
           }))}
           setPodDetail={(e: string) =>
@@ -328,9 +328,9 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
           isOpen={isOpenPodFile}
           onClose={onClosePodFile}
           pod={pods[detailFilePodIndex]}
-          podAlias={`${appName}-${detailFilePodIndex + 1}`}
+          podAlias={pods[detailFilePodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
-            alias: `${appName}-${i + 1}`,
+            alias: item.podName,
             podName: item.podName
           }))}
           setPodDetail={(e: string) =>
