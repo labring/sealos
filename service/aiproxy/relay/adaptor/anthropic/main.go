@@ -311,10 +311,12 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 		if meta != nil {
 			usage.PromptTokens += meta.Usage.InputTokens
 			usage.CompletionTokens += meta.Usage.OutputTokens
+			usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 			if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
 				id = "chatcmpl-" + meta.ID
 				continue
 			}
+			response.Usage = &usage
 			if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 				lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 				if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
@@ -346,14 +348,6 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	}
 
 	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
-
-	_ = render.ObjectData(c, &openai.ChatCompletionsStreamResponse{
-		Model:   m.OriginModel,
-		Object:  "chat.completion.chunk",
-		Created: createdTime,
-		Choices: []*openai.ChatCompletionsStreamResponseChoice{},
-		Usage:   &usage,
-	})
 
 	render.Done(c)
 
