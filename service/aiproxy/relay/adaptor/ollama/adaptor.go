@@ -6,13 +6,12 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
-
-	"github.com/gin-gonic/gin"
-	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type Adaptor struct{}
@@ -58,23 +57,15 @@ func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*h
 	return utils.DoRequest(req)
 }
 
-func (a *Adaptor) ConvertSTTRequest(*http.Request) (io.Reader, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (a *Adaptor) ConvertTTSRequest(*relaymodel.TextToSpeechRequest) (any, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(c, resp)
+		err, usage = EmbeddingHandler(meta, c, resp)
 	default:
 		if utils.IsStreamResponse(resp) {
-			err, usage = StreamHandler(c, resp)
+			err, usage = StreamHandler(meta, c, resp)
 		} else {
-			err, usage = Handler(c, resp)
+			err, usage = Handler(meta, c, resp)
 		}
 	}
 	return

@@ -75,7 +75,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
-func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
+func responseOllama2OpenAI(meta *meta.Meta, response *ChatResponse) *openai.TextResponse {
 	choice := openai.TextResponseChoice{
 		Index: 0,
 		Message: relaymodel.Message{
@@ -88,7 +88,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
-		Model:   response.Model,
+		Model:   meta.OriginModel,
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
@@ -101,7 +101,7 @@ func responseOllama2OpenAI(response *ChatResponse) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
+func streamResponseOllama2OpenAI(meta *meta.Meta, ollamaResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
 	var choice openai.ChatCompletionsStreamResponseChoice
 	choice.Delta.Role = ollamaResponse.Message.Role
 	choice.Delta.Content = ollamaResponse.Message.Content
@@ -112,13 +112,22 @@ func streamResponseOllama2OpenAI(ollamaResponse *ChatResponse) *openai.ChatCompl
 		ID:      "chatcmpl-" + random.GetUUID(),
 		Object:  "chat.completion.chunk",
 		Created: time.Now().Unix(),
-		Model:   ollamaResponse.Model,
+		Model:   meta.OriginModel,
 		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 	}
+
+	if ollamaResponse.EvalCount != 0 {
+		response.Usage = &relaymodel.Usage{
+			PromptTokens:     ollamaResponse.PromptEvalCount,
+			CompletionTokens: ollamaResponse.EvalCount,
+			TotalTokens:      ollamaResponse.PromptEvalCount + ollamaResponse.EvalCount,
+		}
+	}
+
 	return &response
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -153,13 +162,12 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithSt
 			continue
 		}
 
-		if ollamaResponse.EvalCount != 0 {
-			usage.PromptTokens = ollamaResponse.PromptEvalCount
-			usage.CompletionTokens = ollamaResponse.EvalCount
-			usage.TotalTokens = ollamaResponse.PromptEvalCount + ollamaResponse.EvalCount
+		response := streamResponseOllama2OpenAI(meta, &ollamaResponse)
+
+		if response.Usage != nil {
+			usage = *response.Usage
 		}
 
-		response := streamResponseOllama2OpenAI(&ollamaResponse)
 		_ = render.ObjectData(c, response)
 	}
 
@@ -195,7 +203,7 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
-func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
 	var ollamaResponse EmbeddingResponse
@@ -216,7 +224,7 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWit
 		}, nil
 	}
 
-	fullTextResponse := embeddingResponseOllama2OpenAI(&ollamaResponse)
+	fullTextResponse := embeddingResponseOllama2OpenAI(meta, &ollamaResponse)
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
@@ -227,12 +235,15 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWit
 	return nil, &fullTextResponse.Usage
 }
 
-func embeddingResponseOllama2OpenAI(response *EmbeddingResponse) *openai.EmbeddingResponse {
+func embeddingResponseOllama2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
 		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
-		Model:  response.Model,
-		Usage:  relaymodel.Usage{TotalTokens: 0},
+		Model:  meta.OriginModel,
+		Usage: relaymodel.Usage{
+			PromptTokens: response.PromptEvalCount,
+			TotalTokens:  response.PromptEvalCount,
+		},
 	}
 
 	for i, embedding := range response.Embeddings {
@@ -245,7 +256,7 @@ func embeddingResponseOllama2OpenAI(response *EmbeddingResponse) *openai.Embeddi
 	return &openAIEmbeddingResponse
 }
 
-func Handler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	defer resp.Body.Close()
 
 	var ollamaResponse ChatResponse
@@ -264,7 +275,7 @@ func Handler(c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCo
 			StatusCode: resp.StatusCode,
 		}, nil
 	}
-	fullTextResponse := responseOllama2OpenAI(&ollamaResponse)
+	fullTextResponse := responseOllama2OpenAI(meta, &ollamaResponse)
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
