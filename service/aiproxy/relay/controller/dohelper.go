@@ -222,6 +222,8 @@ func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, r
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
+	// copy body buffer
+	// do not use bytes conv
 	detail.ResponseBody = rw.body.String()
 	detail.ResponseBodyTruncated = rw.truncated
 
