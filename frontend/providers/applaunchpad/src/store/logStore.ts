@@ -48,16 +48,7 @@ export const useLogStore = create<LogState>()(
             return;
           }
           const logLines = data.split('\n').filter((line) => line.trim());
-          console.log(
-            logLines.map((line) => {
-              try {
-                return JSON.parse(line);
-              } catch (e) {
-                return { raw: line, parseError: true };
-              }
-            }),
-            'data'
-          );
+
           state.logCounts = logLines.map((line) => {
             try {
               return JSON.parse(line);

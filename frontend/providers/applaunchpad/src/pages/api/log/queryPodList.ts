@@ -6,20 +6,11 @@ import { ApiResp } from '@/services/kubernet';
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export interface LogQueryPayload {
+export interface PodListQueryPayload {
   app?: string;
   time?: string;
   namespace?: string;
-  limit?: string;
-  jsonMode?: string;
-  stderrMode?: string;
-  numberMode?: string;
-  numberLevel?: string;
-  pod?: string[];
-  container?: string[];
-  keyword?: string;
-  jsonQuery?: JsonFilterItem[];
-  exportMode?: boolean;
+  podQuery?: string;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
@@ -52,38 +43,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const {
-      time = '30d',
-      app = '',
-      limit = '10',
-      jsonMode = 'true',
-      stderrMode = 'false',
-      numberMode = 'false',
-      numberLevel = '',
-      pod = [],
-      container = [],
-      keyword = '',
-      jsonQuery = [],
-      exportMode = false
-    } = req.body as LogQueryPayload;
+    const { time = '30d', app = '', podQuery = 'true' } = req.body as PodListQueryPayload;
 
-    const params: LogQueryPayload = {
+    const params: PodListQueryPayload = {
       time: time,
       namespace: namespace,
       app: app,
-      limit: limit,
-      jsonMode: jsonMode,
-      stderrMode: stderrMode,
-      numberMode: numberMode,
-      ...(numberLevel && { numberLevel: numberLevel }),
-      pod: Array.isArray(pod) ? pod : [],
-      container: Array.isArray(container) ? container : [],
-      keyword: keyword,
-      jsonQuery: Array.isArray(jsonQuery) ? jsonQuery : []
+      podQuery: podQuery
     };
 
     console.log(params, 'params');
-    const result = await fetch(logUrl + '/queryLogsByParams', {
+    const result = await fetch(logUrl + '/queryPodList', {
       method: 'POST',
       body: JSON.stringify(params),
       headers: {
@@ -91,8 +61,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         Authorization: encodeURIComponent(kubeconfig)
       }
     });
-    console.log('fetch /queryLogsByParams: ', result.status);
-    const data = await result.text();
+    console.log('fetch /queryPodList: ', result.status);
+    if (result.status !== 200) {
+      return jsonRes(res, {
+        data: []
+      });
+    }
+
+    const data = await result.json();
 
     jsonRes(res, {
       code: 200,
