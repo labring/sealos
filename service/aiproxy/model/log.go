@@ -17,6 +17,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	requestBodyMaxSize  = 128 * 1024 // 128KB
+	responseBodyMaxSize = 128 * 1024 // 128KB
+)
+
 type RequestDetail struct {
 	CreatedAt             time.Time `gorm:"autoCreateTime"                    json:"-"`
 	RequestBody           string    `gorm:"type:text"                         json:"request_body,omitempty"`
@@ -25,6 +30,18 @@ type RequestDetail struct {
 	ResponseBodyTruncated bool      `json:"response_body_truncated,omitempty"`
 	ID                    int       `json:"id"`
 	LogID                 int       `json:"log_id"`
+}
+
+func (d *RequestDetail) BeforeSave(tx *gorm.DB) (err error) {
+	if len(d.RequestBody) > requestBodyMaxSize {
+		d.RequestBody = common.TruncateByRune(d.RequestBody, requestBodyMaxSize) + "..."
+		d.RequestBodyTruncated = true
+	}
+	if len(d.ResponseBody) > responseBodyMaxSize {
+		d.ResponseBody = common.TruncateByRune(d.ResponseBody, responseBodyMaxSize) + "..."
+		d.ResponseBodyTruncated = true
+	}
+	return
 }
 
 type Log struct {
@@ -48,6 +65,17 @@ type Log struct {
 	Code             int            `gorm:"index"                                                                                                                  json:"code"`
 	Mode             int            `json:"mode"`
 	IP               string         `json:"ip"`
+}
+
+const (
+	contentMaxSize = 2 * 1024 // 2KB
+)
+
+func (l *Log) BeforeSave(tx *gorm.DB) (err error) {
+	if len(l.Content) > contentMaxSize {
+		l.Content = common.TruncateByRune(l.Content, contentMaxSize) + "..."
+	}
+	return
 }
 
 func (l *Log) MarshalJSON() ([]byte, error) {
