@@ -18,11 +18,13 @@ import (
 )
 
 type RequestDetail struct {
-	CreatedAt    time.Time `gorm:"autoCreateTime" json:"-"`
-	RequestBody  string    `gorm:"type:text"      json:"request_body,omitempty"`
-	ResponseBody string    `gorm:"type:text"      json:"response_body,omitempty"`
-	ID           int       `json:"id"`
-	LogID        int       `json:"log_id"`
+	CreatedAt             time.Time `gorm:"autoCreateTime"                    json:"-"`
+	RequestBody           string    `gorm:"type:text"                         json:"request_body,omitempty"`
+	ResponseBody          string    `gorm:"type:text"                         json:"response_body,omitempty"`
+	RequestBodyTruncated  bool      `json:"request_body_truncated,omitempty"`
+	ResponseBodyTruncated bool      `json:"response_body_truncated,omitempty"`
+	ID                    int       `json:"id"`
+	LogID                 int       `json:"log_id"`
 }
 
 type Log struct {

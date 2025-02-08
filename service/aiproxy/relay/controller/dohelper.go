@@ -36,12 +36,15 @@ const (
 
 type responseWriter struct {
 	gin.ResponseWriter
-	body *bytes.Buffer
+	body      *bytes.Buffer
+	truncated bool
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	if rw.body.Len() <= storeResponseBodyMaxSize {
 		rw.body.Write(b)
+	} else {
+		rw.truncated = true
 	}
 	return rw.ResponseWriter.Write(b)
 }
@@ -49,6 +52,8 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 func (rw *responseWriter) WriteString(s string) (int, error) {
 	if rw.body.Len() <= storeResponseBodyMaxSize {
 		rw.body.WriteString(s)
+	} else {
+		rw.truncated = true
 	}
 	return rw.ResponseWriter.WriteString(s)
 }
@@ -120,6 +125,10 @@ func DoHelper(
 	return usage, &detail, nil
 }
 
+const (
+	requestBodyMaxSize = 2 * 1024 * 1024 // 2MB
+)
+
 func getRequestBody(meta *meta.Meta, c *gin.Context, detail *model.RequestDetail) *relaymodel.ErrorWithStatusCode {
 	switch meta.Mode {
 	case relaymode.AudioTranscription, relaymode.AudioTranslation:
@@ -128,6 +137,10 @@ func getRequestBody(meta *meta.Meta, c *gin.Context, detail *model.RequestDetail
 		reqBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			return openai.ErrorWrapperWithMessage("get request body failed: "+err.Error(), "get_request_body_failed", http.StatusBadRequest)
+		}
+		if len(reqBody) > requestBodyMaxSize {
+			reqBody = reqBody[:requestBodyMaxSize]
+			detail.RequestBodyTruncated = true
 		}
 		detail.RequestBody = conv.BytesToString(reqBody)
 		return nil
@@ -210,6 +223,7 @@ func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, r
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
 	usage, relayErr := a.DoResponse(meta, c, resp)
 	detail.ResponseBody = rw.body.String()
+	detail.ResponseBodyTruncated = rw.truncated
 
 	return usage, relayErr
 }

@@ -7,10 +7,8 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -61,14 +59,9 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	preCheckReq, err := preProcess()
 	if err != nil {
 		log.Errorf("pre-process request failed: %s", err.Error())
-		var detail *model.RequestDetail
-		body, bodyErr := common.GetRequestBody(c.Request)
-		if bodyErr != nil {
-			log.Errorf("get request body failed: %s", bodyErr.Error())
-		} else {
-			detail = &model.RequestDetail{
-				RequestBody: conv.BytesToString(body),
-			}
+		detail := &model.RequestDetail{}
+		if err := getRequestBody(meta, c, detail); err != nil {
+			log.Errorf("get request body failed: %v", err.Error)
 		}
 		consume.AsyncConsume(
 			nil,
