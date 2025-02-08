@@ -17,7 +17,6 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if meta.Channel.BaseURL == "" {
 		meta.Channel.BaseURL = baseURL
 	}
-	meta.Set(openai.MetaBaseURLNoV1, true)
 	return a.Adaptor.GetRequestURL(meta)
 }
 

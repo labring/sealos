@@ -19,7 +19,7 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://api.siliconflow.cn"
+const baseURL = "https://api.siliconflow.cn/v1"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if meta.Channel.BaseURL == "" {

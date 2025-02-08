@@ -51,7 +51,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		)
 	}
 
-	if groupRemainBalance <= 0 {
+	if !meta.IsChannelTest && groupRemainBalance <= 0 {
 		return openai.ErrorWrapperWithMessage("group balance not enough", "insufficient_group_balance", http.StatusForbidden)
 	}
 

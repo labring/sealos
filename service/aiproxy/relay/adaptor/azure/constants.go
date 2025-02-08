@@ -40,15 +40,6 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	}
 }
 
-func GetFullRequestURL(baseURL string, requestURL string) string {
-	fullRequestURL := fmt.Sprintf("%s%s", baseURL, requestURL)
-
-	if strings.HasPrefix(baseURL, "https://gateway.ai.cloudflare.com") {
-		fullRequestURL = fmt.Sprintf("%s%s", baseURL, strings.TrimPrefix(requestURL, "/v1"))
-	}
-	return fullRequestURL
-}
-
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	token, _, err := getTokenAndAPIVersion(meta.Channel.Key)
 	if err != nil {

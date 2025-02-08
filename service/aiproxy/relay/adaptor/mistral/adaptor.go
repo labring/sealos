@@ -10,7 +10,7 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://api.mistral.ai"
+const baseURL = "https://api.mistral.ai/v1"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if meta.Channel.BaseURL == "" {
