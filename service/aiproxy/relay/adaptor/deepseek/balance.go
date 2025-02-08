@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )

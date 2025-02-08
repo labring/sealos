@@ -17,7 +17,7 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://api.minimax.chat"
+const baseURL = "https://api.minimax.chat/v1"
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
@@ -42,11 +42,11 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	}
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		return meta.Channel.BaseURL + "/v1/text/chatcompletion_v2", nil
+		return meta.Channel.BaseURL + "/text/chatcompletion_v2", nil
 	case relaymode.Embeddings:
-		return fmt.Sprintf("%s/v1/embeddings?GroupId=%s", meta.Channel.BaseURL, groupID), nil
+		return fmt.Sprintf("%s/embeddings?GroupId=%s", meta.Channel.BaseURL, groupID), nil
 	case relaymode.AudioSpeech:
-		return fmt.Sprintf("%s/v1/t2a_v2?GroupId=%s", meta.Channel.BaseURL, groupID), nil
+		return fmt.Sprintf("%s/t2a_v2?GroupId=%s", meta.Channel.BaseURL, groupID), nil
 	default:
 		return a.Adaptor.GetRequestURL(meta)
 	}

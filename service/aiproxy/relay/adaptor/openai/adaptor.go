@@ -3,10 +3,8 @@ package openai
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -23,9 +21,7 @@ var _ adaptor.Adaptor = (*Adaptor)(nil)
 
 type Adaptor struct{}
 
-const baseURL = "https://api.openai.com"
-
-const MetaBaseURLNoV1 = "base_url_no_v1"
+const baseURL = "https://api.openai.com/v1"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
@@ -59,11 +55,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return "", errors.New("unsupported mode")
 	}
 
-	if meta.GetBool(MetaBaseURLNoV1) ||
-		(strings.HasPrefix(u, "https://gateway.ai.cloudflare.com") && strings.HasSuffix(u, "/openai")) {
-		return u + path, nil
-	}
-	return fmt.Sprintf("%s/v1%s", u, path), nil
+	return u + path, nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

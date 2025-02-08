@@ -13,7 +13,7 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://api.deepseek.com"
+const baseURL = "https://api.deepseek.com/v1"
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	if meta.Channel.BaseURL == "" {

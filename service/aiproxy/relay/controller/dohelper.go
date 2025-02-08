@@ -158,6 +158,8 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 		return nil, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)
 	}
 
+	log.Debugf("request url: %s %s", method, fullRequestURL)
+
 	ctx := context.Background()
 	if timeout := config.GetTimeoutWithModelType()[meta.Mode]; timeout > 0 {
 		// donot use c.Request.Context() because it will be canceled by the client
