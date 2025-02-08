@@ -11,7 +11,7 @@ import { LogCounts } from '@/components/app/detail/logs/LogCounts';
 import { useEffect, useMemo, useState } from 'react';
 import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
-import { getAppLogs } from '@/api/app';
+import { getAppLogs, getLogPodList } from '@/api/app';
 import { useForm } from 'react-hook-form';
 import { formatTimeRange } from '@/utils/timeRange';
 import { downLoadBold } from '@/utils/tools';
@@ -67,11 +67,11 @@ export default function LogsPage({ appName }: { appName: string }) {
   useEffect(() => {
     if (!isInitialized && appDetailPods?.length > 0) {
       const urlPodName = router.query.pod as string;
-      const pods = appDetailPods.map((pod) => ({
-        value: pod.podName,
-        label: pod.podName,
-        checked: urlPodName ? pod.podName === urlPodName : true
-      }));
+      // const pods = appDetailPods.map((pod) => ({
+      //   value: pod.podName,
+      //   label: pod.podName,
+      //   checked: urlPodName ? pod.podName === urlPodName : true
+      // }));
 
       const containers = appDetailPods
         .flatMap((pod) => pod.spec?.containers || [])
@@ -82,7 +82,8 @@ export default function LogsPage({ appName }: { appName: string }) {
         }))
         .filter((item, index, self) => index === self.findIndex((t) => t.value === item.value));
 
-      formHook.setValue('pods', pods);
+      // console.log(pods, containers);
+      // formHook.setValue('pods', pods);
       formHook.setValue('containers', containers);
 
       setIsInitialized(true);
@@ -182,12 +183,46 @@ export default function LogsPage({ appName }: { appName: string }) {
     }
   );
 
+  const { refetch: refetchPodListData, isLoading: isPodListLoading } = useQuery(
+    ['log-pod-list-data', appName, timeRange],
+    () =>
+      getLogPodList({
+        app: appName,
+        time: timeRange
+      }),
+    {
+      staleTime: 3000,
+      cacheTime: 3000,
+      onSuccess: (data) => {
+        const podList = Array.isArray(data) ? data : [];
+        const formattedPods = podList.map((podName: string) => ({
+          value: podName,
+          label: podName,
+          checked: true
+        }));
+        const urlPodName = router.query.pod as string;
+        const detailPods = appDetailPods.map((pod) => ({
+          value: pod.podName,
+          label: pod.podName,
+          checked: urlPodName ? pod.podName === urlPodName : true
+        }));
+
+        const mergedPods = [...formattedPods, ...detailPods];
+        const uniquePods = Array.from(new Map(mergedPods.map((pod) => [pod.value, pod])).values());
+
+        console.log(uniquePods, 'uniquePods');
+        formHook.setValue('pods', uniquePods);
+      }
+    }
+  );
+
   const refetchData = () => {
     message({
       title: t('refetching_success')
     });
     refetchLogsData();
     refetchLogCountsData();
+    refetchPodListData();
   };
 
   return (
