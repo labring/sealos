@@ -52,6 +52,17 @@ func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
+const (
+	DefaultPriority = 100
+)
+
+func (c *Channel) GetPriority() int32 {
+	if c.Priority == 0 {
+		return DefaultPriority
+	}
+	return c.Priority
+}
+
 func GetModelConfigWithModels(models []string) ([]string, []string, error) {
 	if len(models) == 0 || config.GetDisableModelConfig() {
 		return models, nil, nil

@@ -610,7 +610,7 @@ func buildModelToChannelsMap(channels []*Channel) map[string][]*Channel {
 func sortChannelsByPriority(modelMap map[string][]*Channel) {
 	for _, channels := range modelMap {
 		sort.Slice(channels, func(i, j int) bool {
-			return channels[i].Priority > channels[j].Priority
+			return channels[i].GetPriority() > channels[j].GetPriority()
 		})
 	}
 }
@@ -743,7 +743,7 @@ func (c *ModelCaches) GetRandomSatisfiedChannel(model string, ignoreChannel ...i
 
 	var totalWeight int32
 	for _, ch := range channels {
-		totalWeight += ch.Priority
+		totalWeight += ch.GetPriority()
 	}
 
 	if totalWeight == 0 {
@@ -752,7 +752,7 @@ func (c *ModelCaches) GetRandomSatisfiedChannel(model string, ignoreChannel ...i
 
 	r := rand.Int32N(totalWeight)
 	for _, ch := range channels {
-		r -= ch.Priority
+		r -= ch.GetPriority()
 		if r < 0 {
 			return ch, nil
 		}
