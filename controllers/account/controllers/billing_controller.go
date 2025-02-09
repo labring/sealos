@@ -139,7 +139,6 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 			amount += billing.Amount
 			orderIDs = append(orderIDs, billing.OrderID)
 		}
-		r.Logger.Info("start save billings", "count", len(billings), "owner", owner, "amount", amount)
 		if err = r.DBClient.SaveBillings(billings...); err != nil {
 			r.Logger.Error(err, "save billings failed", "owner", owner, "amount", amount)
 			failedList = append(failedList, owner)
@@ -214,11 +213,11 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
-	r.Logger.Info("get recent used namespace", "count", len(namespaceList))
 	nsToOwnerMap, err := GetAllUser()
 	if err != nil {
 		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
+	r.Logger.Info("get owner and namespace", "owner count", len(nsToOwnerMap), "namespace count", len(namespaceList))
 	usedOwnerList := make(map[string][]string)
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
@@ -276,8 +275,6 @@ func GetAllUser() (map[string]string, error) {
 		if err := k8sClt.List(context.Background(), userMetaList, listOpts); err != nil {
 			return nil, fmt.Errorf("failed to list instances: %v", err)
 		}
-
-		fmt.Printf("Retrieved %d users\n", len(userMetaList.Items))
 
 		for _, user := range userMetaList.Items {
 			owner := user.Annotations[userv1.UserLabelOwnerKey]

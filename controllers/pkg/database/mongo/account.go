@@ -580,11 +580,7 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 
 	// 分组 key 生成规则
 	genGroupKey := func(rec resources.Monitor) string {
-		t, n := rec.Type, rec.Name
-		if rec.ParentType != 0 && rec.ParentName != "" {
-			t, n = rec.ParentType, rec.ParentName
-		}
-		return fmt.Sprintf("%s/%d/%s", rec.Category, t, n)
+		return fmt.Sprintf("%s/%d/%s", rec.Category, rec.Type, rec.Name)
 	}
 
 	// 遍历所有记录，按分组键聚合
