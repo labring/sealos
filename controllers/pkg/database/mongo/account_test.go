@@ -478,3 +478,52 @@ func Test_mongoDB_GetTimeUsedOwnerList(t *testing.T) {
 	}
 	t.Logf("get time used owner list success: %v", owners)
 }
+
+func Test_mongoDB_GenerateBillingData(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGO_URI"))
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+
+	prols := resources.DefaultPropertyTypeLS
+	ownerToNS := map[string][]string{
+		"ax1uut8w": {"ns-tnw80mhk", "ns-ax1uut8w"},
+	}
+	billings, err := m.GenerateBillingData(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), prols, ownerToNS)
+	if err != nil {
+		t.Fatalf("failed to generate billing data: %v", err)
+	}
+	for _, billing := range billings {
+		for _, bill := range billing {
+			t.Logf("%+v\n", bill)
+		}
+	}
+}
+
+func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, "")
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	now := time.Now().UTC()
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	owners, err := m.GetOwnersWithoutRecentUpdates([]string{"nfhmc74p"}, endHourTime)
+	if err != nil {
+		t.Fatalf("failed to get owners without recent updates: %v", err)
+	}
+	t.Logf("get owners without recent updates success: %v", owners)
+}

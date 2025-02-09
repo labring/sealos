@@ -112,10 +112,9 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string, now time.Time) error {
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	startHourTime := endHourTime.Add(-1 * time.Hour)
-
-	var ownerList []string
-	for _, ns := range ownerListMap {
-		ownerList = append(ownerList, ns...)
+	var ownerList, failedList []string
+	for owner := range ownerListMap {
+		ownerList = append(ownerList, owner)
 	}
 	updateOwnerList, err := r.DBClient.GetOwnersWithoutRecentUpdates(ownerList, endHourTime)
 	if err != nil {
@@ -128,22 +127,29 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 		return fmt.Errorf("generate billing data failed: %w", err)
 	}
 	r.Logger.Info("generate billing data", "count", len(ownerBillings))
-	for _, billings := range ownerBillings {
+	for owner, billings := range ownerBillings {
 		amount := int64(0)
 		orderIDs := make([]string, 0, len(billings))
 		for _, billing := range billings {
 			amount += billing.Amount
 			orderIDs = append(orderIDs, billing.OrderID)
 		}
+		r.Logger.Info("start save billings", "count", len(billings), "owner", owner, "amount", amount)
 		if err = r.DBClient.SaveBillings(billings...); err != nil {
-			return fmt.Errorf("save billings failed: %w", err)
+			r.Logger.Error(err, "save billings failed", "owner", owner, "amount", amount)
+			failedList = append(failedList, owner)
+			continue
 		}
-		if err := r.rechargeBalance(billings[0].Owner, amount); err != nil {
+		if err := r.rechargeBalance(owner, amount); err != nil {
+			r.Logger.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
+			failedList = append(failedList, owner)
 			if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); err != nil {
 				r.Logger.Error(err, "update billing unsettled status failed", "orderIDs", orderIDs)
 			}
-			return fmt.Errorf("recharge balance failed: %w", err)
 		}
+	}
+	if len(failedList) > 0 {
+		r.Logger.Error(fmt.Errorf("failed to reconcile owner list: %v", failedList), "failed to reconcile owner list")
 	}
 	return nil
 }

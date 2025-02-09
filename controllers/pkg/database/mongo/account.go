@@ -568,8 +568,8 @@ func (m *mongoDB) FetchOwnerMonitorRecords(startTime, endTime time.Time, ownerTo
 }
 
 func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resources.PropertyTypeLS, startTime, endTime time.Time, owner string) (billings []*resources.Billing, err error) {
-	// 计算时间间隔（分钟）
-	minutes := endTime.Sub(startTime).Minutes()
+	// Calculate the interval (minutes) to ensure that the divisor is not 0
+	minutes := math.Max(endTime.Sub(startTime).Minutes(), 1)
 
 	// 存储分组后的数据
 	aggregatedMap := make(map[string]*struct {
@@ -580,10 +580,11 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 
 	// 分组 key 生成规则
 	genGroupKey := func(rec resources.Monitor) string {
+		t, n := rec.Type, rec.Name
 		if rec.ParentType != 0 && rec.ParentName != "" {
-			return fmt.Sprintf("%s/%d/%s", rec.Category, rec.ParentType, rec.ParentName)
+			t, n = rec.ParentType, rec.ParentName
 		}
-		return fmt.Sprintf("%s/%d/%s", rec.Category, rec.Type, rec.Name)
+		return fmt.Sprintf("%s/%d/%s", rec.Category, t, n)
 	}
 
 	// 遍历所有记录，按分组键聚合
@@ -595,61 +596,38 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 				UsedValues map[uint8][]int64
 				Count      int64
 			}{
-				Monitor: resources.Monitor{
-					Type:       rec.Type,
-					Name:       rec.Name,
-					Category:   rec.Category,
-					ParentType: rec.ParentType,
-					ParentName: rec.ParentName,
-				},
+				Monitor:    rec,
 				UsedValues: make(map[uint8][]int64),
 				Count:      0,
 			}
 		}
 		aggregatedMap[key].Count++
 		for k, v := range rec.Used {
+			//aggregatedMap[key].UsedValues[k] = append(aggregatedMap[key].UsedValues[k], v)
+			if _, exists := aggregatedMap[key].UsedValues[k]; !exists {
+				aggregatedMap[key].UsedValues[k] = make([]int64, 0, len(records))
+			}
 			aggregatedMap[key].UsedValues[k] = append(aggregatedMap[key].UsedValues[k], v)
 		}
 	}
 
 	// 存储最终计费数据
+	// map[namespace]map[app_type | parent_type/parent_name][]resources.AppCost
 	appCostsMap := make(map[string]map[string][]resources.AppCost)
-	nsTypeAmount := make(map[string]int64)
+	nsTypeAmount := make(map[string]map[string]int64)
 
-	// 计算最终 Used 数据
-	for key, agg := range aggregatedMap {
+	calculateFinalUsed := func(values map[uint8][]int64, prols *resources.PropertyTypeLS, minutes float64) map[uint8]int64 {
 		finalUsed := make(map[uint8]int64)
-		for propKey, values := range agg.UsedValues {
+		for propKey, vals := range values {
 			if prop, ok := prols.EnumMap[propKey]; ok {
-				switch prop.PriceType {
-				case resources.DIF:
-					var maxVal int64 = -math.MaxInt64
-					var minVal int64 = math.MaxInt64
-					for _, v := range values {
-						if v > maxVal {
-							maxVal = v
-						}
-						if v != 0 && v < minVal {
-							minVal = v
-						}
-					}
-					finalUsed[propKey] = maxVal - minVal
-				case resources.SUM:
-					var sum int64
-					for _, v := range values {
-						sum += v
-					}
-					finalUsed[propKey] = sum
-				default:
-					var sum int64
-					for _, v := range values {
-						sum += v
-					}
-					finalUsed[propKey] = int64(math.Round(float64(sum) / minutes))
-				}
+				finalUsed[propKey] = computeUsedValue(vals, prop, minutes)
 			}
 		}
-
+		return finalUsed
+	}
+	// 计算最终 Used 数据
+	for _, agg := range aggregatedMap {
+		finalUsed := calculateFinalUsed(agg.UsedValues, prols, minutes)
 		// 计算费用
 		appCost := resources.AppCost{
 			Type:       agg.Type,
@@ -661,7 +639,11 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 		for propKey, usedVal := range finalUsed {
 			if prop, ok := prols.EnumMap[propKey]; ok {
 				if prop.UnitPrice > 0 {
-					fee := int64(math.Ceil(float64(usedVal) * prop.UnitPrice))
+					feeFloat := float64(usedVal) * prop.UnitPrice
+					if feeFloat > math.MaxInt64 {
+						return nil, fmt.Errorf("fee calculation overflow: %f", feeFloat)
+					}
+					fee := int64(math.Ceil(feeFloat))
 					appCost.UsedAmount[propKey] = fee
 					totalAmount += fee
 				}
@@ -670,9 +652,16 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 		if totalAmount == 0 {
 			continue
 		}
-		groupKey := key
+		appCost.Amount = totalAmount
+		groupKey := strconv.Itoa(int(agg.Type))
+		if agg.ParentType != 0 && agg.ParentName != "" {
+			groupKey = strconv.Itoa(int(agg.ParentType)) + "/" + agg.ParentName
+		}
 		ns := agg.Category
-		nsTypeAmount[groupKey] += totalAmount
+		if _, ok := nsTypeAmount[ns]; !ok {
+			nsTypeAmount[ns] = make(map[string]int64)
+		}
+		nsTypeAmount[ns][groupKey] += totalAmount
 
 		if _, ok := appCostsMap[ns]; !ok {
 			appCostsMap[ns] = make(map[string][]resources.AppCost)
@@ -684,8 +673,8 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 	// 生成 Billing 数据
 	for ns, appCostMap := range appCostsMap {
 		for tp, appCostList := range appCostMap {
-			amountt := nsTypeAmount[tp]
-			if amountt <= 0 {
+			amount := nsTypeAmount[ns][tp]
+			if amount <= 0 {
 				continue
 			}
 			id, err := gonanoid.New(12)
@@ -693,10 +682,10 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 				return nil, fmt.Errorf("generate billing id error: %v", err)
 			}
 			parts := strings.Split(tp, "/")
-			appType, _ := strconv.Atoi(parts[1])
+			appType, _ := strconv.Atoi(parts[0])
 			appName := ""
-			if len(parts) > 2 {
-				appName = parts[2]
+			if len(parts) > 1 {
+				appName = parts[1]
 			}
 			billings = append(billings, &resources.Billing{
 				OrderID:   id,
@@ -705,7 +694,7 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 				AppType:   uint8(appType),
 				AppName:   appName,
 				AppCosts:  appCostList,
-				Amount:    amountt,
+				Amount:    amount,
 				Owner:     owner,
 				Time:      endTime,
 				Status:    resources.Settled,
@@ -713,6 +702,38 @@ func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resource
 		}
 	}
 	return billings, nil
+}
+
+func computeUsedValue(usedValues []int64, prop resources.PropertyType, minutes float64) int64 {
+	switch prop.PriceType {
+	case resources.DIF:
+		var maxVal int64 = -math.MaxInt64
+		var minVal int64 = math.MaxInt64
+		for _, v := range usedValues {
+			if v > maxVal {
+				maxVal = v
+			}
+			if v != 0 && v < minVal {
+				minVal = v
+			}
+		}
+		if maxVal > minVal {
+			return maxVal - minVal
+		}
+		return 0
+	case resources.SUM:
+		var sum int64
+		for _, v := range usedValues {
+			sum += v
+		}
+		return sum
+	default:
+		var sum int64
+		for _, v := range usedValues {
+			sum += v
+		}
+		return int64(math.Round(float64(sum) / minutes))
+	}
 }
 
 func (m *mongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
