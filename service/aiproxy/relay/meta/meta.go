@@ -16,11 +16,12 @@ type ChannelMeta struct {
 }
 
 type Meta struct {
-	values      map[string]any
-	Channel     *ChannelMeta
-	Group       *model.GroupCache
-	Token       *model.TokenCache
-	ModelConfig *model.ModelConfig
+	values        map[string]any
+	Channel       *ChannelMeta
+	ChannelConfig model.ChannelConfig
+	Group         *model.GroupCache
+	Token         *model.TokenCache
+	ModelConfig   *model.ModelConfig
 
 	Endpoint      string
 	RequestAt     time.Time
@@ -105,6 +106,7 @@ func (m *Meta) Reset(channel *model.Channel) {
 		ID:      channel.ID,
 		Type:    channel.Type,
 	}
+	m.ChannelConfig = channel.Config
 	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
 	m.ClearValues()
 }

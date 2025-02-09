@@ -160,6 +160,7 @@ func (r *AddChannelRequest) ToChannel() (*model.Channel, error) {
 		ModelMapping: maps.Clone(r.ModelMapping),
 		Priority:     r.Priority,
 		Status:       r.Status,
+		Config:       r.Config,
 	}, nil
 }
 

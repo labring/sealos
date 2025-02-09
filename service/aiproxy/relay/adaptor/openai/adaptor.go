@@ -92,8 +92,6 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	}
 }
 
-const SplitThinkMetaKey = "split_think"
-
 func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
@@ -110,7 +108,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		fallthrough
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			usage, err = StreamHandler(meta, c, resp, meta.GetBool(SplitThinkMetaKey))
+			usage, err = StreamHandler(meta, c, resp)
 		} else {
 			usage, err = Handler(meta, c, resp)
 		}

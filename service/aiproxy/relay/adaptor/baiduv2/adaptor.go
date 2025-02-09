@@ -66,9 +66,6 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 			meta.ActualModel = v2Model
 			defer func() { meta.ActualModel = actModel }()
 		}
-		if meta.ActualModel == "deepseek-r1" {
-			meta.Set(openai.SplitThinkMetaKey, true)
-		}
 		return openai.ConvertRequest(meta, req)
 	default:
 		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)

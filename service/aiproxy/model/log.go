@@ -32,7 +32,7 @@ type RequestDetail struct {
 	LogID                 int       `json:"log_id"`
 }
 
-func (d *RequestDetail) BeforeSave(tx *gorm.DB) (err error) {
+func (d *RequestDetail) BeforeSave(_ *gorm.DB) (err error) {
 	if len(d.RequestBody) > requestBodyMaxSize {
 		d.RequestBody = common.TruncateByRune(d.RequestBody, requestBodyMaxSize) + "..."
 		d.RequestBodyTruncated = true
@@ -71,7 +71,7 @@ const (
 	contentMaxSize = 2 * 1024 // 2KB
 )
 
-func (l *Log) BeforeSave(tx *gorm.DB) (err error) {
+func (l *Log) BeforeSave(_ *gorm.DB) (err error) {
 	if len(l.Content) > contentMaxSize {
 		l.Content = common.TruncateByRune(l.Content, contentMaxSize) + "..."
 	}

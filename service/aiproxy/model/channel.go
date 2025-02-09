@@ -24,6 +24,10 @@ const (
 	ChannelStatusFail     = 3
 )
 
+type ChannelConfig struct {
+	SplitThink bool `json:"split_think"`
+}
+
 type Channel struct {
 	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
 	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
@@ -41,6 +45,7 @@ type Channel struct {
 	Status           int               `gorm:"default:1;index"                    json:"status"`
 	Type             int               `gorm:"default:0;index"                    json:"type"`
 	Priority         int32             `json:"priority"`
+	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"      json:"config"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
@@ -128,16 +133,6 @@ func getChannelOrder(order string) string {
 	default:
 		return "id desc"
 	}
-}
-
-type ChannelConfig struct {
-	Region            string `json:"region,omitempty"`
-	SK                string `json:"sk,omitempty"`
-	AK                string `json:"ak,omitempty"`
-	UserID            string `json:"user_id,omitempty"`
-	Plugin            string `json:"plugin,omitempty"`
-	VertexAIProjectID string `json:"vertex_ai_project_id,omitempty"`
-	VertexAIADC       string `json:"vertex_ai_adc,omitempty"`
 }
 
 func GetAllChannels() (channels []*Channel, err error) {

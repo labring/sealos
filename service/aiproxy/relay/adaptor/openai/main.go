@@ -31,7 +31,7 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, splitThink bool) (*model.Usage, *model.ErrorWithStatusCode) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -46,7 +46,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, splitTh
 
 	hasReasoningContent := false
 	var thinkSplitter *splitter.Splitter
-	if splitThink {
+	if meta.ChannelConfig.SplitThink {
 		thinkSplitter = splitter.NewThinkSplitter()
 	}
 
@@ -88,8 +88,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, splitTh
 			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
 				respMap["model"] = meta.OriginModel
 			}
-			if splitThink && !hasReasoningContent {
-				SplitThink(respMap, thinkSplitter, func(data map[string]any) {
+			if meta.ChannelConfig.SplitThink && !hasReasoningContent {
+				StreamSplitThink(respMap, thinkSplitter, func(data map[string]any) {
 					_ = render.ObjectData(c, data)
 				})
 				continue
@@ -128,7 +128,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response, splitTh
 }
 
 // renderCallback maybe reuse data, so don't modify data
-func SplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCallback func(data map[string]any)) {
+func StreamSplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCallback func(data map[string]any)) {
 	choices, ok := data["choices"].([]any)
 	if !ok {
 		return
@@ -157,6 +157,30 @@ func SplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCal
 			delta["reasoning_content"] = ""
 			renderCallback(data)
 		}
+	}
+}
+
+func SplitThink(data map[string]any) {
+	choices, ok := data["choices"].([]any)
+	if !ok {
+		return
+	}
+	for _, choice := range choices {
+		choiceMap, ok := choice.(map[string]any)
+		if !ok {
+			continue
+		}
+		delta, ok := choiceMap["delta"].(map[string]any)
+		if !ok {
+			continue
+		}
+		content, ok := delta["content"].(string)
+		if !ok {
+			continue
+		}
+		think, remaining := splitter.NewThinkSplitter().Process(conv.StringToBytes(content))
+		delta["reasoning_content"] = conv.BytesToString(think)
+		delta["content"] = conv.BytesToString(remaining)
 	}
 }
 
@@ -198,6 +222,10 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 
 	if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
 		respMap["model"] = meta.OriginModel
+	}
+
+	if meta.ChannelConfig.SplitThink {
+		SplitThink(respMap)
 	}
 
 	newData, err := stdjson.Marshal(respMap)
