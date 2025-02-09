@@ -149,7 +149,7 @@ func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (boo
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
-func (m *mongoDB) GetOwnersWithoutRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error) {
+func (m *mongoDB) GetOwnersRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error) {
 	// MongoDB filter
 	filter := bson.M{
 		"owner": bson.M{"$in": ownerList},
@@ -190,15 +190,15 @@ func (m *mongoDB) GetOwnersWithoutRecentUpdates(ownerList []string, checkTime ti
 		latestUpdates[result.Owner] = result.LastUpdateRaw.Time()
 	}
 
-	// **In-memory processing: Filters owners that have not been updated since checkTime**
-	var outdatedOwners []string
+	// **In-memory processing: Filters owners that have been updated since checkTime**
+	var updatedOwners []string
 	for _, owner := range ownerList {
 		lastUpdateTime, exists := latestUpdates[owner]
-		if !exists || lastUpdateTime.Before(checkTime) {
-			outdatedOwners = append(outdatedOwners, owner)
+		if exists && (lastUpdateTime.After(checkTime) || lastUpdateTime.Equal(checkTime)) {
+			updatedOwners = append(updatedOwners, owner)
 		}
 	}
-	return outdatedOwners, nil
+	return updatedOwners, nil
 }
 
 func (m *mongoDB) GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error) {

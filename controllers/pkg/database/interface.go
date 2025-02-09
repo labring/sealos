@@ -47,7 +47,7 @@ type CVM interface {
 
 type Account interface {
 	GetBillingLastUpdateTime(owner string, _type common.Type) (bool, time.Time, error)
-	GetOwnersWithoutRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error)
+	GetOwnersRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error)
 	GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error)
 	SaveBillings(billing ...*resources.Billing) error
 	SaveObjTraffic(obs ...*types.ObjectStorageTraffic) error

@@ -116,11 +116,16 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
-	updateOwnerList, err := r.DBClient.GetOwnersWithoutRecentUpdates(ownerList, endHourTime)
+	updateOwnerList, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
 	if err != nil {
 		return fmt.Errorf("get owners without recent updates failed: %w", err)
 	}
-	r.Logger.Info("get owners without recent updates", "count", len(updateOwnerList))
+
+	// remove the owner that does not need to be updated
+	for _, owner := range updateOwnerList {
+		delete(ownerListMap, owner)
+	}
+	r.Logger.Info("get owners recent updates", "already update owner count", len(updateOwnerList), "remaining owner count", len(ownerListMap))
 
 	ownerBillings, err := r.DBClient.GenerateBillingData(startHourTime, endHourTime, r.Properties, ownerListMap)
 	if err != nil {

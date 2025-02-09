@@ -521,7 +521,7 @@ func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
 	}()
 	now := time.Now().UTC()
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
-	owners, err := m.GetOwnersWithoutRecentUpdates([]string{"nfhmc74p"}, endHourTime)
+	owners, err := m.GetOwnersRecentUpdates([]string{"nfhmc74p"}, endHourTime)
 	if err != nil {
 		t.Fatalf("failed to get owners without recent updates: %v", err)
 	}
