@@ -1025,27 +1025,35 @@ func GetUserRealNameInfo(c *gin.Context) {
 	}
 
 	userRealNameInfo, err := dao.DBClient.GetUserRealNameInfo(req)
-
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)})
 		return
 	}
 
-	if userRealNameInfo == nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: "user real name info not found"})
+	enterpriseRealNameInfo, err := dao.DBClient.GetEnterpriseRealNameInfo(req)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get enterprise real name info: %v", err)})
 		return
 	}
 
-	if !userRealNameInfo.IsVerified {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: "user real name info is not verified"})
+	isVerified := (userRealNameInfo != nil && userRealNameInfo.IsVerified) ||
+		(enterpriseRealNameInfo != nil && enterpriseRealNameInfo.IsVerified)
+
+	if !isVerified {
+		c.JSON(http.StatusOK, helper.GetRealNameInfoResp{
+			Data: helper.GetRealNameInfoRespData{
+				UserID:     req.UserID,
+				IsRealName: false,
+			},
+			Message: "user is not verified",
+		})
 		return
 	}
 
-	// Return success response
 	c.JSON(http.StatusOK, helper.GetRealNameInfoResp{
 		Data: helper.GetRealNameInfoRespData{
 			UserID:     req.UserID,
-			IsRealName: userRealNameInfo.IsVerified,
+			IsRealName: true,
 		},
 		Message: "successfully get user real name info",
 	})
