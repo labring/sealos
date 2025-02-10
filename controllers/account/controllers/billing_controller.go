@@ -22,26 +22,62 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/client-go/rest"
+
+	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
-	v12 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/labring/sealos/controllers/pkg/database"
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type BillingTaskRunner struct {
+	*BillingReconciler
+}
+
+func (r *BillingTaskRunner) Start(ctx context.Context) error {
+	if err := r.ExecuteBillingTask(); err != nil {
+		r.Logger.Error(err, "failed to execute billing task")
+	}
+	defer func() {
+		r.Logger.Info("stop billing reconcile", "time", time.Now().Format(time.RFC3339))
+	}()
+	now := time.Now()
+	nextHour := now.Truncate(time.Hour).Add(time.Hour).Add(5 * time.Minute)
+	r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
+	time.Sleep(nextHour.Sub(now))
+
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for {
+		if err := r.ExecuteBillingTask(); err != nil {
+			r.Logger.Error(err, "failed to execute billing task")
+		}
+		select {
+		case <-ticker.C:
+			if err := r.ExecuteBillingTask(); err != nil {
+				r.Logger.Error(err, "failed to execute billing task")
+			}
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
 
 const (
 	UserNamespacePrefix = "ns-"
@@ -55,83 +91,110 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	DBClient   database.Account
-	AccountV2  database.AccountV2
-	Properties *resources.PropertyTypeLS
+	DBClient        database.Account
+	AccountV2       database.AccountV2
+	Properties      *resources.PropertyTypeLS
+	concurrentLimit int64
 }
 
-//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Billing object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
-func (r *BillingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("Reconcile Billing: ", "req.NamespacedName", req.NamespacedName)
-	ns := &corev1.Namespace{}
-	if err := r.Get(ctx, req.NamespacedName, ns); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	if ns.DeletionTimestamp != nil {
-		r.Logger.V(1).Info("namespace is deleting", "namespace", ns)
-		return ctrl.Result{}, nil
-	}
-
-	owner := ns.Labels[v1.UserLabelOwnerKey]
-	nsList, err := getOwnNsList(r.Client, owner)
+func (r *BillingReconciler) ExecuteBillingTask() error {
+	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	ownerListMap, err := r.getRecentUsedOwners()
 	if err != nil {
-		r.Logger.Error(err, "get own namespace list failed")
-		return ctrl.Result{Requeue: true}, err
+		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
 	}
-	r.Logger.V(1).Info("own namespace list", "own", owner, "nsList", nsList)
-	now := time.Now()
-	currentHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
-	queryTime := currentHourTime.Add(-1 * time.Hour)
+	err = r.reconcileOwnerListBatch(ownerListMap, env.GetIntEnvWithDefault("BILLING_RECONCILE_BATCH_COUNT", 200), time.Now(), r.reconcileOwnerList)
+	if err != nil {
+		return fmt.Errorf("failed to reconcile owner list batch: %w", err)
+	}
+	r.Logger.Info("finish billing reconcile", "time", time.Now().Format(time.RFC3339))
+	return nil
+}
 
-	// TODO r.处理Unsettle状态的账单
-
-	if exist, lastUpdateTime, _ := r.DBClient.GetBillingLastUpdateTime(owner, v12.Consumption); exist {
-		if lastUpdateTime.Equal(currentHourTime) || lastUpdateTime.After(currentHourTime) {
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
-		}
-		// 24小时内的数据，从上次更新时间开始计算，否则从当前时间起算
-		if lastUpdateTime.After(currentHourTime.Add(-24 * time.Hour)) {
-			queryTime = lastUpdateTime
-		}
+func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string, now time.Time) error {
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	startHourTime := endHourTime.Add(-1 * time.Hour)
+	var ownerList, failedList []string
+	for owner := range ownerListMap {
+		ownerList = append(ownerList, owner)
+	}
+	updateOwnerList, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
+	if err != nil {
+		return fmt.Errorf("get owners without recent updates failed: %w", err)
 	}
 
-	orderList := []string{}
-	consumAmount := int64(0)
-	// 计算上次billing到当前的时间之间的整点，左开右闭
-	for t := queryTime.Truncate(time.Hour).Add(time.Hour); t.Before(currentHourTime) || t.Equal(currentHourTime); t = t.Add(time.Hour) {
-		ids, amount, err := r.DBClient.GenerateBillingData(t.Add(-1*time.Hour), t, r.Properties, nsList, getUsername(owner))
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("generate billing data failed: %w", err)
-		}
-		orderList = append(orderList, ids...)
-		consumAmount += amount
+	// remove the owner that does not need to be updated
+	for _, owner := range updateOwnerList {
+		delete(ownerListMap, owner)
 	}
-	if consumAmount > 0 {
-		if err := r.rechargeBalance(owner, consumAmount); err != nil {
-			for i := range orderList {
-				if err := r.DBClient.UpdateBillingStatus(orderList[i], resources.Unsettled); err != nil {
-					r.Logger.Error(err, "update billing status failed", "id", orderList[i])
-				}
+	r.Logger.Info("get owners recent updates", "already update owner count", len(updateOwnerList), "remaining owner count", len(ownerListMap))
+
+	ownerBillings, err := r.DBClient.GenerateBillingData(startHourTime, endHourTime, r.Properties, ownerListMap)
+	if err != nil {
+		return fmt.Errorf("generate billing data failed: %w", err)
+	}
+	r.Logger.Info("generate billing data", "count", len(ownerBillings))
+	for owner, billings := range ownerBillings {
+		amount := int64(0)
+		orderIDs := make([]string, 0, len(billings))
+		for _, billing := range billings {
+			amount += billing.Amount
+			orderIDs = append(orderIDs, billing.OrderID)
+		}
+		if err = r.DBClient.SaveBillings(billings...); err != nil {
+			r.Logger.Error(err, "save billings failed", "owner", owner, "amount", amount)
+			failedList = append(failedList, owner)
+			continue
+		}
+		if err := r.rechargeBalance(owner, amount); err != nil {
+			r.Logger.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
+			failedList = append(failedList, owner)
+			if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); err != nil {
+				r.Logger.Error(err, "update billing unsettled status failed", "orderIDs", orderIDs)
 			}
-			return ctrl.Result{}, fmt.Errorf("recharge balance failed: %w", err)
 		}
-		r.Logger.V(1).Info("success recharge balance", "owner", owner, "amount", consumAmount)
 	}
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Until(currentHourTime.Add(1*time.Hour + 10*time.Minute))}, nil
+	if len(failedList) > 0 {
+		r.Logger.Error(fmt.Errorf("failed to reconcile owner list: %v", failedList), "failed to reconcile owner list")
+	}
+	return nil
+}
+
+// reconcileOwnerListBatch process ownerlistmap in batch mode
+func (r *BillingReconciler) reconcileOwnerListBatch(
+	ownerListMap map[string][]string, // The owner -> namespaces mapping needs to be handled
+	batchSize int, // number of owners processed per batch
+	now time.Time, // current time
+	reconcileFunc func(map[string][]string, time.Time) error, // processing function
+) error {
+	if batchSize <= 0 {
+		return fmt.Errorf("batch size must be greater than zero")
+	}
+
+	owners := make([]string, 0, len(ownerListMap)) // store all owners
+	for owner := range ownerListMap {
+		owners = append(owners, owner)
+	}
+
+	total := len(owners)
+	for i := 0; i < total; i += batchSize {
+		end := i + batchSize
+		if end > total {
+			end = total
+		}
+
+		batchOwners := owners[i:end] // the owner list of the current batch
+		batchOwnerMap := make(map[string][]string, len(batchOwners))
+		for _, owner := range batchOwners {
+			batchOwnerMap[owner] = ownerListMap[owner] // example retrieve a namespace
+		}
+		// call processing logic
+		if err := reconcileFunc(batchOwnerMap, now); err != nil {
+			return fmt.Errorf("failed to reconcile batch from %d to %d: %w", i, end, err)
+		}
+		r.Logger.Info("reconcile batch", "from", i, "to", end)
+	}
+	return nil
 }
 
 func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err error) {
@@ -144,48 +207,90 @@ func (r *BillingReconciler) rechargeBalance(owner string, amount int64) (err err
 	return nil
 }
 
-func getOwnNsList(clt client.Client, user string) ([]string, error) {
-	nsList := &corev1.NamespaceList{}
-	if err := clt.List(context.Background(), nsList, client.MatchingLabels{v1.UserLabelOwnerKey: user}); err != nil {
-		return nil, fmt.Errorf("list namespace failed: %w", err)
+func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
+	now := time.Now()
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	startHourTime := endHourTime.Add(-1 * time.Hour)
+	namespaceList, err := r.DBClient.GetTimeUsedNamespaceList(startHourTime, endHourTime)
+	if err != nil {
+		return nil, fmt.Errorf("get recent owners failed: %w", err)
 	}
-	nsListStr := make([]string, len(nsList.Items))
-	for i := range nsList.Items {
-		nsListStr[i] = nsList.Items[i].Name
+	nsToOwnerMap, err := GetAllUser()
+	if err != nil {
+		return nil, fmt.Errorf("get all user failed: %w", err)
 	}
-	return nsListStr, nil
-}
-
-func (r *BillingReconciler) initDB() error {
-	return r.DBClient.CreateBillingIfNotExist()
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *BillingReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
-	if err := r.initDB(); err != nil {
-		r.Logger.Error(err, "init db failed")
+	r.Logger.Info("get owner and namespace", "owner count", len(nsToOwnerMap), "namespace count", len(namespaceList))
+	usedOwnerList := make(map[string][]string)
+	for _, ns := range namespaceList {
+		if owner, ok := nsToOwnerMap[ns]; ok {
+			if _, ok := usedOwnerList[owner]; !ok {
+				usedOwnerList[owner] = []string{}
+			}
+			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
+		}
 	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
-			CreateFunc: func(createEvent event.CreateEvent) bool {
-				own, ok := createEvent.Object.GetLabels()[v1.UserLabelOwnerKey]
-				return ok && getUsername(createEvent.Object.GetName()) == own
-			},
-			UpdateFunc: func(_ event.UpdateEvent) bool {
-				return false
-			},
-			DeleteFunc: func(_ event.DeleteEvent) bool {
-				return false
-			},
-			GenericFunc: func(_ event.GenericEvent) bool {
-				return false
-			},
-		})).
-		WithOptions(rateOpts).
-		Complete(r)
+	r.Logger.Info("get all user", "count", len(usedOwnerList))
+	return usedOwnerList, nil
 }
 
 func getUsername(namespace string) string {
 	return strings.TrimPrefix(namespace, UserNamespacePrefix)
+}
+
+func (r *BillingReconciler) Init() error {
+	r.Logger = ctrl.Log.WithName("controller").WithName("Billing")
+	if err := r.DBClient.CreateBillingIfNotExist(); err != nil {
+		return fmt.Errorf("create billing collection failed: %w", err)
+	}
+	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 100)
+	return nil
+}
+
+// map[namespace]owner
+func GetAllUser() (map[string]string, error) {
+	err := userv1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		return nil, fmt.Errorf("unable to add scheme: %v", err)
+	}
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, fmt.Errorf("unable to build config: %v", err)
+	}
+	//TODO from cluster config
+	//config, err := clientcmd.BuildConfigFromFlags("", os.Getenv("KUBECONFIG"))
+	//if err != nil {
+	//	return nil, fmt.Errorf("unable to build config: %v", err)
+	//}
+	k8sClt, err := client.New(config, client.Options{Scheme: scheme.Scheme})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create client: %v", err)
+	}
+	nsToOwnerMap := make(map[string]string)
+
+	listOpts := &client.ListOptions{
+		Limit: 5000,
+	}
+	for {
+		userMetaList := &metav1.PartialObjectMetadataList{}
+		userMetaList.SetGroupVersionKind(userv1.GroupVersion.WithKind("UserList"))
+
+		if err := k8sClt.List(context.Background(), userMetaList, listOpts); err != nil {
+			return nil, fmt.Errorf("failed to list instances: %v", err)
+		}
+
+		for _, user := range userMetaList.Items {
+			owner := user.Annotations[userv1.UserLabelOwnerKey]
+			if owner == "" {
+				continue
+			}
+			nsToOwnerMap["ns-"+user.Name] = owner
+		}
+
+		token := userMetaList.GetContinue()
+		if token == "" {
+			break
+		}
+		listOpts.Continue = token
+	}
+	return nsToOwnerMap, nil
 }

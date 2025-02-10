@@ -60,6 +60,7 @@ func Init(ctx context.Context) error {
 	}
 
 	file := helper.ConfigPath
+	Cfg = &Config{} // Initialize Cfg regardless of file existence
 	if _, err := os.Stat(file); err == nil {
 		data, err := os.ReadFile(file)
 		if err != nil {
@@ -67,8 +68,7 @@ func Init(ctx context.Context) error {
 		}
 		fmt.Printf("config file found, use config file: \n%s\n", file)
 
-		Cfg = &Config{}
-		// json marshal
+		// json unmarshal
 		if err = json.Unmarshal(data, Cfg); err != nil {
 			return fmt.Errorf("unmarshal config file error: %v", err)
 		}
