@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -34,23 +34,28 @@ func NewVLogsServer(config *Config) (*VLogsServer, error) {
 }
 
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if req.URL.Path == "/queryLogsByParams" {
-		err := vl.queryLogsByParams(rw, req)
-		if err != nil {
-			http.Error(rw, fmt.Sprintf("query logs error: %s", err), http.StatusInternalServerError)
-			log.Printf("query logs error: %s", err)
-		}
+	query, err := vl.queryConvert(req)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("query %s error: %s", req.URL.Path, err), http.StatusInternalServerError)
 		return
 	}
-	if req.URL.Path == "/queryPodList" {
-		err := vl.queryPodList(rw, req)
-		if err != nil {
-			http.Error(rw, fmt.Sprintf("query pod list error: %s", err), http.StatusInternalServerError)
-			log.Printf("query pod list error: %s", err)
-		}
+	err = query(rw, req)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("query %s error: %s", req.URL.Path, err), http.StatusInternalServerError)
+		slog.Error("%s error: %s", req.URL.Path, err)
 		return
 	}
-	http.Error(rw, "Not found", http.StatusNotFound)
+}
+
+func (vl *VLogsServer) queryConvert(req *http.Request) (func(rw http.ResponseWriter, req *http.Request) error, error) {
+	switch req.URL.Path {
+	case "/queryLogsByParams":
+		return vl.queryLogsByParams, nil
+	case "/queryPodList":
+		return vl.queryPodList, nil
+	default:
+		return nil, fmt.Errorf("unknown url path")
+	}
 }
 
 func (vl *VLogsServer) authenticate(req *http.Request) (string, error) {
@@ -161,7 +166,6 @@ type VLogsQuery struct {
 func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 	if req.PodQuery == modeTrue {
 		query := v.generatePodListQuery(req)
-		log.Println("query the pod list " + query)
 		return query, nil
 	}
 	v.generateKeywordQuery(req)
