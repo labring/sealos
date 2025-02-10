@@ -24,11 +24,13 @@ import (
 
 	"k8s.io/client-go/rest"
 
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
