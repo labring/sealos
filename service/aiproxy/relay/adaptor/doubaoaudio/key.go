@@ -14,6 +14,10 @@ func (a *Adaptor) ValidateKey(key string) error {
 	return err
 }
 
+func (a *Adaptor) KeyHelp() string {
+	return "app_id|app_token"
+}
+
 // key格式: app_id|app_token
 func getAppIDAndToken(key string) (string, string, error) {
 	parts := strings.Split(key, "|")

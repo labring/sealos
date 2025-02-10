@@ -19,6 +19,10 @@ type Adaptor struct{}
 
 const baseURL = "https://generativelanguage.googleapis.com"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 var v1ModelMap = map[string]struct{}{}
 
 func getRequestURL(meta *meta.Meta, action string) string {

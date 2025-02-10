@@ -138,6 +138,10 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 		return nil, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
 	}
 
+	if meta.Channel.BaseURL == "" {
+		meta.Channel.BaseURL = a.GetBaseURL()
+	}
+
 	fullRequestURL, err := a.GetRequestURL(meta)
 	if err != nil {
 		return nil, openai.ErrorWrapperWithMessage("get request url failed: "+err.Error(), "get_request_url_failed", http.StatusBadRequest)

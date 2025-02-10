@@ -21,12 +21,12 @@ type Adaptor struct{}
 
 const baseURL = "https://api.coze.com"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	return u + "/open_api/v2/chat", nil
+	return meta.Channel.BaseURL + "/open_api/v2/chat", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

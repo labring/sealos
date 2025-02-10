@@ -13,14 +13,11 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://spark-api-open.xf-yun.com/v1"
-
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-	return a.Adaptor.GetRequestURL(meta)
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
 }
+
+const baseURL = "https://spark-api-open.xf-yun.com/v1"
 
 func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	domain, err := getXunfeiDomain(meta.ActualModel)

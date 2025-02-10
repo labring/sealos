@@ -23,6 +23,10 @@ const (
 	baseURL = "https://aip.baidubce.com"
 )
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 // Get model-specific endpoint using map
 var modelEndpointMap = map[string]string{
 	"ERNIE-4.0-8K":         "completions_pro",

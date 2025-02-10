@@ -16,6 +16,10 @@ type Adaptor struct {
 
 const baseURL = "https://api.cloudflare.com"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 // WorkerAI cannot be used across accounts with AIGateWay
 // https://developers.cloudflare.com/ai-gateway/providers/workersai/#openai-compatible-endpoints
 // https://gateway.ai.cloudflare.com/v1/{account_id}/{gateway_id}/workers-ai
@@ -25,9 +29,6 @@ func isAIGateWay(baseURL string) bool {
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 	isAIGateWay := isAIGateWay(u)
 	var urlPrefix string
 	if isAIGateWay {

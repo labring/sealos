@@ -19,6 +19,10 @@ type Adaptor struct {
 
 const baseURL = "https://api.minimax.chat/v1"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
 }
@@ -33,9 +37,6 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
 	_, groupID, err := GetAPIKeyAndGroupID(meta.Channel.Key)
 	if err != nil {
 		return "", err

@@ -18,9 +18,6 @@ import (
 
 func GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
 		if strings.HasPrefix(meta.ActualModel, "bot-") {
@@ -39,6 +36,10 @@ type Adaptor struct {
 }
 
 const baseURL = "https://ark.cn-beijing.volces.com"
+
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList

@@ -19,8 +19,12 @@ import (
 type Adaptor struct{}
 
 const (
-	baseURL = "https://qianfan.baidubce.com"
+	baseURL = "https://qianfan.baidubce.com/v2"
 )
+
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 // https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu
 var v2ModelMap = map[string]string{
@@ -36,13 +40,9 @@ func toV2ModelName(modelName string) string {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		return meta.Channel.BaseURL + "/v2/chat/completions", nil
+		return meta.Channel.BaseURL + "/chat/completions", nil
 	default:
 		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}

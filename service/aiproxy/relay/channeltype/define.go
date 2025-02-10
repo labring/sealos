@@ -72,7 +72,16 @@ func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
 	return a, ok
 }
 
-var ChannelNames = map[int]string{}
+type AdaptorMeta struct {
+	Name           string `json:"name"`
+	KeyHelp        string `json:"keyHelp"`
+	DefaultBaseURL string `json:"defaultBaseUrl"`
+}
+
+var (
+	ChannelNames = map[int]string{}
+	ChannelMetas = map[int]AdaptorMeta{}
+)
 
 func init() {
 	names := make(map[string]struct{})
@@ -82,6 +91,18 @@ func init() {
 			panic("duplicate channel name: " + name)
 		}
 		names[name] = struct{}{}
+		ChannelMetas[i] = AdaptorMeta{
+			Name:           name,
+			KeyHelp:        getAdaptorKeyHelp(adaptor),
+			DefaultBaseURL: adaptor.GetBaseURL(),
+		}
 		ChannelNames[i] = name
 	}
+}
+
+func getAdaptorKeyHelp(a adaptor.Adaptor) string {
+	if keyValidator, ok := a.(adaptor.KeyValidator); ok {
+		return keyValidator.KeyHelp()
+	}
+	return ""
 }

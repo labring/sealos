@@ -16,14 +16,14 @@ import (
 
 type Adaptor struct{}
 
-const baseURL = "https://api.anthropic.com"
+const baseURL = "https://api.anthropic.com/v1"
+
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	return u + "/v1/messages", nil
+	return meta.Channel.BaseURL + "/v1/messages", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {

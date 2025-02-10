@@ -17,6 +17,10 @@ func (a *Adaptor) ValidateKey(key string) error {
 	return nil
 }
 
+func (a *Adaptor) KeyHelp() string {
+	return "region|projectID|adcJSON"
+}
+
 // region|projectID|adcJSON
 func getConfigFromKey(key string) (Config, error) {
 	region, after, ok := strings.Cut(key, "|")

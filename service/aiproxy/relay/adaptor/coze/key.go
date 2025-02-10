@@ -17,6 +17,10 @@ func (a *Adaptor) ValidateKey(key string) error {
 	return nil
 }
 
+func (a *Adaptor) KeyHelp() string {
+	return "token|user_id"
+}
+
 func getTokenAndUserID(key string) (string, string, error) {
 	split := strings.Split(key, "|")
 	if len(split) != 2 {

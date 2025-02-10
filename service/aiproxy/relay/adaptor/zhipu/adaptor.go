@@ -17,11 +17,8 @@ type Adaptor struct {
 
 const baseURL = "https://open.bigmodel.cn/api/paas/v4"
 
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-	return a.Adaptor.GetRequestURL(meta)
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {

@@ -20,12 +20,12 @@ type Adaptor struct{}
 
 const baseURL = "https://api.cohere.ai"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	return u + "/v1/chat", nil
+	return meta.Channel.BaseURL + "/v1/chat", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {

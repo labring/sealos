@@ -23,6 +23,10 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
+func (a *Adaptor) GetBaseURL() string {
+	return ""
+}
+
 type Config struct {
 	Region    string
 	ProjectID string

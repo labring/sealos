@@ -21,6 +21,10 @@ func ChannelTypeNames(c *gin.Context) {
 	middleware.SuccessResponse(c, channeltype.ChannelNames)
 }
 
+func ChannelTypeMetas(c *gin.Context) {
+	middleware.SuccessResponse(c, channeltype.ChannelMetas)
+}
+
 func GetChannels(c *gin.Context) {
 	p, _ := strconv.Atoi(c.Query("p"))
 	p--

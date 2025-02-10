@@ -22,6 +22,10 @@ type Adaptor struct{}
 
 const baseURL = "https://dashscope.aliyuncs.com"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
 	if u == "" {

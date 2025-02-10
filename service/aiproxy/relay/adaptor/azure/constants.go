@@ -15,6 +15,10 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
+func (a *Adaptor) GetBaseURL() string {
+	return "https://{resource_name}.openai.azure.com"
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	_, apiVersion, err := getTokenAndAPIVersion(meta.Channel.Key)
 	if err != nil {

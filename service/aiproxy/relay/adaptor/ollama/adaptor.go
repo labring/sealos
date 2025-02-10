@@ -18,12 +18,13 @@ type Adaptor struct{}
 
 const baseURL = "http://localhost:11434"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	// https://github.com/ollama/ollama/blob/main/docs/api.md
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
 		return u + "/api/embed", nil

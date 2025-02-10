@@ -12,6 +12,7 @@ import (
 
 type Adaptor interface {
 	GetChannelName() string
+	GetBaseURL() string
 	GetRequestURL(meta *meta.Meta) (string, error)
 	SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error
 	ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error)
@@ -26,4 +27,5 @@ type Balancer interface {
 
 type KeyValidator interface {
 	ValidateKey(key string) error
+	KeyHelp() string
 }

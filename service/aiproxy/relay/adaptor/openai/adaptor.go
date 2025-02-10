@@ -23,11 +23,12 @@ type Adaptor struct{}
 
 const baseURL = "https://api.openai.com/v1"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 
 	var path string
 	switch meta.Mode {

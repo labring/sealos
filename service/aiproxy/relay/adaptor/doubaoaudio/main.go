@@ -15,9 +15,6 @@ import (
 
 func GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 	switch meta.Mode {
 	case relaymode.AudioSpeech:
 		return u + "/api/v1/tts/ws_binary", nil
@@ -29,6 +26,10 @@ func GetRequestURL(meta *meta.Meta) (string, error) {
 type Adaptor struct{}
 
 const baseURL = "https://openspeech.bytedance.com"
+
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
 	return ModelList
