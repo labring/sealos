@@ -233,7 +233,7 @@ export const LogTable = ({
       </Flex>
 
       {isJsonMode && (
-        <Collapse in={onOpenField} animateOpacity>
+        <Collapse in={onOpenField} animateOpacity style={{ flexShrink: 0 }}>
           <Flex
             p={4}
             position={'relative'}

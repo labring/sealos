@@ -242,7 +242,7 @@ export default function LogsPage({ appName }: { appName: string }) {
           borderRadius={'lg'}
           flex={1}
           height={'0px'}
-          minH={'200px'}
+          minH={parsedLogs?.length > 0 ? '400px' : '200px'}
         >
           <LogTable data={parsedLogs || []} isLoading={isLoading} formHook={formHook} />
         </Box>
