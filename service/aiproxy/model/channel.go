@@ -45,7 +45,7 @@ type Channel struct {
 	Status           int               `gorm:"default:1;index"                    json:"status"`
 	Type             int               `gorm:"default:0;index"                    json:"type"`
 	Priority         int32             `json:"priority"`
-	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"      json:"config"`
+	Config           *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
@@ -279,6 +279,7 @@ func UpdateChannel(channel *Channel) error {
 		Model(channel).
 		Omit("used_amount", "request_count", "created_at", "balance_updated_at", "balance").
 		Clauses(clause.Returning{}).
+		Where("id = ?", channel.ID).
 		Updates(channel)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
@@ -325,10 +326,13 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 }
 
 func (c *Channel) UpdateBalance(balance float64) error {
-	result := DB.Model(c).Select("balance_updated_at", "balance").Updates(Channel{
-		BalanceUpdatedAt: time.Now(),
-		Balance:          balance,
-	})
+	result := DB.Model(&Channel{}).
+		Select("balance_updated_at", "balance").
+		Where("id = ?", c.ID).
+		Updates(Channel{
+			BalanceUpdatedAt: time.Now(),
+			Balance:          balance,
+		})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
@@ -347,15 +351,19 @@ func DeleteChannelsByIDs(ids []int) error {
 }
 
 func UpdateChannelStatusByID(id int, status int) error {
-	result := DB.Model(&Channel{}).Where("id = ?", id).Update("status", status)
+	result := DB.Model(&Channel{}).
+		Where("id = ?", id).
+		Update("status", status)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
 func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {
-	result := DB.Model(&Channel{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"used_amount":   gorm.Expr("used_amount + ?", amount),
-		"request_count": gorm.Expr("request_count + ?", requestCount),
-	})
+	result := DB.Model(&Channel{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"used_amount":   gorm.Expr("used_amount + ?", amount),
+			"request_count": gorm.Expr("request_count + ?", requestCount),
+		})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 

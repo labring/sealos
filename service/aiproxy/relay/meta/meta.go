@@ -106,7 +106,9 @@ func (m *Meta) Reset(channel *model.Channel) {
 		ID:      channel.ID,
 		Type:    channel.Type,
 	}
-	m.ChannelConfig = channel.Config
+	if channel.Config != nil {
+		m.ChannelConfig = *channel.Config
+	}
 	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
 	m.ClearValues()
 }
