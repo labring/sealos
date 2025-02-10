@@ -152,7 +152,11 @@ func (r *AddChannelRequest) ToChannel() (*model.Channel, error) {
 	if validator, ok := channelType.(adaptor.KeyValidator); ok {
 		err := validator.ValidateKey(r.Key)
 		if err != nil {
-			return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+			keyHelp := validator.KeyHelp()
+			if keyHelp == "" {
+				return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+			}
+			return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w, %s", r.Name, channeltype.ChannelNames[r.Type], r.Type, err, keyHelp)
 		}
 	}
 	return &model.Channel{
