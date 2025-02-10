@@ -389,7 +389,21 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
   }, [])
 
   return (
-    <Box display="flex" flexDirection="column" w="full" h="full" gap="24px">
+    <Box
+      display="flex"
+      flexDirection="column"
+      w="full"
+      h="full"
+      gap="24px"
+      overflowY="auto"
+      overflowX="hidden"
+      sx={{
+        '&::-webkit-scrollbar': {
+          display: 'none'
+        },
+        msOverflowStyle: 'none',
+        scrollbarWidth: 'none'
+      }}>
       <Flex w="full" flex="4.5" flexDirection="column" gap="24px">
         <Text
           color="black"
@@ -401,7 +415,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           letterSpacing="0.1px">
           {t('dataDashboard.cost')}
         </Text>
-        <Box ref={costChartRef} w="full" h="full" position="relative" />
+        <Box ref={costChartRef} w="full" h="full" position="relative" minH="140px" />
       </Flex>
       <Flex w="full" flex="5.5" flexDirection="column" gap="24px">
         <Text
@@ -414,7 +428,7 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           letterSpacing="0.1px">
           {t('dataDashboard.callCount')}
         </Text>
-        <Box ref={requestChartRef} w="full" h="full" position="relative" />
+        <Box ref={requestChartRef} w="full" h="full" position="relative" minH="160px" />
       </Flex>
     </Box>
   )

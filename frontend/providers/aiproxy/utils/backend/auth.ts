@@ -110,7 +110,7 @@ export async function checkSealosUserIsRealName(headers: Headers): Promise<boole
 
     return result.data.isRealName
   } catch (error) {
-    console.error('CheckSealosUserIsRealName: Token parsing error:', error)
+    console.error('CheckSealosUserIsRealName: ', error)
     return false
   }
 }

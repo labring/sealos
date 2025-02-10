@@ -180,9 +180,30 @@ export default function Home(): React.JSX.Element {
           gap="38px"
           alignItems="flex-start"
           justifyContent="center"
-          flexDirection="column">
+          flexDirection="column"
+          overflowY="auto"
+          overflowX="hidden"
+          sx={{
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            },
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none'
+          }}>
           {/* chart 1 */}
-          <Flex w="full" gap="16px" alignItems="center">
+          <Flex
+            w="full"
+            gap="16px"
+            alignItems="center"
+            overflowY="hidden"
+            overflowX="auto"
+            sx={{
+              '&::-webkit-scrollbar': {
+                display: 'none'
+              },
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none'
+            }}>
             <Flex
               flex="1"
               bg="#EDFAFF"

@@ -188,9 +188,9 @@ export default function Logs(): React.JSX.Element {
                 color={code === 200 ? 'var(--Green-600, #039855)' : 'var(--Red-600, #D92D20)'}
                 fontFamily="PingFang SC"
                 fontSize="12px"
-                fontWeight={500}
+                fontWeight={400}
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.048px">
                 {code !== 200 ? `${t('logs.failed')} (${row.original.code})` : code}
               </Text>
               {code !== 200 && (
@@ -233,12 +233,12 @@ export default function Logs(): React.JSX.Element {
                 <Flex alignItems={'center'} gap={'4px'}>
                   <Text
                     noOfLines={1}
-                    color="grayModern.600"
+                    color="grayModern.900"
                     fontFamily="PingFang SC"
                     fontSize="12px"
-                    fontWeight={500}
+                    fontWeight={400}
                     lineHeight="16px"
-                    letterSpacing="0.5px">
+                    letterSpacing="0.048px">
                     {t('logs.total_price')}
                   </Text>
                   <CurrencySymbol type={currencySymbol} />
@@ -268,21 +268,16 @@ export default function Logs(): React.JSX.Element {
               setSelectedRow(row.original)
               onOpen()
             }}
+            h="28px"
             variant="unstyled"
             display="inline-flex"
             padding="6px 8px"
             justifyContent="center"
             alignItems="center"
             gap="4px"
-            boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
             borderRadius="4px"
             background="grayModern.150"
-            fontSize="11px"
-            fontFamily="PingFang SC"
-            fontWeight="500"
             whiteSpace="nowrap"
-            lineHeight="16px"
-            letterSpacing="0.5px"
             transition="all 0.2s ease"
             _hover={{
               transform: 'scale(1.05)',
@@ -315,7 +310,8 @@ export default function Logs(): React.JSX.Element {
             <Text
               color="grayModern.600"
               fontFamily="PingFang SC"
-              fontSize="12px"
+              fontStyle="normal"
+              fontSize="11px"
               fontWeight={500}
               lineHeight="16px"
               letterSpacing="0.5px">
