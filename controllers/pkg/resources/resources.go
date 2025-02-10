@@ -135,7 +135,7 @@ type Billing struct {
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
 	Detail   string    `json:"detail" bson:"detail,omitempty"`
-	UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
+	//UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
 }
 
 type Payment struct {

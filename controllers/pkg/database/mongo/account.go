@@ -149,6 +149,87 @@ func (m *mongoDB) GetBillingLastUpdateTime(owner string, _type common.Type) (boo
 	return false, time.Time{}, fmt.Errorf("failed to convert time field to primitive.DateTime: %v", result["time"])
 }
 
+func (m *mongoDB) GetOwnersRecentUpdates(ownerList []string, checkTime time.Time) ([]string, error) {
+	// MongoDB filter
+	filter := bson.M{
+		"owner": bson.M{"$in": ownerList},
+		"type":  common.Consumption,
+		"app_type": bson.M{
+			"$ne": resources.AppType[resources.CVM],
+		},
+	}
+
+	// Aggregate query: Group by owner to get the latest time
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$sort", Value: bson.D{{Key: "owner", Value: 1}, {Key: "time", Value: -1}}}}, // Sort by owner first, then by time in descending order
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$owner"},
+			{Key: "lastUpdateTime", Value: bson.D{{Key: "$first", Value: "$time"}}}, // fetch latest Time
+		}}},
+	}
+	// execute aggregate query
+	cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute aggregate query: %w", err)
+	}
+	defer cursor.Close(context.Background())
+
+	// get all the data out at once
+	var results []struct {
+		Owner         string             `bson:"_id"`
+		LastUpdateRaw primitive.DateTime `bson:"lastUpdateTime"`
+	}
+	if err := cursor.All(context.Background(), &results); err != nil {
+		return nil, fmt.Errorf("failed to decode cursor: %w", err)
+	}
+
+	// use map to store query results
+	latestUpdates := make(map[string]time.Time, len(results))
+	for _, result := range results {
+		latestUpdates[result.Owner] = result.LastUpdateRaw.Time()
+	}
+
+	// **In-memory processing: Filters owners that have been updated since checkTime**
+	var updatedOwners []string
+	for _, owner := range ownerList {
+		lastUpdateTime, exists := latestUpdates[owner]
+		if exists && (lastUpdateTime.After(checkTime) || lastUpdateTime.Equal(checkTime)) {
+			updatedOwners = append(updatedOwners, owner)
+		}
+	}
+	return updatedOwners, nil
+}
+
+func (m *mongoDB) GetTimeUsedNamespaceList(startTime, endTime time.Time) ([]string, error) {
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{{Key: "time", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}}}}},
+		{{Key: "$group", Value: bson.D{{Key: "_id", Value: "$category"}}}},
+		{{Key: "$project", Value: bson.D{{Key: "_id", Value: 0}, {Key: "namespace", Value: "$_id"}}}},
+	}
+	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("aggregate error: %v", err)
+	}
+	defer cursor.Close(context.Background())
+
+	var namespaces []string
+	for cursor.Next(context.Background()) {
+		var result struct {
+			Namespace string `bson:"namespace"`
+		}
+		err := cursor.Decode(&result)
+		if err != nil {
+			return nil, fmt.Errorf("decode error: %v", err)
+		}
+		namespaces = append(namespaces, result.Namespace)
+	}
+	if err = cursor.Err(); err != nil {
+		return nil, fmt.Errorf("cursor error: %v", err)
+	}
+	return namespaces, nil
+}
+
 func (m *mongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingHandler, error) {
 	filter := bson.M{
 		"owner": owner,
@@ -178,15 +259,15 @@ func (m *mongoDB) GetUnsettingBillingHandler(owner string) ([]resources.BillingH
 	return results, nil
 }
 
-func (m *mongoDB) UpdateBillingStatus(orderID string, status resources.BillingStatus) error {
+func (m *mongoDB) UpdateBillingStatus(orderIDs []string, status resources.BillingStatus) error {
 	// create a query filter
-	filter := bson.M{"order_id": orderID}
+	filter := bson.M{"order_id": bson.M{"$in": orderIDs}}
 	update := bson.M{
 		"$set": bson.M{
 			"status": status,
 		},
 	}
-	_, err := m.getBillingCollection().UpdateOne(context.Background(), filter, update)
+	_, err := m.getBillingCollection().UpdateMany(context.Background(), filter, update)
 	if err != nil {
 		return fmt.Errorf("update error: %v", err)
 	}
@@ -421,185 +502,234 @@ func (m *mongoDB) SavePropertyTypes(types []resources.PropertyType) error {
 	return err
 }
 
-func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, namespaces []string, owner string) (orderID []string, amount int64, err error) {
-	minutes := endTime.Sub(startTime).Minutes()
-
-	groupStage := bson.D{
-		primitive.E{Key: "_id", Value: bson.D{{Key: "type", Value: "$type"}, {Key: "name", Value: "$name"}, {Key: "category", Value: "$category"}, {Key: "parent_type", Value: "$parent_type"}, {Key: "parent_name", Value: "$parent_name"}}},
-		primitive.E{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
-	}
-
-	projectStage := bson.D{
-		primitive.E{Key: "_id", Value: 0},
-		primitive.E{Key: "type", Value: "$_id.type"},
-		primitive.E{Key: "name", Value: "$_id.name"},
-		primitive.E{Key: "parent_type", Value: "$_id.parent_type"},
-		primitive.E{Key: "parent_name", Value: "$_id.parent_name"},
-		primitive.E{Key: "category", Value: "$_id.category"},
-	}
-
-	// initialize the used phase
-	usedStage := bson.M{}
-
-	// Build the $group and $project phases dynamically from EnumMap
-	for key, value := range prols.EnumMap {
-		keyStr := strconv.Itoa(int(key))
-
-		// $max - $min;
-		// When max is not zero, the minimum value other than the zero value is used to prevent some data from obtaining a value in special cases
-		// max-min=0 if the hour has only one data piece or no data piece
-		if value.PriceType == resources.DIF {
-			// for non 0 $min
-			minWithCondition := bson.D{
-				{Key: "$min", Value: bson.D{
-					{Key: "$cond", Value: bson.A{
-						bson.D{{Key: "$eq", Value: bson.A{"$used." + keyStr, 0}}},
-						nil, // 将0值排除在外
-						"$used." + keyStr,
-					}},
-				}},
-			}
-
-			groupStage = append(groupStage,
-				primitive.E{Key: keyStr + "_max", Value: bson.D{{Key: "$max", Value: "$used." + keyStr}}}, // 正常计算$max
-				primitive.E{Key: keyStr + "_min", Value: minWithCondition},
-			)
-
-			// added to the used phase
-			usedStage[keyStr] = bson.D{{Key: "$subtract", Value: bson.A{
-				"$" + keyStr + "_max",
-				"$" + keyStr + "_min",
-			}}}
-			continue
-		}
-		if value.PriceType == resources.SUM {
-			groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
-			usedStage[keyStr] = bson.D{{Key: "$toInt", Value: "$" + keyStr}}
-			continue
-		}
-		groupStage = append(groupStage, primitive.E{Key: keyStr, Value: bson.D{{Key: "$sum", Value: "$used." + keyStr}}})
-		usedStage[keyStr] = bson.D{{Key: "$toInt", Value: bson.D{{Key: "$round", Value: bson.D{{Key: "$divide", Value: bson.A{
-			"$" + keyStr, minutes}}}}}}}
-	}
-
-	// add the used phase to the $project phase
-	projectStage = append(projectStage, primitive.E{Key: "used", Value: usedStage})
-
-	// construction-pipeline
-	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.D{{Key: "time", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}}, {Key: "category", Value: bson.D{{Key: "$in", Value: namespaces}}}}}},
-		{{Key: "$group", Value: groupStage}},
-		{{Key: "$project", Value: projectStage}},
-	}
-
-	cursor, err := m.getMonitorCollection(startTime).Aggregate(context.Background(), pipeline)
+func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resources.PropertyTypeLS, ownerToNS map[string][]string) (map[string][]*resources.Billing, error) {
+	ownerMonitors, err := m.FetchOwnerMonitorRecords(startTime, endTime, ownerToNS)
 	if err != nil {
-		return nil, 0, fmt.Errorf("aggregate error: %v", err)
+		return nil, fmt.Errorf("failed to fetch monitor records: %v", err)
+	}
+	var ownerBillings = make(map[string][]*resources.Billing)
+	for owner, monitors := range ownerMonitors {
+		billings, err := GenerateBillingDataFromRecords(monitors, prols, startTime, endTime, owner)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate billing data: %v", err)
+		}
+		ownerBillings[owner] = billings
+	}
+	return ownerBillings, nil
+}
+
+func (m *mongoDB) FetchOwnerMonitorRecords(startTime, endTime time.Time, ownerToNS map[string][]string) (map[string][]resources.Monitor, error) {
+	// collect all namespaces to avoid repetition
+	nsSet := make(map[string]struct{})
+	for _, nsList := range ownerToNS {
+		for _, ns := range nsList {
+			nsSet[ns] = struct{}{}
+		}
+	}
+	namespaces := make([]string, 0, len(nsSet))
+	for ns := range nsSet {
+		namespaces = append(namespaces, ns)
+	}
+
+	// get all matching monitor records from mongodb
+	collection := m.getMonitorCollection(startTime)
+	filter := bson.M{
+		"time":     bson.M{"$gte": startTime, "$lt": endTime},
+		"category": bson.M{"$in": namespaces}, // 查询所有涉及的 namespaces
+	}
+
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find monitor records: %w", err)
 	}
 	defer cursor.Close(context.Background())
 
-	var appCostsMap = make(map[string]map[string][]resources.AppCost)
-	// map[ns/type]int64
-	var nsTypeAmount = make(map[string]int64)
+	// reading mongodb data
+	var allRecords []resources.Monitor
+	if err := cursor.All(context.Background(), &allRecords); err != nil {
+		return nil, fmt.Errorf("failed to decode monitor records: %w", err)
+	}
 
-	for cursor.Next(context.Background()) {
-		var result struct {
-			Type       uint8                 `bson:"type"`
-			Namespace  string                `bson:"category"`
-			Name       string                `bson:"name"`
-			ParentType uint8                 `bson:"parent_type"`
-			ParentName string                `bson:"parent_name"`
-			Used       resources.EnumUsedMap `bson:"used"`
-		}
-
-		err := cursor.Decode(&result)
-		if err != nil {
-			return nil, 0, fmt.Errorf("decode error: %v", err)
-		}
-
-		//TODO delete
-		//logger.Info("generate billing data", "result", result)
-
-		if _, ok := appCostsMap[result.Namespace]; !ok {
-			appCostsMap[result.Namespace] = make(map[string][]resources.AppCost)
-		}
-		strType := strconv.Itoa(int(result.Type))
-		if _, ok := appCostsMap[result.Namespace][strType]; !ok {
-			appCostsMap[result.Namespace][strType] = make([]resources.AppCost, 0)
-		}
-		appCost := resources.AppCost{
-			Type:       result.Type,
-			Used:       result.Used,
-			Name:       result.Name,
-			UsedAmount: make(map[uint8]int64),
-		}
-		// Calculate the amount and set the used value
-		for property := range result.Used {
-			if prop, ok := prols.EnumMap[property]; ok {
-				if prop.UnitPrice > 0 {
-					appCost.UsedAmount[property] = int64(math.Ceil(float64(result.Used[property]) * prop.UnitPrice))
-					appCost.Amount += appCost.UsedAmount[property]
+	// build the mapping of owner monitor data
+	ownerMonitorRecords := make(map[string][]resources.Monitor)
+	for _, record := range allRecords {
+		for owner, nsList := range ownerToNS {
+			// Only the records of the namespace that belong to the owner are saved
+			for _, ns := range nsList {
+				if record.Category == ns {
+					ownerMonitorRecords[owner] = append(ownerMonitorRecords[owner], record)
+					break // avoid duplicate additions
 				}
 			}
 		}
-		if appCost.Amount == 0 {
-			continue
-		}
-		key := result.Namespace + "/" + strType
-		if result.ParentType != 0 && result.ParentName != "" {
-			key = result.Namespace + "/" + strconv.Itoa(int(result.ParentType)) + "/" + result.ParentName
-		}
-		nsTypeAmount[key] += appCost.Amount
-		appCostsMap[result.Namespace][key] = append(appCostsMap[result.Namespace][key], appCost)
 	}
 
+	return ownerMonitorRecords, nil
+}
+
+func GenerateBillingDataFromRecords(records []resources.Monitor, prols *resources.PropertyTypeLS, startTime, endTime time.Time, owner string) (billings []*resources.Billing, err error) {
+	// Calculate the interval (minutes) to ensure that the divisor is not 0
+	minutes := math.Max(endTime.Sub(startTime).Minutes(), 1)
+
+	// 存储分组后的数据
+	aggregatedMap := make(map[string]*struct {
+		resources.Monitor
+		UsedValues map[uint8][]int64
+		Count      int64
+	})
+
+	// 分组 key 生成规则
+	genGroupKey := func(rec resources.Monitor) string {
+		return fmt.Sprintf("%s/%d/%s", rec.Category, rec.Type, rec.Name)
+	}
+
+	// 遍历所有记录，按分组键聚合
+	for _, rec := range records {
+		key := genGroupKey(rec)
+		if _, ok := aggregatedMap[key]; !ok {
+			aggregatedMap[key] = &struct {
+				resources.Monitor
+				UsedValues map[uint8][]int64
+				Count      int64
+			}{
+				Monitor:    rec,
+				UsedValues: make(map[uint8][]int64),
+				Count:      0,
+			}
+		}
+		aggregatedMap[key].Count++
+		for k, v := range rec.Used {
+			//aggregatedMap[key].UsedValues[k] = append(aggregatedMap[key].UsedValues[k], v)
+			if _, exists := aggregatedMap[key].UsedValues[k]; !exists {
+				aggregatedMap[key].UsedValues[k] = make([]int64, 0, len(records))
+			}
+			aggregatedMap[key].UsedValues[k] = append(aggregatedMap[key].UsedValues[k], v)
+		}
+	}
+
+	// 存储最终计费数据
+	// map[namespace]map[app_type | parent_type/parent_name][]resources.AppCost
+	appCostsMap := make(map[string]map[string][]resources.AppCost)
+	nsTypeAmount := make(map[string]map[string]int64)
+
+	calculateFinalUsed := func(values map[uint8][]int64, prols *resources.PropertyTypeLS, minutes float64) map[uint8]int64 {
+		finalUsed := make(map[uint8]int64)
+		for propKey, vals := range values {
+			if prop, ok := prols.EnumMap[propKey]; ok {
+				finalUsed[propKey] = computeUsedValue(vals, prop, minutes)
+			}
+		}
+		return finalUsed
+	}
+	// 计算最终 Used 数据
+	for _, agg := range aggregatedMap {
+		finalUsed := calculateFinalUsed(agg.UsedValues, prols, minutes)
+		// 计算费用
+		appCost := resources.AppCost{
+			Type:       agg.Type,
+			Name:       agg.Name,
+			Used:       finalUsed,
+			UsedAmount: make(map[uint8]int64),
+		}
+		var totalAmount int64
+		for propKey, usedVal := range finalUsed {
+			if prop, ok := prols.EnumMap[propKey]; ok {
+				if prop.UnitPrice > 0 {
+					feeFloat := float64(usedVal) * prop.UnitPrice
+					if feeFloat > math.MaxInt64 {
+						return nil, fmt.Errorf("fee calculation overflow: %f", feeFloat)
+					}
+					fee := int64(math.Ceil(feeFloat))
+					appCost.UsedAmount[propKey] = fee
+					totalAmount += fee
+				}
+			}
+		}
+		if totalAmount == 0 {
+			continue
+		}
+		appCost.Amount = totalAmount
+		groupKey := strconv.Itoa(int(agg.Type))
+		if agg.ParentType != 0 && agg.ParentName != "" {
+			groupKey = strconv.Itoa(int(agg.ParentType)) + "/" + agg.ParentName
+		}
+		ns := agg.Category
+		if _, ok := nsTypeAmount[ns]; !ok {
+			nsTypeAmount[ns] = make(map[string]int64)
+		}
+		nsTypeAmount[ns][groupKey] += totalAmount
+
+		if _, ok := appCostsMap[ns]; !ok {
+			appCostsMap[ns] = make(map[string][]resources.AppCost)
+		}
+		appCostsMap[ns][groupKey] = append(appCostsMap[ns][groupKey], appCost)
+	}
+	billings = make([]*resources.Billing, 0)
+
+	// 生成 Billing 数据
 	for ns, appCostMap := range appCostsMap {
-		for tp, appCost := range appCostMap {
-			amountt := nsTypeAmount[tp]
-			if amountt == 0 {
+		for tp, appCostList := range appCostMap {
+			amount := nsTypeAmount[ns][tp]
+			if amount <= 0 {
 				continue
 			}
 			id, err := gonanoid.New(12)
 			if err != nil {
-				return nil, 0, fmt.Errorf("generate billing id error: %v", err)
+				return nil, fmt.Errorf("generate billing id error: %v", err)
 			}
-			// tp = ns/type/parentName && parentName not contain "/"
-			appType, appName := 0, ""
-			switch strings.Count(tp, "/") {
-			case 1:
-				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
-			case 2:
-				appType, _ = strconv.Atoi(strings.Split(tp, "/")[1])
-				appName = strings.Split(tp, "/")[2]
+			parts := strings.Split(tp, "/")
+			appType, _ := strconv.Atoi(parts[0])
+			appName := ""
+			if len(parts) > 1 {
+				appName = parts[1]
 			}
-			billing := resources.Billing{
+			billings = append(billings, &resources.Billing{
 				OrderID:   id,
 				Type:      Consumption,
 				Namespace: ns,
 				AppType:   uint8(appType),
 				AppName:   appName,
-				AppCosts:  appCost,
-				Amount:    amountt,
+				AppCosts:  appCostList,
+				Amount:    amount,
 				Owner:     owner,
 				Time:      endTime,
 				Status:    resources.Settled,
-			}
-			amount += amountt
-			orderID = append(orderID, id)
-			// Insert the billing document
-			_, err = m.getBillingCollection().InsertOne(context.Background(), billing)
-			if err != nil {
-				return nil, 0, fmt.Errorf("insert error: %v", err)
-			}
-			//TODO delete
-			//logger.Info("generate billing data", "billing", billing)
+			})
 		}
 	}
+	return billings, nil
+}
 
-	if err = cursor.Err(); err != nil {
-		return nil, 0, fmt.Errorf("cursor error: %v", err)
+func computeUsedValue(usedValues []int64, prop resources.PropertyType, minutes float64) int64 {
+	switch prop.PriceType {
+	case resources.DIF:
+		var maxVal int64 = -math.MaxInt64
+		var minVal int64 = math.MaxInt64
+		for _, v := range usedValues {
+			if v > maxVal {
+				maxVal = v
+			}
+			if v != 0 && v < minVal {
+				minVal = v
+			}
+		}
+		if maxVal > minVal {
+			return maxVal - minVal
+		}
+		return 0
+	case resources.SUM:
+		var sum int64
+		for _, v := range usedValues {
+			sum += v
+		}
+		return sum
+	default:
+		var sum int64
+		for _, v := range usedValues {
+			sum += v
+		}
+		return int64(math.Round(float64(sum) / minutes))
 	}
-	return orderID, amount, nil
 }
 
 func (m *mongoDB) GetUpdateTimeForCategoryAndPropertyFromMetering(category string, property string) (time.Time, error) {
