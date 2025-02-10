@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -76,6 +77,11 @@ func GetGroupAdjustedModelConfig(group *model.GroupCache, mc *model.ModelConfig)
 	return mc
 }
 
+var (
+	ErrRequestRateLimitExceeded = errors.New("request rate limit exceeded, please try again later")
+	ErrRequestTpmLimitExceeded  = errors.New("request tpm limit exceeded, please try again later")
+)
+
 func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model.ModelConfig) error {
 	adjustedModelConfig := GetGroupAdjustedModelConfig(group, mc)
 
@@ -88,7 +94,7 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 			time.Minute,
 		)
 		if !ok {
-			return fmt.Errorf("group (%s) is requesting too frequently", group.ID)
+			return ErrRequestRateLimitExceeded
 		}
 	} else if common.RedisEnabled {
 		_, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, time.Minute)
@@ -106,7 +112,7 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 		}
 
 		if tpm >= adjustedModelConfig.TPM {
-			return fmt.Errorf("group (%s) tpm is too high", group.ID)
+			return ErrRequestTpmLimitExceeded
 		}
 	}
 	return nil
