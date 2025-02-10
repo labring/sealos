@@ -1,11 +1,12 @@
 {
   "Cumulative number of invitees": "Cumulative number of invitees",
   "Earnings": "Earnings",
-  "Cashback Ratio": "Cashback Ratio",
-  "Every time a friend recharges": "Every time a friend recharges, you will receive a balance reward of {{amount}}",
+  "Cashback Ratio": "Cashback Rules",
+  "every_time_a_friend_recharges": "2. Every time a friend recharges, you will receive a rebate of TA's recharge amount <strong>{{amount}}</strong>",
   "Invitation link": "Invitation link",
   "Copy link": "Copy link",
   "Time": "Time",
   "Amount": "Amount",
-  "No invitation records": "No invitation records~"
+  "No invitation records": "No invitation records~",
+  "cashback_first_rule": "1. After a friend completes real-name authentication, you and TA will receive a <strong>5</strong> yuan balance reward"
 }
