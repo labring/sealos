@@ -46,7 +46,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   const { message } = useMessage();
   const { t } = useTranslation();
   const { appDetail, appDetailPods } = useAppStore();
-  const [isInitialized, setIsInitialized] = useState(false);
+
   const { refreshInterval, setRefreshInterval, startDateTime, endDateTime } = useDateTimeStore();
   const { setLogs, exportLogs, parsedLogs, logCounts, setLogCounts } = useLogStore();
 
@@ -62,31 +62,6 @@ export default function LogsPage({ appName }: { appName: string }) {
       refreshInterval: 0
     }
   });
-
-  // init pods and containers
-  useEffect(() => {
-    if (!isInitialized && appDetailPods?.length > 0) {
-      const urlPodName = router.query.pod as string;
-      const initialPods = appDetailPods.map((pod) => ({
-        value: pod.podName,
-        label: pod.podName,
-        checked: urlPodName ? pod.podName === urlPodName : true
-      }));
-
-      const containers = appDetailPods
-        .flatMap((pod) => pod.spec?.containers || [])
-        .map((container) => ({
-          value: container.name,
-          label: container.name,
-          checked: true
-        }))
-        .filter((item, index, self) => index === self.findIndex((t) => t.value === item.value));
-
-      formHook.setValue('pods', initialPods);
-      formHook.setValue('containers', containers);
-      setIsInitialized(true);
-    }
-  }, [appDetailPods, isInitialized, formHook, router.query.pod]);
 
   const selectedPods = formHook.watch('pods').filter((pod) => pod.checked);
   const selectedContainers = formHook.watch('containers').filter((container) => container.checked);
@@ -182,7 +157,7 @@ export default function LogsPage({ appName }: { appName: string }) {
   );
 
   const { refetch: refetchPodListData, isLoading: isPodListLoading } = useQuery(
-    ['log-pod-list-data', appName, timeRange],
+    ['log-pod-list-data', appName, timeRange, appDetailPods?.length],
     () =>
       getLogPodList({
         app: appName,
@@ -192,26 +167,37 @@ export default function LogsPage({ appName }: { appName: string }) {
       staleTime: 3000,
       cacheTime: 3000,
       onSuccess: (data) => {
-        const podList = Array.isArray(data) ? data : [];
-        const urlPodName = router.query.pod as string;
+        console.log('isInitialized', appDetailPods);
 
-        const currentPodsState = new Map(
-          formHook.watch('pods').map((pod) => [pod.value, pod.checked])
-        );
+        if (appDetailPods?.length > 0) {
+          const podList = Array.isArray(data) ? data : [];
+          const urlPodName = router.query.pod as string;
 
-        const allPods = podList.map((podName: string) => ({
-          value: podName,
-          label: podName,
-          checked: currentPodsState.has(podName)
-            ? !!currentPodsState.get(podName)
-            : urlPodName
-            ? podName === urlPodName
-            : true
-        }));
+          const podNamesSet = new Set([
+            ...podList,
+            ...appDetailPods
+              .map((pod) => pod.metadata?.name)
+              .filter((name): name is string => !!name)
+          ]);
 
-        const uniquePods = Array.from(new Map(allPods.map((pod) => [pod.value, pod])).values());
+          const allPods: ListItem[] = Array.from(podNamesSet).map((podName) => ({
+            value: podName,
+            label: podName,
+            checked: urlPodName ? podName === urlPodName : true
+          }));
 
-        formHook.setValue('pods', uniquePods);
+          formHook.setValue('pods', allPods);
+
+          const containers = appDetailPods
+            .flatMap((pod) => pod.spec?.containers || [])
+            .map((container) => ({
+              value: container.name,
+              label: container.name,
+              checked: true
+            }))
+            .filter((item, index, self) => index === self.findIndex((t) => t.value === item.value));
+          formHook.setValue('containers', containers);
+        }
       }
     }
   );
