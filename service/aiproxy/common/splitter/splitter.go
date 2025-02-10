@@ -44,6 +44,9 @@ func computeKMPNext(pattern []byte) []int {
 }
 
 func (s *Splitter) Process(data []byte) ([]byte, []byte) {
+	if len(data) == 0 {
+		return nil, nil
+	}
 	switch s.state {
 	case 0:
 		s.buffer = append(s.buffer, data...)
@@ -66,11 +69,10 @@ func (s *Splitter) Process(data []byte) ([]byte, []byte) {
 		}
 
 		s.state = 1
-		if s.headLen == len(s.buffer) {
+		s.buffer = s.buffer[s.headLen:]
+		if len(s.buffer) == 0 {
 			return nil, nil
 		}
-		tailData := s.buffer[s.headLen:]
-		s.buffer = tailData
 		return s.processSeekTail()
 	case 1:
 		s.buffer = append(s.buffer, data...)

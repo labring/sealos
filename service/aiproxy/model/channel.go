@@ -31,7 +31,7 @@ type ChannelConfig struct {
 type Channel struct {
 	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
 	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
-	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
+	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
 	Key              string            `gorm:"type:text;index"                    json:"key"`
