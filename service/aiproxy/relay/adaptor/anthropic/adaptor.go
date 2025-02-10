@@ -23,7 +23,7 @@ func (a *Adaptor) GetBaseURL() string {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	return meta.Channel.BaseURL + "/v1/messages", nil
+	return meta.Channel.BaseURL + "/messages", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.Request) error {

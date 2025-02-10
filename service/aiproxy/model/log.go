@@ -61,6 +61,7 @@ type Log struct {
 	UsedAmount       float64        `gorm:"index"                                                                                                                  json:"used_amount"`
 	PromptTokens     int            `json:"prompt_tokens"`
 	CompletionTokens int            `json:"completion_tokens"`
+	TotalTokens      int            `json:"total_tokens"`
 	ChannelID        int            `gorm:"index"                                                                                                                  json:"channel"`
 	Code             int            `gorm:"index"                                                                                                                  json:"code"`
 	Mode             int            `json:"mode"`
@@ -825,7 +826,7 @@ func DeleteGroupLogs(groupID string) (int64, error) {
 	return result.RowsAffected, result.Error
 }
 
-type HourlyChartData struct {
+type ChartData struct {
 	Timestamp      int64   `json:"timestamp"`
 	RequestCount   int64   `json:"request_count"`
 	UsedAmount     float64 `json:"used_amount"`
@@ -833,13 +834,13 @@ type HourlyChartData struct {
 }
 
 type DashboardResponse struct {
-	ChartData      []*HourlyChartData `json:"chart_data"`
-	Models         []string           `json:"models"`
-	TotalCount     int64              `json:"total_count"`
-	ExceptionCount int64              `json:"exception_count"`
-	UsedAmount     float64            `json:"used_amount"`
-	RPM            int64              `json:"rpm"`
-	TPM            int64              `json:"tpm"`
+	ChartData      []*ChartData `json:"chart_data"`
+	Models         []string     `json:"models"`
+	TotalCount     int64        `json:"total_count"`
+	ExceptionCount int64        `json:"exception_count"`
+	UsedAmount     float64      `json:"used_amount"`
+	RPM            int64        `json:"rpm"`
+	TPM            int64        `json:"tpm"`
 }
 
 type GroupDashboardResponse struct {
@@ -860,8 +861,8 @@ func getTimeSpanFormat(timeSpan time.Duration) string {
 	}
 }
 
-func getChartData(group string, start, end time.Time, tokenName, modelName string, timeSpan time.Duration) ([]*HourlyChartData, error) {
-	var chartData []*HourlyChartData
+func getChartData(group string, start, end time.Time, tokenName, modelName string, timeSpan time.Duration) ([]*ChartData, error) {
+	var chartData []*ChartData
 
 	timeSpanFormat := getTimeSpanFormat(timeSpan)
 	if timeSpanFormat == "" {
@@ -891,6 +892,7 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	}
 
 	err := query.Scan(&chartData).Error
+
 	return chartData, err
 }
 
@@ -919,7 +921,7 @@ func getLogDistinctValues[T cmp.Ordered](field string, group string, start, end 
 	return values, nil
 }
 
-func sumTotalCount(chartData []*HourlyChartData) int64 {
+func sumTotalCount(chartData []*ChartData) int64 {
 	var count int64
 	for _, data := range chartData {
 		count += data.RequestCount
@@ -927,7 +929,7 @@ func sumTotalCount(chartData []*HourlyChartData) int64 {
 	return count
 }
 
-func sumExceptionCount(chartData []*HourlyChartData) int64 {
+func sumExceptionCount(chartData []*ChartData) int64 {
 	var count int64
 	for _, data := range chartData {
 		count += data.ExceptionCount
@@ -935,7 +937,7 @@ func sumExceptionCount(chartData []*HourlyChartData) int64 {
 	return count
 }
 
-func sumUsedAmount(chartData []*HourlyChartData) float64 {
+func sumUsedAmount(chartData []*ChartData) float64 {
 	var amount decimal.Decimal
 	for _, data := range chartData {
 		amount = amount.Add(decimal.NewFromFloat(data.UsedAmount))
@@ -964,7 +966,7 @@ func getRPM(group string, end time.Time, tokenName, modelName string) (int64, er
 
 func getTPM(group string, end time.Time, tokenName, modelName string) (int64, error) {
 	query := LogDB.Model(&Log{}).
-		Select("COALESCE(SUM(prompt_tokens + completion_tokens), 0)").
+		Select("COALESCE(SUM(total_tokens), 0)").
 		Where("request_at >= ? AND request_at <= ?", end.Add(-time.Minute), end)
 
 	if group != "" {
@@ -990,7 +992,7 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 	}
 
 	var (
-		chartData []*HourlyChartData
+		chartData []*ChartData
 		models    []string
 		rpm       int64
 		tpm       int64
@@ -1053,7 +1055,7 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 	}
 
 	var (
-		chartData  []*HourlyChartData
+		chartData  []*ChartData
 		tokenNames []string
 		models     []string
 		rpm        int64
@@ -1137,7 +1139,7 @@ func GetGroupModelTPM(group string, model string) (int64, error) {
 	err := LogDB.
 		Model(&Log{}).
 		Where("group_id = ? AND request_at >= ? AND request_at <= ? AND model = ?", group, start, end, model).
-		Select("COALESCE(SUM(prompt_tokens + completion_tokens), 0)").
+		Select("COALESCE(SUM(total_tokens), 0)").
 		Scan(&tpm).Error
 	return tpm, err
 }

@@ -35,7 +35,7 @@ func getDashboardTime(t string) (time.Time, time.Time, time.Duration) {
 	return start, end, timeSpan
 }
 
-func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time.Duration) []*model.HourlyChartData {
+func fillGaps(data []*model.ChartData, start, end time.Time, timeSpan time.Duration) []*model.ChartData {
 	if len(data) == 0 {
 		return data
 	}
@@ -48,7 +48,7 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 	}
 	var firstIsZero bool
 	if !firstAlignedTime.Equal(firstPoint) {
-		data = append([]*model.HourlyChartData{
+		data = append([]*model.ChartData{
 			{
 				Timestamp: firstAlignedTime.Unix(),
 			},
@@ -64,13 +64,13 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 	}
 	var lastIsZero bool
 	if !lastAlignedTime.Equal(lastPoint) {
-		data = append(data, &model.HourlyChartData{
+		data = append(data, &model.ChartData{
 			Timestamp: lastAlignedTime.Unix(),
 		})
 		lastIsZero = true
 	}
 
-	result := make([]*model.HourlyChartData, 0, len(data))
+	result := make([]*model.ChartData, 0, len(data))
 	result = append(result, data[0])
 
 	for i := 1; i < len(data); i++ {
@@ -88,13 +88,13 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 		if hourDiff > 3 {
 			// Add point for hour after prev
 			if i != 1 || (i == 1 && !firstIsZero) {
-				result = append(result, &model.HourlyChartData{
+				result = append(result, &model.ChartData{
 					Timestamp: prev.Timestamp + int64(timeSpan.Seconds()),
 				})
 			}
 			// Add point for hour before curr
 			if i != len(data)-1 || (i == len(data)-1 && !lastIsZero) {
-				result = append(result, &model.HourlyChartData{
+				result = append(result, &model.ChartData{
 					Timestamp: curr.Timestamp - int64(timeSpan.Seconds()),
 				})
 			}
@@ -104,7 +104,7 @@ func fillGaps(data []*model.HourlyChartData, start, end time.Time, timeSpan time
 
 		// Fill gaps of 2-3 hours with zero points
 		for j := prev.Timestamp + int64(timeSpan.Seconds()); j < curr.Timestamp; j += int64(timeSpan.Seconds()) {
-			result = append(result, &model.HourlyChartData{
+			result = append(result, &model.ChartData{
 				Timestamp: j,
 			})
 		}
