@@ -171,6 +171,7 @@ func RecordConsumeLog(
 		Code:             code,
 		PromptTokens:     promptTokens,
 		CompletionTokens: completionTokens,
+		TotalTokens:      promptTokens + completionTokens,
 		TokenID:          tokenID,
 		TokenName:        tokenName,
 		Model:            modelName,
