@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 import { useCallback } from 'react';
 
 export default function Index({
@@ -79,10 +79,22 @@ export default function Index({
           <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
             <Box mb="4px">{t('Cashback Ratio')}</Box>
             <Text fontSize={'12px'}>
-              {t('Every time a friend recharges', { amount: `${parseFloat(GIFT_RATIO) * 100}%` })}
+              <Trans
+                i18nKey="cashback_first_rule"
+                values={{
+                  amount: 5
+                }}
+              />
+            </Text>
+            <Text fontSize={'12px'}>
+              <Trans
+                i18nKey="every_time_a_friend_recharges"
+                values={{
+                  amount: `${parseFloat(GIFT_RATIO) * 100}%`
+                }}
+              />
             </Text>
           </Flex>
-          <Box {...titleStyles}>{parseFloat(GIFT_RATIO) * 100}%</Box>
         </Box>
         <Box {...statisticsStyles}>
           <Flex alignItems={'center'} justifyContent={'center'}>
