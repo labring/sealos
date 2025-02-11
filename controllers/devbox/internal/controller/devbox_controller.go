@@ -39,6 +39,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -459,7 +460,9 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	// update commit history status because pod has been deleted
-	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	if len(pod.Status.ContainerStatuses) != 0 {
+		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	}
 	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
@@ -472,8 +475,10 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 		return err
 	}
 	// update commit history status because pod has been deleted
+	if len(pod.Status.ContainerStatuses) != 0 {
+		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	}
 	helper.UpdateCommitHistory(devbox, pod, true)
-	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	return nil
 }
 
@@ -606,6 +611,7 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

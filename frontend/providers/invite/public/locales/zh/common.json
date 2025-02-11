@@ -1,11 +1,12 @@
 {
   "Cumulative number of invitees": "累计邀请人数",
   "Earnings": "收益",
-  "Cashback Ratio": "返现比例",
-  "Every time a friend recharges": "好友每次充值，您都获得 {{amount}} 的余额奖励",
+  "Cashback Ratio": "返现规则",
+  "every_time_a_friend_recharges": "2. 好友每次充值，您会获得TA的充值金额  <strong>{{amount}}</strong>  的返利",
   "Invitation link": "邀请链接",
   "Copy link": "复制链接",
   "Time": "时间",
   "Amount": "金额",
-  "No invitation records": "无邀请记录~"
+  "No invitation records": "无邀请记录~",
+  "cashback_first_rule": "1. 好友完成实名认证后，您和TA都将获得 <strong>{{amount}}</strong> 元余额奖励"
 }
