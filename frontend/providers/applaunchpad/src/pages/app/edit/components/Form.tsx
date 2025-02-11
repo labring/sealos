@@ -1109,7 +1109,7 @@ const Form = ({
                             bg={'grayModern.25'}
                           >
                             <MyIcon name={'configMap'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.mountPath}
                               </Box>
@@ -1181,7 +1181,7 @@ const Form = ({
                             onClick={() => setStoreEdit(item)}
                           >
                             <MyIcon name={'store'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>
@@ -1233,7 +1233,7 @@ const Form = ({
                             bg={'grayModern.25'}
                           >
                             <MyIcon name={'store'} w={'20px'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>

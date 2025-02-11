@@ -82,7 +82,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                 borderColor={'grayModern.300'}
               />
               <Text>
-                {t('Storage')}: {app.configMapList?.length}
+                {t('Storage')}: {app.storeList?.length}
               </Text>
             </Flex>
 

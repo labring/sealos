@@ -113,6 +113,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     amount: 0,
     manufacturers: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
@@ -169,7 +170,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           await putApp({
             patch,
             appName,
-            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulset.yaml')?.value
           });
         } else {
           await postDeployApp(parsedNewYamlList);
@@ -336,7 +337,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
+            if (isSubmitting) return;
             closeGuide();
+            setIsSubmitting(true);
             formHook.handleSubmit(async (data) => {
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
@@ -391,7 +394,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
 
-              openConfirm(() => submitSuccess(parseYamls))();
+              openConfirm(
+                () => submitSuccess(parseYamls),
+                () => setIsSubmitting(false)
+              )();
             }, submitError)();
           }}
         />
