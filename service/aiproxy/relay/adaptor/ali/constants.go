@@ -379,6 +379,48 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigToolChoice(true),
 		),
 	},
+	{
+		Model:       "qwen2.5-vl-72b-instruct",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.016,
+		OutputPrice: 0.048,
+		RPM:         60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxInputTokens(129024),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigVision(true),
+		),
+	},
+	{
+		Model:       "qwen2.5-vl-7b-instruct",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.002,
+		OutputPrice: 0.005,
+		RPM:         1200,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxInputTokens(129024),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigVision(true),
+		),
+	},
+	{
+		Model:       "qwen2.5-vl-3b-instruct",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.0012,
+		OutputPrice: 0.0036,
+		RPM:         1200,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(131072),
+			model.WithModelConfigMaxInputTokens(129024),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigVision(true),
+		),
+	},
 
 	// 通义千问2
 	{
@@ -421,6 +463,20 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigMaxInputTokens(128000),
 			model.WithModelConfigMaxOutputTokens(6144),
 			model.WithModelConfigToolChoice(true),
+		),
+	},
+	{
+		Model:       "qwen2-vl-72b-instruct",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.016,
+		OutputPrice: 0.048,
+		RPM:         60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(32768),
+			model.WithModelConfigMaxInputTokens(30720),
+			model.WithModelConfigMaxOutputTokens(2048),
+			model.WithModelConfigVision(true),
 		),
 	},
 
