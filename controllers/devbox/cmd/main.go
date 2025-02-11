@@ -85,7 +85,9 @@ func main() {
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
-
+	// config qps and burst
+	var configQPS int
+	var configBurst int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -113,7 +115,9 @@ func main() {
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
-
+	// config qps and burst
+	flag.IntVar(&configQPS, "config-qps", 50, "The qps of the config")
+	flag.IntVar(&configBurst, "config-burst", 100, "The burst of the config")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -170,7 +174,12 @@ func main() {
 		"app.kubernetes.io/part-of":    "devbox",
 	})
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	config := ctrl.GetConfigOrDie()
+	// set qps and burst to config qps and burst for kube-config
+	config.QPS = float32(configQPS)
+	config.Burst = configBurst
+
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
