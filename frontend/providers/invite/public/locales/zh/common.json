@@ -8,5 +8,5 @@
   "Time": "时间",
   "Amount": "金额",
   "No invitation records": "无邀请记录~",
-  "cashback_first_rule": "1. 好友完成实名认证后，您和TA都将获得 <strong>5</strong> 元余额奖励"
+  "cashback_first_rule": "1. 好友完成实名认证后，您和TA都将获得 <strong>{{amount}}</strong> 元余额奖励"
 }

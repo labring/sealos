@@ -82,7 +82,7 @@ export default function Index({
               <Trans
                 i18nKey="cashback_first_rule"
                 values={{
-                  amount: `${parseFloat(GIFT_RATIO) * 100}%`
+                  amount: 5
                 }}
               />
             </Text>
