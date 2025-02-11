@@ -106,7 +106,10 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, userUid: str
     });
 
     if (!info || !info.additionalInfo) {
-      return jsonRes(res, { code: 200, data: { authTimes: realNameAuthProvider.maxFailedTimes } });
+      return jsonRes(res, {
+        code: 200,
+        data: { remainingAttempts: realNameAuthProvider.maxFailedTimes }
+      });
     }
 
     const additionalInfo = info.additionalInfo as unknown as AdditionalInfo;
