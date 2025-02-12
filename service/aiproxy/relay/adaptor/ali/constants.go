@@ -391,6 +391,7 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigMaxInputTokens(129024),
 			model.WithModelConfigMaxOutputTokens(8192),
 			model.WithModelConfigVision(true),
+			model.WithModelConfigToolChoice(true),
 		),
 	},
 	{
@@ -405,6 +406,7 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigMaxInputTokens(129024),
 			model.WithModelConfigMaxOutputTokens(8192),
 			model.WithModelConfigVision(true),
+			model.WithModelConfigToolChoice(true),
 		),
 	},
 	{
@@ -419,6 +421,7 @@ var ModelList = []*model.ModelConfig{
 			model.WithModelConfigMaxInputTokens(129024),
 			model.WithModelConfigMaxOutputTokens(8192),
 			model.WithModelConfigVision(true),
+			model.WithModelConfigToolChoice(true),
 		),
 	},
 
