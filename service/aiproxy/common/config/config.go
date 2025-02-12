@@ -18,6 +18,7 @@ var (
 	DisableAutoMigrateDB = env.Bool("DISABLE_AUTO_MIGRATE_DB", false)
 	OnlyOneLogFile       = env.Bool("ONLY_ONE_LOG_FILE", false)
 	AdminKey             = os.Getenv("ADMIN_KEY")
+	FfprobeEnabled       = env.Bool("FFPROBE_ENABLED", false)
 )
 
 var (

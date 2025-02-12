@@ -2,7 +2,6 @@ package ali
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 
@@ -64,24 +63,14 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 	if err != nil {
 		return "", nil, nil, err
 	}
-
-	var audioData []byte
-	if files, ok := request.MultipartForm.File["file"]; !ok {
-		return "", nil, nil, errors.New("audio file is required")
-	} else if len(files) == 1 {
-		file, err := files[0].Open()
-		if err != nil {
-			return "", nil, nil, err
-		}
-		audioData, err = io.ReadAll(file)
-		file.Close()
-		if err != nil {
-			return "", nil, nil, err
-		}
-	} else {
-		return "", nil, nil, errors.New("audio file is required")
+	audioFile, _, err := request.FormFile("file")
+	if err != nil {
+		return "", nil, nil, err
 	}
-
+	audioData, err := io.ReadAll(audioFile)
+	if err != nil {
+		return "", nil, nil, err
+	}
 	sttRequest := STTMessage{
 		Header: STTHeader{
 			Action:    "run-task",
