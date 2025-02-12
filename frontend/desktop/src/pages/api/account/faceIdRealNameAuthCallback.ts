@@ -157,7 +157,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (!isFaceRecognitionSuccess) {
       await globalPrisma.userRealNameInfo.update({
-        where: { userUid },
+        where: { userUid: userUid },
         data: {
           isVerified: false,
           idVerifyFailedTimes: { increment: 1 },
@@ -189,6 +189,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         </head>
         <body>
           <h1>Real Name Authentication Failed</h1>
+        </body>
+        </html>
+      `);
+    }
+
+    const realnameInfo = await globalPrisma.userRealNameInfo.findFirst({
+      where: {
+        realName: userRealNameFaceAuthInfo.Text?.Name,
+        idCard: userRealNameFaceAuthInfo.Text?.IdCard,
+        isVerified: true
+      }
+    });
+
+    if (realnameInfo) {
+      await globalPrisma.userRealNameInfo.update({
+        where: { userUid: userUid },
+        data: {
+          isVerified: false,
+          idVerifyFailedTimes: { increment: 1 },
+          additionalInfo: additionalInfo
+        }
+      });
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Real Name Authentication</title>
+          <style>
+            body, html {
+              height: 100%;
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            }
+            h1 {
+              text-align: center;
+              color: #ff0000; /* Red color for error message */
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Real name information has been used</h1>
         </body>
         </html>
       `);
