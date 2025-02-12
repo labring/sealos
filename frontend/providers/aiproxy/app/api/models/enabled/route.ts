@@ -8,10 +8,10 @@ export type GetEnabledModelsResponse = ApiResp<ModelConfig[]>
 
 export const dynamic = 'force-dynamic'
 
-async function fetchEnabledModels(): Promise<ModelConfig[]> {
+async function fetchEnabledModels(namespace: string): Promise<ModelConfig[]> {
   try {
     const url = new URL(
-      '/api/models/enabled',
+      `/api/dashboard/${namespace}/models`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
@@ -42,11 +42,11 @@ async function fetchEnabledModels(): Promise<ModelConfig[]> {
 
 export async function GET(request: NextRequest): Promise<NextResponse<GetEnabledModelsResponse>> {
   try {
-    await parseJwtToken(request.headers)
+    const group = await parseJwtToken(request.headers)
 
     return NextResponse.json({
       code: 200,
-      data: await fetchEnabledModels()
+      data: await fetchEnabledModels(group)
     } satisfies GetEnabledModelsResponse)
   } catch (error) {
     console.error('enabled models api: get enabled models error:', error)
