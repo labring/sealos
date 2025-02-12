@@ -810,10 +810,11 @@ var ModelList = []*model.ModelConfig{
 	},
 
 	{
-		Model: "paraformer-realtime-v2",
-		Type:  relaymode.AudioTranscription,
-		Owner: model.ModelOwnerAlibaba,
-		RPM:   20,
+		Model:      "paraformer-realtime-v2",
+		Type:       relaymode.AudioTranscription,
+		Owner:      model.ModelOwnerAlibaba,
+		RPM:        20,
+		InputPrice: 0.24,
 		Config: model.NewModelConfig(
 			model.WithModelConfigMaxInputTokens(10000),
 			model.WithModelConfigSupportFormats([]string{"pcm", "wav", "opus", "speex", "aac", "amr"}),
