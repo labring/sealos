@@ -15,7 +15,7 @@ metadata:
   namespace: devbox-frontend
 spec:
   rules:
-    - host: devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+    - host: devbox.{{ .cloudDomain }}
       http:
         paths:
           - pathType: Prefix
@@ -27,5 +27,5 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - devbox.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
-      secretName: wildcard-cert
+        - devbox.{{ .cloudDomain }}
+      secretName: {{ .certSecretName }}
