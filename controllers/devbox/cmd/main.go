@@ -250,7 +250,7 @@ func main() {
 	if err = (&controller.DevBoxReleaseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-		Registry: &registry.Client{
+		Registry: &registry.Registry{
 			Username: registryUser,
 			Password: registryPassword,
 		},
