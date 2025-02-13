@@ -26,9 +26,9 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { useCallback, useMemo, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
-import UpdateModal from '@/pages/app/detail/components/UpdateModal';
+import UpdateModal from '@/components/app/detail/index/UpdateModal';
 
-const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
+const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 
 const AppList = ({
   apps = [],

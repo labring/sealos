@@ -150,6 +150,9 @@ const PodLineChart = ({
       min: 0,
       axisLabel: {
         show: isShowLabel
+      },
+      splitLine: {
+        show: false
       }
     },
     grid: {

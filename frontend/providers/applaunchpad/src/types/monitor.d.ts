@@ -42,7 +42,7 @@ export type MonitorQueryKey = {
 };
 
 export type MonitorDataResult = {
-  name: string;
+  name?: string;
   xData: number[];
   yData: string[];
 };
