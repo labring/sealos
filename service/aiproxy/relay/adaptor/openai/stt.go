@@ -113,7 +113,12 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	if err != nil {
 		return nil, ErrorWrapper(err, "get_text_from_body_err", http.StatusInternalServerError)
 	}
-	completionTokens := CountTokenText(text, meta.ActualModel)
+	var promptTokens int
+	if meta.InputTokens > 0 {
+		promptTokens = meta.InputTokens
+	} else {
+		promptTokens = CountTokenText(text, meta.ActualModel)
+	}
 
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
@@ -124,9 +129,9 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 
 	return &model.Usage{
-		PromptTokens:     0,
-		CompletionTokens: completionTokens,
-		TotalTokens:      completionTokens,
+		PromptTokens:     promptTokens,
+		CompletionTokens: 0,
+		TotalTokens:      promptTokens,
 	}, nil
 }
 
