@@ -22,6 +22,7 @@ type ChatRequest struct {
 	Model    string    `json:"model,omitempty"`
 	Messages []Message `json:"messages,omitempty"`
 	Stream   bool      `json:"stream"`
+	Format   any       `json:"format,omitempty"`
 }
 
 type ChatResponse struct {
@@ -45,7 +46,8 @@ type EmbeddingRequest struct {
 }
 
 type EmbeddingResponse struct {
-	Error      string      `json:"error,omitempty"`
-	Model      string      `json:"model"`
-	Embeddings [][]float64 `json:"embeddings"`
+	Error           string      `json:"error,omitempty"`
+	Model           string      `json:"model"`
+	Embeddings      [][]float64 `json:"embeddings"`
+	PromptEvalCount int         `json:"prompt_eval_count,omitempty"`
 }

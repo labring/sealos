@@ -7,7 +7,6 @@ import (
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-
 	"gorm.io/gorm/schema"
 )
 

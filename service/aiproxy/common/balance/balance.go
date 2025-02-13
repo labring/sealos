@@ -1,9 +1,13 @@
 package balance
 
-import "context"
+import (
+	"context"
+
+	"github.com/labring/sealos/service/aiproxy/model"
+)
 
 type GroupBalance interface {
-	GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error)
+	GetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error)
 }
 
 type PostGroupConsumer interface {

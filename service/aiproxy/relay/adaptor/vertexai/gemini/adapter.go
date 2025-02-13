@@ -39,7 +39,7 @@ var ModelList = []*model.ModelConfig{
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	return gemini.ConvertRequest(meta, request)
 }
 

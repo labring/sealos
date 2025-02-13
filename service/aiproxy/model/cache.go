@@ -9,22 +9,23 @@ import (
 	"slices"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	json "github.com/json-iterator/go"
-	"github.com/maruel/natural"
-	"github.com/redis/go-redis/v9"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/maruel/natural"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	SyncFrequency = time.Minute * 3
-	TokenCacheKey = "token:%s"
-	GroupCacheKey = "group:%s"
+	SyncFrequency    = time.Minute * 3
+	TokenCacheKey    = "token:%s"
+	GroupCacheKey    = "group:%s"
+	GroupModelTPMKey = "group:%s:model_tpm"
 )
 
 var (
@@ -43,6 +44,11 @@ func (r redisStringSlice) MarshalBinary() ([]byte, error) {
 }
 
 type redisTime time.Time
+
+var (
+	_ redis.Scanner            = (*redisTime)(nil)
+	_ encoding.BinaryMarshaler = (*redisTime)(nil)
+)
 
 func (t *redisTime) ScanRedis(value string) error {
 	return (*time.Time)(t).UnmarshalBinary(conv.StringToBytes(value))
@@ -88,13 +94,13 @@ func CacheDeleteToken(key string) error {
 }
 
 //nolint:gosec
-func CacheSetToken(token *Token) error {
+func CacheSetToken(token *TokenCache) error {
 	if !common.RedisEnabled {
 		return nil
 	}
 	key := fmt.Sprintf(TokenCacheKey, token.Key)
 	pipe := common.RDB.Pipeline()
-	pipe.HSet(context.Background(), key, token.ToTokenCache())
+	pipe.HSet(context.Background(), key, token)
 	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
@@ -125,47 +131,26 @@ func CacheGetTokenByKey(key string) (*TokenCache, error) {
 		return nil, err
 	}
 
-	if err := CacheSetToken(token); err != nil {
+	tc := token.ToTokenCache()
+
+	if err := CacheSetToken(tc); err != nil {
 		log.Error("redis set token error: " + err.Error())
 	}
 
-	return token.ToTokenCache(), nil
+	return tc, nil
 }
 
-var updateTokenUsedAmountScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "used_amount") then
-		redis.call("HSet", KEYS[1], "used_amount", ARGV[1])
-	end
-	return redis.status_reply("ok")
-`)
-
 var updateTokenUsedAmountOnlyIncreaseScript = redis.NewScript(`
-	local used_amount = redis.call("HGet", KEYS[1], "used_amount")
+	local used_amount = redis.call("HGet", KEYS[1], "ua")
 	if used_amount == false then
 		return redis.status_reply("ok")
 	end
 	if ARGV[1] < used_amount then
 		return redis.status_reply("ok")
 	end
-	redis.call("HSet", KEYS[1], "used_amount", ARGV[1])
+	redis.call("HSet", KEYS[1], "ua", ARGV[1])
 	return redis.status_reply("ok")
 `)
-
-var increaseTokenUsedAmountScript = redis.NewScript(`
-	local used_amount = redis.call("HGet", KEYS[1], "used_amount")
-	if used_amount == false then
-		return redis.status_reply("ok")
-	end
-	redis.call("HSet", KEYS[1], "used_amount", used_amount + ARGV[1])
-	return redis.status_reply("ok")
-`)
-
-func CacheUpdateTokenUsedAmount(key string, amount float64) error {
-	if !common.RedisEnabled {
-		return nil
-	}
-	return updateTokenUsedAmountScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
-}
 
 func CacheUpdateTokenUsedAmountOnlyIncrease(key string, amount float64) error {
 	if !common.RedisEnabled {
@@ -174,24 +159,68 @@ func CacheUpdateTokenUsedAmountOnlyIncrease(key string, amount float64) error {
 	return updateTokenUsedAmountOnlyIncreaseScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
 }
 
-func CacheIncreaseTokenUsedAmount(key string, amount float64) error {
+var updateTokenNameScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "n") then
+		redis.call("HSet", KEYS[1], "n", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateTokenName(key string, name string) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	return increaseTokenUsedAmountScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, amount).Err()
+	return updateTokenNameScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, name).Err()
+}
+
+var updateTokenStatusScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "st") then
+		redis.call("HSet", KEYS[1], "st", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateTokenStatus(key string, status int) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateTokenStatusScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(TokenCacheKey, key)}, status).Err()
+}
+
+type redisMapStringInt64 map[string]int64
+
+var (
+	_ redis.Scanner            = (*redisMapStringInt64)(nil)
+	_ encoding.BinaryMarshaler = (*redisMapStringInt64)(nil)
+)
+
+func (r *redisMapStringInt64) ScanRedis(value string) error {
+	return json.Unmarshal(conv.StringToBytes(value), r)
+}
+
+func (r redisMapStringInt64) MarshalBinary() ([]byte, error) {
+	return json.Marshal(r)
 }
 
 type GroupCache struct {
-	ID     string `json:"-"      redis:"-"`
-	Status int    `json:"status" redis:"st"`
-	QPM    int64  `json:"qpm"    redis:"q"`
+	ID         string              `json:"-"           redis:"-"`
+	Status     int                 `json:"status"      redis:"st"`
+	UsedAmount float64             `json:"used_amount" redis:"ua"`
+	RPMRatio   float64             `json:"rpm_ratio"   redis:"rpm_r"`
+	RPM        redisMapStringInt64 `json:"rpm"         redis:"rpm"`
+	TPMRatio   float64             `json:"tpm_ratio"   redis:"tpm_r"`
+	TPM        redisMapStringInt64 `json:"tpm"         redis:"tpm"`
 }
 
 func (g *Group) ToGroupCache() *GroupCache {
 	return &GroupCache{
-		ID:     g.ID,
-		Status: g.Status,
-		QPM:    g.QPM,
+		ID:         g.ID,
+		Status:     g.Status,
+		UsedAmount: g.UsedAmount,
+		RPMRatio:   g.RPMRatio,
+		RPM:        g.RPM,
+		TPMRatio:   g.TPMRatio,
+		TPM:        g.TPM,
 	}
 }
 
@@ -202,23 +231,73 @@ func CacheDeleteGroup(id string) error {
 	return common.RedisDel(fmt.Sprintf(GroupCacheKey, id))
 }
 
-var updateGroupQPMScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "qpm") then
-		redis.call("HSet", KEYS[1], "qpm", ARGV[1])
+var updateGroupRPMRatioScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "rpm_r") then
+		redis.call("HSet", KEYS[1], "rpm_r", ARGV[1])
 	end
 	return redis.status_reply("ok")
 `)
 
-func CacheUpdateGroupQPM(id string, qpm int64) error {
+func CacheUpdateGroupRPMRatio(id string, rpmRatio float64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	return updateGroupQPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, qpm).Err()
+	return updateGroupRPMRatioScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, rpmRatio).Err()
+}
+
+var updateGroupRPMScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "rpm") then
+		redis.call("HSet", KEYS[1], "rpm", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupRPM(id string, rpm map[string]int64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	jsonRPM, err := json.Marshal(rpm)
+	if err != nil {
+		return err
+	}
+	return updateGroupRPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, conv.BytesToString(jsonRPM)).Err()
+}
+
+var updateGroupTPMRatioScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "tpm_r") then
+		redis.call("HSet", KEYS[1], "tpm_r", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupTPMRatio(id string, tpmRatio float64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateGroupTPMRatioScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, tpmRatio).Err()
+}
+
+var updateGroupTPMScript = redis.NewScript(`
+	if redis.call("HExists", KEYS[1], "tpm") then
+		redis.call("HSet", KEYS[1], "tpm", ARGV[1])
+	end
+	return redis.status_reply("ok")
+`)
+
+func CacheUpdateGroupTPM(id string, tpm map[string]int64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	jsonTPM, err := json.Marshal(tpm)
+	if err != nil {
+		return err
+	}
+	return updateGroupTPMScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, conv.BytesToString(jsonTPM)).Err()
 }
 
 var updateGroupStatusScript = redis.NewScript(`
-	if redis.call("HExists", KEYS[1], "status") then
-		redis.call("HSet", KEYS[1], "status", ARGV[1])
+	if redis.call("HExists", KEYS[1], "st") then
+		redis.call("HSet", KEYS[1], "st", ARGV[1])
 	end
 	return redis.status_reply("ok")
 `)
@@ -231,13 +310,13 @@ func CacheUpdateGroupStatus(id string, status int) error {
 }
 
 //nolint:gosec
-func CacheSetGroup(group *Group) error {
+func CacheSetGroup(group *GroupCache) error {
 	if !common.RedisEnabled {
 		return nil
 	}
 	key := fmt.Sprintf(GroupCacheKey, group.ID)
 	pipe := common.RDB.Pipeline()
-	pipe.HSet(context.Background(), key, group.ToGroupCache())
+	pipe.HSet(context.Background(), key, group)
 	expireTime := SyncFrequency + time.Duration(rand.Int64N(60)-30)*time.Second
 	pipe.Expire(context.Background(), key, expireTime)
 	_, err := pipe.Exec(context.Background())
@@ -268,89 +347,103 @@ func CacheGetGroup(id string) (*GroupCache, error) {
 		return nil, err
 	}
 
-	if err := CacheSetGroup(group); err != nil {
+	gc := group.ToGroupCache()
+
+	if err := CacheSetGroup(gc); err != nil {
 		log.Error("redis set group error: " + err.Error())
 	}
 
-	return group.ToGroupCache(), nil
+	return gc, nil
 }
 
-var (
-	enabledChannels                 []*Channel
-	allChannels                     []*Channel
-	enabledModel2channels           map[string][]*Channel
-	enabledModels                   []string
-	enabledModelConfigs             []*ModelConfig
-	enabledChannelType2ModelConfigs map[int][]*ModelConfig
-	enabledChannelID2channel        map[int]*Channel
-	allChannelID2channel            map[int]*Channel
-	channelSyncLock                 sync.RWMutex
-)
+var updateGroupUsedAmountOnlyIncreaseScript = redis.NewScript(`
+	local used_amount = redis.call("HGet", KEYS[1], "ua")
+	if used_amount == false then
+		return redis.status_reply("ok")
+	end
+	if ARGV[1] < used_amount then
+		return redis.status_reply("ok")
+	end
+	redis.call("HSet", KEYS[1], "ua", ARGV[1])
+	return redis.status_reply("ok")
+`)
 
-func CacheGetAllChannels() []*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return allChannels
+func CacheUpdateGroupUsedAmountOnlyIncrease(id string, amount float64) error {
+	if !common.RedisEnabled {
+		return nil
+	}
+	return updateGroupUsedAmountOnlyIncreaseScript.Run(context.Background(), common.RDB, []string{fmt.Sprintf(GroupCacheKey, id)}, amount).Err()
 }
 
-func CacheGetAllChannelByID(id int) (*Channel, bool) {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	channel, ok := allChannelID2channel[id]
-	return channel, ok
+//nolint:gosec
+func CacheGetGroupModelTPM(id string, model string) (int64, error) {
+	if !common.RedisEnabled {
+		return GetGroupModelTPM(id, model)
+	}
+
+	cacheKey := fmt.Sprintf(GroupModelTPMKey, id)
+	tpm, err := common.RDB.HGet(context.Background(), cacheKey, model).Int64()
+	if err == nil {
+		return tpm, nil
+	} else if !errors.Is(err, redis.Nil) {
+		log.Errorf("get group model tpm (%s:%s) from redis error: %s", id, model, err.Error())
+	}
+
+	tpm, err = GetGroupModelTPM(id, model)
+	if err != nil {
+		return 0, err
+	}
+
+	pipe := common.RDB.Pipeline()
+	pipe.HSet(context.Background(), cacheKey, model, tpm)
+	// 2-5 seconds
+	pipe.Expire(context.Background(), cacheKey, 2*time.Second+time.Duration(rand.Int64N(3))*time.Second)
+	_, err = pipe.Exec(context.Background())
+	if err != nil {
+		log.Errorf("set group model tpm (%s:%s) to redis error: %s", id, model, err.Error())
+	}
+
+	return tpm, nil
 }
 
-// GetEnabledModel2Channels returns a map of model name to enabled channels
-func GetEnabledModel2Channels() map[string][]*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModel2channels
+//nolint:revive
+type ModelConfigCache interface {
+	GetModelConfig(model string) (*ModelConfig, bool)
 }
 
-// CacheGetEnabledModels returns a list of enabled model names
-func CacheGetEnabledModels() []string {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModels
+// read-only cache
+//
+//nolint:revive
+type ModelCaches struct {
+	ModelConfig                     ModelConfigCache
+	EnabledModel2channels           map[string][]*Channel
+	EnabledModels                   []string
+	EnabledModelsMap                map[string]struct{}
+	EnabledModelConfigs             []*ModelConfig
+	EnabledModelConfigsMap          map[string]*ModelConfig
+	EnabledChannelType2ModelConfigs map[int][]*ModelConfig
+	EnabledChannelID2channel        map[int]*Channel
 }
 
-// CacheGetEnabledChannelType2ModelConfigs returns a map of channel type to enabled model configs
-func CacheGetEnabledChannelType2ModelConfigs() map[int][]*ModelConfig {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledChannelType2ModelConfigs
+var modelCaches atomic.Pointer[ModelCaches]
+
+func init() {
+	modelCaches.Store(new(ModelCaches))
 }
 
-// CacheGetEnabledModelConfigs returns a list of enabled model configs
-func CacheGetEnabledModelConfigs() []*ModelConfig {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledModelConfigs
+func LoadModelCaches() *ModelCaches {
+	return modelCaches.Load()
 }
 
-func CacheGetEnabledChannels() []*Channel {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	return enabledChannels
-}
-
-func CacheGetEnabledChannelByID(id int) (*Channel, bool) {
-	channelSyncLock.RLock()
-	defer channelSyncLock.RUnlock()
-	channel, ok := enabledChannelID2channel[id]
-	return channel, ok
-}
-
-// InitChannelCache initializes the channel cache from database
-func InitChannelCache() error {
-	// Load enabled newEnabledChannels from database
-	newEnabledChannels, err := LoadEnabledChannels()
+// InitModelConfigAndChannelCache initializes the channel cache from database
+func InitModelConfigAndChannelCache() error {
+	modelConfig, err := initializeModelConfigCache()
 	if err != nil {
 		return err
 	}
 
-	// Load all channels from database
-	newAllChannels, err := LoadChannels()
+	// Load enabled newEnabledChannels from database
+	newEnabledChannels, err := LoadEnabledChannels()
 	if err != nil {
 		return err
 	}
@@ -359,7 +452,6 @@ func InitChannelCache() error {
 	newEnabledChannelID2channel := buildChannelIDMap(newEnabledChannels)
 
 	// Build all channel ID to channel map
-	newAllChannelID2channel := buildChannelIDMap(newAllChannels)
 
 	// Build model to channels map
 	newEnabledModel2channels := buildModelToChannelsMap(newEnabledChannels)
@@ -368,29 +460,29 @@ func InitChannelCache() error {
 	sortChannelsByPriority(newEnabledModel2channels)
 
 	// Build channel type to model configs map
-	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels)
+	newEnabledChannelType2ModelConfigs := buildChannelTypeToModelConfigsMap(newEnabledChannels, modelConfig)
 
 	// Build enabled models and configs lists
-	newEnabledModels, newEnabledModelConfigs := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
+	newEnabledModels, newEnabledModelsMap, newEnabledModelConfigs, newEnabledModelConfigsMap := buildEnabledModelsAndConfigs(newEnabledChannelType2ModelConfigs)
 
 	// Update global cache atomically
-	updateGlobalCache(
-		newEnabledChannels,
-		newAllChannels,
-		newEnabledModel2channels,
-		newEnabledModels,
-		newEnabledModelConfigs,
-		newEnabledChannelID2channel,
-		newEnabledChannelType2ModelConfigs,
-		newAllChannelID2channel,
-	)
+	modelCaches.Store(&ModelCaches{
+		ModelConfig:                     modelConfig,
+		EnabledModel2channels:           newEnabledModel2channels,
+		EnabledModels:                   newEnabledModels,
+		EnabledModelsMap:                newEnabledModelsMap,
+		EnabledModelConfigs:             newEnabledModelConfigs,
+		EnabledModelConfigsMap:          newEnabledModelConfigsMap,
+		EnabledChannelType2ModelConfigs: newEnabledChannelType2ModelConfigs,
+		EnabledChannelID2channel:        newEnabledChannelID2channel,
+	})
 
 	return nil
 }
 
 func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
-	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
+	err := DB.Where("status = ? or status = ?", ChannelStatusEnabled, ChannelStatusFail).Find(&channels).Error
 	if err != nil {
 		return nil, err
 	}
@@ -431,13 +523,54 @@ func LoadChannelByID(id int) (*Channel, error) {
 	return &channel, nil
 }
 
+var _ ModelConfigCache = (*modelConfigMapCache)(nil)
+
+type modelConfigMapCache struct {
+	modelConfigMap map[string]*ModelConfig
+}
+
+func (m *modelConfigMapCache) GetModelConfig(model string) (*ModelConfig, bool) {
+	config, ok := m.modelConfigMap[model]
+	return config, ok
+}
+
+var _ ModelConfigCache = (*disabledModelConfigCache)(nil)
+
+type disabledModelConfigCache struct {
+	modelConfigs ModelConfigCache
+}
+
+func (d *disabledModelConfigCache) GetModelConfig(model string) (*ModelConfig, bool) {
+	if config, ok := d.modelConfigs.GetModelConfig(model); ok {
+		return config, true
+	}
+	return NewDefaultModelConfig(model), true
+}
+
+func initializeModelConfigCache() (ModelConfigCache, error) {
+	modelConfigs, err := GetAllModelConfigs()
+	if err != nil {
+		return nil, err
+	}
+	newModelConfigMap := make(map[string]*ModelConfig)
+	for _, modelConfig := range modelConfigs {
+		newModelConfigMap[modelConfig.Model] = modelConfig
+	}
+
+	configs := &modelConfigMapCache{modelConfigMap: newModelConfigMap}
+	if config.GetDisableModelConfig() {
+		return &disabledModelConfigCache{modelConfigs: configs}, nil
+	}
+	return configs, nil
+}
+
 func initializeChannelModels(channel *Channel) {
 	if len(channel.Models) == 0 {
 		channel.Models = config.GetDefaultChannelModels()[channel.Type]
 		return
 	}
 
-	findedModels, missingModels, err := CheckModelConfig(channel.Models)
+	findedModels, missingModels, err := GetModelConfigWithModels(channel.Models)
 	if err != nil {
 		return
 	}
@@ -477,12 +610,12 @@ func buildModelToChannelsMap(channels []*Channel) map[string][]*Channel {
 func sortChannelsByPriority(modelMap map[string][]*Channel) {
 	for _, channels := range modelMap {
 		sort.Slice(channels, func(i, j int) bool {
-			return channels[i].Priority > channels[j].Priority
+			return channels[i].GetPriority() > channels[j].GetPriority()
 		})
 	}
 }
 
-func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConfig {
+func buildChannelTypeToModelConfigsMap(channels []*Channel, modelConfigMap ModelConfigCache) map[int][]*ModelConfig {
 	typeMap := make(map[int][]*ModelConfig)
 
 	for _, channel := range channels {
@@ -492,7 +625,7 @@ func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConf
 		configs := typeMap[channel.Type]
 
 		for _, model := range channel.Models {
-			if config, ok := CacheGetModelConfig(model); ok {
+			if config, ok := modelConfigMap.GetModelConfig(model); ok {
 				configs = append(configs, config)
 			}
 		}
@@ -508,10 +641,11 @@ func buildChannelTypeToModelConfigsMap(channels []*Channel) map[int][]*ModelConf
 	return typeMap
 }
 
-func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, []*ModelConfig) {
+func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, map[string]struct{}, []*ModelConfig, map[string]*ModelConfig) {
 	models := make([]string, 0)
 	configs := make([]*ModelConfig, 0)
 	appended := make(map[string]struct{})
+	modelConfigsMap := make(map[string]*ModelConfig)
 
 	for _, modelConfigs := range typeMap {
 		for _, config := range modelConfigs {
@@ -521,13 +655,14 @@ func buildEnabledModelsAndConfigs(typeMap map[int][]*ModelConfig) ([]string, []*
 			models = append(models, config.Model)
 			configs = append(configs, config)
 			appended[config.Model] = struct{}{}
+			modelConfigsMap[config.Model] = config
 		}
 	}
 
 	slices.Sort(models)
 	slices.SortStableFunc(configs, SortModelConfigsFunc)
 
-	return models, configs
+	return models, appended, configs, modelConfigsMap
 }
 
 func SortModelConfigsFunc(i, j *ModelConfig) int {
@@ -552,29 +687,7 @@ func SortModelConfigsFunc(i, j *ModelConfig) int {
 	return 1
 }
 
-func updateGlobalCache(
-	newEnabledChannels []*Channel,
-	newAllChannels []*Channel,
-	newEnabledModel2channels map[string][]*Channel,
-	newEnabledModels []string,
-	newEnabledModelConfigs []*ModelConfig,
-	newEnabledChannelID2channel map[int]*Channel,
-	newEnabledChannelType2ModelConfigs map[int][]*ModelConfig,
-	newAllChannelID2channel map[int]*Channel,
-) {
-	channelSyncLock.Lock()
-	defer channelSyncLock.Unlock()
-	enabledChannels = newEnabledChannels
-	allChannels = newAllChannels
-	enabledModel2channels = newEnabledModel2channels
-	enabledModels = newEnabledModels
-	enabledModelConfigs = newEnabledModelConfigs
-	enabledChannelID2channel = newEnabledChannelID2channel
-	enabledChannelType2ModelConfigs = newEnabledChannelType2ModelConfigs
-	allChannelID2channel = newAllChannelID2channel
-}
-
-func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
+func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
 	defer wg.Done()
 
 	ticker := time.NewTicker(frequency)
@@ -584,7 +697,7 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			err := InitChannelCache()
+			err := InitModelConfigAndChannelCache()
 			if err != nil {
 				log.Error("failed to sync channels: " + err.Error())
 				continue
@@ -593,11 +706,35 @@ func SyncChannelCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Du
 	}
 }
 
+func filterChannels(channels []*Channel, ignoreChannel ...int) []*Channel {
+	filtered := make([]*Channel, 0)
+	for _, channel := range channels {
+		if channel.Status != ChannelStatusEnabled {
+			continue
+		}
+		if slices.Contains(ignoreChannel, channel.ID) {
+			continue
+		}
+		filtered = append(filtered, channel)
+	}
+	return filtered
+}
+
+var (
+	ErrChannelsNotFound  = errors.New("channels not found")
+	ErrChannelsExhausted = errors.New("channels exhausted")
+)
+
 //nolint:gosec
-func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
-	channels := GetEnabledModel2Channels()[model]
+func (c *ModelCaches) GetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
+	_channels := c.EnabledModel2channels[model]
+	if len(_channels) == 0 {
+		return nil, ErrChannelsNotFound
+	}
+
+	channels := filterChannels(_channels, ignoreChannel...)
 	if len(channels) == 0 {
-		return nil, errors.New("model not found")
+		return nil, ErrChannelsExhausted
 	}
 
 	if len(channels) == 1 {
@@ -606,7 +743,7 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 
 	var totalWeight int32
 	for _, ch := range channels {
-		totalWeight += ch.Priority
+		totalWeight += ch.GetPriority()
 	}
 
 	if totalWeight == 0 {
@@ -615,73 +752,11 @@ func CacheGetRandomSatisfiedChannel(model string) (*Channel, error) {
 
 	r := rand.Int32N(totalWeight)
 	for _, ch := range channels {
-		r -= ch.Priority
+		r -= ch.GetPriority()
 		if r < 0 {
 			return ch, nil
 		}
 	}
 
 	return channels[rand.IntN(len(channels))], nil
-}
-
-var (
-	modelConfigSyncLock sync.RWMutex
-	modelConfigMap      map[string]*ModelConfig
-)
-
-func InitModelConfigCache() error {
-	modelConfigs, err := GetAllModelConfigs()
-	if err != nil {
-		return err
-	}
-	newModelConfigMap := make(map[string]*ModelConfig)
-	for _, modelConfig := range modelConfigs {
-		newModelConfigMap[modelConfig.Model] = modelConfig
-	}
-
-	modelConfigSyncLock.Lock()
-	modelConfigMap = newModelConfigMap
-	modelConfigSyncLock.Unlock()
-	return nil
-}
-
-func SyncModelConfigCache(ctx context.Context, wg *sync.WaitGroup, frequency time.Duration) {
-	defer wg.Done()
-
-	ticker := time.NewTicker(frequency)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			err := InitModelConfigCache()
-			if err != nil {
-				log.Error("failed to sync model configs: " + err.Error())
-			}
-		}
-	}
-}
-
-func CacheGetModelConfig(model string) (*ModelConfig, bool) {
-	modelConfigSyncLock.RLock()
-	defer modelConfigSyncLock.RUnlock()
-	modelConfig, ok := modelConfigMap[model]
-	return modelConfig, ok
-}
-
-func CacheCheckModelConfig(models []string) ([]string, []string) {
-	if len(models) == 0 {
-		return models, nil
-	}
-	founded := make([]string, 0)
-	missing := make([]string, 0)
-	for _, model := range models {
-		if _, ok := modelConfigMap[model]; ok {
-			founded = append(founded, model)
-		} else {
-			missing = append(missing, model)
-		}
-	}
-	return founded, missing
 }

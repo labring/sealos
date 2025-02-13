@@ -3,11 +3,12 @@ package model
 import "strings"
 
 type Message struct {
-	Content    any     `json:"content,omitempty"`
-	Name       *string `json:"name,omitempty"`
-	Role       string  `json:"role,omitempty"`
-	ToolCallID string  `json:"tool_call_id,omitempty"`
-	ToolCalls  []*Tool `json:"tool_calls,omitempty"`
+	Content          any     `json:"content,omitempty"`
+	ReasoningContent string  `json:"reasoning_content,omitempty"`
+	Name             *string `json:"name,omitempty"`
+	Role             string  `json:"role,omitempty"`
+	ToolCallID       string  `json:"tool_call_id,omitempty"`
+	ToolCalls        []*Tool `json:"tool_calls,omitempty"`
 }
 
 func (m *Message) IsStringContent() bool {
@@ -23,6 +24,10 @@ func (m *Message) ToStringContentMessage() {
 }
 
 func (m *Message) StringContent() string {
+	if m.ReasoningContent != "" {
+		return m.ReasoningContent
+	}
+
 	content, ok := m.Content.(string)
 	if ok {
 		return content

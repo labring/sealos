@@ -20,12 +20,12 @@ type Adaptor struct{}
 
 const baseURL = "https://api.cohere.ai"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	return u + "/v1/chat", nil
+	return meta.Channel.BaseURL + "/v1/chat", nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
@@ -33,21 +33,21 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	requestBody := ConvertRequest(request)
 	if requestBody == nil {
-		return nil, nil, errors.New("request body is nil")
+		return "", nil, nil, errors.New("request body is nil")
 	}
 	data, err := json.Marshal(requestBody)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
@@ -62,7 +62,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(c, resp)
 		} else {
-			err, usage = Handler(c, resp, meta.PromptTokens, meta.ActualModelName)
+			err, usage = Handler(c, resp, meta.InputTokens, meta.ActualModel)
 		}
 	}
 	return

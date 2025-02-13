@@ -36,13 +36,13 @@ func ModerationsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*
 		return nil, ErrorWrapperWithMessage(errorResp.Error.Message, errorResp.Error.Code, http.StatusBadRequest)
 	}
 
-	if _, ok := respMap["model"]; ok && meta.OriginModelName != "" {
-		respMap["model"] = meta.OriginModelName
+	if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
+		respMap["model"] = meta.OriginModel
 	}
 
 	usage := &model.Usage{
-		PromptTokens: meta.PromptTokens,
-		TotalTokens:  meta.PromptTokens,
+		PromptTokens: meta.InputTokens,
+		TotalTokens:  meta.InputTokens,
 	}
 
 	newData, err := stdjson.Marshal(respMap)
@@ -52,7 +52,7 @@ func ModerationsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*
 
 	_, err = c.Writer.Write(newData)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return usage, nil
 }

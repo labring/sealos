@@ -3,78 +3,123 @@ package router
 import (
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SetRelayRouter(router *gin.Engine) {
-	router.Use(middleware.CORS())
-	router.Use(middleware.GlobalAPIRateLimit)
 	// https://platform.openai.com/docs/api-reference/introduction
-	modelsRouter := router.Group("/v1/models")
-	modelsRouter.Use(middleware.TokenAuth)
+	v1Router := router.Group("/v1")
+	v1Router.Use(middleware.TokenAuth)
+
+	modelsRouter := v1Router.Group("/models")
 	{
 		modelsRouter.GET("", controller.ListModels)
 		modelsRouter.GET("/:model", controller.RetrieveModel)
 	}
-	dashboardRouter := router.Group("/v1/dashboard")
-	dashboardRouter.Use(middleware.TokenAuth)
+	dashboardRouter := v1Router.Group("/dashboard")
 	{
 		dashboardRouter.GET("/billing/subscription", controller.GetSubscription)
 		dashboardRouter.GET("/billing/usage", controller.GetUsage)
 	}
-	relayV1Router := router.Group("/v1")
-	relayV1Router.Use(middleware.TokenAuth, middleware.Distribute)
+	relayRouter := v1Router.Group("")
 	{
-		relayV1Router.POST("/completions", controller.Relay)
-		relayV1Router.POST("/chat/completions", controller.Relay)
-		relayV1Router.POST("/edits", controller.Relay)
-		relayV1Router.POST("/images/generations", controller.Relay)
-		relayV1Router.POST("/images/edits", controller.RelayNotImplemented)
-		relayV1Router.POST("/images/variations", controller.RelayNotImplemented)
-		relayV1Router.POST("/embeddings", controller.Relay)
-		relayV1Router.POST("/engines/:model/embeddings", controller.Relay)
-		relayV1Router.POST("/audio/transcriptions", controller.Relay)
-		relayV1Router.POST("/audio/translations", controller.Relay)
-		relayV1Router.POST("/audio/speech", controller.Relay)
-		relayV1Router.POST("/rerank", controller.Relay)
-		relayV1Router.GET("/files", controller.RelayNotImplemented)
-		relayV1Router.POST("/files", controller.RelayNotImplemented)
-		relayV1Router.DELETE("/files/:id", controller.RelayNotImplemented)
-		relayV1Router.GET("/files/:id", controller.RelayNotImplemented)
-		relayV1Router.GET("/files/:id/content", controller.RelayNotImplemented)
-		relayV1Router.POST("/fine_tuning/jobs", controller.RelayNotImplemented)
-		relayV1Router.GET("/fine_tuning/jobs", controller.RelayNotImplemented)
-		relayV1Router.GET("/fine_tuning/jobs/:id", controller.RelayNotImplemented)
-		relayV1Router.POST("/fine_tuning/jobs/:id/cancel", controller.RelayNotImplemented)
-		relayV1Router.GET("/fine_tuning/jobs/:id/events", controller.RelayNotImplemented)
-		relayV1Router.DELETE("/models/:model", controller.RelayNotImplemented)
-		relayV1Router.POST("/moderations", controller.Relay)
-		relayV1Router.POST("/assistants", controller.RelayNotImplemented)
-		relayV1Router.GET("/assistants/:id", controller.RelayNotImplemented)
-		relayV1Router.POST("/assistants/:id", controller.RelayNotImplemented)
-		relayV1Router.DELETE("/assistants/:id", controller.RelayNotImplemented)
-		relayV1Router.GET("/assistants", controller.RelayNotImplemented)
-		relayV1Router.POST("/assistants/:id/files", controller.RelayNotImplemented)
-		relayV1Router.GET("/assistants/:id/files/:fileId", controller.RelayNotImplemented)
-		relayV1Router.DELETE("/assistants/:id/files/:fileId", controller.RelayNotImplemented)
-		relayV1Router.GET("/assistants/:id/files", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id", controller.RelayNotImplemented)
-		relayV1Router.DELETE("/threads/:id", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/messages", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/messages/:messageId", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/messages/:messageId", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/messages/:messageId/files/:filesId", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/messages/:messageId/files", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/runs", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/runs/:runsId", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/runs/:runsId", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/runs", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/runs/:runsId/submit_tool_outputs", controller.RelayNotImplemented)
-		relayV1Router.POST("/threads/:id/runs/:runsId/cancel", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/runs/:runsId/steps/:stepId", controller.RelayNotImplemented)
-		relayV1Router.GET("/threads/:id/runs/:runsId/steps", controller.RelayNotImplemented)
+		relayRouter.POST(
+			"/completions",
+			middleware.NewDistribute(relaymode.Completions),
+			controller.NewRelay(relaymode.Completions),
+		)
+
+		relayRouter.POST(
+			"/chat/completions",
+			middleware.NewDistribute(relaymode.ChatCompletions),
+			controller.NewRelay(relaymode.ChatCompletions),
+		)
+		relayRouter.POST(
+			"/edits",
+			middleware.NewDistribute(relaymode.Edits),
+			controller.NewRelay(relaymode.Edits),
+		)
+		relayRouter.POST(
+			"/images/generations",
+			middleware.NewDistribute(relaymode.ImagesGenerations),
+			controller.NewRelay(relaymode.ImagesGenerations),
+		)
+		relayRouter.POST(
+			"/embeddings",
+			middleware.NewDistribute(relaymode.Embeddings),
+			controller.NewRelay(relaymode.Embeddings),
+		)
+		relayRouter.POST(
+			"/engines/:model/embeddings",
+			middleware.NewDistribute(relaymode.Embeddings),
+			controller.NewRelay(relaymode.Embeddings),
+		)
+		relayRouter.POST(
+			"/audio/transcriptions",
+			middleware.NewDistribute(relaymode.AudioTranscription),
+			controller.NewRelay(relaymode.AudioTranscription),
+		)
+		relayRouter.POST(
+			"/audio/translations",
+			middleware.NewDistribute(relaymode.AudioTranslation),
+			controller.NewRelay(relaymode.AudioTranslation),
+		)
+		relayRouter.POST(
+			"/audio/speech",
+			middleware.NewDistribute(relaymode.AudioSpeech),
+			controller.NewRelay(relaymode.AudioSpeech),
+		)
+		relayRouter.POST(
+			"/rerank",
+			middleware.NewDistribute(relaymode.Rerank),
+			controller.NewRelay(relaymode.Rerank),
+		)
+		relayRouter.POST(
+			"/moderations",
+			middleware.NewDistribute(relaymode.Moderations),
+			controller.NewRelay(relaymode.Moderations),
+		)
+
+		relayRouter.POST("/images/edits", controller.RelayNotImplemented)
+		relayRouter.POST("/images/variations", controller.RelayNotImplemented)
+		relayRouter.GET("/files", controller.RelayNotImplemented)
+		relayRouter.POST("/files", controller.RelayNotImplemented)
+		relayRouter.DELETE("/files/:id", controller.RelayNotImplemented)
+		relayRouter.GET("/files/:id", controller.RelayNotImplemented)
+		relayRouter.GET("/files/:id/content", controller.RelayNotImplemented)
+		relayRouter.POST("/fine_tuning/jobs", controller.RelayNotImplemented)
+		relayRouter.GET("/fine_tuning/jobs", controller.RelayNotImplemented)
+		relayRouter.GET("/fine_tuning/jobs/:id", controller.RelayNotImplemented)
+		relayRouter.POST("/fine_tuning/jobs/:id/cancel", controller.RelayNotImplemented)
+		relayRouter.GET("/fine_tuning/jobs/:id/events", controller.RelayNotImplemented)
+		relayRouter.DELETE("/models/:model", controller.RelayNotImplemented)
+		relayRouter.POST("/assistants", controller.RelayNotImplemented)
+		relayRouter.GET("/assistants/:id", controller.RelayNotImplemented)
+		relayRouter.POST("/assistants/:id", controller.RelayNotImplemented)
+		relayRouter.DELETE("/assistants/:id", controller.RelayNotImplemented)
+		relayRouter.GET("/assistants", controller.RelayNotImplemented)
+		relayRouter.POST("/assistants/:id/files", controller.RelayNotImplemented)
+		relayRouter.GET("/assistants/:id/files/:fileId", controller.RelayNotImplemented)
+		relayRouter.DELETE("/assistants/:id/files/:fileId", controller.RelayNotImplemented)
+		relayRouter.GET("/assistants/:id/files", controller.RelayNotImplemented)
+		relayRouter.POST("/threads", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id", controller.RelayNotImplemented)
+		relayRouter.DELETE("/threads/:id", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/messages", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/messages/:messageId", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/messages/:messageId", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/messages/:messageId/files/:filesId", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/messages/:messageId/files", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/runs", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/runs/:runsId", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/runs/:runsId", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/runs", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/runs/:runsId/submit_tool_outputs", controller.RelayNotImplemented)
+		relayRouter.POST("/threads/:id/runs/:runsId/cancel", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/runs/:runsId/steps/:stepId", controller.RelayNotImplemented)
+		relayRouter.GET("/threads/:id/runs/:runsId/steps", controller.RelayNotImplemented)
 	}
 }
