@@ -48,4 +48,5 @@ const App = ({ Component, pageProps }: AppProps) => {
     </QueryClientProvider>
   );
 };
+
 export default appWithTranslation(App);
