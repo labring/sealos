@@ -216,7 +216,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             }}
                           >
                             <MyIcon name={'configMap'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box fontWeight={'bold'} color={'grayModern.900'}>
                                 {item.mountPath}
                               </Box>
@@ -271,7 +271,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                             }}
                           >
                             <MyIcon name={'store'} width={'24px'} height={'24px'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'grayModern.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>
