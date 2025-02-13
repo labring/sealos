@@ -125,7 +125,7 @@ type GroupBalanceConsumer struct {
 
 func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	log := GetLogger(c)
-	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), group.ID)
+	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
 	if err != nil {
 		log.Errorf("get group (%s) balance error: %v", group.ID, err)
 		abortWithMessage(c, http.StatusInternalServerError, "get group balance error")

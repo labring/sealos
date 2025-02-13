@@ -104,7 +104,7 @@ func AutomaticallyUpdateChannels(frequency int) {
 // subscription
 func GetSubscription(c *gin.Context) {
 	group := middleware.GetGroup(c)
-	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
+	b, _, err := balance.Default.GetGroupRemainBalance(c, *group)
 	if err != nil {
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
 		c.JSON(http.StatusOK, middleware.APIResponse{

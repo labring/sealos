@@ -49,7 +49,7 @@ func getGroupBalance(ctx *gin.Context, meta *meta.Meta) (float64, balance.PostGr
 
 	groupBalance, ok := ctx.Get(ctxkey.GroupBalance)
 	if !ok {
-		return balance.Default.GetGroupRemainBalance(ctx.Request.Context(), meta.Group.ID)
+		return balance.Default.GetGroupRemainBalance(ctx.Request.Context(), *meta.Group)
 	}
 
 	groupBalanceConsumer := groupBalance.(*middleware.GroupBalanceConsumer)

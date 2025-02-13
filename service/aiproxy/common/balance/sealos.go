@@ -14,6 +14,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/env"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/redis/go-redis/v9"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -145,10 +146,10 @@ func cacheDecreaseGroupBalance(ctx context.Context, group string, amount int64) 
 	return decreaseGroupBalanceScript.Run(ctx, common.RDB, []string{fmt.Sprintf(sealosGroupBalanceKey, group)}, amount).Err()
 }
 
-func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
+func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
 	var errs []error
 	for i := 0; ; i++ {
-		balance, consumer, err := s.getGroupRemainBalance(ctx, group)
+		balance, consumer, err := s.getGroupRemainBalance(ctx, group.ID)
 		if err == nil {
 			return balance, consumer, nil
 		}

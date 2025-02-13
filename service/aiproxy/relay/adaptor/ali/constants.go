@@ -728,6 +728,33 @@ var ModelList = []*model.ModelConfig{
 		),
 	},
 
+	{
+		Model:       "qwen-mt-plus",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.015,
+		OutputPrice: 0.045,
+		RPM:         60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(2048),
+			model.WithModelConfigMaxInputTokens(1024),
+			model.WithModelConfigMaxOutputTokens(1024),
+		),
+	},
+	{
+		Model:       "qwen-mt-turbo",
+		Type:        relaymode.ChatCompletions,
+		Owner:       model.ModelOwnerAlibaba,
+		InputPrice:  0.001,
+		OutputPrice: 0.003,
+		RPM:         60,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(2048),
+			model.WithModelConfigMaxInputTokens(1024),
+			model.WithModelConfigMaxOutputTokens(1024),
+		),
+	},
+
 	// stable-diffusion
 	{
 		Model: "stable-diffusion-xl",
