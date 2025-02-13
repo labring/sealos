@@ -155,7 +155,7 @@ func (m *mongoDB) GetOwnersRecentUpdates(ownerList []string, checkTime time.Time
 		"owner": bson.M{"$in": ownerList},
 		"type":  common.Consumption,
 		"app_type": bson.M{
-			"$ne": resources.AppType[resources.CVM],
+			"$nin": []int{int(resources.AppType[resources.CVM]), int(resources.AppType[resources.LLMToken])},
 		},
 	}
 

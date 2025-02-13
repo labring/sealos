@@ -106,7 +106,10 @@ async function handleGet(req: NextApiRequest, res: NextApiResponse, userUid: str
     });
 
     if (!info || !info.additionalInfo) {
-      return jsonRes(res, { code: 200, data: { authTimes: realNameAuthProvider.maxFailedTimes } });
+      return jsonRes(res, {
+        code: 200,
+        data: { remainingAttempts: realNameAuthProvider.maxFailedTimes }
+      });
     }
 
     const additionalInfo = info.additionalInfo as unknown as AdditionalInfo;
@@ -189,6 +192,20 @@ async function handlePost(
     }
 
     const data = validationResult.data;
+
+    const enterprise = await globalPrisma.enterpriseRealNameInfo.findFirst({
+      where: {
+        enterpriseName: data.keyName,
+        isVerified: true
+      }
+    });
+
+    if (enterprise) {
+      return jsonRes(res, {
+        code: 400,
+        message: 'Enterprise real name information has been used'
+      });
+    }
 
     const globalToken = generateAuthenticationToken({
       userUid: payload.userUid,
