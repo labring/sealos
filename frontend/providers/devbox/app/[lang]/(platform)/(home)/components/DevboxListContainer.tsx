@@ -106,7 +106,20 @@ function useDevboxList() {
     isLoading,
     refetchList: () => {
       refetchDevboxList();
-      refetchAvgMonitorData();
+
+      // retry 3 times to fetch monitor data,because refetchDevboxList and then refetchAvgMonitorData immediately will cause monitor data be covered (devboxList refetch 3s once).
+      // And monitor 2min to refetch normally,but there we retry 3 times once.
+      const retryFetch = async (retryCount = 3, delay = 10 * 1000) => {
+        console.log('retry');
+        await refetchAvgMonitorData();
+
+        if (retryCount > 0) {
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          await retryFetch(retryCount - 1, delay);
+        }
+      };
+
+      retryFetch();
     }
   };
 }
