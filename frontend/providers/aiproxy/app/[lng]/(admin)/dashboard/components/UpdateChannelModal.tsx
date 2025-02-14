@@ -115,10 +115,14 @@ export const UpdateChannelModal = function ({
   ) => {
     const lowerCasedInputValue = inputValue.toLowerCase()
 
-    return dropdownItems.filter(
-      (item) =>
-        !selectedItems.includes(item) && item.name.toLowerCase().includes(lowerCasedInputValue)
+    // First filter out items that are already selected
+    const unselectedItems = dropdownItems.filter(
+      (dropdownItem) =>
+        !selectedItems.some((selectedItem) => selectedItem.name === dropdownItem.name)
     )
+
+    // Then filter by input value
+    return unselectedItems.filter((item) => item.name.toLowerCase().includes(lowerCasedInputValue))
   }
 
   const handleModelDropdownItemDisplay = (dropdownItem: Model) => {

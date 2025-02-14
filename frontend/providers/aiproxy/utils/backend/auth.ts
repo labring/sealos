@@ -102,7 +102,6 @@ export async function checkSealosUserIsRealName(headers: Headers): Promise<boole
       }
     )
     const result: RealNameInfoResponse = await response.json()
-    console.log(result)
     if (result.error) {
       console.error(result.error)
       return false

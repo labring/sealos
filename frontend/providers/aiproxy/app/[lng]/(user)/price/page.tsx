@@ -108,7 +108,7 @@ export default function Price() {
 
   const [modelOwner, setModelOwner] = useState<string>('')
   const [modelType, setModelType] = useState<string>('')
-  const [modelName, setModelName] = useState<string>('')
+
   const [searchInput, setSearchInput] = useState('')
   const debouncedSearch = useDebounce(searchInput, 500)
 
@@ -155,10 +155,6 @@ export default function Price() {
       name: debouncedSearch
     })
   }, [modelConfigs, modelOwner, modelType, debouncedSearch])
-
-  useEffect(() => {
-    setModelName(debouncedSearch)
-  }, [debouncedSearch])
 
   return (
     <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
