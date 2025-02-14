@@ -8,11 +8,16 @@ export const NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { k8sApp, namespace, k8sCore } = await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
-    const result = await k8sCore.listNamespace();
-    const namespacesList = result.body.items.map((item: any) => item.metadata.name);
+    const kubeconfig = await authSession(req.headers);
+    const { k8sApp, namespace, k8sCore, kube_user } = await getK8s({ kubeconfig });
+    let namespacesList = null;
+    // console.log('kube_user:', kube_user);
+    if (kube_user.name === 'kubernetes-admin' || kube_user.name === 'inClusterUser') {
+      let result = await k8sCore.listNamespace();
+      namespacesList = result.body.items.map((item: any) => item.metadata.name);
+    } else {
+      namespacesList = [namespace];
+    }
     jsonRes(res, {
       data: namespacesList
     });

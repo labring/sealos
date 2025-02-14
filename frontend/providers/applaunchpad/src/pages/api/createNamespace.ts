@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       ns: string;
     };
 
-    const temp = {
+    const namespace = {
       apiVersion: 'v1',
       kind: 'Namespace',
       metadata: {
@@ -22,10 +22,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     };
 
-    const result = await k8sCore.createNamespace(temp);
+    const namespaceResult = await k8sCore.createNamespace(namespace);
+
+    const resourceQuota = {
+      apiVersion: 'v1',
+      kind: 'ResourceQuota',
+      metadata: {
+        name: 'quota',
+        namespace: ns
+      },
+      spec: {
+        hard: {
+          'services': '5',
+          'requests.storage': '10Gi',
+          'persistentvolumeclaims': '5',
+          'limits.cpu': '4',
+          'limits.memory': '8Gi'
+        }
+      }
+    };
+
+    const resourceQuotaResult = await k8sCore.createNamespacedResourceQuota(ns, resourceQuota);
 
     jsonRes(res, {
-      data: result
+      data: {
+        namespace: namespaceResult,
+        resourceQuota: resourceQuotaResult
+      }
     });
   } catch (err: any) {
     jsonRes(res, {

@@ -33,6 +33,7 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
+import { getCurrentNamespace, getUserNamespace } from '@/utils/user';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -131,6 +132,8 @@ const EditApp = ({
     return val;
   }, [screenWidth]);
 
+  const currentNamespace = getCurrentNamespace(namespace);
+
   // form
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
@@ -172,17 +175,17 @@ const EditApp = ({
             newYamlList: yamls,
             crYamlList: crOldYamls.current
           });
-          console.log('patch:', namespace, appName, patch);
-          await putApp(namespace, {
+          console.log('patch:', currentNamespace, appName, patch);
+          await putApp(currentNamespace, {
             patch,
             appName,
             stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
           });
         } else {
-          await postDeployApp(namespace, yamls);
+          await postDeployApp(currentNamespace, yamls);
         }
 
-        router.replace(`/app/detail?namespace=${namespace}&&name=${formHook.getValues('appName')}`);
+        router.replace(`/app/detail?namespace=${currentNamespace}&&name=${formHook.getValues('appName')}`);
         if (!isGuided) {
           updateDesktopGuide({
             activityType: 'beginner-guide',
@@ -212,7 +215,7 @@ const EditApp = ({
       setIsLoading,
       appName,
       router,
-      namespace,
+      currentNamespace,
       formHook,
       isGuided,
       toast,
@@ -264,7 +267,7 @@ const EditApp = ({
       }
       setIsLoading(true);
       refetchPrice();
-      return setAppDetail(namespace, appName);
+      return setAppDetail(currentNamespace, appName);
     },
     {
       onSuccess(res) {
@@ -310,7 +313,7 @@ const EditApp = ({
         backgroundColor={'grayModern.100'}
       >
         <Header
-          namespace={namespace}
+          namespace={currentNamespace}
           formHook={formHook}
           appName={formHook.getValues('appName')}
           title={title}
@@ -375,7 +378,7 @@ const EditApp = ({
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
             <Form
-              namespace={namespace}
+              namespace={currentNamespace}
               formHook={formHook}
               already={already}
               defaultStorePathList={defaultStorePathList}
@@ -384,7 +387,7 @@ const EditApp = ({
               refresh={forceUpdate}
             />
           ) : (
-            <Yaml namespace={namespace} yamlList={yamlList} pxVal={pxVal} />
+            <Yaml namespace={currentNamespace} yamlList={yamlList} pxVal={pxVal} />
           )}
         </Box>
       </Flex>

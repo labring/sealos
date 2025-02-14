@@ -3,6 +3,7 @@ import SwitchPage from '@/components/ImageHub/SwitchPage';
 import List from '@/components/ImageHub/list';
 import { useLoading } from '@/hooks/useLoading';
 import { serviceSideProps } from '@/utils/i18n';
+import { getUserNamespace } from '@/utils/user';
 import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';

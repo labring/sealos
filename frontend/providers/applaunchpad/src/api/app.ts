@@ -17,6 +17,26 @@ import { ImageHubItem } from '@/pages/api/imagehub/get';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
+export const getResourceQuotas = () => GET('/api/getResourceQuotas');
+
+export const deleteResourceQuotas = (namespace: string) =>
+  DELETE(`/api/deleteResourceQuota?namespace=${namespace}`);
+
+interface Limits {
+  services: string;
+  requestsStorage: string;
+  persistentVolumeClaims: string;
+  limitsCpu: string;
+  limitsMemory: string;
+}
+
+interface UpdateResourceQuotasData {
+  namespace: string;
+  limits: Limits;
+}
+export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuotasData) =>
+  POST(`/api/updateResourceQuotas?namespace=${namespace}`, data);
+
 export const getNodes = () => GET<NodeInfo[]>('/api/getNodes');
 
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');

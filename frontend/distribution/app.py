@@ -9,6 +9,8 @@ import zipfile
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
+from node import add_node_to_cluster, delete_node_from_cluster
+
 
 app = Flask(__name__)
 
@@ -521,7 +523,7 @@ def get_cluster_resources():
     try:
         # 获取节点总容量
         cmd = "kubectl get nodes --no-headers -o custom-columns=':status.capacity.cpu',':status.capacity.memory' --kubeconfig=/etc/kubernetes/admin.conf"
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
         
         # 解析节点容量
         lines = result.stdout.strip().split('\n')
@@ -542,7 +544,7 @@ def get_cluster_resources():
 
         # 获取所有Pod的资源限制
         cmd = "kubectl get pods --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf"
-        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
         pods = json.loads(result.stdout)
 
         total_cpu_limits = 0
@@ -601,7 +603,7 @@ def scale_high_priority_workloads():
             workload_types = ['deployment', 'statefulset']
             for workload_type in workload_types:
                 cmd = "kubectl get {} --all-namespaces -o json --kubeconfig=/etc/kubernetes/admin.conf".format(workload_type)
-                result = subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True)
+                result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
                 workloads = json.loads(result.stdout)
                 
                 for workload in workloads['items']:
@@ -626,6 +628,42 @@ def scale_high_priority_workloads():
                         continue
     except Exception as e:
         print("Error in scale_high_priority_workloads: {}".format(str(e)))
+        
+@app.route('/add_node', methods=['POST'])
+def add_node():
+    data = request.json
+    node_ip = data.get('node_ip')
+    cluster_name = data.get('cluster_name', 'default')
+    user = data.get('user', '')
+    passwd = data.get('passwd', '')
+    pk = data.get('pk', '/root/.ssh/id_rsa')
+    pk_passwd = data.get('pk_passwd', '')
+    port = data.get('port', 22)
+    
+    if not node_ip:
+        return jsonify({'error': 'node_ip is required'}), 400
+    
+    try:
+        add_node_to_cluster(node_ip, cluster_name, user, passwd, pk, pk_passwd, port)
+        return jsonify({'message': 'Node added successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/delete_node', methods=['POST'])
+def delete_node():
+    data = request.json
+    node_ip = data.get('node_ip')
+    cluster_name = data.get('cluster_name', 'default')
+    force = data.get('force', False)
+    
+    if not node_ip:
+        return jsonify({'error': 'node_ip is required'}), 400
+    
+    try:
+        delete_node_from_cluster(node_ip, cluster_name, force)
+        return jsonify({'message': 'Node deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # 创建定时任务调度器
 scheduler = BackgroundScheduler()

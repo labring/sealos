@@ -63,24 +63,24 @@ const App = ({ Component, pageProps }: AppProps) => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
       loadUserSourcePrice();
-
-      try {
-        const newSession = JSON.stringify(await sealosApp.getSession());
-        const oldSession = localStorage.getItem('session');
-        if (newSession && newSession !== oldSession) {
-          localStorage.setItem('session', newSession);
-          window.location.reload();
-        }
-        console.log('app init success');
-      } catch (err) {
-        console.log('App is not running in desktop');
-        // if (!process.env.NEXT_PUBLIC_MOCK_USER) {
-        //   localStorage.removeItem('session');
-        //   openConfirm(() => {
-        //     window.open(`https://${SEALOS_DOMAIN}`, '_self');
-        //   })();
-        // }
-      }
+      
+      // try {
+      //   const newSession = JSON.stringify(await sealosApp.getSession());
+      //   const oldSession = localStorage.getItem('session');
+      //   if (newSession && newSession !== oldSession) {
+      //     localStorage.setItem('session', newSession);
+      //     window.location.reload();
+      //   }
+      //   console.log('app init success');
+      // } catch (err) {
+      //   console.log('App is not running in desktop');
+      //   // if (!process.env.NEXT_PUBLIC_MOCK_USER) {
+      //   //   localStorage.removeItem('session');
+      //   //   openConfirm(() => {
+      //   //     window.open(`https://${SEALOS_DOMAIN}`, '_self');
+      //   //   })();
+      //   // }
+      // }
     })();
     return response;
   }, []);

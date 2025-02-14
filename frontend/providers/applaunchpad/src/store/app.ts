@@ -32,7 +32,9 @@ export const useAppStore = create<State>()(
       appDetailPods: [] as PodDetailType[],
       namespaces: ['default'] as string[],
       setAppList: async (namespace, init = false) => {
+        console.log('get namespaces');
         const namespaces = await getNamespaces();
+        console.log('namespaces222:', namespaces);
         set((state) => {
           state.namespaces = namespaces;
         });
