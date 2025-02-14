@@ -8,12 +8,15 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex, useTheme } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import React, { useMemo, useState } from 'react';
-import AppBaseInfo from './components/AppBaseInfo';
-import Header from './components/Header';
-import Pods from './components/Pods';
+import React, { useMemo } from 'react';
+import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
+import Pods from '@/components/app/detail/index/Pods';
+import DetailLayout from '@/components/layouts/DetailLayout';
+import AdvancedInfo from '@/components/app/detail/index/AdvancedInfo';
 
-const AppMainInfo = dynamic(() => import('./components/AppMainInfo'), { ssr: false });
+const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainInfo'), {
+  ssr: false
+});
 
 const AppDetail = ({ appName }: { appName: string }) => {
   const { startGuide } = useDetailDriver();
@@ -30,9 +33,6 @@ const AppDetail = ({ appName }: { appName: string }) => {
     loadDetailMonitorData
   } = useAppStore();
 
-  const [podsLoaded, setPodsLoaded] = useState(false);
-  const [showSlider, setShowSlider] = useState(false);
-
   const { refetch, isSuccess } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
     onError(err) {
       toast({
@@ -41,21 +41,6 @@ const AppDetail = ({ appName }: { appName: string }) => {
       });
     }
   });
-
-  useQuery(
-    ['app-detail-pod'],
-    () => {
-      if (appDetail?.isPause) return null;
-      return intervalLoadPods(appName, true);
-    },
-    {
-      refetchOnMount: true,
-      refetchInterval: 3000,
-      onSettled() {
-        setPodsLoaded(true);
-      }
-    }
-  );
 
   useQuery(
     ['loadDetailMonitorData', appName, appDetail?.isPause],
@@ -70,82 +55,31 @@ const AppDetail = ({ appName }: { appName: string }) => {
   );
 
   return (
-    <Flex
-      flexDirection={'column'}
-      height={'100vh'}
-      backgroundColor={'grayModern.100'}
-      px={'32px'}
-      pb={4}
-    >
-      <Box>
-        <Header
-          source={appDetail.source}
-          appName={appName}
-          appStatus={appDetail?.status}
-          isPause={appDetail?.isPause}
-          refetch={refetch}
-          setShowSlider={setShowSlider}
-          isLargeScreen={isLargeScreen}
-        />
-      </Box>
-      <Flex position={'relative'} flex={'1 0 0'} h={0}>
-        <Box
-          h={'100%'}
-          flex={'0 0 410px'}
-          w={'410px'}
-          mr={4}
-          overflow={'overlay'}
-          zIndex={1}
-          transition={'0.4s'}
-          bg={'white'}
-          border={theme.borders.base}
-          borderRadius={'lg'}
-          {...(isLargeScreen
-            ? {}
-            : {
-                position: 'absolute',
-                left: 0,
-                boxShadow: '7px 4px 12px rgba(165, 172, 185, 0.25)',
-                transform: `translateX(${showSlider ? '0' : '-500'}px)`
-              })}
-        >
-          {appDetail ? <AppBaseInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
-        </Box>
-        <Flex flexDirection={'column'} minH={'100%'} flex={'1 0 0'} w={0} overflow={'overlay'}>
-          <Box
-            mb={4}
-            bg={'white'}
-            border={theme.borders.base}
-            borderRadius={'lg'}
-            flexShrink={0}
-            minH={'257px'}
-          >
+    <DetailLayout appName={appName} key={'detail'}>
+      <Flex
+        flexDirection={'column'}
+        minH={'100%'}
+        flex={'1 0 0'}
+        w={0}
+        overflowY={'auto'}
+        overflowX={'hidden'}
+      >
+        <Flex mb={'6px'} borderRadius={'lg'} flexShrink={0} minH={'257px'} gap={'6px'}>
+          <Box flexShrink={0} w="408px" bg={'white'} borderRadius={'8px'}>
+            <AppBaseInfo app={appDetail} />
+          </Box>
+          <Box flex="1" bg={'white'} borderRadius={'8px'}>
             {appDetail ? <AppMainInfo app={appDetail} /> : <Loading loading={true} fixed={false} />}
           </Box>
-          <Box
-            bg={'white'}
-            border={theme.borders.base}
-            borderRadius={'lg'}
-            h={0}
-            flex={1}
-            minH={'300px'}
-          >
-            <Pods pods={appDetailPods} appName={appName} loading={!podsLoaded} />
-          </Box>
         </Flex>
+        <Box bg={'white'} borderRadius={'8px'} mb={'6px'}>
+          <AdvancedInfo app={appDetail} />
+        </Box>
+        <Box bg={'white'} borderRadius={'lg'} flex={1}>
+          <Pods pods={appDetailPods} appName={appName} />
+        </Box>
       </Flex>
-      {/* mask */}
-      {!isLargeScreen && showSlider && (
-        <Box
-          position={'fixed'}
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          onClick={() => setShowSlider(false)}
-        />
-      )}
-    </Flex>
+    </DetailLayout>
   );
 };
 

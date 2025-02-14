@@ -23,7 +23,8 @@ export const theme = extendTheme(sealosTheme, {
       'html, body': {
         fontSize: 'md',
         height: '100%',
-        overflow: 'overlay',
+        backgroundColor: '#F4F4F7',
+        overflowX: 'auto',
         fontWeight: 400,
         minWidth: '1024px'
       }

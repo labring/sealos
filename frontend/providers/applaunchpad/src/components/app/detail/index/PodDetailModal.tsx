@@ -28,7 +28,7 @@ import { SealosMenu } from '@sealos/ui';
 
 import { MyTooltip } from '@sealos/ui';
 
-import styles from '../index.module.scss';
+import styles from '@/components/app/detail/index/index.module.scss';
 import { useTranslation } from 'next-i18next';
 import { SHOW_EVENT_ANALYZE } from '@/store/static';
 

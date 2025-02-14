@@ -1,6 +1,6 @@
 import { setLangStore } from '@/utils/cookieUtils';
 import { Menu, MenuButton, MenuButtonProps, MenuItem, MenuList, Text } from '@chakra-ui/react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 const langIcon = (
   <svg
