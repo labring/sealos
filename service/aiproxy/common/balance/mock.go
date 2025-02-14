@@ -25,7 +25,3 @@ func (q *MockGroupBalance) GetGroupRemainBalance(_ context.Context, _ model.Grou
 func (q *MockGroupBalance) PostGroupConsume(_ context.Context, _ string, usage float64) (float64, error) {
 	return usage, nil
 }
-
-func (q *MockGroupBalance) GetBalance(_ context.Context) (float64, error) {
-	return mockBalance, nil
-}

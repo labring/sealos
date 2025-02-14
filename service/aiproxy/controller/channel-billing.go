@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -106,11 +107,12 @@ func GetSubscription(c *gin.Context) {
 	group := middleware.GetGroup(c)
 	b, _, err := balance.Default.GetGroupRemainBalance(c, *group)
 	if err != nil {
+		if errors.Is(err, balance.ErrRealNameUsedAmountLimit) {
+			middleware.ErrorResponse(c, http.StatusForbidden, err.Error())
+			return
+		}
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
-		c.JSON(http.StatusOK, middleware.APIResponse{
-			Success: false,
-			Message: fmt.Sprintf("get group (%s) balance failed", group.ID),
-		})
+		middleware.ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance failed", group.ID))
 		return
 	}
 	token := middleware.GetToken(c)
