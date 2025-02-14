@@ -136,17 +136,24 @@ func StreamSplitThink(data map[string]any, thinkSplitter *splitter.Splitter, ren
 	for _, choice := range choices {
 		choiceMap, ok := choice.(map[string]any)
 		if !ok {
+			renderCallback(data)
 			continue
 		}
 		delta, ok := choiceMap["delta"].(map[string]any)
 		if !ok {
+			renderCallback(data)
 			continue
 		}
 		content, ok := delta["content"].(string)
 		if !ok {
+			renderCallback(data)
 			continue
 		}
 		think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
+		if len(think) == 0 && len(remaining) == 0 {
+			renderCallback(data)
+			continue
+		}
 		if len(think) > 0 {
 			delta["content"] = ""
 			delta["reasoning_content"] = conv.BytesToString(think)
