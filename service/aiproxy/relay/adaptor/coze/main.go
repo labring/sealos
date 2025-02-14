@@ -3,18 +3,17 @@ package coze
 import (
 	"bufio"
 	"net/http"
-	"strings"
-
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze/constant/messagetype"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -34,26 +33,6 @@ func stopReasonCoze2OpenAI(reason *string) string {
 	default:
 		return *reason
 	}
-}
-
-func ConvertRequest(textRequest *model.GeneralOpenAIRequest) *Request {
-	cozeRequest := Request{
-		Stream: textRequest.Stream,
-		User:   textRequest.User,
-		BotID:  strings.TrimPrefix(textRequest.Model, "bot-"),
-	}
-	for i, message := range textRequest.Messages {
-		if i == len(textRequest.Messages)-1 {
-			cozeRequest.Query = message.StringContent()
-			continue
-		}
-		cozeMessage := Message{
-			Role:    message.Role,
-			Content: message.StringContent(),
-		}
-		cozeRequest.ChatHistory = append(cozeRequest.ChatHistory, cozeMessage)
-	}
-	return &cozeRequest
 }
 
 func StreamResponseCoze2OpenAI(cozeResponse *StreamResponse) (*openai.ChatCompletionsStreamResponse, *Response) {
@@ -94,13 +73,13 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 			Content: responseText,
 			Name:    nil,
 		},
-		FinishReason: "stop",
+		FinishReason: constant.StopFinishReason,
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + cozeResponse.ConversationID,
 		Model:   "coze-bot",
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
@@ -112,7 +91,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	log := middleware.GetLogger(c)
 
 	var responseText string
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
@@ -148,10 +127,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		response.Model = modelName
 		response.Created = createdTime
 
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -192,7 +168,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	var responseText string
 	if len(fullTextResponse.Choices) > 0 {

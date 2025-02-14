@@ -1,7 +1,6 @@
 package zhipu
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,23 +15,10 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://open.bigmodel.cn"
+const baseURL = "https://open.bigmodel.cn/api/paas/v4"
 
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	switch meta.Mode {
-	case relaymode.ImagesGenerations:
-		return u + "/api/paas/v4/images/generations", nil
-	case relaymode.Embeddings:
-		return u + "/api/paas/v4/embeddings", nil
-	case relaymode.ChatCompletions:
-		return u + "/api/paas/v4/chat/completions", nil
-	default:
-		return "", errors.New("unsupported mode")
-	}
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {

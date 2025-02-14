@@ -41,12 +41,12 @@ type ChatRequest struct {
 	EnableCitation  bool             `json:"enable_citation,omitempty"`
 }
 
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 	baiduRequest := ChatRequest{
 		Messages:        request.Messages,
 		Temperature:     request.Temperature,
@@ -81,9 +81,9 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 
 	data, err := json.Marshal(baiduRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(data), nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
@@ -93,7 +93,7 @@ func responseBaidu2OpenAI(response *ChatResponse) *openai.TextResponse {
 			Role:    "assistant",
 			Content: response.Result,
 		},
-		FinishReason: "stop",
+		FinishReason: constant.StopFinishReason,
 	}
 	fullTextResponse := openai.TextResponse{
 		ID:      response.ID,
@@ -117,7 +117,7 @@ func streamResponseBaidu2OpenAI(meta *meta.Meta, baiduResponse *ChatStreamRespon
 		ID:      baiduResponse.ID,
 		Object:  "chat.completion.chunk",
 		Created: baiduResponse.Created,
-		Model:   meta.OriginModelName,
+		Model:   meta.OriginModel,
 		Choices: []*openai.ChatCompletionsStreamResponseChoice{&choice},
 		Usage:   baiduResponse.Usage,
 	}
@@ -158,10 +158,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			usage.CompletionTokens = baiduResponse.Usage.TotalTokens - baiduResponse.Usage.PromptTokens
 		}
 		response := streamResponseBaidu2OpenAI(meta, &baiduResponse)
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -185,7 +182,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
-	fullTextResponse.Model = meta.OriginModelName
+	fullTextResponse.Model = meta.OriginModel
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)

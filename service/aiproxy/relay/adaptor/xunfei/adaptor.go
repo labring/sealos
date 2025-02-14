@@ -13,30 +13,27 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://spark-api-open.xf-yun.com"
-
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-	return a.Adaptor.GetRequestURL(meta)
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	domain, err := getXunfeiDomain(meta.ActualModelName)
+const baseURL = "https://spark-api-open.xf-yun.com/v1"
+
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
+	domain, err := getXunfeiDomain(meta.ActualModel)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	model := meta.ActualModelName
-	meta.ActualModelName = domain
+	model := meta.ActualModel
+	meta.ActualModel = domain
 	defer func() {
-		meta.ActualModelName = model
+		meta.ActualModel = model
 	}()
-	h, body, err := a.Adaptor.ConvertRequest(meta, req)
+	method, h, body, err := a.Adaptor.ConvertRequest(meta, req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return h, body, nil
+	return method, h, body, nil
 }
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {

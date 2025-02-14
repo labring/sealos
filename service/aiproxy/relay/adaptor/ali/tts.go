@@ -93,21 +93,21 @@ var ttsSupportedFormat = map[string]struct{}{
 	"mp3": {},
 }
 
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	request, err := utils.UnmarshalTTSRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	reqMap, err := utils.UnmarshalMap(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	var sampleRate int
 	sampleRateI, ok := reqMap["sample_rate"].(float64)
 	if ok {
 		sampleRate = int(sampleRateI)
 	}
-	request.Model = meta.ActualModelName
+	request.Model = meta.ActualModel
 
 	if strings.HasPrefix(request.Model, "sambert-v") {
 		voice := request.Voice
@@ -156,9 +156,9 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Read
 
 	data, err := json.Marshal(ttsRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return http.Header{
+	return http.MethodPost, http.Header{
 		"X-DashScope-DataInspection": {"enable"},
 	}, bytes.NewReader(data), nil
 }

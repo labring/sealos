@@ -1,6 +1,10 @@
 package balance
 
-import "context"
+import (
+	"context"
+
+	"github.com/labring/sealos/service/aiproxy/model"
+)
 
 var _ GroupBalance = (*MockGroupBalance)(nil)
 
@@ -14,14 +18,10 @@ func NewMockGroupBalance() *MockGroupBalance {
 	return &MockGroupBalance{}
 }
 
-func (q *MockGroupBalance) GetGroupRemainBalance(_ context.Context, _ string) (float64, PostGroupConsumer, error) {
+func (q *MockGroupBalance) GetGroupRemainBalance(_ context.Context, _ model.GroupCache) (float64, PostGroupConsumer, error) {
 	return mockBalance, q, nil
 }
 
 func (q *MockGroupBalance) PostGroupConsume(_ context.Context, _ string, usage float64) (float64, error) {
 	return usage, nil
-}
-
-func (q *MockGroupBalance) GetBalance(_ context.Context) (float64, error) {
-	return mockBalance, nil
 }
