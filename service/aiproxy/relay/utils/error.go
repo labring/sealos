@@ -99,8 +99,15 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 	var errResponse GeneralErrorResponse
 	err = json.Unmarshal(respBody, &errResponse)
 	if err != nil {
-		ErrorWithStatusCode.Error.Message = conv.BytesToString(respBody)
-		return ErrorWithStatusCode
+		var errsResp []GeneralErrorResponse
+		err = json.Unmarshal(respBody, &errsResp)
+		if err != nil {
+			ErrorWithStatusCode.Error.Message = conv.BytesToString(respBody)
+			return ErrorWithStatusCode
+		}
+		if len(errsResp) > 0 {
+			errResponse = errsResp[0]
+		}
 	}
 
 	if errResponse.Error.Message != "" {

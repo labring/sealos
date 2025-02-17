@@ -12,7 +12,7 @@ const (
 )
 
 func MessageWithRequestID(message string, id string) string {
-	return fmt.Sprintf("%s (request id: %s)", message, id)
+	return fmt.Sprintf("%s (aiproxy: %s)", message, id)
 }
 
 func abortLogWithMessage(c *gin.Context, statusCode int, message string) {

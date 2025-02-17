@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -198,13 +197,6 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		return "", nil, nil, err
 	}
 
-	tokenCount, err := CountTokens(req.Context(), meta, contents)
-	if err != nil {
-		log.Error("count tokens failed: " + err.Error())
-	} else {
-		meta.InputTokens = tokenCount
-	}
-
 	// Build actual request
 	geminiRequest := ChatRequest{
 		Contents:          contents,
@@ -223,40 +215,48 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
-func CountTokens(ctx context.Context, meta *meta.Meta, chat []*ChatContent) (int, error) {
-	countReq := ChatRequest{
-		Contents: chat,
-	}
-	countData, err := json.Marshal(countReq)
-	if err != nil {
-		return 0, err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, getRequestURL(meta, "countTokens"), bytes.NewReader(countData))
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
+// func CountTokens(ctx context.Context, meta *meta.Meta, chat []*ChatContent) (int, error) {
+// 	countReq := ChatRequest{
+// 		Contents: chat,
+// 	}
+// 	countData, err := json.Marshal(countReq)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, getRequestURL(meta, "countTokens"), bytes.NewReader(countData))
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	req.Header.Set("Content-Type", "application/json")
+// 	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
 
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
+// 	resp, err := http.DefaultClient.Do(req)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+// 	defer resp.Body.Close()
 
-	var tokenCount CountTokensResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenCount); err != nil {
-		return 0, err
-	}
-	if tokenCount.Error != nil {
-		return 0, fmt.Errorf("count tokens error: %s, code: %d, status: %s", tokenCount.Error.Message, tokenCount.Error.Code, resp.Status)
-	}
-	return tokenCount.TotalTokens, nil
-}
+// 	var tokenCount CountTokensResponse
+// 	if err := json.NewDecoder(resp.Body).Decode(&tokenCount); err != nil {
+// 		return 0, err
+// 	}
+// 	if tokenCount.Error != nil {
+// 		return 0, fmt.Errorf("count tokens error: %s, code: %d, status: %s", tokenCount.Error.Message, tokenCount.Error.Code, resp.Status)
+// 	}
+// 	return tokenCount.TotalTokens, nil
+// }
 
 type ChatResponse struct {
 	Candidates     []*ChatCandidate   `json:"candidates"`
 	PromptFeedback ChatPromptFeedback `json:"promptFeedback"`
+	UsageMetadata  *UsageMetadata     `json:"usageMetadata"`
+	ModelVersion   string             `json:"modelVersion"`
+}
+
+type UsageMetadata struct {
+	PromptTokenCount     int `json:"promptTokenCount"`
+	CandidatesTokenCount int `json:"candidatesTokenCount"`
+	TotalTokenCount      int `json:"totalTokenCount"`
 }
 
 func (g *ChatResponse) GetResponseText() string {
@@ -361,6 +361,13 @@ func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatRespon
 		Object:  "chat.completion.chunk",
 		Choices: make([]*openai.ChatCompletionsStreamResponseChoice, 0, len(geminiResponse.Candidates)),
 	}
+	if geminiResponse.UsageMetadata != nil {
+		response.Usage = &model.Usage{
+			PromptTokens:     geminiResponse.UsageMetadata.PromptTokenCount,
+			CompletionTokens: geminiResponse.UsageMetadata.CandidatesTokenCount,
+			TotalTokens:      geminiResponse.UsageMetadata.TotalTokenCount,
+		}
+	}
 	for i, candidate := range geminiResponse.Candidates {
 		choice := openai.ChatCompletionsStreamResponseChoice{
 			Index: i,
@@ -393,11 +400,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	log := middleware.GetLogger(c)
 
 	responseText := strings.Builder{}
-	respContent := []*ChatContent{}
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
 	common.SetEventStreamHeaders(c)
+
+	usage := model.Usage{
+		PromptTokens: meta.InputTokens,
+	}
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -416,12 +426,9 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
-		for _, candidate := range geminiResponse.Candidates {
-			respContent = append(respContent, &candidate.Content)
-		}
 		response := streamResponseGeminiChat2OpenAI(meta, &geminiResponse)
-		if response == nil {
-			continue
+		if response.Usage != nil {
+			usage = *response.Usage
 		}
 
 		responseText.WriteString(response.Choices[0].Delta.StringContent())
@@ -435,25 +442,11 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	render.Done(c)
 
-	usage := model.Usage{
-		PromptTokens: meta.InputTokens,
-	}
-
-	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
-	if err != nil {
-		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModel)
-	} else {
-		usage.CompletionTokens = tokenCount
-	}
-	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	return &usage, nil
 }
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
-
-	log := middleware.GetLogger(c)
 
 	var geminiResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&geminiResponse)
@@ -465,22 +458,12 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 	fullTextResponse := responseGeminiChat2OpenAI(meta, &geminiResponse)
 	fullTextResponse.Model = meta.OriginModel
-	respContent := []*ChatContent{}
-	for _, candidate := range geminiResponse.Candidates {
-		respContent = append(respContent, &candidate.Content)
-	}
 
 	usage := model.Usage{
-		PromptTokens: meta.InputTokens,
+		PromptTokens:     geminiResponse.UsageMetadata.PromptTokenCount,
+		CompletionTokens: geminiResponse.UsageMetadata.CandidatesTokenCount,
+		TotalTokens:      geminiResponse.UsageMetadata.TotalTokenCount,
 	}
-	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
-	if err != nil {
-		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModel)
-	} else {
-		usage.CompletionTokens = tokenCount
-	}
-	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	fullTextResponse.Usage = usage
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
