@@ -87,7 +87,7 @@ const AppList = ({
     { title: '详情', field: 'details' },
   ];
   
-  const data = [
+  const data: any[] = [
     // 这里添加你的数据
     // 每个对象应该有和columns中field属性对应的键值对
   ];
