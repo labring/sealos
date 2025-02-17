@@ -7,6 +7,7 @@ import (
 
 // https://ai.google.dev/models/gemini
 // https://ai.google.dev/gemini-api/docs/pricing
+
 var ModelList = []*model.ModelConfig{
 	{
 		Model:       "gemini-1.5-pro",

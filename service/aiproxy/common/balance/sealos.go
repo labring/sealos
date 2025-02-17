@@ -160,8 +160,8 @@ func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group model.GroupCac
 		balance, userUID, err := s.getGroupRemainBalance(ctx, group.ID)
 		if err == nil {
 			if sealosCheckRealNameEnable &&
-				!s.checkRealName(ctx, userUID) &&
-				group.UsedAmount > sealosNoRealNameUsedAmountLimit {
+				group.UsedAmount > sealosNoRealNameUsedAmountLimit &&
+				!s.checkRealName(ctx, userUID) {
 				return 0, nil, ErrRealNameUsedAmountLimit
 			}
 			return decimal.NewFromInt(balance).Div(decimalBalancePrecision).InexactFloat64(),
@@ -206,7 +206,7 @@ func cacheSetUserRealName(ctx context.Context, userUID string, realName bool) er
 func (s *Sealos) checkRealName(ctx context.Context, userUID string) bool {
 	if cache, err := cacheGetUserRealName(ctx, userUID); err == nil {
 		return cache
-	} else if err != nil && !errors.Is(err, redis.Nil) {
+	} else if !errors.Is(err, redis.Nil) {
 		log.Errorf("get user (%s) real name cache failed: %s", userUID, err)
 	}
 
