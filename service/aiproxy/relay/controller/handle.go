@@ -52,7 +52,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	}
 
 	if !meta.IsChannelTest && groupRemainBalance <= 0 {
-		return openai.ErrorWrapperWithMessage("group balance not enough", "insufficient_group_balance", http.StatusForbidden)
+		return openai.ErrorWrapperWithMessage(fmt.Sprintf("group (%s) balance not enough", meta.Group.ID), "insufficient_group_balance", http.StatusForbidden)
 	}
 
 	// 3. Pre-process request
@@ -80,7 +80,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	// 4. Pre-check balance
 	ok = checkGroupBalance(preCheckReq, meta, groupRemainBalance)
 	if !ok {
-		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
+		return openai.ErrorWrapper(errors.New(fmt.Sprintf("group (%s) balance is not enough", meta.Group.ID)), "insufficient_group_balance", http.StatusForbidden)
 	}
 
 	meta.InputTokens = preCheckReq.InputTokens

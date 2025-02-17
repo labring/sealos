@@ -127,18 +127,18 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	log := GetLogger(c)
 	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
 	if err != nil {
-		if errors.Is(err, balance.ErrRealNameUsedAmountLimit) {
-			abortLogWithMessage(c, http.StatusForbidden, balance.ErrRealNameUsedAmountLimit.Error())
+		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
+			abortLogWithMessage(c, http.StatusForbidden, balance.ErrNoRealNameUsedAmountLimit.Error())
 			return false
 		}
 		log.Errorf("get group (%s) balance error: %v", group.ID, err)
-		abortWithMessage(c, http.StatusInternalServerError, "get group balance error")
+		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
 		return false
 	}
 	log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
 
 	if groupBalance <= 0 {
-		abortLogWithMessage(c, http.StatusForbidden, "group balance not enough")
+		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID))
 		return false
 	}
 	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
