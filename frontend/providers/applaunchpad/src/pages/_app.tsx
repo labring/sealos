@@ -206,6 +206,7 @@ const App = ({ Component, pageProps }: AppProps) => {
                 <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/apps')}>应用管理</Text>
                 <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/tenantManage')}>租户管理</Text>
                 <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/nodeManage')}>节点管理</Text>
+                <Text fontSize="lg" p={4} className="menu" onClick={()=>router.push('/user')}>用户管理</Text>
               </Box>
 
               <Box flex={1}>

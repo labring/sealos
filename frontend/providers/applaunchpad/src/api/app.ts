@@ -20,7 +20,7 @@ export const getNamespaces = () => GET('/api/getNamespaces');
 export const getResourceQuotas = () => GET('/api/getResourceQuotas');
 
 export const deleteResourceQuotas = (namespace: string) =>
-  DELETE(`/api/deleteResourceQuota?namespace=${namespace}`);
+  DELETE(`/api/deleteResourceQuotas?namespace=${namespace}`);
 
 interface Limits {
   services: string;
