@@ -92,7 +92,7 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </AccordionButton>
           <AccordionPanel>
             <Flex mt={'8px'} gap={'16px'}>
-              <Box flex={'1 0 0'}>
+              <Box flex={'1 0 0'} width={'0px'}>
                 <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
                   <Text>{t('Command')}</Text>
                   <Box
@@ -304,7 +304,6 @@ const AdvancedInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
-
       {detailConfigMap && (
         <ConfigMapDetailModal {...detailConfigMap} onClose={() => setDetailConfigMap(undefined)} />
       )}
