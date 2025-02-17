@@ -39,6 +39,14 @@ export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuot
 
 export const getNodes = () => GET<NodeInfo[]>('/api/getNodes');
 
+export const addNodes = (data: any) => POST<any>('/api/node/addNode', data, {
+  timeout: 30000 * 4
+});
+
+export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data, {
+  timeout: 30000 * 2
+});
+
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
 export const getImageTags = (data: { repository: string }) =>

@@ -76,7 +76,7 @@ const AppList = ({
     { title: '内存', field: 'memory' },
     { title: 'persistentvolumeclaims', field: 'persistentvolumeclaims' },
     { title: 'services', field: 'services' },
-    { title: 'storage', field: 'storage' },
+    { title: '存储', field: 'storage' },
     { title: '操作' }
   ];
 
@@ -261,7 +261,7 @@ const AppList = ({
         </Table>
       </TableContainer>
 
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>新增用户</ModalHeader>
@@ -288,7 +288,7 @@ const AppList = ({
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose}>
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>删除用户</ModalHeader>
@@ -304,7 +304,7 @@ const AppList = ({
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={isEditOpen} onClose={onEditClose} size={'4xl'}>
+      <Modal isOpen={isEditOpen} onClose={onEditClose} size={'4xl'} isCentered>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>编辑用户</ModalHeader>
@@ -336,7 +336,7 @@ const AppList = ({
                 />
               </Flex>
               <Flex alignItems={'center'} mb={5}>
-                <Label>requestsStorage</Label>
+                <Label>请求存储</Label>
                 <InputGroup>
                   <Input
                     type='number'
@@ -369,7 +369,7 @@ const AppList = ({
                 />
               </Flex>
               <Flex alignItems={'center'} mb={5}>
-                <Label>limitsCpu</Label>
+                <Label>CPU 限制</Label>
                 <Input
                   type='number'
                   value={currentData?.limitsCpu}
@@ -384,7 +384,7 @@ const AppList = ({
                 />
               </Flex>
               <Flex alignItems={'center'} mb={5}>
-                <Label>limitsMemory</Label>
+                <Label>内存限制</Label>
                 <InputGroup>
                   <Input
                     type='number'
