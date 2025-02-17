@@ -131,15 +131,15 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 
 		if group == "" {
 			if common.UsingPostgreSQL {
-				conditions = append(conditions, "name ILIKE ?")
+				conditions = append(conditions, "group_id ILIKE ?")
 			} else {
-				conditions = append(conditions, "name LIKE ?")
+				conditions = append(conditions, "group_id LIKE ?")
 			}
 			values = append(values, "%"+keyword+"%")
 		}
 		if status == 0 {
 			conditions = append(conditions, "status = ?")
-			values = append(values, 1)
+			values = append(values, String2Int(keyword))
 		}
 		if name == "" {
 			if common.UsingPostgreSQL {
@@ -155,7 +155,7 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 			} else {
 				conditions = append(conditions, "key LIKE ?")
 			}
-			values = append(values, keyword)
+			values = append(values, keyword+"%")
 		}
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
