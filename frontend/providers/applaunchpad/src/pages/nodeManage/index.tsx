@@ -99,6 +99,8 @@ const AppList = ({
   })
   const [currentDeleteNode, setCurrentDeleteNode] = useState<any>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [createLoading, setCreateLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     initNodeData()
@@ -123,11 +125,13 @@ const AppList = ({
   }
 
   const createNodeModelConfirm = async() => {
+    setCreateLoading(true)
     try {
       const resp = await addNodes({
         node_ip: nodeModel.ip,
         passwd: nodeModel.pwd
       })
+      setCreateLoading(false)
       toast({
         status: 'success',
         title: '创建成功'
@@ -135,6 +139,7 @@ const AppList = ({
       createNodeModelClose()
       initNodeData()
     } catch (error: any) {
+      setCreateLoading(false)
       toast({
         status: 'error',
         title: error.message
@@ -164,10 +169,12 @@ const AppList = ({
   }
 
   const onDeleteConfirm = async() => {
+    setDeleteLoading(true)
     try {
       const resp = await deleteNodes({
         node_ip: currentDeleteNode.internalIP
       })
+      setDeleteLoading(false)
       toast({
         status:'success',
         title: '删除成功'
@@ -175,6 +182,7 @@ const AppList = ({
       onDeleteClose()
       initNodeData()
     } catch (error: any) {
+      setDeleteLoading(false)
       toast({
         status: 'error',
         title: error.message
@@ -203,7 +211,7 @@ const AppList = ({
       </Flex>
 
 
-      <Modal isOpen={isOpen} onClose={createNodeModelClose} isCentered>
+      <Modal isOpen={isOpen} onClose={createNodeModelClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>新增节点</ModalHeader>
@@ -264,7 +272,7 @@ const AppList = ({
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={createNodeModelConfirm}>
+            <Button colorScheme="blue" mr={3} onClick={createNodeModelConfirm} isLoading={createLoading}>
               确认
             </Button>
           </ModalFooter>
@@ -296,7 +304,7 @@ const AppList = ({
         </Table>
       </TableContainer>
 
-      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered>
+      <Modal isOpen={isDeleteOpen} onClose={onDeleteClose} isCentered closeOnOverlayClick={false}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>删除用户</ModalHeader>
@@ -305,7 +313,7 @@ const AppList = ({
             <p>确定删除吗？</p>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={onDeleteConfirm}>
+            <Button colorScheme="blue" mr={3} onClick={onDeleteConfirm} isLoading={deleteLoading}>
               确认
             </Button>
           </ModalFooter>

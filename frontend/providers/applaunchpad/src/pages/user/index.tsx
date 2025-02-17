@@ -70,12 +70,12 @@ const AppList = ({
   const toast = useToast();
 
   const columns = [
-    { title: 'namespace', field: 'namespace' },
-    { title: 'name', field: 'name' },
+    { title: '命名空间', field: 'namespace' },
+    // { title: '用户名', field: 'name' },
     { title: 'cpu', field: 'cpu' },
     { title: '内存', field: 'memory' },
-    { title: 'persistentvolumeclaims', field: 'persistentvolumeclaims' },
-    { title: 'services', field: 'services' },
+    { title: '磁盘数量', field: 'persistentvolumeclaims' },
+    { title: '网络服务数量', field: 'services' },
     { title: '存储', field: 'storage' },
     { title: '操作' }
   ];
@@ -315,13 +315,13 @@ const AppList = ({
                 <Label>用户名</Label>
                 <Input
                   value={currentData?.namespace}
-                  onChange={(e) => setUsername(e.target.value)}
                   autoFocus={true}
                   maxLength={60}
+                  disabled={true}
                 />
               </Flex>
               <Flex alignItems={'center'} mb={5}>
-                <Label>services</Label>
+                <Label>网络服务数量</Label>
                 <Input
                   type='number'
                   value={currentData?.services}
@@ -354,7 +354,7 @@ const AppList = ({
                 </InputGroup>
               </Flex>
               <Flex alignItems={'center'} mb={5}>
-                <Label>persistentVolumeClaims</Label>
+                <Label>磁盘数量</Label>
                 <Input
                   type='number'
                   value={currentData?.persistentVolumeClaims}
