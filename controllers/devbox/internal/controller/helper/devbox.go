@@ -254,6 +254,22 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 	return nil
 }
 
+func GetLastPredicatedSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
+	if len(devbox.Status.CommitHistory) == 0 {
+		return nil
+	}
+	// Sort commit history by time in descending order
+	sort.Slice(devbox.Status.CommitHistory, func(i, j int) bool {
+		return devbox.Status.CommitHistory[i].Time.After(devbox.Status.CommitHistory[j].Time.Time)
+	})
+	for _, commit := range devbox.Status.CommitHistory {
+		if commit.PredicatedStatus == devboxv1alpha1.CommitStatusSuccess {
+			return commit
+		}
+	}
+	return nil
+}
+
 func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox) string {
 	if len(devbox.Status.CommitHistory) == 0 {
 		return devbox.Spec.Image
