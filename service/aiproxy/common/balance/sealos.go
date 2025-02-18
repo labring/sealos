@@ -152,7 +152,7 @@ func cacheDecreaseGroupBalance(ctx context.Context, group string, amount int64) 
 	return decreaseGroupBalanceScript.Run(ctx, common.RDB, []string{fmt.Sprintf(sealosGroupBalanceKey, group)}, amount).Err()
 }
 
-var ErrNoRealNameUsedAmountLimit = errors.New("no real name used amount limit reached")
+var ErrNoRealNameUsedAmountLimit = errors.New("达到未实名用户使用额度限制，请实名认证")
 
 func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
 	var errs []error
