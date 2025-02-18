@@ -1,0 +1,29 @@
+networks: {}
+services:
+  deployapp:
+    image: sealos.hub:5000/luanshaotong/deployapp:LAUNCHPAD_TAG
+    container_name: deployapp
+    working_dir: /root/app
+    command: ["python", "app.py"]
+    environment:
+      - CLUSTER_DOMAIN=FLAG_SEALOS_DOMAIN
+      - SAVE_PATH=/root/.mxapps
+      - RESOURCE_THRESHOLD=70
+      - ENABLE_WORKLOAD_SCALING=false
+      - ENABLE_NODE_SCALING=false
+      - NODE_DELETE_THRESHOLD=5
+      - NODE_ADD_THRESHOLD=20
+    volumes:
+      - /usr/bin/deployapp:/root/app
+      - /usr/bin/docker:/usr/bin/docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/kubectl:/usr/bin/kubectl
+      - /etc/kubernetes/admin.conf:/etc/kubernetes/admin.conf
+      - /etc/hosts:/etc/hosts
+      - /root/.ssh:/root/.ssh
+      - /root/.mxapps:/root/.mxapps
+    ports:
+      - "5002:5002/tcp"
+    restart: always
+    stdin_open: true
+    tty: true

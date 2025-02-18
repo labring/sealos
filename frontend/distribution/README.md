@@ -103,9 +103,16 @@ images = request.json.get('images')
 VERSION=${your-version} sh build.sh
 
 # 极简包
-VERSION=${your-version} sh build.sh --light
+VERSION=${your-version} sh build.sh -light
 ```
 得到app${VERSION}.tar.gz和app${VERSION}-light.tar.gz的部署包
 
 ## 应用打包工具部署至k8s
 解压后运行sh install.sh
+
+## 查看deployapp日志
+docker logs -f deployapp
+
+## 查看applaunchpad日志
+POD_NAME=$(kubectl get pods -n default | grep "sealos-applaunchpad-deployment" | awk '{print $1}')
+kubectl logs -f $POD_NAME

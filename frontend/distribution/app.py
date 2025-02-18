@@ -1,3 +1,4 @@
+import socket
 from flask import Flask, request, jsonify, Response
 import subprocess
 import os
@@ -15,7 +16,8 @@ from node import add_node_to_cluster, delete_node_from_cluster
 app = Flask(__name__)
 
 # 环境变量：集群域名
-CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
+# CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
+CLUSTER_DOMAIN = '192.168.0.134'
 # 环境变量：镜像仓库地址
 REGISTRY_URL = os.getenv('REGISTRY_URL')
 # 环境变量：镜像仓库用户名
@@ -25,7 +27,20 @@ REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 # 环境变量：文件保存路径
 SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：资源利用比例
+
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
+ENABLE_WORKLOAD_SCALING = bool(os.getenv('ENABLE_WORKLOAD_SCALING') or 'false')
+ENABLE_NODE_SCALING = bool(os.getenv('ENABLE_NODE_SCALING') or 'false')
+NODE_DELETE_THRESHOLD = os.getenv('NODE_DOWN_THRESHOLD') or '5'
+NODE_ADD_THRESHOLD = os.getenv('NODE_UP_THRESHOLD') or '20'
+
+MASTER_IP = ''
+#如果CLUSTER_DOMAIN是IP地址，MASTER_IP就是CLUSTER_DOMAIN
+if re.match(r'^\d+\.\d+\.\d+\.\d+$', CLUSTER_DOMAIN):
+    MASTER_IP = CLUSTER_DOMAIN
+else:
+    #如果CLUSTER_DOMAIN是域名，MASTER_IP就是CLUSTER_DOMAIN的IP地址
+    MASTER_IP = socket.gethostbyname(CLUSTER_DOMAIN)
 
 default_cluster_name = 'default'
 
@@ -590,11 +605,18 @@ def get_cluster_resources():
         print("Error getting cluster resources: {}".format(str(e)))
         return None, None
 
+scale_workloads_flag = False
+
 def scale_high_priority_workloads():
     """检查资源使用情况并根据需要缩放工作负载"""
+    global scale_workloads_flag
+    if scale_workloads_flag:
+        return
+    scale_workloads_flag = True
     try:
         cpu_usage, memory_usage = get_cluster_resources()
         if cpu_usage is None or memory_usage is None:
+            scale_workloads_flag = False
             return
         
         # 如果CPU或内存使用率超过RESOURCE_THRESHOLD
@@ -628,7 +650,10 @@ def scale_high_priority_workloads():
                                 print("Failed to pause {} {}/{}: {}".format(workload_type, namespace, name, response.text))
                     except ValueError:
                         continue
+        
+        scale_workloads_flag = False
     except Exception as e:
+        scale_workloads_flag = False
         print("Error in scale_high_priority_workloads: {}".format(str(e)))
         
 @app.route('/add_node', methods=['POST'])
@@ -646,7 +671,7 @@ def add_node():
         return jsonify({'error': 'node_ip is required'}), 400
     
     try:
-        add_node_to_cluster(node_ip, cluster_name, user, passwd, pk, pk_passwd, port)
+        add_node_to_cluster(node_ip, MASTER_IP, cluster_name, user, passwd, pk, pk_passwd, port)
         return jsonify({'message': 'Node added successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -662,7 +687,7 @@ def delete_node():
         return jsonify({'error': 'node_ip is required'}), 400
     
     try:
-        delete_node_from_cluster(node_ip, cluster_name, force)
+        delete_node_from_cluster(node_ip, MASTER_IP, cluster_name, force)
         return jsonify({'message': 'Node deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -671,25 +696,34 @@ CONFIGMAP_NAME = "backup-nodes-config"
 NAMESPACE = "default"
 
 def init_configmap():
-    data = {
-        "backup_nodes": "[]"
-    }
-    cmd = f"kubectl create configmap {CONFIGMAP_NAME} -n {NAMESPACE} --from-literal=backup_nodes='[]'"
-    subprocess.run(cmd, shell=True, check=True)
+    cmd = f"kubectl create configmap {CONFIGMAP_NAME} -n {NAMESPACE} --from-literal=backup_nodes='[]' --kubeconfig=/etc/kubernetes/admin.conf"
+    try:
+        subprocess.run(cmd, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        # print(f"Error creating configmap: {e}")
+        pass
 
 def get_configmap():
-    cmd = f"kubectl get configmap {CONFIGMAP_NAME} -n {NAMESPACE} -o json"
+    cmd = f"kubectl get configmap {CONFIGMAP_NAME} -n {NAMESPACE} -o json --kubeconfig=/etc/kubernetes/admin.conf"
     result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     return json.loads(result.stdout)
 
 def update_configmap(data):
-    cmd = f"kubectl patch configmap {CONFIGMAP_NAME} -n {NAMESPACE} --patch '{json.dumps(data)}'"
+    cmd = f"kubectl patch configmap {CONFIGMAP_NAME} -n {NAMESPACE} --patch '{json.dumps(data)}' --kubeconfig=/etc/kubernetes/admin.conf"
     subprocess.run(cmd, shell=True, check=True)
 
 def get_cluster_node_ips():
     cmd = "kubectl get nodes --no-headers -o custom-columns=':status.addresses[0].address' --kubeconfig=/etc/kubernetes/admin.conf"
     result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
     return result.stdout.strip().split('\n')
+
+@app.route('/cluster-nodes', methods=['GET'])
+def get_cluster_nodes():
+    try:
+        nodes = get_cluster_node_ips()
+        return jsonify({'nodes': nodes}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/backup-nodes', methods=['GET'])
 def get_backup_nodes():
@@ -740,8 +774,15 @@ def delete_backup_node():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+scale_nodes_flag = False
+
 def scale_nodes():
+    global scale_nodes_flag
+    if scale_nodes_flag == True:
+        return
+    scale_nodes_flag = True
     try:
+        print("Scaling nodes")
         configmap = get_configmap()
         backup_nodes = json.loads(configmap['data'].get('backup_nodes', '[]'))
         current_nodes = get_cluster_node_ips()
@@ -756,9 +797,10 @@ def scale_nodes():
         cpu_usage, memory_usage = get_cluster_resources()
         if cpu_usage is None or memory_usage is None:
             print("Error getting cluster resources")
+            scale_nodes_flag = False
             return
 
-        if cpu_usage > 80 or memory_usage > 80:
+        if cpu_usage > float(NODE_ADD_THRESHOLD) or memory_usage > float(NODE_ADD_THRESHOLD):
             print("Cluster resources - CPU: {}%, Memory: {}%".format(cpu_usage, memory_usage))
             print("Current nodes: {}".format(current_nodes))
             print("Backup nodes: {}".format(backup_nodes))
@@ -771,15 +813,14 @@ def scale_nodes():
             port = 22
             # if there are backup nodes available
             if len(backup_nodes_out) > 0:
-                add_node_to_cluster(backup_nodes_out[0], cluster_name, user, passwd, pk, pk_passwd, port)
+                add_node_to_cluster(backup_nodes_out[0], MASTER_IP, cluster_name, user, passwd, pk, pk_passwd, port)
         
-        if cpu_usage < 30 and memory_usage < 30:
+        if cpu_usage < float(NODE_DELETE_THRESHOLD) and memory_usage < float(NODE_DELETE_THRESHOLD):
             cluster_name = 'default'
             for node in backup_nodes_in:
-                delete_node_from_cluster(node, cluster_name, force=True)
+                delete_node_from_cluster(node, MASTER_IP, cluster_name, force=True)
                     
-        
-        cmd = "kubectl get nodes --no-headers -o custom-columns=':metadata.name',':status.conditions[?type==\"Ready\"].status' --kubeconfig=/etc/kubernetes/admin.conf"
+        cmd = "kubectl get nodes --no-headers -o custom-columns=':metadata.name',':status.conditions[?(@.type==\"Ready\")].status' --kubeconfig=/etc/kubernetes/admin.conf"
         result = subprocess.run(cmd, shell=True, check=True, capture_output=True, universal_newlines=True)
         lines = result.stdout.strip().split('\n')
         
@@ -792,14 +833,21 @@ def scale_nodes():
                 print(f"Node {node_name} is ready, cordoning it")
                 cmd = f"kubectl cordon {node_name} --kubeconfig=/etc/kubernetes/admin.conf"
                 subprocess.run(cmd, shell=True, check=True)
+        
+        scale_nodes_flag = False
+
     except Exception as e:
+        scale_nodes_flag = False
         print("Error in scale_nodes: {}".format(str(e)))
 
 # 创建定时任务调度器
-scheduler = BackgroundScheduler()
-scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
-scheduler.add_job(scale_nodes, 'interval', minutes=30)
-scheduler.start()
+if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
+    scheduler = BackgroundScheduler()
+    if ENABLE_WORKLOAD_SCALING:
+        scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
+    if ENABLE_NODE_SCALING:
+        scheduler.add_job(scale_nodes, 'interval', minutes=1)
+    scheduler.start()
 
 if __name__ == '__main__':
     init_configmap()
