@@ -86,12 +86,8 @@ const AppList = ({
     { title: 'TOKEN链接', field: 'tokenLink' },
     { title: '详情', field: 'details' },
   ];
-  
-  const data = [
-    // 这里添加你的数据
-    // 每个对象应该有和columns中field属性对应的键值对
-  ];
 
+  const [data, setData] = useState([]);
 
   return (
     <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
