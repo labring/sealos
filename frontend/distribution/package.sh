@@ -9,6 +9,7 @@ fi
 
 # pyinstaller --onefile app.py
 
+rm -rf dist
 mkdir -p dist/deployapp/
 
 cp install_templete.sh install.sh

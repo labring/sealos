@@ -17,6 +17,12 @@ if [ -z $dc ]; then
     chmod +x /usr/local/bin/docker-compose
 fi
 
+if [ -f /etc/systemd/system/deployapp.service ]; then
+    systemctl stop deployapp
+    systemctl disable deployapp
+    rm -rf /etc/systemd/system/deployapp.service
+fi
+
 rm -rf /usr/bin/deployapp
 cp -r deployapp /usr/bin/deployapp
 cd /usr/bin/deployapp
