@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -198,7 +199,7 @@ func GetGroupDashboardModels(c *gin.Context) {
 	}
 	groupCache, err := model.CacheGetGroup(group)
 	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "failed to get group")
+		middleware.ErrorResponse(c, http.StatusOK, fmt.Sprintf("failed to get group: %v", err))
 		return
 	}
 

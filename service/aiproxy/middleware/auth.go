@@ -103,7 +103,7 @@ func TokenAuth(c *gin.Context) {
 		var err error
 		group, err = model.CacheGetGroup(token.Group)
 		if err != nil {
-			abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
+			abortLogWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("failed to get group: %v", err))
 			return
 		}
 		if group.Status != model.GroupStatusEnabled {

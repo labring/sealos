@@ -15,7 +15,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.0025,
 		OutputPrice: 0.01,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(2097152),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-1.5-flash",
@@ -23,7 +29,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.00015,
 		OutputPrice: 0.0006,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1048576),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-1.5-flash-8b",
@@ -31,7 +43,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.000075,
 		OutputPrice: 0.0003,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1048576),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-2.0-flash",
@@ -39,7 +57,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0004,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1048576),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-2.0-flash-lite-preview",
@@ -47,7 +71,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.000075,
 		OutputPrice: 0.0003,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1048576),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-2.0-flash-thinking-exp",
@@ -55,7 +85,12 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.0001,
 		OutputPrice: 0.0004,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(1048576),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigVision(true),
+		),
 	},
 	{
 		Model:       "gemini-2.0-pro-exp",
@@ -63,7 +98,13 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerGoogle,
 		InputPrice:  0.0025,
 		OutputPrice: 0.01,
-		RPM:         120,
+		RPM:         600,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(2097152),
+			model.WithModelConfigMaxOutputTokens(8192),
+			model.WithModelConfigToolChoice(true),
+			model.WithModelConfigVision(true),
+		),
 	},
 
 	{
@@ -71,6 +112,10 @@ var ModelList = []*model.ModelConfig{
 		Type:       relaymode.Embeddings,
 		Owner:      model.ModelOwnerGoogle,
 		InputPrice: 0.0001,
-		RPM:        300,
+		RPM:        1500,
+		Config: model.NewModelConfig(
+			model.WithModelConfigMaxContextTokens(2048),
+			model.WithModelConfigMaxOutputTokens(768),
+		),
 	},
 }
