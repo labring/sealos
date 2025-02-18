@@ -11,8 +11,8 @@ services:
       - RESOURCE_THRESHOLD=70
       - ENABLE_WORKLOAD_SCALING=false
       - ENABLE_NODE_SCALING=false
-      - NODE_DELETE_THRESHOLD=5
-      - NODE_ADD_THRESHOLD=20
+      - NODE_DELETE_THRESHOLD=15
+      - NODE_ADD_THRESHOLD=70
     volumes:
       - /usr/bin/deployapp:/root/app
       - /usr/bin/docker:/usr/bin/docker
