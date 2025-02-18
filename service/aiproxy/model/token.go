@@ -157,6 +157,10 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 			}
 			values = append(values, keyword+"%")
 		}
+
+		conditions = append(conditions, "models LIKE ?")
+		values = append(values, "%"+keyword+"%")
+
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
 		}

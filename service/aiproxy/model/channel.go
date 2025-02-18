@@ -238,6 +238,9 @@ func SearchChannels(keyword string, startIdx int, num int, id int, name string, 
 			values = append(values, "%"+keyword+"%")
 		}
 
+		conditions = append(conditions, "models LIKE ?")
+		values = append(values, "%"+keyword+"%")
+
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
 		}
