@@ -76,7 +76,7 @@ func GetGroups(startIdx int, num int, order string, onlyDisabled bool) (groups [
 
 func GetGroupByID(id string) (*Group, error) {
 	if id == "" {
-		return nil, errors.New("id 为空！")
+		return nil, errors.New("group id is empty")
 	}
 	group := Group{ID: id}
 	err := DB.First(&group, "id = ?", id).Error
@@ -85,7 +85,7 @@ func GetGroupByID(id string) (*Group, error) {
 
 func DeleteGroupByID(id string) (err error) {
 	if id == "" {
-		return errors.New("id 为空！")
+		return errors.New("group id is empty")
 	}
 	defer func() {
 		if err == nil {
