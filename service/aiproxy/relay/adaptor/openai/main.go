@@ -105,6 +105,9 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			for _, choice := range streamResponse.Choices {
 				responseText += choice.Text
 			}
+			if streamResponse.Usage != nil {
+				usage = streamResponse.Usage
+			}
 			render.StringData(c, data)
 		}
 	}

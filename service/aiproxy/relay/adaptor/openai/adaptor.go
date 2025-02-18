@@ -76,7 +76,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	case relaymode.Moderations:
 		meta.Set(MetaEmbeddingsPatchInputToSlices, true)
 		return ConvertEmbeddingsRequest(meta, req)
-	case relaymode.Embeddings:
+	case relaymode.Embeddings, relaymode.Completions:
 		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.ChatCompletions:
 		return ConvertTextRequest(meta, req, meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey))
@@ -105,7 +105,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.Moderations:
 		usage, err = ModerationsHandler(meta, c, resp)
-	case relaymode.Embeddings:
+	case relaymode.Embeddings, relaymode.Completions:
 		fallthrough
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {

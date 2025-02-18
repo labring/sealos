@@ -32,7 +32,7 @@ var (
 	enableModelErrorAutoBan atomic.Bool
 	modelErrorAutoBanRate   = math.Float64bits(0.5)
 	timeoutWithModelType    atomic.Value
-	disableModelConfig      atomic.Bool
+	disableModelConfig      = env.Bool("DISABLE_MODEL_CONFIG", false)
 )
 
 var (
@@ -57,12 +57,7 @@ func init() {
 }
 
 func GetDisableModelConfig() bool {
-	return disableModelConfig.Load()
-}
-
-func SetDisableModelConfig(disabled bool) {
-	disabled = env.Bool("DISABLE_MODEL_CONFIG", disabled)
-	disableModelConfig.Store(disabled)
+	return disableModelConfig
 }
 
 func GetRetryTimes() int64 {

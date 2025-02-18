@@ -138,6 +138,7 @@ type CompletionsStreamResponse struct {
 		Text         string `json:"text"`
 		FinishReason string `json:"finish_reason"`
 	} `json:"choices"`
+	Usage *model.Usage `json:"usage"`
 }
 
 type SubscriptionResponse struct {

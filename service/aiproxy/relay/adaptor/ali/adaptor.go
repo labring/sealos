@@ -38,6 +38,8 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
+	case relaymode.Completions:
+		return u + "/compatible-mode/v1/completions", nil
 	case relaymode.AudioSpeech, relaymode.AudioTranscription:
 		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
@@ -62,7 +64,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		return ConvertRerankRequest(meta, req)
 	case relaymode.Embeddings:
 		return ConvertEmbeddingsRequest(meta, req)
-	case relaymode.ChatCompletions:
+	case relaymode.ChatCompletions, relaymode.Completions:
 		return openai.ConvertRequest(meta, req)
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
@@ -107,7 +109,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = EmbeddingsHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
-	case relaymode.ChatCompletions:
+	case relaymode.ChatCompletions, relaymode.Completions:
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)
