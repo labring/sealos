@@ -83,6 +83,13 @@ func buildTools(textRequest *model.GeneralOpenAIRequest) []ChatTools {
 	if textRequest.Tools != nil {
 		functions := make([]model.Function, 0, len(textRequest.Tools))
 		for _, tool := range textRequest.Tools {
+			if parameters, ok := tool.Function.Parameters.(map[string]any); ok {
+				if properties, ok := parameters["properties"].(map[string]any); ok {
+					if len(properties) == 0 {
+						tool.Function.Parameters = nil
+					}
+				}
+			}
 			functions = append(functions, tool.Function)
 		}
 		return []ChatTools{{FunctionDeclarations: functions}}
@@ -305,10 +312,13 @@ type ChatPromptFeedback struct {
 	SafetyRatings []ChatSafetyRating `json:"safetyRatings"`
 }
 
-func getToolCalls(candidate *ChatCandidate) []*model.Tool {
-	var toolCalls []*model.Tool
+func getToolCalls(candidate *ChatCandidate, toolCallIndex int) []*model.Tool {
+	if len(candidate.Content.Parts) <= toolCallIndex {
+		return nil
+	}
 
-	item := candidate.Content.Parts[0]
+	var toolCalls []*model.Tool
+	item := candidate.Content.Parts[toolCallIndex]
 	if item.FunctionCall == nil {
 		return toolCalls
 	}
@@ -346,8 +356,23 @@ func responseGeminiChat2OpenAI(meta *meta.Meta, response *ChatResponse) *openai.
 			FinishReason: constant.StopFinishReason,
 		}
 		if len(candidate.Content.Parts) > 0 {
-			if candidate.Content.Parts[0].FunctionCall != nil {
-				choice.Message.ToolCalls = getToolCalls(candidate)
+			toolCallIndex := -1
+			for i, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					toolCallIndex = i
+					break
+				}
+			}
+			if toolCallIndex != -1 {
+				choice.Message.ToolCalls = getToolCalls(candidate, toolCallIndex)
+				content := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i == toolCallIndex {
+						continue
+					}
+					content.WriteString(part.Text)
+				}
+				choice.Message.Content = content.String()
 			} else {
 				builder := strings.Builder{}
 				for i, part := range candidate.Content.Parts {
@@ -387,8 +412,23 @@ func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatRespon
 			Index: i,
 		}
 		if len(candidate.Content.Parts) > 0 {
-			if candidate.Content.Parts[0].FunctionCall != nil {
-				choice.Delta.ToolCalls = getToolCalls(candidate)
+			toolCallIndex := -1
+			for i, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					toolCallIndex = i
+					break
+				}
+			}
+			if toolCallIndex != -1 {
+				choice.Delta.ToolCalls = getToolCalls(candidate, toolCallIndex)
+				content := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i == toolCallIndex {
+						continue
+					}
+					content.WriteString(part.Text)
+				}
+				choice.Delta.Content = content.String()
 			} else {
 				builder := strings.Builder{}
 				for i, part := range candidate.Content.Parts {
