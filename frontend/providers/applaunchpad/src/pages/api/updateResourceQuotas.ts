@@ -5,53 +5,53 @@ import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 interface Limits {
-  services: string;
-  requestsStorage: string;
-  persistentVolumeClaims: string;
-  limitsCpu: string;
-  limitsMemory: string;
+	services: string;
+	requestsStorage: string;
+	persistentVolumeClaims: string;
+	limitsCpu: string;
+	limitsMemory: string;
 }
 
 interface RequestBody {
-  namespace: string;
-  limits: Limits;
+	namespace: string;
+	limits: Limits;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
-  try {
-	const { k8sCore } = await getK8s({
-	  kubeconfig: await authSession(req.headers)
-	});
+	try {
+		const { k8sCore } = await getK8s({
+			kubeconfig: await authSession(req.headers)
+		});
 
-	const { namespace, limits } = req.body as RequestBody;
+		const { namespace, limits } = req.body as RequestBody;
 
-	const resourceQuota = {
-	  apiVersion: 'v1',
-	  kind: 'ResourceQuota',
-	  metadata: {
-		name: 'quota',
-		namespace: namespace
-	  },
-	  spec: {
-		hard: {
-		  'services': limits.services,
-		  'requests.storage': limits.requestsStorage,
-		  'persistentvolumeclaims': limits.persistentVolumeClaims,
-		  'limits.cpu': limits.limitsCpu,
-		  'limits.memory': limits.limitsMemory
-		}
-	  }
-	};
+		const resourceQuota = {
+			apiVersion: 'v1',
+			kind: 'ResourceQuota',
+			metadata: {
+				name: 'quota',
+				namespace: namespace
+			},
+			spec: {
+				hard: {
+					'services': limits.services,
+					'requests.storage': limits.requestsStorage,
+					'persistentvolumeclaims': limits.persistentVolumeClaims,
+					'limits.cpu': limits.limitsCpu,
+					'limits.memory': limits.limitsMemory
+				}
+			}
+		};
 
-	const resourceQuotaResult = await k8sCore.replaceNamespacedResourceQuota('quota', namespace, resourceQuota);
+		const resourceQuotaResult = await k8sCore.replaceNamespacedResourceQuota('quota', namespace, resourceQuota);
 
-	jsonRes(res, {
-	  data: resourceQuotaResult
-	});
-  } catch (err: any) {
-	jsonRes(res, {
-	  code: 500,
-	  error: err
-	});
-  }
+		jsonRes(res, {
+			data: resourceQuotaResult
+		});
+	} catch (err: any) {
+		jsonRes(res, {
+			code: 500,
+			error: err
+		});
+	}
 }

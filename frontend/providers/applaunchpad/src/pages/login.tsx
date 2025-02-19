@@ -83,6 +83,7 @@ export default function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             w={'full'}
+            placeholder="密码"
             type="password"
           />
         </FormControl>

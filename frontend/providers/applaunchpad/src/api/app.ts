@@ -20,7 +20,7 @@ export const getNamespaces = () => GET('/api/getNamespaces');
 export const getResourceQuotas = () => GET('/api/getResourceQuotas');
 
 export const deleteResourceQuotas = (namespace: string) =>
-  DELETE(`/api/deleteResourceQuota?namespace=${namespace}`);
+  DELETE(`/api/deleteResourceQuotas?namespace=${namespace}`);
 
 interface Limits {
   services: string;
@@ -38,6 +38,36 @@ export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuot
   POST(`/api/updateResourceQuotas?namespace=${namespace}`, data);
 
 export const getNodes = () => GET<NodeInfo[]>('/api/getNodes');
+
+export const getBackupNodes = () => GET<any[]>('/api/node/getBackupNodes');
+
+export const addBackupNodes = (data: any) => POST<any>('/api/node/addBackupNodes', data);
+
+export const deleteBackupNodes = (data: any) => DELETE<any>('/api/node/deleteBackupNodes', data);
+
+export const addNodes = (data: any) => POST<any>('/api/node/addNode', data, {
+  timeout: 30000 * 4
+});
+
+export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data, {
+  timeout: 30000 * 2
+});
+
+export const uploadImageFiles = (data: any) => {
+  const formData = new FormData();
+  console.log(data.image)
+  formData.append('file', data.image);
+  return POST<any>('/api/imagehub/uploadImageFile', formData, {
+    timeout: 30000,
+    headers: {
+      // 不设置 Content-Type，让浏览器自动处理
+      // 'Content-Type': 'multipart/form-data'
+    }
+  });
+}
+
+export const buildDockerImage = (data: any) =>
+  POST<any>('/api/imagehub/buildDockerImage', data);
 
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
