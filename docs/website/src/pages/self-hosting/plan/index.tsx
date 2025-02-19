@@ -300,15 +300,23 @@ export default function Plan() {
                 onChange={(e) => {
                   setMonths(e.target.value);
                 }}
-                className="w-52 input-select h-8 border-gray-300 border-none bg-transparent text-white/80 text-xs rounded-md block focus-visible:outline-none lg:w-10"
+                className="w-52 input-select min-w-[100px] h-8 border-gray-300 border-none bg-transparent text-white/80 text-xs rounded-md block focus-visible:outline-none lg:w-10 appearance-none"
                 style={{
                   borderRadius: '6px',
                   border: '1px solid rgba(232, 235, 240, 0.10)',
-                  background: 'rgba(247, 248, 250, 0.10)'
+                  background: 'rgba(247, 248, 250, 0.10)',
+                  WebkitAppearance: 'none'
                 }}
               >
                 {MonthMapList.map((item) => (
-                  <option key={item.label} value={item.value}>
+                  <option
+                    key={item.label}
+                    value={item.value}
+                    style={{
+                      background: '#1A1A1A',
+                      color: 'rgba(255, 255, 255, 0.8)'
+                    }}
+                  >
                     {item.label}
                   </option>
                 ))}
