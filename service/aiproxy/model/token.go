@@ -130,35 +130,27 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 		var values []interface{}
 
 		if group == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "group_id ILIKE ?")
-			} else {
-				conditions = append(conditions, "group_id LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "group_id = ?")
+			values = append(values, keyword)
 		}
 		if status == 0 {
 			conditions = append(conditions, "status = ?")
 			values = append(values, String2Int(keyword))
 		}
 		if name == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "name ILIKE ?")
-			} else {
-				conditions = append(conditions, "name LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "name = ?")
+			values = append(values, keyword)
 		}
 		if key == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "key ILIKE ?")
-			} else {
-				conditions = append(conditions, "key LIKE ?")
-			}
-			values = append(values, keyword+"%")
+			conditions = append(conditions, "key = ?")
+			values = append(values, keyword)
 		}
 
-		conditions = append(conditions, "models LIKE ?")
+		if common.UsingPostgreSQL {
+			conditions = append(conditions, "models ILIKE ?")
+		} else {
+			conditions = append(conditions, "models LIKE ?")
+		}
 		values = append(values, "%"+keyword+"%")
 
 		if len(conditions) > 0 {

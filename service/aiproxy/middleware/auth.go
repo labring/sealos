@@ -63,7 +63,7 @@ func TokenAuth(c *gin.Context) {
 
 	var token *model.TokenCache
 	var useInternalToken bool
-	if config.GetInternalToken() != "" && config.GetInternalToken() == key {
+	if config.GetInternalToken() != "" && config.GetInternalToken() == key || config.AdminKey != "" && config.AdminKey == key {
 		token = &model.TokenCache{}
 		useInternalToken = true
 	} else {
@@ -75,7 +75,7 @@ func TokenAuth(c *gin.Context) {
 		}
 	}
 
-	SetLogTokenFields(log.Data, token)
+	SetLogTokenFields(log.Data, token, useInternalToken)
 
 	if token.Subnet != "" {
 		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
@@ -97,7 +97,7 @@ func TokenAuth(c *gin.Context) {
 	var group *model.GroupCache
 	if useInternalToken {
 		group = &model.GroupCache{
-			Status: model.GroupStatusEnabled,
+			Status: model.GroupStatusInternal,
 		}
 	} else {
 		var err error
@@ -106,7 +106,7 @@ func TokenAuth(c *gin.Context) {
 			abortLogWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("failed to get group: %v", err))
 			return
 		}
-		if group.Status != model.GroupStatusEnabled {
+		if group.Status != model.GroupStatusEnabled && group.Status != model.GroupStatusInternal {
 			abortLogWithMessage(c, http.StatusForbidden, "group is disabled")
 			return
 		}
@@ -172,7 +172,7 @@ func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
 	}
 
 	SetLogGroupFields(fields, m.Group)
-	SetLogTokenFields(fields, m.Token)
+	SetLogTokenFields(fields, m.Token, false)
 	SetLogChannelFields(fields, m.Channel)
 }
 
@@ -213,7 +213,7 @@ func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
 	}
 }
 
-func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
+func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache, internal bool) {
 	if token == nil {
 		return
 	}
@@ -225,6 +225,9 @@ func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
 	}
 	if token.Key != "" {
 		fields["key"] = maskTokenKey(token.Key)
+	}
+	if internal {
+		fields["internal"] = "true"
 	}
 }
 

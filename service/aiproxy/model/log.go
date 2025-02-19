@@ -540,12 +540,8 @@ func buildSearchLogsQuery(
 		var values []interface{}
 
 		if group == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "content ILIKE ?")
-			} else {
-				conditions = append(conditions, "content LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "group_id = ?")
+			values = append(values, keyword)
 		}
 
 		if num := String2Int(keyword); num != 0 {
@@ -558,49 +554,39 @@ func buildSearchLogsQuery(
 				values = append(values, num)
 			}
 		}
-		if endpoint == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "endpoint ILIKE ?")
-			} else {
-				conditions = append(conditions, "endpoint LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
-		}
 		if requestID == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "request_id ILIKE ?")
-			} else {
-				conditions = append(conditions, "request_id LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "request_id = ?")
+			values = append(values, keyword)
 		}
 		if tokenName == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "token_name ILIKE ?")
-			} else {
-				conditions = append(conditions, "token_name LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "token_name = ?")
+			values = append(values, keyword)
 		}
 		if modelName == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "model ILIKE ?")
-			} else {
-				conditions = append(conditions, "model LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
+			conditions = append(conditions, "model = ?")
+			values = append(values, keyword)
 		}
+
+		if ip != "" {
+			conditions = append(conditions, "ip = ?")
+			values = append(values, ip)
+		}
+
+		// if endpoint == "" {
+		// 	if common.UsingPostgreSQL {
+		// 		conditions = append(conditions, "endpoint ILIKE ?")
+		// 	} else {
+		// 		conditions = append(conditions, "endpoint LIKE ?")
+		// 	}
+		// 	values = append(values, "%"+keyword+"%")
+		// }
+
 		if common.UsingPostgreSQL {
 			conditions = append(conditions, "content ILIKE ?")
 		} else {
 			conditions = append(conditions, "content LIKE ?")
 		}
 		values = append(values, "%"+keyword+"%")
-
-		if ip != "" {
-			conditions = append(conditions, "ip = ?")
-			values = append(values, ip)
-		}
 
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)

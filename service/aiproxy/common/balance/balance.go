@@ -14,4 +14,11 @@ type PostGroupConsumer interface {
 	PostGroupConsume(ctx context.Context, tokenName string, usage float64) (float64, error)
 }
 
-var Default GroupBalance = NewMockGroupBalance()
+var (
+	mock    GroupBalance = NewMockGroupBalance()
+	Default              = mock
+)
+
+func MockGetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
+	return mock.GetGroupRemainBalance(ctx, group)
+}

@@ -124,18 +124,26 @@ type GroupBalanceConsumer struct {
 }
 
 func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
-	log := GetLogger(c)
-	groupBalance, consumer, err := balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
-	if err != nil {
-		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
-			abortLogWithMessage(c, http.StatusForbidden, balance.ErrNoRealNameUsedAmountLimit.Error())
+	var groupBalance float64
+	var consumer balance.PostGroupConsumer
+
+	if group.Status == model.GroupStatusInternal {
+		groupBalance, consumer, _ = balance.MockGetGroupRemainBalance(c.Request.Context(), *group)
+	} else {
+		log := GetLogger(c)
+		var err error
+		groupBalance, consumer, err = balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
+		if err != nil {
+			if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
+				abortLogWithMessage(c, http.StatusForbidden, balance.ErrNoRealNameUsedAmountLimit.Error())
+				return false
+			}
+			log.Errorf("get group (%s) balance error: %v", group.ID, err)
+			abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
 			return false
 		}
-		log.Errorf("get group (%s) balance error: %v", group.ID, err)
-		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
-		return false
+		log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
 	}
-	log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
 
 	if groupBalance <= 0 {
 		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID))

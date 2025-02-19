@@ -209,6 +209,10 @@ func SearchChannels(keyword string, startIdx int, num int, id int, name string, 
 			conditions = append(conditions, "id = ?")
 			values = append(values, String2Int(keyword))
 		}
+		if channelType == 0 {
+			conditions = append(conditions, "type = ?")
+			values = append(values, String2Int(keyword))
+		}
 		if name == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "name ILIKE ?")
@@ -225,10 +229,6 @@ func SearchChannels(keyword string, startIdx int, num int, id int, name string, 
 			}
 			values = append(values, "%"+keyword+"%")
 		}
-		if channelType == 0 {
-			conditions = append(conditions, "type = ?")
-			values = append(values, String2Int(keyword))
-		}
 		if baseURL == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "base_url ILIKE ?")
@@ -238,7 +238,11 @@ func SearchChannels(keyword string, startIdx int, num int, id int, name string, 
 			values = append(values, "%"+keyword+"%")
 		}
 
-		conditions = append(conditions, "models LIKE ?")
+		if common.UsingPostgreSQL {
+			conditions = append(conditions, "models ILIKE ?")
+		} else {
+			conditions = append(conditions, "models LIKE ?")
+		}
 		values = append(values, "%"+keyword+"%")
 
 		if len(conditions) > 0 {

@@ -2,7 +2,6 @@ package model
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -20,6 +19,7 @@ const (
 const (
 	GroupStatusEnabled  = 1 // don't use 0, 0 is the default value!
 	GroupStatusDisabled = 2 // also don't use 0
+	GroupStatusInternal = 3
 )
 
 type Group struct {
@@ -232,19 +232,6 @@ func SearchGroup(keyword string, startIdx int, num int, order string, status int
 		tx = tx.Where("id ILIKE ?", "%"+keyword+"%")
 	} else {
 		tx = tx.Where("id LIKE ?", "%"+keyword+"%")
-	}
-	if keyword != "" {
-		var conditions []string
-		var values []interface{}
-
-		if status == 0 {
-			conditions = append(conditions, "status = ?")
-			values = append(values, 1)
-		}
-
-		if len(conditions) > 0 {
-			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
-		}
 	}
 	err = tx.Count(&total).Error
 	if err != nil {
