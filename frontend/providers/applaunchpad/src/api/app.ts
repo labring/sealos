@@ -47,6 +47,22 @@ export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data
   timeout: 30000 * 2
 });
 
+export const uploadImageFiles = (data: any) => {
+  const formData = new FormData();
+  console.log(data.image)
+  formData.append('file', data.image);
+  return POST<any>('/api/imagehub/uploadImageFile', formData, {
+    timeout: 30000,
+    headers: {
+      // 不设置 Content-Type，让浏览器自动处理
+      // 'Content-Type': 'multipart/form-data'
+    }
+  });
+}
+
+export const buildDockerImage = (data: any) =>
+  POST<any>('/api/imagehub/buildDockerImage', data);
+
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
 export const getImageTags = (data: { repository: string }) =>
