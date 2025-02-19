@@ -275,10 +275,13 @@ export default function AppList({
 
 // https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props#context-parameter
 export async function getServerSideProps(content: any) {
+  const forcedLanguage = process.env.FORCED_LANGUAGE;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
   const local =
+    forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
+
   content?.res.setHeader(
     'Set-Cookie',
     `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
