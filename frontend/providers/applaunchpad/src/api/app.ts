@@ -39,6 +39,12 @@ export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuot
 
 export const getNodes = () => GET<NodeInfo[]>('/api/getNodes');
 
+export const getBackupNodes = () => GET<any[]>('/api/node/getBackupNodes');
+
+export const addBackupNodes = (data: any) => POST<any>('/api/node/addBackupNodes', data);
+
+export const deleteBackupNodes = (data: any) => DELETE<any>('/api/node/deleteBackupNodes', data);
+
 export const addNodes = (data: any) => POST<any>('/api/node/addNode', data, {
   timeout: 30000 * 4
 });

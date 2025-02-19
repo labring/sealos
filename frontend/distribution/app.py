@@ -16,7 +16,7 @@ from node import add_node_to_cluster, delete_node_from_cluster
 app = Flask(__name__)
 
 # 环境变量：集群域名
-# CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
+#CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
 CLUSTER_DOMAIN = '192.168.0.134'
 # 环境变量：镜像仓库地址
 REGISTRY_URL = os.getenv('REGISTRY_URL')
@@ -27,7 +27,8 @@ REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 # 环境变量：文件保存路径
 SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：资源利用比例
-
+# 环境变量：镜像上传路径
+UPLOAD_FOLDER = '/opt/image';
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
 ENABLE_WORKLOAD_SCALING = bool(os.getenv('ENABLE_WORKLOAD_SCALING') or 'false')
 ENABLE_NODE_SCALING = bool(os.getenv('ENABLE_NODE_SCALING') or 'false')
@@ -840,6 +841,88 @@ def scale_nodes():
         scale_nodes_flag = False
         print("Error in scale_nodes: {}".format(str(e)))
 
+@app.route('/uploadImageFiles', methods=['POST'])
+def upload_and_extract():
+    # 获取上传的文件
+    uploaded_file = request.files['file']
+
+    if uploaded_file and uploaded_file.filename.endswith('.zip'):
+        # 保存上传的ZIP文件
+        zip_path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename)
+        uploaded_file.save(zip_path)
+
+        # 解压ZIP文件
+        extract_path = os.path.join(UPLOAD_FOLDER, uploaded_file.filename[:-4])  # 去掉.zip扩展名
+        os.makedirs(extract_path, exist_ok=True)
+
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+
+        # 获取解压后的第一层文件和文件夹
+        first_level_items = []
+        for item in os.listdir(extract_path):
+            full_path = os.path.join(extract_path, item)
+            if os.path.isdir(full_path):
+                first_level_items.append({'type': 'folder', 'name': item})
+            else:
+                first_level_items.append({'type': 'file', 'name': item})
+
+        return jsonify({
+            'extracted_path': extract_path,
+            'first_level_items': first_level_items
+        }), 200
+    else:
+        return jsonify({'error': 'Please upload a valid .zip file'}), 400
+
+def build_and_push_docker_image(path, namespace, imageName, version, dockerfile_content):
+    # 确保路径存在
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # 创建Dockerfile文件
+    dockerfile_path = os.path.join(path, "Dockerfile")
+    with open(dockerfile_path, 'w') as dockerfile:
+        dockerfile.write(dockerfile_content)
+
+    # 构建Docker镜像
+    image_tag = f"sealos.hub:5000/{namespace}/{imageName}:{version}"
+    build_command = ["docker", "build", "-t", image_tag, path]
+
+    try:
+        # 执行docker build命令
+        subprocess.run(build_command, check=True)
+        print(f"Docker镜像构建成功: {image_tag}")
+
+        # 如果构建成功，执行docker push命令
+        push_command = ["docker", "push", image_tag]
+        subprocess.run(push_command, check=True)
+        print(f"Docker镜像推送成功: {image_tag}")
+        return True, "镜像构建并推送成功"
+
+    except subprocess.CalledProcessError as e:
+        print(f"Docker镜像构建或推送失败: {e}")
+        return False, f"镜像构建或推送失败: {e}"
+
+@app.route('/buildDockerImage', methods=['POST'])
+def build_docker_image():
+    # 获取POST请求的参数
+    data = request.json
+    path = data.get('path')
+    namespace = data.get('namespace')
+    imageName = data.get('imageName')
+    version = data.get('version')
+    dockerfile = data.get('dockerfile')
+
+    if not all([path, namespace, imageName, version, dockerfile]):
+        return jsonify({"error": "缺少必要参数"}), 400
+
+    # 调用构建和推送镜像的方法
+    success, message = build_and_push_docker_image(path, namespace, imageName, version, dockerfile)
+
+    if success:
+        return jsonify({"message": message}), 200
+    else:
+        return jsonify({"error": message}), 500
 # 创建定时任务调度器
 if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
     scheduler = BackgroundScheduler()
