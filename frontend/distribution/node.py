@@ -1,8 +1,10 @@
 import subprocess
 import time
 
-def add_node_to_cluster(node_ip: str, cluster_name: str = 'default', user: str = '', passwd: str = '', pk: str = '', pk_passwd: str = '', port: int = 22):
+def add_node_to_cluster(node_ip: str, master_ip: str, cluster_name: str = 'default', user: str = '', passwd: str = '', pk: str = '', pk_passwd: str = '', port: int = 22):
     command = [
+        'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null',
+        '-p', str(port), master_ip,
         'sealos', 'add',
         '--nodes', node_ip,
         '--cluster', cluster_name,
@@ -48,8 +50,10 @@ def add_node_to_cluster(node_ip: str, cluster_name: str = 'default', user: str =
 # Example usage:
 # add_node_to_cluster('192.168.1.100', user='root', passwd='your_password')
 
-def delete_node_from_cluster(node_ip: str, cluster_name: str = 'default', force: bool = False):
+def delete_node_from_cluster(node_ip: str, master_ip: str, cluster_name: str = 'default', force: bool = False):
     command = [
+        'ssh', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/dev/null',
+        '-p', str(22), master_ip,
         'sealos', 'delete',
         '--nodes', node_ip,
         '--cluster', cluster_name,

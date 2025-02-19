@@ -2,7 +2,7 @@ set -e
 if [ ! -d "docker-demo" ]; then
     mkdir docker-demo
 fi
-cp Dockerfile config.json test_deploy.py docker-demo
+cp docker-demo-template/* docker-demo
 cd docker-demo
 if [ ! -d "arthas" ]; then
     curl -k --user test01:qwer@123 -o arthas.tar https://ofc0.lafyun.com:18033/arthas.tar

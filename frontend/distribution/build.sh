@@ -3,7 +3,7 @@ if [ -z "$VERSION" ]; then
     echo "VERSION is not set"
     exit 1
 fi
-cd .. && make image-build-providers/applaunchpad && cd -
+cd .. && DOCKER_BUILDKIT=1 make image-build-providers/applaunchpad && cd -
 sh package.sh
 tar zcvf app${VERSION}-light.tar.gz dist/
 
