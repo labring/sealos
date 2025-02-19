@@ -42,14 +42,23 @@ type InlineData struct {
 }
 
 type FunctionCall struct {
-	Arguments    any    `json:"args"`
-	FunctionName string `json:"name"`
+	Args map[string]any `json:"args"`
+	Name string         `json:"name"`
+}
+
+type FunctionResponse struct {
+	Name     string `json:"name"`
+	Response struct {
+		Name    string         `json:"name"`
+		Content map[string]any `json:"content"`
+	} `json:"response"`
 }
 
 type Part struct {
-	InlineData   *InlineData   `json:"inlineData,omitempty"`
-	FunctionCall *FunctionCall `json:"functionCall,omitempty"`
-	Text         string        `json:"text,omitempty"`
+	InlineData       *InlineData       `json:"inlineData,omitempty"`
+	FunctionCall     *FunctionCall     `json:"functionCall,omitempty"`
+	FunctionResponse *FunctionResponse `json:"functionResponse,omitempty"`
+	Text             string            `json:"text,omitempty"`
 }
 
 type ChatContent struct {

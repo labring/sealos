@@ -151,27 +151,72 @@ func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest)
 			Parts: make([]Part, 0),
 		}
 
-		// Process message content
-		openaiContent := message.ParseContent()
-		for _, part := range openaiContent {
-			if part.Type == model.ContentTypeImageURL {
-				imageNum++
-				if imageNum > VisionMaxImageNum {
-					continue
+		if message.Role == "assistant" && len(message.ToolCalls) > 0 {
+			for _, toolCall := range message.ToolCalls {
+				var args map[string]any
+				if toolCall.Function.Arguments != "" {
+					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+						args = make(map[string]any)
+					}
+				} else {
+					args = make(map[string]any)
 				}
+				content.Parts = append(content.Parts, Part{
+					FunctionCall: &FunctionCall{
+						Name: toolCall.Function.Name,
+						Args: args,
+					},
+				})
 			}
+		} else if message.Role == "tool" && message.ToolCallID != "" {
+			var contentMap map[string]any
+			if message.Content != nil {
+				switch content := message.Content.(type) {
+				case map[string]any:
+					contentMap = content
+				case string:
+					if err := json.Unmarshal([]byte(content), &contentMap); err != nil {
+						log.Error("unmarshal content failed: " + err.Error())
+					}
+				}
+			} else {
+				contentMap = make(map[string]any)
+			}
+			content.Parts = append(content.Parts, Part{
+				FunctionResponse: &FunctionResponse{
+					Name: *message.Name,
+					Response: struct {
+						Name    string         `json:"name"`
+						Content map[string]any `json:"content"`
+					}{
+						Name:    *message.Name,
+						Content: contentMap,
+					},
+				},
+			})
+		} else {
+			openaiContent := message.ParseContent()
+			for _, part := range openaiContent {
+				if part.Type == model.ContentTypeImageURL {
+					imageNum++
+					if imageNum > VisionMaxImageNum {
+						continue
+					}
+				}
 
-			parts, err := buildMessageParts(ctx, part)
-			if err != nil {
-				return nil, nil, err
+				parts, err := buildMessageParts(ctx, part)
+				if err != nil {
+					return nil, nil, err
+				}
+				content.Parts = append(content.Parts, parts...)
 			}
-			content.Parts = append(content.Parts, parts...)
 		}
 
-		// Convert role names
 		switch content.Role {
 		case "assistant":
 			content.Role = "model"
+		case "tool":
+			content.Role = "user"
 		case "system":
 			systemContent = &content
 			continue
@@ -214,37 +259,6 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 
 	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
-
-// func CountTokens(ctx context.Context, meta *meta.Meta, chat []*ChatContent) (int, error) {
-// 	countReq := ChatRequest{
-// 		Contents: chat,
-// 	}
-// 	countData, err := json.Marshal(countReq)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, getRequestURL(meta, "countTokens"), bytes.NewReader(countData))
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	req.Header.Set("Content-Type", "application/json")
-// 	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
-
-// 	resp, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	var tokenCount CountTokensResponse
-// 	if err := json.NewDecoder(resp.Body).Decode(&tokenCount); err != nil {
-// 		return 0, err
-// 	}
-// 	if tokenCount.Error != nil {
-// 		return 0, fmt.Errorf("count tokens error: %s, code: %d, status: %s", tokenCount.Error.Message, tokenCount.Error.Code, resp.Status)
-// 	}
-// 	return tokenCount.TotalTokens, nil
-// }
 
 type ChatResponse struct {
 	Candidates     []*ChatCandidate   `json:"candidates"`
@@ -298,7 +312,7 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 	if item.FunctionCall == nil {
 		return toolCalls
 	}
-	argsBytes, err := json.Marshal(item.FunctionCall.Arguments)
+	argsBytes, err := json.Marshal(item.FunctionCall.Args)
 	if err != nil {
 		log.Error("getToolCalls failed: " + err.Error())
 		return toolCalls
@@ -308,7 +322,7 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 		Type: "function",
 		Function: model.Function{
 			Arguments: conv.BytesToString(argsBytes),
-			Name:      item.FunctionCall.FunctionName,
+			Name:      item.FunctionCall.Name,
 		},
 	}
 	toolCalls = append(toolCalls, &toolCall)
