@@ -33,6 +33,7 @@ export const json2CronJob = (data: CronJobEditType) => {
   if (data.jobType === 'url') {
     data.imageName = 'curlimages/curl';
     data.cmdParam = `["/bin/sh", "-c", "curl ${data.url}"]`;
+    data.runCMD = '';
   }
 
   if (data.jobType === 'launchpad') {
