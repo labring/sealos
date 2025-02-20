@@ -305,9 +305,11 @@ const AppList = ({
           <Box fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
             {Title}
           </Box>
-          <Button onClick={openBackupDrawer} marginLeft={2}>备用节点</Button>
         </Flex>
-        <Button onClick={onOpen}>添加节点</Button>
+        <Flex gap={2}>
+          <Button onClick={openBackupDrawer} marginLeft={2}>备用节点</Button>
+          <Button onClick={onOpen}>添加节点</Button>
+        </Flex>
       </Flex>
 
 
