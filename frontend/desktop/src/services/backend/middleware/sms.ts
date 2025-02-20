@@ -11,6 +11,7 @@ import {
 import { isEmail } from '@/utils/crypto';
 import { EMAIL_STATUS } from '@/types/response/email';
 import { SemData } from '@/types/sem';
+import { captchaReq } from '../sms';
 
 export const filterPhoneParams = async (
   req: NextApiRequest,
@@ -139,6 +140,71 @@ export const filterCf = async (req: NextApiRequest, res: NextApiResponse, next: 
       });
   }
   return await Promise.resolve(next());
+};
+export const filterCaptcha = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  next: () => void
+) => {
+  if (
+    !global.AppConfig.desktop.auth.captcha?.enabled ||
+    (process.env.NODE_ENV === 'development' && !process.env.DEV_CAPTCHA_ENABLED)
+  ) {
+    await Promise.resolve(next());
+    return;
+  }
+  const { cfToken: captchaVerifyParam } = req.body as { cfToken?: string };
+  if (!captchaVerifyParam)
+    return jsonRes(res, {
+      message: 'captchaToken is invalid',
+      code: 400
+    });
+  const result = await captchaReq({
+    captchaVerifyParam
+  });
+  if (!result?.verifyResult)
+    return jsonRes(res, {
+      message: 'captchaToken is invalid',
+      data: {
+        result: !!result?.verifyResult,
+        code: result?.verifyCode || ''
+      },
+      code: 409
+    });
+  await Promise.resolve(next());
+};
+export const captchaSvc = async (req: NextApiRequest, res: NextApiResponse) => {
+  if (process.env.NODE_ENV === 'development' && !process.env.DEV_CAPTCHA_ENABLED) {
+    return true;
+  }
+  const { captchaToken } = req.body as { captchaToken?: string; sceneId?: string };
+
+  if (!captchaToken)
+    return jsonRes(res, {
+      message: 'captchaToken is invalid',
+      code: 400
+    });
+  const result = await captchaReq({
+    captchaVerifyParam: captchaToken
+  });
+  if (!result?.verifyResult)
+    return jsonRes(res, {
+      message: 'captchaToken is invalid',
+      data: {
+        result: !!result?.verifyResult,
+        code: result?.verifyCode || ''
+      },
+      code: 409
+    });
+  else
+    return jsonRes(res, {
+      message: 'captchaToken is valid',
+      data: {
+        result: result.verifyResult,
+        code: result?.verifyCode || ''
+      },
+      code: 203
+    });
 };
 
 // once code

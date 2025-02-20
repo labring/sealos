@@ -2,10 +2,10 @@
 import { getAppConfig } from '@/pages/api/platform/getAppConfig';
 import { retrySerially } from '@/utils/tools';
 import Dysmsapi, * as dysmsapi from '@alicloud/dysmsapi20170525';
-//@ts-ignore
-import * as OpenApi from '@alicloud/openapi-client';
-//@ts-ignore
-import * as Util from '@alicloud/tea-util';
+import * as $tea from '@alicloud/tea-typescript';
+import OpenApi, * as $OpenApi from '@alicloud/openapi-client';
+import Utils, * as $Util from '@alicloud/tea-util';
+import Captcha, * as $Captcha from '@alicloud/captcha20230305';
 import nodemailer from 'nodemailer';
 const getTransporter = () => {
   if (!global.nodemailer) {
@@ -26,7 +26,12 @@ const getTransporter = () => {
   }
   return global.nodemailer;
 };
+
 export const smsReq = async (phoneNumbers: string) => {
+  // for dev
+  if (process.env.NODE_ENV === 'development' && !process.env.DEV_SMS_ENABLED) {
+    return '123456';
+  }
   const aliConfig = global.AppConfig.desktop.auth.idp.sms?.ali;
   if (!aliConfig) throw Error('config error');
   const { signName, templateCode, accessKeyID: accessKeyId, accessKeySecret } = aliConfig;
@@ -42,13 +47,13 @@ export const smsReq = async (phoneNumbers: string) => {
     templateCode,
     templateParam: `{"code":${code}}`
   });
-  const config = new OpenApi.Config({
+  const config = new $OpenApi.Config({
     accessKeyId,
     accessKeySecret
   });
 
   const client = new Dysmsapi(config);
-  const runtime = new Util.RuntimeOptions({});
+  const runtime = new $Util.RuntimeOptions({});
   await retrySerially(async () => {
     try {
       const _result = await client.sendSmsWithOptions(sendSmsRequest, runtime);
@@ -65,8 +70,8 @@ export const smsReq = async (phoneNumbers: string) => {
       }
       if (_result.body.code !== 'OK') {
         throw new Error(`
-				${_result.body.message} 
-				${phoneNumbers}, 
+				${_result.body.message}
+				${phoneNumbers},
 				${new Date()}`);
       }
       return _result;
@@ -75,6 +80,42 @@ export const smsReq = async (phoneNumbers: string) => {
     }
   }, 3);
   return code;
+};
+
+export const captchaReq = async ({ captchaVerifyParam }: { captchaVerifyParam?: string }) => {
+  // for dev
+  const captchaConfig = global.AppConfig.desktop.auth.captcha;
+  if (!captchaConfig?.enabled) throw Error('config error');
+  const aliConfig = global.AppConfig.desktop.auth.captcha?.ali;
+  if (!aliConfig) throw Error('config error');
+  const { sceneId, accessKeyID: accessKeyId, accessKeySecret = '', endpoint } = aliConfig;
+  const captchaRequest = new $Captcha.VerifyIntelligentCaptchaRequest({});
+  captchaRequest.captchaVerifyParam = captchaVerifyParam;
+  captchaRequest.sceneId = sceneId;
+  const config = new $OpenApi.Config({
+    accessKeyId,
+    accessKeySecret,
+    endpoint
+  });
+  const client = new Captcha(config);
+  const runtime = new $Util.RuntimeOptions({});
+  return await retrySerially(async () => {
+    try {
+      const _result = await client.verifyIntelligentCaptchaWithOptions(captchaRequest, runtime);
+      if (!_result) {
+        throw new Error('captcha result is null');
+      }
+      console.log(_result);
+      if (_result.body.code !== 'Success' || !_result.body.success) {
+        throw new Error(`
+				${_result.body.message}
+				${new Date()}`);
+      }
+      return _result.body.result;
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  }, 3);
 };
 export const emailSmsReq = async (email: string) => {
   const emailConfig = global.AppConfig.desktop.auth.idp.sms?.email;
@@ -101,7 +142,7 @@ export const emailSmsReq = async (email: string) => {
 						background-color: #f0f0f0;
 						text-align: center;
 					}
-			
+
 					.container {
 						max-width: 400px;
 						margin: 50px auto;
@@ -110,17 +151,17 @@ export const emailSmsReq = async (email: string) => {
 						border-radius: 5px;
 						box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 					}
-			
+
 					h2 {
 						color: #3498db;
 					}
-			
+
 					.verification-code {
 						font-size: 24px;
 						color: #333;
 						margin-bottom: 20px;
 					}
-			
+
 					.button {
 						padding: 10px 20px;
 						background-color: #3498db;
@@ -129,7 +170,7 @@ export const emailSmsReq = async (email: string) => {
 						border-radius: 5px;
 						cursor: pointer;
 					}
-			
+
 					.button:hover {
 						background-color: #2980b9;
 					}

@@ -17,8 +17,10 @@
     "postinstall": "pnpm gen:global && pnpm gen:region"
   },
   "dependencies": {
+    "@alicloud/captcha20230305": "1.1.3",
     "@alicloud/dysmsapi20170525": "^2.0.24",
     "@alicloud/openapi-client": "^0.4.6",
+    "@alicloud/tea-typescript": "^1.8.0",
     "@alicloud/tea-util": "^1.4.7",
     "@chakra-ui/anatomy": "^2.2.1",
     "@chakra-ui/icons": "^2.1.1",

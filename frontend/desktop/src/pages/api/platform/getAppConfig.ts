@@ -52,10 +52,10 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
     const authConf = await getAuthClientConfig();
     const commonConf = await getCommonClientConfig();
     const layoutConf = await getLayoutConfig();
-    const _tracking = global.AppConfig.tracking;
+    const appConfig = global.AppConfig;
     const tracking: Required<TrackingConfigType> = {
-      websiteId: _tracking.websiteId || '',
-      hostUrl: _tracking.hostUrl || ''
+      websiteId: appConfig?.tracking?.websiteId || '',
+      hostUrl: appConfig?.tracking?.hostUrl || ''
     };
     const conf = genResConfig(cloudConf, authConf, commonConf, layoutConf, tracking);
     if (!global.commitCroner) {
