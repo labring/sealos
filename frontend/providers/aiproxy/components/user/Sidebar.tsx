@@ -31,19 +31,19 @@ const SideBar = (): JSX.Element => {
 
   const menus: Menu[] = [
     {
-      id: 'home',
-      url: '/home',
-      value: t('Sidebar.Home'),
-      icon: homeIcon,
-      activeIcon: homeIcon_a,
-      display: true
-    },
-    {
       id: 'keys',
       url: '/key',
       value: t('Sidebar.Keys'),
       icon: keysIcon,
       activeIcon: keysIcon_a,
+      display: true
+    },
+    {
+      id: 'home',
+      url: '/home',
+      value: t('Sidebar.Home'),
+      icon: homeIcon,
+      activeIcon: homeIcon_a,
       display: true
     },
     {

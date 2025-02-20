@@ -12,7 +12,13 @@
     "Keys": "API Keys"
   },
   "keyList": {
-    "title": "API Keys"
+    "title": "API Keys",
+    "invitationText1": "Limited time benefits!!",
+    "invite": "Event details",
+    "invitationText2": "Invite friends to register Sealos,",
+    "invitationText3": "Rebate immediately: 10 yuan balance!",
+    "invitationText4": "Invitation link:",
+    "invitationText5": "Click to copy"
   },
   "key": {
     "key": "API Key",
@@ -71,7 +77,6 @@
     "inputTokens": "Input Tokens",
     "outputTokens": "Output Tokens",
     "searchByContent": "Enter search keyword",
-    "status": "State",
     "statusOptions": {
       "all": "All",
       "success": "Success",

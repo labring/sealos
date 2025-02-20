@@ -12,7 +12,13 @@
     "Keys": "API Keys"
   },
   "keyList": {
-    "title": "API Keys"
+    "title": "API Keys",
+    "invitationText1": "限时福利!!",
+    "invite": "活动详情",
+    "invitationText2": "邀请好友注册 Sealos，",
+    "invitationText3": "立返 10元 余额！",
+    "invitationText4": "邀请链接：",
+    "invitationText5": "点击复制"
   },
   "key": {
     "key": "API Key",
@@ -71,7 +77,6 @@
     "inputTokens": "输入 Tokens",
     "outputTokens": "输出 Tokens",
     "searchByContent": "输入搜索关键词",
-    "status": "状态",
     "statusOptions": {
       "all": "全部",
       "success": "成功",

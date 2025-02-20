@@ -16,7 +16,13 @@ export default function InitializeApp() {
   const pathname = usePathname()
   const { lng } = useI18n()
   const { i18n } = useTranslationClientSide(lng)
-  const { setAiproxyBackend, setCurrencySymbol } = useBackendStore()
+  const {
+    setAiproxyBackend,
+    setCurrencySymbol,
+    setDocUrl,
+    setIsInvitationActive,
+    setInvitationUrl
+  } = useBackendStore()
 
   const handleI18nChange = useCallback(
     (data: { currentLanguage: string }) => {
@@ -111,9 +117,13 @@ export default function InitializeApp() {
   // init config
   const initConfig = async () => {
     try {
-      const { aiproxyBackend, currencySymbol } = await initAppConfig()
+      const { aiproxyBackend, currencySymbol, docUrl, isInvitationActive, invitationUrl } =
+        await initAppConfig()
       setAiproxyBackend(aiproxyBackend)
       setCurrencySymbol(currencySymbol)
+      setDocUrl(docUrl)
+      setIsInvitationActive(isInvitationActive)
+      setInvitationUrl(invitationUrl)
       console.info('aiproxy: init config success')
     } catch (error) {
       console.error('aiproxy: init config error:', error)

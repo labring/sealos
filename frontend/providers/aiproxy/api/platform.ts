@@ -21,9 +21,13 @@ import { DashboardResponse } from '@/types/user/dashboard'
 import { UserLogDetailResponse } from '@/app/api/user/log/detail/[log_id]/route'
 
 export const initAppConfig = () =>
-  GET<{ aiproxyBackend: string; currencySymbol: 'shellCoin' | 'cny' | 'usd' }>(
-    '/api/init-app-config'
-  )
+  GET<{
+    aiproxyBackend: string
+    currencySymbol: 'shellCoin' | 'cny' | 'usd'
+    docUrl: string
+    isInvitationActive: boolean
+    invitationUrl: string
+  }>('/api/init-app-config')
 
 // <user>
 export const getEnabledMode = () => GET<GetEnabledModelsResponse['data']>('/api/models/enabled')

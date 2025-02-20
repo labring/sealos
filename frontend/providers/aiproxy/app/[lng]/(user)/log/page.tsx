@@ -44,7 +44,7 @@ export default function Logs(): React.JSX.Element {
 
   const [startTime, setStartTime] = useState(() => {
     const currentDate = new Date()
-    currentDate.setMonth(currentDate.getMonth() - 1)
+    currentDate.setDate(currentDate.getDate() - 3)
     return currentDate
   })
   const [endTime, setEndTime] = useState(new Date())
