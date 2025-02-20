@@ -348,7 +348,7 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
                       }
                     />
                   )}
-                  {conf.authConfig?.idp.sms.enabled && conf.authConfig.idp.sms.email.enabled && (
+                  {conf.authConfig?.idp.email.enabled && (
                     <ConfigItem
                       LeftElement={<Text>{t('common:email')}</Text>}
                       RightElement={

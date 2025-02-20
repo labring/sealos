@@ -9,7 +9,7 @@ import * as Util from '@alicloud/tea-util';
 import nodemailer from 'nodemailer';
 const getTransporter = () => {
   if (!global.nodemailer) {
-    const emailConfig = global.AppConfig.desktop.auth.idp.sms?.email;
+    const emailConfig = global.AppConfig.desktop.auth.idp.email;
     if (!emailConfig) throw Error('email transporter config error');
     const transporter = nodemailer.createTransport({
       pool: true,
@@ -65,8 +65,8 @@ export const smsReq = async (phoneNumbers: string) => {
       }
       if (_result.body.code !== 'OK') {
         throw new Error(`
-				${_result.body.message} 
-				${phoneNumbers}, 
+				${_result.body.message}
+				${phoneNumbers},
 				${new Date()}`);
       }
       return _result;
@@ -77,7 +77,7 @@ export const smsReq = async (phoneNumbers: string) => {
   return code;
 };
 export const emailSmsReq = async (email: string) => {
-  const emailConfig = global.AppConfig.desktop.auth.idp.sms?.email;
+  const emailConfig = global.AppConfig.desktop.auth.idp.email;
   if (!emailConfig) throw Error('config error');
 
   const code = Math.floor(Math.random() * 900000 + 100000).toString();
@@ -101,7 +101,7 @@ export const emailSmsReq = async (email: string) => {
 						background-color: #f0f0f0;
 						text-align: center;
 					}
-			
+
 					.container {
 						max-width: 400px;
 						margin: 50px auto;
@@ -110,17 +110,17 @@ export const emailSmsReq = async (email: string) => {
 						border-radius: 5px;
 						box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 					}
-			
+
 					h2 {
 						color: #3498db;
 					}
-			
+
 					.verification-code {
 						font-size: 24px;
 						color: #333;
 						margin-bottom: 20px;
 					}
-			
+
 					.button {
 						padding: 10px 20px;
 						background-color: #3498db;
@@ -129,7 +129,7 @@ export const emailSmsReq = async (email: string) => {
 						border-radius: 5px;
 						cursor: pointer;
 					}
-			
+
 					.button:hover {
 						background-color: #2980b9;
 					}
