@@ -2,13 +2,11 @@ package openai
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
-	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkoukk/tiktoken-go"
@@ -34,28 +32,26 @@ func getTokenEncoder(model string) *tiktoken.Tiktoken {
 	tokenEncoderLock.RLock()
 	tokenEncoder, ok := tokenEncoderMap[model]
 	tokenEncoderLock.RUnlock()
-
-	if ok && tokenEncoder != nil {
-		return tokenEncoder
-	}
 	if ok {
-		tokenEncoder, err := tiktoken.EncodingForModel(model)
-		if err != nil {
-			log.Error(fmt.Sprintf("failed to get token encoder for model %s: %s, using encoder for gpt-3.5-turbo", model, err.Error()))
-			tokenEncoder = defaultTokenEncoder
-		}
-		tokenEncoderLock.Lock()
-		tokenEncoderMap[model] = tokenEncoder
-		tokenEncoderLock.Unlock()
 		return tokenEncoder
 	}
-	return defaultTokenEncoder
+
+	tokenEncoderLock.Lock()
+	defer tokenEncoderLock.Unlock()
+	if tokenEncoder, ok := tokenEncoderMap[model]; ok {
+		return tokenEncoder
+	}
+
+	tokenEncoder, err := tiktoken.EncodingForModel(model)
+	if err != nil {
+		log.Warnf("failed to get token encoder for model %s: %v, using encoder for gpt-3.5-turbo", model, err)
+		tokenEncoder = defaultTokenEncoder
+	}
+	tokenEncoderMap[model] = tokenEncoder
+	return tokenEncoder
 }
 
 func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
-	if config.GetApproximateTokenEnabled() {
-		return int(float64(len(text)) * 0.38)
-	}
 	return len(tokenEncoder.Encode(text, nil, nil))
 }
 

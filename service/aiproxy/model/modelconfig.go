@@ -10,52 +10,9 @@ import (
 	"gorm.io/gorm"
 )
 
-//nolint:revive
-type ModelConfigKey string
-
 const (
-	ModelConfigMaxContextTokensKey ModelConfigKey = "max_context_tokens"
-	ModelConfigMaxInputTokensKey   ModelConfigKey = "max_input_tokens"
-	ModelConfigMaxOutputTokensKey  ModelConfigKey = "max_output_tokens"
-	ModelConfigToolChoiceKey       ModelConfigKey = "tool_choice"
-	ModelConfigFunctionCallingKey  ModelConfigKey = "function_calling"
-	ModelConfigSupportFormatsKey   ModelConfigKey = "support_formats"
-	ModelConfigSupportVoicesKey    ModelConfigKey = "support_voices"
-)
-
-//nolint:revive
-type ModelOwner string
-
-const (
-	ModelOwnerOpenAI      ModelOwner = "openai"
-	ModelOwnerAlibaba     ModelOwner = "alibaba"
-	ModelOwnerTencent     ModelOwner = "tencent"
-	ModelOwnerXunfei      ModelOwner = "xunfei"
-	ModelOwnerDeepSeek    ModelOwner = "deepseek"
-	ModelOwnerMoonshot    ModelOwner = "moonshot"
-	ModelOwnerMiniMax     ModelOwner = "minimax"
-	ModelOwnerBaidu       ModelOwner = "baidu"
-	ModelOwnerGoogle      ModelOwner = "google"
-	ModelOwnerBAAI        ModelOwner = "baai"
-	ModelOwnerFunAudioLLM ModelOwner = "funaudiollm"
-	ModelOwnerDoubao      ModelOwner = "doubao"
-	ModelOwnerFishAudio   ModelOwner = "fishaudio"
-	ModelOwnerChatGLM     ModelOwner = "chatglm"
-	ModelOwnerStabilityAI ModelOwner = "stabilityai"
-	ModelOwnerNetease     ModelOwner = "netease"
-	ModelOwnerAI360       ModelOwner = "ai360"
-	ModelOwnerAnthropic   ModelOwner = "anthropic"
-	ModelOwnerMeta        ModelOwner = "meta"
-	ModelOwnerBaichuan    ModelOwner = "baichuan"
-	ModelOwnerMistral     ModelOwner = "mistral"
-	ModelOwnerOpenChat    ModelOwner = "openchat"
-	ModelOwnerMicrosoft   ModelOwner = "microsoft"
-	ModelOwnerDefog       ModelOwner = "defog"
-	ModelOwnerNexusFlow   ModelOwner = "nexusflow"
-	ModelOwnerCohere      ModelOwner = "cohere"
-	ModelOwnerHuggingFace ModelOwner = "huggingface"
-	ModelOwnerLingyiWanwu ModelOwner = "lingyiwanwu"
-	ModelOwnerStepFun     ModelOwner = "stepfun"
+	// /1K tokens
+	PriceUnit = 1000
 )
 
 //nolint:revive
@@ -63,14 +20,21 @@ type ModelConfig struct {
 	CreatedAt         time.Time              `gorm:"index;autoCreateTime"          json:"created_at"`
 	UpdatedAt         time.Time              `gorm:"index;autoUpdateTime"          json:"updated_at"`
 	Config            map[ModelConfigKey]any `gorm:"serializer:fastjson;type:text" json:"config,omitempty"`
-	ImagePrices       map[string]float64     `gorm:"serializer:fastjson"           json:"image_prices"`
+	ImagePrices       map[string]float64     `gorm:"serializer:fastjson"           json:"image_prices,omitempty"`
 	Model             string                 `gorm:"primaryKey"                    json:"model"`
 	Owner             ModelOwner             `gorm:"type:varchar(255);index"       json:"owner"`
-	ImageMaxBatchSize int                    `json:"image_batch_size"`
-	// relaymode/define.go
-	Type        int     `json:"type"`
-	InputPrice  float64 `json:"input_price"`
-	OutputPrice float64 `json:"output_price"`
+	ImageMaxBatchSize int                    `json:"image_batch_size,omitempty"`
+	Type              int                    `json:"type"` // relaymode/define.go
+	InputPrice        float64                `json:"input_price,omitempty"`
+	OutputPrice       float64                `json:"output_price,omitempty"`
+	RPM               int64                  `json:"rpm,omitempty"`
+	TPM               int64                  `json:"tpm,omitempty"`
+}
+
+func NewDefaultModelConfig(model string) *ModelConfig {
+	return &ModelConfig{
+		Model: model,
+	}
 }
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {
@@ -84,6 +48,34 @@ func (c *ModelConfig) MarshalJSON() ([]byte, error) {
 		CreatedAt: c.CreatedAt.UnixMilli(),
 		UpdatedAt: c.UpdatedAt.UnixMilli(),
 	})
+}
+
+func (c *ModelConfig) MaxContextTokens() (int, bool) {
+	return GetModelConfigInt(c.Config, ModelConfigMaxContextTokensKey)
+}
+
+func (c *ModelConfig) MaxInputTokens() (int, bool) {
+	return GetModelConfigInt(c.Config, ModelConfigMaxInputTokensKey)
+}
+
+func (c *ModelConfig) MaxOutputTokens() (int, bool) {
+	return GetModelConfigInt(c.Config, ModelConfigMaxOutputTokensKey)
+}
+
+func (c *ModelConfig) SupportVision() (bool, bool) {
+	return GetModelConfigBool(c.Config, ModelConfigVisionKey)
+}
+
+func (c *ModelConfig) SupportVoices() ([]string, bool) {
+	return GetModelConfigStringSlice(c.Config, ModelConfigSupportVoicesKey)
+}
+
+func (c *ModelConfig) SupportToolChoice() (bool, bool) {
+	return GetModelConfigBool(c.Config, ModelConfigToolChoiceKey)
+}
+
+func (c *ModelConfig) SupportFormats() ([]string, bool) {
+	return GetModelConfigStringSlice(c.Config, ModelConfigSupportFormatsKey)
 }
 
 func GetModelConfigs(startIdx int, num int, model string) (configs []*ModelConfig, total int64, err error) {

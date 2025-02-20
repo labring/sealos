@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"maps"
 	"net/http"
 	"slices"
@@ -10,11 +11,18 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/monitor"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
+	log "github.com/sirupsen/logrus"
 )
 
 func ChannelTypeNames(c *gin.Context) {
 	middleware.SuccessResponse(c, channeltype.ChannelNames)
+}
+
+func ChannelTypeMetas(c *gin.Context) {
+	middleware.SuccessResponse(c, channeltype.ChannelMetas)
 }
 
 func GetChannels(c *gin.Context) {
@@ -35,7 +43,7 @@ func GetChannels(c *gin.Context) {
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.GetChannels(p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.GetChannels(p*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -47,7 +55,7 @@ func GetChannels(c *gin.Context) {
 }
 
 func GetAllChannels(c *gin.Context) {
-	channels, err := model.GetAllChannels(false, false)
+	channels, err := model.GetAllChannels()
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -64,7 +72,12 @@ func AddChannels(c *gin.Context) {
 	}
 	_channels := make([]*model.Channel, 0, len(channels))
 	for _, channel := range channels {
-		_channels = append(_channels, channel.ToChannels()...)
+		channels, err := channel.ToChannels()
+		if err != nil {
+			middleware.ErrorResponse(c, http.StatusOK, err.Error())
+			return
+		}
+		_channels = append(_channels, channels...)
 	}
 	err = model.BatchInsertChannels(_channels)
 	if err != nil {
@@ -93,7 +106,7 @@ func SearchChannels(c *gin.Context) {
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, false, false, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -110,7 +123,7 @@ func GetChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
+	channel, err := model.GetChannelByID(id)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -119,19 +132,33 @@ func GetChannel(c *gin.Context) {
 }
 
 type AddChannelRequest struct {
-	ModelMapping map[string]string   `json:"model_mapping"`
-	Config       model.ChannelConfig `json:"config"`
-	Name         string              `json:"name"`
-	Key          string              `json:"key"`
-	BaseURL      string              `json:"base_url"`
-	Other        string              `json:"other"`
-	Models       []string            `json:"models"`
-	Type         int                 `json:"type"`
-	Priority     int32               `json:"priority"`
-	Status       int                 `json:"status"`
+	ModelMapping map[string]string    `json:"model_mapping"`
+	Config       *model.ChannelConfig `json:"config"`
+	Name         string               `json:"name"`
+	Key          string               `json:"key"`
+	BaseURL      string               `json:"base_url"`
+	Other        string               `json:"other"`
+	Models       []string             `json:"models"`
+	Type         int                  `json:"type"`
+	Priority     int32                `json:"priority"`
+	Status       int                  `json:"status"`
 }
 
-func (r *AddChannelRequest) ToChannel() *model.Channel {
+func (r *AddChannelRequest) ToChannel() (*model.Channel, error) {
+	channelType, ok := channeltype.GetAdaptor(r.Type)
+	if !ok {
+		return nil, fmt.Errorf("invalid channel type: %d", r.Type)
+	}
+	if validator, ok := channelType.(adaptor.KeyValidator); ok {
+		err := validator.ValidateKey(r.Key)
+		if err != nil {
+			keyHelp := validator.KeyHelp()
+			if keyHelp == "" {
+				return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w", r.Name, channeltype.ChannelNames[r.Type], r.Type, err)
+			}
+			return nil, fmt.Errorf("%s [%s(%d)] invalid key: %w, %s", r.Name, channeltype.ChannelNames[r.Type], r.Type, err, keyHelp)
+		}
+	}
 	return &model.Channel{
 		Type:         r.Type,
 		Name:         r.Name,
@@ -139,24 +166,27 @@ func (r *AddChannelRequest) ToChannel() *model.Channel {
 		BaseURL:      r.BaseURL,
 		Models:       slices.Clone(r.Models),
 		ModelMapping: maps.Clone(r.ModelMapping),
-		Config:       r.Config,
 		Priority:     r.Priority,
 		Status:       r.Status,
-	}
+		Config:       r.Config,
+	}, nil
 }
 
-func (r *AddChannelRequest) ToChannels() []*model.Channel {
+func (r *AddChannelRequest) ToChannels() ([]*model.Channel, error) {
 	keys := strings.Split(r.Key, "\n")
 	channels := make([]*model.Channel, 0, len(keys))
 	for _, key := range keys {
 		if key == "" {
 			continue
 		}
-		c := r.ToChannel()
+		c, err := r.ToChannel()
+		if err != nil {
+			return nil, err
+		}
 		c.Key = key
 		channels = append(channels, c)
 	}
-	return channels
+	return channels, nil
 }
 
 func AddChannel(c *gin.Context) {
@@ -166,7 +196,12 @@ func AddChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err = model.BatchInsertChannels(channel.ToChannels())
+	channels, err := channel.ToChannels()
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	err = model.BatchInsertChannels(channels)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -216,12 +251,20 @@ func UpdateChannel(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	ch := channel.ToChannel()
+	ch, err := channel.ToChannel()
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
 	ch.ID = id
 	err = model.UpdateChannel(ch)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
+	}
+	err = monitor.ClearChannelAllModelErrors(c.Request.Context(), id)
+	if err != nil {
+		log.Errorf("failed to clear channel all model errors: %+v", err)
 	}
 	middleware.SuccessResponse(c, ch)
 }
@@ -242,6 +285,10 @@ func UpdateChannelStatus(c *gin.Context) {
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
+	}
+	err = monitor.ClearChannelAllModelErrors(c.Request.Context(), id)
+	if err != nil {
+		log.Errorf("failed to clear channel all model errors: %+v", err)
 	}
 	middleware.SuccessResponse(c, nil)
 }

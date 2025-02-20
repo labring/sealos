@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -25,14 +24,10 @@ func NewErrUnsupportedModelType(modelType string) *UnsupportedModelTypeError {
 	return &UnsupportedModelTypeError{ModelType: modelType}
 }
 
-func BuildRequest(modelName string) (io.Reader, int, error) {
-	modelConfig, ok := model.CacheGetModelConfig(modelName)
-	if !ok {
-		return nil, relaymode.Unknown, errors.New(modelName + " model config not found")
-	}
+func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, int, error) {
 	switch modelConfig.Type {
 	case relaymode.ChatCompletions:
-		body, err := BuildChatCompletionRequest(modelName)
+		body, err := BuildChatCompletionRequest(modelConfig.Model)
 		if err != nil {
 			return nil, relaymode.Unknown, err
 		}
@@ -40,13 +35,13 @@ func BuildRequest(modelName string) (io.Reader, int, error) {
 	case relaymode.Completions:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType("completions")
 	case relaymode.Embeddings:
-		body, err := BuildEmbeddingsRequest(modelName)
+		body, err := BuildEmbeddingsRequest(modelConfig.Model)
 		if err != nil {
 			return nil, relaymode.Unknown, err
 		}
 		return body, relaymode.Embeddings, nil
 	case relaymode.Moderations:
-		body, err := BuildModerationsRequest(modelName)
+		body, err := BuildModerationsRequest(modelConfig.Model)
 		if err != nil {
 			return nil, relaymode.Unknown, err
 		}
@@ -60,7 +55,7 @@ func BuildRequest(modelName string) (io.Reader, int, error) {
 	case relaymode.Edits:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType("edits")
 	case relaymode.AudioSpeech:
-		body, err := BuildAudioSpeechRequest(modelName)
+		body, err := BuildAudioSpeechRequest(modelConfig.Model)
 		if err != nil {
 			return nil, relaymode.Unknown, err
 		}
@@ -70,7 +65,7 @@ func BuildRequest(modelName string) (io.Reader, int, error) {
 	case relaymode.AudioTranslation:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType("audio translation")
 	case relaymode.Rerank:
-		body, err := BuildRerankRequest(modelName)
+		body, err := BuildRerankRequest(modelConfig.Model)
 		if err != nil {
 			return nil, relaymode.Unknown, err
 		}
@@ -162,30 +157,4 @@ func BuildRerankRequest(model string) (io.Reader, error) {
 		return nil, err
 	}
 	return bytes.NewReader(jsonBytes), nil
-}
-
-func BuildModeDefaultPath(mode int) string {
-	switch mode {
-	case relaymode.ChatCompletions:
-		return "/v1/chat/completions"
-	case relaymode.Completions:
-		return "/v1/completions"
-	case relaymode.Embeddings:
-		return "/v1/embeddings"
-	case relaymode.Moderations:
-		return "/v1/moderations"
-	case relaymode.ImagesGenerations:
-		return "/v1/images/generations"
-	case relaymode.Edits:
-		return "/v1/edits"
-	case relaymode.AudioSpeech:
-		return "/v1/audio/speech"
-	case relaymode.AudioTranscription:
-		return "/v1/audio/transcriptions"
-	case relaymode.AudioTranslation:
-		return "/v1/audio/translations"
-	case relaymode.Rerank:
-		return "/v1/rerank"
-	}
-	return ""
 }

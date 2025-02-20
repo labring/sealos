@@ -56,7 +56,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 	_, err = c.Writer.Write(jsonData)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return &reRankResp.Usage, nil
 }

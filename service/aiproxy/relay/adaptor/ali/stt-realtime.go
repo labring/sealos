@@ -2,7 +2,6 @@ package ali
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"net/http"
 
@@ -59,29 +58,19 @@ type STTUsage struct {
 	Characters int `json:"characters"`
 }
 
-func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	err := request.ParseMultipartForm(1024 * 1024 * 4)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-
-	var audioData []byte
-	if files, ok := request.MultipartForm.File["file"]; !ok {
-		return nil, nil, errors.New("audio file is required")
-	} else if len(files) == 1 {
-		file, err := files[0].Open()
-		if err != nil {
-			return nil, nil, err
-		}
-		audioData, err = io.ReadAll(file)
-		file.Close()
-		if err != nil {
-			return nil, nil, err
-		}
-	} else {
-		return nil, nil, errors.New("audio file is required")
+	audioFile, _, err := request.FormFile("file")
+	if err != nil {
+		return "", nil, nil, err
 	}
-
+	audioData, err := io.ReadAll(audioFile)
+	if err != nil {
+		return "", nil, nil, err
+	}
 	sttRequest := STTMessage{
 		Header: STTHeader{
 			Action:    "run-task",
@@ -89,7 +78,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 			TaskID:    uuid.New().String(),
 		},
 		Payload: STTPayload{
-			Model:     meta.ActualModelName,
+			Model:     meta.ActualModel,
 			Task:      "asr",
 			TaskGroup: "audio",
 			Function:  "recognition",
@@ -103,11 +92,11 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 
 	data, err := json.Marshal(sttRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	meta.Set("audio_data", audioData)
 	meta.Set("task_id", sttRequest.Header.TaskID)
-	return http.Header{
+	return http.MethodPost, http.Header{
 		"X-DashScope-DataInspection": {"enable"},
 	}, bytes.NewReader(data), nil
 }

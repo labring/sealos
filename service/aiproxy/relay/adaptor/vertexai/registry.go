@@ -37,7 +37,7 @@ func init() {
 }
 
 type innerAIAdapter interface {
-	ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error)
+	ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error)
 	DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode)
 }
 
