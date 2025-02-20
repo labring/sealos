@@ -4,29 +4,26 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/random"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gin-gonic/gin"
 )
 
 // https://ai.google.dev/docs/gemini_api_overview?hl=zh-cn
@@ -34,6 +31,12 @@ import (
 const (
 	VisionMaxImageNum = 16
 )
+
+var toolChoiceTypeMap = map[string]string{
+	"none":     "NONE",
+	"auto":     "AUTO",
+	"required": "ANY",
+}
 
 var mimeTypeMap = map[string]string{
 	"json_object": "application/json",
@@ -52,6 +55,7 @@ func buildSafetySettings() []ChatSafetySettings {
 		{Category: "HARM_CATEGORY_HATE_SPEECH", Threshold: safetySetting},
 		{Category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", Threshold: safetySetting},
 		{Category: "HARM_CATEGORY_DANGEROUS_CONTENT", Threshold: safetySetting},
+		{Category: "HARM_CATEGORY_CIVIC_INTEGRITY", Threshold: safetySetting},
 	}
 }
 
@@ -79,6 +83,13 @@ func buildTools(textRequest *model.GeneralOpenAIRequest) []ChatTools {
 	if textRequest.Tools != nil {
 		functions := make([]model.Function, 0, len(textRequest.Tools))
 		for _, tool := range textRequest.Tools {
+			if parameters, ok := tool.Function.Parameters.(map[string]any); ok {
+				if properties, ok := parameters["properties"].(map[string]any); ok {
+					if len(properties) == 0 {
+						tool.Function.Parameters = nil
+					}
+				}
+			}
 			functions = append(functions, tool.Function)
 		}
 		return []ChatTools{{FunctionDeclarations: functions}}
@@ -87,6 +98,31 @@ func buildTools(textRequest *model.GeneralOpenAIRequest) []ChatTools {
 		return []ChatTools{{FunctionDeclarations: textRequest.Functions}}
 	}
 	return nil
+}
+
+func buildToolConfig(textRequest *model.GeneralOpenAIRequest) *ToolConfig {
+	if textRequest.ToolChoice == nil {
+		return nil
+	}
+	toolConfig := ToolConfig{
+		FunctionCallingConfig: FunctionCallingConfig{
+			Mode: "auto",
+		},
+	}
+	switch mode := textRequest.ToolChoice.(type) {
+	case string:
+		if toolChoiceType, ok := toolChoiceTypeMap[mode]; ok {
+			toolConfig.FunctionCallingConfig.Mode = toolChoiceType
+		}
+	case map[string]interface{}:
+		toolConfig.FunctionCallingConfig.Mode = "ANY"
+		if fn, ok := mode["function"].(map[string]interface{}); ok {
+			if fnName, ok := fn["name"].(string); ok {
+				toolConfig.FunctionCallingConfig.AllowedFunctionNames = []string{fnName}
+			}
+		}
+	}
+	return &toolConfig
 }
 
 func buildMessageParts(ctx context.Context, part model.MessageContent) ([]Part, error) {
@@ -110,10 +146,11 @@ func buildMessageParts(ctx context.Context, part model.MessageContent) ([]Part, 
 	return nil, nil
 }
 
-func buildContents(textRequest *model.GeneralOpenAIRequest, req *http.Request) ([]ChatContent, error) {
-	contents := make([]ChatContent, 0, len(textRequest.Messages))
-	shouldAddDummyModelMessage := false
+func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest) (*ChatContent, []*ChatContent, error) {
+	contents := make([]*ChatContent, 0, len(textRequest.Messages))
 	imageNum := 0
+
+	var systemContent *ChatContent
 
 	for _, message := range textRequest.Messages {
 		content := ChatContent{
@@ -121,134 +158,142 @@ func buildContents(textRequest *model.GeneralOpenAIRequest, req *http.Request) (
 			Parts: make([]Part, 0),
 		}
 
-		// Convert role names
+		if message.Role == "assistant" && len(message.ToolCalls) > 0 {
+			for _, toolCall := range message.ToolCalls {
+				var args map[string]any
+				if toolCall.Function.Arguments != "" {
+					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+						args = make(map[string]any)
+					}
+				} else {
+					args = make(map[string]any)
+				}
+				content.Parts = append(content.Parts, Part{
+					FunctionCall: &FunctionCall{
+						Name: toolCall.Function.Name,
+						Args: args,
+					},
+				})
+			}
+		} else if message.Role == "tool" && message.ToolCallID != "" {
+			var contentMap map[string]any
+			if message.Content != nil {
+				switch content := message.Content.(type) {
+				case map[string]any:
+					contentMap = content
+				case string:
+					if err := json.Unmarshal([]byte(content), &contentMap); err != nil {
+						log.Error("unmarshal content failed: " + err.Error())
+					}
+				}
+			} else {
+				contentMap = make(map[string]any)
+			}
+			content.Parts = append(content.Parts, Part{
+				FunctionResponse: &FunctionResponse{
+					Name: *message.Name,
+					Response: struct {
+						Name    string         `json:"name"`
+						Content map[string]any `json:"content"`
+					}{
+						Name:    *message.Name,
+						Content: contentMap,
+					},
+				},
+			})
+		} else {
+			openaiContent := message.ParseContent()
+			for _, part := range openaiContent {
+				if part.Type == model.ContentTypeImageURL {
+					imageNum++
+					if imageNum > VisionMaxImageNum {
+						continue
+					}
+				}
+
+				parts, err := buildMessageParts(ctx, part)
+				if err != nil {
+					return nil, nil, err
+				}
+				content.Parts = append(content.Parts, parts...)
+			}
+		}
+
 		switch content.Role {
 		case "assistant":
 			content.Role = "model"
-		case "system":
+		case "tool":
 			content.Role = "user"
-			shouldAddDummyModelMessage = true
+		case "system":
+			systemContent = &content
+			continue
 		}
-
-		// Process message content
-		openaiContent := message.ParseContent()
-		for _, part := range openaiContent {
-			if part.Type == model.ContentTypeImageURL {
-				imageNum++
-				if imageNum > VisionMaxImageNum {
-					continue
-				}
-			}
-
-			parts, err := buildMessageParts(req.Context(), part)
-			if err != nil {
-				return nil, err
-			}
-			content.Parts = append(content.Parts, parts...)
-		}
-
-		contents = append(contents, content)
-
-		// Add dummy model message after system message
-		if shouldAddDummyModelMessage {
-			contents = append(contents, ChatContent{
-				Role:  "model",
-				Parts: []Part{{Text: "Okay"}},
-			})
-			shouldAddDummyModelMessage = false
-		}
+		contents = append(contents, &content)
 	}
 
-	return contents, nil
+	return systemContent, contents, nil
 }
 
 // Setting safety to the lowest possible values since Gemini is already powerless enough
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	textRequest, err := utils.UnmarshalGeneralOpenAIRequest(req)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	textRequest.Model = meta.ActualModelName
+	textRequest.Model = meta.ActualModel
 	meta.Set("stream", textRequest.Stream)
 
-	contents, err := buildContents(textRequest, req)
+	systemContent, contents, err := buildContents(req.Context(), textRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-
-	tokenCount, err := CountTokens(req.Context(), meta, contents)
-	if err != nil {
-		return nil, nil, err
-	}
-	meta.PromptTokens = tokenCount
 
 	// Build actual request
 	geminiRequest := ChatRequest{
-		Contents:         contents,
-		SafetySettings:   buildSafetySettings(),
-		GenerationConfig: buildGenerationConfig(textRequest),
-		Tools:            buildTools(textRequest),
+		Contents:          contents,
+		SystemInstruction: systemContent,
+		SafetySettings:    buildSafetySettings(),
+		GenerationConfig:  buildGenerationConfig(textRequest),
+		Tools:             buildTools(textRequest),
+		ToolConfig:        buildToolConfig(textRequest),
 	}
 
 	data, err := json.Marshal(geminiRequest)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	return nil, bytes.NewReader(data), nil
-}
-
-func CountTokens(ctx context.Context, meta *meta.Meta, chat []ChatContent) (int, error) {
-	countReq := ChatRequest{
-		Contents: chat,
-	}
-	countData, err := json.Marshal(countReq)
-	if err != nil {
-		return 0, err
-	}
-	version := helper.AssignOrDefault(meta.Channel.Config.APIVersion, config.GetGeminiVersion())
-	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
-	countURL := fmt.Sprintf("%s/%s/models/%s:countTokens", u, version, meta.ActualModelName)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, countURL, bytes.NewReader(countData))
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Goog-Api-Key", meta.Channel.Key)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-
-	var tokenCount CountTokensResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenCount); err != nil {
-		return 0, err
-	}
-	if tokenCount.Error != nil {
-		return 0, fmt.Errorf("count tokens error: %s, code: %d, status: %s", tokenCount.Error.Message, tokenCount.Error.Code, resp.Status)
-	}
-	return tokenCount.TotalTokens, nil
+	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
 type ChatResponse struct {
 	Candidates     []*ChatCandidate   `json:"candidates"`
 	PromptFeedback ChatPromptFeedback `json:"promptFeedback"`
+	UsageMetadata  *UsageMetadata     `json:"usageMetadata"`
+	ModelVersion   string             `json:"modelVersion"`
+}
+
+type UsageMetadata struct {
+	PromptTokenCount     int `json:"promptTokenCount"`
+	CandidatesTokenCount int `json:"candidatesTokenCount"`
+	TotalTokenCount      int `json:"totalTokenCount"`
 }
 
 func (g *ChatResponse) GetResponseText() string {
 	if g == nil {
 		return ""
 	}
-	if len(g.Candidates) > 0 && len(g.Candidates[0].Content.Parts) > 0 {
-		return g.Candidates[0].Content.Parts[0].Text
+	builder := strings.Builder{}
+	for _, candidate := range g.Candidates {
+		for i, part := range candidate.Content.Parts {
+			if i > 0 {
+				builder.WriteString("\n")
+			}
+			builder.WriteString(part.Text)
+		}
 	}
-	return ""
+	return builder.String()
 }
 
 type ChatCandidate struct {
@@ -267,14 +312,17 @@ type ChatPromptFeedback struct {
 	SafetyRatings []ChatSafetyRating `json:"safetyRatings"`
 }
 
-func getToolCalls(candidate *ChatCandidate) []*model.Tool {
-	var toolCalls []*model.Tool
+func getToolCalls(candidate *ChatCandidate, toolCallIndex int) []*model.Tool {
+	if len(candidate.Content.Parts) <= toolCallIndex {
+		return nil
+	}
 
-	item := candidate.Content.Parts[0]
+	var toolCalls []*model.Tool
+	item := candidate.Content.Parts[toolCallIndex]
 	if item.FunctionCall == nil {
 		return toolCalls
 	}
-	argsBytes, err := json.Marshal(item.FunctionCall.Arguments)
+	argsBytes, err := json.Marshal(item.FunctionCall.Args)
 	if err != nil {
 		log.Error("getToolCalls failed: " + err.Error())
 		return toolCalls
@@ -284,18 +332,19 @@ func getToolCalls(candidate *ChatCandidate) []*model.Tool {
 		Type: "function",
 		Function: model.Function{
 			Arguments: conv.BytesToString(argsBytes),
-			Name:      item.FunctionCall.FunctionName,
+			Name:      item.FunctionCall.Name,
 		},
 	}
 	toolCalls = append(toolCalls, &toolCall)
 	return toolCalls
 }
 
-func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
+func responseGeminiChat2OpenAI(meta *meta.Meta, response *ChatResponse) *openai.TextResponse {
 	fullTextResponse := openai.TextResponse{
 		ID:      "chatcmpl-" + random.GetUUID(),
+		Model:   meta.OriginModel,
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: make([]*openai.TextResponseChoice, 0, len(response.Candidates)),
 	}
 	for i, candidate := range response.Candidates {
@@ -307,10 +356,32 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 			FinishReason: constant.StopFinishReason,
 		}
 		if len(candidate.Content.Parts) > 0 {
-			if candidate.Content.Parts[0].FunctionCall != nil {
-				choice.Message.ToolCalls = getToolCalls(candidate)
+			toolCallIndex := -1
+			for i, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					toolCallIndex = i
+					break
+				}
+			}
+			if toolCallIndex != -1 {
+				choice.Message.ToolCalls = getToolCalls(candidate, toolCallIndex)
+				content := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i == toolCallIndex {
+						continue
+					}
+					content.WriteString(part.Text)
+				}
+				choice.Message.Content = content.String()
 			} else {
-				choice.Message.Content = candidate.Content.Parts[0].Text
+				builder := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i > 0 {
+						builder.WriteString("\n")
+					}
+					builder.WriteString(part.Text)
+				}
+				choice.Message.Content = builder.String()
 			}
 		} else {
 			choice.Message.Content = ""
@@ -322,16 +393,59 @@ func responseGeminiChat2OpenAI(response *ChatResponse) *openai.TextResponse {
 }
 
 func streamResponseGeminiChat2OpenAI(meta *meta.Meta, geminiResponse *ChatResponse) *openai.ChatCompletionsStreamResponse {
-	var choice openai.ChatCompletionsStreamResponseChoice
-	choice.Delta.Content = geminiResponse.GetResponseText()
-	// choice.FinishReason = &constant.StopFinishReason
-	var response openai.ChatCompletionsStreamResponse
-	response.ID = "chatcmpl-" + random.GetUUID()
-	response.Created = helper.GetTimestamp()
-	response.Object = "chat.completion.chunk"
-	response.Model = meta.OriginModelName
-	response.Choices = []*openai.ChatCompletionsStreamResponseChoice{&choice}
-	return &response
+	response := &openai.ChatCompletionsStreamResponse{
+		ID:      "chatcmpl-" + random.GetUUID(),
+		Created: time.Now().Unix(),
+		Model:   meta.OriginModel,
+		Object:  "chat.completion.chunk",
+		Choices: make([]*openai.ChatCompletionsStreamResponseChoice, 0, len(geminiResponse.Candidates)),
+	}
+	if geminiResponse.UsageMetadata != nil {
+		response.Usage = &model.Usage{
+			PromptTokens:     geminiResponse.UsageMetadata.PromptTokenCount,
+			CompletionTokens: geminiResponse.UsageMetadata.CandidatesTokenCount,
+			TotalTokens:      geminiResponse.UsageMetadata.TotalTokenCount,
+		}
+	}
+	for i, candidate := range geminiResponse.Candidates {
+		choice := openai.ChatCompletionsStreamResponseChoice{
+			Index: i,
+		}
+		if len(candidate.Content.Parts) > 0 {
+			toolCallIndex := -1
+			for i, part := range candidate.Content.Parts {
+				if part.FunctionCall != nil {
+					toolCallIndex = i
+					break
+				}
+			}
+			if toolCallIndex != -1 {
+				choice.Delta.ToolCalls = getToolCalls(candidate, toolCallIndex)
+				content := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i == toolCallIndex {
+						continue
+					}
+					content.WriteString(part.Text)
+				}
+				choice.Delta.Content = content.String()
+			} else {
+				builder := strings.Builder{}
+				for i, part := range candidate.Content.Parts {
+					if i > 0 {
+						builder.WriteString("\n")
+					}
+					builder.WriteString(part.Text)
+				}
+				choice.Delta.Content = builder.String()
+			}
+		} else {
+			choice.Delta.Content = ""
+			choice.FinishReason = &candidate.FinishReason
+		}
+		response.Choices = append(response.Choices, &choice)
+	}
+	return response
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
@@ -340,11 +454,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	log := middleware.GetLogger(c)
 
 	responseText := strings.Builder{}
-	respContent := []ChatContent{}
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(bufio.ScanLines)
 
 	common.SetEventStreamHeaders(c)
+
+	usage := model.Usage{
+		PromptTokens: meta.InputTokens,
+	}
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -363,20 +480,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
-		for _, candidate := range geminiResponse.Candidates {
-			respContent = append(respContent, candidate.Content)
-		}
 		response := streamResponseGeminiChat2OpenAI(meta, &geminiResponse)
-		if response == nil {
-			continue
+		if response.Usage != nil {
+			usage = *response.Usage
 		}
 
 		responseText.WriteString(response.Choices[0].Delta.StringContent())
 
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -385,25 +496,11 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	render.Done(c)
 
-	usage := model.Usage{
-		PromptTokens: meta.PromptTokens,
-	}
-
-	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
-	if err != nil {
-		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(responseText.String(), meta.ActualModelName)
-	} else {
-		usage.CompletionTokens = tokenCount
-	}
-	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	return &usage, nil
 }
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
-
-	log := middleware.GetLogger(c)
 
 	var geminiResponse ChatResponse
 	err := json.NewDecoder(resp.Body).Decode(&geminiResponse)
@@ -413,24 +510,14 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if len(geminiResponse.Candidates) == 0 {
 		return nil, openai.ErrorWrapperWithMessage("No candidates returned", "gemini_error", resp.StatusCode)
 	}
-	fullTextResponse := responseGeminiChat2OpenAI(&geminiResponse)
-	fullTextResponse.Model = meta.OriginModelName
-	respContent := []ChatContent{}
-	for _, candidate := range geminiResponse.Candidates {
-		respContent = append(respContent, candidate.Content)
-	}
+	fullTextResponse := responseGeminiChat2OpenAI(meta, &geminiResponse)
+	fullTextResponse.Model = meta.OriginModel
 
 	usage := model.Usage{
-		PromptTokens: meta.PromptTokens,
+		PromptTokens:     geminiResponse.UsageMetadata.PromptTokenCount,
+		CompletionTokens: geminiResponse.UsageMetadata.CandidatesTokenCount,
+		TotalTokens:      geminiResponse.UsageMetadata.TotalTokenCount,
 	}
-	tokenCount, err := CountTokens(c.Request.Context(), meta, respContent)
-	if err != nil {
-		log.Error("count tokens failed: " + err.Error())
-		usage.CompletionTokens = openai.CountTokenText(geminiResponse.GetResponseText(), meta.ActualModelName)
-	} else {
-		usage.CompletionTokens = tokenCount
-	}
-	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	fullTextResponse.Usage = usage
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {

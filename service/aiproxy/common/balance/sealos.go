@@ -14,6 +14,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/env"
+	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/redis/go-redis/v9"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
@@ -25,6 +26,7 @@ const (
 	appType               = "LLM-TOKEN"
 	sealosRequester       = "sealos-admin"
 	sealosGroupBalanceKey = "sealos:balance:%s"
+	sealosUserRealNameKey = "sealos:realName:%s"
 	getBalanceRetry       = 3
 )
 
@@ -36,6 +38,11 @@ var (
 	jwtToken                string
 	sealosRedisCacheEnable  = env.Bool("BALANCE_SEALOS_REDIS_CACHE_ENABLE", true)
 	sealosCacheExpire       = 3 * time.Minute
+)
+
+var (
+	sealosCheckRealNameEnable       = env.Bool("BALANCE_SEALOS_CHECK_REAL_NAME_ENABLE", false)
+	sealosNoRealNameUsedAmountLimit = env.Float64("BALANCE_SEALOS_NO_REAL_NAME_USED_AMOUNT_LIMIT", 1)
 )
 
 type Sealos struct {
@@ -145,12 +152,20 @@ func cacheDecreaseGroupBalance(ctx context.Context, group string, amount int64) 
 	return decreaseGroupBalanceScript.Run(ctx, common.RDB, []string{fmt.Sprintf(sealosGroupBalanceKey, group)}, amount).Err()
 }
 
-func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
+var ErrNoRealNameUsedAmountLimit = errors.New("达到未实名用户使用额度限制，请实名认证")
+
+func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
 	var errs []error
 	for i := 0; ; i++ {
-		balance, consumer, err := s.getGroupRemainBalance(ctx, group)
+		balance, userUID, err := s.getGroupRemainBalance(ctx, group.ID)
 		if err == nil {
-			return balance, consumer, nil
+			if sealosCheckRealNameEnable &&
+				group.UsedAmount > sealosNoRealNameUsedAmountLimit &&
+				!s.checkRealName(ctx, userUID) {
+				return 0, nil, ErrNoRealNameUsedAmountLimit
+			}
+			return decimal.NewFromInt(balance).Div(decimalBalancePrecision).InexactFloat64(),
+				newSealosPostGroupConsumer(s.accountURL, group.ID, userUID), nil
 		}
 		errs = append(errs, err)
 		if i == getBalanceRetry-1 {
@@ -160,26 +175,105 @@ func (s *Sealos) GetGroupRemainBalance(ctx context.Context, group string) (float
 	}
 }
 
+func cacheGetUserRealName(ctx context.Context, userUID string) (bool, error) {
+	if !common.RedisEnabled || !sealosRedisCacheEnable {
+		return true, redis.Nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	realName, err := common.RDB.Get(ctx, fmt.Sprintf(sealosUserRealNameKey, userUID)).Bool()
+	if err != nil {
+		return false, err
+	}
+	return realName, nil
+}
+
+func cacheSetUserRealName(ctx context.Context, userUID string, realName bool) error {
+	if !common.RedisEnabled || !sealosRedisCacheEnable {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	var expireTime time.Duration
+	if realName {
+		expireTime = time.Hour * 12
+	} else {
+		expireTime = time.Minute * 1
+	}
+	return common.RDB.Set(ctx, fmt.Sprintf(sealosUserRealNameKey, userUID), realName, expireTime).Err()
+}
+
+func (s *Sealos) checkRealName(ctx context.Context, userUID string) bool {
+	if cache, err := cacheGetUserRealName(ctx, userUID); err == nil {
+		return cache
+	} else if !errors.Is(err, redis.Nil) {
+		log.Errorf("get user (%s) real name cache failed: %s", userUID, err)
+	}
+
+	realName, err := s.fetchRealNameFromAPI(ctx, userUID)
+	if err != nil {
+		log.Errorf("fetch user (%s) real name failed: %s", userUID, err)
+		return true
+	}
+
+	if err := cacheSetUserRealName(ctx, userUID, realName); err != nil {
+		log.Errorf("set user (%s) real name cache failed: %s", userUID, err)
+	}
+
+	return realName
+}
+
+type sealosGetRealNameInfoResp struct {
+	IsRealName bool   `json:"isRealName"`
+	Error      string `json:"error"`
+}
+
+func (s *Sealos) fetchRealNameFromAPI(ctx context.Context, userUID string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		fmt.Sprintf("%s/admin/v1alpha1/real-name-info?userUID=%s", s.accountURL, userUID), nil)
+	if err != nil {
+		return false, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+jwtToken)
+	resp, err := sealosHTTPClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var sealosResp sealosGetRealNameInfoResp
+	if err := json.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode != http.StatusOK || sealosResp.Error != "" {
+		return false, fmt.Errorf("get user (%s) real name failed with status code %d, error: %s", userUID, resp.StatusCode, sealosResp.Error)
+	}
+
+	return sealosResp.IsRealName, nil
+}
+
 // GroupBalance interface implementation
-func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (float64, PostGroupConsumer, error) {
+func (s *Sealos) getGroupRemainBalance(ctx context.Context, group string) (int64, string, error) {
 	if cache, err := cacheGetGroupBalance(ctx, group); err == nil && cache.UserUID != "" {
-		return decimal.NewFromInt(cache.Balance).Div(decimalBalancePrecision).InexactFloat64(),
-			newSealosPostGroupConsumer(s.accountURL, group, cache.UserUID, cache.Balance), nil
+		return cache.Balance, cache.UserUID, nil
 	} else if err != nil && !errors.Is(err, redis.Nil) {
 		log.Errorf("get group (%s) balance cache failed: %s", group, err)
 	}
 
 	balance, userUID, err := s.fetchBalanceFromAPI(ctx, group)
 	if err != nil {
-		return 0, nil, err
+		return 0, "", err
 	}
 
 	if err := cacheSetGroupBalance(ctx, group, balance, userUID); err != nil {
 		log.Errorf("set group (%s) balance cache failed: %s", group, err)
 	}
 
-	return decimal.NewFromInt(balance).Div(decimalBalancePrecision).InexactFloat64(),
-		newSealosPostGroupConsumer(s.accountURL, group, userUID, balance), nil
+	return balance, userUID, nil
 }
 
 func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance int64, userUID string, err error) {
@@ -218,20 +312,14 @@ type SealosPostGroupConsumer struct {
 	accountURL string
 	group      string
 	uid        string
-	balance    int64
 }
 
-func newSealosPostGroupConsumer(accountURL, group, uid string, balance int64) *SealosPostGroupConsumer {
+func newSealosPostGroupConsumer(accountURL, group, uid string) *SealosPostGroupConsumer {
 	return &SealosPostGroupConsumer{
 		accountURL: accountURL,
 		group:      group,
 		uid:        uid,
-		balance:    balance,
 	}
-}
-
-func (s *SealosPostGroupConsumer) GetBalance(_ context.Context) (float64, error) {
-	return decimal.NewFromInt(s.balance).Div(decimalBalancePrecision).InexactFloat64(), nil
 }
 
 func (s *SealosPostGroupConsumer) PostGroupConsume(ctx context.Context, tokenName string, usage float64) (float64, error) {

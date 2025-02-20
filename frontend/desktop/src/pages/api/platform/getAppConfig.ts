@@ -1,23 +1,24 @@
+import { getAuthClientConfig } from '@/pages/api/platform/getAuthConfig';
+import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
+import { getLayoutConfig } from '@/pages/api/platform/getLayoutConfig';
+import {
+  commitTransactionjob,
+  finishTransactionJob,
+  runTransactionjob
+} from '@/services/backend/cronjob';
 import { jsonRes } from '@/services/backend/response';
-import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   AppClientConfigType,
   AuthClientConfigType,
   CloudConfigType,
   CommonClientConfigType,
   DefaultAppClientConfig,
-  LayoutConfigType
+  LayoutConfigType,
+  TrackingConfigType
 } from '@/types/system';
-import { getCloudConfig } from '@/pages/api/platform/getCloudConfig';
-import { getAuthClientConfig } from '@/pages/api/platform/getAuthConfig';
-import { getLayoutConfig } from '@/pages/api/platform/getLayoutConfig';
-import { getCommonClientConfig } from './getCommonConfig';
 import { Cron } from 'croner';
-import {
-  commitTransactionjob,
-  finishTransactionJob,
-  runTransactionjob
-} from '@/services/backend/cronjob';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getCommonClientConfig } from './getCommonConfig';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = await getAppConfig();
@@ -31,7 +32,8 @@ function genResConfig(
   cloudConf: CloudConfigType,
   authConf: AuthClientConfigType,
   commonConf: CommonClientConfigType,
-  layoutConf: LayoutConfigType
+  layoutConf: LayoutConfigType,
+  tracking: Required<TrackingConfigType>
 ): AppClientConfigType {
   return {
     cloud: cloudConf,
@@ -39,7 +41,8 @@ function genResConfig(
     desktop: {
       auth: authConf,
       layout: layoutConf
-    }
+    },
+    tracking: tracking
   };
 }
 
@@ -49,7 +52,12 @@ export async function getAppConfig(): Promise<AppClientConfigType> {
     const authConf = await getAuthClientConfig();
     const commonConf = await getCommonClientConfig();
     const layoutConf = await getLayoutConfig();
-    const conf = genResConfig(cloudConf, authConf, commonConf, layoutConf);
+    const _tracking = global.AppConfig.tracking;
+    const tracking: Required<TrackingConfigType> = {
+      websiteId: _tracking.websiteId || '',
+      hostUrl: _tracking.hostUrl || ''
+    };
+    const conf = genResConfig(cloudConf, authConf, commonConf, layoutConf, tracking);
     if (!global.commitCroner) {
       // console.log('init commit croner');
       global.commitCroner = new Cron('* * * * * *', commitTransactionjob, {

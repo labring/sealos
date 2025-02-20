@@ -22,7 +22,6 @@ func GetLogs(c *gin.Context) {
 	} else if perPage > 100 {
 		perPage = 100
 	}
-	code, _ := strconv.Atoi(c.Query("code"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 	var startTimestampTime time.Time
@@ -35,42 +34,47 @@ func GetLogs(c *gin.Context) {
 	}
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
+	channelID, _ := strconv.Atoi(c.Query("channel"))
 	group := c.Query("group")
 	endpoint := c.Query("endpoint")
-	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
-	logs, total, err := model.GetLogs(
+	codeType := c.Query("code_type")
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
+	result, err := model.GetLogs(
+		group,
 		startTimestampTime,
 		endTimestampTime,
-		code,
 		modelName,
-		group,
 		requestID,
 		tokenID,
 		tokenName,
-		p*perPage,
-		perPage,
-		channel,
+		channelID,
 		endpoint,
-		content,
 		order,
 		mode,
+		model.CodeType(codeType),
+		withBody,
+		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
 }
 
 func GetGroupLogs(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
 	p, _ := strconv.Atoi(c.Query("p"))
 	p--
 	if p < 0 {
@@ -82,7 +86,6 @@ func GetGroupLogs(c *gin.Context) {
 	} else if perPage > 100 {
 		perPage = 100
 	}
-	code, _ := strconv.Atoi(c.Query("code"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
 	var startTimestampTime time.Time
@@ -95,39 +98,38 @@ func GetGroupLogs(c *gin.Context) {
 	}
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	group := c.Param("group")
+	channelID, _ := strconv.Atoi(c.Query("channel"))
 	endpoint := c.Query("endpoint")
-	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	order := c.Query("order")
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
-	logs, total, err := model.GetGroupLogs(
+	codeType := c.Query("code_type")
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
+	result, err := model.GetGroupLogs(
 		group,
 		startTimestampTime,
 		endTimestampTime,
-		code,
 		modelName,
 		requestID,
 		tokenID,
 		tokenName,
-		p*perPage,
-		perPage,
-		channel,
+		channelID,
 		endpoint,
-		content,
 		order,
 		mode,
+		model.CodeType(codeType),
+		withBody,
+		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
 }
 
 func SearchLogs(c *gin.Context) {
@@ -139,70 +141,10 @@ func SearchLogs(c *gin.Context) {
 	} else if perPage > 100 {
 		perPage = 100
 	}
-	code, _ := strconv.Atoi(c.Query("code"))
 	endpoint := c.Query("endpoint")
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model_name")
-	content := c.Query("content")
-	groupID := c.Query("group_id")
-	tokenID, _ := strconv.Atoi(c.Query("token_id"))
-	channel, _ := strconv.Atoi(c.Query("channel"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	order := c.Query("order")
-	requestID := c.Query("request_id")
-	mode, _ := strconv.Atoi(c.Query("mode"))
-	logs, total, err := model.SearchLogs(
-		keyword,
-		p,
-		perPage,
-		code,
-		endpoint,
-		groupID,
-		requestID,
-		tokenID,
-		tokenName,
-		modelName,
-		content,
-		startTimestampTime,
-		endTimestampTime,
-		channel,
-		order,
-		mode,
-	)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
-}
-
-func SearchGroupLogs(c *gin.Context) {
-	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	group := c.Param("group")
-	code, _ := strconv.Atoi(c.Query("code"))
-	endpoint := c.Query("endpoint")
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	content := c.Query("content")
+	group := c.Query("group_id")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	channelID, _ := strconv.Atoi(c.Query("channel"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
@@ -218,32 +160,119 @@ func SearchGroupLogs(c *gin.Context) {
 	order := c.Query("order")
 	requestID := c.Query("request_id")
 	mode, _ := strconv.Atoi(c.Query("mode"))
-	logs, total, err := model.SearchGroupLogs(
+	codeType := c.Query("code_type")
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
+	result, err := model.SearchLogs(
 		group,
 		keyword,
-		p,
-		perPage,
-		code,
 		endpoint,
 		requestID,
 		tokenID,
 		tokenName,
 		modelName,
-		content,
 		startTimestampTime,
 		endTimestampTime,
 		channelID,
 		order,
 		mode,
+		model.CodeType(codeType),
+		withBody,
+		ip,
+		p,
+		perPage,
 	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	middleware.SuccessResponse(c, gin.H{
-		"logs":  logs,
-		"total": total,
-	})
+	middleware.SuccessResponse(c, result)
+}
+
+func SearchGroupLogs(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	keyword := c.Query("keyword")
+	p, _ := strconv.Atoi(c.Query("p"))
+	perPage, _ := strconv.Atoi(c.Query("per_page"))
+	if perPage <= 0 {
+		perPage = 10
+	} else if perPage > 100 {
+		perPage = 100
+	}
+	endpoint := c.Query("endpoint")
+	tokenName := c.Query("token_name")
+	modelName := c.Query("model_name")
+	tokenID, _ := strconv.Atoi(c.Query("token_id"))
+	channelID, _ := strconv.Atoi(c.Query("channel"))
+	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
+	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	var startTimestampTime time.Time
+	if startTimestamp != 0 {
+		startTimestampTime = time.UnixMilli(startTimestamp)
+	}
+	var endTimestampTime time.Time
+	if endTimestamp != 0 {
+		endTimestampTime = time.UnixMilli(endTimestamp)
+	}
+	order := c.Query("order")
+	requestID := c.Query("request_id")
+	mode, _ := strconv.Atoi(c.Query("mode"))
+	codeType := c.Query("code_type")
+	withBody, _ := strconv.ParseBool(c.Query("with_body"))
+	ip := c.Query("ip")
+	result, err := model.SearchGroupLogs(
+		group,
+		keyword,
+		endpoint,
+		requestID,
+		tokenID,
+		tokenName,
+		modelName,
+		startTimestampTime,
+		endTimestampTime,
+		channelID,
+		order,
+		mode,
+		model.CodeType(codeType),
+		withBody,
+		ip,
+		p,
+		perPage,
+	)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, result)
+}
+
+func GetLogDetail(c *gin.Context) {
+	logID, _ := strconv.Atoi(c.Param("log_id"))
+	log, err := model.GetLogDetail(logID)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, log)
+}
+
+func GetGroupLogDetail(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	logID, _ := strconv.Atoi(c.Param("log_id"))
+	log, err := model.GetGroupLogDetail(logID, group)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, log)
 }
 
 func DeleteHistoryLogs(c *gin.Context) {

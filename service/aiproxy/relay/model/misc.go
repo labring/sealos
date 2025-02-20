@@ -1,6 +1,9 @@
 package model
 
-import "fmt"
+import (
+	json "github.com/json-iterator/go"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
+)
 
 type Usage struct {
 	PromptTokens     int `json:"prompt_tokens"`
@@ -9,25 +12,39 @@ type Usage struct {
 }
 
 type Error struct {
-	Code    any    `json:"code"`
-	Message string `json:"message"`
-	Type    string `json:"type"`
-	Param   string `json:"param"`
+	Code    any    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Type    string `json:"type,omitempty"`
+	Param   string `json:"param,omitempty"`
 }
 
-func (e *Error) String() string {
-	return fmt.Sprintf("code: %v, message: %s, type: %s, param: %s", e.Code, e.Message, e.Type, e.Param)
+func (e *Error) IsEmpty() bool {
+	return e == nil || (e.Code == nil && e.Message == "" && e.Type == "" && e.Param == "")
 }
 
-func (e *Error) Error() string {
-	return e.String()
+func (e *Error) JSONOrEmpty() string {
+	if e.IsEmpty() {
+		return ""
+	}
+	jsonBuf, err := json.Marshal(e)
+	if err != nil {
+		return ""
+	}
+	return conv.BytesToString(jsonBuf)
 }
 
 type ErrorWithStatusCode struct {
-	Error
-	StatusCode int `json:"status_code"`
+	Error      Error `json:"error"`
+	StatusCode int   `json:"-"`
 }
 
-func (e *ErrorWithStatusCode) String() string {
-	return fmt.Sprintf("%s, status_code: %d", e.Error.String(), e.StatusCode)
+func (e *ErrorWithStatusCode) JSONOrEmpty() string {
+	if e.Error.IsEmpty() {
+		return ""
+	}
+	jsonBuf, err := json.Marshal(e)
+	if err != nil {
+		return ""
+	}
+	return conv.BytesToString(jsonBuf)
 }

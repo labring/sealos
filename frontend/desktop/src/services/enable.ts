@@ -18,6 +18,7 @@ export const getBillingUrl = () => global.AppConfig.desktop.auth.billingUrl || '
 export const getWorkorderUrl = () => global.AppConfig.desktop.auth.workorderUrl || '';
 export const getCvmUrl = () => global.AppConfig.desktop.auth.cloudVitrualMachineUrl || '';
 export const getTeamLimit = () => global.AppConfig.desktop.teamManagement?.maxTeamCount || 50;
+export const enableTracking = () => !!global.AppConfig.common.trackingEnabled;
 export const getTeamInviteLimit = () =>
   global.AppConfig.desktop.teamManagement?.maxTeamMemberCount || 50;
 

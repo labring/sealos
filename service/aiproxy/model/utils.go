@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,6 +59,7 @@ func BatchRecordConsume(
 	endpoint string,
 	content string,
 	mode int,
+	ip string,
 	requestDetail *RequestDetail,
 ) error {
 	errs := []error{}
@@ -78,22 +80,29 @@ func BatchRecordConsume(
 		endpoint,
 		content,
 		mode,
+		ip,
 		requestDetail,
 	)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to record log: %w", err))
 	}
-	err = UpdateGroupUsedAmountAndRequestCount(group, amount, 1)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to update group used amount and request count: %w", err))
+	if group != "" {
+		err = UpdateGroupUsedAmountAndRequestCount(group, amount, 1)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to update group used amount and request count: %w", err))
+		}
 	}
-	err = UpdateTokenUsedAmount(tokenID, amount, 1)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to update token used amount: %w", err))
+	if tokenID > 0 {
+		err = UpdateTokenUsedAmount(tokenID, amount, 1)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to update token used amount: %w", err))
+		}
 	}
-	err = UpdateChannelUsedAmount(channelID, amount, 1)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
+	if channelID > 0 {
+		err = UpdateChannelUsedAmount(channelID, amount, 1)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
+		}
 	}
 	if len(errs) == 0 {
 		return nil
@@ -130,4 +139,15 @@ func (ns EmptyNullString) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns), nil
+}
+
+func String2Int(keyword string) int {
+	if keyword == "" {
+		return 0
+	}
+	i, err := strconv.Atoi(keyword)
+	if err != nil {
+		return 0
+	}
+	return i
 }

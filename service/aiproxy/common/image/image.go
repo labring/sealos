@@ -19,10 +19,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/labring/sealos/service/aiproxy/common"
+
 	// import webp decoder
 	_ "golang.org/x/image/webp"
-
-	"github.com/labring/sealos/service/aiproxy/common/client"
 )
 
 // Regex to match data URL pattern
@@ -37,7 +37,7 @@ func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	resp, err := client.UserContentRequestHTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return
 	}
@@ -58,6 +58,10 @@ func GetImageSizeFromURL(url string) (width int, height int, err error) {
 	return img.Width, img.Height, nil
 }
 
+const (
+	MaxImageSize = 1024 * 1024 * 5 // 5MB
+)
+
 func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	// Check if the URL is a data URL
 	matches := dataURLPattern.FindStringSubmatch(url)
@@ -70,7 +74,7 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	resp, err := client.UserContentRequestHTTPClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", "", err
 	}
@@ -78,19 +82,28 @@ func GetImageFromURL(ctx context.Context, url string) (string, string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", "", fmt.Errorf("status code: %d", resp.StatusCode)
 	}
+	isImage := IsImageURL(resp)
+	if !isImage {
+		return "", "", errors.New("not an image")
+	}
 	var buf []byte
 	if resp.ContentLength <= 0 {
-		buf, err = io.ReadAll(resp.Body)
+		buf, err = io.ReadAll(common.LimitReader(resp.Body, MaxImageSize))
+		if err != nil {
+			if errors.Is(err, common.ErrLimitedReaderExceeded) {
+				return "", "", fmt.Errorf("image too large, max: %d", MaxImageSize)
+			}
+			return "", "", fmt.Errorf("image read failed: %w", err)
+		}
 	} else {
+		if resp.ContentLength > MaxImageSize {
+			return "", "", fmt.Errorf("image too large: %d, max: %d", resp.ContentLength, MaxImageSize)
+		}
 		buf = make([]byte, resp.ContentLength)
 		_, err = io.ReadFull(resp.Body, buf)
 	}
 	if err != nil {
 		return "", "", err
-	}
-	isImage := IsImageURL(resp)
-	if !isImage {
-		return "", "", errors.New("not an image")
 	}
 	return resp.Header.Get("Content-Type"), base64.StdEncoding.EncodeToString(buf), nil
 }

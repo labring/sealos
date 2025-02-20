@@ -4,17 +4,17 @@ import (
 	"bufio"
 	"net/http"
 	"slices"
-
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/common/render"
-	"github.com/labring/sealos/service/aiproxy/middleware"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
+	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
+	"github.com/labring/sealos/service/aiproxy/relay/constant"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
@@ -26,10 +26,8 @@ func stopReasonClaude2OpenAI(reason *string) string {
 		return ""
 	}
 	switch *reason {
-	case "end_turn":
-		return "stop"
-	case "stop_sequence":
-		return "stop"
+	case "end_turn", "stop_sequence":
+		return constant.StopFinishReason
 	case "max_tokens":
 		return "length"
 	case toolUseType:
@@ -45,7 +43,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	textRequest.Model = meta.ActualModelName
+	textRequest.Model = meta.ActualModel
 	meta.Set("stream", textRequest.Stream)
 	claudeTools := make([]Tool, 0, len(textRequest.Tools))
 
@@ -256,18 +254,18 @@ func ResponseClaude2OpenAI(claudeResponse *Response) *openai.TextResponse {
 		ID:      "chatcmpl-" + claudeResponse.ID,
 		Model:   claudeResponse.Model,
 		Object:  "chat.completion",
-		Created: helper.GetTimestamp(),
+		Created: time.Now().Unix(),
 		Choices: []*openai.TextResponseChoice{&choice},
 	}
 	return &fullTextResponse
 }
 
-func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
 
-	createdTime := helper.GetTimestamp()
+	createdTime := time.Now().Unix()
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		if atEOF && len(data) == 0 {
@@ -285,9 +283,9 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 	common.SetEventStreamHeaders(c)
 
 	var usage model.Usage
-	var modelName string
 	var id string
 	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
+	var usageWrited bool
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -314,11 +312,14 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 		if meta != nil {
 			usage.PromptTokens += meta.Usage.InputTokens
 			usage.CompletionTokens += meta.Usage.OutputTokens
+			usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 			if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
-				modelName = meta.Model
 				id = "chatcmpl-" + meta.ID
 				continue
 			}
+			response.Usage = &usage
+			usageWrited = true
+
 			if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 				lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 				if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
@@ -330,7 +331,7 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 		}
 
 		response.ID = id
-		response.Model = modelName
+		response.Model = m.OriginModel
 		response.Created = createdTime
 
 		for _, choice := range response.Choices {
@@ -338,14 +339,27 @@ func StreamHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 				lastToolCallChoice = choice
 			}
 		}
-		err = render.ObjectData(c, response)
-		if err != nil {
-			log.Error("error rendering stream response: " + err.Error())
-		}
+		_ = render.ObjectData(c, response)
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Error("error reading stream: " + err.Error())
+	}
+
+	if usage.CompletionTokens == 0 && usage.PromptTokens == 0 {
+		usage.PromptTokens = m.InputTokens
+	}
+
+	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
+
+	if !usageWrited {
+		_ = render.ObjectData(c, &openai.ChatCompletionsStreamResponse{
+			Model:   m.OriginModel,
+			Object:  "chat.completion.chunk",
+			Created: createdTime,
+			Choices: []*openai.ChatCompletionsStreamResponseChoice{},
+			Usage:   &usage,
+		})
 	}
 
 	render.Done(c)
@@ -373,7 +387,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(&claudeResponse)
-	fullTextResponse.Model = meta.OriginModelName
+	fullTextResponse.Model = meta.OriginModel
 	usage := model.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,

@@ -1,21 +1,20 @@
 package controller
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/gin-gonic/gin"
 )
 
 // https://github.com/labring/sealos/service/aiproxy/issues/79
@@ -25,7 +24,7 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	if !ok {
 		return 0, fmt.Errorf("invalid channel type: %d", channel.Type)
 	}
-	if getBalance, ok := adaptorI.(adaptor.GetBalance); ok {
+	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
 		if err != nil {
 			return 0, err
@@ -48,7 +47,7 @@ func UpdateChannelBalance(c *gin.Context) {
 		})
 		return
 	}
-	channel, err := model.GetChannelByID(id, false)
+	channel, err := model.GetChannelByID(id)
 	if err != nil {
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
@@ -72,7 +71,7 @@ func UpdateChannelBalance(c *gin.Context) {
 }
 
 func updateAllChannelsBalance() error {
-	channels, err := model.GetAllChannels(false, false)
+	channels, err := model.GetAllChannels()
 	if err != nil {
 		return err
 	}
@@ -105,29 +104,30 @@ func AutomaticallyUpdateChannels(frequency int) {
 
 // subscription
 func GetSubscription(c *gin.Context) {
-	group := c.MustGet(ctxkey.Group).(*model.GroupCache)
-	b, _, err := balance.Default.GetGroupRemainBalance(c, group.ID)
+	group := middleware.GetGroup(c)
+	b, _, err := balance.Default.GetGroupRemainBalance(c, *group)
 	if err != nil {
+		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
+			middleware.ErrorResponse(c, http.StatusForbidden, err.Error())
+			return
+		}
 		log.Errorf("get group (%s) balance failed: %s", group.ID, err)
-		c.JSON(http.StatusOK, middleware.APIResponse{
-			Success: false,
-			Message: fmt.Sprintf("get group (%s) balance failed", group.ID),
-		})
+		middleware.ErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance failed", group.ID))
 		return
 	}
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
+	token := middleware.GetToken(c)
 	quota := token.Quota
 	if quota <= 0 {
 		quota = b
 	}
 	c.JSON(http.StatusOK, openai.SubscriptionResponse{
-		HardLimitUSD:       quota / 7,
-		SoftLimitUSD:       b / 7,
-		SystemHardLimitUSD: quota / 7,
+		HardLimitUSD:       quota + token.UsedAmount,
+		SoftLimitUSD:       b,
+		SystemHardLimitUSD: quota + token.UsedAmount,
 	})
 }
 
 func GetUsage(c *gin.Context) {
-	token := c.MustGet(ctxkey.Token).(*model.TokenCache)
-	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount / 7 * 100})
+	token := middleware.GetToken(c)
+	c.JSON(http.StatusOK, openai.UsageResponse{TotalUsage: token.UsedAmount * 100})
 }

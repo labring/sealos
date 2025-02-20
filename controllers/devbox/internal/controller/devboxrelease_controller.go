@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	reference "github.com/google/go-containerregistry/pkg/name"
 
@@ -85,7 +86,7 @@ func (r *DevBoxReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		err := r.CreateReleaseTag(ctx, devboxRelease)
 		if err != nil && errors.Is(err, registry.ErrorManifestNotFound) {
 			logger.Info("Manifest not found, retrying", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
-			return ctrl.Result{Requeue: true}, nil
+			return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 		} else if err != nil {
 			logger.Error(err, "Failed to create release tag", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 			devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhaseFailed
@@ -135,7 +136,7 @@ func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox) (s
 	if len(devbox.Status.CommitHistory) == 0 {
 		return "", "", "", fmt.Errorf("commit history is empty")
 	}
-	commitHistory := helper.GetLastSuccessCommitHistory(devbox)
+	commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
 	if commitHistory == nil {
 		return "", "", "", fmt.Errorf("no successful commit history found")
 	}

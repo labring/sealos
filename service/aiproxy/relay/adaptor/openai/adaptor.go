@@ -3,10 +3,8 @@ package openai
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -23,15 +21,14 @@ var _ adaptor.Adaptor = (*Adaptor)(nil)
 
 type Adaptor struct{}
 
-const baseURL = "https://api.openai.com"
+const baseURL = "https://api.openai.com/v1"
 
-const MetaBaseURLNoV1 = "base_url_no_v1"
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
-	if u == "" {
-		u = baseURL
-	}
 
 	var path string
 	switch meta.Mode {
@@ -59,11 +56,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return "", errors.New("unsupported mode")
 	}
 
-	if meta.GetBool(MetaBaseURLNoV1) ||
-		(strings.HasPrefix(u, "https://gateway.ai.cloudflare.com") && strings.HasSuffix(u, "/openai")) {
-		return u + path, nil
-	}
-	return fmt.Sprintf("%s/v1%s", u, path), nil
+	return u + path, nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
@@ -71,22 +64,22 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	return ConvertRequest(meta, req)
 }
 
-func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	if req == nil {
-		return nil, nil, errors.New("request is nil")
+		return "", nil, nil, errors.New("request is nil")
 	}
 	switch meta.Mode {
 	case relaymode.Moderations:
 		meta.Set(MetaEmbeddingsPatchInputToSlices, true)
 		return ConvertEmbeddingsRequest(meta, req)
-	case relaymode.Embeddings:
+	case relaymode.Embeddings, relaymode.Completions:
 		return ConvertEmbeddingsRequest(meta, req)
 	case relaymode.ChatCompletions:
-		return ConvertTextRequest(meta, req)
+		return ConvertTextRequest(meta, req, meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey))
 	case relaymode.ImagesGenerations:
 		return ConvertImageRequest(meta, req)
 	case relaymode.AudioTranscription, relaymode.AudioTranslation:
@@ -96,7 +89,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader,
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
@@ -112,7 +105,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.Moderations:
 		usage, err = ModerationsHandler(meta, c, resp)
-	case relaymode.Embeddings:
+	case relaymode.Embeddings, relaymode.Completions:
 		fallthrough
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
@@ -128,25 +121,25 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 
 const DoNotPatchStreamOptionsIncludeUsageMetaKey = "do_not_patch_stream_options_include_usage"
 
-func ConvertTextRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertTextRequest(meta *meta.Meta, req *http.Request, doNotPatchStreamOptionsIncludeUsage bool) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
-	if !meta.GetBool(DoNotPatchStreamOptionsIncludeUsageMetaKey) {
+	if !doNotPatchStreamOptionsIncludeUsage {
 		if err := patchStreamOptions(reqMap); err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func patchStreamOptions(reqMap map[string]any) error {

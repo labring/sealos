@@ -23,19 +23,29 @@ const channelName = "vertexai"
 
 type Adaptor struct{}
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
-	adaptor := GetAdaptor(meta.ActualModelName)
+func (a *Adaptor) GetBaseURL() string {
+	return ""
+}
+
+type Config struct {
+	Region    string
+	ProjectID string
+	ADCJSON   string
+}
+
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
+	adaptor := GetAdaptor(meta.ActualModel)
 	if adaptor == nil {
-		return nil, nil, errors.New("adaptor not found")
+		return "", nil, nil, errors.New("adaptor not found")
 	}
 
 	return adaptor.ConvertRequest(meta, request)
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	adaptor := GetAdaptor(meta.ActualModelName)
+	adaptor := GetAdaptor(meta.ActualModel)
 	if adaptor == nil {
-		return nil, openai.ErrorWrapperWithMessage(meta.ActualModelName+" adaptor not found", "adaptor_not_found", http.StatusInternalServerError)
+		return nil, openai.ErrorWrapperWithMessage(meta.ActualModel+" adaptor not found", "adaptor_not_found", http.StatusInternalServerError)
 	}
 	return adaptor.DoResponse(meta, c, resp)
 }
@@ -50,7 +60,7 @@ func (a *Adaptor) GetChannelName() string {
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	var suffix string
-	if strings.HasPrefix(meta.ActualModelName, "gemini") {
+	if strings.HasPrefix(meta.ActualModel, "gemini") {
 		if meta.GetBool("stream") {
 			suffix = "streamGenerateContent?alt=sse"
 		} else {
@@ -64,28 +74,37 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		}
 	}
 
+	config, err := getConfigFromKey(meta.Channel.Key)
+	if err != nil {
+		return "", err
+	}
+
 	if meta.Channel.BaseURL != "" {
 		return fmt.Sprintf(
 			"%s/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
 			meta.Channel.BaseURL,
-			meta.Channel.Config.VertexAIProjectID,
-			meta.Channel.Config.Region,
-			meta.ActualModelName,
+			config.ProjectID,
+			config.Region,
+			meta.ActualModel,
 			suffix,
 		), nil
 	}
 	return fmt.Sprintf(
 		"https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:%s",
-		meta.Channel.Config.Region,
-		meta.Channel.Config.VertexAIProjectID,
-		meta.Channel.Config.Region,
-		meta.ActualModelName,
+		config.Region,
+		config.ProjectID,
+		config.Region,
+		meta.ActualModel,
 		suffix,
 	), nil
 }
 
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
-	token, err := getToken(context.Background(), meta.Channel.ID, meta.Channel.Config.VertexAIADC)
+	config, err := getConfigFromKey(meta.Channel.Key)
+	if err != nil {
+		return err
+	}
+	token, err := getToken(context.Background(), meta.Channel.ID, config.ADCJSON)
 	if err != nil {
 		return err
 	}

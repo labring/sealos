@@ -5,13 +5,11 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 
 	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
-	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type GeneralErrorResponse struct {
@@ -60,7 +58,7 @@ const (
 	ErrorCodeBadResponse = "bad_response"
 )
 
-func RelayErrorHandler(meta *meta.Meta, resp *http.Response) *model.ErrorWithStatusCode {
+func RelayErrorHandler(_ *meta.Meta, resp *http.Response) *model.ErrorWithStatusCode {
 	if resp == nil {
 		return &model.ErrorWithStatusCode{
 			StatusCode: 500,
@@ -71,36 +69,7 @@ func RelayErrorHandler(meta *meta.Meta, resp *http.Response) *model.ErrorWithSta
 			},
 		}
 	}
-	switch meta.Mode {
-	case relaymode.Rerank:
-		return RerankErrorHandler(resp)
-	default:
-		return RelayDefaultErrorHanlder(resp)
-	}
-}
-
-func RerankErrorHandler(resp *http.Response) *model.ErrorWithStatusCode {
-	defer resp.Body.Close()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return &model.ErrorWithStatusCode{
-			StatusCode: resp.StatusCode,
-			Error: model.Error{
-				Message: err.Error(),
-				Type:    ErrorTypeUpstream,
-				Code:    ErrorCodeBadResponse,
-			},
-		}
-	}
-	trimmedRespBody := strings.Trim(conv.BytesToString(respBody), "\"")
-	return &model.ErrorWithStatusCode{
-		StatusCode: resp.StatusCode,
-		Error: model.Error{
-			Message: trimmedRespBody,
-			Type:    ErrorTypeUpstream,
-			Code:    ErrorCodeBadResponse,
-		},
-	}
+	return RelayDefaultErrorHanlder(resp)
 }
 
 func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
@@ -126,11 +95,21 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 			Param:   strconv.Itoa(resp.StatusCode),
 		},
 	}
+
 	var errResponse GeneralErrorResponse
 	err = json.Unmarshal(respBody, &errResponse)
 	if err != nil {
-		return ErrorWithStatusCode
+		var errsResp []GeneralErrorResponse
+		err = json.Unmarshal(respBody, &errsResp)
+		if err != nil {
+			ErrorWithStatusCode.Error.Message = conv.BytesToString(respBody)
+			return ErrorWithStatusCode
+		}
+		if len(errsResp) > 0 {
+			errResponse = errsResp[0]
+		}
 	}
+
 	if errResponse.Error.Message != "" {
 		// OpenAI format error, so we override the default one
 		ErrorWithStatusCode.Error = errResponse.Error

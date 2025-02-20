@@ -87,13 +87,23 @@ func SearchModelConfigs(c *gin.Context) {
 	})
 }
 
+type SaveModelConfigsRequest struct {
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
+	*model.ModelConfig
+}
+
 func SaveModelConfigs(c *gin.Context) {
-	var configs []*model.ModelConfig
+	var configs []*SaveModelConfigsRequest
 	if err := c.ShouldBindJSON(&configs); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err := model.SaveModelConfigs(configs)
+	modelConfigs := make([]*model.ModelConfig, len(configs))
+	for i, config := range configs {
+		modelConfigs[i] = config.ModelConfig
+	}
+	err := model.SaveModelConfigs(modelConfigs)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -102,12 +112,12 @@ func SaveModelConfigs(c *gin.Context) {
 }
 
 func SaveModelConfig(c *gin.Context) {
-	var config model.ModelConfig
+	var config SaveModelConfigsRequest
 	if err := c.ShouldBindJSON(&config); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err := model.SaveModelConfig(&config)
+	err := model.SaveModelConfig(config.ModelConfig)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
