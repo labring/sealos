@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --ignore-preflight-errors=all --yes"
+	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --ignore-preflight-errors=all --yes %s"
 	upradeNodeCmd   = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
@@ -110,7 +110,7 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		//install kubeadm:{version} at master0
 		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 		//execute  kubeadm upgrade apply {version} at master0
-		fmt.Sprintf(upgradeApplyCmd),
+		fmt.Sprintf(upgradeApplyCmd, version),
 		//kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
 		//install kubelet:{version},kubectl{version} at master0
