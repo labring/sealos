@@ -559,12 +559,20 @@ func buildSearchLogsQuery(
 			values = append(values, keyword)
 		}
 		if tokenName == "" {
-			conditions = append(conditions, "token_name = ?")
-			values = append(values, keyword)
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "token_name ILIKE ?")
+			} else {
+				conditions = append(conditions, "token_name LIKE ?")
+			}
+			values = append(values, keyword+"%")
 		}
 		if modelName == "" {
-			conditions = append(conditions, "model = ?")
-			values = append(values, keyword)
+			if common.UsingPostgreSQL {
+				conditions = append(conditions, "model ILIKE ?")
+			} else {
+				conditions = append(conditions, "model LIKE ?")
+			}
+			values = append(values, keyword+"%")
 		}
 
 		if ip != "" {
@@ -581,12 +589,13 @@ func buildSearchLogsQuery(
 		// 	values = append(values, "%"+keyword+"%")
 		// }
 
-		if common.UsingPostgreSQL {
-			conditions = append(conditions, "content ILIKE ?")
-		} else {
-			conditions = append(conditions, "content LIKE ?")
-		}
-		values = append(values, "%"+keyword+"%")
+		// slow query
+		// if common.UsingPostgreSQL {
+		// 	conditions = append(conditions, "content ILIKE ?")
+		// } else {
+		// 	conditions = append(conditions, "content LIKE ?")
+		// }
+		// values = append(values, "%"+keyword+"%")
 
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
