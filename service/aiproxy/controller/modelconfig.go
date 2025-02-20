@@ -2,7 +2,6 @@ package controller
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/middleware"
@@ -10,19 +9,9 @@ import (
 )
 
 func GetModelConfigs(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+	page, perPage := parsePageParams(c)
 	_model := c.Query("model")
-	configs, total, err := model.GetModelConfigs(p*perPage, perPage, _model)
+	configs, total, err := model.GetModelConfigs(page*perPage, perPage, _model)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -63,20 +52,10 @@ func GetModelConfigsByModelsContains(c *gin.Context) {
 
 func SearchModelConfigs(c *gin.Context) {
 	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+	page, perPage := parsePageParams(c)
 	_model := c.Query("model")
 	owner := c.Query("owner")
-	configs, total, err := model.SearchModelConfigs(keyword, p*perPage, perPage, _model, model.ModelOwner(owner))
+	configs, total, err := model.SearchModelConfigs(keyword, page*perPage, perPage, _model, model.ModelOwner(owner))
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

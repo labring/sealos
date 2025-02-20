@@ -543,6 +543,14 @@ func buildSearchLogsQuery(
 			conditions = append(conditions, "group_id = ?")
 			values = append(values, keyword)
 		}
+		if tokenName == "" {
+			conditions = append(conditions, "token_name = ?")
+			values = append(values, keyword)
+		}
+		if requestID == "" {
+			conditions = append(conditions, "request_id = ?")
+			values = append(values, keyword)
+		}
 
 		if num := String2Int(keyword); num != 0 {
 			if channelID == 0 {
@@ -554,25 +562,9 @@ func buildSearchLogsQuery(
 				values = append(values, num)
 			}
 		}
-		if requestID == "" {
-			conditions = append(conditions, "request_id = ?")
-			values = append(values, keyword)
-		}
-		if tokenName == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "token_name ILIKE ?")
-			} else {
-				conditions = append(conditions, "token_name LIKE ?")
-			}
-			values = append(values, keyword+"%")
-		}
 		if modelName == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "model ILIKE ?")
-			} else {
-				conditions = append(conditions, "model LIKE ?")
-			}
-			values = append(values, keyword+"%")
+			conditions = append(conditions, "model = ?")
+			values = append(values, keyword)
 		}
 
 		if ip != "" {

@@ -15,6 +15,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
+// TokenResponse represents the response structure for token endpoints
 type TokenResponse struct {
 	*model.Token
 	AccessedAt time.Time `json:"accessed_at"`
@@ -35,198 +36,23 @@ func (t *TokenResponse) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func GetTokens(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
+type (
+	AddTokenRequest struct {
+		Name      string   `json:"name"`
+		Subnet    string   `json:"subnet"`
+		Models    []string `json:"models"`
+		ExpiredAt int64    `json:"expiredAt"`
+		Quota     float64  `json:"quota"`
 	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	group := c.Query("group")
-	order := c.Query("order")
-	status, _ := strconv.Atoi(c.Query("status"))
-	tokens, total, err := model.GetTokens(group, p*perPage, perPage, order, status)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	tokenResponses := make([]*TokenResponse, len(tokens))
-	for i, token := range tokens {
-		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
-		tokenResponses[i] = &TokenResponse{
-			Token:      token,
-			AccessedAt: lastRequestAt,
-		}
-	}
-	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokenResponses,
-		"total":  total,
-	})
-}
 
-func GetGroupTokens(c *gin.Context) {
-	group := c.Param("group")
-	if group == "" {
-		middleware.ErrorResponse(c, http.StatusOK, "group is required")
-		return
+	UpdateTokenStatusRequest struct {
+		Status int `json:"status"`
 	}
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	order := c.Query("order")
-	status, _ := strconv.Atoi(c.Query("status"))
-	tokens, total, err := model.GetTokens(group, p*perPage, perPage, order, status)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	tokenResponses := make([]*TokenResponse, len(tokens))
-	for i, token := range tokens {
-		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
-		tokenResponses[i] = &TokenResponse{
-			Token:      token,
-			AccessedAt: lastRequestAt,
-		}
-	}
-	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokenResponses,
-		"total":  total,
-	})
-}
 
-func SearchTokens(c *gin.Context) {
-	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
+	UpdateTokenNameRequest struct {
+		Name string `json:"name"`
 	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	order := c.Query("order")
-	name := c.Query("name")
-	key := c.Query("key")
-	status, _ := strconv.Atoi(c.Query("status"))
-	group := c.Query("group")
-	tokens, total, err := model.SearchTokens(group, keyword, p*perPage, perPage, order, status, name, key)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	tokenResponses := make([]*TokenResponse, len(tokens))
-	for i, token := range tokens {
-		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
-		tokenResponses[i] = &TokenResponse{
-			Token:      token,
-			AccessedAt: lastRequestAt,
-		}
-	}
-	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokenResponses,
-		"total":  total,
-	})
-}
-
-func SearchGroupTokens(c *gin.Context) {
-	group := c.Param("group")
-	if group == "" {
-		middleware.ErrorResponse(c, http.StatusOK, "group is required")
-		return
-	}
-	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	order := c.Query("order")
-	name := c.Query("name")
-	key := c.Query("key")
-	status, _ := strconv.Atoi(c.Query("status"))
-	tokens, total, err := model.SearchTokens(group, keyword, p*perPage, perPage, order, status, name, key)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	tokenResponses := make([]*TokenResponse, len(tokens))
-	for i, token := range tokens {
-		lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
-		tokenResponses[i] = &TokenResponse{
-			Token:      token,
-			AccessedAt: lastRequestAt,
-		}
-	}
-	middleware.SuccessResponse(c, gin.H{
-		"tokens": tokenResponses,
-		"total":  total,
-	})
-}
-
-func GetToken(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token, err := model.GetTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	lastRequestAt, _ := model.GetTokenLastRequestTime(id)
-	tokenResponse := &TokenResponse{
-		Token:      token,
-		AccessedAt: lastRequestAt,
-	}
-	middleware.SuccessResponse(c, tokenResponse)
-}
-
-func GetGroupToken(c *gin.Context) {
-	group := c.Param("group")
-	if group == "" {
-		middleware.ErrorResponse(c, http.StatusOK, "group is required")
-		return
-	}
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token, err := model.GetGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	lastRequestAt, _ := model.GetTokenLastRequestTime(id)
-	tokenResponse := &TokenResponse{
-		Token:      token,
-		AccessedAt: lastRequestAt,
-	}
-	middleware.SuccessResponse(c, tokenResponse)
-}
+)
 
 func validateToken(token AddTokenRequest) error {
 	if token.Name == "" {
@@ -236,278 +62,11 @@ func validateToken(token AddTokenRequest) error {
 		return errors.New("token name is too long")
 	}
 	if token.Subnet != "" {
-		err := network.IsValidSubnets(token.Subnet)
-		if err != nil {
+		if err := network.IsValidSubnets(token.Subnet); err != nil {
 			return fmt.Errorf("invalid subnet: %w", err)
 		}
 	}
 	return nil
-}
-
-type AddTokenRequest struct {
-	Name      string   `json:"name"`
-	Subnet    string   `json:"subnet"`
-	Models    []string `json:"models"`
-	ExpiredAt int64    `json:"expiredAt"`
-	Quota     float64  `json:"quota"`
-}
-
-func AddToken(c *gin.Context) {
-	group := c.Param("group")
-	token := AddTokenRequest{}
-	err := c.ShouldBindJSON(&token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = validateToken(token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
-		return
-	}
-
-	var expiredAt time.Time
-	if token.ExpiredAt == 0 {
-		expiredAt = time.Time{}
-	} else {
-		expiredAt = time.UnixMilli(token.ExpiredAt)
-	}
-
-	cleanToken := &model.Token{
-		GroupID:   group,
-		Name:      model.EmptyNullString(token.Name),
-		Key:       random.GenerateKey(),
-		ExpiredAt: expiredAt,
-		Quota:     token.Quota,
-		Models:    token.Models,
-		Subnet:    token.Subnet,
-	}
-	err = model.InsertToken(cleanToken, c.Query("auto_create_group") == "true")
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, &TokenResponse{
-		Token: cleanToken,
-	})
-}
-
-func DeleteToken(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = model.DeleteTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
-}
-
-func DeleteTokens(c *gin.Context) {
-	ids := []int{}
-	err := c.ShouldBindJSON(&ids)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = model.DeleteTokensByIDs(ids)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
-}
-
-func DeleteGroupToken(c *gin.Context) {
-	group := c.Param("group")
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = model.DeleteGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
-}
-
-func DeleteGroupTokens(c *gin.Context) {
-	group := c.Param("group")
-	ids := []int{}
-	err := c.ShouldBindJSON(&ids)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = model.DeleteGroupTokensByIDs(group, ids)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
-}
-
-func UpdateToken(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token := AddTokenRequest{}
-	err = c.ShouldBindJSON(&token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = validateToken(token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
-		return
-	}
-	cleanToken, err := model.GetTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	expiredAt := time.Time{}
-	if token.ExpiredAt != 0 {
-		expiredAt = time.UnixMilli(token.ExpiredAt)
-	}
-	cleanToken.Name = model.EmptyNullString(token.Name)
-	cleanToken.ExpiredAt = expiredAt
-	cleanToken.Quota = token.Quota
-	cleanToken.Models = token.Models
-	cleanToken.Subnet = token.Subnet
-	err = model.UpdateToken(cleanToken)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, &TokenResponse{
-		Token: cleanToken,
-	})
-}
-
-func UpdateGroupToken(c *gin.Context) {
-	group := c.Param("group")
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token := AddTokenRequest{}
-	err = c.ShouldBindJSON(&token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	err = validateToken(token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
-		return
-	}
-	cleanToken, err := model.GetGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	expiredAt := time.Time{}
-	if token.ExpiredAt != 0 {
-		expiredAt = time.UnixMilli(token.ExpiredAt)
-	}
-	cleanToken.Name = model.EmptyNullString(token.Name)
-	cleanToken.ExpiredAt = expiredAt
-	cleanToken.Quota = token.Quota
-	cleanToken.Models = token.Models
-	cleanToken.Subnet = token.Subnet
-	err = model.UpdateToken(cleanToken)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, &TokenResponse{
-		Token: cleanToken,
-	})
-}
-
-type UpdateTokenStatusRequest struct {
-	Status int `json:"status"`
-}
-
-func UpdateTokenStatus(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token := UpdateTokenStatusRequest{}
-	err = c.ShouldBindJSON(&token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	cleanToken, err := model.GetTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-
-	if token.Status == model.TokenStatusEnabled {
-		if err := validateTokenStatus(cleanToken); err != nil {
-			middleware.ErrorResponse(c, http.StatusOK, err.Error())
-			return
-		}
-	}
-
-	err = model.UpdateTokenStatus(id, token.Status)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
-}
-
-type UpdateGroupTokenStatusRequest struct {
-	UpdateTokenStatusRequest
-}
-
-func UpdateGroupTokenStatus(c *gin.Context) {
-	group := c.Param("group")
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	token := UpdateTokenStatusRequest{}
-	err = c.ShouldBindJSON(&token)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	cleanToken, err := model.GetGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-
-	if token.Status == model.TokenStatusEnabled {
-		if err := validateTokenStatus(cleanToken); err != nil {
-			middleware.ErrorResponse(c, http.StatusOK, err.Error())
-			return
-		}
-	}
-
-	err = model.UpdateGroupTokenStatus(group, id, token.Status)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-	middleware.SuccessResponse(c, nil)
 }
 
 func validateTokenStatus(token *model.Token) error {
@@ -520,8 +79,404 @@ func validateTokenStatus(token *model.Token) error {
 	return nil
 }
 
-type UpdateTokenNameRequest struct {
-	Name string `json:"name"`
+func buildTokenResponse(token *model.Token) *TokenResponse {
+	lastRequestAt, _ := model.GetTokenLastRequestTime(token.ID)
+	return &TokenResponse{
+		Token:      token,
+		AccessedAt: lastRequestAt,
+	}
+}
+
+func buildTokenResponses(tokens []*model.Token) []*TokenResponse {
+	responses := make([]*TokenResponse, len(tokens))
+	for i, token := range tokens {
+		responses[i] = buildTokenResponse(token)
+	}
+	return responses
+}
+
+// Token list handlers
+func GetTokens(c *gin.Context) {
+	page, perPage := parsePageParams(c)
+	group := c.Query("group")
+	order := c.Query("order")
+	status, _ := strconv.Atoi(c.Query("status"))
+
+	tokens, total, err := model.GetTokens(group, page*perPage, perPage, order, status)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, gin.H{
+		"tokens": buildTokenResponses(tokens),
+		"total":  total,
+	})
+}
+
+func GetGroupTokens(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+
+	page, perPage := parsePageParams(c)
+	order := c.Query("order")
+	status, _ := strconv.Atoi(c.Query("status"))
+
+	tokens, total, err := model.GetTokens(group, page*perPage, perPage, order, status)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, gin.H{
+		"tokens": buildTokenResponses(tokens),
+		"total":  total,
+	})
+}
+
+func SearchTokens(c *gin.Context) {
+	page, perPage := parsePageParams(c)
+	keyword := c.Query("keyword")
+	order := c.Query("order")
+	name := c.Query("name")
+	key := c.Query("key")
+	status, _ := strconv.Atoi(c.Query("status"))
+	group := c.Query("group")
+
+	tokens, total, err := model.SearchTokens(group, keyword, page*perPage, perPage, order, status, name, key)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, gin.H{
+		"tokens": buildTokenResponses(tokens),
+		"total":  total,
+	})
+}
+
+func SearchGroupTokens(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+
+	page, perPage := parsePageParams(c)
+	keyword := c.Query("keyword")
+	order := c.Query("order")
+	name := c.Query("name")
+	key := c.Query("key")
+	status, _ := strconv.Atoi(c.Query("status"))
+
+	tokens, total, err := model.SearchTokens(group, keyword, page*perPage, perPage, order, status, name, key)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, gin.H{
+		"tokens": buildTokenResponses(tokens),
+		"total":  total,
+	})
+}
+
+// Single token handlers
+func GetToken(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	token, err := model.GetTokenByID(id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, buildTokenResponse(token))
+}
+
+func GetGroupToken(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	token, err := model.GetGroupTokenByID(group, id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, buildTokenResponse(token))
+}
+
+func AddToken(c *gin.Context) {
+	group := c.Param("group")
+	var req AddTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := validateToken(req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
+		return
+	}
+
+	var expiredAt time.Time
+	if req.ExpiredAt > 0 {
+		expiredAt = time.UnixMilli(req.ExpiredAt)
+	}
+
+	token := &model.Token{
+		GroupID:   group,
+		Name:      model.EmptyNullString(req.Name),
+		Key:       random.GenerateKey(),
+		ExpiredAt: expiredAt,
+		Quota:     req.Quota,
+		Models:    req.Models,
+		Subnet:    req.Subnet,
+	}
+
+	if err := model.InsertToken(token, c.Query("auto_create_group") == "true"); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, &TokenResponse{Token: token})
+}
+
+// Delete handlers
+func DeleteToken(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := model.DeleteTokenByID(id); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
+}
+
+func DeleteTokens(c *gin.Context) {
+	var ids []int
+	if err := c.ShouldBindJSON(&ids); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := model.DeleteTokensByIDs(ids); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
+}
+
+func DeleteGroupToken(c *gin.Context) {
+	group := c.Param("group")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := model.DeleteGroupTokenByID(group, id); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
+}
+
+func DeleteGroupTokens(c *gin.Context) {
+	group := c.Param("group")
+	var ids []int
+	if err := c.ShouldBindJSON(&ids); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := model.DeleteGroupTokensByIDs(group, ids); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
+}
+
+// Update handlers
+func UpdateToken(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var req AddTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := validateToken(req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
+		return
+	}
+
+	token, err := model.GetTokenByID(id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var expiredAt time.Time
+	if req.ExpiredAt > 0 {
+		expiredAt = time.UnixMilli(req.ExpiredAt)
+	}
+
+	token.Name = model.EmptyNullString(req.Name)
+	token.ExpiredAt = expiredAt
+	token.Quota = req.Quota
+	token.Models = req.Models
+	token.Subnet = req.Subnet
+
+	if err := model.UpdateToken(token); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, &TokenResponse{Token: token})
+}
+
+func UpdateGroupToken(c *gin.Context) {
+	group := c.Param("group")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var req AddTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if err := validateToken(req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
+		return
+	}
+
+	token, err := model.GetGroupTokenByID(group, id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var expiredAt time.Time
+	if req.ExpiredAt > 0 {
+		expiredAt = time.UnixMilli(req.ExpiredAt)
+	}
+
+	token.Name = model.EmptyNullString(req.Name)
+	token.ExpiredAt = expiredAt
+	token.Quota = req.Quota
+	token.Models = req.Models
+	token.Subnet = req.Subnet
+
+	if err := model.UpdateToken(token); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, &TokenResponse{Token: token})
+}
+
+func UpdateTokenStatus(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var req UpdateTokenStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	token, err := model.GetTokenByID(id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if req.Status == model.TokenStatusEnabled {
+		if err := validateTokenStatus(token); err != nil {
+			middleware.ErrorResponse(c, http.StatusOK, err.Error())
+			return
+		}
+	}
+
+	if err := model.UpdateTokenStatus(id, req.Status); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
+}
+
+func UpdateGroupTokenStatus(c *gin.Context) {
+	group := c.Param("group")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	var req UpdateTokenStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	token, err := model.GetGroupTokenByID(group, id)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	if req.Status == model.TokenStatusEnabled {
+		if err := validateTokenStatus(token); err != nil {
+			middleware.ErrorResponse(c, http.StatusOK, err.Error())
+			return
+		}
+	}
+
+	if err := model.UpdateGroupTokenStatus(group, id, req.Status); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+
+	middleware.SuccessResponse(c, nil)
 }
 
 func UpdateTokenName(c *gin.Context) {
@@ -530,17 +485,18 @@ func UpdateTokenName(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	name := UpdateTokenNameRequest{}
-	err = c.ShouldBindJSON(&name)
-	if err != nil {
+
+	var req UpdateTokenNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err = model.UpdateTokenName(id, name.Name)
-	if err != nil {
+
+	if err := model.UpdateTokenName(id, req.Name); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+
 	middleware.SuccessResponse(c, nil)
 }
 
@@ -551,16 +507,17 @@ func UpdateGroupTokenName(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	name := UpdateTokenNameRequest{}
-	err = c.ShouldBindJSON(&name)
-	if err != nil {
+
+	var req UpdateTokenNameRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
-	err = model.UpdateGroupTokenName(group, id, name.Name)
-	if err != nil {
+
+	if err := model.UpdateGroupTokenName(group, id, req.Name); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
+
 	middleware.SuccessResponse(c, nil)
 }
