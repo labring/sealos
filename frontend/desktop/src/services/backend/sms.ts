@@ -9,7 +9,7 @@ import Captcha, * as $Captcha from '@alicloud/captcha20230305';
 import nodemailer from 'nodemailer';
 const getTransporter = () => {
   if (!global.nodemailer) {
-    const emailConfig = global.AppConfig.desktop.auth.idp.sms?.email;
+    const emailConfig = global.AppConfig.desktop.auth.idp.email;
     if (!emailConfig) throw Error('email transporter config error');
     const transporter = nodemailer.createTransport({
       pool: true,
@@ -118,7 +118,7 @@ export const captchaReq = async ({ captchaVerifyParam }: { captchaVerifyParam?: 
   }, 3);
 };
 export const emailSmsReq = async (email: string) => {
-  const emailConfig = global.AppConfig.desktop.auth.idp.sms?.email;
+  const emailConfig = global.AppConfig.desktop.auth.idp.email;
   if (!emailConfig) throw Error('config error');
 
   const code = Math.floor(Math.random() * 900000 + 100000).toString();

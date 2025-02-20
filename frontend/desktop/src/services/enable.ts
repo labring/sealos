@@ -7,8 +7,7 @@ export const enableGithub = () => global.AppConfig.desktop.auth.idp.github?.enab
 export const enableSms = () => global.AppConfig.desktop.auth.idp.sms?.enabled || false;
 export const enablePhoneSms = () =>
   enableSms() && !!global.AppConfig.desktop.auth.idp.sms?.ali?.enabled;
-export const enableEmailSms = () =>
-  enableSms() && !!global.AppConfig.desktop.auth.idp.sms?.email?.enabled;
+export const enableEmailSms = () => !!global.AppConfig.desktop.auth.idp.email?.enabled;
 export const enableWechat = () => global.AppConfig.desktop.auth.idp.wechat?.enabled || false;
 export const enableGoogle = () => global.AppConfig.desktop.auth.idp.google?.enabled || false;
 export const enableSignUp = () => global.AppConfig.desktop.auth.signUpEnabled || false;

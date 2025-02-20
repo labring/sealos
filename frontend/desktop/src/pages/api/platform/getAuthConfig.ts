@@ -33,10 +33,10 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         enabled: !!conf.idp.sms?.enabled,
         ali: {
           enabled: !!conf.idp.sms?.ali?.enabled
-        },
-        email: {
-          enabled: !!conf.idp.sms?.email?.enabled
         }
+      },
+      email: {
+        enabled: !!conf.idp.email?.enabled
       },
       github: {
         enabled: !!conf.idp.github?.enabled,
