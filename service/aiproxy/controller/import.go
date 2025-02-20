@@ -93,6 +93,7 @@ const (
 )
 
 // relay/channeltype/define.go
+
 var OneAPIChannelType2AIProxyMap = map[int]int{
 	OneAPIOpenAI:                 1,
 	OneAPIAzure:                  3,
