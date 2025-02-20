@@ -70,6 +70,37 @@ type Stats struct {
 	ExecutionTimeMsec int    `json:"executionTimeMsec"`
 }
 
+type JSONQuery struct {
+	Key string
+	// There are a total of four modes,"=" equal,"!" Not equal,"~" including,"!~" Not included.
+	Mode  string
+	Value string
+}
+
+type VlogsRequest struct {
+	Time        string      `json:"time"`
+	Namespace   string      `json:"namespace"`
+	App         string      `json:"app"`
+	Limit       string      `json:"limit,omitempty"`
+	JSONMode    string      `json:"jsonMode,omitempty"`
+	StderrMode  string      `json:"stderrMode,omitempty"`
+	NumberMode  string      `json:"numberMode,omitempty"`
+	NumberLevel string      `json:"numberLevel,omitempty"`
+	Pod         []string    `json:"pod,omitempty"`
+	Container   []string    `json:"container,omitempty"`
+	Keyword     string      `json:"keyword,omitempty"`
+	JSONQuery   []JSONQuery `json:"jsonQuery,omitempty"`
+	PodQuery    string      `json:"podQuery,omitempty"`
+}
+
+type VlogsResponse struct {
+	Time      string `json:"_time"`
+	Message   string `json:"_msg"`
+	Container string `json:"container"`
+	Pod       string `json:"pod"`
+	Stream    string `json:"stream"`
+}
+
 var (
 	Mysql = map[string]string{
 		"cpu":           "round(sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_irate{namespace=~\"#\",pod=~\"@-mysql-\\\\d\"}) by (pod) / sum(cluster:namespace:pod_cpu:active:kube_pod_container_resource_limits{namespace=~\"#\",pod=~\"@-mysql-\\\\d\"}) by (pod)*100,0.01)",

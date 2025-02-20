@@ -1,7 +1,6 @@
 package siliconflow
 
 import (
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,13 +18,10 @@ type Adaptor struct {
 	openai.Adaptor
 }
 
-const baseURL = "https://api.siliconflow.cn"
+const baseURL = "https://api.siliconflow.cn/v1"
 
-func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-	return a.Adaptor.GetRequestURL(meta)
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
 }
 
 func (a *Adaptor) GetModelList() []*model.ModelConfig {
@@ -34,10 +30,6 @@ func (a *Adaptor) GetModelList() []*model.ModelConfig {
 
 func (a *Adaptor) GetChannelName() string {
 	return "siliconflow"
-}
-
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
-	return a.Adaptor.ConvertRequest(meta, req)
 }
 
 //nolint:gocritic

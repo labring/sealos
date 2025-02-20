@@ -35,12 +35,12 @@ export default function AppList({ instanceName }: { instanceName: string }) {
     }
   );
 
-  const handleToDetailPage = (name: string) => {
+  const handleToDetailPage = (item: DBListItemType) => {
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-dbprovider',
-      pathname: '/db/detail',
-      query: { name: name },
-      messageData: { type: 'InternalAppCall', name: name }
+      pathname: '/redirect',
+      query: { name: item.name },
+      messageData: { type: 'InternalAppCall', name: item.name }
     });
   };
 
@@ -108,7 +108,7 @@ export default function AppList({ instanceName }: { instanceName: string }) {
               }}
               h={'32px'}
               leftIcon={<MyIcon name={'detail'} transform={'translateY(-1px)'} />}
-              onClick={() => handleToDetailPage(item.name)}
+              onClick={() => handleToDetailPage(item)}
             >
               {t('Details')}
             </Button>

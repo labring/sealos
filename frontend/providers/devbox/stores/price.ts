@@ -1,9 +1,8 @@
+import { getResourcePrice } from '@/api/platform';
+import { SourcePrice } from '@/types/static';
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-
-import { SourcePrice } from '@/types/static';
-import { getResourcePrice } from '@/api/platform';
 
 const defaultSourcePrice: SourcePrice = {
   cpu: 0.067,

@@ -13,10 +13,12 @@ import Version from './components/Version';
 import { useDevboxStore } from '@/stores/devbox';
 import { useEnvStore } from '@/stores/env';
 import { useGlobalStore } from '@/stores/global';
+import useDetailDriver from '@/hooks/useDetailDriver';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
   const { Loading } = useLoading();
+  const { handleUserGuide } = useDetailDriver();
 
   const { env } = useEnvStore();
   const { screenWidth } = useGlobalStore();
@@ -33,6 +35,9 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     {
       onSettled() {
         setInitialized(true);
+      },
+      onSuccess: () => {
+        handleUserGuide();
       }
     }
   );

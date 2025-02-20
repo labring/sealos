@@ -4,12 +4,13 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react';
 
-import { useRouter } from '@/i18n';
+import Code from '@/components/Code';
 import MyIcon from '@/components/Icon';
+
+import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
 import type { YamlItemType } from '@/types';
 import { useCopyData } from '@/utils/tools';
-import YamlCode from '@/components/YamlCode/index';
 
 import styles from './index.module.scss';
 
@@ -117,7 +118,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
             </Center>
           </Flex>
           <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
-            <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
+            <Code className={styles.code} content={yamlList[selectedIndex].value} language="yaml" />
           </Box>
         </Flex>
       )}

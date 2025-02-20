@@ -49,7 +49,8 @@ export enum TableHeaderID {
   'TraderID' = 'Trader ID',
   'Status' = 'Invoice Status',
   'InvoiceCreateTime' = 'Invoice Create Time',
-  'InvoiceUpdateTime' = 'Invoice Update Time'
+  'InvoiceUpdateTime' = 'Invoice Update Time',
+  'GPUAmount' = 'GPU Amount'
 }
 
-export const resourceType = ['cpu', 'memory', 'storage', 'network', 'nodeports'] as const;
+export const resourceType = ['cpu', 'memory', 'storage', 'network', 'nodeports', 'gpu'] as const;

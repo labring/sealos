@@ -5,6 +5,7 @@ import IntlProvider from '@/components/providers/MyIntlProvider';
 import QueryProvider from '@/components/providers/MyQueryProvider';
 import { enableMapSet } from 'immer';
 import './globals.css';
+import '@sealos/driver/src/driver.css';
 
 const inter = Inter({ subsets: ['latin'] });
 

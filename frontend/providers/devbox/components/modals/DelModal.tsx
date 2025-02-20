@@ -19,7 +19,6 @@ import { useCallback, useState } from 'react';
 import { delDevbox } from '@/api/devbox';
 import MyIcon from '@/components/Icon';
 import { useIDEStore } from '@/stores/ide';
-import { useDevboxStore } from '@/stores/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
 
 const DelModal = ({
@@ -45,12 +44,10 @@ const DelModal = ({
       setLoading(true);
       await delDevbox(devbox.name);
       removeDevboxIDE(devbox.name);
-
       toast({
         title: t('delete_successful'),
         status: 'success'
       });
-
       onSuccess();
       onClose();
 

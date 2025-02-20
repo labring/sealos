@@ -23,6 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"github.com/google/uuid"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -319,7 +321,7 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 	if err != nil {
 		return fmt.Errorf("get payment Interface failed: %w", err)
 	}
-	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount/10000, payment.Spec.UserID, "sealos cloud pay [domain="+r.domain+"]")
+	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount/10000, payment.Spec.UserID, fmt.Sprintf(env.GetEnvWithDefault("PAY_DESCRIBE_FORMAT", `sealos cloud pay [domain="%s"]`), r.domain))
 	if err != nil {
 		return fmt.Errorf("get tradeNO and codeURL failed: %w", err)
 	}

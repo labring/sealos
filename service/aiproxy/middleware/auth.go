@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/config"
@@ -42,12 +41,18 @@ func AdminAuth(c *gin.Context) {
 		c.Abort()
 		return
 	}
+
+	group := c.Param("group")
+	if group != "" {
+		log := GetLogger(c)
+		log.Data["gid"] = group
+	}
+
 	c.Next()
 }
 
 func TokenAuth(c *gin.Context) {
 	log := GetLogger(c)
-	ctx := c.Request.Context()
 	key := c.Request.Header.Get("Authorization")
 	key = strings.TrimPrefix(
 		strings.TrimPrefix(key, "Bearer "),
@@ -55,18 +60,29 @@ func TokenAuth(c *gin.Context) {
 	)
 	parts := strings.Split(key, "-")
 	key = parts[0]
-	token, err := model.ValidateAndGetToken(key)
-	if err != nil {
-		abortWithMessage(c, http.StatusUnauthorized, err.Error())
-		return
+
+	var token *model.TokenCache
+	var useInternalToken bool
+	if config.GetInternalToken() != "" && config.GetInternalToken() == key || config.AdminKey != "" && config.AdminKey == key {
+		token = &model.TokenCache{}
+		useInternalToken = true
+	} else {
+		var err error
+		token, err = model.ValidateAndGetToken(key)
+		if err != nil {
+			abortLogWithMessage(c, http.StatusUnauthorized, err.Error())
+			return
+		}
 	}
-	SetLogTokenFields(log.Data, token)
+
+	SetLogTokenFields(log.Data, token, useInternalToken)
+
 	if token.Subnet != "" {
 		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
-			abortWithMessage(c, http.StatusInternalServerError, err.Error())
+			abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
 			return
 		} else if !ok {
-			abortWithMessage(c, http.StatusForbidden,
+			abortLogWithMessage(c, http.StatusForbidden,
 				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnet: %s, current ip: %s",
 					token.Name,
 					token.ID,
@@ -77,47 +93,86 @@ func TokenAuth(c *gin.Context) {
 			return
 		}
 	}
-	group, err := model.CacheGetGroup(token.Group)
-	if err != nil {
-		abortWithMessage(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-	SetLogGroupFields(log.Data, group)
-	if len(token.Models) == 0 {
-		token.Models = model.CacheGetEnabledModels()
-	}
-	if group.QPM <= 0 {
-		group.QPM = config.GetDefaultGroupQPM()
-	}
-	if group.QPM > 0 {
-		ok := ForceRateLimit(ctx, "group_qpm:"+group.ID, int(group.QPM), time.Minute)
-		if !ok {
-			abortWithMessage(c, http.StatusTooManyRequests,
-				group.ID+" is requesting too frequently",
-			)
+
+	var group *model.GroupCache
+	if useInternalToken {
+		group = &model.GroupCache{
+			Status: model.GroupStatusInternal,
+		}
+	} else {
+		var err error
+		group, err = model.CacheGetGroup(token.Group)
+		if err != nil {
+			abortLogWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("failed to get group: %v", err))
+			return
+		}
+		if group.Status != model.GroupStatusEnabled && group.Status != model.GroupStatusInternal {
+			abortLogWithMessage(c, http.StatusForbidden, "group is disabled")
 			return
 		}
 	}
 
+	SetLogGroupFields(log.Data, group)
+
+	modelCaches := model.LoadModelCaches()
+
+	storeTokenModels(token, modelCaches)
+
 	c.Set(ctxkey.Group, group)
 	c.Set(ctxkey.Token, token)
+	c.Set(ctxkey.ModelCaches, modelCaches)
 
 	c.Next()
+}
+
+func GetGroup(c *gin.Context) *model.GroupCache {
+	return c.MustGet(ctxkey.Group).(*model.GroupCache)
+}
+
+func GetToken(c *gin.Context) *model.TokenCache {
+	return c.MustGet(ctxkey.Token).(*model.TokenCache)
+}
+
+func GetModelCaches(c *gin.Context) *model.ModelCaches {
+	return c.MustGet(ctxkey.ModelCaches).(*model.ModelCaches)
+}
+
+func sliceFilter[T any](s []T, fn func(T) bool) []T {
+	i := 0
+	for _, v := range s {
+		if fn(v) {
+			s[i] = v
+			i++
+		}
+	}
+	return s[:i]
+}
+
+func storeTokenModels(token *model.TokenCache, modelCaches *model.ModelCaches) {
+	if len(token.Models) == 0 {
+		token.Models = modelCaches.EnabledModels
+	} else {
+		enabledModelsMap := modelCaches.EnabledModelsMap
+		token.Models = sliceFilter(token.Models, func(m string) bool {
+			_, ok := enabledModelsMap[m]
+			return ok
+		})
+	}
 }
 
 func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
 	SetLogRequestIDField(fields, m.RequestID)
 
 	SetLogModeField(fields, m.Mode)
-	SetLogModelFields(fields, m.OriginModelName)
-	SetLogActualModelFields(fields, m.ActualModelName)
+	SetLogModelFields(fields, m.OriginModel)
+	SetLogActualModelFields(fields, m.ActualModel)
 
 	if m.IsChannelTest {
 		SetLogIsChannelTestField(fields, true)
 	}
 
 	SetLogGroupFields(fields, m.Group)
-	SetLogTokenFields(fields, m.Token)
+	SetLogTokenFields(fields, m.Token, false)
 	SetLogChannelFields(fields, m.Channel)
 }
 
@@ -150,16 +205,29 @@ func SetLogRequestIDField(fields logrus.Fields, requestID string) {
 }
 
 func SetLogGroupFields(fields logrus.Fields, group *model.GroupCache) {
-	if group != nil {
+	if group == nil {
+		return
+	}
+	if group.ID != "" {
 		fields["gid"] = group.ID
 	}
 }
 
-func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache) {
-	if token != nil {
+func SetLogTokenFields(fields logrus.Fields, token *model.TokenCache, internal bool) {
+	if token == nil {
+		return
+	}
+	if token.ID > 0 {
 		fields["tid"] = token.ID
+	}
+	if token.Name != "" {
 		fields["tname"] = token.Name
+	}
+	if token.Key != "" {
 		fields["key"] = maskTokenKey(token.Key)
+	}
+	if internal {
+		fields["internal"] = "true"
 	}
 }
 

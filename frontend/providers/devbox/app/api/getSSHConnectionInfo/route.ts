@@ -13,11 +13,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
-    // const runtimeName = searchParams.get('runtimeName') as string
 
     const headerList = req.headers;
-
-    const { ROOT_RUNTIME_NAMESPACE } = process.env;
 
     const { k8sCore, namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)

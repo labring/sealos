@@ -1,5 +1,5 @@
 import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react';
-import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
+import { SealosMenu, useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { useCallback, useState } from 'react';
@@ -10,11 +10,12 @@ import { useRouter } from '@/i18n';
 import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag';
 import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
-import ReleaseModal from '@/components/modals/releaseModal';
 import PodLineChart from '@/components/PodLineChart';
+import { AdvancedTable } from '@/components/AdvancedTable';
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import ReleaseModal from '@/components/modals/ReleaseModal';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
@@ -220,6 +221,7 @@ const DevboxList = ({
             sshPort={item.sshPort}
             status={item.status}
             mr={'8px'}
+            runtimeType={item.template.templateRepository.iconId as string}
           />
           <Button
             mr={'8px'}
@@ -343,7 +345,7 @@ const DevboxList = ({
   ];
   return (
     <>
-      <MyTable columns={columns} data={devboxList} itemClass="devboxListItem" />
+      <AdvancedTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}

@@ -22,6 +22,10 @@ type Adaptor struct{}
 
 const baseURL = "https://dashscope.aliyuncs.com"
 
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
+
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	u := meta.Channel.BaseURL
 	if u == "" {
@@ -34,6 +38,8 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
+	case relaymode.Completions:
+		return u + "/compatible-mode/v1/completions", nil
 	case relaymode.AudioSpeech, relaymode.AudioTranscription:
 		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
@@ -46,13 +52,11 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.Request) error {
 	req.Header.Set("Authorization", "Bearer "+meta.Channel.Key)
 
-	if meta.Channel.Config.Plugin != "" {
-		req.Header.Set("X-Dashscope-Plugin", meta.Channel.Config.Plugin)
-	}
+	// req.Header.Set("X-Dashscope-Plugin", meta.Channel.Config.Plugin)
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.ImagesGenerations:
 		return ConvertImageRequest(meta, req)
@@ -60,30 +64,36 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Heade
 		return ConvertRerankRequest(meta, req)
 	case relaymode.Embeddings:
 		return ConvertEmbeddingsRequest(meta, req)
-	case relaymode.ChatCompletions:
+	case relaymode.ChatCompletions, relaymode.Completions:
 		return openai.ConvertRequest(meta, req)
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
 	case relaymode.AudioTranscription:
 		return ConvertSTTRequest(meta, req)
 	default:
-		return nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, errors.New("unsupported convert request mode")
 	}
 }
 
+func ignoreTest(meta *meta.Meta) bool {
+	return meta.IsChannelTest &&
+		(strings.Contains(meta.ActualModel, "-ocr") ||
+			strings.HasPrefix(meta.ActualModel, "qwen-mt-"))
+}
+
 func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) (*http.Response, error) {
+	if ignoreTest(meta) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewReader(nil)),
+		}, nil
+	}
 	switch meta.Mode {
 	case relaymode.AudioSpeech:
 		return TTSDoRequest(meta, req)
 	case relaymode.AudioTranscription:
 		return STTDoRequest(meta, req)
 	case relaymode.ChatCompletions:
-		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
-			return &http.Response{
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader(nil)),
-			}, nil
-		}
 		fallthrough
 	default:
 		return utils.DoRequest(req)
@@ -91,15 +101,15 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) 
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
+	if ignoreTest(meta) {
+		return &relaymodel.Usage{}, nil
+	}
 	switch meta.Mode {
 	case relaymode.Embeddings:
 		usage, err = EmbeddingsHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
-	case relaymode.ChatCompletions:
-		if meta.IsChannelTest && strings.Contains(meta.ActualModelName, "-ocr") {
-			return nil, nil
-		}
+	case relaymode.ChatCompletions, relaymode.Completions:
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)

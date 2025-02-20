@@ -15,7 +15,8 @@ export type AllResourceKindType =
   | 'Instance'
   | 'Service'
   | 'ObjectStorageBucket'
-  | 'PersistentVolumeClaim';
+  | 'PersistentVolumeClaim'
+  | 'Devbox';
 
 export type DeleteResourceFunction = (instanceName: string) => void;
 

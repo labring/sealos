@@ -1188,3 +1188,20 @@ func (c *Cockroach) GetUserRealNameInfoByUserID(userID string) (*types.UserRealN
 	}
 	return &userRealNameInfo, nil
 }
+
+func (c *Cockroach) GetEnterpriseRealNameInfoByUserID(userID string) (*types.EnterpriseRealNameInfo, error) {
+	// get user info
+	ops := &types.UserQueryOpts{ID: userID}
+	user, err := c.GetUserCr(ops)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %v", err)
+	}
+
+	// get user realname info
+	var enterpriseRealNameInfo types.EnterpriseRealNameInfo
+	if err := c.DB.Where(&types.EnterpriseRealNameInfo{UserUID: user.UserUID}).First(&enterpriseRealNameInfo).Error; err != nil {
+		return nil, fmt.Errorf("failed to get enterprise real name info: %w", err)
+	}
+	return &enterpriseRealNameInfo, nil
+}

@@ -127,7 +127,7 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     if (infoData.isSuccess && commonConfig?.realNameAuthEnabled) {
-      if (!infoData?.data?.realName && infoData?.data?.enterpriseVerificationStatus !== 'Success') {
+      if (!infoData?.data?.realName && !infoData?.data?.enterpriseRealName) {
         realNameAuthNotificationIdRef.current = realNameAuthNotification({
           duration: null,
           isClosable: true

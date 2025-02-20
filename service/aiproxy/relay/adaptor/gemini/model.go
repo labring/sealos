@@ -1,10 +1,12 @@
 package gemini
 
 type ChatRequest struct {
-	GenerationConfig *ChatGenerationConfig `json:"generation_config,omitempty"`
-	Contents         []ChatContent         `json:"contents"`
-	SafetySettings   []ChatSafetySettings  `json:"safety_settings,omitempty"`
-	Tools            []ChatTools           `json:"tools,omitempty"`
+	Contents          []*ChatContent        `json:"contents"`
+	SystemInstruction *ChatContent          `json:"system_instruction,omitempty"`
+	SafetySettings    []ChatSafetySettings  `json:"safety_settings,omitempty"`
+	GenerationConfig  *ChatGenerationConfig `json:"generation_config,omitempty"`
+	Tools             []ChatTools           `json:"tools,omitempty"`
+	ToolConfig        *ToolConfig           `json:"tool_config,omitempty"`
 }
 
 type EmbeddingRequest struct {
@@ -40,14 +42,23 @@ type InlineData struct {
 }
 
 type FunctionCall struct {
-	Arguments    any    `json:"args"`
-	FunctionName string `json:"name"`
+	Args map[string]any `json:"args"`
+	Name string         `json:"name"`
+}
+
+type FunctionResponse struct {
+	Name     string `json:"name"`
+	Response struct {
+		Name    string         `json:"name"`
+		Content map[string]any `json:"content"`
+	} `json:"response"`
 }
 
 type Part struct {
-	InlineData   *InlineData   `json:"inlineData,omitempty"`
-	FunctionCall *FunctionCall `json:"functionCall,omitempty"`
-	Text         string        `json:"text,omitempty"`
+	InlineData       *InlineData       `json:"inlineData,omitempty"`
+	FunctionCall     *FunctionCall     `json:"functionCall,omitempty"`
+	FunctionResponse *FunctionResponse `json:"functionResponse,omitempty"`
+	Text             string            `json:"text,omitempty"`
 }
 
 type ChatContent struct {
@@ -73,4 +84,13 @@ type ChatGenerationConfig struct {
 	TopK             float64  `json:"topK,omitempty"`
 	MaxOutputTokens  int      `json:"maxOutputTokens,omitempty"`
 	CandidateCount   int      `json:"candidateCount,omitempty"`
+}
+
+type FunctionCallingConfig struct {
+	Mode                 string   `json:"mode,omitempty"`
+	AllowedFunctionNames []string `json:"allowed_function_names,omitempty"`
+}
+
+type ToolConfig struct {
+	FunctionCallingConfig FunctionCallingConfig `json:"function_calling_config"`
 }

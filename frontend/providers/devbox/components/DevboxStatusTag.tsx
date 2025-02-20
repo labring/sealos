@@ -22,6 +22,7 @@ const DevboxStatusTag = ({
 
   return (
     <Flex
+      className="guide-status-tag"
       color={status.color}
       backgroundColor={thinMode ? 'transparent' : status.backgroundColor}
       border={showBorder ? '1px solid' : 'none'}

@@ -20,6 +20,7 @@ export type ServiceEnvType = {
 };
 
 export type EnvResponse = {
+  FORCED_LANGUAGE: string;
   SEALOS_CLOUD_DOMAIN: string;
   SEALOS_CERT_SECRET_NAME: string;
   TEMPLATE_REPO_URL: string;

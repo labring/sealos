@@ -87,15 +87,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { queryName, queryKey, start, end, step = '1m' } = req.query;
 
     // One hour of monitoring data
-    const endTime = Date.now();
-    const startTime = endTime - 60 * 60 * 1000;
+    const endTime = end ? Number(end) : Date.now();
+    const startTime = start ? Number(start) : endTime - 60 * 60 * 1000;
 
     const params = {
       type: queryKey,
       launchPadName: queryName,
       namespace: namespace,
-      start: startTime / 1000,
-      end: endTime / 1000,
+      start: Math.floor(startTime / 1000),
+      end: Math.floor(endTime / 1000),
       step: step
     };
 
@@ -106,7 +106,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       kubeconfig
     ).then((res) => {
-      // console.log(res.data.result, res.data.result[0].values.length, 'AdapterChartData');
       // @ts-ignore
       return AdapterChartData[queryKey]
         ? // @ts-ignore

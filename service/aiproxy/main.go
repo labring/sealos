@@ -17,11 +17,11 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/consume"
+	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
-	relaycontroller "github.com/labring/sealos/service/aiproxy/relay/controller"
 	"github.com/labring/sealos/service/aiproxy/router"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,12 +39,7 @@ func initializeServices() error {
 		return err
 	}
 
-	if err := initializeCaches(); err != nil {
-		return err
-	}
-
-	client.Init()
-	return nil
+	return initializeCaches()
 }
 
 func initializeBalance() error {
@@ -76,7 +71,7 @@ func setLog(l *log.Logger) {
 	l.SetOutput(os.Stdout)
 	stdlog.SetOutput(l.Writer())
 
-	log.SetFormatter(&log.TextFormatter{
+	l.SetFormatter(&log.TextFormatter{
 		ForceColors:      true,
 		DisableColors:    false,
 		ForceQuote:       config.DebugEnabled,
@@ -105,20 +100,16 @@ func initializeDatabases() error {
 }
 
 func initializeCaches() error {
-	if err := model.InitOptionMap(); err != nil {
+	if err := model.InitOption2DB(); err != nil {
 		return err
 	}
-	if err := model.InitModelConfigCache(); err != nil {
-		return err
-	}
-	return model.InitChannelCache()
+	return model.InitModelConfigAndChannelCache()
 }
 
 func startSyncServices(ctx context.Context, wg *sync.WaitGroup) {
-	wg.Add(3)
+	wg.Add(2)
 	go model.SyncOptions(ctx, wg, time.Second*5)
-	go model.SyncChannelCache(ctx, wg, time.Second*5)
-	go model.SyncModelConfigCache(ctx, wg, time.Second*5)
+	go model.SyncModelConfigAndChannelCache(ctx, wg, time.Second*10)
 }
 
 func setupHTTPServer() (*http.Server, *gin.Engine) {
@@ -126,9 +117,9 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 
 	w := log.StandardLogger().Writer()
 	server.
-		Use(middleware.NewLog(log.StandardLogger())).
 		Use(gin.RecoveryWithWriter(w)).
-		Use(middleware.RequestID)
+		Use(middleware.NewLog(log.StandardLogger())).
+		Use(middleware.RequestID, middleware.CORS())
 	router.SetRouter(server)
 
 	port := os.Getenv("PORT")
@@ -141,6 +132,16 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 		ReadHeaderTimeout: 10 * time.Second,
 		Handler:           server,
 	}, server
+}
+
+func autoTestBannedModels() {
+	log.Info("auto test banned models start")
+	ticker := time.NewTicker(time.Second * 15)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		controller.AutoTestBannedModels()
+	}
 }
 
 func main() {
@@ -169,18 +170,25 @@ func main() {
 		}
 	}()
 
-	<-ctx.Done()
-	log.Info("shutting down server...")
-	log.Info("max wait time: 120s")
+	go autoTestBannedModels()
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	<-ctx.Done()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
 	defer cancel()
 
+	log.Info("shutting down http server...")
+	log.Info("max wait time: 600s")
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("server forced to shutdown: " + err.Error())
+	} else {
+		log.Info("server shutdown successfully")
 	}
 
-	relaycontroller.ConsumeWaitGroup.Wait()
+	log.Info("shutting down consumer...")
+	consume.Wait()
+
+	log.Info("shutting down sync services...")
 	wg.Wait()
 
 	log.Info("server exiting")

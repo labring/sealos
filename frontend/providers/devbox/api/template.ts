@@ -14,9 +14,6 @@ export const listOfficialTemplateRepository = () =>
       kind: TemplateRepositoryKind;
       iconId: string;
       description: string | null;
-      templateRepositoryTags: {
-        tag: Tag;
-      }[];
     }[];
   }>(`/api/templateRepository/listOfficial`);
 export const listTemplateRepository = (

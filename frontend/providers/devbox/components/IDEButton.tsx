@@ -15,14 +15,16 @@ import { useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
-import { getSSHConnectionInfo } from '@/api/devbox';
+import MyIcon from './Icon';
 import { useEnvStore } from '@/stores/env';
 import { IDEType, useIDEStore } from '@/stores/ide';
 import { DevboxStatusMapType } from '@/types/devbox';
-import MyIcon from './Icon';
+import { getSSHConnectionInfo } from '@/api/devbox';
+import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
 
 interface Props {
   devboxName: string;
+  runtimeType: string;
   sshPort: number;
   status: DevboxStatusMapType;
   isBigButton?: boolean;
@@ -30,8 +32,21 @@ interface Props {
   rightButtonProps?: ButtonProps;
 }
 
+export interface JetBrainsGuideData {
+  devboxName: string;
+  runtimeType: string;
+  privateKey: string;
+  userName: string;
+  token: string;
+  workingDir: string;
+  host: string;
+  port: string;
+  configHost: string;
+}
+
 const IDEButton = ({
   devboxName,
+  runtimeType,
   sshPort,
   status,
   isBigButton = true,
@@ -43,23 +58,46 @@ const IDEButton = ({
 
   const { env } = useEnvStore();
   const { message: toast } = useMessage();
-  const [loading, setLoading] = useState(false);
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore();
+
+  const [loading, setLoading] = useState(false);
+  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
+  const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false);
   const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
 
   const handleGotoIDE = useCallback(
-    async (currentIDE: IDEType = 'vscode') => {
+    async (currentIDE: IDEType = 'cursor') => {
       setLoading(true);
 
-      toast({
-        title: t('opening_ide'),
-        status: 'info'
-      });
+      if (currentIDE !== 'jetbrains') {
+        toast({
+          title: t('opening_ide'),
+          status: 'info'
+        });
+      }
 
       try {
         const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
           devboxName
         });
+        const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
+
+        setJetBrainsGuideData({
+          devboxName,
+          runtimeType,
+          privateKey: sshPrivateKey,
+          userName,
+          token,
+          workingDir,
+          host: env.sealosDomain,
+          port: sshPort.toString(),
+          configHost: `${env.sealosDomain}_${env.namespace}_${devboxName}`
+        });
+
+        if (currentIDE === 'jetbrains') {
+          setOnOpenJetbrainsModal(true);
+          return;
+        }
 
         const idePrefix = ideObj[currentIDE].prefix;
         const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
@@ -76,15 +114,15 @@ const IDEButton = ({
         setLoading(false);
       }
     },
-    [devboxName, env.namespace, env.sealosDomain, setLoading, sshPort, toast, t]
+    [toast, t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
   );
 
   return (
-    <Flex {...props}>
+    <Flex className="guide-ide-button" {...props}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
-          width={'90px'}
+          width={'100px'}
           fontSize={'base'}
           bg={'grayModern.150'}
           color={'grayModern.900'}
@@ -172,6 +210,13 @@ const IDEButton = ({
           ))}
         </MenuList>
       </Menu>
+      {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
+        <JetBrainsGuideModal
+          onSuccess={() => {}}
+          onClose={() => setOnOpenJetbrainsModal(false)}
+          jetbrainsGuideData={jetbrainsGuideData}
+        />
+      )}
     </Flex>
   );
 };
@@ -208,6 +253,22 @@ export const ideObj = {
     prefix: 'windsurf://',
     value: 'windsurf',
     sortId: 3
+  },
+  trae: {
+    label: 'Trae',
+    menuLabel: 'Trae',
+    icon: 'trae',
+    prefix: 'trae://',
+    value: 'trae',
+    sortId: 4
+  },
+  jetbrains: {
+    label: 'JetBrains',
+    icon: 'jetbrains',
+    menuLabel: 'JetBrains',
+    prefix: '-',
+    value: 'jetbrains',
+    sortId: 4
   }
 } as const;
 

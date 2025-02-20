@@ -156,8 +156,8 @@ export const useDevboxStore = create<State>()(
           pods.length === 0
             ? devboxStatusMap.Stopped
             : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
-              ? devboxStatusMap.Running
-              : devboxStatusMap.Pending;
+            ? devboxStatusMap.Running
+            : devboxStatusMap.Pending;
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {

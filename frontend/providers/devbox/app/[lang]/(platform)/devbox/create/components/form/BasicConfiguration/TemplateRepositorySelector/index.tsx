@@ -1,4 +1,5 @@
 import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template';
+import useDriver from '@/hooks/useDriver';
 import { TemplateRepositoryKind } from '@/prisma/generated/client';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
@@ -11,6 +12,7 @@ import { useFormContext } from 'react-hook-form';
 import Label from '../../Label';
 import TemplateRepositoryListNav from '../TemplateRepositoryListNav';
 import TemplateRepositoryItem from './TemplateReposistoryItem';
+import { useSearchParams } from 'next/navigation';
 
 interface TemplateRepositorySelectorProps {
   isEdit: boolean;
@@ -20,10 +22,16 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   const { startedTemplate, setStartedTemplate } = useDevboxStore();
   const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>();
   const t = useTranslations();
+  const { handleUserGuide } = useDriver();
+  const searchParams = useSearchParams();
   const templateRepositoryQuery = useQuery(
     ['list-official-template-repository'],
     listOfficialTemplateRepository,
     {
+      onSuccess(res) {
+        console.log('res', res);
+        handleUserGuide();
+      },
       staleTime: Infinity,
       cacheTime: 1000 * 60 * 30
     }
@@ -90,8 +98,18 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
       return item.uid === curTemplateRepositoryUid;
     });
     if (!curTemplateRepository) {
-      const defaultTemplateRepositoryUid = templateData[0].uid;
-      setValue('templateRepositoryUid', defaultTemplateRepositoryUid);
+      const runtime = searchParams.get('runtime');
+      if (!runtime) {
+        setValue('templateRepositoryUid', templateData[0].uid);
+        return;
+      } else {
+        const runtimeTemplate = templateData.find((item) => item.iconId === runtime);
+        if (runtimeTemplate) {
+          setValue('templateRepositoryUid', runtimeTemplate.uid);
+        } else {
+          setValue('templateRepositoryUid', templateData[0].uid);
+        }
+      }
     }
   }, [
     templateRepositoryQuery.isSuccess,
@@ -132,34 +150,37 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   ]);
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
-      <Flex w="full" justify={'space-between'}>
-        <Label w={100} alignSelf={'flex-start'}>
-          {t('runtime_environment')}
-        </Label>
-        <TemplateRepositoryListNav />
-      </Flex>
-      {!!startedTemplate && (
-        <Flex gap={'10px'} px={'14px'} width={'full'}>
-          <Box width={'85px'}>{t('current')}</Box>
-          <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-            <TemplateRepositoryItem
-              item={{
-                uid: startedTemplate.uid,
-                iconId: startedTemplate.iconId || '',
-                name: startedTemplate.name
-              }}
-              isEdit={isEdit}
-            />
-          </Flex>
+      <Flex className="guide-runtimes" gap={'24px'} flexDir={'column'} w={'full'}>
+        <Flex w="full" justify={'space-between'}>
+          <Label w={100} alignSelf={'flex-start'}>
+            {t('runtime_environment')}
+          </Label>
+          <TemplateRepositoryListNav />
         </Flex>
-      )}
-      <Flex gap={'10px'} px={'14px'} width={'full'}>
-        {/* Language */}
-        {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
-        <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-          {categorizedData['LANGUAGE']?.map((item) => (
-            <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
-          ))}
+
+        {!!startedTemplate && (
+          <Flex gap={'10px'} px={'14px'} width={'full'}>
+            <Box width={'85px'}>{t('current')}</Box>
+            <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
+              <TemplateRepositoryItem
+                item={{
+                  uid: startedTemplate.uid,
+                  iconId: startedTemplate.iconId || '',
+                  name: startedTemplate.name
+                }}
+                isEdit={isEdit}
+              />
+            </Flex>
+          </Flex>
+        )}
+        <Flex gap={'10px'} px={'14px'} width={'full'}>
+          {/* Language */}
+          {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
+          <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
+            {categorizedData['LANGUAGE']?.map((item) => (
+              <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
+            ))}
+          </Flex>
         </Flex>
       </Flex>
       <Flex gap={'10px'} px={'14px'} width={'full'}>

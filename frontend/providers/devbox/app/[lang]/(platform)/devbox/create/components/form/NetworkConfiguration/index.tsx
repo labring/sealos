@@ -80,6 +80,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
           {networks.map((network, i) => (
             <Flex
+              className="guide-network-configuration"
               alignItems={'flex-start'}
               key={network.id}
               _notLast={{ pb: 6, borderBottom: theme.borders.base }}

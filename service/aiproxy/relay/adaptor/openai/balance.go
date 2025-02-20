@@ -6,12 +6,11 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/client"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
 
-var _ adaptor.GetBalance = (*Adaptor)(nil)
+var _ adaptor.Balancer = (*Adaptor)(nil)
 
 func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 	return GetBalance(channel)
@@ -29,7 +28,7 @@ func GetBalance(channel *model.Channel) (float64, error) {
 		return 0, err
 	}
 	req1.Header.Set("Authorization", "Bearer "+channel.Key)
-	res1, err := client.HTTPClient.Do(req1)
+	res1, err := http.DefaultClient.Do(req1)
 	if err != nil {
 		return 0, err
 	}
@@ -51,7 +50,7 @@ func GetBalance(channel *model.Channel) (float64, error) {
 		return 0, err
 	}
 	req2.Header.Set("Authorization", "Bearer "+channel.Key)
-	res2, err := client.HTTPClient.Do(req2)
+	res2, err := http.DefaultClient.Do(req2)
 	if err != nil {
 		return 0, err
 	}

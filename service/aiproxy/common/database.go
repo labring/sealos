@@ -11,6 +11,6 @@ var (
 )
 
 var (
-	SQLitePath        = "aiproxy.db"
-	SQLiteBusyTimeout = env.Int("SQLITE_BUSY_TIMEOUT", 3000)
+	SQLitePath        = env.String("SQLITE_PATH", "aiproxy.db")
+	SQLiteBusyTimeout = env.Int64("SQLITE_BUSY_TIMEOUT", 3000)
 )

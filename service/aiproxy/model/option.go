@@ -11,7 +11,6 @@ import (
 	"time"
 
 	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	log "github.com/sirupsen/logrus"
@@ -24,41 +23,78 @@ type Option struct {
 
 func GetAllOption() ([]*Option, error) {
 	var options []*Option
-	err := DB.Find(&options).Error
+	err := DB.Where("key IN (?)", optionKeys).Find(&options).Error
 	return options, err
 }
 
-func InitOptionMap() error {
-	config.OptionMapRWMutex.Lock()
-	config.OptionMap = make(map[string]string)
-	config.OptionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
-	config.OptionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
-	config.OptionMap["AutomaticDisableChannelEnabled"] = strconv.FormatBool(config.GetAutomaticDisableChannelEnabled())
-	config.OptionMap["AutomaticEnableChannelWhenTestSucceedEnabled"] = strconv.FormatBool(config.GetAutomaticEnableChannelWhenTestSucceedEnabled())
-	config.OptionMap["ApproximateTokenEnabled"] = strconv.FormatBool(config.GetApproximateTokenEnabled())
-	config.OptionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
-	config.OptionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
-	config.OptionMap["GlobalApiRateLimitNum"] = strconv.FormatInt(config.GetGlobalAPIRateLimitNum(), 10)
-	config.OptionMap["DefaultGroupQPM"] = strconv.FormatInt(config.GetDefaultGroupQPM(), 10)
-	defaultChannelModelsJSON, _ := json.Marshal(config.GetDefaultChannelModels())
-	config.OptionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
-	defaultChannelModelMappingJSON, _ := json.Marshal(config.GetDefaultChannelModelMapping())
-	config.OptionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
-	config.OptionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
-	config.OptionMap["GeminiVersion"] = config.GetGeminiVersion()
-	config.OptionMap["GroupMaxTokenNum"] = strconv.FormatInt(int64(config.GetGroupMaxTokenNum()), 10)
-	config.OptionMapRWMutex.Unlock()
-	err := loadOptionsFromDatabase(true)
+func GetOption(key string) (*Option, error) {
+	if !slices.Contains(optionKeys, key) {
+		return nil, ErrUnknownOptionKey
+	}
+	var option Option
+	err := DB.Where("key = ?", key).First(&option).Error
+	return &option, err
+}
+
+var (
+	optionMap = make(map[string]string)
+	// allowed option keys
+	optionKeys []string
+)
+
+func InitOption2DB() error {
+	err := initOptionMap()
+	if err != nil {
+		return err
+	}
+
+	err = loadOptionsFromDatabase(true)
 	if err != nil {
 		return err
 	}
 	return storeOptionMap()
 }
 
+func initOptionMap() error {
+	optionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
+	optionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
+	optionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
+	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
+	optionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
+	optionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
+	timeoutWithModelTypeJSON, err := json.Marshal(config.GetTimeoutWithModelType())
+	if err != nil {
+		return err
+	}
+	optionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
+	defaultChannelModelsJSON, err := json.Marshal(config.GetDefaultChannelModels())
+	if err != nil {
+		return err
+	}
+	optionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
+	defaultChannelModelMappingJSON, err := json.Marshal(config.GetDefaultChannelModelMapping())
+	if err != nil {
+		return err
+	}
+	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
+	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
+	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(config.GetGroupMaxTokenNum(), 10)
+	groupConsumeLevelRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRatio())
+	if err != nil {
+		return err
+	}
+	optionMap["GroupConsumeLevelRatio"] = conv.BytesToString(groupConsumeLevelRatioJSON)
+	optionMap["InternalToken"] = config.GetInternalToken()
+
+	optionKeys = make([]string, 0, len(optionMap))
+	for key := range optionMap {
+		optionKeys = append(optionKeys, key)
+	}
+	return nil
+}
+
 func storeOptionMap() error {
-	config.OptionMapRWMutex.Lock()
-	defer config.OptionMapRWMutex.Unlock()
-	for key, value := range config.OptionMap {
+	for key, value := range optionMap {
 		err := saveOption(key, value)
 		if err != nil {
 			return err
@@ -73,9 +109,18 @@ func loadOptionsFromDatabase(isInit bool) error {
 		return err
 	}
 	for _, option := range options {
-		err := updateOptionMap(option.Key, option.Value, isInit)
-		if err != nil && !errors.Is(err, ErrUnknownOptionKey) {
-			log.Errorf("failed to update option: %s, value: %s, error: %s", option.Key, option.Value, err.Error())
+		err := updateOption(option.Key, option.Value, isInit)
+		if err != nil {
+			if !errors.Is(err, ErrUnknownOptionKey) {
+				return fmt.Errorf("failed to update option: %s, value: %s, error: %w", option.Key, option.Value, err)
+			}
+			if isInit {
+				log.Warnf("unknown option: %s, value: %s", option.Key, option.Value)
+			}
+			continue
+		}
+		if isInit {
+			delete(optionMap, option.Key)
 		}
 	}
 	return nil
@@ -91,7 +136,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := loadOptionsFromDatabase(true); err != nil {
+			if err := loadOptionsFromDatabase(false); err != nil {
 				log.Error("failed to sync options from database: " + err.Error())
 			}
 		}
@@ -108,7 +153,7 @@ func saveOption(key string, value string) error {
 }
 
 func UpdateOption(key string, value string) error {
-	err := updateOptionMap(key, value, false)
+	err := updateOption(key, value, false)
 	if err != nil {
 		return err
 	}
@@ -136,25 +181,22 @@ func isTrue(value string) bool {
 	return result
 }
 
-func updateOptionMap(key string, value string, isInit bool) (err error) {
-	config.OptionMapRWMutex.Lock()
-	defer config.OptionMapRWMutex.Unlock()
-	config.OptionMap[key] = value
+//nolint:gocyclo
+func updateOption(key string, value string, isInit bool) (err error) {
 	switch key {
+	case "InternalToken":
+		config.SetInternalToken(value)
 	case "LogDetailStorageHours":
 		logDetailStorageHours, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return err
 		}
+		if logDetailStorageHours < 0 {
+			return errors.New("log detail storage hours must be greater than 0")
+		}
 		config.SetLogDetailStorageHours(logDetailStorageHours)
 	case "DisableServe":
 		config.SetDisableServe(isTrue(value))
-	case "AutomaticDisableChannelEnabled":
-		config.SetAutomaticDisableChannelEnabled(isTrue(value))
-	case "AutomaticEnableChannelWhenTestSucceedEnabled":
-		config.SetAutomaticEnableChannelWhenTestSucceedEnabled(isTrue(value))
-	case "ApproximateTokenEnabled":
-		config.SetApproximateTokenEnabled(isTrue(value))
 	case "BillingEnabled":
 		config.SetBillingEnabled(isTrue(value))
 	case "GroupMaxTokenNum":
@@ -162,23 +204,12 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
-		config.SetGroupMaxTokenNum(int32(groupMaxTokenNum))
+		if groupMaxTokenNum < 0 {
+			return errors.New("group max token num must be greater than 0")
+		}
+		config.SetGroupMaxTokenNum(groupMaxTokenNum)
 	case "GeminiSafetySetting":
 		config.SetGeminiSafetySetting(value)
-	case "GeminiVersion":
-		config.SetGeminiVersion(value)
-	case "GlobalApiRateLimitNum":
-		globalAPIRateLimitNum, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		config.SetGlobalAPIRateLimitNum(globalAPIRateLimitNum)
-	case "DefaultGroupQPM":
-		defaultGroupQPM, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
-			return err
-		}
-		config.SetDefaultGroupQPM(defaultGroupQPM)
 	case "DefaultChannelModels":
 		var newModels map[int][]string
 		err := json.Unmarshal(conv.StringToBytes(value), &newModels)
@@ -196,7 +227,7 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		for model := range allModelsMap {
 			allModels = append(allModels, model)
 		}
-		foundModels, missingModels, err := CheckModelConfig(allModels)
+		foundModels, missingModels, err := GetModelConfigWithModels(allModels)
 		if err != nil {
 			return err
 		}
@@ -229,7 +260,48 @@ func updateOptionMap(key string, value string, isInit bool) (err error) {
 		if err != nil {
 			return err
 		}
+		if retryTimes < 0 {
+			return errors.New("retry times must be greater than 0")
+		}
 		config.SetRetryTimes(retryTimes)
+	case "EnableModelErrorAutoBan":
+		config.SetEnableModelErrorAutoBan(isTrue(value))
+	case "ModelErrorAutoBanRate":
+		modelErrorAutoBanRate, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return err
+		}
+		if modelErrorAutoBanRate < 0 || modelErrorAutoBanRate > 1 {
+			return errors.New("model error auto ban rate must be between 0 and 1")
+		}
+		config.SetModelErrorAutoBanRate(modelErrorAutoBanRate)
+	case "TimeoutWithModelType":
+		var newTimeoutWithModelType map[int]int64
+		err := json.Unmarshal(conv.StringToBytes(value), &newTimeoutWithModelType)
+		if err != nil {
+			return err
+		}
+		for _, v := range newTimeoutWithModelType {
+			if v < 0 {
+				return errors.New("timeout must be greater than 0")
+			}
+		}
+		config.SetTimeoutWithModelType(newTimeoutWithModelType)
+	case "GroupConsumeLevelRatio":
+		var newGroupRpmRatio map[float64]float64
+		err := json.Unmarshal(conv.StringToBytes(value), &newGroupRpmRatio)
+		if err != nil {
+			return err
+		}
+		for k, v := range newGroupRpmRatio {
+			if k < 0 {
+				return errors.New("consume level must be greater than 0")
+			}
+			if v < 0 {
+				return errors.New("rpm ratio must be greater than 0")
+			}
+		}
+		config.SetGroupConsumeLevelRatio(newGroupRpmRatio)
 	default:
 		return ErrUnknownOptionKey
 	}

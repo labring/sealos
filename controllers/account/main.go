@@ -29,7 +29,6 @@ import (
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
-	"github.com/labring/sealos/controllers/pkg/utils/env"
 	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
@@ -218,14 +217,23 @@ func main() {
 		setupLog.Error(err, "unable to get property type")
 		os.Exit(1)
 	}
-	if err = (&controllers.BillingReconciler{
+	billingReconciler := controllers.BillingReconciler{
 		DBClient:   dbClient,
 		Properties: resources.DefaultPropertyTypeLS,
 		Client:     mgr.GetClient(),
 		Scheme:     mgr.GetScheme(),
 		AccountV2:  v2Account,
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Billing")
+	}
+	if err = billingReconciler.Init(); err != nil {
+		setupLog.Error(err, "unable to init billing reconciler")
+		os.Exit(1)
+	}
+	billingTaskRunner := &controllers.BillingTaskRunner{
+		BillingReconciler: &billingReconciler,
+	}
+	if err := mgr.Add(billingTaskRunner); err != nil {
+		setupLog.Error(err, "unable to add billing task runner")
+		os.Exit(1)
 	}
 
 	if err = (&controllers.PodReconciler{
@@ -261,23 +269,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	go func() {
-		if cvmDBClient == nil {
-			setupLog.Info("CVM DB client is nil, skip billing cvm")
-			return
+	if cvmDBClient != nil {
+		cvmTaskRunner := &controllers.CVMTaskRunner{
+			DBClient:          cvmDBClient,
+			Logger:            ctrl.Log.WithName("CVMTaskRunner"),
+			AccountReconciler: accountReconciler,
 		}
-		ticker := time.NewTicker(env.GetDurationEnvWithDefault("BILLING_CVM_INTERVAL", 10*time.Minute))
-		defer ticker.Stop()
-		for {
-			setupLog.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
-			err := accountReconciler.BillingCVM()
-			if err != nil {
-				setupLog.Error(err, "fail to billing cvm")
-			}
-			setupLog.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
-			<-ticker.C
+		if err := mgr.Add(cvmTaskRunner); err != nil {
+			setupLog.Error(err, "unable to add cvm task runner")
+			os.Exit(1)
 		}
-	}()
+	}
+	//go func() {
+	//	now := time.Now()
+	//	nextHour := now.Truncate(time.Hour).Add(time.Hour)
+	//	time.Sleep(nextHour.Sub(now))
+	//
+	//	ticker := time.NewTicker(time.Hour)
+	//	defer ticker.Stop()
+	//	for {
+	//		setupLog.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	//		if err := billingReconciler.ExecuteBillingTask(); err != nil {
+	//			setupLog.Error(err, "failed to execute billing task")
+	//		}
+	//		<-ticker.C
+	//	}
+	//}()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

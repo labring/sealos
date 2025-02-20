@@ -163,6 +163,7 @@ export const DefaultJobEditValue: CronJobEditType = {
   launchpadName: '',
   launchpadId: '',
   serviceAccountName: '',
+  launchpadKind: 'Deployment',
   status: CronJobStatusMap['Running'],
   isPause: false,
   creatTime: '',

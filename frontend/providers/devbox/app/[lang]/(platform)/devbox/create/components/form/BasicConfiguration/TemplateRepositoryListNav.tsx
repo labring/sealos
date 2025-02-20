@@ -3,7 +3,7 @@ import { TemplateState } from '@/constants/template';
 import { useTemplateStore } from '@/stores/template';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n';
 
 const TemplateRepositoryListNav = () => {
   const t = useTranslations();

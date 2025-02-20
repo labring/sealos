@@ -6,6 +6,7 @@ import { ApiResp, Region } from '@/types';
 import { BIND_STATUS } from '@/types/response/bind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
 import { DELETE_USER_STATUS } from '@/types/response/deleteUser';
+import { EnterpriseAuthInfo, PAYMENTSTATUS } from '@/types/response/enterpriseRealName';
 import { USER_MERGE_STATUS } from '@/types/response/merge';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
@@ -58,7 +59,6 @@ export const _UserInfo = (request: AxiosInstance) => () =>
     ApiResp<{
       info: {
         realName?: string;
-        enterpriseVerificationStatus?: string;
         enterpriseRealName?: string;
         userRestrictedLevel?: number;
         uid: string;
@@ -172,27 +172,52 @@ export const _getFaceAuthStatusRequest = (request: AxiosInstance) => (data: { bi
     data
   );
 
-export const _enterpriseRealNameAuthRequest = (request: AxiosInstance) => (data: FormData) => {
-  return request.post<any, ApiResp<{ status: string }>>(
-    '/api/account/enterpriseRealNameAuth',
-    data,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }
+export const _enterpriseRealNameAuthPaymentRequest =
+  (request: AxiosInstance) =>
+  (data: {
+    key: string;
+    accountBank: string;
+    accountNo: string;
+    keyName: string;
+    usrName: string;
+    contactInfo: string;
+  }) => {
+    return request.post<typeof data, ApiResp<{ paymentStatus: PAYMENTSTATUS }>>(
+      '/api/account/enterpriseRealName',
+      data
+    );
+  };
+
+export const _enterpriseRealNameAuthVerifyRequest =
+  (request: AxiosInstance) => (data: { transAmt: string }) => {
+    return request.post<
+      typeof data,
+      ApiResp<{ authState: 'success' | 'failed'; enterpriseRealName: string }>
+    >('/api/account/enterpriseRealNameVerify', data);
+  };
+
+export const _enterpriseRealNameAuthInfoRequest = (request: AxiosInstance) => () => {
+  return request.get<any, ApiResp<EnterpriseAuthInfo>>('/api/account/enterpriseRealName');
+};
+
+export const _enterpriseRealNameAuthCancelRequest = (request: AxiosInstance) => () => {
+  return request.patch<any, ApiResp<{ paymentStatus: PAYMENTSTATUS }>>(
+    '/api/account/enterpriseRealName'
   );
 };
 
 export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
-
+export const _verifyToken = (request: AxiosInstance) => () =>
+  request<never, ApiResp<null>>('/api/auth/verify');
 export const passwordExistRequest = _passwordExistRequest(request);
 export const passwordLoginRequest = _passwordLoginRequest(request, (token) => {
   useSessionStore.setState({ token });
 });
+
 export const passwordModifyRequest = _passwordModifyRequest(request);
 export const UserInfo = _UserInfo(request);
+export const verifyToken = _verifyToken(request);
 export const regionList = _regionList(request);
 
 export const getSmsBindCodeRequest = _getSmsBindCodeRequest(request);
@@ -211,7 +236,11 @@ export const deleteUserRequest = _deleteUser(request);
 export const checkRemainResource = _checkRemainResource(request);
 export const forceDeleteUser = _forceDeleteUser(request);
 
-export const enterpriseRealNameAuthRequest = _enterpriseRealNameAuthRequest(request);
+export const enterpriseRealNameAuthPaymentRequest = _enterpriseRealNameAuthPaymentRequest(request);
+export const enterpriseRealNameAuthVerifyRequest = _enterpriseRealNameAuthVerifyRequest(request);
+export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequest(request);
+export const enterpriseRealNameAuthCancelRequest = _enterpriseRealNameAuthCancelRequest(request);
+
 export const faceAuthGenerateQRcodeUriRequest = _faceAuthGenerateQRcodeUriRequest(request);
 export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 

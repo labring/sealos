@@ -2,13 +2,13 @@ package model
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
 	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -18,20 +18,22 @@ const (
 )
 
 const (
-	ChannelStatusUnknown          = 0
-	ChannelStatusEnabled          = 1 // don't use 0, 0 is the default value!
-	ChannelStatusManuallyDisabled = 2 // also don't use 0
-	ChannelStatusAutoDisabled     = 3
+	ChannelStatusUnknown  = 0
+	ChannelStatusEnabled  = 1 // don't use 0, 0 is the default value!
+	ChannelStatusDisabled = 2 // also don't use 0
+	ChannelStatusFail     = 3
 )
+
+type ChannelConfig struct {
+	SplitThink bool `json:"split_think"`
+}
 
 type Channel struct {
 	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
-	AccessedAt       time.Time         `json:"accessed_at"`
 	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
-	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests"`
+	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
 	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
 	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
-	Config           ChannelConfig     `gorm:"serializer:fastjson;type:text"      json:"config"`
 	Key              string            `gorm:"type:text;index"                    json:"key"`
 	Name             string            `gorm:"index"                              json:"name"`
 	BaseURL          string            `gorm:"index"                              json:"base_url"`
@@ -43,37 +45,30 @@ type Channel struct {
 	Status           int               `gorm:"default:1;index"                    json:"status"`
 	Type             int               `gorm:"default:0;index"                    json:"type"`
 	Priority         int32             `json:"priority"`
+	Config           *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
-// check model config exist
-func (c *Channel) BeforeSave(tx *gorm.DB) (err error) {
-	if len(c.Models) == 0 {
-		return nil
+const (
+	DefaultPriority = 100
+)
+
+func (c *Channel) GetPriority() int32 {
+	if c.Priority == 0 {
+		return DefaultPriority
 	}
-	_, missingModels, err := checkModelConfig(tx, c.Models)
-	if err != nil {
-		return err
-	}
-	if len(missingModels) > 0 {
-		return fmt.Errorf("model config not found: %v", missingModels)
-	}
-	return nil
+	return c.Priority
 }
 
-func CheckModelConfig(models []string) ([]string, []string, error) {
-	return checkModelConfig(DB, models)
-}
-
-func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) {
-	if len(models) == 0 {
+func GetModelConfigWithModels(models []string) ([]string, []string, error) {
+	if len(models) == 0 || config.GetDisableModelConfig() {
 		return models, nil, nil
 	}
 
-	where := tx.Model(&ModelConfig{}).Where("model IN ?", models)
+	where := DB.Model(&ModelConfig{}).Where("model IN ?", models)
 	var count int64
 	if err := where.Count(&count).Error; err != nil {
 		return nil, nil, err
@@ -108,18 +103,28 @@ func checkModelConfig(tx *gorm.DB, models []string) ([]string, []string, error) 
 	return foundModels, nil, nil
 }
 
+func CheckModelConfigExist(models []string) error {
+	_, missingModels, err := GetModelConfigWithModels(models)
+	if err != nil {
+		return err
+	}
+	if len(missingModels) > 0 {
+		slices.Sort(missingModels)
+		return fmt.Errorf("model config not found: %v", missingModels)
+	}
+	return nil
+}
+
 func (c *Channel) MarshalJSON() ([]byte, error) {
 	type Alias Channel
 	return json.Marshal(&struct {
 		*Alias
 		CreatedAt        int64 `json:"created_at"`
-		AccessedAt       int64 `json:"accessed_at"`
 		BalanceUpdatedAt int64 `json:"balance_updated_at"`
 		LastTestErrorAt  int64 `json:"last_test_error_at"`
 	}{
 		Alias:            (*Alias)(c),
 		CreatedAt:        c.CreatedAt.UnixMilli(),
-		AccessedAt:       c.AccessedAt.UnixMilli(),
 		BalanceUpdatedAt: c.BalanceUpdatedAt.UnixMilli(),
 		LastTestErrorAt:  c.LastTestErrorAt.UnixMilli(),
 	})
@@ -129,7 +134,7 @@ func (c *Channel) MarshalJSON() ([]byte, error) {
 func getChannelOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "name", "type", "created_at", "accessed_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
+	case "name", "type", "created_at", "status", "test_at", "balance_updated_at", "used_amount", "request_count", "priority", "id":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -141,34 +146,14 @@ func getChannelOrder(order string) string {
 	}
 }
 
-type ChannelConfig struct {
-	Region            string `json:"region,omitempty"`
-	SK                string `json:"sk,omitempty"`
-	AK                string `json:"ak,omitempty"`
-	UserID            string `json:"user_id,omitempty"`
-	APIVersion        string `json:"api_version,omitempty"`
-	Plugin            string `json:"plugin,omitempty"`
-	VertexAIProjectID string `json:"vertex_ai_project_id,omitempty"`
-	VertexAIADC       string `json:"vertex_ai_adc,omitempty"`
-}
-
-func GetAllChannels(onlyDisabled bool, omitKey bool) (channels []*Channel, err error) {
+func GetAllChannels() (channels []*Channel, err error) {
 	tx := DB.Model(&Channel{})
-	if onlyDisabled {
-		tx = tx.Where("status = ? or status = ?", ChannelStatusAutoDisabled, ChannelStatusManuallyDisabled)
-	}
-	if omitKey {
-		tx = tx.Omit("key")
-	}
 	err = tx.Order("id desc").Find(&channels).Error
 	return channels, err
 }
 
-func GetChannels(startIdx int, num int, onlyDisabled bool, omitKey bool, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
+func GetChannels(startIdx int, num int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
 	tx := DB.Model(&Channel{})
-	if onlyDisabled {
-		tx = tx.Where("status = ? or status = ?", ChannelStatusAutoDisabled, ChannelStatusManuallyDisabled)
-	}
 	if id != 0 {
 		tx = tx.Where("id = ?", id)
 	}
@@ -188,9 +173,6 @@ func GetChannels(startIdx int, num int, onlyDisabled bool, omitKey bool, id int,
 	if err != nil {
 		return nil, 0, err
 	}
-	if omitKey {
-		tx = tx.Omit("key")
-	}
 	if total <= 0 {
 		return nil, 0, nil
 	}
@@ -198,11 +180,8 @@ func GetChannels(startIdx int, num int, onlyDisabled bool, omitKey bool, id int,
 	return channels, total, err
 }
 
-func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, omitKey bool, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
+func SearchChannels(keyword string, startIdx int, num int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
 	tx := DB.Model(&Channel{})
-	if onlyDisabled {
-		tx = tx.Where("status = ? or status = ?", ChannelStatusAutoDisabled, ChannelStatusManuallyDisabled)
-	}
 
 	// Handle exact match conditions for non-zero values
 	if id != 0 {
@@ -228,7 +207,11 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 
 		if id == 0 {
 			conditions = append(conditions, "id = ?")
-			values = append(values, helper.String2Int(keyword))
+			values = append(values, String2Int(keyword))
+		}
+		if channelType == 0 {
+			conditions = append(conditions, "type = ?")
+			values = append(values, String2Int(keyword))
 		}
 		if name == "" {
 			if common.UsingPostgreSQL {
@@ -246,10 +229,6 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 			}
 			values = append(values, "%"+keyword+"%")
 		}
-		if channelType == 0 {
-			conditions = append(conditions, "type = ?")
-			values = append(values, helper.String2Int(keyword))
-		}
 		if baseURL == "" {
 			if common.UsingPostgreSQL {
 				conditions = append(conditions, "base_url ILIKE ?")
@@ -258,6 +237,13 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 			}
 			values = append(values, "%"+keyword+"%")
 		}
+
+		if common.UsingPostgreSQL {
+			conditions = append(conditions, "models ILIKE ?")
+		} else {
+			conditions = append(conditions, "models LIKE ?")
+		}
+		values = append(values, "%"+keyword+"%")
 
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
@@ -268,9 +254,6 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 	if err != nil {
 		return nil, 0, err
 	}
-	if omitKey {
-		tx = tx.Omit("key")
-	}
 	if total <= 0 {
 		return nil, 0, nil
 	}
@@ -278,28 +261,32 @@ func SearchChannels(keyword string, startIdx int, num int, onlyDisabled bool, om
 	return channels, total, err
 }
 
-func GetChannelByID(id int, omitKey bool) (*Channel, error) {
+func GetChannelByID(id int) (*Channel, error) {
 	channel := Channel{ID: id}
-	var err error
-	if omitKey {
-		err = DB.Omit("key").First(&channel, "id = ?", id).Error
-	} else {
-		err = DB.First(&channel, "id = ?", id).Error
-	}
+	err := DB.First(&channel, "id = ?", id).Error
 	return &channel, HandleNotFound(err, ErrChannelNotFound)
 }
 
 func BatchInsertChannels(channels []*Channel) error {
+	for _, channel := range channels {
+		if err := CheckModelConfigExist(channel.Models); err != nil {
+			return err
+		}
+	}
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return tx.Create(&channels).Error
 	})
 }
 
 func UpdateChannel(channel *Channel) error {
+	if err := CheckModelConfigExist(channel.Models); err != nil {
+		return err
+	}
 	result := DB.
 		Model(channel).
-		Omit("accessed_at", "used_amount", "request_count", "created_at", "balance_updated_at", "balance").
+		Omit("used_amount", "request_count", "created_at", "balance_updated_at", "balance").
 		Clauses(clause.Returning{}).
+		Where("id = ?", channel.ID).
 		Updates(channel)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
@@ -346,10 +333,13 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 }
 
 func (c *Channel) UpdateBalance(balance float64) error {
-	result := DB.Model(c).Select("balance_updated_at", "balance").Updates(Channel{
-		BalanceUpdatedAt: time.Now(),
-		Balance:          balance,
-	})
+	result := DB.Model(&Channel{}).
+		Select("balance_updated_at", "balance").
+		Where("id = ?", c.ID).
+		Updates(Channel{
+			BalanceUpdatedAt: time.Now(),
+			Balance:          balance,
+		})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
@@ -368,28 +358,28 @@ func DeleteChannelsByIDs(ids []int) error {
 }
 
 func UpdateChannelStatusByID(id int, status int) error {
-	result := DB.Model(&Channel{}).Where("id = ?", id).Update("status", status)
+	result := DB.Model(&Channel{}).
+		Where("id = ?", id).
+		Update("status", status)
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DisableChannelByID(id int) error {
-	return UpdateChannelStatusByID(id, ChannelStatusAutoDisabled)
-}
-
-func EnableChannelByID(id int) error {
-	return UpdateChannelStatusByID(id, ChannelStatusEnabled)
-}
-
 func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {
-	result := DB.Model(&Channel{}).Where("id = ?", id).Updates(map[string]interface{}{
-		"used_amount":   gorm.Expr("used_amount + ?", amount),
-		"request_count": gorm.Expr("request_count + ?", requestCount),
-		"accessed_at":   time.Now(),
-	})
+	result := DB.Model(&Channel{}).
+		Where("id = ?", id).
+		Updates(map[string]interface{}{
+			"used_amount":   gorm.Expr("used_amount + ?", amount),
+			"request_count": gorm.Expr("request_count + ?", requestCount),
+		})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
 func DeleteDisabledChannel() error {
-	result := DB.Where("status = ? or status = ?", ChannelStatusAutoDisabled, ChannelStatusManuallyDisabled).Delete(&Channel{})
+	result := DB.Where("status = ?", ChannelStatusDisabled).Delete(&Channel{})
+	return HandleUpdateResult(result, ErrChannelNotFound)
+}
+
+func DeleteFailChannel() error {
+	result := DB.Where("status = ?", ChannelStatusFail).Delete(&Channel{})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }

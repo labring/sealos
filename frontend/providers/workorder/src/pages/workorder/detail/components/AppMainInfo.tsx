@@ -1,5 +1,5 @@
 import { FeishuNotification, deleteFileByName, getFileUrl, uploadFile } from '@/api/platform';
-import { updateWorkOrderDialogById } from '@/api/workorder';
+import { updateWorkOrderDialogById, updateWorkOrderById } from '@/api/workorder';
 import MyIcon from '@/components/Icon';
 import Markdown from '@/components/Markdown';
 import { useSelectFile } from '@/hooks/useSelectFile';
@@ -350,6 +350,32 @@ const AppMainInfo = ({
     }
   }, []);
 
+  const handleRecallMessage = async (index: number) => {
+    try {
+      setIsloading(true);
+      await updateWorkOrderById({
+        orderId: app.orderId,
+        updates: {
+          [`dialogs.${index}.isRecall`]: true
+        }
+      });
+      setDialogs(
+        dialogs.map((dialog, i) => (i === index ? { ...dialog, isRecall: true } : dialog))
+      );
+      toast({
+        title: t('success'),
+        status: 'success'
+      });
+    } catch (error) {
+      toast({
+        title: t('network anomaly'),
+        status: 'error'
+      });
+    } finally {
+      setIsloading(false);
+    }
+  };
+
   return (
     <>
       <Text fontSize={'18px'} fontWeight={500} color={'#24282C'} mt="24px" ml="36px">
@@ -427,13 +453,78 @@ const AppMainInfo = ({
                       )}
                     </Box>
 
-                    <Box mt="4px" p="12px" bg="#F6F8F9" borderRadius={'4px'} fontWeight={400}>
-                      {isURL(item.content) ? (
-                        <Image alt="img" src={item.content} onLoad={() => scrollToBottom()}></Image>
+                    <Box
+                      position={'relative'}
+                      mt="4px"
+                      p="12px"
+                      bg="#F6F8F9"
+                      borderRadius={'4px'}
+                      fontWeight={400}
+                      role="group"
+                    >
+                      {item.isRecall ? (
+                        <Text color="grayModern.500" fontSize="12px" fontStyle="italic">
+                          {item.userId === session?.user?.userId
+                            ? t('you_recalled_a_message')
+                            : item.isAdmin
+                            ? t('user_recalled_a_message')
+                            : t('user_recalled_a_message')}
+                        </Text>
                       ) : (
-                        <Box fontWeight={400}>
-                          <Markdown source={item.content} />
-                        </Box>
+                        <>
+                          {item.userId === session?.user?.userId && (
+                            <Center
+                              color={'grayModern.500'}
+                              position={'absolute'}
+                              right="8px"
+                              top="8px"
+                              cursor={'pointer'}
+                              opacity={0}
+                              _groupHover={{ opacity: 1 }}
+                              _hover={{
+                                bg: 'rgba(17, 24, 36, 0.05)'
+                              }}
+                              w={'20px'}
+                              h={'20px'}
+                              borderRadius={'4px'}
+                              onClick={() => handleRecallMessage(index)}
+                            >
+                              <Icon
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14px"
+                                height="14px"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M9 14 4 9l5-5" />
+                                <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+                              </Icon>
+                            </Center>
+                          )}
+                          {isURL(item.content) ? (
+                            item.content.match(/\.(jpg|jpeg|png|gif|bmp)/i) ? (
+                              <Image alt="img" src={item.content} onLoad={() => scrollToBottom()} />
+                            ) : (
+                              <Box
+                                as="a"
+                                href={item.content}
+                                target="_blank"
+                                color="blue.500"
+                                textDecoration="underline"
+                              >
+                                {item.content}
+                              </Box>
+                            )
+                          ) : (
+                            <Box fontWeight={400}>
+                              <Markdown source={item.content} />
+                            </Box>
+                          )}
+                        </>
                       )}
                     </Box>
                     {index === dialogs?.length - 1 &&

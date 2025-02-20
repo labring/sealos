@@ -65,7 +65,7 @@ export default function TemplateSelector({ isEdit }: TemplateSelectorProps) {
             openPublicDomain: true,
             publicDomain: `${nanoid()}.${env.ingressDomain}`,
             customDomain: ''
-          }) as const
+          } as const)
       )
     );
   };

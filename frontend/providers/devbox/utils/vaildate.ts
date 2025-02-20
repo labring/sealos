@@ -9,7 +9,7 @@ export const versionSchema = z
     message: versionErrorEnum.INVALID_VERSION
   });
 export const templateNameSchema = z.string().regex(/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/);
-export const devboxNameSchema = z.string().regex(/^[a-z]([-a-z0-9]*[a-z0-9])?/);
+export const devboxNameSchema = z.string().regex(/^[a-z]([-a-z0-9]*[a-z0-9])?$/);
 export const createTemplateRepositorySchema = z.object({
   description: z.string().max(255),
   version: z.string().min(1).max(255),

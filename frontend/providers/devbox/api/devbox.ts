@@ -1,5 +1,6 @@
 import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
+import { DELETE, GET, POST } from '@/services/request';
 import { GetDevboxByNameReturn } from '@/types/adapt';
 import {
   DevboxEditTypeV2,
@@ -8,7 +9,6 @@ import {
   DevboxVersionListItemType
 } from '@/types/devbox';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import {
   adaptAppListItem,
   adaptDevboxDetailV2,
@@ -16,7 +16,8 @@ import {
   adaptDevboxVersionListItem,
   adaptPod
 } from '@/utils/adapt';
-import { GET, POST, DELETE } from '@/services/request';
+import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
+import { AxiosProgressEvent } from 'axios';
 
 export const getMyDevboxList = () =>
   GET<
@@ -99,3 +100,17 @@ export const getAppsByDevboxId = (devboxId: string) =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
     res.map(adaptAppListItem)
   );
+
+export const execCommandInDevboxPod = (data: {
+  devboxName: string;
+  command: string;
+  idePath: string;
+  onDownloadProgress: (progressEvent: AxiosProgressEvent) => void;
+  signal: AbortSignal;
+}) =>
+  POST('/api/execCommandInDevboxPod', data, {
+    // responseType: 'stream',
+    timeout: 0,
+    onDownloadProgress: data.onDownloadProgress,
+    signal: data.signal
+  });

@@ -28,6 +28,7 @@ export type WorkOrderDialog = {
   userId: string;
   isAdmin: boolean;
   isAIBot: boolean;
+  isRecall?: boolean;
 };
 
 export enum WorkOrderType {

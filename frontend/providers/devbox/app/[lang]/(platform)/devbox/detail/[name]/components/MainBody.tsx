@@ -90,6 +90,7 @@ const MainBody = () => {
               borderRadius={'md'}
             >
               <Text
+                className="guide-network-address"
                 cursor="pointer"
                 color={'grayModern.600'}
                 _hover={{ textDecoration: 'underline' }}
@@ -140,7 +141,7 @@ const MainBody = () => {
               <MyIcon name="maximize" width={'16px'} fill={'#667085'} />
             </Button>
             <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
-              {t('memory')}{' '}
+              {t('memory')}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
             </Box>
             <Box h={'60px'}>

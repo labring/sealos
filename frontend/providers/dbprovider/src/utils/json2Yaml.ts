@@ -29,7 +29,13 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
  * @param backupInfo Optional backup data for database restoration.
  * @returns Generated YAML configuration.
  */
-export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType) => {
+export const json2CreateCluster = (
+  data: DBEditType,
+  backupInfo?: BackupItemType,
+  options?: {
+    storageClassName?: string;
+  }
+) => {
   const resources = {
     limits: {
       cpu: `${str2Num(Math.floor(data.cpu))}m`,
@@ -65,7 +71,10 @@ export const json2CreateCluster = (data: DBEditType, backupInfo?: BackupItemType
     name: data.dbName
   };
 
-  const storageClassName = StorageClassName ? { storageClassName: StorageClassName } : {};
+  const storageClassName =
+    options?.storageClassName || StorageClassName
+      ? { storageClassName: options?.storageClassName || StorageClassName }
+      : {};
 
   const redisHA = RedisHAConfig(data.replicas > 1);
 
@@ -854,6 +863,9 @@ export const json2Upgrade = ({ dbName, dbVersion }: DBEditType) => {
   return yaml.dump(template);
 };
 
+/**
+ * @deprecated
+ */
 export const json2StartOrStop = ({ dbName, type }: { dbName: string; type: 'Start' | 'Stop' }) => {
   const nameType = type.toLocaleLowerCase();
 
@@ -877,6 +889,9 @@ export const json2StartOrStop = ({ dbName, type }: { dbName: string; type: 'Star
   };
 };
 
+/**
+ * @deprecated
+ */
 export const json2Restart = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
   const template = {
     apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -1176,7 +1191,7 @@ export const json2Reconfigure = (
   return yaml.dump(template);
 };
 
-export const json2ClusterOps = (
+export const json2ResourceOps = (
   data: DBEditType,
   type: 'VerticalScaling' | 'HorizontalScaling' | 'VolumeExpansion'
 ) => {
@@ -1184,8 +1199,9 @@ export const json2ClusterOps = (
     data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
 
   const getOpsName = () => {
-    const timeStr = dayjs().format('YYYYMMDDHHmmss');
-    return `ops-${type.toLowerCase()}-${timeStr}`;
+    const timeStr = dayjs().format('YYYYMMDDHHmm');
+    const randomStr = nanoid(4);
+    return `ops-${type.toLowerCase()}-${timeStr}-${randomStr}`;
   };
 
   const baseTemplate = {
@@ -1247,6 +1263,37 @@ export const json2ClusterOps = (
     spec: {
       ...baseTemplate.spec,
       ...opsConfig[type]
+    }
+  };
+
+  return yaml.dump(template);
+};
+
+export const json2BasicOps = (data: {
+  dbName: string;
+  dbType?: DBType;
+  type: 'Start' | 'Stop' | 'Restart';
+}) => {
+  const componentName =
+    data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType === 'kafka' ? 'broker' : data.dbType;
+
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      name: `ops-${data.type.toLowerCase()}-${dayjs().format('YYYYMMDDHHmmss')}`,
+      labels: {
+        [crLabelKey]: data.dbName
+      }
+    },
+    spec: {
+      clusterRef: data.dbName,
+      type: data.type,
+      ...(data.type === 'Restart'
+        ? {
+            restart: [{ componentName }]
+          }
+        : {})
     }
   };
 

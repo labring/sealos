@@ -14,12 +14,15 @@ var ModelList = []*model.ModelConfig{
 		Owner:       model.ModelOwnerBAAI,
 		InputPrice:  0.0009,
 		OutputPrice: 0,
+		RPM:         2000,
 	},
 
 	{
-		Model: "BAAI/bge-large-zh-v1.5",
-		Type:  relaymode.Embeddings,
-		Owner: model.ModelOwnerBAAI,
+		Model:      "BAAI/bge-large-zh-v1.5",
+		Type:       relaymode.Embeddings,
+		Owner:      model.ModelOwnerBAAI,
+		InputPrice: 0.0005,
+		RPM:        2000,
 	},
 
 	{

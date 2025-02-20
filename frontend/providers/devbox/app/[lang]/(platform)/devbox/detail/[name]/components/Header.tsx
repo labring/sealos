@@ -169,6 +169,7 @@ const Header = ({
       <Flex gap={5}>
         <Box>
           <IDEButton
+            runtimeType={devboxDetail.iconId}
             devboxName={devboxDetail.name}
             sshPort={devboxDetail.sshPort as number}
             status={devboxDetail.status}
@@ -207,6 +208,7 @@ const Header = ({
         </Button>
         {devboxDetail.status.value === 'Running' && (
           <Button
+            className="guide-close-button"
             h={'40px'}
             fontSize={'14px'}
             bg={'white'}

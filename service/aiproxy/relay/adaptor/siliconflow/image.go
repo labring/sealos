@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -33,7 +32,7 @@ func ConvertImageRequest(meta *meta.Meta, request *http.Request) (http.Header, i
 
 	meta.Set(openai.MetaResponseFormat, reqMap["response_format"])
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	reqMap["batch_size"] = reqMap["n"]
 	delete(reqMap, "n")
 	if _, ok := reqMap["steps"]; ok {

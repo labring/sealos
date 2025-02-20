@@ -19,6 +19,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.21.0",
     "@prisma/client": "^5.10.2",
+    "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "axios": "^1.7.3",

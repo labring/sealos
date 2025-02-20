@@ -23,6 +23,8 @@ import (
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	corev1 "k8s.io/api/core/v1"
@@ -37,6 +39,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -44,11 +47,12 @@ import (
 
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
-	CommitImageRegistry     string
-	RequestCPURate          float64
-	RequestMemoryRate       float64
-	RequestEphemeralStorage string
-	LimitEphemeralStorage   string
+	CommitImageRegistry string
+
+	RequestRate      resource.RequestRate
+	EphemeralStorage resource.EphemeralStorage
+
+	PodMatchers []matcher.PodMatcher
 
 	DebugMode bool
 
@@ -260,12 +264,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
-		runtimecr, err := r.getRuntime(ctx, devbox)
-		if err != nil {
-			return err
-		}
 		nextCommitHistory := r.generateNextCommitHistory(devbox)
-		expectPod := r.generateDevboxPod(devbox, runtimecr, nextCommitHistory)
+		expectPod := r.generateDevboxPod(devbox, nextCommitHistory)
 
 		switch len(podList.Items) {
 		case 0:
@@ -298,7 +298,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				logger.Info("pod has been deleted")
 				return r.handlePodDeleted(ctx, devbox, pod)
 			}
-			switch helper.PodMatchExpectations(expectPod, pod) {
+			switch matcher.PodMatchExpectations(expectPod, pod, r.PodMatchers...) {
 			case true:
 				// pod match expectations
 				logger.Info("pod match expectations")
@@ -343,12 +343,8 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 }
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	runtimecr, err := r.getRuntime(ctx, devbox)
-	if err != nil {
-		return err
-	}
 	var servicePorts []corev1.ServicePort
-	for _, port := range runtimecr.Spec.Config.Ports {
+	for _, port := range devbox.Spec.Config.Ports {
 		servicePorts = append(servicePorts, corev1.ServicePort{
 			Name:       port.Name,
 			Port:       port.ContainerPort,
@@ -399,7 +395,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 
 	// Retrieve the updated Service to get the NodePort
 	var updatedService corev1.Service
-	err = retry.OnError(
+	err := retry.OnError(
 		retry.DefaultRetry,
 		func(err error) bool { return client.IgnoreNotFound(err) == nil },
 		func() error {
@@ -426,26 +422,27 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	return r.Status().Update(ctx, devbox)
 }
 
-// get the runtime
-func (r *DevboxReconciler) getRuntime(ctx context.Context, devbox *devboxv1alpha1.Devbox) (*devboxv1alpha1.Runtime, error) {
-	runtimeNamespace := devbox.Spec.RuntimeRef.Namespace
-	if runtimeNamespace == "" {
-		runtimeNamespace = devbox.Namespace
-	}
-	runtimecr := &devboxv1alpha1.Runtime{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: runtimeNamespace, Name: devbox.Spec.RuntimeRef.Name}, runtimecr); err != nil {
-		return nil, err
-	}
-	return runtimecr, nil
-}
-
 // create a new pod, add predicated status to nextCommitHistory
 func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, expectPod *corev1.Pod, nextCommitHistory *devboxv1alpha1.CommitHistory) error {
+	logger := log.FromContext(ctx)
+
+	logger.Info("creating pod",
+		"podName", expectPod.Name,
+		"namespace", expectPod.Namespace,
+		"nextCommitHistory", nextCommitHistory)
+
 	nextCommitHistory.Status = devboxv1alpha1.CommitStatusPending
 	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
+
+	if expectPod.Name == "" {
+		return fmt.Errorf("pod name cannot be empty")
+	}
+
 	if err := r.Create(ctx, expectPod); err != nil {
+		logger.Error(err, "failed to create pod")
 		return err
 	}
+
 	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
 	return nil
 }
@@ -463,7 +460,9 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		return err
 	}
 	// update commit history status because pod has been deleted
-	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	if len(pod.Status.ContainerStatuses) != 0 {
+		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	}
 	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
@@ -476,8 +475,10 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 		return err
 	}
 	// update commit history status because pod has been deleted
+	if len(pod.Status.ContainerStatuses) != 0 {
+		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
+	}
 	helper.UpdateCommitHistory(devbox, pod, true)
-	devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
 	return nil
 }
 
@@ -513,38 +514,34 @@ func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj clie
 	return client.IgnoreNotFound(err)
 }
 
-func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runtime *devboxv1alpha1.Runtime, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
 	objectMeta := metav1.ObjectMeta{
 		Name:        nextCommitHistory.Pod,
 		Namespace:   devbox.Namespace,
-		Labels:      helper.GeneratePodLabels(devbox, runtime),
-		Annotations: helper.GeneratePodAnnotations(devbox, runtime),
+		Labels:      helper.GeneratePodLabels(devbox),
+		Annotations: helper.GeneratePodAnnotations(devbox),
 	}
 
-	// set up ports and env by using runtime ports and devbox extra ports
-	ports := runtime.Spec.Config.Ports
+	ports := devbox.Spec.Config.Ports
 	// TODO: add extra ports to pod, currently not support
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
-	envs := runtime.Spec.Config.Env
-	envs = append(envs, devbox.Spec.ExtraEnvs...)
+	envs := devbox.Spec.Config.Env
 	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
 
 	//get image name
 	var imageName string
 	if r.DebugMode {
-		imageName = runtime.Spec.Config.Image
+		imageName = devbox.Spec.Image
 	} else {
-		imageName = helper.GetLastSuccessCommitImageName(devbox, runtime)
+		imageName = helper.GetLastSuccessCommitImageName(devbox)
 	}
 
-	volumes := runtime.Spec.Config.Volumes
+	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
-	volumes = append(volumes, devbox.Spec.ExtraVolumes...)
 
-	volumeMounts := runtime.Spec.Config.VolumeMounts
+	volumeMounts := devbox.Spec.Config.VolumeMounts
 	volumeMounts = append(volumeMounts, helper.GenerateSSHVolumeMounts()...)
-	volumeMounts = append(volumeMounts, devbox.Spec.ExtraVolumeMounts...)
 
 	containers := []corev1.Container{
 		{
@@ -554,15 +551,22 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			Ports:        ports,
 			VolumeMounts: volumeMounts,
 
-			WorkingDir: helper.GenerateWorkingDir(devbox, runtime),
-			Command:    helper.GenerateCommand(devbox, runtime),
-			Args:       helper.GenerateDevboxArgs(devbox, runtime),
-			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestCPURate, r.RequestMemoryRate, r.RequestEphemeralStorage, r.LimitEphemeralStorage),
-		},
+			WorkingDir: helper.GetWorkingDir(devbox),
+			Command:    helper.GetCommand(devbox),
+			Args:       helper.GetArgs(devbox),
+			Resources:  helper.GenerateResourceRequirements(devbox, r.RequestRate, r.EphemeralStorage)},
 	}
 
 	terminationGracePeriodSeconds := 300
 	automountServiceAccountToken := false
+
+	runtimeClassName := devbox.Spec.RuntimeClassName
+	var runtimeClassNamePtr *string
+	if runtimeClassName == "" {
+		runtimeClassNamePtr = nil
+	} else {
+		runtimeClassNamePtr = ptr.To(runtimeClassName)
+	}
 
 	expectPod := &corev1.Pod{
 		ObjectMeta: objectMeta,
@@ -575,8 +579,11 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, runt
 			Containers: containers,
 			Volumes:    volumes,
 
-			Tolerations: devbox.Spec.Tolerations,
-			Affinity:    devbox.Spec.Affinity,
+			RuntimeClassName: runtimeClassNamePtr,
+
+			NodeSelector: devbox.Spec.NodeSelector,
+			Tolerations:  devbox.Spec.Tolerations,
+			Affinity:     devbox.Spec.Affinity,
 		},
 	}
 	// set controller reference and finalizer
@@ -604,6 +611,7 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

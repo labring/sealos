@@ -4,6 +4,7 @@ package aws
 import (
 	"io"
 	"net/http"
+	"time"
 
 	json "github.com/json-iterator/go"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
-	"github.com/labring/sealos/service/aiproxy/common/helper"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -93,7 +93,7 @@ func awsModelID(requestModel string) (string, error) {
 }
 
 func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
-	awsModelID, err := awsModelID(meta.ActualModelName)
+	awsModelID, err := awsModelID(meta.ActualModel)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -121,7 +121,12 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := meta.AwsClient().InvokeModel(c.Request.Context(), awsReq)
+	awsClient, err := utils.AwsClientFromMeta(meta)
+	if err != nil {
+		return utils.WrapErr(errors.Wrap(err, "get aws client")), nil
+	}
+
+	awsResp, err := awsClient.InvokeModel(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModel")), nil
 	}
@@ -133,7 +138,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 	}
 
 	openaiResp := anthropic.ResponseClaude2OpenAI(claudeResponse)
-	openaiResp.Model = meta.OriginModelName
+	openaiResp.Model = meta.OriginModel
 	usage := relaymodel.Usage{
 		PromptTokens:     claudeResponse.Usage.InputTokens,
 		CompletionTokens: claudeResponse.Usage.OutputTokens,
@@ -147,9 +152,9 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
 	log := middleware.GetLogger(c)
-	createdTime := helper.GetTimestamp()
-	originModelName := meta.OriginModelName
-	awsModelID, err := awsModelID(meta.ActualModelName)
+	createdTime := time.Now().Unix()
+	originModelName := meta.OriginModel
+	awsModelID, err := awsModelID(meta.ActualModel)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "awsModelID")), nil
 	}
@@ -177,7 +182,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
 
-	awsResp, err := meta.AwsClient().InvokeModelWithResponseStream(c.Request.Context(), awsReq)
+	awsClient, err := utils.AwsClientFromMeta(meta)
+	if err != nil {
+		return utils.WrapErr(errors.Wrap(err, "get aws client")), nil
+	}
+
+	awsResp, err := awsClient.InvokeModelWithResponseStream(c.Request.Context(), awsReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "InvokeModelWithResponseStream")), nil
 	}

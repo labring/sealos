@@ -39,3 +39,14 @@ export type GpuType = {
   type: string;
   amount: number;
 };
+
+export type UserTask = {
+  id: string;
+  title: string;
+  description: string;
+  reward: string;
+  order: number;
+  taskType: TaskType;
+  isCompleted: boolean;
+  completedAt: string;
+};

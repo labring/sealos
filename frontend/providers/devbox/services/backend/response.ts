@@ -15,8 +15,16 @@ export const jsonRes = <T = any>(props: {
     return NextResponse.json(ERROR_RESPONSE[error]);
   }
   const body = error?.body;
-  if (body instanceof V1Status && body.message?.includes('40001:')) {
-    return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment]);
+  if (body instanceof V1Status) {
+    if (body.message?.includes('40001:')) {
+      return NextResponse.json(ERROR_RESPONSE[ERROR_ENUM.outstandingPayment]);
+    } else {
+      return NextResponse.json({
+        code: 500,
+        statusText: body.message,
+        message: body.message
+      });
+    }
   }
 
   let msg = message;

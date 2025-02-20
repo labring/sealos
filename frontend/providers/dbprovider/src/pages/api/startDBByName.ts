@@ -3,9 +3,10 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { json2StartOrStop } from '@/utils/json2Yaml';
+import { json2BasicOps } from '@/utils/json2Yaml';
 import { PatchUtils } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { getCluster } from './getDBByName';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -24,22 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const { yaml, yamlObj } = json2StartOrStop({
+    const yaml = json2BasicOps({
       dbName,
       type: 'Start'
     });
 
-    const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      namespace,
-      'clusters',
-      dbName
-    )) as {
-      body: KbPgClusterType;
-    };
-
-    console.log(yamlObj, body.spec.backup, body.spec.backup?.enabled === false, 'yaml');
+    const body = await getCluster(req, dbName);
 
     if (body.spec.backup?.enabled === false) {
       const patch = [

@@ -14,20 +14,20 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertImageRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 	meta.Set(MetaResponseFormat, reqMap["response_format"])
 
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
@@ -71,7 +71,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 
 	_, err = c.Writer.Write(data)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return usage, nil
 }

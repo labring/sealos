@@ -3,12 +3,10 @@ package controller
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
-
-	"github.com/gin-gonic/gin"
 )
 
 func GetOptions(c *gin.Context) {
@@ -22,6 +20,20 @@ func GetOptions(c *gin.Context) {
 		options[option.Key] = option.Value
 	}
 	middleware.SuccessResponse(c, options)
+}
+
+func GetOption(c *gin.Context) {
+	key := c.Param("key")
+	if key == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "key is required")
+		return
+	}
+	option, err := model.GetOption(key)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, option)
 }
 
 func UpdateOption(c *gin.Context) {

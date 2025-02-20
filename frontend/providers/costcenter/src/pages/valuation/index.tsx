@@ -50,7 +50,7 @@ function Valuation() {
       _data?.data?.properties
         // ?.filter((x) => !x.name.startsWith('gpu-'))
         ?.flatMap<CardItem>((x) => {
-          let props = valuationMap.get(x.name);
+          let props = valuationMap.get(x.name as any);
           if (!props) {
             if (!x.name.startsWith('gpu-')) return [];
             const gpuprops = valuationMap.get('gpu');
