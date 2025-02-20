@@ -17,7 +17,6 @@ package kubernetes
 import (
 	"context"
 	"fmt"
-	"path"
 	"strings"
 	"time"
 
@@ -33,7 +32,7 @@ import (
 )
 
 const (
-	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --config %s --yes"
+	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --ignore-preflight-errors=all --yes"
 	upradeNodeCmd   = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
@@ -52,13 +51,13 @@ EOF`
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	logger.Info("Change ClusterConfiguration up to newVersion if need.")
-	conversion, err := k.autoUpdateConfig(version)
+	_, err := k.autoUpdateConfig(version)
 	if err != nil {
 		return err
 	}
 	//upgrade master0
 	logger.Info("start to upgrade master0")
-	err = k.upgradeMaster0(conversion, version)
+	err = k.upgradeMaster0(version)
 	if err != nil {
 		return err
 	}
@@ -74,7 +73,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	return k.upgradeOtherNodes(upgradeNodes, version)
 }
 
-func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig, version string) error {
+func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
 	sver := semver.MustParse(version)
 	if gte(sver, V1260) {
@@ -107,22 +106,11 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 		logger.Warn("image pull pre-upgrade failed: %s", err.Error())
 	}
 
-	config, err := yaml.MarshalConfigs(&conversion.InitConfiguration, &conversion.ClusterConfiguration)
-	if err != nil {
-		logger.Error("kubeadm config marshal failed: %s", err.Error())
-		return err
-	}
-
-	upgradeConfigName := "kubeadm-upgrade.yaml"
-	upgradeConfigPath := path.Join(k.pathResolver.EtcPath(), upgradeConfigName)
-
 	err = k.sshCmdAsync(master0ip,
 		//install kubeadm:{version} at master0
 		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
-		// write kubeadm config to file
-		fmt.Sprintf(writeKubeadmConfig, upgradeConfigPath, string(config)),
 		//execute  kubeadm upgrade apply {version} at master0
-		fmt.Sprintf(upgradeApplyCmd, upgradeConfigPath),
+		fmt.Sprintf(upgradeApplyCmd),
 		//kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
 		//install kubelet:{version},kubectl{version} at master0
