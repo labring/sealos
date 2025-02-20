@@ -241,5 +241,6 @@
   "first_recharge_title": "首充双倍!",
   "credit_purchase": "余额充值",
   "remaining_balance": "当前余额",
-  "custom_amount": "输入金额"
+  "custom_amount": "输入金额",
+  "pay with alipay": "支付宝支付"
 }

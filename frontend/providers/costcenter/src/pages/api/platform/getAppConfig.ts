@@ -1,8 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import * as yaml from 'js-yaml';
-import { readFileSync } from 'fs';
 import { jsonRes } from '@/service/backend/response';
 import { AppConfigType, DefaultAppConfig } from '@/types/config';
+import { readFileSync } from 'fs';
+import * as yaml from 'js-yaml';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type Response = {
   REALNAME_RECHARGE_LIMIT: boolean;
@@ -11,6 +11,7 @@ export type Response = {
   STRIPE_ENABLED: boolean;
   STRIPE_PUB: string;
   WECHAT_ENABLED: boolean;
+  ALIPAY_ENABLED: boolean;
   CURRENCY: 'shellCoin' | 'cny' | 'usd';
   INVOICE_ENABLED: boolean;
   GPU_ENABLED: boolean;
@@ -50,6 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         RECHARGE_ENABLED: global.AppConfig.costCenter.recharge.enabled,
         TRANSFER_ENABLED: global.AppConfig.costCenter.transferEnabled,
         STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,
+        ALIPAY_ENABLED: global.AppConfig.costCenter.recharge.payMethods.alipay.enabled,
         STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
         WECHAT_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.wechat?.enabled || false,
         CURRENCY: global.AppConfig.costCenter.currencyType,

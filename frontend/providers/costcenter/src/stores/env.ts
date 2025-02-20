@@ -5,6 +5,7 @@ type EnvState = {
   rechargeEnabled: boolean;
   transferEnabled: boolean;
   invoiceEnabled: boolean;
+  alipayEnabled: boolean;
   gpuEnabled: boolean;
   wechatEnabled: boolean;
   stripeEnabled: boolean;
@@ -20,6 +21,7 @@ type EnvState = {
 
 const useEnvStore = create<EnvState>((set, get) => ({
   realNameRechargeLimit: false,
+  alipayEnabled: false,
   rechargeEnabled: false,
   transferEnabled: false,
   invoiceEnabled: false,

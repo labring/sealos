@@ -7,13 +7,14 @@ import useNotEnough from '@/hooks/useNotEnough';
 import request from '@/service/request';
 import useOverviewStore from '@/stores/overview';
 import { ApiResp } from '@/types';
+import { RechargeModalRef } from '@/types/payment';
 import { Box, Flex, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
-import { MutableRefObject, createContext, useEffect, useRef } from 'react';
-export const RechargeContext = createContext<{ rechargeRef: MutableRefObject<any> | null }>({
+import { RefObject, createContext, useEffect, useRef } from 'react';
+export const RechargeContext = createContext<{ rechargeRef: RefObject<RechargeModalRef> | null }>({
   rechargeRef: null
 });
 
@@ -51,7 +52,7 @@ function CostOverview() {
   }, []);
   const { NotEnoughModal } = useNotEnough();
   const totast = useToast();
-  const rechargeRef = useRef<any>();
+  const rechargeRef = useRef<RechargeModalRef>(null);
   const { data: balance_raw } = useQuery({
     queryKey: ['getAccount'],
     queryFn: () =>
