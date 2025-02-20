@@ -32,14 +32,14 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		u = baseURL
 	}
 	switch meta.Mode {
-	case relaymode.Embeddings:
-		return u + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
 	case relaymode.Completions:
 		return u + "/compatible-mode/v1/completions", nil
+	case relaymode.Embeddings:
+		return u + "/compatible-mode/v1/embeddings", nil
 	case relaymode.AudioSpeech, relaymode.AudioTranscription:
 		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
