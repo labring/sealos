@@ -12,15 +12,14 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
-import NProgress from 'nprogress'; //nprogress module
+import NProgress from 'nprogress';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import 'react-day-picker/dist/style.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
-import { AppEditSyncedFields } from '@/types/app';
-import Script from 'next/script';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());

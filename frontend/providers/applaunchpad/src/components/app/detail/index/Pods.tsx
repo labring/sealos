@@ -34,15 +34,7 @@ const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
 const PodFileModal = dynamic(() => import('./PodFileModal'));
 
-const Pods = ({
-  pods = [],
-  loading,
-  appName
-}: {
-  pods: PodDetailType[];
-  loading: boolean;
-  appName: string;
-}) => {
+const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
@@ -88,7 +80,7 @@ const Pods = ({
       key: 'podName',
       render: (_: PodDetailType, i: number) => (
         <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
-          {appName}-{i + 1}
+          {_?.podName}
         </Box>
       )
     },
@@ -247,17 +239,17 @@ const Pods = ({
   ];
 
   return (
-    <Box h={'100%'} py={5} position={'relative'}>
-      <Flex px={6} alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
-        <MyIcon name="podList" w={'14px'} fill={'grayModern.600'} />
-        <Box ml={3} flex={1} color={'grayModern.600'}>
+    <Box h={'100%'} py={'20px'} px={'32px'} position={'relative'}>
+      <Flex>
+        <Box fontSize={'14px'} fontWeight={'bold'} color={'grayModern.900'}>
           {t('Pods List')}
         </Box>
-        <Box color={'grayModern.500'}>
-          {pods.length} {t('Items')}
-        </Box>
+        <Text ml={'8px'} fontSize={'14px'} fontWeight={'bold'} color={'grayModern.500'}>
+          ({pods.length})
+        </Text>
       </Flex>
-      <TableContainer mt={5} overflow={'auto'}>
+
+      <TableContainer mt={'12px'} overflow={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'}>
           <Thead backgroundColor={'grayModern.50'}>
             <Tr>
@@ -269,6 +261,12 @@ const Pods = ({
                   fontSize={'12px'}
                   fontWeight={'500'}
                   color={'grayModern.600'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
                 >
                   {t(item.title)}
                 </Th>
@@ -279,7 +277,7 @@ const Pods = ({
             {pods.map((app, i) => (
               <Tr key={app.podName}>
                 {columns.map((col) => (
-                  <Td key={col.key}>
+                  <Td key={col.key} border={'none'}>
                     {col.render
                       ? col.render(app, i)
                       : col.dataIndex
@@ -293,7 +291,6 @@ const Pods = ({
         </Table>
       </TableContainer>
 
-      <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
           appName={appName}
@@ -301,10 +298,10 @@ const Pods = ({
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.running)
             .map((item, i) => ({
-              alias: `${appName}-${i + 1}`,
+              alias: item.podName,
               podName: item.podName
             }))}
-          podAlias={`${appName}-${logsPodIndex + 1}`}
+          podAlias={pods[logsPodIndex]?.podName || ''}
           setLogsPodName={(name: string) =>
             setLogsPodIndex(pods.findIndex((item) => item.podName === name))
           }
@@ -314,9 +311,9 @@ const Pods = ({
       {detailPodIndex !== undefined && (
         <DetailModel
           pod={pods[detailPodIndex]}
-          podAlias={`${appName}-${detailPodIndex + 1}`}
+          podAlias={pods[detailPodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
-            alias: `${appName}-${i + 1}`,
+            alias: item.podName,
             podName: item.podName
           }))}
           setPodDetail={(e: string) =>
@@ -331,9 +328,9 @@ const Pods = ({
           isOpen={isOpenPodFile}
           onClose={onClosePodFile}
           pod={pods[detailFilePodIndex]}
-          podAlias={`${appName}-${detailFilePodIndex + 1}`}
+          podAlias={pods[detailFilePodIndex]?.podName || ''}
           pods={pods.map((item, i) => ({
-            alias: `${appName}-${i + 1}`,
+            alias: item.podName,
             podName: item.podName
           }))}
           setPodDetail={(e: string) =>
