@@ -201,7 +201,7 @@ const App = ({ Component, pageProps }: AppProps) => {
 
             <Box bg="#001529" color="white" px={4} py={5}>
 
-              <Heading size="md">储存云</Heading>
+              <Heading size="md">容器云</Heading>
 
             </Box>
 
@@ -210,9 +210,9 @@ const App = ({ Component, pageProps }: AppProps) => {
               <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
                 <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/imagehub')}>镜像管理</Text>
                 <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/apps')}>应用管理</Text>
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text>
+                {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
                 <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/nodeManage')}>节点管理</Text>
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/user')}>用户管理</Text>
+                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/user')}>租户管理</Text>
                 <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/monitor')}>监控管理</Text>
               </Box>
 
