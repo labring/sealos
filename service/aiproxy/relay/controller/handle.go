@@ -87,12 +87,14 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 	// 5. Do request
 	usage, detail, respErr := DoHelper(adaptor, c, meta)
 	if respErr != nil {
+		var logDetail *model.RequestDetail
 		if detail != nil && config.DebugEnabled {
+			logDetail = detail
 			log.Errorf(
 				"handle failed: %+v\nrequest detail:\n%s\nresponse detail:\n%s",
 				respErr.Error,
-				detail.RequestBody,
-				detail.ResponseBody,
+				logDetail.RequestBody,
+				logDetail.ResponseBody,
 			)
 		} else {
 			log.Errorf("handle failed: %+v", respErr.Error)
