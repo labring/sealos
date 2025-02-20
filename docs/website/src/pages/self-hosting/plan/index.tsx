@@ -34,6 +34,7 @@ export default function Plan() {
   const [months, setMonths] = useState('3');
   const [cpu, setCpu] = useState(8);
   const [memory, setMemory] = useState(16);
+  const [isOpen, setIsOpen] = useState(false);
 
   const price = useMemo(() => {
     return calculatePrice({ cpu, memory, months });
@@ -295,49 +296,56 @@ export default function Plan() {
           <div className="flex items-center mt-10">
             <div className="w-28">月数</div>
             <div className="relative">
-              <select
-                value={months}
-                onChange={(e) => {
-                  setMonths(e.target.value);
-                }}
-                className="w-52 input-select min-w-[100px] h-8 border-gray-300 border-none bg-transparent text-white/80 text-xs rounded-md block focus-visible:outline-none lg:w-10 appearance-none"
+              <div
+                className="w-52 input-select min-w-[100px] h-8 flex items-center px-3 cursor-pointer text-white/80 text-xs lg:w-10"
+                onClick={() => setIsOpen(!isOpen)}
                 style={{
                   borderRadius: '6px',
                   border: '1px solid rgba(232, 235, 240, 0.10)',
-                  background: 'rgba(247, 248, 250, 0.10)',
-                  WebkitAppearance: 'none'
+                  background: 'rgba(247, 248, 250, 0.10)'
                 }}
               >
-                {MonthMapList.map((item) => (
-                  <option
-                    key={item.label}
-                    value={item.value}
-                    style={{
-                      background: '#1A1A1A',
-                      color: 'rgba(255, 255, 255, 0.8)'
-                    }}
+                {MonthMapList.find((item) => item.value === months)?.label}
+                <div className="absolute top-[6px] right-[10px]">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="17"
+                    height="16"
+                    viewBox="0 0 17 16"
+                    fill="none"
                   >
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute top-[6px] right-[10px]">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="17"
-                  height="16"
-                  viewBox="0 0 17 16"
-                  fill="none"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M4.32173 5.52851C4.58208 5.26816 5.00419 5.26816 5.26454 5.52851L8.79313 9.05711L12.3217 5.52851C12.5821 5.26816 13.0042 5.26816 13.2645 5.52851C13.5249 5.78886 13.5249 6.21097 13.2645 6.47132L9.26454 10.4713C9.00419 10.7317 8.58208 10.7317 8.32173 10.4713L4.32173 6.47132C4.06138 6.21097 4.06138 5.78886 4.32173 5.52851Z"
-                    fill="white"
-                    fillOpacity="0.7"
-                  />
-                </svg>
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M4.32173 5.52851C4.58208 5.26816 5.00419 5.26816 5.26454 5.52851L8.79313 9.05711L12.3217 5.52851C12.5821 5.26816 13.0042 5.26816 13.2645 5.52851C13.5249 5.78886 13.5249 6.21097 13.2645 6.47132L9.26454 10.4713C9.00419 10.7317 8.58208 10.7317 8.32173 10.4713L4.32173 6.47132C4.06138 6.21097 4.06138 5.78886 4.32173 5.52851Z"
+                      fill="white"
+                      fillOpacity="0.7"
+                    />
+                  </svg>
+                </div>
               </div>
+              {isOpen && (
+                <div
+                  className="absolute top-full left-0 w-52 mt-1 z-10 rounded-md overflow-hidden"
+                  style={{
+                    background: 'rgba(247, 248, 250, 0.10)',
+                    border: '1px solid rgba(232, 235, 240, 0.10)'
+                  }}
+                >
+                  {MonthMapList.map((item) => (
+                    <div
+                      key={item.value}
+                      className="px-3 py-2 hover:bg-white/10 cursor-pointer text-white/80 text-xs"
+                      onClick={() => {
+                        setMonths(item.value);
+                        setIsOpen(false);
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
