@@ -157,6 +157,7 @@ func SetAPIRouter(router *gin.Engine) {
 			monitorRoute.DELETE("/", controller.ClearAllModelErrors)
 			monitorRoute.DELETE("/:id", controller.ClearChannelAllModelErrors)
 			monitorRoute.DELETE("/:id/:model", controller.ClearChannelModelErrors)
+			monitorRoute.GET("/models", controller.GetModelsErrorRate)
 		}
 	}
 }
