@@ -61,7 +61,9 @@ export interface AppListItemType {
   source: TAppSource;
 }
 
-export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
+export type ApplicationProtocolType = 'HTTP' | 'GRPC' | 'WS';
+
+export type TransportProtocolType = 'TCP' | 'UDP' | 'SCTP' | 'HTTP' | 'GRPC' | 'WS';
 
 export interface AppEditType {
   appName: string;
@@ -76,11 +78,14 @@ export interface AppEditType {
     networkName: string;
     portName: string;
     port: number;
-    protocol: ProtocolType;
+    protocol: TransportProtocolType;
+    appProtocol: ApplicationProtocolType;
     openPublicDomain: boolean;
     publicDomain: string; //  domainPrefix
     customDomain: string; // custom domain
     domain: string; // Main promoted domain
+    nodePort?: number; // nodePort
+    openNodePort: boolean; // open nodePort
   }[];
   envs: {
     key: string;

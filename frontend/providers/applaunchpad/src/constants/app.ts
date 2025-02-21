@@ -1,4 +1,4 @@
-import { TAppSourceType } from '@/types/app';
+import { ApplicationProtocolType, TAppSourceType, TransportProtocolType } from '@/types/app';
 
 export enum AppStatusEnum {
   running = 'running',
@@ -73,10 +73,16 @@ export const podStatusMap = {
 };
 
 export const ProtocolList = [
-  { value: 'HTTP', label: 'https://' },
-  { value: 'GRPC', label: 'grpcs://' },
-  { value: 'WS', label: 'wss://' }
+  { value: 'HTTP', label: 'https://', inline: 'http://' },
+  { value: 'GRPC', label: 'grpcs://', inline: 'grpc://' },
+  { value: 'WS', label: 'wss://', inline: 'ws://' },
+  { value: 'TCP', label: 'tcp://', inline: 'tcp://' },
+  { value: 'UDP', label: 'udp://', inline: 'udp://' }
 ];
+
+export const APPLICATION_PROTOCOLS: ApplicationProtocolType[] = ['HTTP', 'GRPC', 'WS'];
+
+export const TRANSPORT_PROTOCOLS: TransportProtocolType[] = ['TCP', 'UDP', 'SCTP'];
 
 export const defaultSliderKey = 'default';
 export const pauseKey = 'deploy.cloud.sealos.io/pause';

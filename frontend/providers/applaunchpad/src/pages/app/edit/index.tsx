@@ -157,6 +157,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
+      setIsSubmitting(false);
       setIsLoading(true);
       try {
         const parsedNewYamlList = yamlList.map((item) => item.value);
@@ -310,8 +311,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           networkName: network.networkName || `network-${nanoid()}`,
           portName: network.portName || nanoid(),
           port: network.port || 80,
-          protocol: network.protocol || 'HTTP',
+          protocol: network.protocol || 'TCP',
+          appProtocol: network.appProtocol || 'HTTP',
           openPublicDomain: network.openPublicDomain || false,
+          openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
           customDomain: network.customDomain || '',
           domain: network.domain || 'gzg.sealos.run'
@@ -337,6 +340,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
+            console.log(isSubmitting, 123123);
+
             if (isSubmitting) return;
             closeGuide();
             setIsSubmitting(true);
