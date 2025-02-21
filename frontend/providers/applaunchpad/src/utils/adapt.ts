@@ -19,9 +19,10 @@ import type {
   PodMetrics,
   PodEvent,
   HpaTarget,
-  ProtocolType,
+  ApplicationProtocolType,
   TAppSource,
-  TAppSourceType
+  TAppSourceType,
+  TransportProtocolType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -223,10 +224,20 @@ export enum YamlKindEnum {
 
 export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
   const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = await getInitData();
+
+  const allServicePorts = configs.flatMap((item) => {
+    if (item.kind === YamlKindEnum.Service) {
+      const temp = item as V1Service;
+      return temp.spec?.ports || [];
+    } else {
+      return [];
+    }
+  });
+
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
-    [YamlKindEnum.Service]?: V1Service;
+    // [YamlKindEnum.Service]?: V1Service;
     [YamlKindEnum.ConfigMap]?: V1ConfigMap;
     [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
     [YamlKindEnum.Secret]?: V1Secret;
@@ -313,7 +324,7 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
         };
       }) || [],
     networks:
-      deployKindsMap.Service?.spec?.ports?.map((item) => {
+      allServicePorts?.map((item) => {
         const ingress = configs.find(
           (config: any) =>
             config.kind === YamlKindEnum.Ingress &&
@@ -321,12 +332,12 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
         ) as V1Ingress;
         const domain = ingress?.spec?.rules?.[0].host || '';
 
-        const backendProtocol = ingress?.metadata?.annotations?.[
-          'nginx.ingress.kubernetes.io/backend-protocol'
-        ] as ProtocolType;
+        const appProtocol =
+          (ingress?.metadata?.annotations?.[
+            'nginx.ingress.kubernetes.io/backend-protocol'
+          ] as ApplicationProtocolType) || 'HTTP';
 
-        const protocol =
-          backendProtocol ?? (item.protocol === 'TCP' ? 'HTTP' : (item.protocol as ProtocolType));
+        const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
         const isCustomDomain =
           !domain.endsWith(SEALOS_DOMAIN) &&
@@ -336,7 +347,10 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
           port: item.port,
+          nodePort: item?.nodePort,
+          openNodePort: !!item?.nodePort,
           protocol: protocol,
+          appProtocol: appProtocol,
           openPublicDomain: !!ingress,
           publicDomain: isCustomDomain
             ? ingress?.metadata?.labels?.[publicDomainKey] || ''
@@ -344,6 +358,8 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
             ? SEALOS_DOMAIN
+            : item?.nodePort // 如果有 nodePort，则使用域名
+            ? domain
             : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
       }) || [],
