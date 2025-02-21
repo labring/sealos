@@ -139,7 +139,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const externalNetWork = useMemo(() => {
     const host = `${SystemEnv?.domain}`;
     const port = service?.spec?.ports?.[0]?.nodePort?.toString() || '';
-    let connection = `${DBTypeSecretMap[db.dbType].connectKey}://${secret?.username}:${
+    let connection = `${DBTypeSecretMap[db.dbType]?.connectKey}://${secret?.username}:${
       secret?.password
     }@${host}:${port}`;
 

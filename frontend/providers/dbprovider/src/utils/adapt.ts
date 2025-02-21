@@ -62,6 +62,17 @@ export const getDBSource = (
 };
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  let cpu = 0;
+  let memory = 0;
+  let storage = 0;
+  db.spec?.componentSpecs.forEach((comp) => {
+    cpu += cpuFormatToM(comp?.resources?.limits?.cpu || '0');
+    memory += memoryFormatToMi(comp?.resources?.limits?.memory || '0');
+    storage += storageFormatToNum(
+      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
+    );
+  });
+
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
@@ -72,11 +83,9 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.cpu),
-    memory: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources?.limits?.memory),
-    storage:
-      db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage ||
-      '-',
+    cpu,
+    memory,
+    storage: storage.toString() || '-',
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -85,6 +94,17 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 };
 
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+  let cpu = 0;
+  let memory = 0;
+  let storage = 0;
+  db.spec?.componentSpecs.forEach((comp) => {
+    cpu += cpuFormatToM(comp?.resources?.limits?.cpu || '0');
+    memory += memoryFormatToMi(comp?.resources?.limits?.memory || '0');
+    storage += storageFormatToNum(
+      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
+    );
+  });
+
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
@@ -96,11 +116,9 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
     replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,
-    cpu: cpuFormatToM(db.spec?.componentSpecs?.[0]?.resources.limits.cpu),
-    memory: memoryFormatToMi(db.spec?.componentSpecs?.[0]?.resources.limits.memory),
-    storage: storageFormatToNum(
-      db.spec?.componentSpecs?.[0]?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage
-    ),
+    cpu,
+    memory,
+    storage,
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
