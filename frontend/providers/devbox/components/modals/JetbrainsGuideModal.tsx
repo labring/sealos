@@ -21,8 +21,9 @@ import {
   ModalCloseButton,
   Progress
 } from '@chakra-ui/react';
-import { useCallback, useRef, useState } from 'react';
+import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 import MyIcon from '../Icon';
 import SshConnectModal from './SshConnectModal';
@@ -67,6 +68,8 @@ const JetBrainsGuideModal = ({
   );
 
   const handleConnectIDE = useCallback(async () => {
+    setOnConnecting(true);
+
     const res = await fetch(
       `https://data.services.jetbrains.com/products/releases?code=${selectedIDE.productCode}&type=release&latest=true&build=`,
       {
@@ -110,9 +113,6 @@ const JetBrainsGuideModal = ({
           if (progress) {
             setProgress(progress);
           }
-          if (progress && progress === 1) {
-            setOnConnecting(true);
-          }
         },
         signal: controller.signal
       });
@@ -130,6 +130,17 @@ const JetBrainsGuideModal = ({
       setOnConnecting(false);
     }
   }, [selectedIDE, jetbrainsGuideData.devboxName, connectIDE, jetbrainsGuideData.workingDir]);
+
+  const debouncedHandleConnectIDE = useMemo(
+    () => debounce(handleConnectIDE, 3000),
+    [handleConnectIDE]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedHandleConnectIDE.cancel();
+    };
+  }, [debouncedHandleConnectIDE]);
 
   return (
     <Box>
@@ -318,7 +329,7 @@ const JetBrainsGuideModal = ({
                         borderColor: 'brightBlue.500'
                       }
                 }
-                onClick={handleConnectIDE}
+                onClick={debouncedHandleConnectIDE}
                 h={'36px'}
               >
                 {onConnecting ? (
