@@ -153,10 +153,10 @@ export const filterCaptcha = async (
     await Promise.resolve(next());
     return;
   }
-  const { cfToken: captchaVerifyParam } = req.body as { cfToken?: string };
+  const { captchaVerifyParam } = req.body as { captchaVerifyParam?: string };
   if (!captchaVerifyParam)
     return jsonRes(res, {
-      message: 'captchaToken is invalid',
+      message: 'captchaVerifyParam  is invalid',
       code: 400
     });
   const result = await captchaReq({
@@ -164,7 +164,7 @@ export const filterCaptcha = async (
   });
   if (!result?.verifyResult)
     return jsonRes(res, {
-      message: 'captchaToken is invalid',
+      message: 'captchaVerifyParam is invalid',
       data: {
         result: !!result?.verifyResult,
         code: result?.verifyCode || ''
