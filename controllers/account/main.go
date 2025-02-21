@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -194,10 +196,12 @@ func main() {
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
 	}
+	finalUserMap := maps.NewConcurrentMap()
 	if err = (&controllers.DebtReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		AccountV2: v2Account,
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		AccountV2:    v2Account,
+		FinalUserMap: finalUserMap,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")
 	}
@@ -218,11 +222,12 @@ func main() {
 		os.Exit(1)
 	}
 	billingReconciler := controllers.BillingReconciler{
-		DBClient:   dbClient,
-		Properties: resources.DefaultPropertyTypeLS,
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		AccountV2:  v2Account,
+		DBClient:     dbClient,
+		Properties:   resources.DefaultPropertyTypeLS,
+		Client:       mgr.GetClient(),
+		Scheme:       mgr.GetScheme(),
+		AccountV2:    v2Account,
+		FinalUserMap: finalUserMap,
 	}
 	if err = billingReconciler.Init(); err != nil {
 		setupLog.Error(err, "unable to init billing reconciler")

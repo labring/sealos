@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"k8s.io/client-go/rest"
 
 	"k8s.io/client-go/kubernetes/scheme"
@@ -94,6 +96,7 @@ type BillingReconciler struct {
 	DBClient        database.Account
 	AccountV2       database.AccountV2
 	Properties      *resources.PropertyTypeLS
+	FinalUserMap    *maps.ConcurrentMap
 	concurrentLimit int64
 }
 
@@ -118,16 +121,15 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
-	updateOwnerList, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
+	ownersRecentUpdates, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
 	if err != nil {
 		return fmt.Errorf("get owners without recent updates failed: %w", err)
 	}
-
-	// remove the owner that does not need to be updated
-	for _, owner := range updateOwnerList {
+	// remove the owner that does not need to be updated; final State The user deletes the service at any time and does not perform billing processing
+	for _, owner := range append(ownersRecentUpdates, r.FinalUserMap.GetAllKey()...) {
 		delete(ownerListMap, owner)
 	}
-	r.Logger.Info("get owners recent updates", "already update owner count", len(updateOwnerList), "remaining owner count", len(ownerListMap))
+	r.Logger.Info("get owners recent updates", "already update owner count", len(ownersRecentUpdates), "remaining owner count", len(ownerListMap))
 
 	ownerBillings, err := r.DBClient.GenerateBillingData(startHourTime, endHourTime, r.Properties, ownerListMap)
 	if err != nil {

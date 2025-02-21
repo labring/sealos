@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/volcengine/volc-sdk-golang/service/vms"
@@ -99,6 +101,7 @@ type DebtReconciler struct {
 	SmsConfig              *SmsConfig
 	VmsConfig              *VmsConfig
 	smtpConfig             *utils.SMTPConfig
+	FinalUserMap           *maps.ConcurrentMap
 }
 
 type VmsConfig struct {
@@ -385,6 +388,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			  最终删除期 -> 正常期：更新status 状态normal事件及更新时间
 		*/
 		if oweamount >= 0 {
+			r.FinalUserMap.Delete(debt.Spec.UserName)
 			if err := r.readNotice(ctx, userNamespaceList, FinalDeletionNotice, ImminentDeletionNotice, ApproachingDeletionNotice, WarningNotice); err != nil {
 				r.Logger.Error(err, "readNotice FinalDeletionNotice error")
 			}
@@ -396,6 +400,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 				return err
 			}
 			break
+		}
+		if _, ok := r.FinalUserMap.Get(debt.Spec.UserName); !ok {
+			r.FinalUserMap.Set(debt.Spec.UserName, struct{}{})
 		}
 		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			return err
@@ -464,10 +471,6 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 
 func GetDebtName(AccountName string) string {
 	return fmt.Sprintf("%s%s", accountv1.DebtPrefix, AccountName)
-}
-
-func GetUserNamespace(AccountName string) string {
-	return "ns-" + AccountName
 }
 
 const (
