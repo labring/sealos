@@ -2,7 +2,6 @@ package dao
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -73,6 +72,7 @@ type Interface interface {
 	ReconcileActiveBilling(startTime, endTime time.Time) error
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
 	ActiveBilling(req resources.ActiveBilling) error
+	GetCockroach() *cockroach.Cockroach
 }
 
 type Account struct {
@@ -91,6 +91,10 @@ type MongoDB struct {
 
 type Cockroach struct {
 	ck *cockroach.Cockroach
+}
+
+func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
+	return g.ck
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -1576,10 +1580,7 @@ func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.Us
 	userRealNameInfo, err := m.ck.GetUserRealNameInfoByUserID(req.UserID)
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, fmt.Errorf("failed to get user real name info: %v", err)
+		return nil, err
 	}
 
 	return userRealNameInfo, nil
@@ -1590,10 +1591,7 @@ func (m *Account) GetEnterpriseRealNameInfo(req *helper.GetRealNameInfoReq) (*ty
 	enterpriseRealNameInfo, err := m.ck.GetEnterpriseRealNameInfoByUserID(req.UserID)
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, fmt.Errorf("failed to get enterprise real name info: %v", err)
+		return nil, err
 	}
 
 	return enterpriseRealNameInfo, nil
