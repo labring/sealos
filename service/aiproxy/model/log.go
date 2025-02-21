@@ -963,6 +963,7 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	return chartData, err
 }
 
+//nolint:unused
 func getLogDistinctValues[T cmp.Ordered](field string, group string, start, end time.Time) ([]T, error) {
 	var values []T
 	query := LogDB.
