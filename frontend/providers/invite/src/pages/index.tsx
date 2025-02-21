@@ -34,6 +34,7 @@ export default function Index({
   const theme = useTheme();
   const { copyData } = useCopyData();
   const userInfo = useSessionStore((state) => state?.session?.user);
+  const inviterReward = process.env.NEXT_PUBLIC_INVITER_REWARD || '5';
 
   const { t } = useTranslation();
 
@@ -82,7 +83,7 @@ export default function Index({
               <Trans
                 i18nKey="cashback_first_rule"
                 values={{
-                  amount: 5
+                  amount: inviterReward
                 }}
               />
             </Text>
