@@ -25,6 +25,7 @@ export default function GpuSelector({
     ['list-official-template-repository'],
     listOfficialTemplateRepository
   );
+
   const templateData = useMemo(
     () => templateRepositoryQuery.data?.templateRepositoryList || [],
     [templateRepositoryQuery.data]

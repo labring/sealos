@@ -185,6 +185,10 @@ export interface KBDevboxSpecV2 {
   resource: {
     cpu: string;
     memory: string;
+    [gpuResourceKey]?: string;
+  };
+  nodeSelector?: {
+    [gpuNodeSelectorKey]: string;
   };
   state: DevboxStatusEnum;
   tolerations?: {

@@ -25,7 +25,12 @@ export const GET = async function GET(req: NextRequest) {
         iconId: true,
         name: true,
         uid: true,
-        description: true
+        description: true,
+        templateRepositoryTags: {
+          select: {
+            tag: true
+          }
+        }
       }
     });
     return jsonRes({

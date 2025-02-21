@@ -7,29 +7,14 @@ import { throttle } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Box, Flex, Grid, useTheme } from '@chakra-ui/react';
-import { Tabs } from '@sealos/ui';
-import { throttle } from 'lodash';
-import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 
-import MyIcon from '@/components/Icon';
-import PriceBox from '@/components/PriceBox';
-import QuotaBox from '@/components/QuotaBox';
-import { useRouter } from '@/i18n';
 import MyIcon from '@/components/Icon';
 import PriceBox from '@/components/PriceBox';
 import QuotaBox from '@/components/QuotaBox';
 import { useRouter } from '@/i18n';
 
 import { useDevboxStore } from '@/stores/devbox';
-import { useDevboxStore } from '@/stores/devbox';
 
-import type { DevboxEditTypeV2 } from '@/types/devbox';
-import { obj2Query } from '@/utils/tools';
-import BasicConfiguration from './BasicConfiguration';
-import NetworkConfiguration from './NetworkConfiguration';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
 import { obj2Query } from '@/utils/tools';
 import BasicConfiguration from './BasicConfiguration';
@@ -60,9 +45,7 @@ const Form = ({
       icon: 'network'
     }
   ];
-  const [activeNav, setActiveNav] = useState(navList[0].id);
-  const { devboxList } = useDevboxStore();
-  ];
+
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const { devboxList } = useDevboxStore();
 
@@ -70,39 +53,26 @@ const Form = ({
   useEffect(() => {
     const scrollFn = throttle((e: Event) => {
       if (!e.target) return;
-      if (!e.target) return;
       const doms = navList.map((item) => ({
         dom: document.getElementById(item.id),
         id: item.id
       }));
-      }));
 
       const dom = e.target as HTMLDivElement;
       const scrollTop = dom.scrollTop;
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
       for (let i = doms.length - 1; i >= 0; i--) {
-        const offsetTop = doms[i].dom?.offsetTop || 0;
         const offsetTop = doms[i].dom?.offsetTop || 0;
 
         if (scrollTop + 500 >= offsetTop) {
           setActiveNav(doms[i].id);
           break;
-          setActiveNav(doms[i].id);
-          break;
         }
       }
     }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
-    }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
     return () => {
       document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
     };
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
-    };
     // eslint-disable-next-line
-  }, []);
   }, []);
 
   const boxStyles = {
@@ -110,7 +80,6 @@ const Form = ({
     borderRadius: 'lg',
     mb: 4,
     bg: 'white'
-  };
   };
 
   return (
@@ -221,5 +190,4 @@ const Form = ({
   );
 };
 
-export default Form;
 export default Form;

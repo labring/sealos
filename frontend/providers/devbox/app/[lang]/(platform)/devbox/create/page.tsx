@@ -10,30 +10,14 @@ import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
-import { useRouter } from '@/i18n';
-import { Box, Flex } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
 
-import Form from './components/form';
-import Header from './components/Header';
-import Yaml from './components/Yaml';
 import Form from './components/form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 
 import type { YamlItemType } from '@/types';
 import type { DevboxEditType, DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
-import type { YamlItemType } from '@/types';
-import type { DevboxEditType, DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
 
-import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 
@@ -50,14 +34,7 @@ import { useTemplateStore } from '@/stores/template';
 import { generateYamlList } from '@/utils/json2Yaml';
 import { patchYamlList } from '@/utils/tools';
 import { debounce } from 'lodash';
-import { createDevbox, updateDevbox } from '@/api/devbox';
-import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
-import { useTemplateStore } from '@/stores/template';
-import { generateYamlList } from '@/utils/json2Yaml';
-import { patchYamlList } from '@/utils/tools';
-import { debounce } from 'lodash';
 
-const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'));
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'));
 const DevboxCreatePage = () => {
   const { env } = useEnvStore();
@@ -82,17 +59,12 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
-  const tabType = searchParams.get('type') || 'form';
-  const devboxName = searchParams.get('name') || '';
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
   const [captureDevboxName, setCaptureDevboxName] = useState('');
   const { updateTemplateModalConfig, config: templateConfig } = useTemplateStore();
-  const [captureDevboxName, setCaptureDevboxName] = useState('');
-  const { updateTemplateModalConfig, config: templateConfig } = useTemplateStore();
   useEffect(() => {
-    const name = searchParams.get('name');
     const name = searchParams.get('name');
     if (name) {
       setCaptureDevboxName(name);
@@ -101,53 +73,39 @@ const DevboxCreatePage = () => {
       router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
     }
   }, [searchParams, router, captureDevboxName]);
-  }, [searchParams, router, captureDevboxName]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
-  const isEdit = useMemo(() => !!devboxName, []);
 
-  const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit);
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(isEdit);
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
-  });
 
   // compute container width
-  const { screenWidth, lastRoute } = useGlobalStore();
   const { screenWidth, lastRoute } = useGlobalStore();
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
-    const val = Math.floor((screenWidth - 1050) / 2);
     if (val < 20) {
       return 20;
-      return 20;
     }
-    return val;
-  }, [screenWidth]);
     return val;
   }, [screenWidth]);
 
   const formHook = useForm<DevboxEditTypeV2>({
     defaultValues: defaultDevboxEditValueV2
   });
-  });
 
   // updateyamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
-    () =>
     () =>
       debounce((data: DevboxEditTypeV2, env) => {
         try {
           const newYamlList = generateYamlList(data, env);
           setYamlList(newYamlList);
-          const newYamlList = generateYamlList(data, env);
-          setYamlList(newYamlList);
         } catch (error) {
-          console.error('Failed to generate yaml:', error);
           console.error('Failed to generate yaml:', error);
         }
       }, 300),
@@ -171,7 +129,6 @@ const DevboxCreatePage = () => {
         debouncedUpdateYaml(value as DevboxEditTypeV2, env);
       }
     });
-    });
     return () => {
       subscription.unsubscribe();
       debouncedUpdateYaml.cancel();
@@ -189,11 +146,7 @@ const DevboxCreatePage = () => {
       if (!devboxName) {
         setYamlList(generateDefaultYamlList());
         return null;
-        setYamlList(generateDefaultYamlList());
-        return null;
       }
-      setIsLoading(true);
-      return setDevboxDetail(devboxName, env.sealosDomain);
       setIsLoading(true);
       return setDevboxDetail(devboxName, env.sealosDomain);
     },
@@ -201,12 +154,7 @@ const DevboxCreatePage = () => {
       onSuccess(res) {
         if (!res) {
           return;
-          return;
         }
-        oldDevboxEditData.current = res;
-        formOldYamls.current = generateYamlList(res, env);
-        crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[];
-        formHook.reset(res);
         oldDevboxEditData.current = res;
         formOldYamls.current = generateYamlList(res, env);
         crOldYamls.current = generateYamlList(res, env) as DevboxKindsType[];
@@ -217,17 +165,13 @@ const DevboxCreatePage = () => {
           title: String(err),
           status: 'error'
         });
-        });
       },
       onSettled() {
-        setIsLoading(false);
         setIsLoading(false);
       }
     }
   );
-  );
   const submitSuccess = async (formData: DevboxEditTypeV2) => {
-    setIsLoading(true);
     setIsLoading(true);
     try {
       // gpu inventory check
@@ -246,26 +190,21 @@ const DevboxCreatePage = () => {
       const quoteCheckRes = checkQuotaAllow(
         { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
           nodeports: number;
-          nodeports: number;
         },
         {
           ...oldDevboxEditData.current,
           nodeports: devboxList.length
         } as DevboxEditType & {
           nodeports: number;
-          nodeports: number;
         }
       );
-      );
       if (quoteCheckRes) {
-        setIsLoading(false);
         setIsLoading(false);
         return toast({
           status: 'warning',
           title: t(quoteCheckRes),
           duration: 5000,
           isClosable: true
-        });
         });
       }
       // update
@@ -274,16 +213,10 @@ const DevboxCreatePage = () => {
         setYamlList(yamlList);
         const parsedNewYamlList = yamlList.map((item) => item.value);
         const parsedOldYamlList = formOldYamls.current.map((item) => item.value);
-        const yamlList = generateYamlList(formData, env);
-        setYamlList(yamlList);
-        const parsedNewYamlList = yamlList.map((item) => item.value);
-        const parsedOldYamlList = formOldYamls.current.map((item) => item.value);
         const areYamlListsEqual =
           new Set(parsedNewYamlList).size === new Set(parsedOldYamlList).size &&
           [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item));
-          [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item));
         if (areYamlListsEqual) {
-          setIsLoading(false);
           setIsLoading(false);
           return toast({
             status: 'info',
@@ -291,11 +224,7 @@ const DevboxCreatePage = () => {
             duration: 5000,
             isClosable: true
           });
-          });
         }
-        if (!parsedNewYamlList) {
-          // prevent empty yamlList
-          return setErrorMessage(t('submit_form_error'));
         if (!parsedNewYamlList) {
           // prevent empty yamlList
           return setErrorMessage(t('submit_form_error'));
@@ -305,22 +234,17 @@ const DevboxCreatePage = () => {
           parsedNewYamlList: parsedNewYamlList,
           originalYamlList: crOldYamls.current
         });
-        });
         await updateDevbox({
           patch,
           devboxName: formData.name
         });
-        });
       } else {
         await createDevbox({ devboxForm: formData });
-        await createDevbox({ devboxForm: formData });
       }
-      addDevboxIDE('vscode', formData.name);
       addDevboxIDE('vscode', formData.name);
       toast({
         title: t(applySuccess),
         status: 'success'
-      });
       });
       updateTemplateModalConfig({
         ...templateConfig,
@@ -332,15 +256,10 @@ const DevboxCreatePage = () => {
       router.push(lastRoute);
     } catch (error) {
       console.log('error', error);
-      console.log('error', error);
       if (error instanceof String && error.includes('402')) {
         setErrorMessage(t('outstanding_tips'));
       } else setErrorMessage(JSON.stringify(error));
-        setErrorMessage(t('outstanding_tips'));
-      } else setErrorMessage(JSON.stringify(error));
     }
-    setIsLoading(false);
-  };
     setIsLoading(false);
   };
 
@@ -349,14 +268,10 @@ const DevboxCreatePage = () => {
     const deepSearch = (obj: any): string => {
       if (!obj || typeof obj !== 'object') {
         return t('submit_form_error');
-        return t('submit_form_error');
       }
       if (!!obj.message) {
         return obj.message;
-        return obj.message;
       }
-      return deepSearch(Object.values(obj)[0]);
-    };
       return deepSearch(Object.values(obj)[0]);
     };
     toast({
@@ -365,8 +280,6 @@ const DevboxCreatePage = () => {
       position: 'top',
       duration: 3000,
       isClosable: true
-    });
-  }, [formHook.formState.errors, toast, t]);
     });
   }, [formHook.formState.errors, toast, t]);
 
@@ -409,12 +322,5 @@ const DevboxCreatePage = () => {
     </>
   );
 };
-      {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
-      )}
-    </>
-  );
-};
 
-export default DevboxCreatePage;
 export default DevboxCreatePage;
