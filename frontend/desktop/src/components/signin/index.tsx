@@ -26,6 +26,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
+import { HiddenCaptchaComponent, TCaptchaInstance } from './Captcha';
+import { captcha } from 'tencentcloud-sdk-nodejs';
 
 export default function SigninComponent() {
   const conf = useConfigStore();
@@ -74,6 +76,7 @@ export default function SigninComponent() {
     }
   }, []);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const captchaRef = useRef<TCaptchaInstance>(null);
   const loginConfig = useMemo(() => {
     return {
       [LoginType.SMS]: {
@@ -82,9 +85,12 @@ export default function SigninComponent() {
           <SmsModal
             onAfterGetCode={() => {
               turnstileRef.current?.reset();
+              captchaRef.current?.reset();
             }}
-            getCfToken={() => {
-              return turnstileRef.current?.getResponse();
+            getCfToken={async () => {
+              const token = await captchaRef.current?.getToken();
+              const turnstiletoken = turnstileRef.current?.getResponse();
+              return token;
             }}
           />
         )
@@ -225,6 +231,7 @@ export default function SigninComponent() {
                     siteKey={conf.commonConfig?.cfSiteKey}
                   />
                 )}
+                {conf.authConfig?.captcha.enabled && <HiddenCaptchaComponent ref={captchaRef} />}
                 <Button
                   variant={'unstyled'}
                   background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"

@@ -141,6 +141,17 @@ export type AuthConfigType = {
       };
     };
   };
+  captcha?: {
+    enabled: boolean;
+    ali?: {
+      enabled: boolean;
+      sceneId: string;
+      prefix: string;
+      endpoint: string;
+      accessKeyID: string;
+      accessKeySecret?: string;
+    };
+  };
 };
 
 export type AuthClientConfigType = DeepRequired<
@@ -161,7 +172,11 @@ export type AuthClientConfigType = DeepRequired<
       'jwt',
       'billingUrl',
       'workorderUrl',
-      'cloudVitrualMachineUrl'
+      'cloudVitrualMachineUrl',
+      //captcha
+      'captcha.ali.accessKeyID',
+      'captcha.ali.accessKeySecret',
+      'captcha.ali.endpoint'
     ]
   >
 > & {
@@ -313,7 +328,15 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     }
   },
-  billingToken: ''
+  billingToken: '',
+  captcha: {
+    enabled: false,
+    ali: {
+      enabled: false,
+      sceneId: '',
+      prefix: ''
+    }
+  }
 };
 export const DefaultAppClientConfig: AppClientConfigType = {
   cloud: DefaultCloudConfig,

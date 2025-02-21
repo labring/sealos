@@ -13,11 +13,12 @@ import {
 import { useTranslation } from 'next-i18next';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import { MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { MouseEvent, MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
+import { get, useForm } from 'react-hook-form';
 import { getRegionToken } from '@/api/auth';
 import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
+import { useConfigStore } from '@/stores/config';
 
 export default function useSms({
   showError
@@ -27,9 +28,10 @@ export default function useSms({
   const { t } = useTranslation();
   const _remainTime = useRef(0);
   const router = useRouter();
+  const { authConfig } = useConfigStore();
   const [isLoading, setIsLoading] = useState(false);
   const setToken = useSessionStore((s) => s.setToken);
-  const { register, handleSubmit, trigger, getValues } = useForm<{
+  const { register, handleSubmit, trigger, getValues, watch } = useForm<{
     phoneNumber: string;
     verifyCode: string;
   }>();
@@ -81,7 +83,7 @@ export default function useSms({
     onAfterGetCode,
     getCfToken
   }: {
-    getCfToken?: () => string | undefined;
+    getCfToken?: () => Promise<string | undefined>;
     onAfterGetCode?: () => void;
   }) => {
     const [remainTime, setRemainTime] = useState(_remainTime.current);
@@ -93,19 +95,26 @@ export default function useSms({
       }, 1000);
       return () => clearInterval(interval);
     }, [remainTime]);
-
-    const getCode: MouseEventHandler = async (e) => {
+    const [invokeTime, setInvokeTime] = useState(new Date().getTime());
+    const getCode: MouseEventHandler = async (e: MouseEvent) => {
       e.preventDefault();
-
       if (!(await trigger('phoneNumber'))) {
         showError(t('common:invalid_phone_number') || 'Invalid phone number');
         return;
       }
+      if (new Date().getTime() - invokeTime <= 1000) {
+        return;
+      } else {
+        setInvokeTime(new Date().getTime());
+      }
+      const cfToken = await getCfToken?.();
+      if (authConfig?.captcha.enabled && authConfig.captcha.ali.enabled) {
+        if (!cfToken) return;
+      }
       setRemainTime(60);
       _remainTime.current = 60;
-
       try {
-        const cfToken = getCfToken?.();
+        const cfToken = await getCfToken?.();
         const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
           id: getValues('phoneNumber'),
           cfToken
@@ -121,7 +130,6 @@ export default function useSms({
         onAfterGetCode?.();
       }
     };
-
     return (
       <>
         <InputGroup
