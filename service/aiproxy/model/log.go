@@ -845,11 +845,11 @@ func getTimeSpanFormat(timeSpan time.Duration) string {
 	case common.UsingPostgreSQL:
 		switch seconds {
 		case 60:
-			return "EXTRACT(EPOCH FROM date_trunc('minute', request_at))"
+			return "EXTRACT(EPOCH FROM date_trunc('minute', request_at))::INTEGER"
 		case 3600:
-			return "EXTRACT(EPOCH FROM date_trunc('hour', request_at))"
+			return "EXTRACT(EPOCH FROM date_trunc('hour', request_at))::INTEGER"
 		case 86400:
-			return "EXTRACT(EPOCH FROM date_trunc('day', request_at))"
+			return "EXTRACT(EPOCH FROM date_trunc('day', request_at))::INTEGER"
 		default:
 			return fmt.Sprintf("FLOOR(EXTRACT(EPOCH FROM date_trunc('minute', request_at)) / %d) * %d", seconds, seconds)
 		}
