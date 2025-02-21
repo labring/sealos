@@ -69,7 +69,7 @@ jobs:
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
       - name: Save Binaries
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
@@ -93,7 +93,7 @@ jobs:
           go install github.com/onsi/ginkgo/v2/ginkgo
           cd test/e2e && ginkgo build .
       - name: Save E2e Test
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: e2e.test
           path: test/e2e/e2e.test
@@ -116,25 +116,25 @@ jobs:
         uses: rlespinasse/git-commit-data-action@v1
 
       - name: Download lvscare
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: lvscare-${{ matrix.arch }}
           path: docker/lvscare
 
       - name: Download sealctl
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealctl-${{ matrix.arch }}
           path: docker/patch
 
       - name: Download image-cri-shim
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: image-cri-shim-${{ matrix.arch }}
           path: docker/patch
 
       - name: Download sealos
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: sealos-${{ matrix.arch }}
           path: docker/sealos
