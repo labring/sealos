@@ -7,7 +7,6 @@ import { immer } from 'zustand/middleware/immer';
 
 type SessionState = {
   session: SessionV1;
-  locale: string;
   setSession: (ss: SessionV1) => void;
   setSessionProp: (key: keyof SessionV1, value: any) => void;
   getSession: () => SessionV1;
@@ -21,7 +20,6 @@ const useSessionStore = create<SessionState>()(
     persist(
       immer((set, get) => ({
         session: {} as SessionV1,
-        locale: 'zh',
         setSession: (ss: SessionV1) => set({ session: ss }),
         setSessionProp: (key: keyof SessionV1, value: any) => {
           set((state) => {
