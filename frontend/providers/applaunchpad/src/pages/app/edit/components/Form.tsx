@@ -1,14 +1,14 @@
 import { obj2Query } from '@/api/tools';
 import MyIcon from '@/components/Icon';
 import { MyRangeSlider, MySelect, MySlider, MyTooltip, RangeInput, Tabs, Tip } from '@sealos/ui';
-import { defaultSliderKey, ProtocolList } from '@/constants/app';
+import { APPLICATION_PROTOCOLS, defaultSliderKey, ProtocolList } from '@/constants/app';
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
 import { SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
-import type { AppEditType } from '@/types/app';
+import { type AppEditType } from '@/types/app';
 import { sliderNumber2MarkList } from '@/utils/adapt';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -840,7 +840,7 @@ const Form = ({
                         }
                       })}
                     />
-                    {i === networks.length - 1 && networks.length < 5 && (
+                    {i === networks.length - 1 && (
                       <Box mt={3}>
                         <Button
                           w={'100px'}
@@ -851,11 +851,14 @@ const Form = ({
                               networkName: '',
                               portName: nanoid(),
                               port: 80,
-                              protocol: 'HTTP',
+                              protocol: 'TCP',
+                              appProtocol: 'HTTP',
                               openPublicDomain: false,
                               publicDomain: '',
                               customDomain: '',
-                              domain: SEALOS_DOMAIN
+                              domain: SEALOS_DOMAIN,
+                              openNodePort: false,
+                              nodePort: undefined
                             })
                           }
                         >
@@ -872,21 +875,43 @@ const Form = ({
                       <Switch
                         className="driver-deploy-network-switch"
                         size={'lg'}
-                        isChecked={!!network.openPublicDomain}
+                        isChecked={!!network.openPublicDomain || !!network.openNodePort}
                         onChange={(e) => {
-                          updateNetworks(i, {
-                            ...getValues('networks')[i],
-                            networkName: network.networkName || `network-${nanoid()}`,
-                            protocol: network.protocol || 'HTTP',
-                            openPublicDomain: e.target.checked,
-                            publicDomain: network.publicDomain || nanoid(),
-                            domain: network.domain || SEALOS_DOMAIN
-                          });
+                          if (e.target.checked) {
+                            if (APPLICATION_PROTOCOLS.includes(network.appProtocol)) {
+                              updateNetworks(i, {
+                                ...getValues('networks')[i],
+                                networkName: network.networkName || `network-${nanoid()}`,
+                                protocol: 'TCP',
+                                appProtocol: network.appProtocol || 'HTTP',
+                                openPublicDomain: true,
+                                openNodePort: false,
+                                publicDomain: network.publicDomain || nanoid(),
+                                domain: network.domain || SEALOS_DOMAIN
+                              });
+                            } else {
+                              updateNetworks(i, {
+                                ...getValues('networks')[i],
+                                networkName: network.networkName || `network-${nanoid()}`,
+                                protocol: network.protocol,
+                                appProtocol: 'HTTP',
+                                openNodePort: true,
+                                openPublicDomain: false,
+                                customDomain: ''
+                              });
+                            }
+                          } else {
+                            updateNetworks(i, {
+                              ...getValues('networks')[i],
+                              openPublicDomain: false,
+                              openNodePort: false
+                            });
+                          }
                         }}
-                      />
+                      ></Switch>
                     </Flex>
                   </Box>
-                  {network.openPublicDomain && (
+                  {(network.openPublicDomain || network.openNodePort) && (
                     <>
                       <Box flex={'1 0 0'}>
                         <Box mb={'8px'} h={'20px'}></Box>
@@ -896,14 +921,35 @@ const Form = ({
                             height={'32px'}
                             borderTopRightRadius={0}
                             borderBottomRightRadius={0}
-                            value={network.protocol}
-                            // border={theme.borders.base}
+                            value={
+                              network.openPublicDomain
+                                ? network.appProtocol
+                                : network.openNodePort
+                                ? network.protocol
+                                : 'HTTP'
+                            }
                             list={ProtocolList}
                             onchange={(val: any) => {
-                              updateNetworks(i, {
-                                ...getValues('networks')[i],
-                                protocol: val
-                              });
+                              if (APPLICATION_PROTOCOLS.includes(val)) {
+                                updateNetworks(i, {
+                                  ...getValues('networks')[i],
+                                  protocol: 'TCP',
+                                  appProtocol: val,
+                                  openNodePort: false,
+                                  openPublicDomain: true,
+                                  networkName: network.networkName || `network-${nanoid()}`,
+                                  publicDomain: network.publicDomain || nanoid()
+                                });
+                              } else {
+                                updateNetworks(i, {
+                                  ...getValues('networks')[i],
+                                  protocol: val,
+                                  appProtocol: 'HTTP',
+                                  openNodePort: true,
+                                  openPublicDomain: false,
+                                  customDomain: ''
+                                });
+                              }
                             }}
                           />
                           <Flex
@@ -921,22 +967,29 @@ const Form = ({
                             <Box flex={1} userSelect={'all'} className="textEllipsis">
                               {network.customDomain
                                 ? network.customDomain
+                                : network.openNodePort
+                                ? network?.nodePort
+                                  ? `${network.domain}:${network.nodePort}`
+                                  : `${network.domain}:${t('pending_to_allocated')}`
                                 : `${network.publicDomain}.${network.domain}`}
                             </Box>
-                            <Box
-                              fontSize={'11px'}
-                              color={'brightBlue.600'}
-                              cursor={'pointer'}
-                              onClick={() =>
-                                setCustomAccessModalData({
-                                  publicDomain: network.publicDomain,
-                                  customDomain: network.customDomain,
-                                  domain: network.domain
-                                })
-                              }
-                            >
-                              {t('Custom Domain')}
-                            </Box>
+
+                            {network.openPublicDomain && !network.openNodePort && (
+                              <Box
+                                fontSize={'11px'}
+                                color={'brightBlue.600'}
+                                cursor={'pointer'}
+                                onClick={() =>
+                                  setCustomAccessModalData({
+                                    publicDomain: network.publicDomain,
+                                    customDomain: network.customDomain,
+                                    domain: network.domain
+                                  })
+                                }
+                              >
+                                {t('Custom Domain')}
+                              </Box>
+                            )}
                           </Flex>
                         </Flex>
                       </Box>
