@@ -22,6 +22,7 @@ import { V1Deployment, V1Ingress, V1Pod, V1StatefulSet } from '@kubernetes/clien
 
 import { KBDevboxReleaseType, KBDevboxType, KBDevboxTypeV2 } from '@/types/k8s';
 import { calculateUptime, cpuFormatToM, formatPodTime, memoryFormatToMi } from '@/utils/tools';
+import { gpuNodeSelectorKey, gpuResourceKey } from '../constants/devbox';
 
 export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType => {
   return {
@@ -126,6 +127,11 @@ export const adaptDevboxDetailV2 = ([
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
+    gpu: {
+      type: devbox.spec.nodeSelector?.[gpuNodeSelectorKey] || '',
+      amount: Number(devbox.spec.resource[gpuResourceKey] || 1),
+      manufacturers: 'nvidia'
+    },
     usedCpu: {
       name: '',
       xData: new Array(30).fill(0),

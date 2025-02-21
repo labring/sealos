@@ -25,12 +25,19 @@ export type userPriceType = {
   cpu: number;
   memory: number;
   nodeports: number;
+  gpu?: { alias: string; type: string; price: number; inventory: number; vm: number }[];
 };
 
 export type UserQuotaItemType = {
-  type: 'cpu' | 'memory' | 'nodeports';
+  type: 'cpu' | 'memory' | 'nodeports' | 'gpu';
   used: number;
   limit: number;
+};
+
+export type GpuType = {
+  manufacturers: string;
+  type: string;
+  amount: number;
 };
 
 export type UserTask = {

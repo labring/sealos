@@ -1,4 +1,5 @@
 'use client';
+'use client';
 
 import { useRouter } from '@/i18n';
 import { Box, Flex } from '@chakra-ui/react';
@@ -25,6 +26,7 @@ import { useEnvStore } from '@/stores/env';
 import { useGlobalStore } from '@/stores/global';
 import { useIDEStore } from '@/stores/ide';
 import { useUserStore } from '@/stores/user';
+import { usePriceStore } from '@/stores/price';
 
 import { createDevbox, updateDevbox } from '@/api/devbox';
 import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
@@ -39,9 +41,12 @@ const DevboxCreatePage = () => {
   const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
   const router = useRouter();
   const t = useTranslations();
+  const { Loading, setIsLoading } = useLoading();
+
   const searchParams = useSearchParams();
   const { message: toast } = useMessage();
   const { addDevboxIDE } = useIDEStore();
+  const { sourcePrice, setSourcePrice } = usePriceStore();
   const { checkQuotaAllow } = useUserStore();
   const { setDevboxDetail, devboxList } = useDevboxStore();
 
@@ -49,7 +54,6 @@ const DevboxCreatePage = () => {
   const formOldYamls = useRef<YamlItemType[]>([]);
   const oldDevboxEditData = useRef<DevboxEditTypeV2>();
 
-  const { Loading, setIsLoading } = useLoading();
   const [errorMessage, setErrorMessage] = useState('');
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
 
@@ -63,6 +67,8 @@ const DevboxCreatePage = () => {
   useEffect(() => {
     const name = searchParams.get('name');
     if (name) {
+      setCaptureDevboxName(name);
+      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
       setCaptureDevboxName(name);
       router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
     }
@@ -106,10 +112,20 @@ const DevboxCreatePage = () => {
     []
   );
 
+  const countGpuInventory = useCallback(
+    (type?: string) => {
+      const inventory = sourcePrice?.gpu?.find((item) => item.type === type)?.inventory || 0;
+
+      return inventory;
+    },
+    [sourcePrice?.gpu]
+  );
+
   // 监听表单变化
   useEffect(() => {
     const subscription = formHook.watch((value) => {
       if (value) {
+        debouncedUpdateYaml(value as DevboxEditTypeV2, env);
         debouncedUpdateYaml(value as DevboxEditTypeV2, env);
       }
     });
@@ -118,6 +134,11 @@ const DevboxCreatePage = () => {
       debouncedUpdateYaml.cancel();
     };
   }, [formHook, debouncedUpdateYaml, env]);
+
+  const { refetch: refetchPrice } = useQuery(['init-price'], setSourcePrice, {
+    enabled: !!sourcePrice?.gpu,
+    refetchInterval: 6000
+  });
 
   useQuery(
     ['initDevboxCreateData'],
@@ -153,6 +174,18 @@ const DevboxCreatePage = () => {
   const submitSuccess = async (formData: DevboxEditTypeV2) => {
     setIsLoading(true);
     try {
+      // gpu inventory check
+      if (formData.gpu?.type) {
+        const inventory = countGpuInventory(formData.gpu?.type);
+        if (formData.gpu?.amount > inventory) {
+          return toast({
+            status: 'warning',
+            title: t('Gpu under inventory Tip', {
+              gputype: formData.gpu.type
+            })
+          });
+        }
+      }
       // quote check
       const quoteCheckRes = checkQuotaAllow(
         { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
@@ -217,6 +250,9 @@ const DevboxCreatePage = () => {
         ...templateConfig,
         lastRoute
       });
+      if (sourcePrice?.gpu) {
+        refetchPrice();
+      }
       router.push(lastRoute);
     } catch (error) {
       console.log('error', error);
@@ -270,7 +306,7 @@ const DevboxCreatePage = () => {
           />
           <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
             {tabType === 'form' ? (
-              <Form pxVal={pxVal} isEdit={isEdit} />
+              <Form pxVal={pxVal} isEdit={isEdit} countGpuInventory={countGpuInventory} />
             ) : (
               <Yaml yamlList={yamlList} pxVal={pxVal} />
             )}

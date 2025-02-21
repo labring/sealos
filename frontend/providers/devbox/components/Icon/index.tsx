@@ -66,6 +66,7 @@ const map = {
   shutdown: require('./icons/shutdown.svg').default,
   windsurf: require('./icons/windsurf.svg').default,
   rocket: require('./icons/rocket.svg').default,
+  nvidia: require('./icons/nvidia.svg').default,
   user: require('./icons/user.svg').default,
   templateTitle: require('./icons/templateTitle.svg').default,
   official: require('./icons/official.svg').default,

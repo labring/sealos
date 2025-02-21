@@ -1,4 +1,5 @@
 'use client';
+'use client';
 
 import { Box, Flex, Grid, useTheme } from '@chakra-ui/react';
 import { Tabs } from '@sealos/ui';
@@ -19,7 +20,15 @@ import { obj2Query } from '@/utils/tools';
 import BasicConfiguration from './BasicConfiguration';
 import NetworkConfiguration from './NetworkConfiguration';
 
-const Form = ({ pxVal, isEdit }: { pxVal: number; isEdit: boolean }) => {
+const Form = ({
+  pxVal,
+  isEdit,
+  countGpuInventory
+}: {
+  pxVal: number;
+  isEdit: boolean;
+  countGpuInventory: (type: string) => number;
+}) => {
   const theme = useTheme();
   const router = useRouter();
   const t = useTranslations();
@@ -36,6 +45,7 @@ const Form = ({ pxVal, isEdit }: { pxVal: number; isEdit: boolean }) => {
       icon: 'network'
     }
   ];
+
   const [activeNav, setActiveNav] = useState(navList[0].id);
   const { devboxList } = useDevboxStore();
 
@@ -59,7 +69,6 @@ const Form = ({ pxVal, isEdit }: { pxVal: number; isEdit: boolean }) => {
         }
       }
     }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
     return () => {
       document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
     };
@@ -168,7 +177,12 @@ const Form = ({ pxVal, isEdit }: { pxVal: number; isEdit: boolean }) => {
         overflowY={'scroll'}
       >
         {/* base info */}
-        <BasicConfiguration isEdit={isEdit} id={'baseInfo'} {...boxStyles} />
+        <BasicConfiguration
+          isEdit={isEdit}
+          id={'baseInfo'}
+          {...boxStyles}
+          countGpuInventory={countGpuInventory}
+        />
         {/* network */}
         <NetworkConfiguration isEdit={isEdit} id={'network'} {...boxStyles} />
       </Box>

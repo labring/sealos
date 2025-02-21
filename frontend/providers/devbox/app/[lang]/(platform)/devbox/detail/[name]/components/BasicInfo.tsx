@@ -3,13 +3,16 @@ import { useTranslations } from 'next-intl';
 import React, { useCallback, useState } from 'react';
 import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react';
 
-import MyIcon from '@/components/Icon';
 import { useEnvStore } from '@/stores/env';
+import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';
 import { getTemplateConfig } from '@/api/template';
 import { getSSHConnectionInfo } from '@/api/devbox';
-import { JetBrainsGuideData } from '@/components/IDEButton';
 import { downLoadBlob, parseTemplateConfig } from '@/utils/tools';
+
+import MyIcon from '@/components/Icon';
+import GPUItem from '@/components/GPUItem';
+import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectModal from '@/components/modals/SshConnectModal';
 
 const BasicInfo = () => {
@@ -18,6 +21,7 @@ const BasicInfo = () => {
 
   const { env } = useEnvStore();
   const { devboxDetail } = useDevboxStore();
+  const { sourcePrice, setSourcePrice } = usePriceStore();
 
   const [loading, setLoading] = useState(false);
   const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false);
@@ -154,6 +158,16 @@ const BasicInfo = () => {
             <Text fontSize={'12px'}>{(devboxDetail?.memory || 0) / 1024} G</Text>
           </Flex>
         </Flex>
+        {sourcePrice?.gpu && (
+          <Flex>
+            <Text mr={2} width={'40%'} fontSize={'12px'}>
+              GPU
+            </Text>
+            <Flex width={'60%'} color={'grayModern.600'}>
+              <GPUItem gpu={devboxDetail?.gpu} />
+            </Flex>
+          </Flex>
+        )}
       </Flex>
       {/* ssh config */}
       <Flex mb={3} mt={4} alignItems={'center'} justify={'space-between'}>

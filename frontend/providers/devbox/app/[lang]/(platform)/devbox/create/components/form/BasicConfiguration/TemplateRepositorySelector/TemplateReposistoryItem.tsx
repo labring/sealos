@@ -51,6 +51,7 @@ export default function TemplateRepositoryItem({
           });
           return;
         }
+        setValue('gpu.type', '');
         if (startedTemplate && startedTemplate.uid !== item.uid) {
           setStartedTemplate(undefined);
         }
