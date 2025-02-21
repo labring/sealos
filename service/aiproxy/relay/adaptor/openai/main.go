@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	DataPrefix       = "data: "
+	DataPrefix       = "data:"
 	Done             = "[DONE]"
 	DataPrefixLength = len(DataPrefix)
 )
@@ -58,7 +58,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		if data[:DataPrefixLength] != DataPrefix {
 			continue
 		}
-		data = data[DataPrefixLength:]
+		data = strings.TrimSpace(data[DataPrefixLength:])
+
 		if strings.HasPrefix(data, Done) {
 			break
 		}
