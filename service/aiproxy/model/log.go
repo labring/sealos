@@ -396,7 +396,7 @@ func GetLogs(
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -452,13 +452,13 @@ func GetGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -718,7 +718,7 @@ func SearchLogs(
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -775,13 +775,13 @@ func SearchGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -912,6 +912,34 @@ func getLogDistinctValues[T cmp.Ordered](field string, group string, start, end 
 	return values, nil
 }
 
+func getLogGroupByValues[T cmp.Ordered](field string, group string, start, end time.Time) ([]T, error) {
+	var values []T
+	query := LogDB.
+		Model(&Log{})
+
+	if group != "" {
+		query = query.Where("group_id = ?", group)
+	}
+
+	if !start.IsZero() && !end.IsZero() {
+		query = query.Where("request_at BETWEEN ? AND ?", start, end)
+	} else if !start.IsZero() {
+		query = query.Where("request_at >= ?", start)
+	} else if !end.IsZero() {
+		query = query.Where("request_at <= ?", end)
+	}
+
+	err := query.
+		Select(field).
+		Group(field).
+		Pluck(field, &values).Error
+	if err != nil {
+		return nil, err
+	}
+	slices.Sort(values)
+	return values, nil
+}
+
 func sumTotalCount(chartData []*ChartData) int64 {
 	var count int64
 	for _, data := range chartData {
@@ -1000,7 +1028,7 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", "", start, end)
+		models, err = getLogGroupByValues[string]("model", "", start, end)
 		return err
 	})
 
@@ -1064,13 +1092,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, start, end)
+		tokenNames, err = getLogGroupByValues[string]("token_name", group, start, end)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, start, end)
+		models, err = getLogGroupByValues[string]("model", group, start, end)
 		return err
 	})
 
