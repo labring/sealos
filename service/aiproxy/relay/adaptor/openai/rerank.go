@@ -13,18 +13,18 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
@@ -46,18 +46,18 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	_, err = c.Writer.Write(responseBody)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 
 	if rerankResponse.Meta.Tokens == nil {
 		return &model.Usage{
-			PromptTokens:     meta.PromptTokens,
+			PromptTokens:     meta.InputTokens,
 			CompletionTokens: 0,
-			TotalTokens:      meta.PromptTokens,
+			TotalTokens:      meta.InputTokens,
 		}, nil
 	}
 	if rerankResponse.Meta.Tokens.InputTokens <= 0 {
-		rerankResponse.Meta.Tokens.InputTokens = meta.PromptTokens
+		rerankResponse.Meta.Tokens.InputTokens = meta.InputTokens
 	}
 	return &model.Usage{
 		PromptTokens:     rerankResponse.Meta.Tokens.InputTokens,

@@ -17,10 +17,10 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.Reader, error) {
+func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Header, io.Reader, error) {
 	err := request.ParseMultipartForm(1024 * 1024 * 4)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
 
 	multipartBody := &bytes.Buffer{}
@@ -32,9 +32,9 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		}
 		value := values[0]
 		if key == "model" {
-			err = multipartWriter.WriteField(key, meta.ActualModelName)
+			err = multipartWriter.WriteField(key, meta.ActualModel)
 			if err != nil {
-				return nil, nil, err
+				return "", nil, nil, err
 			}
 			continue
 		}
@@ -44,7 +44,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		}
 		err = multipartWriter.WriteField(key, value)
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
@@ -55,23 +55,23 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (http.Header, io.
 		fileHeader := files[0]
 		file, err := fileHeader.Open()
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 		w, err := multipartWriter.CreateFormFile(key, fileHeader.Filename)
 		if err != nil {
 			file.Close()
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 		_, err = io.Copy(w, file)
 		file.Close()
 		if err != nil {
-			return nil, nil, err
+			return "", nil, nil, err
 		}
 	}
 
 	multipartWriter.Close()
 	ContentType := multipartWriter.FormDataContentType()
-	return http.Header{
+	return http.MethodPost, http.Header{
 		"Content-Type": {ContentType},
 	}, multipartBody, nil
 }
@@ -113,20 +113,25 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	if err != nil {
 		return nil, ErrorWrapper(err, "get_text_from_body_err", http.StatusInternalServerError)
 	}
-	completionTokens := CountTokenText(text, meta.ActualModelName)
+	var promptTokens int
+	if meta.InputTokens > 0 {
+		promptTokens = meta.InputTokens
+	} else {
+		promptTokens = CountTokenText(text, meta.ActualModel)
+	}
 
 	for k, v := range resp.Header {
 		c.Writer.Header().Set(k, v[0])
 	}
 	_, err = c.Writer.Write(responseBody)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 
 	return &model.Usage{
-		PromptTokens:     0,
-		CompletionTokens: completionTokens,
-		TotalTokens:      completionTokens,
+		PromptTokens:     promptTokens,
+		CompletionTokens: 0,
+		TotalTokens:      promptTokens,
 	}, nil
 }
 

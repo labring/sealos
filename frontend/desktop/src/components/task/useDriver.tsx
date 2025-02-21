@@ -1,6 +1,7 @@
 import { checkUserTask, getUserTasks, updateTask } from '@/api/platform';
 import { AppStoreIcon, DBproviderIcon, DriverStarIcon, LaunchpadIcon } from '@/components/icons';
 import useAppStore from '@/stores/app';
+import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { UserTask } from '@/types/task';
@@ -22,6 +23,7 @@ export default function useDriver() {
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
   const { canShowGuide } = useDesktopConfigStore();
   const { installedApps } = useAppStore();
+  const { workspaceInviteCode } = useCallbackStore();
 
   useEffect(() => {
     const fetchUserTasks = async () => {
@@ -51,13 +53,13 @@ export default function useDriver() {
       }
     };
 
-    if (isPC && conf?.guideEnabled && canShowGuide) {
+    if (isPC && conf?.guideEnabled && canShowGuide && !workspaceInviteCode) {
       handleUserGuide();
     } else {
       setDesktopGuide(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conf?.guideEnabled, isPC, canShowGuide]);
+  }, [conf?.guideEnabled, isPC, canShowGuide, workspaceInviteCode]);
 
   const completeGuide = async () => {
     try {

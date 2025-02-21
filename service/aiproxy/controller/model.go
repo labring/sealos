@@ -168,11 +168,11 @@ func ChannelDefaultModelsAndMappingByType(c *gin.Context) {
 }
 
 func EnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, model.CacheGetEnabledModelConfigs())
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledModelConfigs)
 }
 
 func ChannelEnabledModels(c *gin.Context) {
-	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs())
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledChannelType2ModelConfigs)
 }
 
 func ChannelEnabledModelsByType(c *gin.Context) {
@@ -186,23 +186,26 @@ func ChannelEnabledModelsByType(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid type")
 		return
 	}
-	middleware.SuccessResponse(c, model.CacheGetEnabledChannelType2ModelConfigs()[channelTypeInt])
+	middleware.SuccessResponse(c, model.LoadModelCaches().EnabledChannelType2ModelConfigs[channelTypeInt])
 }
 
 func ListModels(c *gin.Context) {
-	models := model.CacheGetEnabledModelConfigs()
+	enabledModelConfigsMap := middleware.GetModelCaches(c).EnabledModelConfigsMap
+	token := middleware.GetToken(c)
 
-	availableOpenAIModels := make([]*OpenAIModels, len(models))
+	availableOpenAIModels := make([]*OpenAIModels, 0, len(token.Models))
 
-	for idx, model := range models {
-		availableOpenAIModels[idx] = &OpenAIModels{
-			ID:         model.Model,
-			Object:     "model",
-			Created:    1626777600,
-			OwnedBy:    string(model.Owner),
-			Root:       model.Model,
-			Permission: permission,
-			Parent:     nil,
+	for _, model := range token.Models {
+		if mc, ok := enabledModelConfigsMap[model]; ok {
+			availableOpenAIModels = append(availableOpenAIModels, &OpenAIModels{
+				ID:         model,
+				Object:     "model",
+				Created:    1626777600,
+				OwnedBy:    string(mc.Owner),
+				Root:       model,
+				Permission: permission,
+				Parent:     nil,
+			})
 		}
 	}
 
@@ -214,10 +217,15 @@ func ListModels(c *gin.Context) {
 
 func RetrieveModel(c *gin.Context) {
 	modelName := c.Param("model")
-	enabledModels := model.GetEnabledModel2Channels()
-	model, ok := model.CacheGetModelConfig(modelName)
+	enabledModelConfigsMap := middleware.GetModelCaches(c).EnabledModelConfigsMap
 
-	if _, exist := enabledModels[modelName]; !exist || !ok {
+	mc, ok := enabledModelConfigsMap[modelName]
+	if ok {
+		token := middleware.GetToken(c)
+		ok = slices.Contains(token.Models, modelName)
+	}
+
+	if !ok {
 		c.JSON(200, gin.H{
 			"error": &relaymodel.Error{
 				Message: fmt.Sprintf("the model '%s' does not exist", modelName),
@@ -230,11 +238,11 @@ func RetrieveModel(c *gin.Context) {
 	}
 
 	c.JSON(200, &OpenAIModels{
-		ID:         model.Model,
+		ID:         modelName,
 		Object:     "model",
 		Created:    1626777600,
-		OwnedBy:    string(model.Owner),
-		Root:       model.Model,
+		OwnedBy:    string(mc.Owner),
+		Root:       modelName,
 		Permission: permission,
 		Parent:     nil,
 	})

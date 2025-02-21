@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -88,8 +89,15 @@ func openMySQL(dsn string) (*gorm.DB, error) {
 }
 
 func openSQLite() (*gorm.DB, error) {
-	log.Info("SQL_DSN not set, using SQLite as database")
+	log.Info("SQL_DSN not set, using SQLite as database: ", common.SQLitePath)
 	common.UsingSQLite = true
+
+	baseDir := filepath.Dir(common.SQLitePath)
+	if err := os.MkdirAll(baseDir, 0o755); err != nil {
+		log.Fatal("failed to create base directory: " + err.Error())
+		return nil, err
+	}
+
 	dsn := fmt.Sprintf("%s?_busy_timeout=%d", common.SQLitePath, common.SQLiteBusyTimeout)
 	return gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		PrepareStmt:                              true, // precompile SQL
@@ -194,9 +202,9 @@ func setDBConns(db *gorm.DB) {
 		return
 	}
 
-	sqlDB.SetMaxIdleConns(env.Int("SQL_MAX_IDLE_CONNS", 100))
-	sqlDB.SetMaxOpenConns(env.Int("SQL_MAX_OPEN_CONNS", 1000))
-	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(env.Int("SQL_MAX_LIFETIME", 60)))
+	sqlDB.SetMaxIdleConns(int(env.Int64("SQL_MAX_IDLE_CONNS", 100)))
+	sqlDB.SetMaxOpenConns(int(env.Int64("SQL_MAX_OPEN_CONNS", 1000)))
+	sqlDB.SetConnMaxLifetime(time.Second * time.Duration(env.Int64("SQL_MAX_LIFETIME", 60)))
 }
 
 func closeDB(db *gorm.DB) error {

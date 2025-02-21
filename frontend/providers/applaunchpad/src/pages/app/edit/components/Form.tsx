@@ -435,7 +435,7 @@ const Form = ({
           pr={`${pxVal}px`}
           height={'100%'}
           position={'relative'}
-          overflowY={'scroll'}
+          // overflowY={'scroll'}
         >
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
@@ -1108,8 +1108,8 @@ const Form = ({
                             onClick={() => setConfigEdit(item)}
                             bg={'grayModern.25'}
                           >
-                            <MyIcon name={'configMap'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <MyIcon name={'configMap'} w={'20px'} />
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.mountPath}
                               </Box>
@@ -1180,8 +1180,8 @@ const Form = ({
                             bg={'grayModern.25'}
                             onClick={() => setStoreEdit(item)}
                           >
-                            <MyIcon name={'store'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <MyIcon name={'store'} w={'20px'} />
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>
@@ -1232,8 +1232,8 @@ const Form = ({
                             cursor={'not-allowed'}
                             bg={'grayModern.25'}
                           >
-                            <MyIcon name={'store'} />
-                            <Box ml={4} flex={'1 0 0'} w={0}>
+                            <MyIcon name={'store'} w={'20px'} />
+                            <Box ml={4} flex={'1 0 0'} w={'0px'}>
                               <Box color={'myGray.900'} fontWeight={'bold'}>
                                 {item.path}
                               </Box>

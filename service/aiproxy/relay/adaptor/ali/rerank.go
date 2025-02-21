@@ -26,13 +26,13 @@ type RerankUsage struct {
 	TotalTokens int `json:"total_tokens"`
 }
 
-func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	reqMap := make(map[string]any)
 	err := common.UnmarshalBodyReusable(req, &reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModelName
+	reqMap["model"] = meta.ActualModel
 	reqMap["input"] = map[string]any{
 		"query":     reqMap["query"],
 		"documents": reqMap["documents"],
@@ -50,9 +50,9 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (http.Header, io.R
 	reqMap["parameters"] = parameters
 	jsonData, err := json.Marshal(reqMap)
 	if err != nil {
-		return nil, nil, err
+		return "", nil, nil, err
 	}
-	return nil, bytes.NewReader(jsonData), nil
+	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
 func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
@@ -86,9 +86,9 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 	var usage *relaymodel.Usage
 	if rerankResponse.Usage == nil {
 		usage = &relaymodel.Usage{
-			PromptTokens:     meta.PromptTokens,
+			PromptTokens:     meta.InputTokens,
 			CompletionTokens: 0,
-			TotalTokens:      meta.PromptTokens,
+			TotalTokens:      meta.InputTokens,
 		}
 	} else {
 		usage = &relaymodel.Usage{
@@ -103,7 +103,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 	}
 	_, err = c.Writer.Write(jsonResponse)
 	if err != nil {
-		log.Error("write response body failed: " + err.Error())
+		log.Warnf("write response body failed: %v", err)
 	}
 	return usage, nil
 }

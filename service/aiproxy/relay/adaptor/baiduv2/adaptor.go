@@ -7,43 +7,29 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
-
-	"github.com/gin-gonic/gin"
-	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type Adaptor struct{}
 
 const (
-	baseURL = "https://qianfan.baidubce.com"
+	baseURL = "https://qianfan.baidubce.com/v2"
 )
+
+func (a *Adaptor) GetBaseURL() string {
+	return baseURL
+}
 
 // https://cloud.baidu.com/doc/WENXINWORKSHOP/s/Fm2vrveyu
 var v2ModelMap = map[string]string{
-	"ERNIE-4.0-8K-Latest":        "ernie-4.0-8k-latest",
-	"ERNIE-4.0-8K-Preview":       "ernie-4.0-8k-preview",
-	"ERNIE-4.0-8K":               "ernie-4.0-8k",
-	"ERNIE-4.0-Turbo-8K-Latest":  "ernie-4.0-turbo-8k-latest",
-	"ERNIE-4.0-Turbo-8K-Preview": "ernie-4.0-turbo-8k-preview",
-	"ERNIE-4.0-Turbo-8K":         "ernie-4.0-turbo-8k",
-	"ERNIE-4.0-Turbo-128K":       "ernie-4.0-turbo-128k",
-	"ERNIE-3.5-8K-Preview":       "ernie-3.5-8k-preview",
-	"ERNIE-3.5-8K":               "ernie-3.5-8k",
-	"ERNIE-3.5-128K":             "ernie-3.5-128k",
-	"ERNIE-Speed-8K":             "ernie-speed-8k",
-	"ERNIE-Speed-128K":           "ernie-speed-128k",
-	"ERNIE-Speed-Pro-128K":       "ernie-speed-pro-128k",
-	"ERNIE-Lite-8K":              "ernie-lite-8k",
-	"ERNIE-Lite-Pro-128K":        "ernie-lite-pro-128k",
-	"ERNIE-Tiny-8K":              "ernie-tiny-8k",
 	"ERNIE-Character-8K":         "ernie-char-8k",
 	"ERNIE-Character-Fiction-8K": "ernie-char-fiction-8k",
-	"ERNIE-Novel-8K":             "ernie-novel-8k",
 }
 
 func toV2ModelName(modelName string) string {
@@ -54,13 +40,9 @@ func toV2ModelName(modelName string) string {
 }
 
 func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
-	if meta.Channel.BaseURL == "" {
-		meta.Channel.BaseURL = baseURL
-	}
-
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		return meta.Channel.BaseURL + "/v2/chat/completions", nil
+		return meta.Channel.BaseURL + "/chat/completions", nil
 	default:
 		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}
@@ -75,16 +57,18 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 	return nil
 }
 
-func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (http.Header, io.Reader, error) {
+func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	switch meta.Mode {
 	case relaymode.ChatCompletions:
-		actModel := meta.ActualModelName
+		actModel := meta.ActualModel
 		v2Model := toV2ModelName(actModel)
-		meta.ActualModelName = v2Model
-		defer func() { meta.ActualModelName = actModel }()
+		if v2Model != actModel {
+			meta.ActualModel = v2Model
+			defer func() { meta.ActualModel = actModel }()
+		}
 		return openai.ConvertRequest(meta, req)
 	default:
-		return nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
 	}
 }
 

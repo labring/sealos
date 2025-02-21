@@ -12,6 +12,7 @@ import { useFormContext } from 'react-hook-form';
 import Label from '../../Label';
 import TemplateRepositoryListNav from '../TemplateRepositoryListNav';
 import TemplateRepositoryItem from './TemplateReposistoryItem';
+import { useSearchParams } from 'next/navigation';
 
 interface TemplateRepositorySelectorProps {
   isEdit: boolean;
@@ -22,7 +23,7 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>();
   const t = useTranslations();
   const { handleUserGuide } = useDriver();
-
+  const searchParams = useSearchParams();
   const templateRepositoryQuery = useQuery(
     ['list-official-template-repository'],
     listOfficialTemplateRepository,
@@ -97,8 +98,18 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
       return item.uid === curTemplateRepositoryUid;
     });
     if (!curTemplateRepository) {
-      const defaultTemplateRepositoryUid = templateData[0].uid;
-      setValue('templateRepositoryUid', defaultTemplateRepositoryUid);
+      const runtime = searchParams.get('runtime');
+      if (!runtime) {
+        setValue('templateRepositoryUid', templateData[0].uid);
+        return;
+      } else {
+        const runtimeTemplate = templateData.find((item) => item.iconId === runtime);
+        if (runtimeTemplate) {
+          setValue('templateRepositoryUid', runtimeTemplate.uid);
+        } else {
+          setValue('templateRepositoryUid', templateData[0].uid);
+        }
+      }
     }
   }, [
     templateRepositoryQuery.isSuccess,

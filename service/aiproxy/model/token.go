@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
-
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	log "github.com/sirupsen/logrus"
@@ -29,7 +27,6 @@ const (
 type Token struct {
 	CreatedAt    time.Time       `json:"created_at"`
 	ExpiredAt    time.Time       `json:"expired_at"`
-	AccessedAt   time.Time       `gorm:"index"                                     json:"accessed_at"`
 	Group        *Group          `gorm:"foreignKey:GroupID"                        json:"-"`
 	Key          string          `gorm:"type:char(48);uniqueIndex"                 json:"key"`
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
@@ -43,26 +40,11 @@ type Token struct {
 	RequestCount int             `gorm:"index"                                     json:"request_count"`
 }
 
-func (t *Token) MarshalJSON() ([]byte, error) {
-	type Alias Token
-	return json.Marshal(&struct {
-		*Alias
-		CreatedAt  int64 `json:"created_at"`
-		AccessedAt int64 `json:"accessed_at"`
-		ExpiredAt  int64 `json:"expired_at"`
-	}{
-		Alias:      (*Alias)(t),
-		CreatedAt:  t.CreatedAt.UnixMilli(),
-		AccessedAt: t.AccessedAt.UnixMilli(),
-		ExpiredAt:  t.ExpiredAt.UnixMilli(),
-	})
-}
-
 //nolint:goconst
 func getTokenOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "name", "accessed_at", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
+	case "name", "expired_at", "group", "used_amount", "request_count", "id", "created_at":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -91,7 +73,7 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 			if err != nil {
 				return err
 			}
-			if count >= int64(maxTokenNum) {
+			if count >= maxTokenNum {
 				return errors.New("group max token num reached")
 			}
 		}
@@ -106,34 +88,11 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 	return nil
 }
 
-func GetTokens(startIdx int, num int, order string, group string, status int) (tokens []*Token, total int64, err error) {
+func GetTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
-
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
-	if status != 0 {
-		tx = tx.Where("status = ?", status)
-	}
-
-	err = tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-
-	if total <= 0 {
-		return nil, 0, nil
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
-	return tokens, total, err
-}
-
-func GetGroupTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
-	if group == "" {
-		return nil, 0, errors.New("group is empty")
-	}
-
-	tx := DB.Model(&Token{}).Where("group_id = ?", group)
 
 	if status != 0 {
 		tx = tx.Where("status = ?", status)
@@ -151,7 +110,7 @@ func GetGroupTokens(group string, startIdx int, num int, order string, status in
 	return tokens, total, err
 }
 
-func SearchTokens(keyword string, startIdx int, num int, order string, status int, name string, key string, group string) (tokens []*Token, total int64, err error) {
+func SearchTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -169,88 +128,31 @@ func SearchTokens(keyword string, startIdx int, num int, order string, status in
 	if keyword != "" {
 		var conditions []string
 		var values []interface{}
-		if status == 0 {
-			conditions = append(conditions, "status = ?")
-			values = append(values, 1)
-		}
+
 		if group == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "group_id ILIKE ?")
-			} else {
-				conditions = append(conditions, "group_id LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
-		}
-		if name == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "name ILIKE ?")
-			} else {
-				conditions = append(conditions, "name LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
-		}
-		if key == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "key ILIKE ?")
-			} else {
-				conditions = append(conditions, "key LIKE ?")
-			}
+			conditions = append(conditions, "group_id = ?")
 			values = append(values, keyword)
 		}
-		if len(conditions) > 0 {
-			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
-		}
-	}
-
-	err = tx.Count(&total).Error
-	if err != nil {
-		return nil, 0, err
-	}
-	if total <= 0 {
-		return nil, 0, nil
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
-	return tokens, total, err
-}
-
-func SearchGroupTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
-	if group == "" {
-		return nil, 0, errors.New("group is empty")
-	}
-	tx := DB.Model(&Token{}).Where("group_id = ?", group)
-	if status != 0 {
-		tx = tx.Where("status = ?", status)
-	}
-	if name != "" {
-		tx = tx.Where("name = ?", name)
-	}
-	if key != "" {
-		tx = tx.Where("key = ?", key)
-	}
-
-	if keyword != "" {
-		var conditions []string
-		var values []interface{}
 		if status == 0 {
 			conditions = append(conditions, "status = ?")
-			values = append(values, 1)
+			values = append(values, String2Int(keyword))
 		}
 		if name == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "name ILIKE ?")
-			} else {
-				conditions = append(conditions, "name LIKE ?")
-			}
-			values = append(values, "%"+keyword+"%")
-		}
-		if key == "" {
-			if common.UsingPostgreSQL {
-				conditions = append(conditions, "key ILIKE ?")
-			} else {
-				conditions = append(conditions, "key LIKE ?")
-			}
+			conditions = append(conditions, "name = ?")
 			values = append(values, keyword)
 		}
+		if key == "" {
+			conditions = append(conditions, "key = ?")
+			values = append(values, keyword)
+		}
+
+		if common.UsingPostgreSQL {
+			conditions = append(conditions, "models ILIKE ?")
+		} else {
+			conditions = append(conditions, "models LIKE ?")
+		}
+		values = append(values, "%"+keyword+"%")
+
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
 		}
@@ -291,10 +193,10 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	token, err = CacheGetTokenByKey(key)
 	if err != nil {
-		log.Error("get token from cache failed: " + err.Error())
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("invalid token")
 		}
+		log.Error("get token from cache failed: " + err.Error())
 		return nil, errors.New("token validation failed")
 	}
 	switch token.Status {
@@ -302,12 +204,14 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 		return nil, fmt.Errorf("token (%s[%d]) quota is exhausted", token.Name, token.ID)
 	case TokenStatusExpired:
 		return nil, fmt.Errorf("token (%s[%d]) is expired", token.Name, token.ID)
+	case TokenStatusDisabled:
+		return nil, fmt.Errorf("token (%s[%d]) is disabled", token.Name, token.ID)
 	}
 	if token.Status != TokenStatusEnabled {
 		return nil, fmt.Errorf("token (%s[%d]) is not available", token.Name, token.ID)
 	}
 	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
-		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExpired)
+		err := UpdateTokenStatus(token.ID, TokenStatusExpired)
 		if err != nil {
 			log.Error("failed to update token status" + err.Error())
 		}
@@ -315,7 +219,7 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 	}
 	if token.Quota > 0 && token.UsedAmount >= token.Quota {
 		// in this case, we can make sure the token is exhausted
-		err := UpdateTokenStatusAndAccessedAt(token.ID, TokenStatusExhausted)
+		err := UpdateTokenStatus(token.ID, TokenStatusExhausted)
 		if err != nil {
 			log.Error("failed to update token status" + err.Error())
 		}
@@ -348,8 +252,8 @@ func UpdateTokenStatus(id int, status int) (err error) {
 	token := Token{ID: id}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenStatus(token.Key, status); err != nil {
+				log.Error("update token status in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -369,63 +273,12 @@ func UpdateTokenStatus(id int, status int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func UpdateTokenStatusAndAccessedAt(id int, status int) (err error) {
-	token := Token{ID: id}
-	defer func() {
-		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
-			}
-		}
-	}()
-	result := DB.
-		Model(&token).
-		Clauses(clause.Returning{
-			Columns: []clause.Column{
-				{Name: "key"},
-			},
-		}).
-		Where("id = ?", id).Updates(
-		map[string]interface{}{
-			"status":      status,
-			"accessed_at": time.Now(),
-		},
-	)
-	return HandleUpdateResult(result, ErrTokenNotFound)
-}
-
-func UpdateGroupTokenStatusAndAccessedAt(group string, id int, status int) (err error) {
-	token := Token{}
-	defer func() {
-		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
-			}
-		}
-	}()
-	result := DB.
-		Model(&token).
-		Clauses(clause.Returning{
-			Columns: []clause.Column{
-				{Name: "key"},
-			},
-		}).
-		Where("id = ? and group_id = ?", id, group).
-		Updates(
-			map[string]interface{}{
-				"status":      status,
-				"accessed_at": time.Now(),
-			},
-		)
-	return HandleUpdateResult(result, ErrTokenNotFound)
-}
-
 func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 	token := Token{}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenStatus(token.Key, status); err != nil {
+				log.Error("update token status in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -586,7 +439,6 @@ func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error)
 			map[string]interface{}{
 				"used_amount":   gorm.Expr("used_amount + ?", amount),
 				"request_count": gorm.Expr("request_count + ?", requestCount),
-				"accessed_at":   time.Now(),
 			},
 		)
 	return HandleUpdateResult(result, ErrTokenNotFound)
@@ -596,8 +448,8 @@ func UpdateTokenName(id int, name string) (err error) {
 	token := &Token{ID: id}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenName(token.Key, name); err != nil {
+				log.Error("update token name in cache failed: " + err.Error())
 			}
 		}
 	}()
@@ -620,8 +472,8 @@ func UpdateGroupTokenName(group string, id int, name string) (err error) {
 	token := &Token{ID: id, GroupID: group}
 	defer func() {
 		if err == nil {
-			if err := CacheDeleteToken(token.Key); err != nil {
-				log.Error("delete token from cache failed: " + err.Error())
+			if err := CacheUpdateTokenName(token.Key, name); err != nil {
+				log.Error("update token name in cache failed: " + err.Error())
 			}
 		}
 	}()

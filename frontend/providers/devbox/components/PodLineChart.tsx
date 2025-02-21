@@ -168,6 +168,7 @@ const PodLineChart = ({
       axisPointer: {
         type: 'line'
       },
+      appendToBody: true,
       formatter: (params: any[]) => {
         const axisValue = params[0]?.axisValue;
         return `${axisValue} ${params[0]?.value || 0}%`;

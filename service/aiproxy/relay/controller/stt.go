@@ -1,86 +1,101 @@
 package controller
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"net/http"
+	"math"
+	"mime/multipart"
+	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/audio"
 	"github.com/labring/sealos/service/aiproxy/middleware"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
-	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
-	billingprice "github.com/labring/sealos/service/aiproxy/relay/price"
 )
 
 func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCode {
-	log := middleware.GetLogger(c)
-	ctx := c.Request.Context()
-
-	adaptor, ok := channeltype.GetAdaptor(meta.Channel.Type)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("invalid channel type: %d", meta.Channel.Type), "invalid_channel_type", http.StatusBadRequest)
-	}
-
-	price, completionPrice, ok := billingprice.GetModelPrice(meta.OriginModelName, meta.ActualModelName)
-	if !ok {
-		return openai.ErrorWrapper(fmt.Errorf("model price not found: %s", meta.OriginModelName), "model_price_not_found", http.StatusInternalServerError)
-	}
-
-	ok, postGroupConsumer, err := preCheckGroupBalance(ctx, &PreCheckGroupBalanceReq{
-		PromptTokens: meta.PromptTokens,
-		Price:        price,
-	}, meta)
-	if err != nil {
-		log.Errorf("get group (%s) balance failed: %v", meta.Group.ID, err)
-		return openai.ErrorWrapper(
-			fmt.Errorf("get group (%s) balance failed", meta.Group.ID),
-			"get_group_quota_failed",
-			http.StatusInternalServerError,
-		)
-	}
-	if !ok {
-		return openai.ErrorWrapper(errors.New("group balance is not enough"), "insufficient_group_balance", http.StatusForbidden)
-	}
-
-	usage, detail, respErr := DoHelper(adaptor, c, meta)
-	if respErr != nil {
-		if detail != nil {
-			log.Errorf("do stt failed: %s\nrequest detail:\n%s\nresponse detail:\n%s", respErr, detail.RequestBody, detail.ResponseBody)
-		} else {
-			log.Errorf("do stt failed: %s", respErr)
+	return Handle(meta, c, func() (*PreCheckGroupBalanceReq, error) {
+		price, completionPrice, ok := GetModelPrice(meta.ModelConfig)
+		if !ok {
+			return nil, fmt.Errorf("model price not found: %s", meta.OriginModel)
 		}
-		ConsumeWaitGroup.Add(1)
-		go postConsumeAmount(context.Background(),
-			&ConsumeWaitGroup,
-			postGroupConsumer,
-			respErr.StatusCode,
-			c.Request.URL.Path,
-			usage,
-			meta,
-			price,
-			completionPrice,
-			respErr.String(),
-			detail,
-		)
-		return respErr
+
+		audioFile, err := c.FormFile("file")
+		if err != nil {
+			return nil, fmt.Errorf("failed to get audio file: %w", err)
+		}
+
+		duration, err := getAudioDuration(audioFile)
+		if err != nil {
+			return nil, err
+		}
+
+		durationInt := int(math.Ceil(duration))
+		log := middleware.GetLogger(c)
+		log.Data["duration"] = durationInt
+
+		return &PreCheckGroupBalanceReq{
+			InputTokens: durationInt,
+			InputPrice:  price,
+			OutputPrice: completionPrice,
+		}, nil
+	})
+}
+
+func getAudioDuration(audioFile *multipart.FileHeader) (float64, error) {
+	// Try to get duration directly from audio data
+	audioData, err := audioFile.Open()
+	if err != nil {
+		return 0, fmt.Errorf("failed to open audio file: %w", err)
+	}
+	defer audioData.Close()
+
+	// If it's already an os.File, use file path method
+	if osFile, ok := audioData.(*os.File); ok {
+		duration, err := audio.GetAudioDurationFromFilePath(osFile.Name())
+		if err != nil {
+			return 0, fmt.Errorf("failed to get audio duration from temp file: %w", err)
+		}
+		return duration, nil
 	}
 
-	ConsumeWaitGroup.Add(1)
-	go postConsumeAmount(context.Background(),
-		&ConsumeWaitGroup,
-		postGroupConsumer,
-		http.StatusOK,
-		c.Request.URL.Path,
-		usage,
-		meta,
-		price,
-		completionPrice,
-		"",
-		nil,
-	)
+	// Try to get duration from audio data
+	duration, err := audio.GetAudioDuration(audioData)
+	if err == nil {
+		return duration, nil
+	}
 
-	return nil
+	// If duration is NaN, create temp file and try again
+	if errors.Is(err, audio.ErrAudioDurationNAN) {
+		return getDurationFromTempFile(audioFile)
+	}
+
+	return 0, fmt.Errorf("failed to get audio duration: %w", err)
+}
+
+func getDurationFromTempFile(audioFile *multipart.FileHeader) (float64, error) {
+	tempFile, err := os.CreateTemp("", "audio.wav")
+	if err != nil {
+		return 0, fmt.Errorf("failed to create temp file: %w", err)
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	newAudioData, err := audioFile.Open()
+	if err != nil {
+		return 0, fmt.Errorf("failed to open audio file: %w", err)
+	}
+	defer newAudioData.Close()
+
+	if _, err = tempFile.ReadFrom(newAudioData); err != nil {
+		return 0, fmt.Errorf("failed to read from temp file: %w", err)
+	}
+
+	duration, err := audio.GetAudioDurationFromFilePath(tempFile.Name())
+	if err != nil {
+		return 0, fmt.Errorf("failed to get audio duration from temp file: %w", err)
+	}
+
+	return duration, nil
 }
