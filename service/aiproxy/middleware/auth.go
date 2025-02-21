@@ -58,8 +58,6 @@ func TokenAuth(c *gin.Context) {
 		strings.TrimPrefix(key, "Bearer "),
 		"sk-",
 	)
-	parts := strings.Split(key, "-")
-	key = parts[0]
 
 	var token *model.TokenCache
 	var useInternalToken bool

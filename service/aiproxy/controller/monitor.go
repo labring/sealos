@@ -72,3 +72,12 @@ func ClearChannelModelErrors(c *gin.Context) {
 	}
 	c.Status(http.StatusNoContent)
 }
+
+func GetModelsErrorRate(c *gin.Context) {
+	rates, err := monitor.GetModelsErrorRate(c.Request.Context())
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, rates)
+}

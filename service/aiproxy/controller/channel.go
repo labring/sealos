@@ -26,24 +26,14 @@ func ChannelTypeMetas(c *gin.Context) {
 }
 
 func GetChannels(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+	page, perPage := parsePageParams(c)
 	id, _ := strconv.Atoi(c.Query("id"))
 	name := c.Query("name")
 	key := c.Query("key")
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.GetChannels(p*perPage, perPage, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.GetChannels(page*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -89,24 +79,14 @@ func AddChannels(c *gin.Context) {
 
 func SearchChannels(c *gin.Context) {
 	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+	page, perPage := parsePageParams(c)
 	id, _ := strconv.Atoi(c.Query("id"))
 	name := c.Query("name")
 	key := c.Query("key")
 	channelType, _ := strconv.Atoi(c.Query("channel_type"))
 	baseURL := c.Query("base_url")
 	order := c.Query("order")
-	channels, total, err := model.SearchChannels(keyword, p*perPage, perPage, id, name, key, channelType, baseURL, order)
+	channels, total, err := model.SearchChannels(keyword, page*perPage, perPage, id, name, key, channelType, baseURL, order)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

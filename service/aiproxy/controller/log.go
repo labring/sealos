@@ -10,56 +10,75 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
-func GetLogs(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+func parseTimeRange(c *gin.Context) (startTime, endTime time.Time) {
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	var startTimestampTime time.Time
+
 	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
+		startTime = time.UnixMilli(startTimestamp)
 	}
-	var endTimestampTime time.Time
+	sevenDaysAgo := time.Now().AddDate(0, 0, -7)
+	if startTime.IsZero() || startTime.Before(sevenDaysAgo) {
+		startTime = sevenDaysAgo
+	}
+
 	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
+		endTime = time.UnixMilli(endTimestamp)
 	}
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channelID, _ := strconv.Atoi(c.Query("channel"))
+	return
+}
+
+func parseCommonParams(c *gin.Context) (params struct {
+	tokenName string
+	modelName string
+	channelID int
+	endpoint  string
+	tokenID   int
+	order     string
+	requestID string
+	mode      int
+	codeType  string
+	withBody  bool
+	ip        string
+},
+) {
+	params.tokenName = c.Query("token_name")
+	params.modelName = c.Query("model_name")
+	params.channelID, _ = strconv.Atoi(c.Query("channel"))
+	params.endpoint = c.Query("endpoint")
+	params.tokenID, _ = strconv.Atoi(c.Query("token_id"))
+	params.order = c.Query("order")
+	params.requestID = c.Query("request_id")
+	params.mode, _ = strconv.Atoi(c.Query("mode"))
+	params.codeType = c.Query("code_type")
+	params.withBody, _ = strconv.ParseBool(c.Query("with_body"))
+	params.ip = c.Query("ip")
+	return
+}
+
+// Handler functions
+func GetLogs(c *gin.Context) {
+	page, perPage := parsePageParams(c)
+	startTime, endTime := parseTimeRange(c)
+	params := parseCommonParams(c)
 	group := c.Query("group")
-	endpoint := c.Query("endpoint")
-	tokenID, _ := strconv.Atoi(c.Query("token_id"))
-	order := c.Query("order")
-	requestID := c.Query("request_id")
-	mode, _ := strconv.Atoi(c.Query("mode"))
-	codeType := c.Query("code_type")
-	withBody, _ := strconv.ParseBool(c.Query("with_body"))
-	ip := c.Query("ip")
+
 	result, err := model.GetLogs(
 		group,
-		startTimestampTime,
-		endTimestampTime,
-		modelName,
-		requestID,
-		tokenID,
-		tokenName,
-		channelID,
-		endpoint,
-		order,
-		mode,
-		model.CodeType(codeType),
-		withBody,
-		ip,
-		p,
+		startTime,
+		endTime,
+		params.modelName,
+		params.requestID,
+		params.tokenID,
+		params.tokenName,
+		params.channelID,
+		params.endpoint,
+		params.order,
+		params.mode,
+		model.CodeType(params.codeType),
+		params.withBody,
+		params.ip,
+		page,
 		perPage,
 	)
 	if err != nil {
@@ -75,54 +94,27 @@ func GetGroupLogs(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "group is required")
 		return
 	}
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	channelID, _ := strconv.Atoi(c.Query("channel"))
-	endpoint := c.Query("endpoint")
-	tokenID, _ := strconv.Atoi(c.Query("token_id"))
-	order := c.Query("order")
-	requestID := c.Query("request_id")
-	mode, _ := strconv.Atoi(c.Query("mode"))
-	codeType := c.Query("code_type")
-	withBody, _ := strconv.ParseBool(c.Query("with_body"))
-	ip := c.Query("ip")
+
+	page, perPage := parsePageParams(c)
+	startTime, endTime := parseTimeRange(c)
+	params := parseCommonParams(c)
+
 	result, err := model.GetGroupLogs(
 		group,
-		startTimestampTime,
-		endTimestampTime,
-		modelName,
-		requestID,
-		tokenID,
-		tokenName,
-		channelID,
-		endpoint,
-		order,
-		mode,
-		model.CodeType(codeType),
-		withBody,
-		ip,
-		p,
+		startTime,
+		endTime,
+		params.modelName,
+		params.requestID,
+		params.tokenID,
+		params.tokenName,
+		params.channelID,
+		params.endpoint,
+		params.order,
+		params.mode,
+		model.CodeType(params.codeType),
+		params.withBody,
+		params.ip,
+		page,
 		perPage,
 	)
 	if err != nil {
@@ -133,53 +125,30 @@ func GetGroupLogs(c *gin.Context) {
 }
 
 func SearchLogs(c *gin.Context) {
+	page, perPage := parsePageParams(c)
+	startTime, endTime := parseTimeRange(c)
+	params := parseCommonParams(c)
+
 	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	endpoint := c.Query("endpoint")
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
 	group := c.Query("group_id")
-	tokenID, _ := strconv.Atoi(c.Query("token_id"))
-	channelID, _ := strconv.Atoi(c.Query("channel"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	order := c.Query("order")
-	requestID := c.Query("request_id")
-	mode, _ := strconv.Atoi(c.Query("mode"))
-	codeType := c.Query("code_type")
-	withBody, _ := strconv.ParseBool(c.Query("with_body"))
-	ip := c.Query("ip")
+
 	result, err := model.SearchLogs(
 		group,
 		keyword,
-		endpoint,
-		requestID,
-		tokenID,
-		tokenName,
-		modelName,
-		startTimestampTime,
-		endTimestampTime,
-		channelID,
-		order,
-		mode,
-		model.CodeType(codeType),
-		withBody,
-		ip,
-		p,
+		params.endpoint,
+		params.requestID,
+		params.tokenID,
+		params.tokenName,
+		params.modelName,
+		startTime,
+		endTime,
+		params.channelID,
+		params.order,
+		params.mode,
+		model.CodeType(params.codeType),
+		params.withBody,
+		params.ip,
+		page,
 		perPage,
 	)
 	if err != nil {
@@ -195,52 +164,29 @@ func SearchGroupLogs(c *gin.Context) {
 		middleware.ErrorResponse(c, http.StatusOK, "group is required")
 		return
 	}
+
+	page, perPage := parsePageParams(c)
+	startTime, endTime := parseTimeRange(c)
+	params := parseCommonParams(c)
 	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-	endpoint := c.Query("endpoint")
-	tokenName := c.Query("token_name")
-	modelName := c.Query("model_name")
-	tokenID, _ := strconv.Atoi(c.Query("token_id"))
-	channelID, _ := strconv.Atoi(c.Query("channel"))
-	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
-	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
-	var startTimestampTime time.Time
-	if startTimestamp != 0 {
-		startTimestampTime = time.UnixMilli(startTimestamp)
-	}
-	var endTimestampTime time.Time
-	if endTimestamp != 0 {
-		endTimestampTime = time.UnixMilli(endTimestamp)
-	}
-	order := c.Query("order")
-	requestID := c.Query("request_id")
-	mode, _ := strconv.Atoi(c.Query("mode"))
-	codeType := c.Query("code_type")
-	withBody, _ := strconv.ParseBool(c.Query("with_body"))
-	ip := c.Query("ip")
+
 	result, err := model.SearchGroupLogs(
 		group,
 		keyword,
-		endpoint,
-		requestID,
-		tokenID,
-		tokenName,
-		modelName,
-		startTimestampTime,
-		endTimestampTime,
-		channelID,
-		order,
-		mode,
-		model.CodeType(codeType),
-		withBody,
-		ip,
-		p,
+		params.endpoint,
+		params.requestID,
+		params.tokenID,
+		params.tokenName,
+		params.modelName,
+		startTime,
+		endTime,
+		params.channelID,
+		params.order,
+		params.mode,
+		model.CodeType(params.codeType),
+		params.withBody,
+		params.ip,
+		page,
 		perPage,
 	)
 	if err != nil {
@@ -297,6 +243,7 @@ func SearchConsumeError(c *gin.Context) {
 	content := c.Query("content")
 	tokenID, _ := strconv.Atoi(c.Query("token_id"))
 	usedAmount, _ := strconv.ParseFloat(c.Query("used_amount"), 64)
+
 	page, _ := strconv.Atoi(c.Query("page"))
 	perPage, _ := strconv.Atoi(c.Query("per_page"))
 	if perPage <= 0 {
@@ -304,9 +251,23 @@ func SearchConsumeError(c *gin.Context) {
 	} else if perPage > 100 {
 		perPage = 100
 	}
+
 	order := c.Query("order")
 	requestID := c.Query("request_id")
-	logs, total, err := model.SearchConsumeError(keyword, requestID, group, tokenName, modelName, content, usedAmount, tokenID, page, perPage, order)
+
+	logs, total, err := model.SearchConsumeError(
+		keyword,
+		requestID,
+		group,
+		tokenName,
+		modelName,
+		content,
+		usedAmount,
+		tokenID,
+		page,
+		perPage,
+		order,
+	)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

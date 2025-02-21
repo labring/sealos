@@ -77,6 +77,11 @@ func SetAPIRouter(router *gin.Engine) {
 			channelsRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
 			channelsRoute.POST("/batch_delete", controller.DeleteChannels)
 			channelsRoute.GET("/test", controller.TestAllChannels)
+
+			importRoute := channelsRoute.Group("/import")
+			{
+				importRoute.POST("/oneapi", controller.ImportChannelFromOneAPI)
+			}
 		}
 		channelRoute := apiRouter.Group("/channel")
 		{
@@ -152,6 +157,7 @@ func SetAPIRouter(router *gin.Engine) {
 			monitorRoute.DELETE("/", controller.ClearAllModelErrors)
 			monitorRoute.DELETE("/:id", controller.ClearChannelAllModelErrors)
 			monitorRoute.DELETE("/:id/:model", controller.ClearChannelModelErrors)
+			monitorRoute.GET("/models", controller.GetModelsErrorRate)
 		}
 	}
 }

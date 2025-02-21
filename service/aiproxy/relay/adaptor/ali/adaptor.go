@@ -32,14 +32,14 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 		u = baseURL
 	}
 	switch meta.Mode {
-	case relaymode.Embeddings:
-		return u + "/api/v1/services/embeddings/text-embedding/text-embedding", nil
 	case relaymode.ImagesGenerations:
 		return u + "/api/v1/services/aigc/text2image/image-synthesis", nil
 	case relaymode.ChatCompletions:
 		return u + "/compatible-mode/v1/chat/completions", nil
 	case relaymode.Completions:
 		return u + "/compatible-mode/v1/completions", nil
+	case relaymode.Embeddings:
+		return u + "/compatible-mode/v1/embeddings", nil
 	case relaymode.AudioSpeech, relaymode.AudioTranscription:
 		return u + "/api-ws/v1/inference", nil
 	case relaymode.Rerank:
@@ -62,9 +62,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		return ConvertImageRequest(meta, req)
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
-	case relaymode.Embeddings:
-		return ConvertEmbeddingsRequest(meta, req)
-	case relaymode.ChatCompletions, relaymode.Completions:
+	case relaymode.ChatCompletions, relaymode.Completions, relaymode.Embeddings:
 		return openai.ConvertRequest(meta, req)
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
@@ -105,11 +103,9 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		return &relaymodel.Usage{}, nil
 	}
 	switch meta.Mode {
-	case relaymode.Embeddings:
-		usage, err = EmbeddingsHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
-	case relaymode.ChatCompletions, relaymode.Completions:
+	case relaymode.ChatCompletions, relaymode.Completions, relaymode.Embeddings:
 		usage, err = openai.DoResponse(meta, c, resp)
 	case relaymode.Rerank:
 		usage, err = RerankHandler(meta, c, resp)

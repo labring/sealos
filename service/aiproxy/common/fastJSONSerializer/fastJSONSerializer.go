@@ -26,6 +26,11 @@ func (*JSONSerializer) Scan(ctx context.Context, field *schema.Field, dst reflec
 			return fmt.Errorf("failed to unmarshal JSONB value: %#v", dbValue)
 		}
 
+		if len(bytes) == 0 {
+			field.ReflectValueOf(ctx, dst).Set(reflect.Zero(field.FieldType))
+			return nil
+		}
+
 		err = json.Unmarshal(bytes, fieldValue.Interface())
 	}
 
