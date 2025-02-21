@@ -53,7 +53,7 @@ type Log struct {
 	Content          string         `gorm:"type:text"                                                                                                                                                                                                                                       json:"content,omitempty"`
 	GroupID          string         `gorm:"index;index:idx_group_token_reqat,priority:1;index:idx_group_model_reqat,priority:1;index:idx_group_reqat_token,priority:1;index:idx_group_reqat_model,priority:1;index:idx_group_reqat,priority:1;index:idx_group_token_model_reqat,priority:1" json:"group,omitempty"`
 	Model            string         `gorm:"index;index:idx_group_model_reqat,priority:2;index:idx_group_reqat_model,priority:3;index:idx_group_token_model_reqat,priority:3"                                                                                                                json:"model"`
-	RequestID        string         `gorm:"index:,type:hash"                                                                                                                                                                                                                                json:"request_id"`
+	RequestID        string         `gorm:"index"                                                                                                                                                                                                                                json:"request_id"`
 	Price            float64        `json:"price"`
 	ID               int            `gorm:"primaryKey"                                                                                                                                                                                                                                      json:"id"`
 	CompletionPrice  float64        `json:"completion_price"`
@@ -65,7 +65,7 @@ type Log struct {
 	ChannelID        int            `gorm:"index"                                                                                                                                                                                                                                           json:"channel"`
 	Code             int            `gorm:"index"                                                                                                                                                                                                                                           json:"code"`
 	Mode             int            `json:"mode"`
-	IP               string         `gorm:"index:,type:hash"                                                                                                                                                                                                                                json:"ip"`
+	IP               string         `gorm:"index"                                                                                                                                                                                                                                json:"ip"`
 }
 
 const (
@@ -837,13 +837,24 @@ type GroupDashboardResponse struct {
 }
 
 func getTimeSpanFormat(timeSpan time.Duration) string {
+	seconds := int64(timeSpan.Seconds())
+
 	switch {
 	case common.UsingMySQL:
-		return fmt.Sprintf("UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%%Y-%%m-%%d %%H:%%i:00')) DIV %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
+		return fmt.Sprintf("UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%%Y-%%m-%%d %%H:%%i:00')) DIV %d * %d", seconds, seconds)
 	case common.UsingPostgreSQL:
-		return fmt.Sprintf("FLOOR(EXTRACT(EPOCH FROM date_trunc('minute', request_at)) / %d) * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
+		switch seconds {
+		case 60:
+			return "EXTRACT(EPOCH FROM date_trunc('minute', request_at))"
+		case 3600:
+			return "EXTRACT(EPOCH FROM date_trunc('hour', request_at))"
+		case 86400:
+			return "EXTRACT(EPOCH FROM date_trunc('day', request_at))"
+		default:
+			return fmt.Sprintf("FLOOR(EXTRACT(EPOCH FROM date_trunc('minute', request_at)) / %d) * %d", seconds, seconds)
+		}
 	case common.UsingSQLite:
-		return fmt.Sprintf("CAST(STRFTIME('%%s', STRFTIME('%%Y-%%m-%%d %%H:%%M:00', request_at)) AS INTEGER) / %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
+		return fmt.Sprintf("CAST(STRFTIME('%%s', STRFTIME('%%Y-%%m-%%d %%H:%%M:00', request_at)) AS INTEGER) / %d * %d", seconds, seconds)
 	default:
 		return ""
 	}
@@ -865,6 +876,7 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	if group != "" {
 		query = query.Where("group_id = ?", group)
 	}
+
 	if !start.IsZero() && !end.IsZero() {
 		query = query.Where("request_at BETWEEN ? AND ?", start, end)
 	} else if !start.IsZero() {
