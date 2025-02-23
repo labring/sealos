@@ -51,8 +51,8 @@ Next, we will create Minio, an open-source object storage service. We can also q
 The image used is `minio/minio`. Note that we need to make some adjustments:
 
 - Expose port: 9000
-- Change the run command to: `minio`
-- Change the command parameters to: `server /data`
+- Change the run command to: `minio server`
+- Change the command parameters to: `/data`
 - Set environment variables:
     - MINIO_ROOT_USER: tailchat
     - MINIO_ROOT_PASSWORD: com.msgbyte.tailchat
