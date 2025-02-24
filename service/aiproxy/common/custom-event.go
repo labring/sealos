@@ -5,9 +5,7 @@
 package common
 
 import (
-	"io"
 	"net/http"
-	"strings"
 
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
@@ -21,43 +19,30 @@ var (
 	noCache     = []string{"no-cache"}
 )
 
-var dataReplacer = strings.NewReplacer(
-	"\n", "\ndata:",
-	"\r", "\\r")
-
-type CustomEvent struct {
-	Data  string
-	Event string
-	ID    string
-	Retry uint
+type OpenAISSE struct {
+	Data string
 }
 
-func encode(writer io.Writer, event CustomEvent) error {
-	return writeData(writer, event.Data)
-}
+const (
+	nn   = "\n\n"
+	data = "data: "
+)
 
-const nn = "\n\n"
+var (
+	nnBytes   = conv.StringToBytes(nn)
+	dataBytes = conv.StringToBytes(data)
+)
 
-var nnBytes = conv.StringToBytes(nn)
+func (r OpenAISSE) Render(w http.ResponseWriter) error {
+	r.WriteContentType(w)
 
-func writeData(w io.Writer, data string) error {
-	_, err := dataReplacer.WriteString(w, data)
-	if err != nil {
-		return err
-	}
-	if strings.HasPrefix(data, "data") {
-		_, err := w.Write(nnBytes)
-		return err
-	}
+	w.Write(dataBytes)
+	w.Write(conv.StringToBytes(r.Data))
+	w.Write(nnBytes)
 	return nil
 }
 
-func (r CustomEvent) Render(w http.ResponseWriter) error {
-	r.WriteContentType(w)
-	return encode(w, r)
-}
-
-func (r CustomEvent) WriteContentType(w http.ResponseWriter) {
+func (r OpenAISSE) WriteContentType(w http.ResponseWriter) {
 	header := w.Header()
 	header["Content-Type"] = contentType
 

@@ -202,7 +202,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 	c.Stream(func(_ io.Writer) bool {
 		event, ok := <-stream.Events()
 		if !ok {
-			render.StringData(c, "[DONE]")
+			render.Done(c)
 			return false
 		}
 
