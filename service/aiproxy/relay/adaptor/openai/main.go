@@ -105,6 +105,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
+				responseText.Reset()
 			}
 			for _, choice := range streamResponse.Choices {
 				if usage == nil {
@@ -139,6 +140,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
+				responseText.Reset()
 			} else {
 				for _, choice := range streamResponse.Choices {
 					responseText.WriteString(choice.Text)
