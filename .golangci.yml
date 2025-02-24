@@ -44,3 +44,7 @@ linters-settings:
     exclude-functions:
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
+  revive:
+    rules:
+      - name: dot-imports
+        disabled: true
