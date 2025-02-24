@@ -18,7 +18,10 @@ package processor
 
 import "context"
 
-var commandKey struct{}
+var (
+	commandKey struct{}
+	envKey     struct{}
+)
 
 func WithCommands(ctx context.Context, commands []string) context.Context {
 	return context.WithValue(ctx, commandKey, commands)
@@ -31,8 +34,6 @@ func GetCommands(ctx context.Context) []string {
 	}
 	return nil
 }
-
-var envKey struct{}
 
 func WithEnvs(ctx context.Context, envs map[string]string) context.Context {
 	return context.WithValue(ctx, envKey, envs)
