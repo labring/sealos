@@ -39,13 +39,6 @@ linters:
 linters-settings:
   errcheck:
     check-type-assertions: false
-    ignore: fmt:.*
     exclude-functions:
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
-
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  # use the fixed version to not introduce new linters unexpectedly
-  golangci-lint-version: latest
