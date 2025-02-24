@@ -23,6 +23,7 @@ var (
 	envKey     struct{}
 )
 
+//nolint:staticcheck
 func WithCommands(ctx context.Context, commands []string) context.Context {
 	return context.WithValue(ctx, commandKey, commands)
 }
@@ -35,6 +36,7 @@ func GetCommands(ctx context.Context) []string {
 	return nil
 }
 
+//nolint:staticcheck
 func WithEnvs(ctx context.Context, envs map[string]string) context.Context {
 	return context.WithValue(ctx, envKey, envs)
 }
