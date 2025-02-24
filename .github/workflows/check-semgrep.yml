@@ -29,7 +29,7 @@ jobs:
 
     container:
       # A Docker image with Semgrep installed. Do not change this.
-      image: returntocorp/semgrep:1.31.2
+      image: semgrep/semgrep:1.109.0
 
     # allow fails due to too many risks
     continue-on-error: true

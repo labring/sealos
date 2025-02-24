@@ -195,7 +195,6 @@ func NumberToChinese(num int) string {
 		return "十" + numToChinese[unitDigit]
 	} else if unitDigit == 0 {
 		return numToChinese[tenDigit] + "十"
-	} else {
-		return numToChinese[tenDigit] + "十" + numToChinese[unitDigit]
 	}
+	return numToChinese[tenDigit] + "十" + numToChinese[unitDigit]
 }
