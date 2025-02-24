@@ -1,18 +1,10 @@
-// Copyright 2014 Manu Martinez-Almeida.  All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file.
-
-package common
+package render
 
 import (
 	"net/http"
 
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
-
-// Server-Sent Events
-// W3C Working Draft 29 October 2009
-// http://www.w3.org/TR/2009/WD-eventsource-20091029/
 
 var (
 	contentType = []string{"text/event-stream"}
