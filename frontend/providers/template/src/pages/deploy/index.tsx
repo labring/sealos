@@ -460,7 +460,7 @@ export async function getServerSideProps(content: any) {
 
     const templateDetail = templateSource?.templateYaml;
     const metaData = {
-      title: templateDetail?.spec?.title || `${appName}部署和安装教程 - Sealos`,
+      title: templateDetail?.spec?.title || '',
       keywords: templateDetail?.spec?.description || '',
       description: templateDetail?.spec?.description || ''
     };
