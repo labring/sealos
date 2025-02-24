@@ -43,6 +43,7 @@ jobs:
     needs: [ resolve-modules ]
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - name: Checkout
