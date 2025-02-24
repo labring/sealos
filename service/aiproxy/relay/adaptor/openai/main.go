@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -37,14 +39,38 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
+const scannerBufferSize = 2 * bufio.MaxScanTokenSize
+
+var scannerBufferPool = sync.Pool{
+	New: func() any {
+		buf := make([]byte, scannerBufferSize, scannerBufferSize)
+		return &buf
+	},
+}
+
+//nolint:forcetypeassert
+func getScannerBuffer() *[]byte {
+	return scannerBufferPool.Get().(*[]byte)
+}
+
+func putScannerBuffer(buf *[]byte) {
+	if cap(*buf) != scannerBufferSize {
+		return
+	}
+	scannerBufferPool.Put(buf)
+}
+
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
 
-	responseText := ""
+	responseText := strings.Builder{}
+
 	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(bufio.ScanLines)
+	buf := getScannerBuffer()
+	defer putScannerBuffer(buf)
+	scanner.Buffer(*buf, cap(*buf))
 
 	var usage *model.Usage
 
@@ -81,7 +107,9 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 				usage = streamResponse.Usage
 			}
 			for _, choice := range streamResponse.Choices {
-				responseText += choice.Delta.StringContent()
+				if usage == nil {
+					responseText.WriteString(choice.Delta.StringContent())
+				}
 				if choice.Delta.ReasoningContent != "" {
 					hasReasoningContent = true
 				}
@@ -109,11 +137,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
-			for _, choice := range streamResponse.Choices {
-				responseText += choice.Text
-			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
+			} else {
+				for _, choice := range streamResponse.Choices {
+					responseText.WriteString(choice.Text)
+				}
 			}
 			respMap := make(map[string]any)
 			err = json.Unmarshal(data, &respMap)
@@ -134,8 +163,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	render.Done(c)
 
-	if usage == nil || (usage.TotalTokens == 0 && responseText != "") {
-		usage = ResponseText2Usage(responseText, meta.ActualModel, meta.InputTokens)
+	if usage == nil || (usage.TotalTokens == 0 && responseText.Len() > 0) {
+		usage = ResponseText2Usage(responseText.String(), meta.ActualModel, meta.InputTokens)
 	}
 
 	if usage.TotalTokens != 0 && usage.PromptTokens == 0 { // some channels don't return prompt tokens & completion tokens
@@ -220,11 +249,13 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if err != nil {
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
+
 	var textResponse SlimTextResponse
 	err = json.Unmarshal(responseBody, &textResponse)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
+
 	if textResponse.Error.Type != "" {
 		return nil, ErrorWrapperWithMessage(textResponse.Error.Message, textResponse.Error.Code, http.StatusBadRequest)
 	}
