@@ -36,9 +36,15 @@ var (
 func (r OpenAISSE) Render(w http.ResponseWriter) error {
 	r.WriteContentType(w)
 
-	w.Write(dataBytes)
-	w.Write(conv.StringToBytes(r.Data))
-	w.Write(nnBytes)
+	for _, bytes := range [][]byte{
+		dataBytes,
+		conv.StringToBytes(r.Data),
+		nnBytes,
+	} {
+		if _, err := w.Write(bytes); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
