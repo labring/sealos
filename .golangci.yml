@@ -28,7 +28,6 @@ linters:
     - misspell
     - whitespace
     - ineffassign
-    - vet
     - typecheck
     - errcheck
     - govet
