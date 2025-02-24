@@ -71,6 +71,6 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.60
+          version: v1.64.5
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
