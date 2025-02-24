@@ -43,7 +43,7 @@ const scannerBufferSize = 2 * bufio.MaxScanTokenSize
 
 var scannerBufferPool = sync.Pool{
 	New: func() any {
-		buf := make([]byte, scannerBufferSize, scannerBufferSize)
+		buf := make([]byte, scannerBufferSize)
 		return &buf
 	},
 }
