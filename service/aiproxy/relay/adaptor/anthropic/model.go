@@ -13,9 +13,10 @@ type ImageSource struct {
 }
 
 type Content struct {
-	Type   string       `json:"type"`
-	Text   string       `json:"text,omitempty"`
-	Source *ImageSource `json:"source,omitempty"`
+	Type     string       `json:"type"`
+	Text     string       `json:"text,omitempty"`
+	Thinking string       `json:"thinking,omitempty"`
+	Source   *ImageSource `json:"source,omitempty"`
 	// tool_calls
 	ID        string `json:"id,omitempty"`
 	Name      string `json:"name,omitempty"`
@@ -41,6 +42,11 @@ type InputSchema struct {
 	Type       string `json:"type"`
 }
 
+type Thinking struct {
+	Type         string `json:"type"`
+	BudgetTokens int    `json:"budget_tokens,omitempty"`
+}
+
 type Request struct {
 	ToolChoice    any       `json:"tool_choice,omitempty"`
 	Temperature   *float64  `json:"temperature,omitempty"`
@@ -53,6 +59,7 @@ type Request struct {
 	MaxTokens     int       `json:"max_tokens,omitempty"`
 	TopK          int       `json:"top_k,omitempty"`
 	Stream        bool      `json:"stream,omitempty"`
+	Thinking      *Thinking `json:"thinking,omitempty"`
 }
 
 type Usage struct {
@@ -81,6 +88,7 @@ type Delta struct {
 	StopReason   *string `json:"stop_reason"`
 	StopSequence *string `json:"stop_sequence"`
 	Type         string  `json:"type"`
+	Thinking     string  `json:"thinking,omitempty"`
 	Text         string  `json:"text"`
 	PartialJSON  string  `json:"partial_json,omitempty"`
 }
