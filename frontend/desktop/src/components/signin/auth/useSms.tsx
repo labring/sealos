@@ -34,6 +34,7 @@ export default function useSms({
   const { register, handleSubmit, trigger, getValues, watch } = useForm<{
     phoneNumber: string;
     verifyCode: string;
+    inviterId?: string;
   }>();
 
   const login = async () => {
@@ -54,7 +55,7 @@ export default function useSms({
             {
               id: data.phoneNumber,
               code: data.verifyCode,
-              inviterId: getInviterId(),
+              inviterId: data?.inviterId || getInviterId(),
               semData: getUserSemData(),
               bdVid: getBaiduId()
             }
@@ -225,6 +226,36 @@ export default function useSms({
             )}
           </InputRightAddon>
         </InputGroup>
+        {!!authConfig?.invite.enabled && (
+          <InputGroup
+            variant={'unstyled'}
+            bg="rgba(255, 255, 255, 0.65)"
+            width="266px"
+            minH="42px"
+            mb="14px"
+            borderRadius="4px"
+            p="10px"
+            border="1px solid #E5E5E5"
+          >
+            <InputLeftAddon>
+              <Image src="/icons/inviter.svg" alt="inviter" />
+            </InputLeftAddon>
+            <Input
+              type="text"
+              placeholder={t('common:inviter_id_tips') || ''}
+              pl={'12px'}
+              variant={'unstyled'}
+              id="inviterId"
+              fontSize="14px"
+              fontWeight="400"
+              _autofill={{
+                backgroundColor: 'transparent !important',
+                backgroundImage: 'none !important'
+              }}
+              {...register('inviterId')}
+            />
+          </InputGroup>
+        )}
       </>
     );
   };

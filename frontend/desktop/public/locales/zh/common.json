@@ -130,6 +130,7 @@
   "invitation_reminder": "受邀提醒",
   "invite_member": "邀请成员",
   "invite_members_to_workspace": "邀请成员至工作空间 {{workspace}}",
+  "inviter_id_tips": "邀请码（选填）",
   "irreversibleactiontips": "此操作不可逆转，请谨慎操作",
   "jump_over": "跳过",
   "language": "语言",

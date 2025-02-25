@@ -135,6 +135,7 @@
   "invitation_reminder": "Invitation reminder",
   "invite_member": "Invite Member",
   "invite_members_to_workspace_": "Invite members to workspace {{workspace}}",
+  "inviter_id_tips": "Invitation code (optional)",
   "irreversibleactiontips": "This action is irreversible, please proceed with caution.",
   "jump_over": "Jump Over",
   "laf_on_sealos": "Laf on Sealos",
