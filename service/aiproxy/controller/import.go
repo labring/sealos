@@ -125,6 +125,7 @@ var OneAPIChannelType2AIProxyMap = map[int]int{
 	OneAPIXunfeiV2:               18,
 	OneAPIAliBailian:             17,
 	OneAPIGeminiOpenAICompatible: 12,
+	OneAPIXAI:                    45,
 }
 
 type ImportChannelFromOneAPIRequest struct {
