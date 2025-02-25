@@ -41,8 +41,9 @@ const (
 type NetworkType string
 
 const (
-	NetworkTypeNodePort NetworkType = "NodePort"
-	NetworkTypeTailnet  NetworkType = "Tailnet"
+	NetworkTypeNodePort  NetworkType = "NodePort"
+	NetworkTypeTailnet   NetworkType = "Tailnet"
+	NetworkTypeWebSocket NetworkType = "WebSocket"
 )
 
 type RuntimeRef struct {
@@ -54,8 +55,9 @@ type RuntimeRef struct {
 
 type NetworkSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
+
 	// +kubebuilder:validation:Optional
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
 }
@@ -137,11 +139,14 @@ type DevboxSpec struct {
 
 type NetworkStatus struct {
 	// +kubebuilder:default=NodePort
-	// +kubebuilder:validation:Enum=NodePort;Tailnet
+	// +kubebuilder:validation:Enum=NodePort;Tailnet;WebSocket
 	Type NetworkType `json:"type"`
 
 	// +kubebuilder:validation:Optional
 	NodePort int32 `json:"nodePort"`
+
+	// +kubebuilder:validation:Optional
+	WebSocket string `json:"webSocket"`
 
 	// todo TailNet
 	// +kubebuilder:validation:Optional

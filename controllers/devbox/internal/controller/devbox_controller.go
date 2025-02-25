@@ -19,6 +19,10 @@ package controller
 import (
 	"context"
 	"fmt"
+	appsv1 "k8s.io/api/apps/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"time"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
@@ -59,6 +63,10 @@ type DevboxReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+
+	WebSocketImage       string
+	WebsocketProxyDomain string
+	IngressClass         string
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
@@ -129,20 +137,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 
-	// create service if network type is NodePort
-	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
-		logger.Info("syncing service")
-		if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := r.syncService(ctx, devbox, recLabels); err != nil {
-			logger.Error(err, "sync service failed")
-			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync service failed", "%v", err)
-			return ctrl.Result{}, err
-		}
-		logger.Info("sync service success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
+	//sync network
+	logger.Info("syncing network")
+	if err := r.syncNetwork(ctx, devbox, recLabels); err != nil {
+		logger.Error(err, "sync network failed")
+		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync network failed", "%v", err)
+		return ctrl.Result{}, err
 	}
+	logger.Info("sync network success")
 
 	// create or update pod
 	logger.Info("syncing pod")
@@ -342,27 +344,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	return nil
 }
 
-func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
-	var servicePorts []corev1.ServicePort
-	for _, port := range devbox.Spec.Config.Ports {
-		servicePorts = append(servicePorts, corev1.ServicePort{
-			Name:       port.Name,
-			Port:       port.ContainerPort,
-			TargetPort: intstr.FromInt32(port.ContainerPort),
-			Protocol:   port.Protocol,
-		})
-	}
-	if len(servicePorts) == 0 {
-		//use the default value
-		servicePorts = []corev1.ServicePort{
-			{
-				Name:       "devbox-ssh-port",
-				Port:       22,
-				TargetPort: intstr.FromInt32(22),
-				Protocol:   corev1.ProtocolTCP,
-			},
-		}
-	}
+func (r *DevboxReconciler) syncNodePortNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeNodePort,
@@ -608,6 +590,278 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
+func (r *DevboxReconciler) syncNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+	servicePorts := r.generateServicePorts(ctx, devbox)
+	switch devbox.Spec.NetworkSpec.Type {
+	case devboxv1alpha1.NetworkTypeNodePort:
+		return r.syncNodePortNetwork(ctx, devbox, recLabels, servicePorts)
+	case devboxv1alpha1.NetworkTypeWebSocket:
+		return r.syncWebSocketNetwork(ctx, devbox, recLabels, servicePorts)
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) generateServicePorts(ctx context.Context, devbox *devboxv1alpha1.Devbox) []corev1.ServicePort {
+	var servicePorts []corev1.ServicePort
+	for _, port := range devbox.Spec.Config.Ports {
+		servicePorts = append(servicePorts, corev1.ServicePort{
+			Name:       port.Name,
+			Port:       port.ContainerPort,
+			TargetPort: intstr.FromInt32(port.ContainerPort),
+			Protocol:   port.Protocol,
+		})
+	}
+	if len(servicePorts) == 0 {
+		//use the default value
+		servicePorts = []corev1.ServicePort{
+			{
+				Name:       "devbox-ssh-port",
+				Port:       22,
+				TargetPort: intstr.FromInt32(22),
+				Protocol:   corev1.ProtocolTCP,
+			},
+		}
+	}
+	return servicePorts
+}
+
+func (r *DevboxReconciler) syncWebSocketNetwork(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
+	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeWebSocket
+	if err := r.Status().Update(ctx, devbox); err != nil {
+		return err
+	}
+	if err := r.syncPodSvc(ctx, devbox, recLabels, servicePorts); err != nil {
+		return err
+	}
+	if err := r.syncProxyPod(ctx, devbox, servicePorts); err != nil {
+		return err
+	}
+	if err := r.syncProxySvc(ctx, devbox); err != nil {
+		return err
+	}
+	if hostName, err := r.syncProxyIngress(ctx, devbox); err != nil {
+		return err
+	} else {
+		devbox.Status.Network.WebSocket = hostName
+	}
+	return r.Status().Update(ctx, devbox)
+}
+
+func (r *DevboxReconciler) syncPodSvc(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string, servicePorts []corev1.ServicePort) error {
+	expectServiceSpec := corev1.ServiceSpec{
+		Selector: recLabels,
+		Type:     corev1.ServiceTypeClusterIP,
+		Ports:    servicePorts,
+	}
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-pod-svc",
+			Namespace: devbox.Namespace,
+			Labels:    helper.GenerateProxyPodLabels(devbox),
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
+		// only update some specific fields
+		service.Spec.Selector = expectServiceSpec.Selector
+		service.Spec.Type = expectServiceSpec.Type
+		if len(service.Spec.Ports) == 0 {
+			service.Spec.Ports = expectServiceSpec.Ports
+		} else {
+			service.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
+			service.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
+			service.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
+			service.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
+		}
+		return controllerutil.SetControllerReference(devbox, service, r.Scheme)
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) generateProxyPodDeploymentName(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Name + "-proxy-deployment"
+}
+
+func (r *DevboxReconciler) generateProxyPodEnv(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) []corev1.EnvVar {
+	var envVars []corev1.EnvVar
+	sshPort := "22"
+	for _, port := range servicePorts {
+		if port.Name == "devbox-ssh-port" {
+			sshPort = port.TargetPort.String()
+			break
+		}
+	}
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "TARGET",
+		Value: fmt.Sprintf("%s-pod-svc:%s", devbox.Name, sshPort),
+	})
+	envVars = append(envVars, corev1.EnvVar{
+		Name:  "LISTEN",
+		Value: "0.0.0.0:80",
+	})
+	return envVars
+}
+
+func (r *DevboxReconciler) generateProxyPodDeployment(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) *appsv1.Deployment {
+	podEnv := r.generateProxyPodEnv(ctx, devbox, servicePorts)
+	podSpec := corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:      "ws-proxy",
+				Image:     r.WebSocketImage,
+				Env:       podEnv,
+				Resources: helper.GenerateProxyPodResourceRequirements(),
+			},
+		},
+	}
+	replicas := int32(1)
+	deploymentSpec := appsv1.DeploymentSpec{
+		Replicas: &replicas,
+		Selector: &metav1.LabelSelector{
+			MatchLabels: helper.GenerateProxyPodLabels(devbox),
+		},
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        r.generateProxyPodName(devbox),
+				Namespace:   devbox.Namespace,
+				Labels:      helper.GenerateProxyPodLabels(devbox),
+				Annotations: helper.GeneratePodAnnotations(devbox),
+			},
+			Spec: podSpec,
+		},
+	}
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        r.generateProxyPodDeploymentName(devbox),
+			Namespace:   devbox.Namespace,
+			Labels:      helper.GenerateProxyPodLabels(devbox),
+			Annotations: helper.GeneratePodAnnotations(devbox),
+		},
+		Spec: deploymentSpec,
+	}
+}
+
+func (r *DevboxReconciler) generateProxyPodName(devbox *devboxv1alpha1.Devbox) string {
+	return devbox.Name + "-proxy-pod" + "-" + rand.String(5)
+}
+
+func (r *DevboxReconciler) syncProxyPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, servicePorts []corev1.ServicePort) error {
+	wsDeployment := &appsv1.Deployment{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: r.generateProxyPodDeploymentName(devbox), Namespace: devbox.Namespace}, wsDeployment)
+
+	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+		if errors.IsNotFound(err) {
+			wsDeployment = r.generateProxyPodDeployment(ctx, devbox, servicePorts)
+			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsDeployment, func() error {
+				return controllerutil.SetControllerReference(devbox, wsDeployment, r.Scheme)
+			}); err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		}
+	} else {
+		if err == nil {
+			if err := r.Client.Delete(ctx, wsDeployment); err != nil {
+				return err
+			}
+		} else if !errors.IsNotFound(err) {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) syncProxySvc(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+	servicePort := []corev1.ServicePort{
+		{
+			Name:       "devbox-ssh-port",
+			Port:       80,
+			TargetPort: intstr.FromInt32(80),
+			Protocol:   corev1.ProtocolTCP,
+		},
+	}
+	expectServiceSpec := corev1.ServiceSpec{
+		Selector: helper.GenerateProxyPodLabels(devbox),
+		Type:     corev1.ServiceTypeClusterIP,
+		Ports:    servicePort,
+	}
+	proxySvc := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-proxy-svc",
+			Namespace: devbox.Namespace,
+			Labels:    helper.GenerateProxyPodLabels(devbox),
+		},
+		Spec: expectServiceSpec,
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, proxySvc, func() error {
+		proxySvc.Spec.Selector = expectServiceSpec.Selector
+		proxySvc.Spec.Type = expectServiceSpec.Type
+		proxySvc.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
+		proxySvc.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
+		proxySvc.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
+		proxySvc.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
+		return controllerutil.SetControllerReference(devbox, proxySvc, r.Scheme)
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *DevboxReconciler) syncProxyIngress(ctx context.Context, devbox *devboxv1alpha1.Devbox) (string, error) {
+	host := r.generateProxyIngressHost()
+	pathType := networkingv1.PathTypePrefix
+	ingressPath := []networkingv1.HTTPIngressPath{
+		{
+			Path:     "/",
+			PathType: &pathType,
+			Backend: networkingv1.IngressBackend{
+				Service: &networkingv1.IngressServiceBackend{
+					Name: devbox.Name + "-proxy-svc",
+					Port: networkingv1.ServiceBackendPort{
+						Number: 80,
+					},
+				},
+			},
+		},
+	}
+
+	ingressSpec := networkingv1.IngressSpec{
+		IngressClassName: &r.IngressClass,
+		Rules: []networkingv1.IngressRule{
+			{
+				Host: host,
+				IngressRuleValue: networkingv1.IngressRuleValue{
+					HTTP: &networkingv1.HTTPIngressRuleValue{
+						Paths: ingressPath,
+					},
+				},
+			},
+		},
+	}
+
+	wsIngress := &networkingv1.Ingress{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      devbox.Name + "-proxy-ingress",
+			Namespace: devbox.Namespace,
+		},
+		Spec: ingressSpec,
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, wsIngress, func() error {
+		return controllerutil.SetControllerReference(devbox, wsIngress, r.Scheme)
+	}); err != nil {
+		return "", err
+	}
+
+	return host, nil
+}
+
+func (r *DevboxReconciler) generateProxyIngressHost() string {
+	return rand.String(12) + "." + r.WebsocketProxyDomain
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -616,5 +870,7 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&networkingv1.Ingress{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		Owns(&appsv1.Deployment{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Complete(r)
 }
