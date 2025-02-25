@@ -53,7 +53,16 @@ export default function SigninComponent() {
     };
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();
-  const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
+  const {
+    SmsModal,
+    login: smsSubmit,
+    isLoading: smsLoading
+  } = useSms({
+    showError,
+    invokeCaptcha() {
+      captchaRef.current?.invoke();
+    }
+  });
   const {
     PasswordComponent,
     pageState,
@@ -85,12 +94,13 @@ export default function SigninComponent() {
           <SmsModal
             onAfterGetCode={() => {
               turnstileRef.current?.reset();
-              captchaRef.current?.reset();
             }}
             getCfToken={async () => {
-              const token = await captchaRef.current?.getToken();
-              const turnstiletoken = turnstileRef.current?.getResponse();
+              const token = turnstileRef.current?.getResponse();
               return token;
+            }}
+            invokeCaptcha={() => {
+              captchaRef.current?.invoke();
             }}
           />
         )
@@ -231,7 +241,9 @@ export default function SigninComponent() {
                     siteKey={conf.commonConfig?.cfSiteKey}
                   />
                 )}
-                {conf.authConfig?.captcha.enabled && <HiddenCaptchaComponent ref={captchaRef} />}
+                {conf.authConfig?.captcha.enabled && (
+                  <HiddenCaptchaComponent ref={captchaRef} showError={showError} />
+                )}
                 <Button
                   variant={'unstyled'}
                   background="linear-gradient(90deg, #000000 0%, rgba(36, 40, 44, 0.9) 98.29%)"

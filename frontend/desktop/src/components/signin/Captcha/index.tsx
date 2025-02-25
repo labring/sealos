@@ -1,24 +1,27 @@
 import request from '@/services/request';
 import { useConfigStore } from '@/stores/config';
 import useScriptStore from '@/stores/script';
+import { ApiResp } from '@/types';
 import { Box, Button, ButtonProps, Link, LinkProps } from '@chakra-ui/react';
 import { delay } from 'lodash';
-import React, {
-  ReactElement,
-  forwardRef,
-  useEffect,
-  useId,
-  useImperativeHandle,
-  useRef,
-  useState
-} from 'react';
+import React, { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { v4 } from 'uuid';
+import useSms from '../auth/useSms';
+import useSmsStateStore from '@/stores/captcha';
+import useCustomError from '../auth/useCustomError';
+import { useTranslation } from 'next-i18next';
+import { I18nCommonKey } from '@/types/i18next';
+import { jsonRes } from '@/services/backend/response';
 export type TCaptchaInstance = {
-  getToken: () => Promise<string>;
-  reset: () => void;
+  invoke: () => void;
 };
-
-const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(props, ref) {
+type Props = {
+  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
+};
+const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
+  { showError }: Props,
+  ref
+) {
   const captchaElementRef = useRef<HTMLDivElement>(null);
   const captchaInstanceRef = useRef(null);
   const tokenRef = useRef('');
@@ -28,16 +31,8 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(props,
     ref,
     () => {
       return {
-        getToken: async () => {
+        invoke() {
           buttonRef.current?.click();
-          await new Promise((res) => {
-            setTimeout(res, 1000);
-          });
-          const token = tokenRef.current;
-          return token;
-        },
-        reset() {
-          tokenRef.current = '';
         }
       };
     },
@@ -46,13 +41,12 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(props,
   const { captchaIsLoaded } = useScriptStore();
   const [buttonId] = useState('captcha_button_pop');
   const [captchaId] = useState('captcha_' + v4().slice(0, 8));
-
+  const { i18n, t } = useTranslation();
   // @ts-ignore
   const getInstance = (instance) => {
     captchaInstanceRef.current = instance;
   };
 
-  const onBizResultCallback = () => {};
   useEffect(() => {
     if (!captchaIsLoaded) return;
     const initAliyunCaptchaOptions = {
@@ -61,27 +55,80 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(props,
       mode: 'popup',
       element: '#' + captchaId,
       button: '#' + buttonId,
-      async captchaVerifyCallback(captchaToken: string) {
+      async captchaVerifyCallback(captchaVerifyParam: string) {
         try {
-          tokenRef.current = captchaToken;
-          return {
-            captchaResult: true
-          };
+          const state = useSmsStateStore.getState();
+          const id = state.phoneNumber;
+          const res = await request.post<
+            any,
+            ApiResp<
+              | {
+                  result: boolean;
+                  code: string;
+                }
+              | undefined
+            >
+          >('/api/auth/phone/sms', {
+            id,
+            captchaVerifyParam
+          });
+          console.log(res);
+          if (res.code === 200) {
+            if (res.message !== 'successfully') {
+              return {
+                captchaResult: true,
+                bizResult: false
+              };
+            } else {
+              return {
+                captchaResult: true,
+                bizResult: true
+              };
+            }
+          } else {
+            // boolean | undefined
+            if (res.data?.result !== true)
+              return {
+                captchaResult: false
+              };
+            else
+              return {
+                captchaResult: true,
+                bizResult: false
+              };
+          }
         } catch (err) {
-          tokenRef.current = '';
-          return {
-            captchaResult: false
-          };
+          // @ts-ignore
+          if (err?.code === 409 && err?.data?.result === false) {
+            return {
+              captchaResult: false,
+              bizResult: false
+            };
+          } else {
+            return {
+              captchaResult: true,
+              bizResult: false
+            };
+          }
+          return;
         }
       },
-      onBizResultCallback: onBizResultCallback,
+      onBizResultCallback(bizResult: boolean) {
+        if (bizResult) {
+          const state = useSmsStateStore.getState();
+          state.setRemainTime(60);
+        } else {
+          const message = i18n.t('common:get_code_failed') || 'Get code failed';
+          showError(message);
+        }
+      },
       getInstance,
       slideStyle: {
         width: 360,
         height: 40
       },
       immediate: false,
-      language: 'cn',
+      language: i18n.language === 'en' ? 'en' : 'cn',
       region: 'cn'
     };
 
@@ -91,16 +138,10 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(props,
     return () => {
       captchaInstanceRef.current = null;
     };
-  }, [captchaIsLoaded]);
+  }, [captchaIsLoaded, t, i18n.language]);
   return (
     <>
-      <Button
-        ref={buttonRef}
-        variant={'unstyled'}
-        hidden
-        id={buttonId}
-        {...(props as ButtonProps)}
-      />
+      <Button ref={buttonRef} variant={'unstyled'} hidden id={buttonId} />
       <div ref={captchaElementRef} id={captchaId} />
     </>
   );

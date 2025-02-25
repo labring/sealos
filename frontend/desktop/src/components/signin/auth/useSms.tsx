@@ -19,14 +19,16 @@ import { getRegionToken } from '@/api/auth';
 import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 import { useConfigStore } from '@/stores/config';
+import useSmsStateStore from '@/stores/captcha';
 
 export default function useSms({
-  showError
+  showError,
+  invokeCaptcha
 }: {
   showError: (errorMessage: I18nCommonKey, duration?: number) => void;
+  invokeCaptcha: () => void;
 }) {
   const { t } = useTranslation();
-  const _remainTime = useRef(0);
   const router = useRouter();
   const { authConfig } = useConfigStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -81,13 +83,16 @@ export default function useSms({
 
   const SmsModal = ({
     onAfterGetCode,
-    getCfToken
+    getCfToken,
+    invokeCaptcha
   }: {
+    // for cloudflare
     getCfToken?: () => Promise<string | undefined>;
     onAfterGetCode?: () => void;
+    // for ali captcha
+    invokeCaptcha?: () => void;
   }) => {
-    const [remainTime, setRemainTime] = useState(_remainTime.current);
-
+    const { remainTime, setRemainTime, setPhoneNumber } = useSmsStateStore();
     useEffect(() => {
       if (remainTime <= 0) return;
       const interval = setInterval(() => {
@@ -95,39 +100,43 @@ export default function useSms({
       }, 1000);
       return () => clearInterval(interval);
     }, [remainTime]);
-    const [invokeTime, setInvokeTime] = useState(new Date().getTime());
+    const [invokeTime, setInvokeTime] = useState(new Date().getTime() - 1000);
     const getCode: MouseEventHandler = async (e: MouseEvent) => {
       e.preventDefault();
       if (!(await trigger('phoneNumber'))) {
         showError(t('common:invalid_phone_number') || 'Invalid phone number');
         return;
       }
+      // throttle
       if (new Date().getTime() - invokeTime <= 1000) {
         return;
       } else {
         setInvokeTime(new Date().getTime());
       }
-      const cfToken = await getCfToken?.();
+
+      const phoneNumber = getValues('phoneNumber');
       if (authConfig?.captcha.enabled && authConfig.captcha.ali.enabled) {
-        if (!cfToken) return;
-      }
-      setRemainTime(60);
-      _remainTime.current = 60;
-      try {
+        setPhoneNumber(phoneNumber);
+        invokeCaptcha?.();
+      } else {
+        // for cf ornot
         const cfToken = await getCfToken?.();
-        const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-          id: getValues('phoneNumber'),
-          cfToken
-        });
-        if (res.code !== 200 || res.message !== 'successfully') {
-          throw new Error('Get code failed');
+        if (authConfig?.captcha.enabled && authConfig.captcha.ali.enabled) {
+          if (!cfToken) return;
         }
-      } catch (err) {
-        showError(t('common:get_code_failed') || 'Get code failed');
-        setRemainTime(0);
-        _remainTime.current = 0;
-      } finally {
-        onAfterGetCode?.();
+        setRemainTime(60);
+        try {
+          const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
+            id: phoneNumber,
+            cfToken
+          });
+          if (res.code !== 200 || res.message !== 'successfully') {
+            throw new Error('Get code failed');
+          }
+        } catch (err) {
+          showError(t('common:get_code_failed') || 'Get code failed');
+          setRemainTime(0);
+        }
       }
     };
     return (
