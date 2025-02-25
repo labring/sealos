@@ -82,7 +82,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 	cluster := "volcano_tts"
 	textType := "ssml"
 	if strings.HasPrefix(request.Voice, "S_") {
-		cluster = "volcano_icl"
+		cluster = "volcano_mega"
 		textType = "plain"
 	}
 
