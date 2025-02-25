@@ -22,9 +22,12 @@ var (
 )
 
 var (
-	disableServe          atomic.Bool
-	logDetailStorageHours int64 = 3 * 24
-	internalToken         atomic.Value
+	disableServe                 atomic.Bool
+	saveAllLogDetail             atomic.Bool
+	logDetailRequestBodyMaxSize  int64 = 128 * 1024 // 128KB
+	logDetailResponseBodyMaxSize int64 = 128 * 1024 // 128KB
+	logDetailStorageHours        int64 = 3 * 24
+	internalToken                atomic.Value
 )
 
 var (
@@ -103,6 +106,33 @@ func GetLogDetailStorageHours() int64 {
 func SetLogDetailStorageHours(hours int64) {
 	hours = env.Int64("LOG_DETAIL_STORAGE_HOURS", hours)
 	atomic.StoreInt64(&logDetailStorageHours, hours)
+}
+
+func GetSaveAllLogDetail() bool {
+	return saveAllLogDetail.Load()
+}
+
+func SetSaveAllLogDetail(enabled bool) {
+	enabled = env.Bool("SAVE_ALL_LOG_DETAIL", enabled)
+	saveAllLogDetail.Store(enabled)
+}
+
+func GetLogDetailRequestBodyMaxSize() int64 {
+	return atomic.LoadInt64(&logDetailRequestBodyMaxSize)
+}
+
+func SetLogDetailRequestBodyMaxSize(size int64) {
+	size = env.Int64("LOG_DETAIL_REQUEST_BODY_MAX_SIZE", size)
+	atomic.StoreInt64(&logDetailRequestBodyMaxSize, size)
+}
+
+func GetLogDetailResponseBodyMaxSize() int64 {
+	return atomic.LoadInt64(&logDetailResponseBodyMaxSize)
+}
+
+func SetLogDetailResponseBodyMaxSize(size int64) {
+	size = env.Int64("LOG_DETAIL_RESPONSE_BODY_MAX_SIZE", size)
+	atomic.StoreInt64(&logDetailResponseBodyMaxSize, size)
 }
 
 func GetDisableServe() bool {

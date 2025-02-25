@@ -17,11 +17,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	requestBodyMaxSize  = 128 * 1024 // 128KB
-	responseBodyMaxSize = 128 * 1024 // 128KB
-)
-
 type RequestDetail struct {
 	CreatedAt             time.Time `gorm:"autoCreateTime;index"              json:"-"`
 	RequestBody           string    `gorm:"type:text"                         json:"request_body,omitempty"`
@@ -33,12 +28,12 @@ type RequestDetail struct {
 }
 
 func (d *RequestDetail) BeforeSave(_ *gorm.DB) (err error) {
-	if len(d.RequestBody) > requestBodyMaxSize {
-		d.RequestBody = common.TruncateByRune(d.RequestBody, requestBodyMaxSize) + "..."
+	if reqMax := config.GetLogDetailRequestBodyMaxSize(); reqMax > 0 && int64(len(d.RequestBody)) > reqMax {
+		d.RequestBody = common.TruncateByRune(d.RequestBody, int(reqMax)) + "..."
 		d.RequestBodyTruncated = true
 	}
-	if len(d.ResponseBody) > responseBodyMaxSize {
-		d.ResponseBody = common.TruncateByRune(d.ResponseBody, responseBodyMaxSize) + "..."
+	if respMax := config.GetLogDetailResponseBodyMaxSize(); respMax > 0 && int64(len(d.ResponseBody)) > respMax {
+		d.ResponseBody = common.TruncateByRune(d.ResponseBody, int(respMax)) + "..."
 		d.ResponseBodyTruncated = true
 	}
 	return
