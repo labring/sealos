@@ -57,6 +57,9 @@ func InitOption2DB() error {
 
 func initOptionMap() error {
 	optionMap["LogDetailStorageHours"] = strconv.FormatInt(config.GetLogDetailStorageHours(), 10)
+	optionMap["SaveAllLogDetail"] = strconv.FormatBool(config.GetSaveAllLogDetail())
+	optionMap["LogDetailRequestBodyMaxSize"] = strconv.FormatInt(config.GetLogDetailRequestBodyMaxSize(), 10)
+	optionMap["LogDetailResponseBodyMaxSize"] = strconv.FormatInt(config.GetLogDetailResponseBodyMaxSize(), 10)
 	optionMap["DisableServe"] = strconv.FormatBool(config.GetDisableServe())
 	optionMap["BillingEnabled"] = strconv.FormatBool(config.GetBillingEnabled())
 	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
@@ -176,7 +179,7 @@ func UpdateOptions(options map[string]string) error {
 
 var ErrUnknownOptionKey = errors.New("unknown option key")
 
-func isTrue(value string) bool {
+func toBool(value string) bool {
 	result, _ := strconv.ParseBool(value)
 	return result
 }
@@ -195,10 +198,24 @@ func updateOption(key string, value string, isInit bool) (err error) {
 			return errors.New("log detail storage hours must be greater than 0")
 		}
 		config.SetLogDetailStorageHours(logDetailStorageHours)
+	case "SaveAllLogDetail":
+		config.SetSaveAllLogDetail(toBool(value))
+	case "LogDetailRequestBodyMaxSize":
+		logDetailRequestBodyMaxSize, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		config.SetLogDetailRequestBodyMaxSize(logDetailRequestBodyMaxSize)
+	case "LogDetailResponseBodyMaxSize":
+		logDetailResponseBodyMaxSize, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return err
+		}
+		config.SetLogDetailResponseBodyMaxSize(logDetailResponseBodyMaxSize)
 	case "DisableServe":
-		config.SetDisableServe(isTrue(value))
+		config.SetDisableServe(toBool(value))
 	case "BillingEnabled":
-		config.SetBillingEnabled(isTrue(value))
+		config.SetBillingEnabled(toBool(value))
 	case "GroupMaxTokenNum":
 		groupMaxTokenNum, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
@@ -265,7 +282,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		}
 		config.SetRetryTimes(retryTimes)
 	case "EnableModelErrorAutoBan":
-		config.SetEnableModelErrorAutoBan(isTrue(value))
+		config.SetEnableModelErrorAutoBan(toBool(value))
 	case "ModelErrorAutoBanRate":
 		modelErrorAutoBanRate, err := strconv.ParseFloat(value, 64)
 		if err != nil {

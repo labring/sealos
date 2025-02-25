@@ -145,7 +145,17 @@ func processGroupConsume(
 	return consumedAmount
 }
 
-func recordConsume(meta *meta.Meta, code int, usage *relaymodel.Usage, inputPrice, outputPrice float64, content string, ip string, requestDetail *model.RequestDetail, amount float64) error {
+func recordConsume(
+	meta *meta.Meta,
+	code int,
+	usage *relaymodel.Usage,
+	inputPrice,
+	outputPrice float64,
+	content string,
+	ip string,
+	requestDetail *model.RequestDetail,
+	amount float64,
+) error {
 	promptTokens := 0
 	completionTokens := 0
 	if usage != nil {

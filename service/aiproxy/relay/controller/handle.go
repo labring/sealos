@@ -119,6 +119,10 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		log.Data["amount"] = strconv.FormatFloat(amount, 'f', -1, 64)
 	}
 
+	if !config.GetSaveAllLogDetail() {
+		detail = nil
+	}
+
 	// 6. Post consume
 	consume.AsyncConsume(
 		postGroupConsumer,
@@ -129,7 +133,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		preCheckReq.OutputPrice,
 		"",
 		c.ClientIP(),
-		nil,
+		detail,
 	)
 
 	return nil
