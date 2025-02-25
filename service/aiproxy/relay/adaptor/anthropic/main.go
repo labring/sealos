@@ -38,9 +38,19 @@ func stopReasonClaude2OpenAI(reason *string) string {
 	}
 }
 
+type onlyThinkingRequest struct {
+	Thinking *Thinking `json:"thinking,omitempty"`
+}
+
 func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 	var textRequest model.GeneralOpenAIRequest
 	err := common.UnmarshalBodyReusable(req, &textRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	var onlyThinking onlyThinkingRequest
+	err = common.UnmarshalBodyReusable(req, &onlyThinking)
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +84,22 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 		Tools:       claudeTools,
 	}
 
-	if strings.Contains(meta.OriginModel, "thinking") {
+	if claudeRequest.MaxTokens == 0 {
+		claudeRequest.MaxTokens = 4096
+	}
+
+	if onlyThinking.Thinking != nil {
+		claudeRequest.Thinking = onlyThinking.Thinking
+	} else if strings.Contains(meta.OriginModel, "think") {
 		claudeRequest.Thinking = &Thinking{
 			Type: "enabled",
 		}
+	}
+
+	if claudeRequest.Thinking != nil &&
+		(claudeRequest.Thinking.BudgetTokens == 0 ||
+			claudeRequest.Thinking.BudgetTokens >= claudeRequest.MaxTokens) {
+		claudeRequest.Thinking.BudgetTokens = claudeRequest.MaxTokens / 3 * 2
 	}
 
 	if len(claudeTools) > 0 {
