@@ -96,10 +96,12 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 		}
 	}
 
-	if claudeRequest.Thinking != nil &&
-		(claudeRequest.Thinking.BudgetTokens == 0 ||
-			claudeRequest.Thinking.BudgetTokens >= claudeRequest.MaxTokens) {
-		claudeRequest.Thinking.BudgetTokens = claudeRequest.MaxTokens / 3 * 2
+	if claudeRequest.Thinking != nil {
+		if claudeRequest.Thinking.BudgetTokens == 0 ||
+			claudeRequest.Thinking.BudgetTokens >= claudeRequest.MaxTokens {
+			claudeRequest.Thinking.BudgetTokens = claudeRequest.MaxTokens / 3 * 2
+		}
+		claudeRequest.Temperature = nil
 	}
 
 	if len(claudeTools) > 0 {
