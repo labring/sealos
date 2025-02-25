@@ -79,7 +79,10 @@ func CountTokenMessages(messages []*model.Message, model string) int {
 			tokenNum += getTokenNum(tokenEncoder, v)
 		case []any:
 			for _, it := range v {
-				m := it.(map[string]any)
+				m, ok := it.(map[string]any)
+				if !ok {
+					continue
+				}
 				switch m["type"] {
 				case "text":
 					if textValue, ok := m["text"]; ok {
@@ -90,10 +93,16 @@ func CountTokenMessages(messages []*model.Message, model string) int {
 				case "image_url":
 					imageURL, ok := m["image_url"].(map[string]any)
 					if ok {
-						url := imageURL["url"].(string)
+						url, ok := imageURL["url"].(string)
+						if !ok {
+							continue
+						}
 						detail := ""
 						if imageURL["detail"] != nil {
-							detail = imageURL["detail"].(string)
+							detail, ok = imageURL["detail"].(string)
+							if !ok {
+								continue
+							}
 						}
 						imageTokens, err := countImageTokens(url, detail, model)
 						if err != nil {
@@ -217,11 +226,7 @@ func CountTokenText(text string, model string) int {
 	if strings.HasPrefix(model, "tts") {
 		return utf8.RuneCountInString(text)
 	}
-	if strings.HasPrefix(model, "sambert-") {
-		return len(text)
-	}
-	tokenEncoder := getTokenEncoder(model)
-	return getTokenNum(tokenEncoder, text)
+	return getTokenNum(getTokenEncoder(model), text)
 }
 
 func CountToken(text string) int {

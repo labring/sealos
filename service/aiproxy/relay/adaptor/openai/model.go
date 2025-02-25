@@ -83,6 +83,7 @@ type TextResponseChoice struct {
 	FinishReason string        `json:"finish_reason"`
 	Message      model.Message `json:"message"`
 	Index        int           `json:"index"`
+	Text         string        `json:"text"`
 }
 
 type TextResponse struct {

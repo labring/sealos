@@ -14,6 +14,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze/constant/messagetype"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -85,7 +86,7 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -96,7 +97,6 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	scanner.Split(bufio.ScanLines)
 
 	common.SetEventStreamHeaders(c)
-	var modelName string
 
 	for scanner.Scan() {
 		data := scanner.Bytes()
@@ -124,7 +124,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		for _, choice := range response.Choices {
 			responseText += conv.AsString(choice.Delta.Content)
 		}
-		response.Model = modelName
+		response.Model = meta.OriginModel
 		response.Created = createdTime
 
 		_ = render.ObjectData(c, response)
@@ -139,7 +139,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 	return nil, &responseText
 }
 
-func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *string) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -159,7 +159,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 		}, nil
 	}
 	fullTextResponse := ResponseCoze2OpenAI(&cozeResponse)
-	fullTextResponse.Model = modelName
+	fullTextResponse.Model = meta.OriginModel
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
