@@ -382,6 +382,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			return err
 		}
+		if _, ok := r.FinalUserMap.Get(debt.Spec.UserName); !ok {
+			r.FinalUserMap.Set(debt.Spec.UserName, struct{}{})
+		}
 	case accountv1.FinalDeletionPeriod:
 		/*
 			余额大于0：
