@@ -8,6 +8,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -78,11 +79,18 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		return "", nil, nil, err
 	}
 
+	cluster := "volcano_tts"
+	textType := "ssml"
+	if strings.HasPrefix(request.Voice, "S_") {
+		cluster = "volcano_icl"
+		textType = "plain"
+	}
+
 	doubaoRequest := DoubaoTTSRequest{
 		App: AppConfig{
 			AppID:   appID,
 			Token:   token,
-			Cluster: "volcano_tts",
+			Cluster: cluster,
 		},
 		User: UserConfig{
 			UID: meta.RequestID,
@@ -93,7 +101,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		Request: RequestConfig{
 			ReqID:     uuid.New().String(),
 			Text:      request.Input,
-			TextType:  "ssml", // plain
+			TextType:  textType,
 			Operation: "submit",
 		},
 	}
@@ -220,6 +228,7 @@ func gzipDecompress(input []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer r.Close()
 	out, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
