@@ -289,13 +289,13 @@ const (
 )
 
 type GetLogsResult struct {
-	Logs   []*Log   `json:"logs"`
-	Total  int64    `json:"total"`
-	Models []string `json:"models"`
+	Logs  []*Log `json:"logs"`
+	Total int64  `json:"total"`
 }
 
 type GetGroupLogsResult struct {
 	GetLogsResult
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
@@ -458,9 +458,8 @@ func GetLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -471,20 +470,13 @@ func GetLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -545,10 +537,10 @@ func GetGroupLogs(
 
 	return &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }
@@ -784,9 +776,8 @@ func SearchLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -797,20 +788,13 @@ func SearchLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -872,10 +856,10 @@ func SearchGroupLogs(
 
 	result := &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}
 
