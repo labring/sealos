@@ -429,7 +429,6 @@ async function fetchReadmeContent(url: string): Promise<string> {
       return await response.text();
     } catch (err) {
       retryCount++;
-      console.log(`Failed to fetch readme (attempt ${retryCount}/${maxRetries}):`, err);
 
       if (retryCount === maxRetries) {
         return '';
