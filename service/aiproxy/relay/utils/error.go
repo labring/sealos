@@ -119,5 +119,10 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 	if ErrorWithStatusCode.Error.Message == "" {
 		ErrorWithStatusCode.Error.Message = fmt.Sprintf("bad response status code %d", resp.StatusCode)
 	}
+
+	if code, ok := ErrorWithStatusCode.Error.Code.(int64); ok && code >= 400 && code < 600 {
+		ErrorWithStatusCode.StatusCode = int(code)
+	}
+
 	return ErrorWithStatusCode
 }

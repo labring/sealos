@@ -23,7 +23,7 @@ type RequestDetail struct {
 	ResponseBody          string    `gorm:"type:text"                         json:"response_body,omitempty"`
 	RequestBodyTruncated  bool      `json:"request_body_truncated,omitempty"`
 	ResponseBodyTruncated bool      `json:"response_body_truncated,omitempty"`
-	ID                    int       `json:"id"`
+	ID                    int       `gorm:"primaryKey"                        json:"id"`
 	LogID                 int       `gorm:"index"                             json:"log_id"`
 }
 
@@ -70,6 +70,13 @@ func CreateLogIndexes(db *gorm.DB) error {
 	if common.UsingSQLite {
 		// not support INCLUDE
 		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at)",
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour)",
+
 			// used by search group logs
 			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at)",
 			// used by search group logs
@@ -92,6 +99,13 @@ func CreateLogIndexes(db *gorm.DB) error {
 		}
 	} else {
 		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at) INCLUDE (code)",
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+
 			// used by search group logs
 			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at) INCLUDE (code)",
 			// used by search group logs

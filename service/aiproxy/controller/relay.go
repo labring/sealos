@@ -65,7 +65,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		}
 		return nil, false
 	}
-	if shouldRetry(c, err.StatusCode) {
+	if shouldErrorMonitor(err.StatusCode) {
 		if err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
@@ -74,9 +74,8 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		); err != nil {
 			log.Errorf("add request failed: %+v", err)
 		}
-		return err, true
 	}
-	return err, false
+	return err, shouldRetry(c, err.StatusCode)
 }
 
 func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
@@ -176,14 +175,23 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	}
 }
 
-// 仅当是channel错误时，才需要重试，用户请求参数错误时，不需要重试
+var shouldRetryStatusCodesMap = map[int]struct{}{
+	http.StatusTooManyRequests: {},
+	http.StatusUnauthorized:    {},
+	http.StatusPaymentRequired: {},
+	http.StatusRequestTimeout:  {},
+	http.StatusGatewayTimeout:  {},
+	http.StatusForbidden:       {},
+}
+
 func shouldRetry(_ *gin.Context, statusCode int) bool {
-	if statusCode == http.StatusTooManyRequests ||
-		statusCode == http.StatusGatewayTimeout ||
-		statusCode == http.StatusForbidden {
-		return true
-	}
-	return false
+	_, ok := shouldRetryStatusCodesMap[statusCode]
+	return ok
+}
+
+// 仅当是channel错误时，才需要记录，用户请求参数错误时，不需要记录
+func shouldErrorMonitor(statusCode int) bool {
+	return statusCode != http.StatusBadRequest
 }
 
 func RelayNotImplemented(c *gin.Context) {
