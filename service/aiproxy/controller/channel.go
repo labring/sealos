@@ -166,6 +166,13 @@ func (r *AddChannelRequest) ToChannels() ([]*model.Channel, error) {
 		c.Key = key
 		channels = append(channels, c)
 	}
+	if len(channels) == 0 {
+		ch, err := r.ToChannel()
+		if err != nil {
+			return nil, err
+		}
+		return []*model.Channel{ch}, nil
+	}
 	return channels, nil
 }
 
