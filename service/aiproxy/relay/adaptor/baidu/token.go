@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
@@ -52,14 +51,14 @@ func GetAccessToken(ctx context.Context, apiKey string) (string, error) {
 }
 
 func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*AccessToken, error) {
-	parts := strings.Split(apiKey, "|")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid baidu apikey")
+	clientID, clientSecret, err := getClientIDAndSecret(apiKey)
+	if err != nil {
+		return nil, err
 	}
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodPost,
 		fmt.Sprintf("https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=%s&client_secret=%s",
-			parts[0], parts[1]),
+			clientID, clientSecret),
 		nil)
 	if err != nil {
 		return nil, err
