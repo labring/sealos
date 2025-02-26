@@ -521,13 +521,13 @@ func GetGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -840,13 +840,13 @@ func SearchGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -954,6 +954,17 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	err := query.Scan(&chartData).Error
 
 	return chartData, err
+}
+
+func GetUsedModels(group string, start, end time.Time) ([]string, error) {
+	return getLogGroupByValues[string]("model", group, start, end)
+}
+
+func GetUsedTokenNames(group string, start, end time.Time) ([]string, error) {
+	if group == "" {
+		return nil, errors.New("group is required")
+	}
+	return getLogGroupByValues[string]("token_name", group, start, end)
 }
 
 //nolint:unused
@@ -1100,7 +1111,7 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", "", start, end)
+		models, err = GetUsedModels("", start, end)
 		return err
 	})
 
@@ -1164,13 +1175,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, start, end)
+		tokenNames, err = GetUsedTokenNames(group, start, end)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, start, end)
+		models, err = GetUsedModels(group, start, end)
 		return err
 	})
 
