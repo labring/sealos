@@ -19,6 +19,7 @@ import { default as AnsiUp } from 'ansi_up';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from '../index.module.scss';
+import { getUserKubeConfig } from '@/utils/user';
 
 const LogsModal = ({
   namespace,
@@ -65,7 +66,8 @@ const LogsModal = ({
     const res = await fetch(`/api/getPodLogs?namespace=${namespace}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+          Authorization: encodeURIComponent(getUserKubeConfig())
       },
       body: JSON.stringify(data),
       signal: controller.signal

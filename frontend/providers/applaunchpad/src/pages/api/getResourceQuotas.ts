@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { k8sCore, kube_user } = await getK8s({ kubeconfig });
     let resourceQuotasList: { namespace: string, name: string, cpu: string, memory: string, storage: string, services: string, persistentvolumeclaims: string }[] = [];
 
-    if (kube_user.name === 'kubernetes-admin') {
+    if (kube_user.name === 'kubernetes-admin' || kube_user.name === 'inClusterUser') {
       const namespacesResult = await k8sCore.listNamespace();
       const namespaces = namespacesResult.body.items.map((item: any) => item.metadata.name);
 
