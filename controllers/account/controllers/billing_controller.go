@@ -19,7 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"k8s.io/client-go/rest"
@@ -88,10 +90,11 @@ type BillingReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	DBClient        database.Account
-	AccountV2       database.AccountV2
-	Properties      *resources.PropertyTypeLS
-	concurrentLimit int64
+	DBClient             database.Account
+	AccountV2            database.AccountV2
+	Properties           *resources.PropertyTypeLS
+	reconcileBillingFunc func(owner string, billings []*resources.Billing) error
+	concurrentLimit      int64
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
@@ -111,7 +114,7 @@ func (r *BillingReconciler) ExecuteBillingTask() error {
 func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string, now time.Time) error {
 	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
 	startHourTime := endHourTime.Add(-1 * time.Hour)
-	var ownerList, failedList []string
+	var ownerList []string
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
@@ -131,28 +134,79 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 		return fmt.Errorf("generate billing data failed: %w", err)
 	}
 	r.Logger.Info("generate billing data", "count", len(ownerBillings))
+
+	type result struct {
+		owner string
+		err   error
+	}
+	workers := make(chan struct{}, r.concurrentLimit)
+	resultChan := make(chan result, len(ownerBillings))
+	var wg sync.WaitGroup
 	for owner, billings := range ownerBillings {
-		amount := int64(0)
-		orderIDs := make([]string, 0, len(billings))
-		for _, billing := range billings {
-			amount += billing.Amount
-			orderIDs = append(orderIDs, billing.OrderID)
-		}
-		if err = r.DBClient.SaveBillings(billings...); err != nil {
-			r.Logger.Error(err, "save billings failed", "owner", owner, "amount", amount)
-			failedList = append(failedList, owner)
-			continue
-		}
-		if err := r.rechargeBalance(owner, amount); err != nil {
-			r.Logger.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
-			failedList = append(failedList, owner)
-			if err := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); err != nil {
-				r.Logger.Error(err, "update billing unsettled status failed", "orderIDs", orderIDs)
-			}
+		wg.Add(1)
+		go func(owner string, billings []*resources.Billing) {
+			defer wg.Done()
+			workers <- struct{}{}
+			defer func() {
+				<-workers
+			}()
+			reconcileErr := r.reconcileBillingFunc(owner, billings)
+			resultChan <- result{owner: owner, err: reconcileErr}
+		}(owner, billings)
+	}
+	wg.Wait()
+	close(resultChan)
+	var failedList []string
+	for res := range resultChan {
+		if res.err != nil {
+			failedList = append(failedList, res.owner)
 		}
 	}
 	if len(failedList) > 0 {
 		r.Logger.Error(fmt.Errorf("failed to reconcile owner list: %v", failedList), "failed to reconcile owner list")
+	}
+	return nil
+}
+
+func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources.Billing) error {
+	amount := int64(0)
+	orderIDs := make([]string, 0, len(billings))
+	for _, billing := range billings {
+		amount += billing.Amount
+		orderIDs = append(orderIDs, billing.OrderID)
+	}
+	if err := r.DBClient.SaveBillings(billings...); err != nil {
+		return fmt.Errorf("save billings failed: %w", err)
+	}
+	if err := r.rechargeBalance(owner, amount); err != nil {
+		r.Logger.Error(err, "recharge balance failed", "owner", owner, "amount", amount)
+		if updateErr := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); updateErr != nil {
+			r.Logger.Error(updateErr, "update billing unsettled status failed", "orderIDs", orderIDs)
+		}
+		return fmt.Errorf("recharge balance failed: %w", err)
+	}
+	return nil
+}
+
+func (r *BillingReconciler) reconcileBillingWithCredits(owner string, billings []*resources.Billing) error {
+	amount := int64(0)
+	orderIDs := make([]string, 0, len(billings))
+	for _, billing := range billings {
+		amount += billing.Amount
+		orderIDs = append(orderIDs, billing.OrderID)
+	}
+	if amount <= 0 {
+		return nil
+	}
+	if err := r.DBClient.SaveBillings(billings...); err != nil {
+		return fmt.Errorf("save billings failed: %w", err)
+	}
+	if err := r.AccountV2.AddDeductionBalanceWithCredits(&types.UserQueryOpts{Owner: owner}, amount, orderIDs); err != nil {
+		r.Logger.Error(err, "AddDeductionBalanceWithCredits failed", "owner", owner, "amount", amount)
+		if updateErr := r.DBClient.UpdateBillingStatus(orderIDs, resources.Unsettled); updateErr != nil {
+			r.Logger.Error(updateErr, "update billing unsettled status failed", "owner", owner, "amount", amount, "orderIDs", orderIDs)
+		}
+		return fmt.Errorf("recharge balance failed: %w", err)
 	}
 	return nil
 }
@@ -239,7 +293,11 @@ func (r *BillingReconciler) Init() error {
 	if err := r.DBClient.CreateBillingIfNotExist(); err != nil {
 		return fmt.Errorf("create billing collection failed: %w", err)
 	}
-	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 100)
+	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 10)
+	r.reconcileBillingFunc = r.reconcileBilling
+	if os.Getenv("CREDITS_ENABLED") == "true" {
+		r.reconcileBillingFunc = r.reconcileBillingWithCredits
+	}
 	return nil
 }
 
