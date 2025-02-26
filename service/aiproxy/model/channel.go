@@ -284,7 +284,7 @@ func UpdateChannel(channel *Channel) error {
 	}
 	result := DB.
 		Model(channel).
-		Select("model_mapping", "key", "name", "base_url", "models", "status", "type", "priority", "config").
+		Select("model_mapping", "key", "name", "base_url", "models", "type", "priority", "config").
 		Clauses(clause.Returning{}).
 		Where("id = ?", channel.ID).
 		Updates(channel)
