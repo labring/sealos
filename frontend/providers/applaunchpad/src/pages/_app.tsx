@@ -8,7 +8,7 @@ import { useUserStore } from '@/store/user';
 import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
 import { getUserIsLogin } from '@/utils/user';
-import { Box, ChakraProvider, Flex, Heading, ListItem, Text, Link, useDisclosure, background } from '@chakra-ui/react';
+import { Box, ChakraProvider, Flex, Heading, ListItem, Text, Link, useDisclosure, background, Button } from '@chakra-ui/react';
 import '@sealos/driver/src/driver.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
@@ -21,6 +21,8 @@ import 'nprogress/nprogress.css';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import Login from './login';
+import { setUserIsLogin } from '@/utils/user';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -49,13 +51,16 @@ const App = ({ Component, pageProps }: AppProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
+  const [loginStatus, setLoginStatus] = useState(false);
 
   const myStyles = {
     cursor: 'pointer',
   };
 
   useEffect(() => {
-    if (!getUserIsLogin()) {
+    const isLogin = getUserIsLogin();
+    setLoginStatus(isLogin)
+    if (!isLogin) {
       router.push('/login');
     }
     const response = createSealosApp();
@@ -63,7 +68,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       const { SEALOS_DOMAIN, FORM_SLIDER_LIST_CONFIG } = await (() => loadInitData())();
       initFormSliderList(FORM_SLIDER_LIST_CONFIG);
       loadUserSourcePrice();
-      
+
       // try {
       //   const newSession = JSON.stringify(await sealosApp.getSession());
       //   const oldSession = localStorage.getItem('session');
@@ -167,7 +172,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         };
         window.addEventListener('message', event);
         return () => window.removeEventListener('message', event);
-      } catch (error) {}
+      } catch (error) { }
     };
     setupInternalAppCallListener();
   }, []);
@@ -199,29 +204,45 @@ const App = ({ Component, pageProps }: AppProps) => {
           {/* <Route path="/login" component={Login} /> */}
           <Flex minH="100vh" direction="column">
 
-            <Box bg="#001529" color="white" px={4} py={5}>
+            <Box bg="#001529" color="white" px={4} py={5} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
 
               <Heading size="md">容器云</Heading>
-
+              {
+                loginStatus ?
+                  <Button
+                    size={'sm'}
+                    ml={'12px'}
+                    variant={'outline'}
+                    onClick={() => {
+                      setUserIsLogin(false, '');
+                      router.replace('/login');
+                    }}
+                  >
+                    登出
+                  </Button> : null
+              }
             </Box>
 
             <Flex flex={1}>
+              {
+                loginStatus ?
+                  <>
+                    <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
+                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/imagehub')}>镜像管理</Text>
+                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/apps')}>应用管理</Text>
+                      {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
+                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/nodeManage')}>节点管理</Text>
+                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/user')}>租户管理</Text>
+                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/monitor')}>监控管理</Text>
+                    </Box>
 
-              <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/imagehub')}>镜像管理</Text>
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/apps')}>应用管理</Text>
-                {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/nodeManage')}>节点管理</Text>
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/user')}>租户管理</Text>
-                <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/monitor')}>监控管理</Text>
-              </Box>
+                    <Box flex={1}>
 
-              <Box flex={1}>
+                      <Component {...pageProps} />
 
-                <Component {...pageProps} />
-
-              </Box>
-
+                    </Box>
+                  </> : <Login></Login>
+              }
             </Flex>
           </Flex>
           <ConfirmChild />
