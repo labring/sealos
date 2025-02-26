@@ -20,7 +20,12 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-const toolUseType = "tool_use"
+const (
+	toolUseType          = "tool_use"
+	conetentTypeText     = "text"
+	conetentTypeThinking = "thinking"
+	conetentTypeImage    = "image"
+)
 
 func stopReasonClaude2OpenAI(reason *string) string {
 	if reason == nil {
@@ -133,7 +138,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 		}
 		var content Content
 		if message.IsStringContent() {
-			content.Type = "text"
+			content.Type = conetentTypeText
 			content.Text = message.StringContent()
 			if message.Role == "tool" {
 				claudeMessage.Role = "user"
@@ -162,10 +167,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 			var content Content
 			switch part.Type {
 			case model.ContentTypeText:
-				content.Type = "text"
+				content.Type = conetentTypeText
 				content.Text = part.Text
 			case model.ContentTypeImageURL:
-				content.Type = "image"
+				content.Type = conetentTypeImage
 				content.Source = &ImageSource{
 					Type: "base64",
 				}
@@ -264,9 +269,9 @@ func ResponseClaude2OpenAI(meta *meta.Meta, claudeResponse *Response) *openai.Te
 	var thinking string
 	for _, v := range claudeResponse.Content {
 		switch v.Type {
-		case "text":
+		case conetentTypeText:
 			content = v.Text
-		case "thinking":
+		case conetentTypeThinking:
 			thinking = v.Thinking
 		}
 	}
