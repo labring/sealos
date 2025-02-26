@@ -50,11 +50,11 @@ func GetBearerToken(ctx context.Context, apiKey string) (*TokenResponse, error) 
 }
 
 func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*TokenResponse, error) {
-	parts := strings.Split(apiKey, "|")
-	if len(parts) != 2 {
-		return nil, errors.New("invalid baidu apikey")
+	ak, sk, err := getAKAndSK(apiKey)
+	if err != nil {
+		return nil, err
 	}
-	authorization := generateAuthorizationString(parts[0], parts[1])
+	authorization := generateAuthorizationString(ak, sk)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://iam.bj.baidubce.com/v1/BCE-BEARER/token", nil)
 	if err != nil {
 		return nil, err
