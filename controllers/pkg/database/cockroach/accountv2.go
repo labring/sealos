@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
@@ -396,18 +397,24 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
 	if ops.UID != uuid.Nil {
 		return ops.UID, nil
 	}
+	var userUID uuid.UUID
 	if ops.ID != "" {
-		var user types.User
-		if err := c.DB.Where(&types.User{ID: ops.ID}).First(&user).Error; err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get user: %v", err)
+		err := c.DB.Table("User").Select("uid").Where("id = ?", ops.ID).Scan(&userUID).Error
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
 		}
-		return user.UID, nil
+		ops.UID = userUID
+		return userUID, nil
+	} else if ops.Owner != "" {
+		var userUID uuid.UUID
+		err := c.Localdb.Table(`"UserCr"`).Select(`"userUid"`).Where(`"crName" = ?`, ops.Owner).Scan(&userUID).Error
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
+		}
+		ops.UID = userUID
+		return userUID, nil
 	}
-	userCr, err := c.GetUserCr(ops)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	return userCr.UserUID, nil
+	return uuid.Nil, fmt.Errorf("empty query opts")
 }
 
 func (c *Cockroach) GetWorkspace(namespaces ...string) ([]types.Workspace, error) {
@@ -561,19 +568,96 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 	return provider, nil
 }
 
+func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, deductionAmount int64, orderIDs []string) error {
+	err := c.DB.Transaction(func(tx *gorm.DB) error {
+		userUID, err := c.GetUserUID(ops)
+		if err != nil {
+			return fmt.Errorf("failed to get user uid: %v", err)
+		}
+		var credits []types.Credit
+		if err := tx.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditStatusActive).Order("expire_at DESC").Find(&credits).Error; err != nil {
+			return fmt.Errorf("failed to get credits: %v", err)
+		}
+		now := time.Now().UTC()
+		accountTransactionID := uuid.New()
+		orderString := strings.Join(orderIDs, ",")
+		accountTransaction := types.AccountTransaction{
+			ID:               accountTransactionID,
+			RegionUID:        c.LocalRegion.UID,
+			Type:             "RESOURCE_BILLING",
+			UserUID:          userUID,
+			DeductionBalance: deductionAmount,
+			CreatedAt:        now,
+			UpdatedAt:        now,
+			Message:          &orderString,
+		}
+		var updateCredits []types.Credit
+		var creditTransactions []types.CreditTransaction
+		var creditUsedAmountAll int64
+		for i := range credits {
+			creditAmt := credits[i].Amount - credits[i].UsedAmount
+			if creditAmt > 0 && deductionAmount > 0 {
+				updateCredits = append(updateCredits, credits[i])
+				usedAmount := int64(0)
+				if creditAmt > deductionAmount {
+					credits[i].UsedAmount += deductionAmount
+					usedAmount = deductionAmount
+				} else {
+					credits[i].UsedAmount = credits[i].Amount
+					credits[i].CreditStatus = types.CreditStatusUsedUp
+					usedAmount = creditAmt
+				}
+				creditUsedAmountAll += usedAmount
+				deductionAmount -= usedAmount
+				creditTransactions = append(creditTransactions, types.CreditTransaction{
+					ID:                   uuid.New(),
+					UserUID:              userUID,
+					AccountTransactionID: &accountTransactionID,
+					CreditID:             credits[i].ID,
+					UsedAmount:           usedAmount,
+					CreatedAt:            now,
+					Reason:               types.CreditRecordReasonResourceAccountTransaction,
+				})
+			}
+		}
+		if len(updateCredits) > 0 {
+			if err := tx.Save(&updateCredits).Error; err != nil {
+				return fmt.Errorf("failed to update credits: %v", err)
+			}
+			accountTransaction.DeductionCredit = creditUsedAmountAll
+		}
+		if deductionAmount > 0 {
+			if err := c.updateBalance(tx, ops, deductionAmount, true, true); err != nil {
+				return err
+			}
+			accountTransaction.DeductionBalance = deductionAmount
+		}
+		if err := tx.Create(&accountTransaction).Error; err != nil {
+			return fmt.Errorf("failed to create account transaction: %v", err)
+		}
+		if len(creditTransactions) > 0 {
+			if err := tx.Create(&creditTransactions).Error; err != nil {
+				return fmt.Errorf("failed to create credit transactions: %v", err)
+			}
+		}
+		return nil
+	})
+	return err
+}
+
 func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
 	return c.updateBalanceRaw(tx, ops, amount, isDeduction, add, false)
 }
 
 func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool, isActive bool) error {
-	if ops.UID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
-		if err != nil {
-			return fmt.Errorf("failed to get user: %v", err)
-		}
-		ops.UID = user.UserUID
+	if amount == 0 {
+		return nil
 	}
-	return c.updateWithAccount(ops.UID, isDeduction, add, isActive, amount, tx)
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get user uid: %v", err)
+	}
+	return c.updateWithAccount(userUID, isDeduction, add, isActive, amount, tx)
 }
 
 func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isActive bool, amount int64, db *gorm.DB) error {
@@ -704,14 +788,14 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	}
 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
-		if err := c.DB.First(&types.Payment{ID: payment.ID}).Error; err == nil {
+		if err := tx.First(&types.Payment{ID: payment.ID}).Error; err == nil {
 			return nil
 		}
-		if err := c.DB.Create(payment).Error; err != nil {
+		if err := tx.Create(payment).Error; err != nil {
 			return fmt.Errorf("failed to save payment: %w", err)
 		}
 		if updateBalance {
-			if err := c.AddBalance(&types.UserQueryOpts{UID: payment.UserUID}, payment.Amount+payment.Gift); err != nil {
+			if err := c.updateBalance(tx, &types.UserQueryOpts{UID: payment.UserUID}, payment.Amount+payment.Gift, false, true); err != nil {
 				return fmt.Errorf("failed to add balance: %w", err)
 			}
 		}
