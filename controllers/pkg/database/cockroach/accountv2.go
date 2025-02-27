@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"gorm.io/gorm/clause"
@@ -574,13 +573,12 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 		if err != nil {
 			return fmt.Errorf("failed to get user uid: %v", err)
 		}
-		var credits []types.Credit
-		if err := tx.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditStatusActive).Order("expire_at DESC").Find(&credits).Error; err != nil {
+		var credits []types.Credits
+		if err := tx.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditsStatusActive).Order("expire_at DESC").Find(&credits).Error; err != nil {
 			return fmt.Errorf("failed to get credits: %v", err)
 		}
 		now := time.Now().UTC()
 		accountTransactionID := uuid.New()
-		orderString := strings.Join(orderIDs, ",")
 		accountTransaction := types.AccountTransaction{
 			ID:               accountTransactionID,
 			RegionUID:        c.LocalRegion.UID,
@@ -589,34 +587,36 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 			DeductionBalance: deductionAmount,
 			CreatedAt:        now,
 			UpdatedAt:        now,
-			Message:          &orderString,
+			BillingIDList:    orderIDs,
 		}
-		var updateCredits []types.Credit
-		var creditTransactions []types.CreditTransaction
+		var updateCredits []types.Credits
+		var updateCreditsIDs []string
+		var creditTransactions []types.CreditsTransaction
 		var creditUsedAmountAll int64
 		for i := range credits {
 			creditAmt := credits[i].Amount - credits[i].UsedAmount
 			if creditAmt > 0 && deductionAmount > 0 {
 				updateCredits = append(updateCredits, credits[i])
+				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
 				usedAmount := int64(0)
 				if creditAmt > deductionAmount {
 					credits[i].UsedAmount += deductionAmount
 					usedAmount = deductionAmount
 				} else {
 					credits[i].UsedAmount = credits[i].Amount
-					credits[i].CreditStatus = types.CreditStatusUsedUp
+					credits[i].Status = types.CreditsStatusUsedUp
 					usedAmount = creditAmt
 				}
 				creditUsedAmountAll += usedAmount
 				deductionAmount -= usedAmount
-				creditTransactions = append(creditTransactions, types.CreditTransaction{
+				creditTransactions = append(creditTransactions, types.CreditsTransaction{
 					ID:                   uuid.New(),
 					UserUID:              userUID,
 					AccountTransactionID: &accountTransactionID,
-					CreditID:             credits[i].ID,
+					CreditsID:            credits[i].ID,
 					UsedAmount:           usedAmount,
 					CreatedAt:            now,
-					Reason:               types.CreditRecordReasonResourceAccountTransaction,
+					Reason:               types.CreditsRecordReasonResourceAccountTransaction,
 				})
 			}
 		}
@@ -625,6 +625,7 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 				return fmt.Errorf("failed to update credits: %v", err)
 			}
 			accountTransaction.DeductionCredit = creditUsedAmountAll
+			accountTransaction.CreditIDList = updateCreditsIDs
 		}
 		if deductionAmount > 0 {
 			if err := c.updateBalance(tx, ops, deductionAmount, true, true); err != nil {
@@ -1134,7 +1135,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{}, types.Credit{}, types.CreditTransaction{})
+	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
