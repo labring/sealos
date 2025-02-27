@@ -48,7 +48,8 @@ export default function LoginForm() {
 
   return (
     <Flex
-      minH={'100vh'}
+      minH={'full'}
+      width={'full'}
       align={'center'}
       justify={'center'}
       bg={useColorModeValue('gray.50', 'gray.800')}
