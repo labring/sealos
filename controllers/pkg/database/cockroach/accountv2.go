@@ -1134,7 +1134,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	err := CreateTableIfNotExist(c.DB, types.Account{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{})
+	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{}, types.Credit{}, types.CreditTransaction{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
