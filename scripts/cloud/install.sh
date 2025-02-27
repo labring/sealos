@@ -436,8 +436,13 @@ spec:
     controller:
       autoscaling:
         enabled: true
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: "true"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerm:
+              matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
       tolerations:
         - effect: "NoExecute"
           operator: "Exists"
