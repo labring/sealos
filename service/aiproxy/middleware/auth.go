@@ -75,19 +75,21 @@ func TokenAuth(c *gin.Context) {
 
 	SetLogTokenFields(log.Data, token, useInternalToken)
 
-	if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnets); err != nil {
-		abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
-		return
-	} else if !ok {
-		abortLogWithMessage(c, http.StatusForbidden,
-			fmt.Sprintf("token (%s[%d]) can only be used in the specified subnets: %v, current ip: %s",
-				token.Name,
-				token.ID,
-				token.Subnets,
-				c.ClientIP(),
-			),
-		)
-		return
+	if len(token.Subnets) > 0 {
+		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnets); err != nil {
+			abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
+			return
+		} else if !ok {
+			abortLogWithMessage(c, http.StatusForbidden,
+				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnets: %v, current ip: %s",
+					token.Name,
+					token.ID,
+					token.Subnets,
+					c.ClientIP(),
+				),
+			)
+			return
+		}
 	}
 
 	var group *model.GroupCache
