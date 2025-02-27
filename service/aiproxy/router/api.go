@@ -49,6 +49,7 @@ func SetAPIRouter(router *gin.Engine) {
 		groupRoute := apiRouter.Group("/group")
 		{
 			groupRoute.POST("/:group", controller.CreateGroup)
+			groupRoute.PUT("/:group", controller.UpdateGroup)
 			groupRoute.GET("/:group", controller.GetGroup)
 			groupRoute.DELETE("/:group", controller.DeleteGroup)
 			groupRoute.POST("/:group/status", controller.UpdateGroupStatus)
