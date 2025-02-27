@@ -3,6 +3,7 @@ name: Import Patch Images Package
 env:
   # Common versions
   GO_VERSION: "1.20"
+  PROJECT_PATH: "./lifecycle"
 
 on:
   workflow_call:
@@ -91,12 +92,12 @@ jobs:
 
       - name: Build Binaries
         run: |
-          make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
+          cd ${{ env.PROJECT_PATH }} && make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
       - name: Save Binaries
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
-          path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
+          path: ${{ env.PROJECT_PATH }}/bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
   test:
     runs-on: ubuntu-24.04
     if: ${{ (inputs.e2e == true) }}
@@ -120,13 +121,13 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Build E2e Test
         run: |
-          go install github.com/onsi/ginkgo/v2/ginkgo
+          cd ${{ env.PROJECT_PATH }} && go install github.com/onsi/ginkgo/v2/ginkgo
           cd test/e2e && ginkgo build .
       - name: Save E2e Test
         uses: actions/upload-artifact@v4
         with:
           name: e2e.test
-          path: test/e2e/e2e.test
+          path: ${{ env.PROJECT_PATH }}/test/e2e/e2e.test
   docker:
     needs: [ resolve-modules-arch,build ]
     runs-on: ubuntu-24.04

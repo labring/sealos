@@ -22,7 +22,7 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
-  PROJECT_PATH: "lifecycle"
+  PROJECT_PATH: "./lifecycle"
 
 jobs:
   coverage:
@@ -39,10 +39,8 @@ jobs:
       - name: Install Dependencies
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
-      - name: CD to Project Directory
-        run: cd ${{ env.PROJECT_PATH }}
       - name: Run Coverage
-        run: make coverage
+        run: cd ${{ env.PROJECT_PATH }} && make coverage
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
