@@ -11,6 +11,19 @@ localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 acmednsSecretPlaceholder="<acmedns-secret-placeholder>"
+cloudDomainPlaceholder="<cloud-domain-placeholder>"
+cloudPortPlaceholder="<cloud-port-placeholder>"
+certSecretNamePlaceholder="<cert-secret-placeholder>"
+regionUIDPlaceholder="<region-uid-placeholder>"
+databaseMongodbURIPlaceholder="<mongodb-uri-placeholder>"
+databaseLocalCockroachdbURIPlaceholder="<local-cockroachdb-uri-placeholder>"
+databaseGlobalCockroachdbURIPlaceholder="<global-cockroachdb-uri-placeholder>"
+passwordEnabledPlaceholder="<password-enabled-placeholder>"
+passwordSaltPlaceholder="<password-salt-placeholder>"
+jwtInternalPlaceholder="<jwt-internal-placeholder>"
+jwtRegionalPlaceholder="<jwt-regional-placeholder>"
+jwtGlobalPlaceholder="<jwt-global-placeholder>"
+
 
 saltKey=""
 jwtInternal=""
@@ -43,6 +56,9 @@ function prepare {
 
   # create tls secret
   create_tls_secret
+
+  # update sealos-config configmap
+  update_sealos_config
 }
 
 # Function to retry `kubectl apply -f` command until it succeeds or reaches a maximum number of attempts
@@ -192,6 +208,24 @@ function create_tls_secret {
     echo "mock tls cert has been created successfully."
   fi
 }
+
+function update_sealos_config {
+  # use generated values to update sealos-config configmap
+  sed -i "s/$cloudDomainPlaceholder/$cloudDomain/g" manifests/sealos-config.yaml
+  sed -i "s/$cloudPortPlaceholder/$cloudPort/g" manifests/sealos-config.yaml
+  sed -i "s/$certSecretNamePlaceholder/$certSecretName/g" manifests/sealos-config.yaml
+  sed -i "s/$regionUIDPlaceholder/$localRegionUID/g" manifests/sealos-config.yaml
+  sed -i "s/$databaseMongodbURIPlaceholder/$mongodbUri/g" manifests/sealos-config.yaml
+  sed -i "s/$databaseLocalCockroachdbURIPlaceholder/$cockroachdbLocalUri/g" manifests/sealos-config.yaml
+  sed -i "s/$databaseGlobalCockroachdbURIPlaceholder/$cockroachdbGlobalUri/g" manifests/sealos-config.yaml
+  sed -i "s/$passwordEnabledPlaceholder/$passwordEnabled/g" manifests/sealos-config.yaml
+  sed -i "s/$passwordSaltPlaceholder/$saltKey/g" manifests/sealos-config.yaml
+  sed -i "s/$jwtInternalPlaceholder/$jwtInternal/g" manifests/sealos-config.yaml
+  sed -i "s/$jwtRegionalPlaceholder/$jwtRegional/g" manifests/sealos-config.yaml
+  sed -i "s/$jwtGlobalPlaceholder/$jwtGlobal/g" manifests/sealos-config.yaml
+  kubectl apply -f manifests/sealos-config.yaml
+}
+
 
 function sealos_run_desktop {
     echo "run desktop frontend"
