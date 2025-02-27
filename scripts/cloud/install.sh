@@ -439,8 +439,8 @@ spec:
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerm:
-              matchExpressions:
+            nodeSelectorTerms:
+            - matchExpressions:
                 - key: node-role.kubernetes.io/control-plane
                   operator: Exists
       tolerations:
