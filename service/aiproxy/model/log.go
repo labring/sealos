@@ -888,7 +888,6 @@ type ChartData struct {
 
 type DashboardResponse struct {
 	ChartData      []*ChartData `json:"chart_data"`
-	Models         []string     `json:"models"`
 	TotalCount     int64        `json:"total_count"`
 	ExceptionCount int64        `json:"exception_count"`
 	UsedAmount     float64      `json:"used_amount"`
@@ -898,6 +897,7 @@ type DashboardResponse struct {
 
 type GroupDashboardResponse struct {
 	DashboardResponse
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
@@ -1096,7 +1096,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 
 	var (
 		chartData []*ChartData
-		models    []string
 		rpm       int64
 		tpm       int64
 	)
@@ -1106,12 +1105,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 	g.Go(func() error {
 		var err error
 		chartData, err = getChartData("", start, end, "", modelName, timeSpan)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		models, err = GetUsedModels("", start, end)
 		return err
 	})
 
@@ -1137,7 +1130,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 
 	return &DashboardResponse{
 		ChartData:      chartData,
-		Models:         models,
 		TotalCount:     totalCount,
 		ExceptionCount: exceptionCount,
 		UsedAmount:     usedAmount,
@@ -1208,13 +1200,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 	return &GroupDashboardResponse{
 		DashboardResponse: DashboardResponse{
 			ChartData:      chartData,
-			Models:         models,
 			TotalCount:     totalCount,
 			ExceptionCount: exceptionCount,
 			UsedAmount:     usedAmount,
 			RPM:            rpm,
 			TPM:            tpm,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }
