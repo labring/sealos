@@ -63,7 +63,7 @@ type TokenCache struct {
 	Group      string           `json:"group"       redis:"g"`
 	Key        string           `json:"-"           redis:"-"`
 	Name       string           `json:"name"        redis:"n"`
-	Subnet     string           `json:"subnet"      redis:"s"`
+	Subnets    redisStringSlice `json:"subnets"     redis:"s"`
 	Models     redisStringSlice `json:"models"      redis:"m"`
 	ID         int              `json:"id"          redis:"i"`
 	Status     int              `json:"status"      redis:"st"`
@@ -78,7 +78,7 @@ func (t *Token) ToTokenCache() *TokenCache {
 		Key:        t.Key,
 		Name:       t.Name.String(),
 		Models:     t.Models,
-		Subnet:     t.Subnet,
+		Subnets:    t.Subnets,
 		Status:     t.Status,
 		ExpiredAt:  redisTime(t.ExpiredAt),
 		Quota:      t.Quota,

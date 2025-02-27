@@ -39,7 +39,7 @@ func (t *TokenResponse) MarshalJSON() ([]byte, error) {
 type (
 	AddTokenRequest struct {
 		Name      string   `json:"name"`
-		Subnet    string   `json:"subnet"`
+		Subnets   []string `json:"subnets"`
 		Models    []string `json:"models"`
 		ExpiredAt int64    `json:"expiredAt"`
 		Quota     float64  `json:"quota"`
@@ -54,6 +54,20 @@ type (
 	}
 )
 
+func (at *AddTokenRequest) ToToken() *model.Token {
+	var expiredAt time.Time
+	if at.ExpiredAt > 0 {
+		expiredAt = time.UnixMilli(at.ExpiredAt)
+	}
+	return &model.Token{
+		Name:      model.EmptyNullString(at.Name),
+		Subnets:   at.Subnets,
+		Models:    at.Models,
+		ExpiredAt: expiredAt,
+		Quota:     at.Quota,
+	}
+}
+
 func validateToken(token AddTokenRequest) error {
 	if token.Name == "" {
 		return errors.New("token name cannot be empty")
@@ -61,20 +75,15 @@ func validateToken(token AddTokenRequest) error {
 	if len(token.Name) > 30 {
 		return errors.New("token name is too long")
 	}
-	if token.Subnet != "" {
-		if err := network.IsValidSubnets(token.Subnet); err != nil {
-			return fmt.Errorf("invalid subnet: %w", err)
-		}
+	if err := network.IsValidSubnets(token.Subnets); err != nil {
+		return fmt.Errorf("invalid subnet: %w", err)
 	}
 	return nil
 }
 
-func validateTokenStatus(token *model.Token) error {
-	if token.Status == model.TokenStatusExpired && !token.ExpiredAt.IsZero() && token.ExpiredAt.Before(time.Now()) {
-		return errors.New("token expired, please update token expired time or set to never expire")
-	}
-	if token.Status == model.TokenStatusExhausted && token.Quota > 0 && token.UsedAmount >= token.Quota {
-		return errors.New("token quota exhausted, please update token quota or set to unlimited quota")
+func validateTokenUpdate(token AddTokenRequest) error {
+	if err := network.IsValidSubnets(token.Subnets); err != nil {
+		return fmt.Errorf("invalid subnet: %w", err)
 	}
 	return nil
 }
@@ -223,7 +232,7 @@ func GetGroupToken(c *gin.Context) {
 	middleware.SuccessResponse(c, buildTokenResponse(token))
 }
 
-func AddToken(c *gin.Context) {
+func AddGroupToken(c *gin.Context) {
 	group := c.Param("group")
 	var req AddTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -236,20 +245,9 @@ func AddToken(c *gin.Context) {
 		return
 	}
 
-	var expiredAt time.Time
-	if req.ExpiredAt > 0 {
-		expiredAt = time.UnixMilli(req.ExpiredAt)
-	}
-
-	token := &model.Token{
-		GroupID:   group,
-		Name:      model.EmptyNullString(req.Name),
-		Key:       random.GenerateKey(),
-		ExpiredAt: expiredAt,
-		Quota:     req.Quota,
-		Models:    req.Models,
-		Subnet:    req.Subnet,
-	}
+	token := req.ToToken()
+	token.GroupID = group
+	token.Key = random.GenerateKey()
 
 	if err := model.InsertToken(token, c.Query("auto_create_group") == "true"); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
@@ -336,29 +334,14 @@ func UpdateToken(c *gin.Context) {
 		return
 	}
 
-	if err := validateToken(req); err != nil {
+	if err := validateTokenUpdate(req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
 		return
 	}
 
-	token, err := model.GetTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
+	token := req.ToToken()
 
-	var expiredAt time.Time
-	if req.ExpiredAt > 0 {
-		expiredAt = time.UnixMilli(req.ExpiredAt)
-	}
-
-	token.Name = model.EmptyNullString(req.Name)
-	token.ExpiredAt = expiredAt
-	token.Quota = req.Quota
-	token.Models = req.Models
-	token.Subnet = req.Subnet
-
-	if err := model.UpdateToken(token); err != nil {
+	if err := model.UpdateToken(id, token); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
@@ -380,29 +363,14 @@ func UpdateGroupToken(c *gin.Context) {
 		return
 	}
 
-	if err := validateToken(req); err != nil {
+	if err := validateTokenUpdate(req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "parameter error: "+err.Error())
 		return
 	}
 
-	token, err := model.GetGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
+	token := req.ToToken()
 
-	var expiredAt time.Time
-	if req.ExpiredAt > 0 {
-		expiredAt = time.UnixMilli(req.ExpiredAt)
-	}
-
-	token.Name = model.EmptyNullString(req.Name)
-	token.ExpiredAt = expiredAt
-	token.Quota = req.Quota
-	token.Models = req.Models
-	token.Subnet = req.Subnet
-
-	if err := model.UpdateToken(token); err != nil {
+	if err := model.UpdateGroupToken(id, group, token); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}
@@ -421,19 +389,6 @@ func UpdateTokenStatus(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
-	}
-
-	token, err := model.GetTokenByID(id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-
-	if req.Status == model.TokenStatusEnabled {
-		if err := validateTokenStatus(token); err != nil {
-			middleware.ErrorResponse(c, http.StatusOK, err.Error())
-			return
-		}
 	}
 
 	if err := model.UpdateTokenStatus(id, req.Status); err != nil {
@@ -456,19 +411,6 @@ func UpdateGroupTokenStatus(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
-	}
-
-	token, err := model.GetGroupTokenByID(group, id)
-	if err != nil {
-		middleware.ErrorResponse(c, http.StatusOK, err.Error())
-		return
-	}
-
-	if req.Status == model.TokenStatusEnabled {
-		if err := validateTokenStatus(token); err != nil {
-			middleware.ErrorResponse(c, http.StatusOK, err.Error())
-			return
-		}
 	}
 
 	if err := model.UpdateGroupTokenStatus(group, id, req.Status); err != nil {
