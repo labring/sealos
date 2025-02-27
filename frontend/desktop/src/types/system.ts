@@ -139,6 +139,7 @@ export type AuthConfigType = {
       port: number;
       user: string;
       password: string;
+      language?: string;
     };
   };
   captcha?: {
