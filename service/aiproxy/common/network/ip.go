@@ -3,16 +3,7 @@ package network
 import (
 	"fmt"
 	"net"
-	"strings"
 )
-
-func splitSubnets(subnets string) []string {
-	res := strings.Split(subnets, ",")
-	for i := 0; i < len(res); i++ {
-		res[i] = strings.TrimSpace(res[i])
-	}
-	return res
-}
 
 func isValidSubnet(subnet string) error {
 	_, _, err := net.ParseCIDR(subnet)
@@ -30,8 +21,8 @@ func isIPInSubnet(ip string, subnet string) (bool, error) {
 	return ipNet.Contains(net.ParseIP(ip)), nil
 }
 
-func IsValidSubnets(subnets string) error {
-	for _, subnet := range splitSubnets(subnets) {
+func IsValidSubnets(subnets []string) error {
+	for _, subnet := range subnets {
 		if err := isValidSubnet(subnet); err != nil {
 			return err
 		}
@@ -39,8 +30,8 @@ func IsValidSubnets(subnets string) error {
 	return nil
 }
 
-func IsIPInSubnets(ip string, subnets string) (bool, error) {
-	for _, subnet := range splitSubnets(subnets) {
+func IsIPInSubnets(ip string, subnets []string) (bool, error) {
+	for _, subnet := range subnets {
 		if ok, err := isIPInSubnet(ip, subnet); err != nil {
 			return false, err
 		} else if ok {

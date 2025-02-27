@@ -274,3 +274,28 @@ func CreateGroup(c *gin.Context) {
 	}
 	middleware.SuccessResponse(c, nil)
 }
+
+func UpdateGroup(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := CreateGroupRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	err = model.UpdateGroup(group, &model.Group{
+		RPMRatio: req.RPMRatio,
+		RPM:      req.RPM,
+		TPMRatio: req.TPMRatio,
+		TPM:      req.TPM,
+	})
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
+}
