@@ -206,6 +206,16 @@ func GetLogDetail(c *gin.Context) {
 	middleware.SuccessResponse(c, log)
 }
 
+func GetUsedModels(c *gin.Context) {
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetUsedModels("", startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
+}
+
 func GetGroupLogDetail(c *gin.Context) {
 	group := c.Param("group")
 	if group == "" {
@@ -219,6 +229,36 @@ func GetGroupLogDetail(c *gin.Context) {
 		return
 	}
 	middleware.SuccessResponse(c, log)
+}
+
+func GetGroupUsedModels(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetUsedModels(group, startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
+}
+
+func GetGroupUsedTokenNames(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	startTime, endTime := parseTimeRange(c)
+	tokenNames, err := model.GetUsedTokenNames(group, startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, tokenNames)
 }
 
 func DeleteHistoryLogs(c *gin.Context) {

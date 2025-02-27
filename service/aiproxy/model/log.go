@@ -23,7 +23,7 @@ type RequestDetail struct {
 	ResponseBody          string    `gorm:"type:text"                         json:"response_body,omitempty"`
 	RequestBodyTruncated  bool      `json:"request_body_truncated,omitempty"`
 	ResponseBodyTruncated bool      `json:"response_body_truncated,omitempty"`
-	ID                    int       `json:"id"`
+	ID                    int       `gorm:"primaryKey"                        json:"id"`
 	LogID                 int       `gorm:"index"                             json:"log_id"`
 }
 
@@ -70,6 +70,13 @@ func CreateLogIndexes(db *gorm.DB) error {
 	if common.UsingSQLite {
 		// not support INCLUDE
 		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at)",
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour)",
+
 			// used by search group logs
 			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at)",
 			// used by search group logs
@@ -92,6 +99,13 @@ func CreateLogIndexes(db *gorm.DB) error {
 		}
 	} else {
 		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at) INCLUDE (code)",
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+
 			// used by search group logs
 			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at) INCLUDE (code)",
 			// used by search group logs
@@ -275,13 +289,13 @@ const (
 )
 
 type GetLogsResult struct {
-	Logs   []*Log   `json:"logs"`
-	Total  int64    `json:"total"`
-	Models []string `json:"models"`
+	Logs  []*Log `json:"logs"`
+	Total int64  `json:"total"`
 }
 
 type GetGroupLogsResult struct {
 	GetLogsResult
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
@@ -444,9 +458,8 @@ func GetLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -457,20 +470,13 @@ func GetLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -515,13 +521,13 @@ func GetGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -531,10 +537,10 @@ func GetGroupLogs(
 
 	return &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }
@@ -770,9 +776,8 @@ func SearchLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -783,20 +788,13 @@ func SearchLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -842,13 +840,13 @@ func SearchGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -858,10 +856,10 @@ func SearchGroupLogs(
 
 	result := &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}
 
@@ -890,7 +888,6 @@ type ChartData struct {
 
 type DashboardResponse struct {
 	ChartData      []*ChartData `json:"chart_data"`
-	Models         []string     `json:"models"`
 	TotalCount     int64        `json:"total_count"`
 	ExceptionCount int64        `json:"exception_count"`
 	UsedAmount     float64      `json:"used_amount"`
@@ -900,6 +897,7 @@ type DashboardResponse struct {
 
 type GroupDashboardResponse struct {
 	DashboardResponse
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
@@ -956,6 +954,17 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	err := query.Scan(&chartData).Error
 
 	return chartData, err
+}
+
+func GetUsedModels(group string, start, end time.Time) ([]string, error) {
+	return getLogGroupByValues[string]("model", group, start, end)
+}
+
+func GetUsedTokenNames(group string, start, end time.Time) ([]string, error) {
+	if group == "" {
+		return nil, errors.New("group is required")
+	}
+	return getLogGroupByValues[string]("token_name", group, start, end)
 }
 
 //nolint:unused
@@ -1087,7 +1096,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 
 	var (
 		chartData []*ChartData
-		models    []string
 		rpm       int64
 		tpm       int64
 	)
@@ -1097,12 +1105,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 	g.Go(func() error {
 		var err error
 		chartData, err = getChartData("", start, end, "", modelName, timeSpan)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		models, err = getLogGroupByValues[string]("model", "", start, end)
 		return err
 	})
 
@@ -1128,7 +1130,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanT
 
 	return &DashboardResponse{
 		ChartData:      chartData,
-		Models:         models,
 		TotalCount:     totalCount,
 		ExceptionCount: exceptionCount,
 		UsedAmount:     usedAmount,
@@ -1166,13 +1167,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogGroupByValues[string]("token_name", group, start, end)
+		tokenNames, err = GetUsedTokenNames(group, start, end)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogGroupByValues[string]("model", group, start, end)
+		models, err = GetUsedModels(group, start, end)
 		return err
 	})
 
@@ -1199,13 +1200,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 	return &GroupDashboardResponse{
 		DashboardResponse: DashboardResponse{
 			ChartData:      chartData,
-			Models:         models,
 			TotalCount:     totalCount,
 			ExceptionCount: exceptionCount,
 			UsedAmount:     usedAmount,
 			RPM:            rpm,
 			TPM:            tpm,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }

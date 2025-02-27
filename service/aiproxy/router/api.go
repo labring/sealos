@@ -126,12 +126,15 @@ func SetAPIRouter(router *gin.Engine) {
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
 			logsRoute.GET("/detail/:log_id", controller.GetLogDetail)
+			logsRoute.GET("/used/models", controller.GetUsedModels)
 		}
 		logRoute := apiRouter.Group("/log")
 		{
-			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
+			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group/detail/:log_id", controller.GetGroupLogDetail)
+			logRoute.GET("/:group/used/models", controller.GetGroupUsedModels)
+			logRoute.GET("/:group/used/token_names", controller.GetGroupUsedTokenNames)
 		}
 
 		modelConfigsRoute := apiRouter.Group("/model_configs")
