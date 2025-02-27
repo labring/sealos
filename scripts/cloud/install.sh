@@ -436,8 +436,6 @@ spec:
     controller:
       autoscaling:
         enabled: true
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: "true"
       tolerations:
         - effect: "NoExecute"
           operator: "Exists"

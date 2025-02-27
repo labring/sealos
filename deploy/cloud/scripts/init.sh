@@ -17,10 +17,9 @@ jwtInternal=""
 jwtRegional=""
 jwtGlobal=""
 
-function prepare {
-  # source .env
-  source etc/sealos/.env
+source etc/sealos/.env
 
+function prepare {
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
 
@@ -292,7 +291,7 @@ function sealos_run_frontend {
   --env transferEnabled="true" \
   --env rechargeEnabled="false" \
   --env jwtInternal="$jwtInternal"
- 
+
   echo "run template frontend"
   sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \
