@@ -206,15 +206,15 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 	}
 	switch status {
 	case pay.PaymentSuccess:
-		user, err := r.Account.AccountV2.GetUser(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		userUID, err := r.Account.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
 		if err != nil {
-			return fmt.Errorf("get user failed: %w", err)
+			return fmt.Errorf("get user UID failed: %w", err)
 		}
-		if r.userLock[user.UID] == nil {
-			r.userLock[user.UID] = &sync.Mutex{}
+		if r.userLock[userUID] == nil {
+			r.userLock[userUID] = &sync.Mutex{}
 		}
-		r.userLock[user.UID].Lock()
-		defer r.userLock[user.UID].Unlock()
+		r.userLock[userUID].Lock()
+		defer r.userLock[userUID].Unlock()
 		userDiscount, err := r.Account.AccountV2.GetUserRechargeDiscount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
 		if err != nil {
 			return fmt.Errorf("get user discount failed: %w", err)
@@ -223,7 +223,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		payAmount := orderAmount * 10000
 		isFirstRecharge, gift := getFirstRechargeDiscount(payAmount, userDiscount)
 		paymentRaw := pkgtypes.PaymentRaw{
-			UserUID:         user.UID,
+			UserUID:         userUID,
 			Amount:          payAmount,
 			Gift:            gift,
 			CreatedAt:       payment.CreationTimestamp.Time,
@@ -295,14 +295,11 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 			return fmt.Errorf("user ID is empty")
 		}
 		payment.Spec.UserCR = payment.Spec.UserID
-		user, err := r.Account.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR})
+		id, err := r.Account.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR})
 		if err != nil {
-			return fmt.Errorf("get user failed: %w", err)
+			return fmt.Errorf("get user ID failed: %w", err)
 		}
-		if user == nil {
-			return fmt.Errorf("user not found")
-		}
-		payment.Spec.UserID = user.ID
+		payment.Spec.UserID = id
 	}
 	if err := r.Update(context.Background(), payment); err != nil {
 		return fmt.Errorf("create payment failed: %w", err)

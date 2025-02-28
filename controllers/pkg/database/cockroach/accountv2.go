@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"gorm.io/gorm/clause"
@@ -45,6 +46,8 @@ type Cockroach struct {
 	ZeroAccount   *types.Account
 	accountConfig *types.AccountConfig
 	tasks         map[uuid.UUID]types.Task
+	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can be reduced when multiple processes operate on different keys
+	ownerUsrUIDMap *sync.Map
 }
 
 const (
@@ -106,11 +109,11 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	} else if ops.ID != "" {
 		queryUser.ID = ops.ID
 	} else if ops.Owner != "" {
-		userCr, err := c.GetUserCr(ops)
+		userUID, err := c.getUserUIDByOwner(ops.Owner)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user cr: %v", err)
+			return nil, fmt.Errorf("failed to get user uid: %v", err)
 		}
-		queryUser.UID = userCr.UserUID
+		queryUser.UID = userUID
 	}
 	var user types.User
 	if err := c.DB.Where(queryUser).First(&user).Error; err != nil {
@@ -210,11 +213,11 @@ func (c *Cockroach) InsertAccountConfig(config *types.AccountConfig) error {
 
 func (c *Cockroach) IsNullRecharge(ops *types.UserQueryOpts) (bool, error) {
 	if ops.UID == uuid.Nil {
-		user, err := c.GetUser(ops)
+		userUID, err := c.GetUserUID(ops)
 		if err != nil {
 			return false, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.UID
+		ops.UID = userUID
 	}
 	var count int64
 	if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).
@@ -333,11 +336,11 @@ func (c *Cockroach) GetUserCr(ops *types.UserQueryOpts) (*types.RegionUserCr, er
 		if ops.ID == "" {
 			return nil, fmt.Errorf("empty query opts")
 		}
-		user, err := c.GetUser(ops)
+		userUID, err := c.getUserUIDByID(ops.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get user: %v", err)
 		}
-		ops.UID = user.UID
+		ops.UID = userUID
 	}
 	query := &types.RegionUserCr{
 		CrName: ops.Owner,
@@ -392,28 +395,90 @@ func (c *Cockroach) GetAccountWithWorkspace(workspace string) (*types.Account, e
 	return &account, nil
 }
 
-func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error) {
+func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err error) {
 	if ops.UID != uuid.Nil {
 		return ops.UID, nil
 	}
-	var userUID uuid.UUID
-	if ops.ID != "" {
-		err := c.DB.Table("User").Select("uid").Where("id = ?", ops.ID).Scan(&userUID).Error
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
-		}
-		ops.UID = userUID
-		return userUID, nil
-	} else if ops.Owner != "" {
-		var userUID uuid.UUID
-		err := c.Localdb.Table(`"UserCr"`).Select(`"userUid"`).Where(`"crName" = ?`, ops.Owner).Scan(&userUID).Error
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
-		}
-		ops.UID = userUID
-		return userUID, nil
+	if ops.ID == "" && ops.Owner == "" {
+		return uuid.Nil, fmt.Errorf("empty query opts")
 	}
-	return uuid.Nil, fmt.Errorf("empty query opts")
+	if ops.ID != "" {
+		uid, err = c.getUserUIDByID(ops.ID)
+	} else {
+		uid, err = c.getUserUIDByOwner(ops.Owner)
+	}
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
+	}
+	if uid == uuid.Nil && !ops.IgnoreEmpty {
+		return uuid.Nil, fmt.Errorf("failed to get userUID: record not found")
+	}
+	return uid, nil
+}
+
+func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
+	if ops.ID != "" {
+		return ops.ID, nil
+	}
+	if ops.Owner == "" && ops.UID == uuid.Nil {
+		return "", fmt.Errorf("empty query opts")
+	}
+	if ops.Owner != "" {
+		uid, err := c.getUserUIDByOwner(ops.Owner)
+		if err != nil {
+			return "", err
+		}
+		ops.UID = uid
+	}
+	id, err = c.getUserIDByUID(ops.UID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get userID: %v", err)
+	}
+	if !ops.IgnoreEmpty && id == "" {
+		return "", fmt.Errorf("failed to get userUID: record not found")
+	}
+	return id, nil
+}
+
+func (c *Cockroach) getUserIDByUID(uid uuid.UUID) (string, error) {
+	var user struct {
+		ID string `gorm:"id"`
+	}
+	err := c.DB.Table("User").Select("id").Where("uid = ?", uid).First(&user).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return "", err
+	}
+	return user.ID, nil
+}
+
+func (c *Cockroach) getUserUIDByID(id string) (uuid.UUID, error) {
+	var user struct {
+		UID uuid.UUID `gorm:"uid,type:uuid"`
+	}
+	err := c.DB.Table("User").Select("uid").Where("id = ?", id).First(&user).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return uuid.Nil, fmt.Errorf("failed to get userUIDByID: %v", err)
+	}
+	return user.UID, nil
+}
+
+// cache user owner uid mapping
+func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
+	if v, ok := c.ownerUsrUIDMap.Load(owner); ok {
+		return v.(uuid.UUID), nil
+	}
+	var user struct {
+		UID uuid.UUID `gorm:"column:userUid;type:uuid"`
+	}
+	err := c.Localdb.Table(`"UserCr"`).Select(`"userUid"`).Where(`"crName" = ?`, owner).First(&user).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, nil
+		}
+		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
+	}
+	c.ownerUsrUIDMap.Store(owner, user.UID)
+	return user.UID, nil
 }
 
 func (c *Cockroach) GetWorkspace(namespaces ...string) ([]types.Workspace, error) {
@@ -532,12 +597,15 @@ func (c *Cockroach) performTransferQuery(ops *types.GetTransfersReq, limit, offs
 }
 
 func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error) {
+	var err error
 	if ops.UID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
+		ops.UID, err = c.GetUserUID(ops)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get user uid: %v", err)
 		}
-		ops.UID = user.UserUID
+		if ops.UID == uuid.Nil {
+			return nil, fmt.Errorf("user record not found with query opts: %v", ops)
+		}
 	}
 	var account types.Account
 	if err := c.DB.Where(types.Account{UserUID: ops.UID}).First(&account).Error; err != nil {
@@ -551,11 +619,11 @@ func (c *Cockroach) getAccount(ops *types.UserQueryOpts) (*types.Account, error)
 
 func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.OauthProvider, error) {
 	if ops.UID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
+		userUID, err := c.GetUserUID(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, fmt.Errorf("failed to get user uid: %v", err)
 		}
-		ops.UID = user.UserUID
+		ops.UID = userUID
 	}
 	var provider []types.OauthProvider
 	if err := c.DB.Where(types.OauthProvider{UserUID: ops.UID}).Find(&provider).Error; err != nil {
@@ -596,8 +664,6 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 		for i := range credits {
 			creditAmt := credits[i].Amount - credits[i].UsedAmount
 			if creditAmt > 0 && deductionAmount > 0 {
-				updateCredits = append(updateCredits, credits[i])
-				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
 				usedAmount := int64(0)
 				if creditAmt > deductionAmount {
 					credits[i].UsedAmount += deductionAmount
@@ -618,6 +684,8 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 					CreatedAt:            now,
 					Reason:               types.CreditsRecordReasonResourceAccountTransaction,
 				})
+				updateCredits = append(updateCredits, credits[i])
+				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
 			}
 		}
 		if len(updateCredits) > 0 {
@@ -644,6 +712,22 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 		return nil
 	})
 	return err
+}
+
+func (c *Cockroach) CreateCredits(credits *types.Credits) error {
+	if credits.ID == uuid.Nil {
+		credits.ID = uuid.New()
+	}
+	if credits.CreatedAt.IsZero() {
+		credits.CreatedAt = time.Now()
+	}
+	if credits.ExpireAt.IsZero() {
+		credits.ExpireAt = time.Now().AddDate(0, 1, 0)
+	}
+	if credits.Status == "" {
+		credits.Status = types.CreditsStatusActive
+	}
+	return c.DB.Create(credits).Error
 }
 
 func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
@@ -737,11 +821,11 @@ func (c *Cockroach) AddDeductionBalanceWithFunc(ops *types.UserQueryOpts, amount
 
 func (c *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
+		userUID, err := c.GetUserUID(ops)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get user: %v", err)
+			return nil, fmt.Errorf("failed to get user uid: %v", err)
 		}
-		ops.UID = user.UserUID
+		ops.UID = userUID
 	}
 	account.UserUID = ops.UID
 	if account.EncryptBalance == "" || account.EncryptDeductionBalance == "" {
@@ -781,11 +865,11 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		if payment.RegionUserOwner == "" {
 			return fmt.Errorf("empty payment owner and user")
 		}
-		user, err := c.GetUserCr(&types.UserQueryOpts{Owner: payment.RegionUserOwner})
+		userUID, err := c.getUserUIDByOwner(payment.RegionUserOwner)
 		if err != nil {
-			return fmt.Errorf("failed to get user: %v", err)
+			return fmt.Errorf("failed to get user uid: %v", err)
 		}
-		payment.UserUID = user.UserUID
+		payment.UserUID = userUID
 	}
 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
@@ -1032,11 +1116,11 @@ func (c *Cockroach) SetInvoiceStatus(ids []string, stats string) error {
 // NewAccount create a new account
 func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	if ops.UID == uuid.Nil {
-		user, err := c.GetUserCr(ops)
+		userUID, err := c.GetUserUID(ops)
 		if err != nil {
 			return nil, err
 		}
-		ops.UID = user.UserUID
+		ops.UID = userUID
 	}
 	account := &types.Account{
 		UserUID:                 ops.UID,
@@ -1142,14 +1226,25 @@ func (c *Cockroach) InitTables() error {
 
 	// TODO: remove this after migration
 	if !c.DB.Migrator().HasColumn(&types.Payment{}, `activityType`) {
-		//if err := c.DB.Migrator().AddColumn(&types.Payment{PaymentRaw: types.PaymentRaw{}}, `PaymentRaw."activityType"`); err != nil {
-		//	return fmt.Errorf("failed to add column activityType: %v", err)
-		//}
 		fmt.Println("add column activityType")
 		tableName := types.Payment{}.TableName()
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "activityType" TEXT;`, gorm.Expr(tableName)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.AccountTransaction{}, "credit_id_list") {
+		sqls := []string{
+			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "region" uuid;`,
+			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "deduction_credit" bigint;`,
+			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "billing_id_list" text[];`,
+			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "credit_id_list" text[];`,
+		}
+		for _, sql := range sqls {
+			err := c.DB.Exec(sql).Error
+			if err != nil {
+				return fmt.Errorf("failed to add column credit_id_list: %v", err)
+			}
 		}
 	}
 	return nil
@@ -1295,16 +1390,13 @@ func (c *Cockroach) UseGiftCode(giftCode *types.GiftCode, userID string) error {
 
 func (c *Cockroach) GetUserRealNameInfoByUserID(userID string) (*types.UserRealNameInfo, error) {
 	// get user info
-	ops := &types.UserQueryOpts{ID: userID}
-	user, err := c.GetUserCr(ops)
-
+	userUID, err := c.getUserUIDByID(userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %v", err)
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
 	}
-
 	// get user realname info
 	var userRealNameInfo types.UserRealNameInfo
-	if err := c.DB.Where(&types.UserRealNameInfo{UserUID: user.UserUID}).First(&userRealNameInfo).Error; err != nil {
+	if err := c.DB.Where(&types.UserRealNameInfo{UserUID: userUID}).First(&userRealNameInfo).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
@@ -1315,16 +1407,14 @@ func (c *Cockroach) GetUserRealNameInfoByUserID(userID string) (*types.UserRealN
 
 func (c *Cockroach) GetEnterpriseRealNameInfoByUserID(userID string) (*types.EnterpriseRealNameInfo, error) {
 	// get user info
-	ops := &types.UserQueryOpts{ID: userID}
-	user, err := c.GetUserCr(ops)
-
+	userUID, err := c.getUserUIDByID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	// get user realname info
 	var enterpriseRealNameInfo types.EnterpriseRealNameInfo
-	if err := c.DB.Where(&types.EnterpriseRealNameInfo{UserUID: user.UserUID}).First(&enterpriseRealNameInfo).Error; err != nil {
+	if err := c.DB.Where(&types.EnterpriseRealNameInfo{UserUID: userUID}).First(&enterpriseRealNameInfo).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}

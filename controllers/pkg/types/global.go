@@ -18,6 +18,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/google/uuid"
 )
 
@@ -270,21 +272,21 @@ func (GiftCode) TableName() string {
 }
 
 type AccountTransaction struct {
-	ID                     uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
-	RegionUID              uuid.UUID `gorm:"column:region;type:uuid;"`
-	Type                   string    `gorm:"column:type;type:text"`
-	UserUID                uuid.UUID `gorm:"column:userUid;type:uuid"`
-	DeductionBalance       int64     `gorm:"column:deduction_balance;type:bigint"`
-	Balance                int64     `gorm:"column:balance;type:bigint"`
-	DeductionCredit        int64     `gorm:"column:deduction_credit;type:bigint"`
-	Message                *string   `gorm:"column:message;type:text"`
-	CreatedAt              time.Time `gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt              time.Time `gorm:"column:updated_at;type:timestamp(3) with time zone;default:current_timestamp()"`
-	BillingID              uuid.UUID `gorm:"column:billing_id;type:uuid"`
-	BillingIDList          []string  `gorm:"column:billing_id_list;type:text[]"`
-	CreditIDList           []string  `gorm:"column:credit_id_list;type:text[]"`
-	BalanceBefore          int64     `gorm:"column:balance_before;type:bigint"`
-	DeductionBalanceBefore int64     `gorm:"column:deduction_balance_before;type:bigint"`
+	ID                     uuid.UUID      `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	RegionUID              uuid.UUID      `gorm:"column:region;type:uuid;"`
+	Type                   string         `gorm:"column:type;type:text"`
+	UserUID                uuid.UUID      `gorm:"column:userUid;type:uuid"`
+	DeductionBalance       int64          `gorm:"column:deduction_balance;type:bigint"`
+	Balance                int64          `gorm:"column:balance;type:bigint"`
+	DeductionCredit        int64          `gorm:"column:deduction_credit;type:bigint"`
+	Message                *string        `gorm:"column:message;type:text"`
+	CreatedAt              time.Time      `gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"`
+	UpdatedAt              time.Time      `gorm:"column:updated_at;type:timestamp(3) with time zone;default:current_timestamp()"`
+	BillingID              uuid.UUID      `gorm:"column:billing_id;type:uuid"`
+	BillingIDList          pq.StringArray `gorm:"column:billing_id_list;type:text[]"`
+	CreditIDList           pq.StringArray `gorm:"column:credit_id_list;type:text[]"`
+	BalanceBefore          int64          `gorm:"column:balance_before;type:bigint"`
+	DeductionBalanceBefore int64          `gorm:"column:deduction_balance_before;type:bigint"`
 }
 
 func (AccountTransaction) TableName() string {
