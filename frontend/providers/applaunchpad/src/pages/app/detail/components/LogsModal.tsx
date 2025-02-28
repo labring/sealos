@@ -67,7 +67,7 @@ const LogsModal = ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-          Authorization: encodeURIComponent(getUserKubeConfig())
+          Authorization: encodeURIComponent(JSON.stringify(getUserKubeConfig()))
       },
       body: JSON.stringify(data),
       signal: controller.signal
