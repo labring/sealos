@@ -132,13 +132,14 @@ export type AuthConfigType = {
         accessKeyID: string;
         accessKeySecret?: string;
       };
-      email?: {
-        enabled: boolean;
-        host: string;
-        port: number;
-        user: string;
-        password: string;
-      };
+    };
+    email?: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      language?: string;
     };
   };
   captcha?: {
@@ -154,7 +155,19 @@ export type AuthConfigType = {
   };
 };
 
-export type AuthClientConfigType = DeepRequired<
+export type AuthClientConfigType = {
+  idp: {
+    sms: {
+      enabled: boolean;
+      ali: {
+        enabled: boolean;
+      };
+    };
+    email: {
+      enabled: boolean;
+    };
+  };
+} & DeepRequired<
   OmitPathArr<
     AuthConfigType,
     [
@@ -166,8 +179,8 @@ export type AuthClientConfigType = DeepRequired<
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
       'idp.google.clientSecret',
-      'idp.sms.ali',
-      'idp.sms.email',
+      'idp.sms',
+      'idp.email',
       'idp.oauth2.clientSecret',
       'jwt',
       'billingUrl',
@@ -179,19 +192,7 @@ export type AuthClientConfigType = DeepRequired<
       'captcha.ali.endpoint'
     ]
   >
-> & {
-  idp: {
-    sms: {
-      enabled: boolean;
-      ali: {
-        enabled: boolean;
-      };
-      email: {
-        enabled: boolean;
-      };
-    };
-  };
-};
+>;
 
 export type JwtConfigType = {
   internal?: string;
@@ -313,10 +314,10 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       enabled: false,
       ali: {
         enabled: false
-      },
-      email: {
-        enabled: false
       }
+    },
+    email: {
+      enabled: false
     },
     oauth2: {
       enabled: false,
