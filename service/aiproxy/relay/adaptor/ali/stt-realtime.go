@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -46,12 +46,17 @@ type STTInput struct {
 }
 
 type STTParameters struct {
-	Format     string `json:"format"`
-	SampleRate int    `json:"sample_rate"`
+	Format     string `json:"format,omitempty"`
+	SampleRate int    `json:"sample_rate,omitempty"`
 }
 
 type STTOutput struct {
-	Text string `json:"text"`
+	STTSentence STTSentence `json:"sentence"`
+}
+
+type STTSentence struct {
+	Text    string `json:"text"`
+	EndTime *int   `json:"end_time"`
 }
 
 type STTUsage struct {
@@ -83,10 +88,6 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 			TaskGroup: "audio",
 			Function:  "recognition",
 			Input:     STTInput{},
-			Parameters: STTParameters{
-				Format:     "mp3",
-				SampleRate: 16000,
-			},
 		},
 	}
 
@@ -128,13 +129,13 @@ func STTDoRequest(meta *meta.Meta, req *http.Request) (*http.Response, error) {
 }
 
 func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	log := middleware.GetLogger(c)
-
 	audioData := meta.MustGet("audio_data").([]byte)
 	taskID := meta.MustGet("task_id").(string)
 
 	conn := meta.MustGet("ws_conn").(*websocket.Conn)
 	defer conn.Close()
+
+	output := strings.Builder{}
 
 	usage = &relaymodel.Usage{}
 
@@ -178,13 +179,16 @@ func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 				return usage, openai.ErrorWrapperWithMessage("ali_wss_write_msg_failed", "ali_wss_write_msg_failed", http.StatusInternalServerError)
 			}
 		case "result-generated":
-			if msg.Payload.Output.Text != "" {
-				log.Info("STT result: " + msg.Payload.Output.Text)
+			if msg.Payload.Output.STTSentence.Text != "" {
+				output.WriteString(msg.Payload.Output.STTSentence.Text)
 			}
 			continue
 		case "task-finished":
 			usage.PromptTokens = msg.Payload.Usage.Characters
 			usage.TotalTokens = msg.Payload.Usage.Characters
+			c.JSON(http.StatusOK, gin.H{
+				"text": output.String(),
+			})
 			return usage, nil
 		case "task-failed":
 			return usage, openai.ErrorWrapperWithMessage(msg.Header.ErrorMessage, msg.Header.ErrorCode, http.StatusInternalServerError)
