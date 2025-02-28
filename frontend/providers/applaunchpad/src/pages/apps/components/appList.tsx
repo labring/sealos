@@ -36,7 +36,6 @@ import { useRouter } from 'next/router';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
 import { createNamespace } from '@/api/platform';
-import { setUserIsLogin } from '@/utils/user';
 import FileSelect from '@/components/FileSelect';
 
 const DelModal = dynamic(() => import('@/pages/app/detail/components/DelModal'));
@@ -447,18 +446,6 @@ const AppList = ({
           onClick={() => router.push(`/app/edit?namespace=${currentNamespaceRef.current}`)}
         >
           {t('Create Application')}
-        </Button>
-        <Button
-          h={'40px'}
-          w={'96px'}
-          ml={'12px'}
-          variant={'outline'}
-          onClick={() => {
-            setUserIsLogin(false, '');
-            router.replace('/login');
-          }}
-        >
-          登出
         </Button>
       </Flex>
       <MyTable itemClass="appItem" columns={columns} data={apps} />
