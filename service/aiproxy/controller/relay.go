@@ -165,7 +165,7 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		meta.Reset(newChannel)
 		//nolint:gosec
 		// random wait 1-2 seconds
-		time.Sleep(time.Duration(rand.Float64()*2*float64(time.Second)) + time.Second)
+		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
 		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return
