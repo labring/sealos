@@ -151,6 +151,9 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 				<-workers
 			}()
 			reconcileErr := r.reconcileBillingFunc(owner, billings)
+			if reconcileErr != nil {
+				r.Logger.Error(reconcileErr, "failed to reconcile owner", "owner", owner, "billings", billings)
+			}
 			resultChan <- result{owner: owner, err: reconcileErr}
 		}(owner, billings)
 	}
