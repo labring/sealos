@@ -205,3 +205,28 @@ func GetGroupDashboardModels(c *gin.Context) {
 	}
 	middleware.SuccessResponse(c, newEnabledModelConfigs)
 }
+
+func GetModelCostRank(c *gin.Context) {
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetModelCostRank("", startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
+}
+
+func GetGroupModelCostRank(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetModelCostRank(group, startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
+}
