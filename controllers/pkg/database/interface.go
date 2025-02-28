@@ -18,6 +18,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"gorm.io/gorm"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -92,6 +94,8 @@ type AccountV2 interface {
 	Close() error
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
+	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
+	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	GetAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error

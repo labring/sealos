@@ -28,13 +28,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/alibabacloud-go/tea/tea"
 
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
-	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -138,23 +139,15 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to get payment %s: %v", req.Name, err)
 	} else {
-		cr, err := r.AccountV2.GetUserCr(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name})
+		userID, err := r.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, IgnoreEmpty: true})
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				r.Logger.Info("user cr not exist, skip", "user", req.NamespacedName.Name)
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user cr %s: %v", req.NamespacedName.Name, err)
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user id %s: %v", req.NamespacedName.Name, err)
 		}
-		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, UID: cr.UserUID})
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				r.Logger.Info("user not exist, skip", "user", req.NamespacedName.Name)
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user %s: %v", req.NamespacedName.Name, err)
+		if userID == "" {
+			r.Logger.Info("user id not exist, skip", "user", req.NamespacedName.Name)
+			return ctrl.Result{}, nil
 		}
-		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, user.ID)
+		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, userID)
 	}
 	if reconcileErr != nil {
 		if reconcileErr == ErrAccountNotExist {
@@ -166,52 +159,39 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{RequeueAfter: r.DebtDetectionCycle}, nil
 }
 
-//func (r *DebtReconciler) getNamespaceOwner(namespace string) (string, error) {
-//	ns := &corev1.Namespace{}
-//	if err := r.Get(context.Background(), client.ObjectKey{Name: namespace}, ns); err != nil {
-//		return "", fmt.Errorf("failed to get namespace %s: %v", namespace, err)
-//	}
-//	if ns.Labels == nil {
-//		return "", fmt.Errorf("namespace %s labels is nil", namespace)
-//	}
-//	owner, ok := ns.Labels[userv1.UserAnnotationOwnerKey]
-//	if !ok {
-//		return "", fmt.Errorf("namespace %s owner is not exist", namespace)
-//	}
-//	return owner, nil
-//}
-
 func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) error {
 	debt := &accountv1.Debt{}
-	userQueryOpts := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID}
-	account, err := r.AccountV2.GetAccount(userQueryOpts)
+	ops := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID, IgnoreEmpty: true}
+	userUID, err := r.AccountV2.GetUserUID(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get user uid %s: %v", userCr, err)
+	}
+	if userUID == uuid.Nil {
+		r.Logger.Info("user uid not exist, skip", "user", userCr)
+		return nil
+	}
+	ops.UID = userUID
+	account, err := r.AccountV2.GetAccount(ops)
+	if err != nil {
+		return fmt.Errorf("failed to get account %s: %v", userCr, err)
+	}
+	// if account not exist, create account
 	if account == nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_, err = r.AccountV2.NewAccount(userQueryOpts)
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("failed to create account %v: %v", userQueryOpts, err)
-			}
-			userOwner := &userv1.User{}
-			if err := r.Get(ctx, types.NamespacedName{Name: userCr, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
-				// if user not exist, skip
-				if client.IgnoreNotFound(err) == nil {
-					return nil
-				}
-				return fmt.Errorf("failed to get usercr %s: %v", userCr, err)
-			}
+		userOwner := &userv1.User{}
+		if err := r.Get(ctx, types.NamespacedName{Name: userCr, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 			// if user not exist, skip
-			if userOwner.CreationTimestamp.Add(20 * 24 * time.Hour).Before(time.Now()) {
+			if client.IgnoreNotFound(err) == nil {
 				return nil
 			}
+			return fmt.Errorf("failed to get usercr %s: %v", userCr, err)
 		}
+		// if user not exist, skip
+		if userOwner.CreationTimestamp.Add(20 * 24 * time.Hour).Before(time.Now()) {
+			return nil
+		}
+		_, err = r.AccountV2.NewAccount(ops)
 		if err != nil {
-			r.Logger.Error(fmt.Errorf("account %v not exist", userQueryOpts), err.Error())
-		}
-		return ErrAccountNotExist
-	}
-	if account.CreateRegionID == "" {
-		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
-			return fmt.Errorf("failed to set account %v create region: %v", userQueryOpts, err)
+			return fmt.Errorf("failed to create account %s: %v", userCr, err)
 		}
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
