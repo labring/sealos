@@ -7,6 +7,7 @@ import (
 	"sync"
 	"unicode/utf8"
 
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/pkoukk/tiktoken-go"
@@ -56,6 +57,9 @@ func getTokenNum(tokenEncoder *tiktoken.Tiktoken, text string) int {
 }
 
 func CountTokenMessages(messages []*model.Message, model string) int {
+	if !config.GetBillingEnabled() {
+		return 0
+	}
 	tokenEncoder := getTokenEncoder(model)
 	// Reference:
 	// https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
@@ -203,6 +207,9 @@ func countImageTokens(url string, detail string, model string) (_ int, err error
 }
 
 func CountTokenInput(input any, model string) int {
+	if !config.GetBillingEnabled() {
+		return 0
+	}
 	switch v := input.(type) {
 	case string:
 		return CountTokenText(v, model)
@@ -223,12 +230,11 @@ func CountTokenInput(input any, model string) int {
 }
 
 func CountTokenText(text string, model string) int {
+	if !config.GetBillingEnabled() {
+		return 0
+	}
 	if strings.HasPrefix(model, "tts") {
 		return utf8.RuneCountInString(text)
 	}
 	return getTokenNum(getTokenEncoder(model), text)
-}
-
-func CountToken(text string) int {
-	return CountTokenInput(text, "gpt-3.5-turbo")
 }

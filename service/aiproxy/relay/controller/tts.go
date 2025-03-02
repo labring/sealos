@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -12,7 +13,11 @@ import (
 
 func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	return Handle(meta, c, func() (*PreCheckGroupBalanceReq, error) {
-		price, completionPrice, ok := GetModelPrice(meta.ModelConfig)
+		if !config.GetBillingEnabled() {
+			return &PreCheckGroupBalanceReq{}, nil
+		}
+
+		inputPrice, outputPrice, ok := GetModelPrice(meta.ModelConfig)
 		if !ok {
 			return nil, fmt.Errorf("model price not found: %s", meta.OriginModel)
 		}
@@ -24,8 +29,8 @@ func RelayTTSHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 		return &PreCheckGroupBalanceReq{
 			InputTokens: openai.CountTokenText(ttsRequest.Input, meta.ActualModel),
-			InputPrice:  price,
-			OutputPrice: completionPrice,
+			InputPrice:  inputPrice,
+			OutputPrice: outputPrice,
 		}, nil
 	})
 }
