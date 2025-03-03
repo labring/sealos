@@ -97,6 +97,7 @@ type AccountV2 interface {
 	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
 	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error)
 	GetAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
@@ -113,7 +114,7 @@ type AccountV2 interface {
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	Payment(payment *types.Payment) error
 	SavePayment(payment *types.Payment) error
-	GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error)
+	GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error)
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
