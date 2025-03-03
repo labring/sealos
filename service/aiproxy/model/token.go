@@ -104,11 +104,8 @@ func GetTokens(group string, page int, perPage int, order string, status int) (t
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(perPage).Offset(page * perPage).Find(&tokens).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getTokenOrder(order)).Limit(limit).Offset(offset).Find(&tokens).Error
 	return tokens, total, err
 }
 
@@ -167,11 +164,8 @@ func SearchTokens(group string, keyword string, page int, perPage int, order str
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getTokenOrder(order)).Limit(perPage).Offset(page * perPage).Find(&tokens).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getTokenOrder(order)).Limit(limit).Offset(offset).Find(&tokens).Error
 	return tokens, total, err
 }
 

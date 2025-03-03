@@ -69,11 +69,8 @@ func GetGroups(page int, perPage int, order string, onlyDisabled bool) (groups [
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getGroupOrder(order)).Limit(perPage).Offset(page * perPage).Find(&groups).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getGroupOrder(order)).Limit(limit).Offset(offset).Find(&groups).Error
 	return groups, total, err
 }
 
@@ -262,11 +259,8 @@ func SearchGroup(keyword string, page int, perPage int, order string, status int
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getGroupOrder(order)).Limit(perPage).Offset(page * perPage).Find(&groups).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getGroupOrder(order)).Limit(limit).Offset(offset).Find(&groups).Error
 	return groups, total, err
 }
 

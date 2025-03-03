@@ -138,12 +138,8 @@ func SearchConsumeError(keyword string, requestID string, group string, tokenNam
 		return nil, 0, nil
 	}
 
-	page--
-	if page < 0 {
-		page = 0
-	}
-
 	var errors []*ConsumeError
-	err = tx.Order(getLogOrder(order)).Limit(perPage).Offset(page * perPage).Find(&errors).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getLogOrder(order)).Limit(limit).Offset(offset).Find(&errors).Error
 	return errors, total, err
 }

@@ -415,11 +415,6 @@ func getLogs(
 	})
 
 	g.Go(func() error {
-		page--
-		if page < 0 {
-			page = 0
-		}
-
 		query := buildGetLogsQuery(
 			group,
 			startTimestamp,
@@ -442,10 +437,11 @@ func getLogs(
 			})
 		}
 
+		limit, offset := toLimitOffset(page, perPage)
 		return query.
 			Order(getLogOrder(order)).
-			Limit(perPage).
-			Offset(page * perPage).
+			Limit(limit).
+			Offset(offset).
 			Find(&logs).Error
 	})
 
@@ -732,11 +728,6 @@ func searchLogs(
 	})
 
 	g.Go(func() error {
-		page--
-		if page < 0 {
-			page = 0
-		}
-
 		query := buildSearchLogsQuery(
 			group,
 			keyword,
@@ -761,10 +752,11 @@ func searchLogs(
 			})
 		}
 
+		limit, offset := toLimitOffset(page, perPage)
 		return query.
 			Order(getLogOrder(order)).
-			Limit(perPage).
-			Offset(page * perPage).
+			Limit(limit).
+			Offset(offset).
 			Find(&logs).Error
 	})
 

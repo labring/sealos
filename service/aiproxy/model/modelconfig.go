@@ -90,11 +90,8 @@ func GetModelConfigs(page int, perPage int, model string) (configs []*ModelConfi
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order("created_at desc").Limit(perPage).Offset(page * perPage).Find(&configs).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order("created_at desc").Limit(limit).Offset(offset).Find(&configs).Error
 	return configs, total, err
 }
 
@@ -157,11 +154,8 @@ func SearchModelConfigs(keyword string, page int, perPage int, model string, own
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order("created_at desc").Limit(perPage).Offset(page * perPage).Find(&configs).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order("created_at desc").Limit(limit).Offset(offset).Find(&configs).Error
 	return configs, total, err
 }
 

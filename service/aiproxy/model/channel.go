@@ -176,11 +176,8 @@ func GetChannels(page int, perPage int, id int, name string, key string, channel
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getChannelOrder(order)).Limit(perPage).Offset(page * perPage).Find(&channels).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getChannelOrder(order)).Limit(limit).Offset(offset).Find(&channels).Error
 	return channels, total, err
 }
 
@@ -261,11 +258,8 @@ func SearchChannels(keyword string, page int, perPage int, id int, name string, 
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	page--
-	if page < 0 {
-		page = 0
-	}
-	err = tx.Order(getChannelOrder(order)).Limit(perPage).Offset(page * perPage).Find(&channels).Error
+	limit, offset := toLimitOffset(page, perPage)
+	err = tx.Order(getChannelOrder(order)).Limit(limit).Offset(offset).Find(&channels).Error
 	return channels, total, err
 }
 
