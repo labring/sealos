@@ -117,22 +117,25 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 type ControllerRestartPredicate struct {
 	predicate.Funcs
+	duration  time.Duration
 	startTime time.Time
 }
 
-func NewControllerRestartPredicate() *ControllerRestartPredicate {
+func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
 	return &ControllerRestartPredicate{
 		startTime: time.Now(),
+		duration:  duration,
 	}
 }
 
+// skip create event p.duration ago
 func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return !e.Object.GetCreationTimestamp().Time.Before(p.startTime.Add(24 * time.Hour))
+	return e.Object.GetCreationTimestamp().Time.After(p.startTime.Add(p.duration))
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions,
-	minRequeueDuration time.Duration, maxRequeueDuration time.Duration) error {
+	minRequeueDuration time.Duration, maxRequeueDuration time.Duration, restartPredicateDuration time.Duration) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -163,7 +166,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
 			RateLimiter:             utilcontroller.GetRateLimiter(opts),
 		}).
-		WithEventFilter(NewControllerRestartPredicate()).
+		WithEventFilter(NewControllerRestartPredicate(restartPredicateDuration)).
 		Complete(r)
 }
 
