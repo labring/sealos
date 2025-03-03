@@ -80,8 +80,8 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	return err, shouldRetry(c, err.StatusCode)
 }
 
-func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
-	channel, err := cache.GetRandomSatisfiedChannel(model, failedChannelIDs...)
+func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, ignoreChannelIDs ...int) (*dbmodel.Channel, error) {
+	channel, err := cache.GetRandomSatisfiedChannel(model, ignoreChannelIDs...)
 	if err == nil {
 		return channel, nil
 	}
@@ -110,17 +110,14 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	if err != nil {
 		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}
-
 	log.Debugf("%s model banned channels: %+v", requestModel, ids)
-
-	failedChannelIDs := []int{}
+	ignoreChannelIDs := make([]int, 0, len(ids))
 	for _, id := range ids {
-		failedChannelIDs = append(failedChannelIDs, int(id))
+		ignoreChannelIDs = append(ignoreChannelIDs, int(id))
 	}
 
 	mc := middleware.GetModelCaches(c)
-
-	channel, err := getChannelWithFallback(mc, requestModel, failedChannelIDs...)
+	channel, err := getChannelWithFallback(mc, requestModel, ignoreChannelIDs...)
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
@@ -137,35 +134,52 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	if bizErr == nil {
 		return
 	}
-	failedChannelIDs = append(failedChannelIDs, channel.ID)
-	requestID := middleware.GetRequestID(c)
-	var retryTimes int64
-	if retry {
-		retryTimes = config.GetRetryTimes()
+	if !retry {
+		bizErr.Error.Message = middleware.MessageWithRequestID(c, bizErr.Error.Message)
+		c.JSON(bizErr.StatusCode, bizErr)
+		return
 	}
+
+	var lastCanContinueChannel *dbmodel.Channel
+
+	retryTimes := config.GetRetryTimes()
+	if !channelCanContinue(bizErr.StatusCode) {
+		ignoreChannelIDs = append(ignoreChannelIDs, channel.ID)
+	} else {
+		lastCanContinueChannel = channel
+	}
+
 	for i := retryTimes; i > 0; i-- {
-		newChannel, err := mc.GetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
+		newChannel, err := mc.GetRandomSatisfiedChannel(requestModel, ignoreChannelIDs...)
 		if err != nil {
-			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
+			if !errors.Is(err, dbmodel.ErrChannelsExhausted) ||
+				lastCanContinueChannel == nil {
 				break
 			}
-			// use first channel to retry
-			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
-				break
-			}
-			newChannel = channel
+			// use last can continue channel to retry
+			newChannel = lastCanContinueChannel
 		}
-		log.Warnf("using channel %s(%d) to retry (remain times %d)", newChannel.Name, newChannel.ID, i)
+		log.Warnf("using channel %s (type: %d, id: %d) to retry (remain times %d)",
+			newChannel.Name,
+			newChannel.Type,
+			newChannel.ID,
+			i-1,
+		)
+
 		requestBody, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			log.Errorf("GetRequestBody failed: %+v", err)
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		meta.Reset(newChannel)
-		//nolint:gosec
-		// random wait 1-2 seconds
-		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
+
+		if shouldDelay(bizErr.StatusCode) {
+			//nolint:gosec
+			// random wait 1-2 seconds
+			time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
+		}
+
+		meta := middleware.NewMetaByContext(c, newChannel, requestModel, mode)
 		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return
@@ -173,10 +187,15 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		if !retry {
 			break
 		}
-		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
+		if !channelCanContinue(bizErr.StatusCode) {
+			ignoreChannelIDs = append(ignoreChannelIDs, newChannel.ID)
+		} else {
+			lastCanContinueChannel = newChannel
+		}
 	}
+
 	if bizErr != nil {
-		bizErr.Error.Message = middleware.MessageWithRequestID(bizErr.Error.Message, requestID)
+		bizErr.Error.Message = middleware.MessageWithRequestID(c, bizErr.Error.Message)
 		c.JSON(bizErr.StatusCode, bizErr)
 	}
 }
@@ -193,6 +212,21 @@ var shouldRetryStatusCodesMap = map[int]struct{}{
 func shouldRetry(_ *gin.Context, statusCode int) bool {
 	_, ok := shouldRetryStatusCodesMap[statusCode]
 	return ok
+}
+
+var channelCanContinueStatusCodesMap = map[int]struct{}{
+	http.StatusTooManyRequests: {},
+	http.StatusRequestTimeout:  {},
+	http.StatusGatewayTimeout:  {},
+}
+
+func channelCanContinue(statusCode int) bool {
+	_, ok := channelCanContinueStatusCodesMap[statusCode]
+	return ok
+}
+
+func shouldDelay(statusCode int) bool {
+	return statusCode == http.StatusTooManyRequests
 }
 
 // 仅当是channel错误时，才需要记录，用户请求参数错误时，不需要记录

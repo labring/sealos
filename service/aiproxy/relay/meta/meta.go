@@ -92,25 +92,20 @@ func NewMeta(
 	}
 
 	if channel != nil {
-		meta.Reset(channel)
+		meta.Channel = &ChannelMeta{
+			Name:    channel.Name,
+			BaseURL: channel.BaseURL,
+			Key:     channel.Key,
+			ID:      channel.ID,
+			Type:    channel.Type,
+		}
+		if channel.Config != nil {
+			meta.ChannelConfig = *channel.Config
+		}
+		meta.ActualModel, _ = GetMappedModelName(modelName, channel.ModelMapping)
 	}
 
 	return &meta
-}
-
-func (m *Meta) Reset(channel *model.Channel) {
-	m.Channel = &ChannelMeta{
-		Name:    channel.Name,
-		BaseURL: channel.BaseURL,
-		Key:     channel.Key,
-		ID:      channel.ID,
-		Type:    channel.Type,
-	}
-	if channel.Config != nil {
-		m.ChannelConfig = *channel.Config
-	}
-	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
-	m.ClearValues()
 }
 
 func (m *Meta) ClearValues() {
