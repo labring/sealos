@@ -40,6 +40,12 @@ func SetAPIRouter(router *gin.Engine) {
 			dashboardRoute.GET("/:group/models", controller.GetGroupDashboardModels)
 		}
 
+		modelCostRankRoute := apiRouter.Group("/model_cost_rank")
+		{
+			modelCostRankRoute.GET("/", controller.GetModelCostRank)
+			modelCostRankRoute.GET("/:group", controller.GetGroupModelCostRank)
+		}
+
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
@@ -49,6 +55,7 @@ func SetAPIRouter(router *gin.Engine) {
 		groupRoute := apiRouter.Group("/group")
 		{
 			groupRoute.POST("/:group", controller.CreateGroup)
+			groupRoute.PUT("/:group", controller.UpdateGroup)
 			groupRoute.GET("/:group", controller.GetGroup)
 			groupRoute.DELETE("/:group", controller.DeleteGroup)
 			groupRoute.POST("/:group/status", controller.UpdateGroupStatus)
@@ -112,7 +119,7 @@ func SetAPIRouter(router *gin.Engine) {
 			tokenRoute.POST("/:group/batch_delete", controller.DeleteGroupTokens)
 			tokenRoute.GET("/:group", controller.GetGroupTokens)
 			tokenRoute.GET("/:group/:id", controller.GetGroupToken)
-			tokenRoute.POST("/:group", controller.AddToken)
+			tokenRoute.POST("/:group", controller.AddGroupToken)
 			tokenRoute.PUT("/:group/:id", controller.UpdateGroupToken)
 			tokenRoute.POST("/:group/:id/status", controller.UpdateGroupTokenStatus)
 			tokenRoute.POST("/:group/:id/name", controller.UpdateGroupTokenName)

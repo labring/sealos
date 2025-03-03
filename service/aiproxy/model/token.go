@@ -18,10 +18,8 @@ const (
 )
 
 const (
-	TokenStatusEnabled   = 1 // don't use 0, 0 is the default value!
-	TokenStatusDisabled  = 2 // also don't use 0
-	TokenStatusExpired   = 3
-	TokenStatusExhausted = 4
+	TokenStatusEnabled  = 1 // don't use 0, 0 is the default value!
+	TokenStatusDisabled = 2 // also don't use 0
 )
 
 type Token struct {
@@ -31,7 +29,7 @@ type Token struct {
 	Key          string          `gorm:"type:char(48);uniqueIndex"                 json:"key"`
 	Name         EmptyNullString `gorm:"index;uniqueIndex:idx_group_name;not null" json:"name"`
 	GroupID      string          `gorm:"index;uniqueIndex:idx_group_name"          json:"group"`
-	Subnet       string          `json:"subnet"`
+	Subnets      []string        `gorm:"serializer:fastjson;type:text"             json:"subnets"`
 	Models       []string        `gorm:"serializer:fastjson;type:text"             json:"models"`
 	Status       int             `gorm:"default:1;index"                           json:"status"`
 	ID           int             `gorm:"primaryKey"                                json:"id"`
@@ -170,21 +168,12 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 }
 
 func GetTokenByKey(key string) (*Token, error) {
+	if key == "" {
+		return nil, errors.New("key is empty")
+	}
 	var token Token
 	err := DB.Where("key = ?", key).First(&token).Error
 	return &token, HandleNotFound(err, ErrTokenNotFound)
-}
-
-func GetTokenUsedAmount(id int) (float64, error) {
-	var amount float64
-	err := DB.Model(&Token{}).Where("id = ?", id).Select("used_amount").Scan(&amount).Error
-	return amount, HandleNotFound(err, ErrTokenNotFound)
-}
-
-func GetTokenUsedAmountByKey(key string) (float64, error) {
-	var amount float64
-	err := DB.Model(&Token{}).Where("key = ?", key).Select("used_amount").Scan(&amount).Error
-	return amount, HandleNotFound(err, ErrTokenNotFound)
 }
 
 func ValidateAndGetToken(key string) (token *TokenCache, err error) {
@@ -199,30 +188,13 @@ func ValidateAndGetToken(key string) (token *TokenCache, err error) {
 		log.Error("get token from cache failed: " + err.Error())
 		return nil, errors.New("token validation failed")
 	}
-	switch token.Status {
-	case TokenStatusExhausted:
-		return nil, fmt.Errorf("token (%s[%d]) quota is exhausted", token.Name, token.ID)
-	case TokenStatusExpired:
-		return nil, fmt.Errorf("token (%s[%d]) is expired", token.Name, token.ID)
-	case TokenStatusDisabled:
+	if token.Status == TokenStatusDisabled {
 		return nil, fmt.Errorf("token (%s[%d]) is disabled", token.Name, token.ID)
 	}
-	if token.Status != TokenStatusEnabled {
-		return nil, fmt.Errorf("token (%s[%d]) is not available", token.Name, token.ID)
-	}
 	if !time.Time(token.ExpiredAt).IsZero() && time.Time(token.ExpiredAt).Before(time.Now()) {
-		err := UpdateTokenStatus(token.ID, TokenStatusExpired)
-		if err != nil {
-			log.Error("failed to update token status" + err.Error())
-		}
 		return nil, fmt.Errorf("token (%s[%d]) is expired", token.Name, token.ID)
 	}
 	if token.Quota > 0 && token.UsedAmount >= token.Quota {
-		// in this case, we can make sure the token is exhausted
-		err := UpdateTokenStatus(token.ID, TokenStatusExhausted)
-		if err != nil {
-			log.Error("failed to update token status" + err.Error())
-		}
 		return nil, fmt.Errorf("token (%s[%d]) quota is exhausted", token.Name, token.ID)
 	}
 	return token, nil
@@ -274,6 +246,9 @@ func UpdateTokenStatus(id int, status int) (err error) {
 }
 
 func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
+	if id == 0 || group == "" {
+		return errors.New("id or group is empty")
+	}
 	token := Token{}
 	defer func() {
 		if err == nil {
@@ -300,7 +275,7 @@ func UpdateGroupTokenStatus(group string, id int, status int) (err error) {
 
 func DeleteGroupTokenByID(groupID string, id int) (err error) {
 	if id == 0 || groupID == "" {
-		return errors.New("id 或 group 为空！")
+		return errors.New("id or group is empty")
 	}
 	token := Token{ID: id, GroupID: groupID}
 	defer func() {
@@ -321,7 +296,10 @@ func DeleteGroupTokenByID(groupID string, id int) (err error) {
 	return HandleUpdateResult(result, ErrTokenNotFound)
 }
 
-func DeleteGroupTokensByIDs(groupID string, ids []int) (err error) {
+func DeleteGroupTokensByIDs(group string, ids []int) (err error) {
+	if group == "" {
+		return errors.New("group is empty")
+	}
 	if len(ids) == 0 {
 		return nil
 	}
@@ -342,7 +320,7 @@ func DeleteGroupTokensByIDs(groupID string, ids []int) (err error) {
 					{Name: "key"},
 				},
 			}).
-			Where("group_id = ?", groupID).
+			Where("group_id = ?", group).
 			Where("id IN (?)", ids).
 			Delete(&tokens).
 			Error
@@ -351,7 +329,7 @@ func DeleteGroupTokensByIDs(groupID string, ids []int) (err error) {
 
 func DeleteTokenByID(id int) (err error) {
 	if id == 0 {
-		return errors.New("id 为空！")
+		return errors.New("id is empty")
 	}
 	token := Token{ID: id}
 	defer func() {
@@ -399,7 +377,10 @@ func DeleteTokensByIDs(ids []int) (err error) {
 	})
 }
 
-func UpdateToken(token *Token) (err error) {
+func UpdateToken(id int, token *Token) (err error) {
+	if id == 0 {
+		return errors.New("id is empty")
+	}
 	defer func() {
 		if err == nil {
 			if err := CacheDeleteToken(token.Key); err != nil {
@@ -407,7 +388,36 @@ func UpdateToken(token *Token) (err error) {
 			}
 		}
 	}()
-	result := DB.Omit("created_at", "status", "key", "group_id", "used_amount", "request_count").Save(token)
+	result := DB.
+		Select("subnets", "quota", "models", "expired_at").
+		Where("id = ?", id).
+		Clauses(clause.Returning{}).
+		Updates(token)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+			return errors.New("token name already exists in this group")
+		}
+	}
+	return HandleUpdateResult(result, ErrTokenNotFound)
+}
+
+func UpdateGroupToken(id int, group string, token *Token) (err error) {
+	if id == 0 || group == "" {
+		return errors.New("id or group is empty")
+	}
+
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteToken(token.Key); err != nil {
+				log.Error("delete token from cache failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Select("subnets", "quota", "models", "expired_at").
+		Where("id = ? and group_id = ?", id, group).
+		Clauses(clause.Returning{}).
+		Updates(token)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
 			return errors.New("token name already exists in this group")

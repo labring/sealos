@@ -42,9 +42,13 @@ func chooseDB(envName string) (*gorm.DB, error) {
 		return OpenMySQL(dsn)
 	default:
 		// Use SQLite
-		log.Info("SQL_DSN not set, using SQLite as database: ", common.SQLitePath)
+		absPath, err := filepath.Abs(common.SQLitePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get absolute path of SQLite database: %w", err)
+		}
+		log.Info("SQL_DSN not set, using SQLite as database: ", absPath)
 		common.UsingSQLite = true
-		return OpenSQLite(common.SQLitePath)
+		return OpenSQLite(absPath)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -46,6 +47,10 @@ func getImageRequest(meta *meta.Meta, c *gin.Context) (*relaymodel.ImageRequest,
 
 func RelayImageHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	return Handle(meta, c, func() (*PreCheckGroupBalanceReq, error) {
+		if !config.GetBillingEnabled() {
+			return &PreCheckGroupBalanceReq{}, nil
+		}
+
 		imageRequest, err := getImageRequest(meta, c)
 		if err != nil {
 			return nil, err

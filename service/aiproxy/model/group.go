@@ -131,6 +131,25 @@ func DeleteGroupsByIDs(ids []string) (err error) {
 	})
 }
 
+func UpdateGroup(id string, group *Group) (err error) {
+	if id == "" {
+		return errors.New("group id is empty")
+	}
+	defer func() {
+		if err == nil {
+			if err := CacheDeleteGroup(id); err != nil {
+				log.Error("cache delete group failed: " + err.Error())
+			}
+		}
+	}()
+	result := DB.
+		Clauses(clause.Returning{}).
+		Where("id = ?", id).
+		Select("rpm_ratio", "rpm", "tpm_ratio", "tpm").
+		Updates(group)
+	return HandleUpdateResult(result, ErrGroupNotFound)
+}
+
 func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) (err error) {
 	group := &Group{ID: id}
 	defer func() {

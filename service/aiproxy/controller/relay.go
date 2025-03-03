@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand/v2"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -147,6 +149,7 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
 				break
 			}
+			// use first channel to retry
 			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
 				break
 			}
@@ -160,6 +163,9 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		meta.Reset(newChannel)
+		//nolint:gosec
+		// random wait 1-2 seconds
+		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
 		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return
