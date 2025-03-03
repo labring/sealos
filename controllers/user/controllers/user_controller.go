@@ -123,7 +123,7 @@ type ControllerRestartPredicate struct {
 
 func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
 	return &ControllerRestartPredicate{
-		checkTime: time.Now().Add(duration),
+		checkTime: time.Now().Add(-duration),
 		duration:  duration,
 	}
 }
