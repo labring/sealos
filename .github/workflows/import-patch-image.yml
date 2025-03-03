@@ -42,7 +42,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-patch-modules.sh ${{ inputs.arch }} "true"
+        run: bash ./${{ env.PROJECT_PATH }}/scripts/resolve-patch-modules.sh ${{ inputs.arch }} "true"
   resolve-modules:
     runs-on: ubuntu-24.04
     outputs:
@@ -59,7 +59,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-patch-modules.sh ${{ inputs.arch }}
+        run: bash ./${{ env.PROJECT_PATH }}/scripts/resolve-patch-modules.sh ${{ inputs.arch }}
   build:
     needs: [ resolve-modules ]
     runs-on: ubuntu-24.04
