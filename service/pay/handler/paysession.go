@@ -28,7 +28,7 @@ func InsertDetails(client *mongo.Client, user, payMethod, amount, currency strin
 	defer session.EndSession(context.Background())
 
 	// execute transaction
-	result, err := session.WithTransaction(context.Background(), func(sessCtx mongo.SessionContext) (interface{}, error) {
+	result, err := session.WithTransaction(context.Background(), func(_ mongo.SessionContext) (interface{}, error) {
 		// perform an operation to insert data into paymentDetails in a transaction
 		orderID, err := InsertPaymentDetails(client, user, payMethod, amount, currency, appID)
 		if err != nil {
@@ -44,7 +44,6 @@ func InsertDetails(client *mongo.Client, user, payMethod, amount, currency strin
 
 		return orderID, nil
 	}, transactionOptions)
-
 	if err != nil {
 		fmt.Println("transaction execution failure:", err)
 	}

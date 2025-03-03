@@ -2,9 +2,12 @@ package openai
 
 import (
 	"bufio"
+	"bytes"
 	"io"
 	"net/http"
+	"slices"
 	"strings"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	json "github.com/json-iterator/go"
@@ -19,9 +22,14 @@ import (
 )
 
 const (
-	DataPrefix       = "data: "
+	DataPrefix       = "data:"
 	Done             = "[DONE]"
 	DataPrefixLength = len(DataPrefix)
+)
+
+var (
+	DataPrefixBytes = conv.StringToBytes(DataPrefix)
+	DoneBytes       = conv.StringToBytes(Done)
 )
 
 var stdjson = json.ConfigCompatibleWithStandardLibrary
@@ -31,14 +39,38 @@ type UsageAndChoicesResponse struct {
 	Choices []*ChatCompletionsStreamResponseChoice
 }
 
+const scannerBufferSize = 2 * bufio.MaxScanTokenSize
+
+var scannerBufferPool = sync.Pool{
+	New: func() any {
+		buf := make([]byte, scannerBufferSize)
+		return &buf
+	},
+}
+
+//nolint:forcetypeassert
+func getScannerBuffer() *[]byte {
+	return scannerBufferPool.Get().(*[]byte)
+}
+
+func putScannerBuffer(buf *[]byte) {
+	if cap(*buf) != scannerBufferSize {
+		return
+	}
+	scannerBufferPool.Put(buf)
+}
+
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
 
-	responseText := ""
+	responseText := strings.Builder{}
+
 	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(bufio.ScanLines)
+	buf := getScannerBuffer()
+	defer putScannerBuffer(buf)
+	scanner.Buffer(*buf, cap(*buf))
 
 	var usage *model.Usage
 
@@ -51,36 +83,40 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 	}
 
 	for scanner.Scan() {
-		data := scanner.Text()
+		data := scanner.Bytes()
 		if len(data) < DataPrefixLength { // ignore blank line or wrong format
 			continue
 		}
-		if data[:DataPrefixLength] != DataPrefix {
+		if !slices.Equal(data[:DataPrefixLength], DataPrefixBytes) {
 			continue
 		}
-		data = data[DataPrefixLength:]
-		if strings.HasPrefix(data, Done) {
+		data = bytes.TrimSpace(data[DataPrefixLength:])
+		if slices.Equal(data, DoneBytes) {
 			break
 		}
+
 		switch meta.Mode {
 		case relaymode.ChatCompletions:
 			var streamResponse UsageAndChoicesResponse
-			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
+			err := json.Unmarshal(data, &streamResponse)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
+				responseText.Reset()
 			}
 			for _, choice := range streamResponse.Choices {
-				responseText += choice.Delta.StringContent()
+				if usage == nil {
+					responseText.WriteString(choice.Delta.StringContent())
+				}
 				if choice.Delta.ReasoningContent != "" {
 					hasReasoningContent = true
 				}
 			}
 			respMap := make(map[string]any)
-			err = json.Unmarshal(conv.StringToBytes(data), &respMap)
+			err = json.Unmarshal(data, &respMap)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
@@ -97,18 +133,29 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 			_ = render.ObjectData(c, respMap)
 		case relaymode.Completions:
 			var streamResponse CompletionsStreamResponse
-			err := json.Unmarshal(conv.StringToBytes(data), &streamResponse)
+			err := json.Unmarshal(data, &streamResponse)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
 			}
-			for _, choice := range streamResponse.Choices {
-				responseText += choice.Text
-			}
 			if streamResponse.Usage != nil {
 				usage = streamResponse.Usage
+				responseText.Reset()
+			} else {
+				for _, choice := range streamResponse.Choices {
+					responseText.WriteString(choice.Text)
+				}
 			}
-			render.StringData(c, data)
+			respMap := make(map[string]any)
+			err = json.Unmarshal(data, &respMap)
+			if err != nil {
+				log.Error("error unmarshalling stream response: " + err.Error())
+				continue
+			}
+			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
+				respMap["model"] = meta.OriginModel
+			}
+			_ = render.ObjectData(c, respMap)
 		}
 	}
 
@@ -118,8 +165,8 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	render.Done(c)
 
-	if usage == nil || (usage.TotalTokens == 0 && responseText != "") {
-		usage = ResponseText2Usage(responseText, meta.ActualModel, meta.InputTokens)
+	if usage == nil || (usage.TotalTokens == 0 && responseText.Len() > 0) {
+		usage = ResponseText2Usage(responseText.String(), meta.ActualModel, meta.InputTokens)
 	}
 
 	if usage.TotalTokens != 0 && usage.PromptTokens == 0 { // some channels don't return prompt tokens & completion tokens
@@ -133,40 +180,41 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 // renderCallback maybe reuse data, so don't modify data
 func StreamSplitThink(data map[string]any, thinkSplitter *splitter.Splitter, renderCallback func(data map[string]any)) {
 	choices, ok := data["choices"].([]any)
-	if !ok {
+	// only support one choice
+	if !ok || len(choices) != 1 {
+		renderCallback(data)
 		return
 	}
-	for _, choice := range choices {
-		choiceMap, ok := choice.(map[string]any)
-		if !ok {
-			renderCallback(data)
-			continue
-		}
-		delta, ok := choiceMap["delta"].(map[string]any)
-		if !ok {
-			renderCallback(data)
-			continue
-		}
-		content, ok := delta["content"].(string)
-		if !ok {
-			renderCallback(data)
-			continue
-		}
-		think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
-		if len(think) == 0 && len(remaining) == 0 {
-			renderCallback(data)
-			continue
-		}
-		if len(think) > 0 {
-			delta["content"] = ""
-			delta["reasoning_content"] = conv.BytesToString(think)
-			renderCallback(data)
-		}
-		if len(remaining) > 0 {
-			delta["content"] = conv.BytesToString(remaining)
-			delta["reasoning_content"] = ""
-			renderCallback(data)
-		}
+	choice := choices[0]
+	choiceMap, ok := choice.(map[string]any)
+	if !ok {
+		renderCallback(data)
+		return
+	}
+	delta, ok := choiceMap["delta"].(map[string]any)
+	if !ok {
+		renderCallback(data)
+		return
+	}
+	content, ok := delta["content"].(string)
+	if !ok {
+		renderCallback(data)
+		return
+	}
+	think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
+	if len(think) == 0 && len(remaining) == 0 {
+		renderCallback(data)
+		return
+	}
+	if len(think) > 0 {
+		delta["content"] = ""
+		delta["reasoning_content"] = conv.BytesToString(think)
+		renderCallback(data)
+	}
+	if len(remaining) > 0 {
+		delta["content"] = conv.BytesToString(remaining)
+		delete(delta, "reasoning_content")
+		renderCallback(data)
 	}
 }
 
@@ -203,11 +251,13 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if err != nil {
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
+
 	var textResponse SlimTextResponse
 	err = json.Unmarshal(responseBody, &textResponse)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
+
 	if textResponse.Error.Type != "" {
 		return nil, ErrorWrapperWithMessage(textResponse.Error.Message, textResponse.Error.Code, http.StatusBadRequest)
 	}
@@ -215,6 +265,10 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	if textResponse.Usage.TotalTokens == 0 || (textResponse.Usage.PromptTokens == 0 && textResponse.Usage.CompletionTokens == 0) {
 		completionTokens := 0
 		for _, choice := range textResponse.Choices {
+			if choice.Text != "" {
+				completionTokens += CountTokenText(choice.Text, meta.ActualModel)
+				continue
+			}
 			completionTokens += CountTokenText(choice.Message.StringContent(), meta.ActualModel)
 		}
 		textResponse.Usage = model.Usage{

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/audio"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -16,7 +17,11 @@ import (
 
 func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatusCode {
 	return Handle(meta, c, func() (*PreCheckGroupBalanceReq, error) {
-		price, completionPrice, ok := GetModelPrice(meta.ModelConfig)
+		if !config.GetBillingEnabled() {
+			return &PreCheckGroupBalanceReq{}, nil
+		}
+
+		inputPrice, outputPrice, ok := GetModelPrice(meta.ModelConfig)
 		if !ok {
 			return nil, fmt.Errorf("model price not found: %s", meta.OriginModel)
 		}
@@ -37,8 +42,8 @@ func RelaySTTHelper(meta *meta.Meta, c *gin.Context) *relaymodel.ErrorWithStatus
 
 		return &PreCheckGroupBalanceReq{
 			InputTokens: durationInt,
-			InputPrice:  price,
-			OutputPrice: completionPrice,
+			InputPrice:  inputPrice,
+			OutputPrice: outputPrice,
 		}, nil
 	})
 }
@@ -75,7 +80,7 @@ func getAudioDuration(audioFile *multipart.FileHeader) (float64, error) {
 }
 
 func getDurationFromTempFile(audioFile *multipart.FileHeader) (float64, error) {
-	tempFile, err := os.CreateTemp("", "audio.wav")
+	tempFile, err := os.CreateTemp("", "audio")
 	if err != nil {
 		return 0, fmt.Errorf("failed to create temp file: %w", err)
 	}

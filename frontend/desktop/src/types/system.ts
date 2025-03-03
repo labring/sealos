@@ -132,18 +132,42 @@ export type AuthConfigType = {
         accessKeyID: string;
         accessKeySecret?: string;
       };
-      email?: {
-        enabled: boolean;
-        host: string;
-        port: number;
-        user: string;
-        password: string;
-      };
+    };
+    email?: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      language?: string;
+    };
+  };
+  captcha?: {
+    enabled: boolean;
+    ali?: {
+      enabled: boolean;
+      sceneId: string;
+      prefix: string;
+      endpoint: string;
+      accessKeyID: string;
+      accessKeySecret?: string;
     };
   };
 };
 
-export type AuthClientConfigType = DeepRequired<
+export type AuthClientConfigType = {
+  idp: {
+    sms: {
+      enabled: boolean;
+      ali: {
+        enabled: boolean;
+      };
+    };
+    email: {
+      enabled: boolean;
+    };
+  };
+} & DeepRequired<
   OmitPathArr<
     AuthConfigType,
     [
@@ -155,28 +179,20 @@ export type AuthClientConfigType = DeepRequired<
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
       'idp.google.clientSecret',
-      'idp.sms.ali',
-      'idp.sms.email',
+      'idp.sms',
+      'idp.email',
       'idp.oauth2.clientSecret',
       'jwt',
       'billingUrl',
       'workorderUrl',
-      'cloudVitrualMachineUrl'
+      'cloudVitrualMachineUrl',
+      //captcha
+      'captcha.ali.accessKeyID',
+      'captcha.ali.accessKeySecret',
+      'captcha.ali.endpoint'
     ]
   >
-> & {
-  idp: {
-    sms: {
-      enabled: boolean;
-      ali: {
-        enabled: boolean;
-      };
-      email: {
-        enabled: boolean;
-      };
-    };
-  };
-};
+>;
 
 export type JwtConfigType = {
   internal?: string;
@@ -298,10 +314,10 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       enabled: false,
       ali: {
         enabled: false
-      },
-      email: {
-        enabled: false
       }
+    },
+    email: {
+      enabled: false
     },
     oauth2: {
       enabled: false,
@@ -313,7 +329,15 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     }
   },
-  billingToken: ''
+  billingToken: '',
+  captcha: {
+    enabled: false,
+    ali: {
+      enabled: false,
+      sceneId: '',
+      prefix: ''
+    }
+  }
 };
 export const DefaultAppClientConfig: AppClientConfigType = {
   cloud: DefaultCloudConfig,

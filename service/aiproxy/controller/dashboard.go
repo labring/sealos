@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,32 +13,40 @@ import (
 	"github.com/labring/sealos/service/aiproxy/model"
 )
 
-func getDashboardTime(t string) (time.Time, time.Time, time.Duration) {
+func getDashboardTime(t string) (time.Time, time.Time, model.TimeSpanType) {
 	end := time.Now()
 	var start time.Time
-	var timeSpan time.Duration
+	var timeSpan model.TimeSpanType
 	switch t {
 	case "month":
 		start = end.AddDate(0, 0, -30)
-		timeSpan = time.Hour * 24
+		timeSpan = model.TimeSpanDay
 	case "two_week":
 		start = end.AddDate(0, 0, -15)
-		timeSpan = time.Hour * 24
+		timeSpan = model.TimeSpanDay
 	case "week":
 		start = end.AddDate(0, 0, -7)
-		timeSpan = time.Hour * 24
+		timeSpan = model.TimeSpanDay
 	case "day":
 		fallthrough
 	default:
 		start = end.AddDate(0, 0, -1)
-		timeSpan = time.Hour * 1
+		timeSpan = model.TimeSpanHour
 	}
 	return start, end, timeSpan
 }
 
-func fillGaps(data []*model.ChartData, start, end time.Time, timeSpan time.Duration) []*model.ChartData {
+func fillGaps(data []*model.ChartData, start, end time.Time, t model.TimeSpanType) []*model.ChartData {
 	if len(data) == 0 {
 		return data
+	}
+
+	var timeSpan time.Duration
+	switch t {
+	case model.TimeSpanDay:
+		timeSpan = time.Hour * 24
+	default:
+		timeSpan = time.Hour
 	}
 
 	// Handle first point
@@ -116,27 +123,11 @@ func fillGaps(data []*model.ChartData, start, end time.Time, timeSpan time.Durat
 	return result
 }
 
-func getTimeSpanWithDefault(c *gin.Context, defaultTimeSpan time.Duration) time.Duration {
-	spanStr := c.Query("span")
-	if spanStr == "" {
-		return defaultTimeSpan
-	}
-	span, err := strconv.Atoi(spanStr)
-	if err != nil {
-		return defaultTimeSpan
-	}
-	if span < 1 || span > 48 {
-		return defaultTimeSpan
-	}
-	return time.Duration(span) * time.Hour
-}
-
 func GetDashboard(c *gin.Context) {
 	log := middleware.GetLogger(c)
 
 	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	modelName := c.Query("model")
-	timeSpan = getTimeSpanWithDefault(c, timeSpan)
 
 	dashboards, err := model.GetDashboardData(start, end, modelName, timeSpan)
 	if err != nil {
@@ -170,7 +161,6 @@ func GetGroupDashboard(c *gin.Context) {
 	start, end, timeSpan := getDashboardTime(c.Query("type"))
 	tokenName := c.Query("token_name")
 	modelName := c.Query("model")
-	timeSpan = getTimeSpanWithDefault(c, timeSpan)
 
 	dashboards, err := model.GetGroupDashboardData(group, start, end, tokenName, modelName, timeSpan)
 	if err != nil {
@@ -214,4 +204,29 @@ func GetGroupDashboardModels(c *gin.Context) {
 		newEnabledModelConfigs[i] = middleware.GetGroupAdjustedModelConfig(groupCache, mc)
 	}
 	middleware.SuccessResponse(c, newEnabledModelConfigs)
+}
+
+func GetModelCostRank(c *gin.Context) {
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetModelCostRank("", startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
+}
+
+func GetGroupModelCostRank(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "group is required")
+		return
+	}
+	startTime, endTime := parseTimeRange(c)
+	models, err := model.GetModelCostRank(group, startTime, endTime)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, models)
 }

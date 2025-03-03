@@ -58,8 +58,6 @@ func TokenAuth(c *gin.Context) {
 		strings.TrimPrefix(key, "Bearer "),
 		"sk-",
 	)
-	parts := strings.Split(key, "-")
-	key = parts[0]
 
 	var token *model.TokenCache
 	var useInternalToken bool
@@ -77,16 +75,16 @@ func TokenAuth(c *gin.Context) {
 
 	SetLogTokenFields(log.Data, token, useInternalToken)
 
-	if token.Subnet != "" {
-		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnet); err != nil {
+	if len(token.Subnets) > 0 {
+		if ok, err := network.IsIPInSubnets(c.ClientIP(), token.Subnets); err != nil {
 			abortLogWithMessage(c, http.StatusInternalServerError, err.Error())
 			return
 		} else if !ok {
 			abortLogWithMessage(c, http.StatusForbidden,
-				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnet: %s, current ip: %s",
+				fmt.Sprintf("token (%s[%d]) can only be used in the specified subnets: %v, current ip: %s",
 					token.Name,
 					token.ID,
-					token.Subnet,
+					token.Subnets,
 					c.ClientIP(),
 				),
 			)

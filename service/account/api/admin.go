@@ -1,12 +1,16 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/service/account/dao"
 	"github.com/labring/sealos/service/account/helper"
+	"gorm.io/gorm"
 )
 
 // GetAccount
@@ -70,6 +74,57 @@ func AdminChargeBilling(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "successfully charged billing",
+	})
+}
+
+// AdminGetUserRealNameInfo
+// @Summary Get user real name info
+// @Description Get user real name info
+// @Tags Account
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "successfully retrieved user real name info"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get user real name info"
+// @Router /admin/v1alpha1/real-name-info [get]
+func AdminGetUserRealNameInfo(c *gin.Context) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	userUID, exist := c.GetQuery("userUID")
+	if !exist || userUID == "" {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "empty userUID"})
+		return
+	}
+	userID, err := dao.DBClient.GetUserID(types.UserQueryOpts{UID: uuid.MustParse(userUID)})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user ID: %v", err)})
+		return
+	}
+	ck := dao.DBClient.GetCockroach()
+
+	userRealNameInfo, err := ck.GetUserRealNameInfoByUserID(userID)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user real name info: %v", err)})
+		return
+	}
+
+	enterpriseRealNameInfo, err := ck.GetEnterpriseRealNameInfoByUserID(userID)
+
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get enterprise real name info: %v", err)})
+		return
+	}
+
+	isVerified := (userRealNameInfo != nil && userRealNameInfo.IsVerified) ||
+		(enterpriseRealNameInfo != nil && enterpriseRealNameInfo.IsVerified)
+
+	c.JSON(http.StatusOK, gin.H{
+		"userUID":    userUID,
+		"isRealName": isVerified,
 	})
 }
 

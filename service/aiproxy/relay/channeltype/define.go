@@ -30,6 +30,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/stepfun"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/tencent"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/vertexai"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/xai"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/xunfei"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/zhipu"
 )
@@ -65,6 +66,7 @@ var ChannelAdaptor = map[int]adaptor.Adaptor{
 	42: &vertexai.Adaptor{},
 	43: &siliconflow.Adaptor{},
 	44: &doubaoaudio.Adaptor{},
+	45: &xai.Adaptor{},
 }
 
 func GetAdaptor(channel int) (adaptor.Adaptor, bool) {

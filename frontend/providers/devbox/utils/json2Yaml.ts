@@ -1,26 +1,28 @@
 import yaml from 'js-yaml';
 
-import { devboxKey, publicDomainKey } from '@/constants/devbox';
-import {
-  DevboxEditType,
-  DevboxEditTypeV2,
-  json2DevboxV2Data,
-  ProtocolType,
-  runtimeNamespaceMapType
-} from '@/types/devbox';
+import { devboxKey, gpuNodeSelectorKey, gpuResourceKey, publicDomainKey } from '@/constants/devbox';
+import { DevboxEditType, DevboxEditTypeV2, json2DevboxV2Data, ProtocolType } from '@/types/devbox';
 import { produce } from 'immer';
 import { parseTemplateConfig, str2Num } from './tools';
 import { getUserNamespace } from './user';
+import { RuntimeNamespaceMap } from '@/types/static';
 
 export const json2Devbox = (
   data: DevboxEditType,
-  runtimeNamespaceMap: runtimeNamespaceMapType,
+  runtimeNamespaceMap: RuntimeNamespaceMap,
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {
   // runtimeNamespace inject
   const runtimeNamespace = runtimeNamespaceMap[data.runtimeVersion];
-
+  // gpu node selector
+  const gpuMap = !!data.gpu?.type
+    ? {
+        nodeSelector: {
+          [gpuNodeSelectorKey]: data.gpu.type
+        }
+      }
+    : {};
   let json: any = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
     kind: 'Devbox',
@@ -37,13 +39,16 @@ export const json2Devbox = (
       },
       resource: {
         cpu: `${str2Num(Math.floor(data.cpu))}m`,
-        memory: `${str2Num(data.memory)}Mi`
+        memory: `${str2Num(data.memory)}Mi`,
+        ...(!!data.gpu?.type ? { [gpuResourceKey]: data.gpu.amount } : {})
       },
+      ...(!!data.gpu?.type ? { runtimeClassName: 'nvidia' } : {}),
       runtimeRef: {
         name: data.runtimeVersion,
         namespace: runtimeNamespace
       },
-      state: 'Running'
+      state: 'Running',
+      ...gpuMap
     }
   };
   if (devboxAffinityEnable === 'true') {

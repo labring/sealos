@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers;
-    const { ROOT_RUNTIME_NAMESPACE } = process.env;
 
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;

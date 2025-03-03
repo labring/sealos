@@ -11,16 +11,28 @@ localRegionUID=""
 
 tlsCrtPlaceholder="<tls-crt-placeholder>"
 acmednsSecretPlaceholder="<acmedns-secret-placeholder>"
+cloudDomainPlaceholder="<cloud-domain-placeholder>"
+cloudPortPlaceholder="<cloud-port-placeholder>"
+certSecretNamePlaceholder="<cert-secret-placeholder>"
+regionUIDPlaceholder="<region-uid-placeholder>"
+databaseMongodbURIPlaceholder="<mongodb-uri-placeholder>"
+databaseLocalCockroachdbURIPlaceholder="<local-cockroachdb-uri-placeholder>"
+databaseGlobalCockroachdbURIPlaceholder="<global-cockroachdb-uri-placeholder>"
+passwordEnabledPlaceholder="<password-enabled-placeholder>"
+passwordSaltPlaceholder="<password-salt-placeholder>"
+jwtInternalPlaceholder="<jwt-internal-placeholder>"
+jwtRegionalPlaceholder="<jwt-regional-placeholder>"
+jwtGlobalPlaceholder="<jwt-global-placeholder>"
+
 
 saltKey=""
 jwtInternal=""
 jwtRegional=""
 jwtGlobal=""
 
-function prepare {
-  # source .env
-  source etc/sealos/.env
+source etc/sealos/.env
 
+function prepare {
   # kubectl apply namespace, secret and mongodb
   kubectl apply -f manifests/namespace.yaml
 
@@ -44,6 +56,9 @@ function prepare {
 
   # create tls secret
   create_tls_secret
+
+  # update sealos-config configmap
+  update_sealos_config
 }
 
 # Function to retry `kubectl apply -f` command until it succeeds or reaches a maximum number of attempts
@@ -194,6 +209,38 @@ function create_tls_secret {
   fi
 }
 
+function update_sealos_config {
+  # use generated values to update sealos-config configmap
+  echo "update sealos-config configmap"
+  echo "cloudDomain: $cloudDomain"
+  sed -i "s|$cloudDomainPlaceholder|$cloudDomain|g" manifests/sealos-config.yaml
+  echo "cloudPort: $cloudPort"
+  sed -i "s|$cloudPortPlaceholder|$cloudPort|g" manifests/sealos-config.yaml
+  echo "certSecretName: $certSecretName"
+  sed -i "s|$certSecretNamePlaceholder|$certSecretName|g" manifests/sealos-config.yaml
+  echo "regionUID: $localRegionUID"
+  sed -i "s|$regionUIDPlaceholder|$localRegionUID|g" manifests/sealos-config.yaml
+  echo "mongodbUri: $mongodbUri"
+  sed -i "s|$databaseMongodbURIPlaceholder|$mongodbUri|g" manifests/sealos-config.yaml
+  echo "cockroachdbLocalUri: $cockroachdbLocalUri"
+  sed -i "s|$databaseLocalCockroachdbURIPlaceholder|$cockroachdbLocalUri|g" manifests/sealos-config.yaml
+  echo "cockroachdbGlobalUri: $cockroachdbGlobalUri"
+  sed -i "s|$databaseGlobalCockroachdbURIPlaceholder|$cockroachdbGlobalUri|g" manifests/sealos-config.yaml
+  echo "passwordEnabled: $passwordEnabled"
+  sed -i "s|$passwordEnabledPlaceholder|$passwordEnabled|g" manifests/sealos-config.yaml
+  echo "passwordSalt: $saltKey"
+  sed -i "s|$passwordSaltPlaceholder|$saltKey|g" manifests/sealos-config.yaml
+  echo "jwtInternal: $jwtInternal"
+  sed -i "s|$jwtInternalPlaceholder|$jwtInternal|g" manifests/sealos-config.yaml
+  echo "jwtRegional: $jwtRegional"
+  sed -i "s|$jwtRegionalPlaceholder|$jwtRegional|g" manifests/sealos-config.yaml
+  echo "jwtGlobal: $jwtGlobal"
+  sed -i "s|$jwtGlobalPlaceholder|$jwtGlobal|g" manifests/sealos-config.yaml
+  echo "apply sealos-config configmap"
+  kubectl apply -f manifests/sealos-config.yaml
+}
+
+
 function sealos_run_desktop {
     echo "run desktop frontend"
     sealos run tars/frontend-desktop.tar \
@@ -292,7 +339,7 @@ function sealos_run_frontend {
   --env transferEnabled="true" \
   --env rechargeEnabled="false" \
   --env jwtInternal="$jwtInternal"
- 
+
   echo "run template frontend"
   sealos run tars/frontend-template.tar \
   --env cloudDomain=$cloudDomain \

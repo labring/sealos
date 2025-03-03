@@ -45,7 +45,12 @@ A Cloud Operating System for Managing Cloud Native Applications
 https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <p align="center">
-  <a href="https://sealos.io/docs/Intro">Docs</a> |
+  <a href="https://usw.sealos.io">West US Availability Zone</a> |
+  <a href="https://cloud.sealos.run">中国可用区</a> | 
+</p>
+
+<p align="center">
+  <a href="https://sealos.io/docs/Intro"></a> |
   <a href="./README_zh.md">简体中文</a> | 
   <a href="https://github.com/orgs/labring/projects/4/views/9">Roadmap</a>
 </p>
@@ -56,7 +61,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Create your Development Environment in Sealos with just one click
 
-1. [Login](https://cloud.sealos.run) and open Sealos Devbox.
+1. [Login](https://cloud.sealos.io) and open Sealos Devbox.
    
    <img width="656" alt="image" src="https://github.com/user-attachments/assets/79692f6c-315f-4363-9426-b41f541f9a55">
    
@@ -72,7 +77,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Create your Database on Sealos
 
-1. [Login](https://cloud.sealos.run), open Sealos database.
+1. [Login](https://cloud.sealos.io), open Sealos database.
    
    <img width="567" alt="image" src="https://github.com/user-attachments/assets/74ca3ce9-6ef8-4396-b9c2-7c1940bb7e0c">
 
@@ -86,7 +91,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Deploy your Docker Image on Sealos
 
-1. [Login](https://cloud.sealos.run), open Sealos App Launchpad.
+1. [Login](https://cloud.sealos.io), open Sealos App Launchpad.
 
    <img width="567" alt="image" src="https://github.com/user-attachments/assets/5f6481c0-05c6-4892-a096-94b613cee73c">
 
@@ -120,7 +125,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 + 🌐 Visit the [Sealos Website](https://sealos.io/) for full documentation and useful links.
 + 💬 Join our [Discord Server](https://discord.gg/qzBmGGZGk7) is to chat with Sealos developers and other Sealos users. This is a good place to learn about Sealos and Kubernetes, ask questions, and share your experiences.
-+ 🐦 Tweet at @Sealos_io on [X/Twitter](https://x.com/Sealos_io) and follow us.
++ 🐦 Tweet at @Sealos_io on [X/Twitter](https://twitter.com/Sealos_io) and follow us.
 + 🐞 Create [GitHub Issues](https://github.com/labring/sealos/issues/new/choose) for bug reports and feature requests.
 
 ## 🚧 Roadmap

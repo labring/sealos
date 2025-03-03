@@ -5,7 +5,9 @@ import (
 	"context"
 	"errors"
 	"io"
+	"math/rand/v2"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
@@ -65,7 +67,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		}
 		return nil, false
 	}
-	if shouldRetry(c, err.StatusCode) {
+	if shouldErrorMonitor(err.StatusCode) {
 		if err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
@@ -74,9 +76,8 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		); err != nil {
 			log.Errorf("add request failed: %+v", err)
 		}
-		return err, true
 	}
-	return err, false
+	return err, shouldRetry(c, err.StatusCode)
 }
 
 func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
@@ -148,6 +149,7 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
 				break
 			}
+			// use first channel to retry
 			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
 				break
 			}
@@ -161,6 +163,9 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		meta.Reset(newChannel)
+		//nolint:gosec
+		// random wait 1-2 seconds
+		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
 		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return
@@ -176,14 +181,23 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	}
 }
 
-// 仅当是channel错误时，才需要重试，用户请求参数错误时，不需要重试
+var shouldRetryStatusCodesMap = map[int]struct{}{
+	http.StatusTooManyRequests: {},
+	http.StatusUnauthorized:    {},
+	http.StatusPaymentRequired: {},
+	http.StatusRequestTimeout:  {},
+	http.StatusGatewayTimeout:  {},
+	http.StatusForbidden:       {},
+}
+
 func shouldRetry(_ *gin.Context, statusCode int) bool {
-	if statusCode == http.StatusTooManyRequests ||
-		statusCode == http.StatusGatewayTimeout ||
-		statusCode == http.StatusForbidden {
-		return true
-	}
-	return false
+	_, ok := shouldRetryStatusCodesMap[statusCode]
+	return ok
+}
+
+// 仅当是channel错误时，才需要记录，用户请求参数错误时，不需要记录
+func shouldErrorMonitor(statusCode int) bool {
+	return statusCode != http.StatusBadRequest
 }
 
 func RelayNotImplemented(c *gin.Context) {

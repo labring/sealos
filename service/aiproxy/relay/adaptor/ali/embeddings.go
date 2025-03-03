@@ -15,6 +15,9 @@ import (
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
+// Deprecated: Use openai.ConvertRequest instead
+// /api/v1/services/embeddings/text-embedding/text-embedding
+
 func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
 	var reqMap map[string]any
 	err := common.UnmarshalBodyReusable(req, &reqMap)

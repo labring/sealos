@@ -40,6 +40,12 @@ func SetAPIRouter(router *gin.Engine) {
 			dashboardRoute.GET("/:group/models", controller.GetGroupDashboardModels)
 		}
 
+		modelCostRankRoute := apiRouter.Group("/model_cost_rank")
+		{
+			modelCostRankRoute.GET("/", controller.GetModelCostRank)
+			modelCostRankRoute.GET("/:group", controller.GetGroupModelCostRank)
+		}
+
 		groupsRoute := apiRouter.Group("/groups")
 		{
 			groupsRoute.GET("/", controller.GetGroups)
@@ -49,6 +55,7 @@ func SetAPIRouter(router *gin.Engine) {
 		groupRoute := apiRouter.Group("/group")
 		{
 			groupRoute.POST("/:group", controller.CreateGroup)
+			groupRoute.PUT("/:group", controller.UpdateGroup)
 			groupRoute.GET("/:group", controller.GetGroup)
 			groupRoute.DELETE("/:group", controller.DeleteGroup)
 			groupRoute.POST("/:group/status", controller.UpdateGroupStatus)
@@ -77,6 +84,11 @@ func SetAPIRouter(router *gin.Engine) {
 			channelsRoute.GET("/update_balance", controller.UpdateAllChannelsBalance)
 			channelsRoute.POST("/batch_delete", controller.DeleteChannels)
 			channelsRoute.GET("/test", controller.TestAllChannels)
+
+			importRoute := channelsRoute.Group("/import")
+			{
+				importRoute.POST("/oneapi", controller.ImportChannelFromOneAPI)
+			}
 		}
 		channelRoute := apiRouter.Group("/channel")
 		{
@@ -107,7 +119,7 @@ func SetAPIRouter(router *gin.Engine) {
 			tokenRoute.POST("/:group/batch_delete", controller.DeleteGroupTokens)
 			tokenRoute.GET("/:group", controller.GetGroupTokens)
 			tokenRoute.GET("/:group/:id", controller.GetGroupToken)
-			tokenRoute.POST("/:group", controller.AddToken)
+			tokenRoute.POST("/:group", controller.AddGroupToken)
 			tokenRoute.PUT("/:group/:id", controller.UpdateGroupToken)
 			tokenRoute.POST("/:group/:id/status", controller.UpdateGroupTokenStatus)
 			tokenRoute.POST("/:group/:id/name", controller.UpdateGroupTokenName)
@@ -121,12 +133,15 @@ func SetAPIRouter(router *gin.Engine) {
 			logsRoute.GET("/search", controller.SearchLogs)
 			logsRoute.GET("/consume_error", controller.SearchConsumeError)
 			logsRoute.GET("/detail/:log_id", controller.GetLogDetail)
+			logsRoute.GET("/used/models", controller.GetUsedModels)
 		}
 		logRoute := apiRouter.Group("/log")
 		{
-			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group", controller.GetGroupLogs)
+			logRoute.GET("/:group/search", controller.SearchGroupLogs)
 			logRoute.GET("/:group/detail/:log_id", controller.GetGroupLogDetail)
+			logRoute.GET("/:group/used/models", controller.GetGroupUsedModels)
+			logRoute.GET("/:group/used/token_names", controller.GetGroupUsedTokenNames)
 		}
 
 		modelConfigsRoute := apiRouter.Group("/model_configs")
@@ -152,6 +167,7 @@ func SetAPIRouter(router *gin.Engine) {
 			monitorRoute.DELETE("/", controller.ClearAllModelErrors)
 			monitorRoute.DELETE("/:id", controller.ClearChannelAllModelErrors)
 			monitorRoute.DELETE("/:id/:model", controller.ClearChannelModelErrors)
+			monitorRoute.GET("/models", controller.GetModelsErrorRate)
 		}
 	}
 }

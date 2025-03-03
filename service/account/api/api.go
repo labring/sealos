@@ -984,7 +984,7 @@ func UserUsage(c *gin.Context) {
 // @Tags RechargeDiscount
 // @Accept json
 // @Produce json
-// @Param request body helper.GetRechargeDiscountReq true "Get recharge discount request"
+// @Param request body object true "Get recharge discount request"
 // @Success 200 {object} map[string]interface{} "successfully get recharge discount"
 // @Failure 400 {object} map[string]interface{} "failed to parse get recharge discount request"
 // @Failure 401 {object} map[string]interface{} "authenticate error"

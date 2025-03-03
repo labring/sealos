@@ -26,6 +26,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
+import { HiddenCaptchaComponent, TCaptchaInstance } from './Captcha';
+import { captcha } from 'tencentcloud-sdk-nodejs';
 
 export default function SigninComponent() {
   const conf = useConfigStore();
@@ -51,7 +53,16 @@ export default function SigninComponent() {
     };
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();
-  const { SmsModal, login: smsSubmit, isLoading: smsLoading } = useSms({ showError });
+  const {
+    SmsModal,
+    login: smsSubmit,
+    isLoading: smsLoading
+  } = useSms({
+    showError,
+    invokeCaptcha() {
+      captchaRef.current?.invoke();
+    }
+  });
   const {
     PasswordComponent,
     pageState,
@@ -74,6 +85,7 @@ export default function SigninComponent() {
     }
   }, []);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const captchaRef = useRef<TCaptchaInstance>(null);
   const loginConfig = useMemo(() => {
     return {
       [LoginType.SMS]: {
@@ -83,8 +95,12 @@ export default function SigninComponent() {
             onAfterGetCode={() => {
               turnstileRef.current?.reset();
             }}
-            getCfToken={() => {
-              return turnstileRef.current?.getResponse();
+            getCfToken={async () => {
+              const token = turnstileRef.current?.getResponse();
+              return token;
+            }}
+            invokeCaptcha={() => {
+              captchaRef.current?.invoke();
             }}
           />
         )
@@ -224,6 +240,9 @@ export default function SigninComponent() {
                     ref={turnstileRef}
                     siteKey={conf.commonConfig?.cfSiteKey}
                   />
+                )}
+                {conf.authConfig?.captcha.enabled && (
+                  <HiddenCaptchaComponent ref={captchaRef} showError={showError} />
                 )}
                 <Button
                   variant={'unstyled'}

@@ -17,55 +17,132 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	requestBodyMaxSize  = 128 * 1024 // 128KB
-	responseBodyMaxSize = 128 * 1024 // 128KB
-)
-
 type RequestDetail struct {
-	CreatedAt             time.Time `gorm:"autoCreateTime"                    json:"-"`
+	CreatedAt             time.Time `gorm:"autoCreateTime;index"              json:"-"`
 	RequestBody           string    `gorm:"type:text"                         json:"request_body,omitempty"`
 	ResponseBody          string    `gorm:"type:text"                         json:"response_body,omitempty"`
 	RequestBodyTruncated  bool      `json:"request_body_truncated,omitempty"`
 	ResponseBodyTruncated bool      `json:"response_body_truncated,omitempty"`
-	ID                    int       `json:"id"`
-	LogID                 int       `json:"log_id"`
+	ID                    int       `gorm:"primaryKey"                        json:"id"`
+	LogID                 int       `gorm:"index"                             json:"log_id"`
 }
 
 func (d *RequestDetail) BeforeSave(_ *gorm.DB) (err error) {
-	if len(d.RequestBody) > requestBodyMaxSize {
-		d.RequestBody = common.TruncateByRune(d.RequestBody, requestBodyMaxSize) + "..."
+	if reqMax := config.GetLogDetailRequestBodyMaxSize(); reqMax > 0 && int64(len(d.RequestBody)) > reqMax {
+		d.RequestBody = common.TruncateByRune(d.RequestBody, int(reqMax)) + "..."
 		d.RequestBodyTruncated = true
 	}
-	if len(d.ResponseBody) > responseBodyMaxSize {
-		d.ResponseBody = common.TruncateByRune(d.ResponseBody, responseBodyMaxSize) + "..."
+	if respMax := config.GetLogDetailResponseBodyMaxSize(); respMax > 0 && int64(len(d.ResponseBody)) > respMax {
+		d.ResponseBody = common.TruncateByRune(d.ResponseBody, int(respMax)) + "..."
 		d.ResponseBodyTruncated = true
 	}
 	return
 }
 
 type Log struct {
-	RequestDetail    *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"                                                         json:"request_detail,omitempty"`
-	RequestAt        time.Time      `gorm:"index;index:idx_request_at_group_id,priority:2;index:idx_group_reqat_token,priority:2"                                  json:"request_at"`
-	CreatedAt        time.Time      `gorm:"index"                                                                                                                  json:"created_at"`
-	TokenName        string         `gorm:"index;index:idx_group_token,priority:2;index:idx_group_reqat_token,priority:3"                                          json:"token_name,omitempty"`
-	Endpoint         string         `gorm:"index"                                                                                                                  json:"endpoint"`
-	Content          string         `gorm:"type:text"                                                                                                              json:"content,omitempty"`
-	GroupID          string         `gorm:"index;index:idx_group_token,priority:1;index:idx_request_at_group_id,priority:1;index:idx_group_reqat_token,priority:1" json:"group,omitempty"`
-	Model            string         `gorm:"index"                                                                                                                  json:"model"`
-	RequestID        string         `gorm:"index"                                                                                                                  json:"request_id"`
-	Price            float64        `json:"price"`
-	ID               int            `gorm:"primaryKey"                                                                                                             json:"id"`
-	CompletionPrice  float64        `json:"completion_price"`
-	TokenID          int            `gorm:"index"                                                                                                                  json:"token_id,omitempty"`
-	UsedAmount       float64        `gorm:"index"                                                                                                                  json:"used_amount"`
-	PromptTokens     int            `json:"prompt_tokens"`
-	CompletionTokens int            `json:"completion_tokens"`
-	TotalTokens      int            `json:"total_tokens"`
-	ChannelID        int            `gorm:"index"                                                                                                                  json:"channel"`
-	Code             int            `gorm:"index"                                                                                                                  json:"code"`
-	Mode             int            `json:"mode"`
-	IP               string         `json:"ip"`
+	RequestDetail        *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"                                                                                                                                                                                  json:"request_detail,omitempty"`
+	RequestAt            time.Time      `gorm:"index"                                                                                                                                                                                                                                          json:"request_at"`
+	TimestampTruncByDay  int64          `json:"timestamp_trunc_by_day"`
+	TimestampTruncByHour int64          `json:"timestamp_trunc_by_hour"`
+	CreatedAt            time.Time      `json:"created_at"`
+	TokenName            string         `json:"token_name,omitempty"`
+	Endpoint             string         `json:"endpoint"`
+	Content              string         `gorm:"type:text"                                                                                                                                                                                                                                       json:"content,omitempty"`
+	GroupID              string         `gorm:"index"                                                                                                                                                                                                                                           json:"group,omitempty"`
+	Model                string         `gorm:"index"                                                                                                                                                                                                                                           json:"model"`
+	RequestID            string         `gorm:"index"                                                                                                                                                                                                                                           json:"request_id"`
+	Price                float64        `json:"price"`
+	ID                   int            `gorm:"primaryKey"                                                                                                                                                                                                                                      json:"id"`
+	CompletionPrice      float64        `json:"completion_price"`
+	TokenID              int            `gorm:"index"                                                                                                                                                                                                                                           json:"token_id,omitempty"`
+	UsedAmount           float64        `json:"used_amount"`
+	PromptTokens         int            `json:"prompt_tokens"`
+	CompletionTokens     int            `json:"completion_tokens"`
+	TotalTokens          int            `json:"total_tokens"`
+	ChannelID            int            `gorm:"index"                                                                                                                                                                                                                                           json:"channel"`
+	Code                 int            `gorm:"index"                                                                                                                                                                                                                                           json:"code"`
+	Mode                 int            `json:"mode"`
+	IP                   string         `gorm:"index"                                                                                                                                                                                                                                           json:"ip"`
+}
+
+func CreateLogIndexes(db *gorm.DB) error {
+	var indexes []string
+	if common.UsingSQLite {
+		// not support INCLUDE
+		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at)",
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_channel_reqat ON logs (channel_id, request_at)",
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_channel_model_reqat ON logs (channel_id, model, request_at)",
+
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour)",
+
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at)",
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat ON logs (group_id, model, request_at)",
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_token_model_reqat ON logs (group_id, token_name, model, request_at)",
+
+			// day indexes, used by dashboard
+			"CREATE INDEX IF NOT EXISTS idx_group_reqat_truncday ON logs (group_id, request_at, timestamp_trunc_by_day)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat_truncday ON logs (group_id, model, request_at, timestamp_trunc_by_day)",
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat_truncday ON logs (group_id, token_name, request_at, timestamp_trunc_by_day)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_token_reqat_truncday ON logs (group_id, model, token_name, request_at, timestamp_trunc_by_day)",
+			// hour indexes, used by dashboard
+			"CREATE INDEX IF NOT EXISTS idx_group_reqat_trunchour ON logs (group_id, request_at, timestamp_trunc_by_hour)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat_trunchour ON logs (group_id, model, request_at, timestamp_trunc_by_hour)",
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat_trunchour ON logs (group_id, token_name, request_at, timestamp_trunc_by_hour)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_token_reqat_trunchour ON logs (group_id, model, token_name, request_at, timestamp_trunc_by_hour)",
+		}
+	} else {
+		indexes = []string{
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat ON logs (model, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_channel_reqat ON logs (channel_id, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+			// used by global search logs
+			"CREATE INDEX IF NOT EXISTS idx_channel_model_reqat ON logs (channel_id, model, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+
+			// global day indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_truncday ON logs (model, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			// global hour indexes, used by global dashboard
+			"CREATE INDEX IF NOT EXISTS idx_model_reqat_trunchour ON logs (model, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat ON logs (group_id, token_name, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat ON logs (group_id, model, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+			// used by search group logs
+			"CREATE INDEX IF NOT EXISTS idx_group_token_model_reqat ON logs (group_id, token_name, model, request_at) INCLUDE (code, used_amount, total_tokens, request_id)",
+
+			// day indexes, used by dashboard
+			"CREATE INDEX IF NOT EXISTS idx_group_reqat_truncday ON logs (group_id, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat_truncday ON logs (group_id, model, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat_truncday ON logs (group_id, token_name, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_token_reqat_truncday ON logs (group_id, model, token_name, request_at, timestamp_trunc_by_day) INCLUDE (code, used_amount, total_tokens)",
+			// hour indexes, used by dashboard
+			"CREATE INDEX IF NOT EXISTS idx_group_reqat_trunchour ON logs (group_id, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_reqat_trunchour ON logs (group_id, model, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_token_reqat_trunchour ON logs (group_id, token_name, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+			"CREATE INDEX IF NOT EXISTS idx_group_model_token_reqat_trunchour ON logs (group_id, model, token_name, request_at, timestamp_trunc_by_hour) INCLUDE (code, used_amount, total_tokens)",
+		}
+	}
+
+	for _, index := range indexes {
+		if err := db.Exec(index).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 const (
@@ -75,6 +152,12 @@ const (
 func (l *Log) BeforeSave(_ *gorm.DB) (err error) {
 	if len(l.Content) > contentMaxSize {
 		l.Content = common.TruncateByRune(l.Content, contentMaxSize) + "..."
+	}
+	if l.TimestampTruncByDay == 0 {
+		l.TimestampTruncByDay = l.RequestAt.Truncate(24 * time.Hour).Unix()
+	}
+	if l.TimestampTruncByHour == 0 {
+		l.TimestampTruncByHour = l.RequestAt.Truncate(time.Hour).Unix()
 	}
 	return
 }
@@ -188,11 +271,10 @@ func RecordConsumeLog(
 	return LogDB.Create(log).Error
 }
 
-//nolint:goconst
 func getLogOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
-	case "used_amount", "token_id", "token_name", "group", "request_id", "request_at", "id", "created_at":
+	case "request_at", "id", "created_at":
 		switch suffix {
 		case "asc":
 			return prefix + " asc"
@@ -213,13 +295,13 @@ const (
 )
 
 type GetLogsResult struct {
-	Logs   []*Log   `json:"logs"`
-	Total  int64    `json:"total"`
-	Models []string `json:"models"`
+	Logs  []*Log `json:"logs"`
+	Total int64  `json:"total"`
 }
 
 type GetGroupLogsResult struct {
 	GetLogsResult
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
@@ -241,10 +323,11 @@ func buildGetLogsQuery(
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
 	}
-	if !startTimestamp.IsZero() {
+	if !startTimestamp.IsZero() && !endTimestamp.IsZero() {
+		tx = tx.Where("request_at BETWEEN ? AND ?", startTimestamp, endTimestamp)
+	} else if !startTimestamp.IsZero() {
 		tx = tx.Where("request_at >= ?", startTimestamp)
-	}
-	if !endTimestamp.IsZero() {
+	} else if !endTimestamp.IsZero() {
 		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
 	if tokenName != "" {
@@ -381,9 +464,8 @@ func GetLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -394,20 +476,13 @@ func GetLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -452,13 +527,13 @@ func GetGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -468,10 +543,10 @@ func GetGroupLogs(
 
 	return &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }
@@ -496,25 +571,22 @@ func buildSearchLogsQuery(
 		tx = tx.Where("group_id = ?", group)
 	}
 
-	// Handle exact match conditions for non-zero values
-	if !startTimestamp.IsZero() {
-		tx = tx.Where("request_at >= ?", startTimestamp)
-	}
-	if !endTimestamp.IsZero() {
-		tx = tx.Where("request_at <= ?", endTimestamp)
-	}
 	if tokenName != "" {
 		tx = tx.Where("token_name = ?", tokenName)
 	}
+
 	if modelName != "" {
 		tx = tx.Where("model = ?", modelName)
 	}
-	if mode != 0 {
-		tx = tx.Where("mode = ?", mode)
+
+	if !startTimestamp.IsZero() && !endTimestamp.IsZero() {
+		tx = tx.Where("request_at BETWEEN ? AND ?", startTimestamp, endTimestamp)
+	} else if !startTimestamp.IsZero() {
+		tx = tx.Where("request_at >= ?", startTimestamp)
+	} else if !endTimestamp.IsZero() {
+		tx = tx.Where("request_at <= ?", endTimestamp)
 	}
-	if endpoint != "" {
-		tx = tx.Where("endpoint = ?", endpoint)
-	}
+
 	if requestID != "" {
 		tx = tx.Where("request_id = ?", requestID)
 	}
@@ -524,14 +596,23 @@ func buildSearchLogsQuery(
 	if channelID != 0 {
 		tx = tx.Where("channel_id = ?", channelID)
 	}
-	if ip != "" {
-		tx = tx.Where("ip = ?", ip)
-	}
+
 	switch codeType {
 	case CodeTypeSuccess:
 		tx = tx.Where("code = 200")
 	case CodeTypeError:
 		tx = tx.Where("code != 200")
+	}
+
+	if ip != "" {
+		tx = tx.Where("ip = ?", ip)
+	}
+
+	if mode != 0 {
+		tx = tx.Where("mode = ?", mode)
+	}
+	if endpoint != "" {
+		tx = tx.Where("endpoint = ?", endpoint)
 	}
 
 	// Handle keyword search for zero value fields
@@ -543,21 +624,6 @@ func buildSearchLogsQuery(
 			conditions = append(conditions, "group_id = ?")
 			values = append(values, keyword)
 		}
-
-		if num := String2Int(keyword); num != 0 {
-			if channelID == 0 {
-				conditions = append(conditions, "channel_id = ?")
-				values = append(values, num)
-			}
-			if mode != 0 {
-				conditions = append(conditions, "mode = ?")
-				values = append(values, num)
-			}
-		}
-		if requestID == "" {
-			conditions = append(conditions, "request_id = ?")
-			values = append(values, keyword)
-		}
 		if tokenName == "" {
 			conditions = append(conditions, "token_name = ?")
 			values = append(values, keyword)
@@ -566,11 +632,26 @@ func buildSearchLogsQuery(
 			conditions = append(conditions, "model = ?")
 			values = append(values, keyword)
 		}
-
-		if ip != "" {
-			conditions = append(conditions, "ip = ?")
-			values = append(values, ip)
+		if requestID == "" {
+			conditions = append(conditions, "request_id = ?")
+			values = append(values, keyword)
 		}
+
+		// if num := String2Int(keyword); num != 0 {
+		// 	if channelID == 0 {
+		// 		conditions = append(conditions, "channel_id = ?")
+		// 		values = append(values, num)
+		// 	}
+		// 	if mode != 0 {
+		// 		conditions = append(conditions, "mode = ?")
+		// 		values = append(values, num)
+		// 	}
+		// }
+
+		// if ip != "" {
+		// 	conditions = append(conditions, "ip = ?")
+		// 	values = append(values, ip)
+		// }
 
 		// if endpoint == "" {
 		// 	if common.UsingPostgreSQL {
@@ -581,12 +662,13 @@ func buildSearchLogsQuery(
 		// 	values = append(values, "%"+keyword+"%")
 		// }
 
-		if common.UsingPostgreSQL {
-			conditions = append(conditions, "content ILIKE ?")
-		} else {
-			conditions = append(conditions, "content LIKE ?")
-		}
-		values = append(values, "%"+keyword+"%")
+		// slow query
+		// if common.UsingPostgreSQL {
+		// 	conditions = append(conditions, "content ILIKE ?")
+		// } else {
+		// 	conditions = append(conditions, "content LIKE ?")
+		// }
+		// values = append(values, "%"+keyword+"%")
 
 		if len(conditions) > 0 {
 			tx = tx.Where(fmt.Sprintf("(%s)", strings.Join(conditions, " OR ")), values...)
@@ -702,9 +784,8 @@ func SearchLogs(
 	perPage int,
 ) (*GetLogsResult, error) {
 	var (
-		total  int64
-		logs   []*Log
-		models []string
+		total int64
+		logs  []*Log
 	)
 
 	g := new(errgroup.Group)
@@ -715,20 +796,13 @@ func SearchLogs(
 		return err
 	})
 
-	g.Go(func() error {
-		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
-		return err
-	})
-
 	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	result := &GetLogsResult{
-		Logs:   logs,
-		Total:  total,
-		Models: models,
+		Logs:  logs,
+		Total: total,
 	}
 
 	return result, nil
@@ -774,13 +848,13 @@ func SearchGroupLogs(
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, startTimestamp, endTimestamp)
+		tokenNames, err = GetUsedTokenNames(group, startTimestamp, endTimestamp)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, startTimestamp, endTimestamp)
+		models, err = GetUsedModels(group, startTimestamp, endTimestamp)
 		return err
 	})
 
@@ -790,10 +864,10 @@ func SearchGroupLogs(
 
 	result := &GetGroupLogsResult{
 		GetLogsResult: GetLogsResult{
-			Logs:   logs,
-			Total:  total,
-			Models: models,
+			Logs:  logs,
+			Total: total,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}
 
@@ -822,7 +896,6 @@ type ChartData struct {
 
 type DashboardResponse struct {
 	ChartData      []*ChartData `json:"chart_data"`
-	Models         []string     `json:"models"`
 	TotalCount     int64        `json:"total_count"`
 	ExceptionCount int64        `json:"exception_count"`
 	UsedAmount     float64      `json:"used_amount"`
@@ -832,23 +905,29 @@ type DashboardResponse struct {
 
 type GroupDashboardResponse struct {
 	DashboardResponse
+	Models     []string `json:"models"`
 	TokenNames []string `json:"token_names"`
 }
 
-func getTimeSpanFormat(timeSpan time.Duration) string {
-	switch {
-	case common.UsingMySQL:
-		return fmt.Sprintf("UNIX_TIMESTAMP(DATE_FORMAT(request_at, '%%Y-%%m-%%d %%H:%%i:00')) DIV %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
-	case common.UsingPostgreSQL:
-		return fmt.Sprintf("FLOOR(EXTRACT(EPOCH FROM date_trunc('minute', request_at)) / %d) * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
-	case common.UsingSQLite:
-		return fmt.Sprintf("CAST(STRFTIME('%%s', STRFTIME('%%Y-%%m-%%d %%H:%%M:00', request_at)) AS INTEGER) / %d * %d", int64(timeSpan.Seconds()), int64(timeSpan.Seconds()))
+type TimeSpanType string
+
+const (
+	TimeSpanDay  TimeSpanType = "day"
+	TimeSpanHour TimeSpanType = "hour"
+)
+
+func getTimeSpanFormat(t TimeSpanType) string {
+	switch t {
+	case TimeSpanDay:
+		return "timestamp_trunc_by_day"
+	case TimeSpanHour:
+		return "timestamp_trunc_by_hour"
 	default:
 		return ""
 	}
 }
 
-func getChartData(group string, start, end time.Time, tokenName, modelName string, timeSpan time.Duration) ([]*ChartData, error) {
+func getChartData(group string, start, end time.Time, tokenName, modelName string, timeSpan TimeSpanType) ([]*ChartData, error) {
 	var chartData []*ChartData
 
 	timeSpanFormat := getTimeSpanFormat(timeSpan)
@@ -864,10 +943,12 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	if group != "" {
 		query = query.Where("group_id = ?", group)
 	}
-	if !start.IsZero() {
+
+	if !start.IsZero() && !end.IsZero() {
+		query = query.Where("request_at BETWEEN ? AND ?", start, end)
+	} else if !start.IsZero() {
 		query = query.Where("request_at >= ?", start)
-	}
-	if !end.IsZero() {
+	} else if !end.IsZero() {
 		query = query.Where("request_at <= ?", end)
 	}
 
@@ -883,24 +964,66 @@ func getChartData(group string, start, end time.Time, tokenName, modelName strin
 	return chartData, err
 }
 
+func GetUsedModels(group string, start, end time.Time) ([]string, error) {
+	return getLogGroupByValues[string]("model", group, start, end)
+}
+
+func GetUsedTokenNames(group string, start, end time.Time) ([]string, error) {
+	if group == "" {
+		return nil, errors.New("group is required")
+	}
+	return getLogGroupByValues[string]("token_name", group, start, end)
+}
+
+//nolint:unused
 func getLogDistinctValues[T cmp.Ordered](field string, group string, start, end time.Time) ([]T, error) {
 	var values []T
 	query := LogDB.
-		Model(&Log{}).
-		Distinct(field)
+		Model(&Log{})
 
 	if group != "" {
 		query = query.Where("group_id = ?", group)
 	}
 
-	if !start.IsZero() {
+	if !start.IsZero() && !end.IsZero() {
+		query = query.Where("request_at BETWEEN ? AND ?", start, end)
+	} else if !start.IsZero() {
 		query = query.Where("request_at >= ?", start)
-	}
-	if !end.IsZero() {
+	} else if !end.IsZero() {
 		query = query.Where("request_at <= ?", end)
 	}
 
-	err := query.Pluck(field, &values).Error
+	err := query.
+		Distinct(field).
+		Pluck(field, &values).Error
+	if err != nil {
+		return nil, err
+	}
+	slices.Sort(values)
+	return values, nil
+}
+
+func getLogGroupByValues[T cmp.Ordered](field string, group string, start, end time.Time) ([]T, error) {
+	var values []T
+	query := LogDB.
+		Model(&Log{})
+
+	if group != "" {
+		query = query.Where("group_id = ?", group)
+	}
+
+	if !start.IsZero() && !end.IsZero() {
+		query = query.Where("request_at BETWEEN ? AND ?", start, end)
+	} else if !start.IsZero() {
+		query = query.Where("request_at >= ?", start)
+	} else if !end.IsZero() {
+		query = query.Where("request_at <= ?", end)
+	}
+
+	err := query.
+		Select(field).
+		Group(field).
+		Pluck(field, &values).Error
 	if err != nil {
 		return nil, err
 	}
@@ -933,8 +1056,7 @@ func sumUsedAmount(chartData []*ChartData) float64 {
 }
 
 func getRPM(group string, end time.Time, tokenName, modelName string) (int64, error) {
-	query := LogDB.Model(&Log{}).
-		Where("request_at >= ? AND request_at <= ?", end.Add(-time.Minute), end)
+	query := LogDB.Model(&Log{})
 
 	if group != "" {
 		query = query.Where("group_id = ?", group)
@@ -947,7 +1069,9 @@ func getRPM(group string, end time.Time, tokenName, modelName string) (int64, er
 	}
 
 	var count int64
-	err := query.Count(&count).Error
+	err := query.
+		Where("request_at BETWEEN ? AND ?", end.Add(-time.Minute), end).
+		Count(&count).Error
 	return count, err
 }
 
@@ -971,7 +1095,7 @@ func getTPM(group string, end time.Time, tokenName, modelName string) (int64, er
 	return tpm, err
 }
 
-func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Duration) (*DashboardResponse, error) {
+func GetDashboardData(start, end time.Time, modelName string, timeSpan TimeSpanType) (*DashboardResponse, error) {
 	if end.IsZero() {
 		end = time.Now()
 	} else if end.Before(start) {
@@ -980,7 +1104,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 
 	var (
 		chartData []*ChartData
-		models    []string
 		rpm       int64
 		tpm       int64
 	)
@@ -990,12 +1113,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 	g.Go(func() error {
 		var err error
 		chartData, err = getChartData("", start, end, "", modelName, timeSpan)
-		return err
-	})
-
-	g.Go(func() error {
-		var err error
-		models, err = getLogDistinctValues[string]("model", "", start, end)
 		return err
 	})
 
@@ -1021,7 +1138,6 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 
 	return &DashboardResponse{
 		ChartData:      chartData,
-		Models:         models,
 		TotalCount:     totalCount,
 		ExceptionCount: exceptionCount,
 		UsedAmount:     usedAmount,
@@ -1030,7 +1146,7 @@ func GetDashboardData(start, end time.Time, modelName string, timeSpan time.Dura
 	}, nil
 }
 
-func GetGroupDashboardData(group string, start, end time.Time, tokenName string, modelName string, timeSpan time.Duration) (*GroupDashboardResponse, error) {
+func GetGroupDashboardData(group string, start, end time.Time, tokenName string, modelName string, timeSpan TimeSpanType) (*GroupDashboardResponse, error) {
 	if group == "" {
 		return nil, errors.New("group is required")
 	}
@@ -1059,13 +1175,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 
 	g.Go(func() error {
 		var err error
-		tokenNames, err = getLogDistinctValues[string]("token_name", group, start, end)
+		tokenNames, err = GetUsedTokenNames(group, start, end)
 		return err
 	})
 
 	g.Go(func() error {
 		var err error
-		models, err = getLogDistinctValues[string]("model", group, start, end)
+		models, err = GetUsedModels(group, start, end)
 		return err
 	})
 
@@ -1092,13 +1208,13 @@ func GetGroupDashboardData(group string, start, end time.Time, tokenName string,
 	return &GroupDashboardResponse{
 		DashboardResponse: DashboardResponse{
 			ChartData:      chartData,
-			Models:         models,
 			TotalCount:     totalCount,
 			ExceptionCount: exceptionCount,
 			UsedAmount:     usedAmount,
 			RPM:            rpm,
 			TPM:            tpm,
 		},
+		Models:     models,
 		TokenNames: tokenNames,
 	}, nil
 }
@@ -1129,4 +1245,38 @@ func GetGroupModelTPM(group string, model string) (int64, error) {
 		Select("COALESCE(SUM(total_tokens), 0)").
 		Scan(&tpm).Error
 	return tpm, err
+}
+
+type ModelCostRank struct {
+	Model      string  `json:"model"`
+	UsedAmount float64 `json:"used_amount"`
+	Total      int64   `json:"total"`
+}
+
+func GetModelCostRank(group string, start, end time.Time) ([]*ModelCostRank, error) {
+	var ranks []*ModelCostRank
+
+	query := LogDB.Model(&Log{}).
+		Select("model, SUM(used_amount) as used_amount, COUNT(*) as total").
+		Group("model").
+		Order("used_amount DESC")
+
+	if group != "" {
+		query = query.Where("group_id = ?", group)
+	}
+
+	if !start.IsZero() && !end.IsZero() {
+		query = query.Where("request_at BETWEEN ? AND ?", start, end)
+	} else if !start.IsZero() {
+		query = query.Where("request_at >= ?", start)
+	} else if !end.IsZero() {
+		query = query.Where("request_at <= ?", end)
+	}
+
+	err := query.Scan(&ranks).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return ranks, nil
 }

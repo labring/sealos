@@ -1,4 +1,10 @@
-import { DevboxStatusEnum } from '@/constants/devbox';
+import {
+  DevboxStatusEnum,
+  gpuNodeSelectorKey,
+  PodStatusEnum,
+  ReconfigStatus,
+  gpuResourceKey
+} from '@/constants/devbox';
 
 export type KBDevboxType = {
   apiVersion: 'devbox.sealos.io/v1alpha1';
@@ -126,10 +132,14 @@ export interface KBDevboxSpec {
   resource: {
     cpu: string;
     memory: string;
+    [gpuResourceKey]?: string;
   };
   runtimeRef: {
     name: string;
     namespace: string;
+  };
+  nodeSelector?: {
+    [gpuNodeSelectorKey]: string;
   };
   state: DevboxStatusEnum;
   tolerations?: {
@@ -175,6 +185,10 @@ export interface KBDevboxSpecV2 {
   resource: {
     cpu: string;
     memory: string;
+    [gpuResourceKey]?: string;
+  };
+  nodeSelector?: {
+    [gpuNodeSelectorKey]: string;
   };
   state: DevboxStatusEnum;
   tolerations?: {

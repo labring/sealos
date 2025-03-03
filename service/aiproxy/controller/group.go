@@ -30,20 +30,9 @@ func (g *GroupResponse) MarshalJSON() ([]byte, error) {
 }
 
 func GetGroups(c *gin.Context) {
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
-
+	page, perPage := parsePageParams(c)
 	order := c.DefaultQuery("order", "")
-	groups, total, err := model.GetGroups(p*perPage, perPage, order, false)
+	groups, total, err := model.GetGroups(page*perPage, perPage, order, false)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -64,20 +53,10 @@ func GetGroups(c *gin.Context) {
 
 func SearchGroups(c *gin.Context) {
 	keyword := c.Query("keyword")
-	p, _ := strconv.Atoi(c.Query("p"))
-	p--
-	if p < 0 {
-		p = 0
-	}
-	perPage, _ := strconv.Atoi(c.Query("per_page"))
-	if perPage <= 0 {
-		perPage = 10
-	} else if perPage > 100 {
-		perPage = 100
-	}
+	page, perPage := parsePageParams(c)
 	order := c.DefaultQuery("order", "")
 	status, _ := strconv.Atoi(c.Query("status"))
-	groups, total, err := model.SearchGroup(keyword, p*perPage, perPage, order, status)
+	groups, total, err := model.SearchGroup(keyword, page*perPage, perPage, order, status)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -290,6 +269,31 @@ func CreateGroup(c *gin.Context) {
 		TPMRatio: req.TPMRatio,
 		TPM:      req.TPM,
 	}); err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	middleware.SuccessResponse(c, nil)
+}
+
+func UpdateGroup(c *gin.Context) {
+	group := c.Param("group")
+	if group == "" {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	req := CreateGroupRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
+		return
+	}
+	err = model.UpdateGroup(group, &model.Group{
+		RPMRatio: req.RPMRatio,
+		RPM:      req.RPM,
+		TPMRatio: req.TPMRatio,
+		TPM:      req.TPM,
+	})
+	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
 	}

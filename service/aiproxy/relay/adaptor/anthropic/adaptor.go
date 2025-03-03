@@ -41,6 +41,10 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, c *gin.Context, req *http.
 		req.Header.Set("Anthropic-Beta", "max-tokens-3-5-sonnet-2024-07-15")
 	}
 
+	if strings.HasPrefix(meta.ActualModel, "claude-3-7-sonnet") {
+		req.Header.Set("Anthropic-Beta", "output-128k-2025-02-19")
+	}
+
 	return nil
 }
 

@@ -137,17 +137,9 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 		return utils.WrapErr(errors.Wrap(err, "unmarshal response")), nil
 	}
 
-	openaiResp := anthropic.ResponseClaude2OpenAI(claudeResponse)
-	openaiResp.Model = meta.OriginModel
-	usage := relaymodel.Usage{
-		PromptTokens:     claudeResponse.Usage.InputTokens,
-		CompletionTokens: claudeResponse.Usage.OutputTokens,
-		TotalTokens:      claudeResponse.Usage.InputTokens + claudeResponse.Usage.OutputTokens,
-	}
-	openaiResp.Usage = usage
-
+	openaiResp := anthropic.ResponseClaude2OpenAI(meta, claudeResponse)
 	c.JSON(http.StatusOK, openaiResp)
-	return nil, &usage
+	return nil, &openaiResp.Usage
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
@@ -169,7 +161,10 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 	if !ok {
 		return utils.WrapErr(errors.New("request not found")), nil
 	}
-	claudeReq := convReq.(*anthropic.Request)
+	claudeReq, ok := convReq.(*anthropic.Request)
+	if !ok {
+		return utils.WrapErr(errors.New("request not found")), nil
+	}
 
 	awsClaudeReq := &Request{
 		AnthropicVersion: "bedrock-2023-05-31",
@@ -198,11 +193,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 	var usage relaymodel.Usage
 	var id string
 	var lastToolCallChoice *openai.ChatCompletionsStreamResponseChoice
+	var usageWrited bool
 
 	c.Stream(func(_ io.Writer) bool {
 		event, ok := <-stream.Events()
 		if !ok {
-			render.StringData(c, "[DONE]")
+			render.Done(c)
 			return false
 		}
 
@@ -215,17 +211,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 				return false
 			}
 
-			response, meta := anthropic.StreamResponseClaude2OpenAI(&claudeResp)
+			response := anthropic.StreamResponseClaude2OpenAI(&claudeResp)
 			if response == nil {
 				return true
 			}
-			if meta != nil {
-				usage.PromptTokens += meta.Usage.InputTokens
-				usage.CompletionTokens += meta.Usage.OutputTokens
-				if len(meta.ID) > 0 { // only message_start has an id, otherwise it's a finish_reason event.
-					id = "chatcmpl-" + meta.ID
-					return true
-				}
+			if response.Usage != nil {
+				usage = *response.Usage
+				usageWrited = true
+
 				if lastToolCallChoice != nil && len(lastToolCallChoice.Delta.ToolCalls) > 0 {
 					lastArgs := &lastToolCallChoice.Delta.ToolCalls[len(lastToolCallChoice.Delta.ToolCalls)-1].Function
 					if len(lastArgs.Arguments) == 0 { // compatible with OpenAI sending an empty object `{}` when no arguments.
@@ -258,6 +251,16 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 			return false
 		}
 	})
+
+	if !usageWrited {
+		_ = render.ObjectData(c, &openai.ChatCompletionsStreamResponse{
+			Model:   meta.OriginModel,
+			Object:  "chat.completion.chunk",
+			Created: createdTime,
+			Choices: []*openai.ChatCompletionsStreamResponseChoice{},
+			Usage:   &usage,
+		})
+	}
 
 	return nil, &usage
 }

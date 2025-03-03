@@ -43,6 +43,7 @@ jobs:
     needs: [ resolve-modules ]
     runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - name: Checkout
@@ -59,7 +60,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.54.2
+          version: v1.64.5
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
