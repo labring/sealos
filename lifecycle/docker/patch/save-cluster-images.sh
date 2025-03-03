@@ -2,7 +2,7 @@
 
 IMAGE=localhost:5000/${OWNER}/lvscare:$GIT_COMMIT_SHORT_SHA-$ARCH
 PATCH=ghcr.io/${OWNER}/sealos-patch:$GIT_COMMIT_SHORT_SHA-$ARCH
-PATCH_DIR=docker/patch
+PATCH_DIR=lifecycle/docker/patch
 SEALOS=sudo sealos
 SEALOS_VERSION=4.1.7
 
