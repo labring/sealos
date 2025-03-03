@@ -50,6 +50,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	kubecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -114,6 +115,21 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
+type ControllerRestartPredicate struct {
+	predicate.Funcs
+	startTime time.Time
+}
+
+func NewControllerRestartPredicate() *ControllerRestartPredicate {
+	return &ControllerRestartPredicate{
+		startTime: time.Now(),
+	}
+}
+
+func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
+	return !e.Object.GetCreationTimestamp().Time.Before(p.startTime.Add(24 * time.Hour))
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.RateLimiterOptions,
 	minRequeueDuration time.Duration, maxRequeueDuration time.Duration) error {
@@ -147,6 +163,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts utilcontroller.
 			MaxConcurrentReconciles: utilcontroller.GetConcurrent(opts),
 			RateLimiter:             utilcontroller.GetRateLimiter(opts),
 		}).
+		WithEventFilter(NewControllerRestartPredicate()).
 		Complete(r)
 }
 
