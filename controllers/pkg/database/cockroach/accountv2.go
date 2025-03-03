@@ -111,6 +111,9 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	} else if ops.Owner != "" {
 		userUID, err := c.getUserUIDByOwner(ops.Owner)
 		if err != nil {
+			if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
+				return nil, nil
+			}
 			return nil, fmt.Errorf("failed to get user uid: %v", err)
 		}
 		queryUser.UID = userUID
@@ -408,7 +411,10 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err err
 		uid, err = c.getUserUIDByOwner(ops.Owner)
 	}
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
+		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, nil
+		}
+		return uuid.Nil, err
 	}
 	if uid == uuid.Nil && !ops.IgnoreEmpty {
 		return uuid.Nil, fmt.Errorf("failed to get userUID: record not found")
@@ -426,6 +432,9 @@ func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
 	if ops.Owner != "" {
 		uid, err := c.getUserUIDByOwner(ops.Owner)
 		if err != nil {
+			if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
+				return "", nil
+			}
 			return "", err
 		}
 		ops.UID = uid
@@ -435,7 +444,7 @@ func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
 		return "", fmt.Errorf("failed to get userID: %v", err)
 	}
 	if !ops.IgnoreEmpty && id == "" {
-		return "", fmt.Errorf("failed to get userUID: record not found")
+		return "", fmt.Errorf("user record not found")
 	}
 	return id, nil
 }
@@ -473,7 +482,7 @@ func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
 	err := c.Localdb.Table(`"UserCr"`).Select(`"userUid"`).Where(`"crName" = ?`, owner).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return uuid.Nil, nil
+			return uuid.Nil, err
 		}
 		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
 	}
