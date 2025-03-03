@@ -15,6 +15,7 @@
 package cockroach
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,6 +49,7 @@ type Cockroach struct {
 	tasks         map[uuid.UUID]types.Task
 	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can be reduced when multiple processes operate on different keys
 	ownerUsrUIDMap *sync.Map
+	ownerUsrIDMap  *sync.Map
 }
 
 const (
@@ -109,7 +111,7 @@ func (c *Cockroach) GetUser(ops *types.UserQueryOpts) (*types.User, error) {
 	} else if ops.ID != "" {
 		queryUser.ID = ops.ID
 	} else if ops.Owner != "" {
-		userUID, err := c.getUserUIDByOwner(ops.Owner)
+		userUID, err := c.getUserUIDByOwnerWithCache(ops.Owner)
 		if err != nil {
 			if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
 				return nil, nil
@@ -405,10 +407,11 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err err
 	if ops.ID == "" && ops.Owner == "" {
 		return uuid.Nil, fmt.Errorf("empty query opts")
 	}
-	if ops.ID != "" {
-		uid, err = c.getUserUIDByID(ops.ID)
+	// data in the cache owner is preferred
+	if ops.Owner != "" {
+		uid, err = c.getUserUIDByOwnerWithCache(ops.Owner)
 	} else {
-		uid, err = c.getUserUIDByOwner(ops.Owner)
+		uid, err = c.getUserUIDByID(ops.ID)
 	}
 	if err != nil {
 		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
@@ -430,14 +433,11 @@ func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
 		return "", fmt.Errorf("empty query opts")
 	}
 	if ops.Owner != "" {
-		uid, err := c.getUserUIDByOwner(ops.Owner)
-		if err != nil {
-			if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
-				return "", nil
-			}
-			return "", err
+		id, err = c.getUserIDByOwner(ops.Owner)
+		if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
+			return "", nil
 		}
-		ops.UID = uid
+		return id, err
 	}
 	id, err = c.getUserIDByUID(ops.UID)
 	if err != nil {
@@ -472,7 +472,7 @@ func (c *Cockroach) getUserUIDByID(id string) (uuid.UUID, error) {
 }
 
 // cache user owner uid mapping
-func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
+func (c *Cockroach) getUserUIDByOwnerWithCache(owner string) (uuid.UUID, error) {
 	if v, ok := c.ownerUsrUIDMap.Load(owner); ok {
 		return v.(uuid.UUID), nil
 	}
@@ -488,6 +488,22 @@ func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
 	}
 	c.ownerUsrUIDMap.Store(owner, user.UID)
 	return user.UID, nil
+}
+
+func (c *Cockroach) getUserIDByOwner(owner string) (string, error) {
+	if v, ok := c.ownerUsrIDMap.Load(owner); ok {
+		return v.(string), nil
+	}
+	userUID, err := c.getUserUIDByOwnerWithCache(owner)
+	if err != nil {
+		return "", err
+	}
+	userID, err := c.getUserIDByUID(userUID)
+	if err != nil {
+		return "", err
+	}
+	c.ownerUsrIDMap.Store(owner, userID)
+	return userID, nil
 }
 
 func (c *Cockroach) GetWorkspace(namespaces ...string) ([]types.Workspace, error) {
@@ -510,6 +526,38 @@ func checkOps(ops *types.UserQueryOpts) error {
 
 func (c *Cockroach) GetAccount(ops *types.UserQueryOpts) (*types.Account, error) {
 	return c.getAccount(ops)
+}
+
+func (c *Cockroach) GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error) {
+	ctx := context.Background()
+	result := &types.UsableBalanceWithCredits{
+		UserUID: userUID,
+	}
+	err := c.DB.WithContext(ctx).Raw(`
+        SELECT 
+            a.balance,
+            a.deduction_balance,
+            a.create_region_id,
+            COALESCE((
+                SELECT SUM(c.amount - c.used_amount)
+                FROM "Credits" c
+                WHERE c.user_uid = a."userUid"
+                AND c.status = 'active'
+                AND (c.expire_at IS NULL OR c.expire_at > CURRENT_TIMESTAMP)
+                AND (c.start_at IS NULL OR c.start_at <= CURRENT_TIMESTAMP)
+            ), 0) as usable_credits
+        FROM "Account" a
+        WHERE a."userUid" = ?
+        LIMIT 1
+    `, userUID).Scan(result).Error
+
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, err // Return gorm.ErrRecordNotFound values if no account found
+		}
+		return nil, fmt.Errorf("failed to query account with credits: %w", err)
+	}
+	return result, nil
 }
 
 func (c *Cockroach) SetAccountCreateLocalRegion(account *types.Account, region string) error {
@@ -874,7 +922,7 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		if payment.RegionUserOwner == "" {
 			return fmt.Errorf("empty payment owner and user")
 		}
-		userUID, err := c.getUserUIDByOwner(payment.RegionUserOwner)
+		userUID, err := c.getUserUIDByOwnerWithCache(payment.RegionUserOwner)
 		if err != nil {
 			return fmt.Errorf("failed to get user uid: %v", err)
 		}
@@ -984,7 +1032,7 @@ func (c *Cockroach) GetPaymentWithLimit(ops *types.UserQueryOpts, req types.Limi
 	return payment, limitResp, nil
 }
 
-func (c *Cockroach) GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error) {
+func (c *Cockroach) GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error) {
 	var payment []types.Payment
 	if err := c.DB.Where("id IN ?", ids).Where("invoiced_at = ?", false).Find(&payment).Error; err != nil {
 		return nil, fmt.Errorf("failed to get payment: %w", err)
@@ -1301,6 +1349,8 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 		return nil, fmt.Errorf("failed to encrypt zero value")
 	}
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
+	cockroach.ownerUsrUIDMap = &sync.Map{}
+	cockroach.ownerUsrIDMap = &sync.Map{}
 	//TODO region with local
 	localRegionStr := os.Getenv(EnvLocalRegion)
 	if localRegionStr != "" {

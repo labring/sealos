@@ -27,8 +27,8 @@ type Account struct {
 	UserUID       uuid.UUID `gorm:"column:userUid;type:uuid;default:gen_random_uuid();primary_key"`
 	ActivityBonus int64     `gorm:"column:activityBonus;type:bigint;not null"`
 	// Discard EncryptBalance and EncryptDeductionBalance
-	EncryptBalance          string    `gorm:"column:encryptBalance;type:text;not null"`
-	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text;not null"`
+	EncryptBalance          string    `gorm:"column:encryptBalance;type:text"`
+	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text"`
 	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
 	CreateRegionID          string    `gorm:"type:text;not null"`
 	Balance                 int64
@@ -37,6 +37,14 @@ type Account struct {
 
 func (Account) TableName() string {
 	return "Account"
+}
+
+type UsableBalanceWithCredits struct {
+	UserUID          uuid.UUID
+	Balance          int64 // Separate balance
+	DeductionBalance int64 // Separate deduction balance
+	UsableCredits    int64
+	CreateRegionID   string
 }
 
 type Region struct {

@@ -1458,7 +1458,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 	if len(req.PaymentIDList) == 0 {
 		return
 	}
-	payments, err = m.ck.GetUnInvoicedPaymentListWithIds(req.PaymentIDList)
+	payments, err = m.ck.GetUnInvoicedPaymentListWithIDs(req.PaymentIDList)
 	if err != nil {
 		err = fmt.Errorf("failed to get payment list: %v", err)
 		return

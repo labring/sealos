@@ -28,6 +28,8 @@ import (
 	"strings"
 	"time"
 
+	"gorm.io/gorm"
+
 	"github.com/google/uuid"
 
 	"github.com/alibabacloud-go/tea/tea"
@@ -162,7 +164,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) error {
 	debt := &accountv1.Debt{}
 	ops := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID, IgnoreEmpty: true}
-	userUID, err := r.AccountV2.GetUserUID(ops)
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: userCr, IgnoreEmpty: true})
 	if err != nil {
 		return fmt.Errorf("failed to get user uid %s: %v", userCr, err)
 	}
@@ -171,8 +173,8 @@ func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) e
 		return nil
 	}
 	ops.UID = userUID
-	account, err := r.AccountV2.GetAccount(ops)
-	if err != nil {
+	account, err := r.AccountV2.GetAccountWithCredits(userUID)
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to get account %s: %v", userCr, err)
 	}
 	// if account not exist, create account
@@ -250,8 +252,8 @@ NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePer
 
 欠费后到完全删除的总周期=WarningPeriodSeconds+ApproachingDeletionPeriodSeconds+ImmediateDeletePeriodSeconds+FinalDeletePeriodSeconds
 */
-func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *pkgtypes.Account, userNamespaceList []string, smsEnable bool) error {
-	oweamount := account.Balance - account.DeductionBalance
+func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *pkgtypes.UsableBalanceWithCredits, userNamespaceList []string, smsEnable bool) error {
+	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status
