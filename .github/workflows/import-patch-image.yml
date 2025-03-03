@@ -156,25 +156,25 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: lvscare-${{ matrix.arch }}
-          path: docker/lvscare
+          path: ${{ env.PROJECT_PATH }}/docker/lvscare
 
       - name: Download sealctl
         uses: actions/download-artifact@v4
         with:
           name: sealctl-${{ matrix.arch }}
-          path: docker/patch
+          path: ${{ env.PROJECT_PATH }}/docker/patch
 
       - name: Download image-cri-shim
         uses: actions/download-artifact@v4
         with:
           name: image-cri-shim-${{ matrix.arch }}
-          path: docker/patch
+          path: ${{ env.PROJECT_PATH }}/docker/patch
 
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
           name: sealos-${{ matrix.arch }}
-          path: docker/sealos
+          path: ${{ env.PROJECT_PATH }}/docker/sealos
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -183,22 +183,22 @@ jobs:
 
       - name: Chmod a+x for docker
         run: |
-          chmod a+x docker/sealos/*
-          chmod a+x docker/patch/*
-          chmod a+x docker/lvscare/*
+          chmod a+x ${{ env.PROJECT_PATH }}/docker/sealos/*
+          chmod a+x ${{ env.PROJECT_PATH }}/docker/patch/*
+          chmod a+x ${{ env.PROJECT_PATH }}/docker/lvscare/*
 
       - name: Build and Push lvscare Image
         uses: docker/build-push-action@v6
         with:
-          context: docker/lvscare
-          file: docker/lvscare/Dockerfile.main
+          context: ${{ env.PROJECT_PATH }}/docker/lvscare
+          file: ${{ env.PROJECT_PATH }}/docker/lvscare/Dockerfile.main
           push: true
           build-args: Bin=lvscare
           platforms: linux/${{ matrix.arch }}
           tags: localhost:5000/${{ github.repository_owner }}/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
 
       - name: Build and Save Cluster Images
-        run: docker/patch/save-cluster-images.sh
+        run: ${{ env.PROJECT_PATH }}/docker/patch/save-cluster-images.sh
         env:
           ARCH: ${{ matrix.arch }}
           OWNER: ${{ github.repository_owner }}
