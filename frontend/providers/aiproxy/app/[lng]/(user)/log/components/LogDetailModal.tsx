@@ -435,7 +435,7 @@ export default function LogDetailModal({
             )}
             {renderDetailRow(
               t('logs.requestTime'),
-              new Date(rowData?.created_at || 0).toLocaleString(),
+              new Date(rowData?.request_at || 0).toLocaleString(),
               t('logs.totalTime'),
               getTimeDiff(rowData?.created_at || 0, rowData?.request_at || 0),
               {
