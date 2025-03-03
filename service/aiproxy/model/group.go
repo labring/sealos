@@ -55,7 +55,7 @@ func getGroupOrder(order string) string {
 	}
 }
 
-func GetGroups(startIdx int, num int, order string, onlyDisabled bool) (groups []*Group, total int64, err error) {
+func GetGroups(page int, perPage int, order string, onlyDisabled bool) (groups []*Group, total int64, err error) {
 	tx := DB.Model(&Group{})
 	if onlyDisabled {
 		tx = tx.Where("status = ?", GroupStatusDisabled)
@@ -69,8 +69,11 @@ func GetGroups(startIdx int, num int, order string, onlyDisabled bool) (groups [
 	if total <= 0 {
 		return nil, 0, nil
 	}
-
-	err = tx.Order(getGroupOrder(order)).Limit(num).Offset(startIdx).Find(&groups).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getGroupOrder(order)).Limit(perPage).Offset(page * perPage).Find(&groups).Error
 	return groups, total, err
 }
 
@@ -242,7 +245,7 @@ func UpdateGroupStatus(id string, status int) (err error) {
 	return HandleUpdateResult(result, ErrGroupNotFound)
 }
 
-func SearchGroup(keyword string, startIdx int, num int, order string, status int) (groups []*Group, total int64, err error) {
+func SearchGroup(keyword string, page int, perPage int, order string, status int) (groups []*Group, total int64, err error) {
 	tx := DB.Model(&Group{})
 	if status != 0 {
 		tx = tx.Where("status = ?", status)
@@ -259,7 +262,11 @@ func SearchGroup(keyword string, startIdx int, num int, order string, status int
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order(getGroupOrder(order)).Limit(num).Offset(startIdx).Find(&groups).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getGroupOrder(order)).Limit(perPage).Offset(page * perPage).Find(&groups).Error
 	return groups, total, err
 }
 

@@ -11,7 +11,7 @@ import (
 func GetModelConfigs(c *gin.Context) {
 	page, perPage := parsePageParams(c)
 	_model := c.Query("model")
-	configs, total, err := model.GetModelConfigs(page*perPage, perPage, _model)
+	configs, total, err := model.GetModelConfigs(page, perPage, _model)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -55,7 +55,7 @@ func SearchModelConfigs(c *gin.Context) {
 	page, perPage := parsePageParams(c)
 	_model := c.Query("model")
 	owner := c.Query("owner")
-	configs, total, err := model.SearchModelConfigs(keyword, page*perPage, perPage, _model, model.ModelOwner(owner))
+	configs, total, err := model.SearchModelConfigs(keyword, page, perPage, _model, model.ModelOwner(owner))
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

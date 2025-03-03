@@ -78,7 +78,7 @@ func (c *ModelConfig) SupportFormats() ([]string, bool) {
 	return GetModelConfigStringSlice(c.Config, ModelConfigSupportFormatsKey)
 }
 
-func GetModelConfigs(startIdx int, num int, model string) (configs []*ModelConfig, total int64, err error) {
+func GetModelConfigs(page int, perPage int, model string) (configs []*ModelConfig, total int64, err error) {
 	tx := DB.Model(&ModelConfig{})
 	if model != "" {
 		tx = tx.Where("model = ?", model)
@@ -90,7 +90,11 @@ func GetModelConfigs(startIdx int, num int, model string) (configs []*ModelConfi
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order("created_at desc").Limit(num).Offset(startIdx).Find(&configs).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order("created_at desc").Limit(perPage).Offset(page * perPage).Find(&configs).Error
 	return configs, total, err
 }
 
@@ -112,7 +116,7 @@ func GetModelConfig(model string) (*ModelConfig, error) {
 	return config, HandleNotFound(err, ErrModelConfigNotFound)
 }
 
-func SearchModelConfigs(keyword string, startIdx int, num int, model string, owner ModelOwner) (configs []*ModelConfig, total int64, err error) {
+func SearchModelConfigs(keyword string, page int, perPage int, model string, owner ModelOwner) (configs []*ModelConfig, total int64, err error) {
 	tx := DB.Model(&ModelConfig{}).Where("model LIKE ?", "%"+keyword+"%")
 	if model != "" {
 		tx = tx.Where("model = ?", model)
@@ -153,7 +157,11 @@ func SearchModelConfigs(keyword string, startIdx int, num int, model string, own
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order("created_at desc").Limit(num).Offset(startIdx).Find(&configs).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order("created_at desc").Limit(perPage).Offset(page * perPage).Find(&configs).Error
 	return configs, total, err
 }
 

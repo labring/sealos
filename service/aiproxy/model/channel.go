@@ -152,7 +152,7 @@ func GetAllChannels() (channels []*Channel, err error) {
 	return channels, err
 }
 
-func GetChannels(startIdx int, num int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
+func GetChannels(page int, perPage int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
 	tx := DB.Model(&Channel{})
 	if id != 0 {
 		tx = tx.Where("id = ?", id)
@@ -176,11 +176,15 @@ func GetChannels(startIdx int, num int, id int, name string, key string, channel
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order(getChannelOrder(order)).Limit(num).Offset(startIdx).Find(&channels).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getChannelOrder(order)).Limit(perPage).Offset(page * perPage).Find(&channels).Error
 	return channels, total, err
 }
 
-func SearchChannels(keyword string, startIdx int, num int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
+func SearchChannels(keyword string, page int, perPage int, id int, name string, key string, channelType int, baseURL string, order string) (channels []*Channel, total int64, err error) {
 	tx := DB.Model(&Channel{})
 
 	// Handle exact match conditions for non-zero values
@@ -257,7 +261,11 @@ func SearchChannels(keyword string, startIdx int, num int, id int, name string, 
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order(getChannelOrder(order)).Limit(num).Offset(startIdx).Find(&channels).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getChannelOrder(order)).Limit(perPage).Offset(page * perPage).Find(&channels).Error
 	return channels, total, err
 }
 

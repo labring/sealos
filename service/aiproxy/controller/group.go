@@ -32,7 +32,7 @@ func (g *GroupResponse) MarshalJSON() ([]byte, error) {
 func GetGroups(c *gin.Context) {
 	page, perPage := parsePageParams(c)
 	order := c.DefaultQuery("order", "")
-	groups, total, err := model.GetGroups(page*perPage, perPage, order, false)
+	groups, total, err := model.GetGroups(page, perPage, order, false)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -56,7 +56,7 @@ func SearchGroups(c *gin.Context) {
 	page, perPage := parsePageParams(c)
 	order := c.DefaultQuery("order", "")
 	status, _ := strconv.Atoi(c.Query("status"))
-	groups, total, err := model.SearchGroup(keyword, page*perPage, perPage, order, status)
+	groups, total, err := model.SearchGroup(keyword, page, perPage, order, status)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

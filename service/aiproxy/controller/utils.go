@@ -8,9 +8,8 @@ import (
 
 func parsePageParams(c *gin.Context) (page, perPage int) {
 	page, _ = strconv.Atoi(c.Query("p"))
-	page--
-	if page < 0 {
-		page = 0
+	if page <= 0 {
+		page = 1
 	}
 
 	perPage, _ = strconv.Atoi(c.Query("per_page"))

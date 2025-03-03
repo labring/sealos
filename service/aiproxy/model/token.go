@@ -86,7 +86,7 @@ func InsertToken(token *Token, autoCreateGroup bool) error {
 	return nil
 }
 
-func GetTokens(group string, startIdx int, num int, order string, status int) (tokens []*Token, total int64, err error) {
+func GetTokens(group string, page int, perPage int, order string, status int) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -104,11 +104,15 @@ func GetTokens(group string, startIdx int, num int, order string, status int) (t
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(perPage).Offset(page * perPage).Find(&tokens).Error
 	return tokens, total, err
 }
 
-func SearchTokens(group string, keyword string, startIdx int, num int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
+func SearchTokens(group string, keyword string, page int, perPage int, order string, status int, name string, key string) (tokens []*Token, total int64, err error) {
 	tx := DB.Model(&Token{})
 	if group != "" {
 		tx = tx.Where("group_id = ?", group)
@@ -163,7 +167,11 @@ func SearchTokens(group string, keyword string, startIdx int, num int, order str
 	if total <= 0 {
 		return nil, 0, nil
 	}
-	err = tx.Order(getTokenOrder(order)).Limit(num).Offset(startIdx).Find(&tokens).Error
+	page--
+	if page < 0 {
+		page = 0
+	}
+	err = tx.Order(getTokenOrder(order)).Limit(perPage).Offset(page * perPage).Find(&tokens).Error
 	return tokens, total, err
 }
 
