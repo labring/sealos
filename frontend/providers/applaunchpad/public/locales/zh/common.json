@@ -317,5 +317,6 @@
   "selected": "已选中",
   "please_select": "请选择",
   "refetching_success": "刷新成功",
-  "refresh": "刷新"
+  "refresh": "刷新",
+  "pending_to_allocated": "待分配"
 }

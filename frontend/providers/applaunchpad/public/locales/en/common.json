@@ -317,5 +317,6 @@
   "selected": "Selected",
   "please_select": "Please Select",
   "refetching_success": "Refresh Successful",
-  "refresh": "refresh"
+  "refresh": "refresh",
+  "pending_to_allocated": "To be allocated"
 }
