@@ -172,7 +172,6 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 			break
 		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		meta.Reset(newChannel)
 
 		if shouldDelay(bizErr.StatusCode) {
 			//nolint:gosec
@@ -180,6 +179,7 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 			time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
 		}
 
+		meta := middleware.NewMetaByContext(c, newChannel, requestModel, mode)
 		bizErr, retry = RelayHelper(meta, c, relayController)
 		if bizErr == nil {
 			return

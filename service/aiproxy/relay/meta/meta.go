@@ -2,7 +2,6 @@ package meta
 
 import (
 	"fmt"
-	"maps"
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -93,32 +92,20 @@ func NewMeta(
 	}
 
 	if channel != nil {
-		meta.Reset(channel)
+		meta.Channel = &ChannelMeta{
+			Name:    channel.Name,
+			BaseURL: channel.BaseURL,
+			Key:     channel.Key,
+			ID:      channel.ID,
+			Type:    channel.Type,
+		}
+		if channel.Config != nil {
+			meta.ChannelConfig = *channel.Config
+		}
+		meta.ActualModel, _ = GetMappedModelName(modelName, channel.ModelMapping)
 	}
 
 	return &meta
-}
-
-func (m *Meta) Clone() *Meta {
-	newM := *m
-	newM.values = maps.Clone(m.values)
-	return &newM
-}
-
-func (m *Meta) Reset(channel *model.Channel) {
-	m.Channel = &ChannelMeta{
-		Name:    channel.Name,
-		BaseURL: channel.BaseURL,
-		Key:     channel.Key,
-		ID:      channel.ID,
-		Type:    channel.Type,
-	}
-	if channel.Config != nil {
-		m.ChannelConfig = *channel.Config
-	}
-	m.ActualModel, _ = GetMappedModelName(m.OriginModel, channel.ModelMapping)
-	m.RequestAt = time.Now()
-	m.ClearValues()
 }
 
 func (m *Meta) ClearValues() {
