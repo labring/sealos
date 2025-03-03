@@ -118,19 +118,19 @@ func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 type ControllerRestartPredicate struct {
 	predicate.Funcs
 	duration  time.Duration
-	startTime time.Time
+	checkTime time.Time
 }
 
 func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
 	return &ControllerRestartPredicate{
-		startTime: time.Now(),
+		checkTime: time.Now().Add(duration),
 		duration:  duration,
 	}
 }
 
 // skip create event p.duration ago
 func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
-	return e.Object.GetCreationTimestamp().Time.After(p.startTime.Add(p.duration))
+	return e.Object.GetCreationTimestamp().Time.After(p.checkTime)
 }
 
 // SetupWithManager sets up the controller with the Manager.
