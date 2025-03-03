@@ -23,10 +23,11 @@ var (
 
 var (
 	disableServe                 atomic.Bool
+	logStorageHours              int64 = 0 // default 0 means no limit
 	saveAllLogDetail             atomic.Bool
 	logDetailRequestBodyMaxSize  int64 = 128 * 1024 // 128KB
 	logDetailResponseBodyMaxSize int64 = 128 * 1024 // 128KB
-	logDetailStorageHours        int64 = 3 * 24
+	logDetailStorageHours        int64 = 3 * 24     // 3 days
 	internalToken                atomic.Value
 )
 
@@ -97,6 +98,15 @@ func GetTimeoutWithModelType() map[int]int64 {
 func SetTimeoutWithModelType(timeout map[int]int64) {
 	timeout = env.JSON("TIMEOUT_WITH_MODEL_TYPE", timeout)
 	timeoutWithModelType.Store(timeout)
+}
+
+func GetLogStorageHours() int64 {
+	return atomic.LoadInt64(&logStorageHours)
+}
+
+func SetLogStorageHours(hours int64) {
+	hours = env.Int64("LOG_STORAGE_HOURS", hours)
+	atomic.StoreInt64(&logStorageHours, hours)
 }
 
 func GetLogDetailStorageHours() int64 {

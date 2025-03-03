@@ -151,3 +151,16 @@ func String2Int(keyword string) int {
 	}
 	return i
 }
+
+func toLimitOffset(page int, perPage int) (limit int, offset int) {
+	page--
+	if page < 0 {
+		page = 0
+	}
+	if perPage <= 0 {
+		perPage = 10
+	} else if perPage > 100 {
+		perPage = 100
+	}
+	return perPage, page * perPage
+}
