@@ -12,7 +12,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/shopspring/decimal"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"gorm.io/gorm"
 )
@@ -204,7 +203,28 @@ func GetGroupLogDetail(logID int, group string) (*RequestDetail, error) {
 	return &detail, nil
 }
 
-func cleanRequestDetail() error {
+func CleanLog() error {
+	err := cleanLog()
+	if err != nil {
+		return err
+	}
+	return cleanLogDetail()
+}
+
+func cleanLog() error {
+	logStorageHours := config.GetLogStorageHours()
+	if logStorageHours <= 0 {
+		return nil
+	}
+	return LogDB.
+		Where(
+			"created_at < ?",
+			time.Now().Add(-time.Duration(logStorageHours)*time.Hour),
+		).
+		Delete(&Log{}).Error
+}
+
+func cleanLogDetail() error {
 	detailStorageHours := config.GetLogDetailStorageHours()
 	if detailStorageHours <= 0 {
 		return nil
@@ -237,15 +257,6 @@ func RecordConsumeLog(
 	ip string,
 	requestDetail *RequestDetail,
 ) error {
-	defer func() {
-		if requestDetail == nil {
-			return
-		}
-		err := cleanRequestDetail()
-		if err != nil {
-			log.Errorf("delete request detail failed: %s", err)
-		}
-	}()
 	log := &Log{
 		RequestID:        requestID,
 		RequestAt:        requestAt,

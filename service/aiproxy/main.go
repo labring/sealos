@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	stdlog "log"
 	"net/http"
@@ -134,13 +135,36 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 	}, server
 }
 
-func autoTestBannedModels() {
+func autoTestBannedModels(ctx context.Context) {
 	log.Info("auto test banned models start")
 	ticker := time.NewTicker(time.Second * 15)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		controller.AutoTestBannedModels()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			controller.AutoTestBannedModels()
+		}
+	}
+}
+
+func cleanLog(ctx context.Context) {
+	log.Info("clean log start")
+	ticker := time.NewTicker(time.Minute * 15)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			err := model.CleanLog()
+			if err != nil {
+				log.Errorf("clean log failed: %s", err)
+			}
+		}
 	}
 }
 
@@ -165,12 +189,14 @@ func main() {
 
 	go func() {
 		log.Infof("server started on http://localhost:%s", srv.Addr[1:])
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil &&
+			!errors.Is(err, http.ErrServerClosed) {
 			log.Fatal("failed to start HTTP server: " + err.Error())
 		}
 	}()
 
-	go autoTestBannedModels()
+	go autoTestBannedModels(ctx)
+	go cleanLog(ctx)
 
 	<-ctx.Done()
 
