@@ -37,6 +37,8 @@ func relayController(mode int) (RelayController, bool) {
 	case relaymode.AudioTranslation,
 		relaymode.AudioTranscription:
 		relayController = controller.RelaySTTHelper
+	case relaymode.ParsePdf:
+		relayController = controller.RelayParsePdfHelper
 	case relaymode.Rerank:
 		relayController = controller.RerankHelper
 	case relaymode.ChatCompletions,
@@ -189,6 +191,8 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		}
 		if !channelCanContinue(bizErr.StatusCode) {
 			ignoreChannelIDs = append(ignoreChannelIDs, newChannel.ID)
+			// do not consume the request times
+			i++
 		} else {
 			lastCanContinueChannel = newChannel
 		}

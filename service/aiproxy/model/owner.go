@@ -34,4 +34,5 @@ const (
 	ModelOwnerLingyiWanwu ModelOwner = "lingyiwanwu"
 	ModelOwnerStepFun     ModelOwner = "stepfun"
 	ModelOwnerXAI         ModelOwner = "xai"
+	ModelOwnerDoc2x       ModelOwner = "doc2x"
 )
