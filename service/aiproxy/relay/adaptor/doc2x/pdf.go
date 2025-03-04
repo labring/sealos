@@ -73,8 +73,10 @@ func HandleParsePdfResponse(meta *meta.Meta, c *gin.Context, resp *http.Response
 
 func handleParsePdfResponse(meta *meta.Meta, c *gin.Context, response *StatusResponseDataResult) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
 	mds := make([]string, 0, len(response.Pages))
+	totalLength := 0
 	for _, page := range response.Pages {
 		mds = append(mds, page.MD)
+		totalLength += len(page.MD)
 	}
 	pages := len(response.Pages)
 
@@ -84,9 +86,14 @@ func handleParsePdfResponse(meta *meta.Meta, c *gin.Context, response *StatusRes
 			Markdowns: mds,
 		})
 	default:
+		builder := strings.Builder{}
+		builder.Grow(totalLength)
+		for _, md := range mds {
+			builder.WriteString(md)
+		}
 		c.JSON(http.StatusOK, relaymodel.ParsePdfResponse{
 			Pages:    pages,
-			Markdown: strings.Join(mds, "\n"),
+			Markdown: builder.String(),
 		})
 	}
 
