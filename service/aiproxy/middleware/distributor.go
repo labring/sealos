@@ -20,6 +20,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -178,7 +179,7 @@ func distribute(c *gin.Context, mode int) {
 		return
 	}
 
-	requestModel, err := getRequestModel(c)
+	requestModel, err := getRequestModel(c, mode)
 	if err != nil {
 		abortLogWithMessage(c, http.StatusBadRequest, err.Error())
 		return
@@ -261,15 +262,18 @@ type ModelRequest struct {
 	Model string `form:"model" json:"model"`
 }
 
-func getRequestModel(c *gin.Context) (string, error) {
+func getRequestModel(c *gin.Context, mode int) (string, error) {
 	path := c.Request.URL.Path
 	switch {
-	case strings.HasPrefix(path, "/v1/audio/transcriptions"),
-		strings.HasPrefix(path, "/v1/audio/translations"):
+	case mode == relaymode.ParsePdf,
+		mode == relaymode.AudioTranscription,
+		mode == relaymode.AudioTranslation:
 		return c.Request.FormValue("model"), nil
+
 	case strings.HasPrefix(path, "/v1/engines") && strings.HasSuffix(path, "/embeddings"):
 		// /engines/:model/embeddings
 		return c.Param("model"), nil
+
 	default:
 		body, err := common.GetRequestBody(c.Request)
 		if err != nil {

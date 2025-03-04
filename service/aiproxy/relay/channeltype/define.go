@@ -14,6 +14,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/cohere"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/coze"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/deepseek"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doc2x"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubao"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/doubaoaudio"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/gemini"
@@ -67,6 +68,7 @@ var ChannelAdaptor = map[int]adaptor.Adaptor{
 	43: &siliconflow.Adaptor{},
 	44: &doubaoaudio.Adaptor{},
 	45: &xai.Adaptor{},
+	46: &doc2x.Adaptor{},
 }
 
 func GetAdaptor(channel int) (adaptor.Adaptor, bool) {
