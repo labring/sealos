@@ -156,7 +156,7 @@ func processException(notificationInfo *api.Info, threshold float64) {
 		api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID] = notificationInfo
 	}
 	ZNThreshold := NumberToChinese(int(threshold))
-	if err := notification.SendToSms(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
+	if err := notification.SendExceptionNotification(notificationInfo, api.ClusterName, "数据库"+notificationInfo.PerformanceType+"超过百分之"+ZNThreshold); err != nil {
 		log.Printf("Failed to send Sms: %v", err)
 	}
 }
