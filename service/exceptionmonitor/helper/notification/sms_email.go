@@ -52,6 +52,7 @@ func SendExceptionNotification(notificationInfo *api.Info, clusterName, content 
 	if err != nil {
 		return err
 	}
+	fmt.Println("userEmail:" + userEmail)
 
 	if phoneNumbers != "" {
 		fmt.Println(phoneNumbers)
