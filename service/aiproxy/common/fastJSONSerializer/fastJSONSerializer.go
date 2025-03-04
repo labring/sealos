@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"gorm.io/gorm/schema"
 )
@@ -31,7 +31,7 @@ func (*JSONSerializer) Scan(ctx context.Context, field *schema.Field, dst reflec
 			return nil
 		}
 
-		err = json.Unmarshal(bytes, fieldValue.Interface())
+		err = sonic.Unmarshal(bytes, fieldValue.Interface())
 	}
 
 	field.ReflectValueOf(ctx, dst).Set(fieldValue.Elem())
@@ -39,7 +39,7 @@ func (*JSONSerializer) Scan(ctx context.Context, field *schema.Field, dst reflec
 }
 
 func (*JSONSerializer) Value(_ context.Context, _ *schema.Field, _ reflect.Value, fieldValue any) (any, error) {
-	return json.Marshal(fieldValue)
+	return sonic.Marshal(fieldValue)
 }
 
 func init() {

@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 )
@@ -29,7 +29,7 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.
 		}
 	}
 
-	jsonData, err := json.Marshal(reqMap)
+	jsonData, err := sonic.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}

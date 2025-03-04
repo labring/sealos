@@ -4,6 +4,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/labring/sealos/service/aiproxy/common/env"
@@ -178,6 +179,15 @@ func SetDefaultChannelModelMapping(mapping map[int]map[string]string) {
 
 func GetGroupConsumeLevelRatio() map[float64]float64 {
 	return groupConsumeLevelRatio.Load().(map[float64]float64)
+}
+
+func GetGroupConsumeLevelRatioStringKeyMap() map[string]float64 {
+	ratio := GetGroupConsumeLevelRatio()
+	stringMap := make(map[string]float64)
+	for k, v := range ratio {
+		stringMap[strconv.FormatFloat(k, 'f', -1, 64)] = v
+	}
+	return stringMap
 }
 
 func SetGroupConsumeLevelRatio(ratio map[float64]float64) {

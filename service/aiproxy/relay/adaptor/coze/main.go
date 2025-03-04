@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
@@ -110,7 +110,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		}
 
 		var cozeResponse StreamResponse
-		err := json.Unmarshal(data, &cozeResponse)
+		err := sonic.Unmarshal(data, &cozeResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -145,7 +145,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	log := middleware.GetLogger(c)
 
 	var cozeResponse Response
-	err := json.NewDecoder(resp.Body).Decode(&cozeResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cozeResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -160,7 +160,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	}
 	fullTextResponse := ResponseCoze2OpenAI(&cozeResponse)
 	fullTextResponse.Model = meta.OriginModel
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}

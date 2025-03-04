@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -154,7 +154,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		ttsRequest.Payload.Parameters.Rate = 2
 	}
 
-	data, err := json.Marshal(ttsRequest)
+	data, err := sonic.Marshal(ttsRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -207,7 +207,7 @@ func TTSDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 		var msg TTSMessage
 		switch messageType {
 		case websocket.TextMessage:
-			err = json.Unmarshal(data, &msg)
+			err = sonic.Unmarshal(data, &msg)
 			if err != nil {
 				return usage, openai.ErrorWrapperWithMessage("ali_wss_read_msg_failed", "ali_wss_read_msg_failed", http.StatusInternalServerError)
 			}

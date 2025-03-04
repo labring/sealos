@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -194,7 +194,7 @@ func UpdateGroupRPM(id string, rpm map[string]int64) (err error) {
 			}
 		}
 	}()
-	jsonRpm, err := json.Marshal(rpm)
+	jsonRpm, err := sonic.Marshal(rpm)
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func UpdateGroupTPM(id string, tpm map[string]int64) (err error) {
 			}
 		}
 	}()
-	jsonTpm, err := json.Marshal(tpm)
+	jsonTpm, err := sonic.Marshal(tpm)
 	if err != nil {
 		return err
 	}

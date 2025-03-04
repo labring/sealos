@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	log "github.com/sirupsen/logrus"
 )
@@ -77,7 +77,7 @@ func JSON[T any](env string, defaultValue T) T {
 		return defaultValue
 	}
 	var t T
-	if err := json.Unmarshal(conv.StringToBytes(e), &t); err != nil {
+	if err := sonic.Unmarshal(conv.StringToBytes(e), &t); err != nil {
 		log.Errorf("invalid %s: %s", env, e)
 		return defaultValue
 	}

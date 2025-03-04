@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/network"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/middleware"
@@ -23,7 +23,7 @@ type TokenResponse struct {
 
 func (t *TokenResponse) MarshalJSON() ([]byte, error) {
 	type Alias TokenResponse
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt  int64 `json:"created_at"`
 		ExpiredAt  int64 `json:"expired_at"`

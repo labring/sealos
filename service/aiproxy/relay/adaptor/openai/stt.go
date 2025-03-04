@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -89,7 +89,7 @@ func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 
 	var openAIErr SlimTextResponse
-	if err = json.Unmarshal(responseBody, &openAIErr); err == nil {
+	if err = sonic.Unmarshal(responseBody, &openAIErr); err == nil {
 		if openAIErr.Error.Message != "" {
 			return nil, ErrorWrapper(fmt.Errorf("type %s, code %v, message %s", openAIErr.Error.Type, openAIErr.Error.Code, openAIErr.Error.Message), "request_error", http.StatusInternalServerError)
 		}
@@ -141,7 +141,7 @@ func getTextFromVTT(body []byte) (string, error) {
 
 func getTextFromVerboseJSON(body []byte) (string, error) {
 	var whisperResponse WhisperVerboseJSONResponse
-	if err := json.Unmarshal(body, &whisperResponse); err != nil {
+	if err := sonic.Unmarshal(body, &whisperResponse); err != nil {
 		return "", fmt.Errorf("unmarshal_response_body_failed err :%w", err)
 	}
 	return whisperResponse.Text, nil
@@ -174,7 +174,7 @@ func getTextFromText(body []byte) string {
 
 func getTextFromJSON(body []byte) (string, error) {
 	var whisperResponse WhisperJSONResponse
-	if err := json.Unmarshal(body, &whisperResponse); err != nil {
+	if err := sonic.Unmarshal(body, &whisperResponse); err != nil {
 		return "", fmt.Errorf("unmarshal_response_body_failed err :%w", err)
 	}
 	return whisperResponse.Text, nil

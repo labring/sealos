@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
@@ -38,7 +37,7 @@ func GetOption(c *gin.Context) {
 
 func UpdateOption(c *gin.Context) {
 	var option model.Option
-	err := json.NewDecoder(c.Request.Body).Decode(&option)
+	err := c.BindJSON(&option)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return
@@ -53,7 +52,7 @@ func UpdateOption(c *gin.Context) {
 
 func UpdateOptions(c *gin.Context) {
 	var options map[string]string
-	err := json.NewDecoder(c.Request.Body).Decode(&options)
+	err := c.BindJSON(&options)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, err.Error())
 		return

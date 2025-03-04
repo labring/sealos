@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -34,7 +34,7 @@ func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usa
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var imageResponse ImageResponse
-	err = json.Unmarshal(body, &imageResponse)
+	err = sonic.Unmarshal(body, &imageResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -49,7 +49,7 @@ func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usa
 	}
 
 	openaiResponse := ToOpenAIImageResponse(&imageResponse)
-	data, err := json.Marshal(openaiResponse)
+	data, err := sonic.Marshal(openaiResponse)
 	if err != nil {
 		return usage, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

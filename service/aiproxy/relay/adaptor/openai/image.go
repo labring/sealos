@@ -2,11 +2,13 @@ package openai
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/middleware"
@@ -15,18 +17,26 @@ import (
 )
 
 func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
-	reqMap := make(map[string]any)
-	err := common.UnmarshalBodyReusable(req, &reqMap)
+	node, err := common.UnmarshalBody2Node(req)
 	if err != nil {
 		return "", nil, nil, err
 	}
-	meta.Set(MetaResponseFormat, reqMap["response_format"])
+	responseFormat, err := node.Get("response_format").String()
+	if err != nil && !errors.Is(err, ast.ErrNotExist) {
+		return "", nil, nil, err
+	}
+	meta.Set(MetaResponseFormat, responseFormat)
 
-	reqMap["model"] = meta.ActualModel
-	jsonData, err := json.Marshal(reqMap)
+	_, err = node.Set("model", ast.NewString(meta.ActualModel))
 	if err != nil {
 		return "", nil, nil, err
 	}
+
+	jsonData, err := node.MarshalJSON()
+	if err != nil {
+		return "", nil, nil, err
+	}
+
 	return http.MethodPost, nil, bytes.NewReader(jsonData), nil
 }
 
@@ -42,7 +52,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var imageResponse ImageResponse
-	err = json.Unmarshal(responseBody, &imageResponse)
+	err = sonic.Unmarshal(responseBody, &imageResponse)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -64,7 +74,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 		}
 	}
 
-	data, err := json.Marshal(imageResponse)
+	data, err := sonic.Marshal(imageResponse)
 	if err != nil {
 		return usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

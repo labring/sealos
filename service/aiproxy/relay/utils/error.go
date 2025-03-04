@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -97,10 +97,10 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 	}
 
 	var errResponse GeneralErrorResponse
-	err = json.Unmarshal(respBody, &errResponse)
+	err = sonic.Unmarshal(respBody, &errResponse)
 	if err != nil {
 		var errsResp []GeneralErrorResponse
-		err = json.Unmarshal(respBody, &errsResp)
+		err = sonic.Unmarshal(respBody, &errsResp)
 		if err != nil {
 			ErrorWithStatusCode.Error.Message = conv.BytesToString(respBody)
 			return ErrorWithStatusCode

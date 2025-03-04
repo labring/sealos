@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -36,11 +36,11 @@ var (
 type redisStringSlice []string
 
 func (r *redisStringSlice) ScanRedis(value string) error {
-	return json.Unmarshal(conv.StringToBytes(value), r)
+	return sonic.Unmarshal(conv.StringToBytes(value), r)
 }
 
 func (r redisStringSlice) MarshalBinary() ([]byte, error) {
-	return json.Marshal(r)
+	return sonic.Marshal(r)
 }
 
 type redisTime time.Time
@@ -195,11 +195,11 @@ var (
 )
 
 func (r *redisMapStringInt64) ScanRedis(value string) error {
-	return json.Unmarshal(conv.StringToBytes(value), r)
+	return sonic.Unmarshal(conv.StringToBytes(value), r)
 }
 
 func (r redisMapStringInt64) MarshalBinary() ([]byte, error) {
-	return json.Marshal(r)
+	return sonic.Marshal(r)
 }
 
 type GroupCache struct {
@@ -256,7 +256,7 @@ func CacheUpdateGroupRPM(id string, rpm map[string]int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	jsonRPM, err := json.Marshal(rpm)
+	jsonRPM, err := sonic.Marshal(rpm)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func CacheUpdateGroupTPM(id string, tpm map[string]int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	jsonTPM, err := json.Marshal(tpm)
+	jsonTPM, err := sonic.Marshal(tpm)
 	if err != nil {
 		return err
 	}

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -38,7 +38,7 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Heade
 
 	meta.Set(MetaResponseFormat, request.ResponseFormat)
 
-	data, err := json.Marshal(&imageRequest)
+	data, err := sonic.Marshal(&imageRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -61,7 +61,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
 	}
-	err = json.Unmarshal(responseBody, &aliTaskResponse)
+	err = sonic.Unmarshal(responseBody, &aliTaskResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -89,7 +89,7 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	}
 
 	fullTextResponse := responseAli2OpenAIImage(c.Request.Context(), aliResponse, responseFormat)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -122,7 +122,7 @@ func asyncTask(ctx context.Context, taskID string, key string) (*TaskResponse, e
 	defer resp.Body.Close()
 
 	var response TaskResponse
-	err = json.NewDecoder(resp.Body).Decode(&response)
+	err = sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
 		return &aliResponse, err
 	}

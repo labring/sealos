@@ -4,8 +4,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -22,14 +22,14 @@ func ModerationsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*
 	}
 
 	var respMap map[string]any
-	err = json.Unmarshal(body, &respMap)
+	err = sonic.Unmarshal(body, &respMap)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	if _, ok := respMap["error"]; ok {
 		var errorResp ErrorResp
-		err = json.Unmarshal(body, &errorResp)
+		err = sonic.Unmarshal(body, &errorResp)
 		if err != nil {
 			return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 		}
@@ -45,7 +45,7 @@ func ModerationsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*
 		TotalTokens:  meta.InputTokens,
 	}
 
-	newData, err := stdjson.Marshal(respMap)
+	newData, err := sonic.Marshal(respMap)
 	if err != nil {
 		return usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

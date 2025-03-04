@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	log "github.com/sirupsen/logrus"
@@ -66,24 +66,24 @@ func initOptionMap() error {
 	optionMap["RetryTimes"] = strconv.FormatInt(config.GetRetryTimes(), 10)
 	optionMap["ModelErrorAutoBanRate"] = strconv.FormatFloat(config.GetModelErrorAutoBanRate(), 'f', -1, 64)
 	optionMap["EnableModelErrorAutoBan"] = strconv.FormatBool(config.GetEnableModelErrorAutoBan())
-	timeoutWithModelTypeJSON, err := json.Marshal(config.GetTimeoutWithModelType())
+	timeoutWithModelTypeJSON, err := sonic.Marshal(config.GetTimeoutWithModelType())
 	if err != nil {
 		return err
 	}
 	optionMap["TimeoutWithModelType"] = conv.BytesToString(timeoutWithModelTypeJSON)
-	defaultChannelModelsJSON, err := json.Marshal(config.GetDefaultChannelModels())
+	defaultChannelModelsJSON, err := sonic.Marshal(config.GetDefaultChannelModels())
 	if err != nil {
 		return err
 	}
 	optionMap["DefaultChannelModels"] = conv.BytesToString(defaultChannelModelsJSON)
-	defaultChannelModelMappingJSON, err := json.Marshal(config.GetDefaultChannelModelMapping())
+	defaultChannelModelMappingJSON, err := sonic.Marshal(config.GetDefaultChannelModelMapping())
 	if err != nil {
 		return err
 	}
 	optionMap["DefaultChannelModelMapping"] = conv.BytesToString(defaultChannelModelMappingJSON)
 	optionMap["GeminiSafetySetting"] = config.GetGeminiSafetySetting()
 	optionMap["GroupMaxTokenNum"] = strconv.FormatInt(config.GetGroupMaxTokenNum(), 10)
-	groupConsumeLevelRatioJSON, err := json.Marshal(config.GetGroupConsumeLevelRatio())
+	groupConsumeLevelRatioJSON, err := sonic.Marshal(config.GetGroupConsumeLevelRatioStringKeyMap())
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetGeminiSafetySetting(value)
 	case "DefaultChannelModels":
 		var newModels map[int][]string
-		err := json.Unmarshal(conv.StringToBytes(value), &newModels)
+		err := sonic.Unmarshal(conv.StringToBytes(value), &newModels)
 		if err != nil {
 			return err
 		}
@@ -271,7 +271,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetDefaultChannelModels(allowedNewModels)
 	case "DefaultChannelModelMapping":
 		var newMapping map[int]map[string]string
-		err := json.Unmarshal(conv.StringToBytes(value), &newMapping)
+		err := sonic.Unmarshal(conv.StringToBytes(value), &newMapping)
 		if err != nil {
 			return err
 		}
@@ -298,7 +298,7 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		config.SetModelErrorAutoBanRate(modelErrorAutoBanRate)
 	case "TimeoutWithModelType":
 		var newTimeoutWithModelType map[int]int64
-		err := json.Unmarshal(conv.StringToBytes(value), &newTimeoutWithModelType)
+		err := sonic.Unmarshal(conv.StringToBytes(value), &newTimeoutWithModelType)
 		if err != nil {
 			return err
 		}
@@ -309,20 +309,26 @@ func updateOption(key string, value string, isInit bool) (err error) {
 		}
 		config.SetTimeoutWithModelType(newTimeoutWithModelType)
 	case "GroupConsumeLevelRatio":
-		var newGroupRpmRatio map[float64]float64
-		err := json.Unmarshal(conv.StringToBytes(value), &newGroupRpmRatio)
+		var newGroupRpmRatio map[string]float64
+		err := sonic.Unmarshal(conv.StringToBytes(value), &newGroupRpmRatio)
 		if err != nil {
 			return err
 		}
+		newGroupRpmRatioMap := make(map[float64]float64)
 		for k, v := range newGroupRpmRatio {
-			if k < 0 {
+			consumeLevel, err := strconv.ParseFloat(k, 64)
+			if err != nil {
+				return err
+			}
+			if consumeLevel < 0 {
 				return errors.New("consume level must be greater than 0")
 			}
 			if v < 0 {
 				return errors.New("rpm ratio must be greater than 0")
 			}
+			newGroupRpmRatioMap[consumeLevel] = v
 		}
-		config.SetGroupConsumeLevelRatio(newGroupRpmRatio)
+		config.SetGroupConsumeLevelRatio(newGroupRpmRatioMap)
 	default:
 		return ErrUnknownOptionKey
 	}

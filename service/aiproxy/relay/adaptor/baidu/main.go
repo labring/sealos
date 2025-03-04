@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
@@ -79,7 +79,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		}
 	}
 
-	data, err := json.Marshal(baiduRequest)
+	data, err := sonic.Marshal(baiduRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -147,7 +147,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		}
 
 		var baiduResponse ChatStreamResponse
-		err := json.Unmarshal(data, &baiduResponse)
+		err := sonic.Unmarshal(data, &baiduResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -174,7 +174,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	defer resp.Body.Close()
 
 	var baiduResponse ChatResponse
-	err := json.NewDecoder(resp.Body).Decode(&baiduResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&baiduResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -183,7 +183,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
 	fullTextResponse.Model = meta.OriginModel
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

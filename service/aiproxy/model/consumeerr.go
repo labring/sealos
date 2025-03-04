@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 )
 
@@ -24,7 +24,7 @@ type ConsumeError struct {
 
 func (c *ConsumeError) MarshalJSON() ([]byte, error) {
 	type Alias ConsumeError
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at"`
 		RequestAt int64 `json:"request_at"`

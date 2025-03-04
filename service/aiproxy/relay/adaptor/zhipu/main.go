@@ -3,8 +3,7 @@ package zhipu
 import (
 	"net/http"
 
-	json "github.com/json-iterator/go"
-
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -19,12 +18,12 @@ func EmbeddingsHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithSta
 	defer resp.Body.Close()
 
 	var zhipuResponse EmbeddingResponse
-	err := json.NewDecoder(resp.Body).Decode(&zhipuResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&zhipuResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
 	fullTextResponse := embeddingResponseZhipu2OpenAI(&zhipuResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}

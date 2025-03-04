@@ -5,8 +5,9 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -14,13 +15,17 @@ import (
 )
 
 func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
-	reqMap := make(map[string]any)
-	err := common.UnmarshalBodyReusable(req, &reqMap)
+	node, err := common.UnmarshalBody2Node(req)
 	if err != nil {
 		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModel
-	jsonData, err := json.Marshal(reqMap)
+
+	_, err = node.Set("model", ast.NewString(meta.ActualModel))
+	if err != nil {
+		return "", nil, nil, err
+	}
+
+	jsonData, err := node.MarshalJSON()
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -37,7 +42,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var rerankResponse SlimRerankResponse
-	err = json.Unmarshal(responseBody, &rerankResponse)
+	err = sonic.Unmarshal(responseBody, &rerankResponse)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
