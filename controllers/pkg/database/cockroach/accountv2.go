@@ -699,6 +699,7 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 				creditTransactions = append(creditTransactions, types.CreditsTransaction{
 					ID:                   uuid.New(),
 					UserUID:              userUID,
+					RegionUID:            c.LocalRegion.UID,
 					AccountTransactionID: &accountTransactionID,
 					CreditsID:            credits[i].ID,
 					UsedAmount:           usedAmount,
