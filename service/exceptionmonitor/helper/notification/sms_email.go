@@ -32,6 +32,8 @@ func GetPhoneNumberByNS(owner string) (string, string, error) {
 			email = oauth.ProviderID
 		}
 	}
+	fmt.Println("phone:" + phone)
+	fmt.Println("email:" + email)
 
 	if phone == "" && email == "" {
 		return "", "", errors.New("user phone && email are not set, skip sms notification")
