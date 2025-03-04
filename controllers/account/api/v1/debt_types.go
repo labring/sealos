@@ -40,6 +40,13 @@ const (
 	DaySecond  = 24 * 60 * 60
 )
 
+const (
+	LowBalancePeriod      DebtStatusType = "LowBalancePeriod"
+	CriticalBalancePeriod DebtStatusType = "CriticalBalancePeriod"
+	DebtPeriod            DebtStatusType = "DebtPeriod"
+	DebtDeletionPeriod    DebtStatusType = "DebtDeletionPeriod"
+)
+
 type DebtStatusType string
 
 var DefaultDebtConfig = map[DebtStatusType]int64{
