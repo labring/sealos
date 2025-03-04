@@ -4,12 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
-
-var stdjson = json.ConfigCompatibleWithStandardLibrary
 
 func StringData(c *gin.Context, str string) {
 	if len(c.Errors) > 0 {
@@ -18,7 +16,7 @@ func StringData(c *gin.Context, str string) {
 	if c.IsAborted() {
 		return
 	}
-	c.Render(-1, OpenAISSE{Data: str})
+	c.Render(-1, &OpenAISSE{Data: str})
 	c.Writer.Flush()
 }
 
@@ -29,11 +27,11 @@ func ObjectData(c *gin.Context, object any) error {
 	if c.IsAborted() {
 		return errors.New("context aborted")
 	}
-	jsonData, err := stdjson.Marshal(object)
+	jsonData, err := sonic.Marshal(object)
 	if err != nil {
 		return fmt.Errorf("error marshalling object: %w", err)
 	}
-	c.Render(-1, OpenAISSE{Data: conv.BytesToString(jsonData)})
+	c.Render(-1, &OpenAISSE{Data: conv.BytesToString(jsonData)})
 	c.Writer.Flush()
 	return nil
 }

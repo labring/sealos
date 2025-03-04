@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -28,7 +28,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var baiduResponse EmbeddingsResponse
-	err = json.Unmarshal(body, &baiduResponse)
+	err = sonic.Unmarshal(body, &baiduResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -37,14 +37,14 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	}
 
 	respMap := make(map[string]any)
-	err = json.Unmarshal(body, &respMap)
+	err = sonic.Unmarshal(body, &respMap)
 	if err != nil {
 		return &baiduResponse.Usage, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	respMap["model"] = meta.OriginModel
 	respMap["object"] = "list"
 
-	data, err := json.Marshal(respMap)
+	data, err := sonic.Marshal(respMap)
 	if err != nil {
 		return &baiduResponse.Usage, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

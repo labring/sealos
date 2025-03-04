@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 )
@@ -18,7 +18,7 @@ type GroupResponse struct {
 
 func (g *GroupResponse) MarshalJSON() ([]byte, error) {
 	type Alias model.Group
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt  int64 `json:"created_at,omitempty"`
 		AccessedAt int64 `json:"accessed_at,omitempty"`
@@ -105,7 +105,7 @@ func UpdateGroupRPMRatio(c *gin.Context) {
 		return
 	}
 	req := UpdateGroupRPMRatioRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -129,7 +129,7 @@ func UpdateGroupRPM(c *gin.Context) {
 		return
 	}
 	req := UpdateGroupRPMRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -153,7 +153,7 @@ func UpdateGroupTPM(c *gin.Context) {
 		return
 	}
 	req := UpdateGroupTPMRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -177,7 +177,7 @@ func UpdateGroupTPMRatio(c *gin.Context) {
 		return
 	}
 	req := UpdateGroupTPMRatioRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -201,7 +201,7 @@ func UpdateGroupStatus(c *gin.Context) {
 		return
 	}
 	req := UpdateGroupStatusRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -257,7 +257,7 @@ func CreateGroup(c *gin.Context) {
 		return
 	}
 	req := CreateGroupRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return
@@ -282,7 +282,7 @@ func UpdateGroup(c *gin.Context) {
 		return
 	}
 	req := CreateGroupRequest{}
-	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	err := sonic.ConfigDefault.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		middleware.ErrorResponse(c, http.StatusOK, "invalid parameter")
 		return

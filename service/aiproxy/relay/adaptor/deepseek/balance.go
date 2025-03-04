@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
@@ -30,7 +30,7 @@ func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 	}
 	defer resp.Body.Close()
 	var usage UsageResponse
-	if err := json.NewDecoder(resp.Body).Decode(&usage); err != nil {
+	if err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&usage); err != nil {
 		return 0, err
 	}
 	index := -1

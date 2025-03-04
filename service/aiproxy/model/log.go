@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/shopspring/decimal"
@@ -163,7 +163,7 @@ func (l *Log) BeforeSave(_ *gorm.DB) (err error) {
 
 func (l *Log) MarshalJSON() ([]byte, error) {
 	type Alias Log
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at"`
 		RequestAt int64 `json:"request_at"`

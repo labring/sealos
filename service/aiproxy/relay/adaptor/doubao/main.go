@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -59,7 +59,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	}
 
 	m := make(map[string]any)
-	err = json.NewDecoder(body).Decode(&m)
+	err = sonic.ConfigDefault.NewDecoder(body).Decode(&m)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -73,7 +73,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	}
 	messages = append([]any{sysMessage}, messages...)
 	m["messages"] = messages
-	newBody, err := json.Marshal(m)
+	newBody, err := sonic.Marshal(m)
 	if err != nil {
 		return "", nil, nil, err
 	}

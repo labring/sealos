@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -162,7 +162,7 @@ func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest)
 			for _, toolCall := range message.ToolCalls {
 				var args map[string]any
 				if toolCall.Function.Arguments != "" {
-					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
+					if err := sonic.UnmarshalString(toolCall.Function.Arguments, &args); err != nil {
 						args = make(map[string]any)
 					}
 				} else {
@@ -182,7 +182,7 @@ func buildContents(ctx context.Context, textRequest *model.GeneralOpenAIRequest)
 				case map[string]any:
 					contentMap = content
 				case string:
-					if err := json.Unmarshal([]byte(content), &contentMap); err != nil {
+					if err := sonic.UnmarshalString(content, &contentMap); err != nil {
 						log.Error("unmarshal content failed: " + err.Error())
 					}
 				}
@@ -259,7 +259,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		ToolConfig:        buildToolConfig(textRequest),
 	}
 
-	data, err := json.Marshal(geminiRequest)
+	data, err := sonic.Marshal(geminiRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -322,7 +322,7 @@ func getToolCalls(candidate *ChatCandidate, toolCallIndex int) []*model.Tool {
 	if item.FunctionCall == nil {
 		return toolCalls
 	}
-	argsBytes, err := json.Marshal(item.FunctionCall.Args)
+	argsBytes, err := sonic.Marshal(item.FunctionCall.Args)
 	if err != nil {
 		log.Error("getToolCalls failed: " + err.Error())
 		return toolCalls
@@ -475,7 +475,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 		}
 
 		var geminiResponse ChatResponse
-		err := json.Unmarshal(data, &geminiResponse)
+		err := sonic.Unmarshal(data, &geminiResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -503,7 +503,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	defer resp.Body.Close()
 
 	var geminiResponse ChatResponse
-	err := json.NewDecoder(resp.Body).Decode(&geminiResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&geminiResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -519,7 +519,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		TotalTokens:      geminiResponse.UsageMetadata.TotalTokenCount,
 	}
 	fullTextResponse.Usage = usage
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

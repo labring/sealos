@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"gorm.io/gorm"
@@ -117,7 +117,7 @@ func CheckModelConfigExist(models []string) error {
 
 func (c *Channel) MarshalJSON() ([]byte, error) {
 	type Alias Channel
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt        int64 `json:"created_at"`
 		BalanceUpdatedAt int64 `json:"balance_updated_at"`

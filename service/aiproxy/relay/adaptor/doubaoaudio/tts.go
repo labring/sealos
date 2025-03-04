@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -125,7 +125,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		doubaoRequest.Audio.PitchRatio = pitchRatio
 	}
 
-	data, err := json.Marshal(doubaoRequest)
+	data, err := sonic.Marshal(doubaoRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}

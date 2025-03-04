@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -48,7 +48,7 @@ type BuiltinModelConfig model.ModelConfig
 
 func (c *BuiltinModelConfig) MarshalJSON() ([]byte, error) {
 	type Alias BuiltinModelConfig
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at,omitempty"`
 		UpdatedAt int64 `json:"updated_at,omitempty"`

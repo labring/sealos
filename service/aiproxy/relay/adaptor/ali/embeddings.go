@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -48,7 +48,7 @@ func ConvertEmbeddingsRequest(meta *meta.Meta, req *http.Request) (string, http.
 		delete(reqMap, k)
 	}
 	reqMap["parameters"] = parameters
-	jsonData, err := json.Marshal(reqMap)
+	jsonData, err := sonic.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -83,7 +83,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", resp.StatusCode)
 	}
 	var respBody EmbeddingResponse
-	err = json.Unmarshal(responseBody, &respBody)
+	err = sonic.Unmarshal(responseBody, &respBody)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", resp.StatusCode)
 	}
@@ -91,7 +91,7 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 		respBody.Usage.PromptTokens = respBody.Usage.TotalTokens
 	}
 	openaiResponse := embeddingResponse2OpenAI(meta, &respBody)
-	data, err := json.Marshal(openaiResponse)
+	data, err := sonic.Marshal(openaiResponse)
 	if err != nil {
 		return &respBody.Usage, openai.ErrorWrapper(err, "marshal_response_body_failed", resp.StatusCode)
 	}

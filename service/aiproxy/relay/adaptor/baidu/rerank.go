@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -28,7 +28,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	reRankResp := &RerankResponse{}
-	err = json.Unmarshal(respBody, reRankResp)
+	err = sonic.Unmarshal(respBody, reRankResp)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -36,7 +36,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 		return nil, openai.ErrorWrapperWithMessage(reRankResp.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(reRankResp.Error.ErrorCode), http.StatusInternalServerError)
 	}
 	respMap := make(map[string]any)
-	err = json.Unmarshal(respBody, &respMap)
+	err = sonic.Unmarshal(respBody, &respMap)
 	if err != nil {
 		return &reRankResp.Usage, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -50,7 +50,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 	}
 	respMap["result"] = respMap["results"]
 	delete(respMap, "results")
-	jsonData, err := json.Marshal(respMap)
+	jsonData, err := sonic.Marshal(respMap)
 	if err != nil {
 		return &reRankResp.Usage, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

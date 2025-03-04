@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
@@ -34,7 +34,7 @@ func GetBalance(channel *model.Channel) (float64, error) {
 	}
 	defer res1.Body.Close()
 	subscription := SubscriptionResponse{}
-	err = json.NewDecoder(res1.Body).Decode(&subscription)
+	err = sonic.ConfigDefault.NewDecoder(res1.Body).Decode(&subscription)
 	if err != nil {
 		return 0, err
 	}
@@ -55,7 +55,7 @@ func GetBalance(channel *model.Channel) (float64, error) {
 		return 0, err
 	}
 	usage := UsageResponse{}
-	err = json.NewDecoder(res2.Body).Decode(&usage)
+	err = sonic.ConfigDefault.NewDecoder(res2.Body).Decode(&usage)
 	if err != nil {
 		return 0, err
 	}

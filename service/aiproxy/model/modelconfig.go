@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"gorm.io/gorm"
 )
@@ -39,7 +39,7 @@ func NewDefaultModelConfig(model string) *ModelConfig {
 
 func (c *ModelConfig) MarshalJSON() ([]byte, error) {
 	type Alias ModelConfig
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		CreatedAt int64 `json:"created_at,omitempty"`
 		UpdatedAt int64 `json:"updated_at,omitempty"`

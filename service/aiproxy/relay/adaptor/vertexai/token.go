@@ -7,7 +7,7 @@ import (
 
 	credentials "cloud.google.com/go/iam/credentials/apiv1"
 	"cloud.google.com/go/iam/credentials/apiv1/credentialspb"
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/patrickmn/go-cache"
 	"google.golang.org/api/option"
@@ -37,7 +37,7 @@ func getToken(ctx context.Context, channelID int, adcJSON string) (string, error
 		return token.(string), nil
 	}
 	adc := &ApplicationDefaultCredentials{}
-	if err := json.Unmarshal(conv.StringToBytes(adcJSON), adc); err != nil {
+	if err := sonic.UnmarshalString(adcJSON, adc); err != nil {
 		return "", fmt.Errorf("failed to decode credentials file: %w", err)
 	}
 

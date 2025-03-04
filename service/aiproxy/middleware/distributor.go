@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
@@ -269,11 +270,18 @@ func getRequestModel(c *gin.Context) (string, error) {
 		// /engines/:model/embeddings
 		return c.Param("model"), nil
 	default:
-		var modelRequest ModelRequest
-		err := common.UnmarshalBodyReusable(c.Request, &modelRequest)
+		body, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			return "", fmt.Errorf("get request model failed: %w", err)
 		}
-		return modelRequest.Model, nil
+		node, err := sonic.Get(body, "model")
+		if err != nil {
+			return "", fmt.Errorf("get request model failed: %w", err)
+		}
+		model, err := node.String()
+		if err != nil {
+			return "", fmt.Errorf("get request model failed: %w", err)
+		}
+		return model, nil
 	}
 }

@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/golang-jwt/jwt/v5"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/env"
@@ -245,7 +245,7 @@ func (s *Sealos) fetchRealNameFromAPI(ctx context.Context, userUID string) (bool
 	defer resp.Body.Close()
 
 	var sealosResp sealosGetRealNameInfoResp
-	if err := json.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
+	if err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
 		return false, err
 	}
 
@@ -293,7 +293,7 @@ func (s *Sealos) fetchBalanceFromAPI(ctx context.Context, group string) (balance
 	defer resp.Body.Close()
 
 	var sealosResp sealosGetGroupBalanceResp
-	if err := json.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
+	if err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
 		return 0, "", err
 	}
 
@@ -345,7 +345,7 @@ func (s *SealosPostGroupConsumer) calculateAmount(usage float64) decimal.Decimal
 }
 
 func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64, tokenName string) error {
-	reqBody, err := json.Marshal(sealosPostGroupConsumeReq{
+	reqBody, err := sonic.Marshal(sealosPostGroupConsumeReq{
 		Namespace: s.group,
 		Amount:    amount,
 		AppType:   appType,
@@ -372,7 +372,7 @@ func (s *SealosPostGroupConsumer) postConsume(ctx context.Context, amount int64,
 	defer resp.Body.Close()
 
 	var sealosResp sealosPostGroupConsumeResp
-	if err := json.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
+	if err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&sealosResp); err != nil {
 		return err
 	}
 
