@@ -38,9 +38,6 @@ func GetPhoneNumberByNS(owner string) (string, string, error) {
 	if phone == "" && email == "" {
 		return "", "", errors.New("user phone && email are not set, skip sms notification")
 	}
-	fmt.Println(222)
-	fmt.Println("email:" + email)
-	fmt.Println(222)
 	return phone, email, nil
 }
 
@@ -60,10 +57,17 @@ func SendExceptionNotification(notificationInfo *api.Info, clusterName, content 
 
 	if phoneNumbers != "" {
 		fmt.Println(phoneNumbers)
-		return SendToSms(clusterName, content, phoneNumbers, name)
-	} else if userEmail != "" {
+		err := SendToSms(clusterName, content, phoneNumbers, name)
+		if err != nil {
+			fmt.Println("Error sending SMS:", err)
+		}
+	}
+	if userEmail != "" {
 		fmt.Println(userEmail)
-		return SendToEmail(clusterName, content, userEmail, name)
+		err := SendToEmail(clusterName, content, userEmail, name)
+		if err != nil {
+			fmt.Println("Error sending Email:", err)
+		}
 	}
 	return nil
 }
