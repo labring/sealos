@@ -52,6 +52,7 @@ type CreditsTransaction struct {
 	ID                   uuid.UUID           `json:"id"`                               // 记录ID
 	UserUID              uuid.UUID           `json:"user_uid"`                         // 用户ID
 	AccountTransactionID *uuid.UUID          `json:"account_transaction_id,omitempty"` // 关联的AccountTransaction ID
+	RegionUID            uuid.UUID           `json:"region_uid"`                       // 区域ID
 	CreditsID            uuid.UUID           `json:"credits_id"`                       // 关联的Credits ID
 	UsedAmount           int64               `json:"used_amount"`                      // 使用额度
 	CreatedAt            time.Time           `json:"created_at"`                       // 操作时间
