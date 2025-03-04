@@ -38,6 +38,9 @@ func GetPhoneNumberByNS(owner string) (string, string, error) {
 	if phone == "" && email == "" {
 		return "", "", errors.New("user phone && email are not set, skip sms notification")
 	}
+	fmt.Println(222)
+	fmt.Println("email:" + email)
+	fmt.Println(222)
 	return phone, email, nil
 }
 
