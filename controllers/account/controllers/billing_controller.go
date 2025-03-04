@@ -65,9 +65,6 @@ func (r *BillingTaskRunner) Start(ctx context.Context) error {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
 	for {
-		if err := r.ExecuteBillingTask(); err != nil {
-			r.Logger.Error(err, "failed to execute billing task")
-		}
 		select {
 		case <-ticker.C:
 			if err := r.ExecuteBillingTask(); err != nil {
