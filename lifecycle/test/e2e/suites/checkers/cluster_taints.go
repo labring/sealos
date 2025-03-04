@@ -41,7 +41,7 @@ func (f *fakeTaintsClient) Verify() error {
 	if len(nodes.Items) != 1 {
 		return fmt.Errorf("expect 1 node, but got %d", len(nodes.Items))
 	}
-	if f.data == nil || len(f.data) == 0 {
+	if len(f.data) == 0 {
 		return nil
 	}
 	for _, node := range nodes.Items {
