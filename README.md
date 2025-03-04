@@ -45,12 +45,8 @@ A Cloud Operating System for Managing Cloud Native Applications
 https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <p align="center">
-  <a href="https://usw.sealos.io">West US Availability Zone</a> |
-  <a href="https://cloud.sealos.run">中国可用区</a> | 
-</p>
-
-<p align="center">
-  <a href="https://sealos.io/docs/Intro"></a> |
+  <a href="https://usw.sealos.io">Sealos Cloud</a> |
+  <a href="https://sealos.io/docs/Intro">Documentation</a> |
   <a href="./README_zh.md">简体中文</a> | 
   <a href="https://github.com/orgs/labring/projects/4/views/9">Roadmap</a>
 </p>
@@ -61,7 +57,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Create your Development Environment in Sealos with just one click
 
-1. [Login](https://cloud.sealos.io) and open Sealos Devbox.
+1. [Login](https://usw.sealos.io) and open Sealos Devbox.
    
    <img width="656" alt="image" src="https://github.com/user-attachments/assets/79692f6c-315f-4363-9426-b41f541f9a55">
    
@@ -77,7 +73,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Create your Database on Sealos
 
-1. [Login](https://cloud.sealos.io), open Sealos database.
+1. [Login](https://usw.sealos.io), open Sealos database.
    
    <img width="567" alt="image" src="https://github.com/user-attachments/assets/74ca3ce9-6ef8-4396-b9c2-7c1940bb7e0c">
 
@@ -91,7 +87,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
 ## Deploy your Docker Image on Sealos
 
-1. [Login](https://cloud.sealos.io), open Sealos App Launchpad.
+1. [Login](https://usw.sealos.io), open Sealos App Launchpad.
 
    <img width="567" alt="image" src="https://github.com/user-attachments/assets/5f6481c0-05c6-4892-a096-94b613cee73c">
 
@@ -103,7 +99,7 @@ Sealos['siːləs] is a cloud operating system distribution based on the Kubernet
 
    <img width="1016" alt="image" src="https://github.com/user-attachments/assets/a54884cf-a1e8-4178-88af-655234ec7eef">
 
-## Install
+## Self hosting
 
 * Install Sealos cloud: [Self hosting](https://sealos.io/self-hosting)
 * Install Kubernetes and kubernetes lifecycle managemant: [One command install kubernetes HA cluster](https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes#install-single-node-kubernetes)
@@ -142,7 +138,7 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 
 ## Links
 
-- [Laf](https://github.com/labring/laf) is a function as a service application on sealos.
+- [FastGPT](https://github.com/labring/FastGPT) is a free, open-source, and powerful AI knowledge base platform, offers out-of-the-box data processing, model invocation, RAG retrieval, and visual AI workflows. Easily build complex LLM applications.
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 <!-- ## License -->
