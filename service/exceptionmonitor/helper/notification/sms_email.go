@@ -52,8 +52,6 @@ func SendExceptionNotification(notificationInfo *api.Info, clusterName, content 
 	if err != nil {
 		return err
 	}
-	fmt.Println(111)
-	fmt.Println("userEmail:" + userEmail)
 
 	if phoneNumbers != "" {
 		fmt.Println(phoneNumbers)
@@ -82,7 +80,7 @@ func SendToSms(clusterName, content, phoneNumbers, name string) error {
 		return err
 	}
 
-	message := constructMessage(clusterName, content, name)
+	message := constructMessage(clusterName, content, name, "phone")
 	err = utils.SendSms(smsClient, &client.SendSmsRequest{
 		PhoneNumbers:  tea.String(phoneNumbers),
 		SignName:      tea.String(os.Getenv("SMS_SIGN_NAME")),
@@ -97,7 +95,7 @@ func SendToSms(clusterName, content, phoneNumbers, name string) error {
 }
 
 func SendToEmail(clusterName, content, userEmail, name string) error {
-	message := constructMessage(clusterName, content, name)
+	message := constructMessage(clusterName, content, name, "email")
 	emailConfig := utils.SMTPConfig{
 		ServerHost: "smtp.feishu.cn",
 		ServerPort: 465,
@@ -113,9 +111,19 @@ func SendToEmail(clusterName, content, userEmail, name string) error {
 	return nil
 }
 
-func constructMessage(clusterName, content, name string) string {
-	return fmt.Sprintf("{\"type\":\"数据库\",\"name\":\"%s\",\"region\":\"%s\",\"content\":\"%s\"}",
-		name, api.ClusterRegionMap[clusterName], content)
+func constructMessage(clusterName, content, name, sendType string) string {
+	if sendType == "phone" {
+		return fmt.Sprintf("{\"type\":\"数据库\",\"name\":\"%s\",\"region\":\"%s\",\"content\":\"%s\"}",
+			name, api.ClusterRegionMap[clusterName], content)
+	}
+	if sendType == "email" {
+		return fmt.Sprintf("【Sealos Cloud】您好！\n\n"+
+			"您的数据库实例 %s（区域: %s）发生告警。\n"+
+			"告警内容：%s\n\n"+
+			"请及时处理以确保应用的正常运行。如有任何疑问，请提交工单技术支持，感谢您的理解与配合！",
+			name, api.ClusterRegionMap[clusterName], content)
+	}
+	return ""
 }
 
 func GetNSOwner(namespace string) (string, error) {
