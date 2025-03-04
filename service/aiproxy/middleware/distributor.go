@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
@@ -274,14 +275,17 @@ func getRequestModel(c *gin.Context) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("get request model failed: %w", err)
 		}
-		node, err := sonic.Get(body, "model")
-		if err != nil {
-			return "", fmt.Errorf("get request model failed: %w", err)
-		}
-		model, err := node.String()
-		if err != nil {
-			return "", fmt.Errorf("get request model failed: %w", err)
-		}
-		return model, nil
+		return GetModelFromJSON(body)
 	}
+}
+
+func GetModelFromJSON(body []byte) (string, error) {
+	node, err := sonic.GetWithOptions(body, ast.SearchOptions{}, "model")
+	if err != nil {
+		if errors.Is(err, ast.ErrNotExist) {
+			return "", nil
+		}
+		return "", fmt.Errorf("get request model failed: %w", err)
+	}
+	return node.String()
 }
