@@ -22,6 +22,7 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
+  PROJECT_PATH: "./lifecycle"
 
 jobs:
   check-license:
@@ -38,4 +39,4 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Check License
-        run: make verify-license
+        run: cd ${{ env.PROJECT_PATH }} && make verify-license
