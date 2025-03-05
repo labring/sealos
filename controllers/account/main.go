@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -169,12 +171,22 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
+	skipExpiredUserTimeDuration := time.Hour * 24 * 2
+	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
+		skipExpiredUserTimeDuration, err = time.ParseDuration(os.Getenv("SKIP_EXPIRED_USER_TIME"))
+		if err != nil {
+			setupLog.Error(err, "unable to parse skip expired user time")
+			os.Exit(1)
+		}
+	}
+	setupLog.Info("skip expired user time", "duration", skipExpiredUserTimeDuration)
 	accountReconciler := &controllers.AccountReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-		DBClient:    dbClient,
-		AccountV2:   v2Account,
-		CVMDBClient: cvmDBClient,
+		Client:                      mgr.GetClient(),
+		Scheme:                      mgr.GetScheme(),
+		DBClient:                    dbClient,
+		AccountV2:                   v2Account,
+		CVMDBClient:                 cvmDBClient,
+		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
@@ -194,10 +206,13 @@ func main() {
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
 	}
+	debtUserMap := maps.NewConcurrentMap()
 	if err = (&controllers.DebtReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		AccountV2: v2Account,
+		Client:                      mgr.GetClient(),
+		Scheme:                      mgr.GetScheme(),
+		AccountV2:                   v2Account,
+		DebtUserMap:                 debtUserMap,
+		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")
 	}
@@ -218,11 +233,12 @@ func main() {
 		os.Exit(1)
 	}
 	billingReconciler := controllers.BillingReconciler{
-		DBClient:   dbClient,
-		Properties: resources.DefaultPropertyTypeLS,
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		AccountV2:  v2Account,
+		DBClient:    dbClient,
+		Properties:  resources.DefaultPropertyTypeLS,
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		AccountV2:   v2Account,
+		DebtUserMap: debtUserMap,
 	}
 	if err = billingReconciler.Init(); err != nil {
 		setupLog.Error(err, "unable to init billing reconciler")

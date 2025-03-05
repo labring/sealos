@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"k8s.io/client-go/rest"
 
 	"k8s.io/client-go/kubernetes/scheme"
@@ -95,6 +97,7 @@ type BillingReconciler struct {
 	Properties           *resources.PropertyTypeLS
 	reconcileBillingFunc func(owner string, billings []*resources.Billing) error
 	concurrentLimit      int64
+	DebtUserMap          *maps.ConcurrentMap
 }
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
@@ -118,16 +121,16 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 	for owner := range ownerListMap {
 		ownerList = append(ownerList, owner)
 	}
-	updateOwnerList, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
+	ownersRecentUpdates, err := r.DBClient.GetOwnersRecentUpdates(ownerList, endHourTime)
 	if err != nil {
 		return fmt.Errorf("get owners without recent updates failed: %w", err)
 	}
 
-	// remove the owner that does not need to be updated
-	for _, owner := range updateOwnerList {
+	// remove the owner that does not need to be updated; final State The user deletes the service at any time and does not perform billing processing
+	for _, owner := range append(ownersRecentUpdates, r.DebtUserMap.GetAllKey()...) {
 		delete(ownerListMap, owner)
 	}
-	r.Logger.Info("get owners recent updates", "already update owner count", len(updateOwnerList), "remaining owner count", len(ownerListMap))
+	r.Logger.Info("get owners recent updates", "already update owner count", len(ownersRecentUpdates), "remaining owner count", len(ownerListMap))
 
 	ownerBillings, err := r.DBClient.GenerateBillingData(startHourTime, endHourTime, r.Properties, ownerListMap)
 	if err != nil {
@@ -143,6 +146,9 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 	resultChan := make(chan result, len(ownerBillings))
 	var wg sync.WaitGroup
 	for owner, billings := range ownerBillings {
+		if len(billings) == 0 {
+			continue
+		}
 		wg.Add(1)
 		go func(owner string, billings []*resources.Billing) {
 			defer wg.Done()

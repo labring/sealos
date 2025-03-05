@@ -94,15 +94,16 @@ const (
 // AccountReconciler reconciles an Account object
 type AccountReconciler struct {
 	client.Client
-	AccountV2              database.AccountV2
-	Scheme                 *runtime.Scheme
-	Logger                 logr.Logger
-	AccountSystemNamespace string
-	DBClient               database.Account
-	CVMDBClient            database.CVM
-	MongoDBURI             string
-	Activities             pkgtypes.Activities
-	DefaultDiscount        pkgtypes.RechargeDiscount
+	AccountV2                   database.AccountV2
+	Scheme                      *runtime.Scheme
+	Logger                      logr.Logger
+	AccountSystemNamespace      string
+	DBClient                    database.Account
+	CVMDBClient                 database.CVM
+	MongoDBURI                  string
+	Activities                  pkgtypes.Activities
+	DefaultDiscount             pkgtypes.RechargeDiscount
+	SkipExpiredUserTimeDuration time.Duration
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -126,7 +127,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
 		// and only the resource quota created by the team user
 		_, err = r.syncAccount(ctx, owner, "ns-"+user.Name)
-		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(20*24*time.Hour).Before(time.Now()) {
+		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
