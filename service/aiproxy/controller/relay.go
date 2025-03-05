@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -82,15 +83,73 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	return err, shouldRetry(c, err.StatusCode)
 }
 
+func filterChannels(channels []*dbmodel.Channel, ignoreChannel ...int) []*dbmodel.Channel {
+	filtered := make([]*dbmodel.Channel, 0)
+	for _, channel := range channels {
+		if channel.Status != dbmodel.ChannelStatusEnabled {
+			continue
+		}
+		if slices.Contains(ignoreChannel, channel.ID) {
+			continue
+		}
+		filtered = append(filtered, channel)
+	}
+	return filtered
+}
+
+var (
+	ErrChannelsNotFound  = errors.New("channels not found")
+	ErrChannelsExhausted = errors.New("channels exhausted")
+)
+
+func GetRandomChannel(c *dbmodel.ModelCaches, model string, ignoreChannel ...int) (*dbmodel.Channel, error) {
+	return getRandomChannel(c.EnabledModel2channels[model], ignoreChannel...)
+}
+
+//nolint:gosec
+func getRandomChannel(channels []*dbmodel.Channel, ignoreChannel ...int) (*dbmodel.Channel, error) {
+	if len(channels) == 0 {
+		return nil, ErrChannelsNotFound
+	}
+
+	channels = filterChannels(channels, ignoreChannel...)
+	if len(channels) == 0 {
+		return nil, ErrChannelsExhausted
+	}
+
+	if len(channels) == 1 {
+		return channels[0], nil
+	}
+
+	var totalWeight int32
+	for _, ch := range channels {
+		totalWeight += ch.GetPriority()
+	}
+
+	if totalWeight == 0 {
+		return channels[rand.IntN(len(channels))], nil
+	}
+
+	r := rand.Int32N(totalWeight)
+	for _, ch := range channels {
+		r -= ch.GetPriority()
+		if r < 0 {
+			return ch, nil
+		}
+	}
+
+	return channels[rand.IntN(len(channels))], nil
+}
+
 func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, ignoreChannelIDs ...int) (*dbmodel.Channel, error) {
-	channel, err := cache.GetRandomSatisfiedChannel(model, ignoreChannelIDs...)
+	channel, err := GetRandomChannel(cache, model, ignoreChannelIDs...)
 	if err == nil {
 		return channel, nil
 	}
-	if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+	if !errors.Is(err, ErrChannelsExhausted) {
 		return nil, err
 	}
-	return cache.GetRandomSatisfiedChannel(model)
+	return GetRandomChannel(cache, model)
 }
 
 func NewRelay(mode int) func(c *gin.Context) {
@@ -143,6 +202,7 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	}
 
 	var lastCanContinueChannel *dbmodel.Channel
+	var exhausted bool
 
 	retryTimes := config.GetRetryTimes()
 	if !channelCanContinue(bizErr.StatusCode) {
@@ -152,15 +212,22 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 	}
 
 	for i := retryTimes; i > 0; i-- {
-		newChannel, err := mc.GetRandomSatisfiedChannel(requestModel, ignoreChannelIDs...)
-		if err != nil {
-			if !errors.Is(err, dbmodel.ErrChannelsExhausted) ||
-				lastCanContinueChannel == nil {
-				break
-			}
-			// use last can continue channel to retry
+		var newChannel *dbmodel.Channel
+		if exhausted {
 			newChannel = lastCanContinueChannel
+		} else {
+			newChannel, err = GetRandomChannel(mc, requestModel, ignoreChannelIDs...)
+			if err != nil {
+				if !errors.Is(err, ErrChannelsExhausted) ||
+					lastCanContinueChannel == nil {
+					break
+				}
+				// use last can continue channel to retry
+				newChannel = lastCanContinueChannel
+				exhausted = true
+			}
 		}
+
 		log.Warnf("using channel %s (type: %d, id: %d) to retry (remain times %d)",
 			newChannel.Name,
 			newChannel.Type,
@@ -189,12 +256,18 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		if !retry {
 			break
 		}
-		if !channelCanContinue(bizErr.StatusCode) {
-			ignoreChannelIDs = append(ignoreChannelIDs, newChannel.ID)
-			// do not consume the request times
-			i++
+		if exhausted {
+			if !channelCanContinue(bizErr.StatusCode) {
+				break
+			}
 		} else {
-			lastCanContinueChannel = newChannel
+			if !channelCanContinue(bizErr.StatusCode) {
+				ignoreChannelIDs = append(ignoreChannelIDs, newChannel.ID)
+				// do not consume the request times
+				i++
+			} else {
+				lastCanContinueChannel = newChannel
+			}
 		}
 	}
 
