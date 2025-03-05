@@ -46,7 +46,7 @@ type ParsePdfResponse struct {
 }
 
 type ParsePdfResponseData struct {
-	Uid string `json:"uid"`
+	UID string `json:"uid"`
 }
 
 func HandleParsePdfResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
@@ -61,7 +61,7 @@ func HandleParsePdfResponse(meta *meta.Meta, c *gin.Context, resp *http.Response
 	}
 
 	for {
-		status, err := GetStatus(context.Background(), meta, response.Data.Uid)
+		status, err := GetStatus(context.Background(), meta, response.Data.UID)
 		if err != nil {
 			return nil, openai.ErrorWrapperWithMessage("get status failed: "+err.Error(), "get_status_failed", http.StatusInternalServerError)
 		}
