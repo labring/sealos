@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"reflect"
 	runtime2 "runtime"
@@ -375,11 +374,11 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 	return true
 }
 
-func determineCurrentStatus(oweamount, balance int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
+func determineCurrentStatus(oweamount, _ int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
 	if oweamount > 0 {
-		if oweamount > int64(math.Ceil(float64(balance)/0.1)) {
+		if oweamount > 50*BaseUnit {
 			return accountv1.NormalPeriod
-		} else if oweamount > int64(math.Ceil(float64(balance)/0.05)) {
+		} else if oweamount > 1*BaseUnit {
 			return accountv1.LowBalancePeriod
 		}
 		return accountv1.CriticalBalancePeriod
