@@ -693,7 +693,7 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 }
 
 func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, deductionAmount int64, orderIDs []string) error {
-	err := c.DB.Transaction(func(tx *gorm.DB) error {
+	err := RetryTransaction(3, 2*time.Second, c.DB, func(tx *gorm.DB) error {
 		userUID, err := c.GetUserUID(ops)
 		if err != nil {
 			return fmt.Errorf("failed to get user uid: %v", err)
@@ -769,6 +769,18 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 		}
 		return nil
 	})
+	return err
+}
+
+func RetryTransaction(retryCount int, interval time.Duration, db *gorm.DB, f func(tx *gorm.DB) error) error {
+	var err error
+	for i := 0; i < retryCount; i++ {
+		err = db.Transaction(f)
+		if err == nil {
+			return nil
+		}
+		time.Sleep(interval)
+	}
 	return err
 }
 
