@@ -265,8 +265,15 @@ type ModelRequest struct {
 func getRequestModel(c *gin.Context, mode int) (string, error) {
 	path := c.Request.URL.Path
 	switch {
-	case mode == relaymode.ParsePdf,
-		mode == relaymode.AudioTranscription,
+	case mode == relaymode.ParsePdf:
+		query := c.Request.URL.Query()
+		model := query.Get("model")
+		if model != "" {
+			return model, nil
+		}
+
+		fallthrough
+	case mode == relaymode.AudioTranscription,
 		mode == relaymode.AudioTranslation:
 		return c.Request.FormValue("model"), nil
 
