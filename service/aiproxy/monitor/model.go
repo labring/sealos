@@ -10,7 +10,6 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/redis/go-redis/v9"
-	log "github.com/sirupsen/logrus"
 )
 
 // Redis key prefixes and patterns
@@ -83,9 +82,9 @@ func canAutoBan() int {
 }
 
 // AddRequest adds a request record and checks if channel should be banned
-func AddRequest(ctx context.Context, model string, channelID int64, isError bool) error {
+func AddRequest(ctx context.Context, model string, channelID int64, isError bool) (banned bool, err error) {
 	if !common.RedisEnabled {
-		return nil
+		return false, nil
 	}
 
 	errorFlag := 0
@@ -106,14 +105,10 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		canAutoBan(),
 	).Int64()
 	if err != nil {
-		return err
+		return false, err
 	}
-
-	log.Debugf("add request result: %d", val)
-	if val == 1 {
-		log.Errorf("channel %d model %s is banned", channelID, model)
-	}
-	return nil
+	fmt.Println("val", val)
+	return val == 1, nil
 }
 
 // GetChannelModelErrorRates gets error rates for a specific channel
@@ -155,8 +150,8 @@ func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string
 	return result, nil
 }
 
-// GetBannedChannels gets banned channels for a specific model
-func GetBannedChannels(ctx context.Context, model string) ([]int64, error) {
+// GetBannedChannelsWithModel gets banned channels for a specific model
+func GetBannedChannelsWithModel(ctx context.Context, model string) ([]int64, error) {
 	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return []int64{}, nil
 	}
@@ -201,8 +196,8 @@ func ClearAllModelErrors(ctx context.Context) error {
 	return clearAllModelErrorsScript.Run(ctx, common.RDB, []string{}).Err()
 }
 
-// GetAllBannedChannels gets all banned channels for all models
-func GetAllBannedChannels(ctx context.Context) (map[string][]int64, error) {
+// GetAllBannedModelChannels gets all banned channels for all models
+func GetAllBannedModelChannels(ctx context.Context) (map[string][]int64, error) {
 	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
 		return map[string][]int64{}, nil
 	}
