@@ -12,4 +12,5 @@ const (
 	AudioTranscription
 	AudioTranslation
 	Rerank
+	ParsePdf
 )

@@ -81,6 +81,11 @@ func SetRelayRouter(router *gin.Engine) {
 			middleware.NewDistribute(relaymode.Moderations),
 			controller.NewRelay(relaymode.Moderations),
 		)
+		relayRouter.POST(
+			"/parse/pdf",
+			middleware.NewDistribute(relaymode.ParsePdf),
+			controller.NewRelay(relaymode.ParsePdf),
+		)
 
 		relayRouter.POST("/images/edits", controller.RelayNotImplemented)
 		relayRouter.POST("/images/variations", controller.RelayNotImplemented)

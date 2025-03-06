@@ -70,6 +70,8 @@ func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, int, error) {
 			return nil, relaymode.Unknown, err
 		}
 		return body, relaymode.Rerank, nil
+	case relaymode.ParsePdf:
+		return nil, relaymode.Unknown, NewErrUnsupportedModelType("parse pdf")
 	default:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType(strconv.Itoa(modelConfig.Type))
 	}
