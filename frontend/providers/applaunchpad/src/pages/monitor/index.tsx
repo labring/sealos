@@ -9,7 +9,8 @@ const App = () => {
   }, [])
 
   const initPageUrl = async() => {
-    const url: string = process.env.MONITOR_PAGE_URL as string
+    const { data } = await axios.get('/config.json')
+    const url: string = data.monitorPageUrl as string
     setPageUrl(url)
   }
 
