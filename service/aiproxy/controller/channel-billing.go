@@ -122,7 +122,7 @@ func UpdateChannelsBalance(frequency time.Duration) {
 // subscription
 func GetSubscription(c *gin.Context) {
 	group := middleware.GetGroup(c)
-	b, _, err := balance.Default.GetGroupRemainBalance(c, *group)
+	b, _, err := balance.GetGroupRemainBalance(c, *group)
 	if err != nil {
 		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
 			middleware.ErrorResponse(c, http.StatusForbidden, err.Error())

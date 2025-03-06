@@ -19,6 +19,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/common/trylock"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
@@ -391,16 +392,8 @@ func TestAllChannels(c *gin.Context) {
 	}
 }
 
-func tryTestChannel(channelID int, modelName string) (bool, error) {
-	if !common.RedisEnabled {
-		return true, nil
-	}
-	lockKey := fmt.Sprintf("channel_test_lock:%d:%s", channelID, modelName)
-	locked, err := common.RDB.SetNX(context.Background(), lockKey, true, 30*time.Second).Result()
-	if err != nil {
-		return false, err
-	}
-	return locked, nil
+func tryTestChannel(channelID int, modelName string) bool {
+	return trylock.Lock(fmt.Sprintf("channel_test_lock:%d:%s", channelID, modelName), 30*time.Second)
 }
 
 func AutoTestBannedModels() {
@@ -420,13 +413,7 @@ func AutoTestBannedModels() {
 
 	for modelName, ids := range channels {
 		for _, id := range ids {
-			locked, err := tryTestChannel(int(id), modelName)
-			if err != nil {
-				log.Errorf("failed to try test channel %d: %s", id, err.Error())
-				notify.Error(fmt.Sprintf("failed to try test channel %d: %s", id, err.Error()))
-				continue
-			}
-			if !locked {
+			if !tryTestChannel(int(id), modelName) {
 				continue
 			}
 			channel, err := model.LoadChannelByID(int(id))

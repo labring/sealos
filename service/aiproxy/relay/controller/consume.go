@@ -3,7 +3,6 @@ package controller
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
-	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -47,11 +46,9 @@ func getGroupBalance(ctx *gin.Context, meta *meta.Meta) (float64, balance.PostGr
 		return 0, nil, nil
 	}
 
-	groupBalance, ok := ctx.Get(ctxkey.GroupBalance)
-	if !ok {
-		return balance.Default.GetGroupRemainBalance(ctx.Request.Context(), *meta.Group)
+	gbc, err := middleware.GetGroupBalanceConsumer(ctx, meta.Group)
+	if err != nil {
+		return 0, nil, err
 	}
-
-	groupBalanceConsumer := groupBalance.(*middleware.GroupBalanceConsumer)
-	return groupBalanceConsumer.GroupBalance, groupBalanceConsumer.Consumer, nil
+	return gbc.GroupBalance, gbc.Consumer, nil
 }

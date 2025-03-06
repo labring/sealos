@@ -22,3 +22,7 @@ var (
 func MockGetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
 	return mock.GetGroupRemainBalance(ctx, group)
 }
+
+func GetGroupRemainBalance(ctx context.Context, group model.GroupCache) (float64, PostGroupConsumer, error) {
+	return Default.GetGroupRemainBalance(ctx, group)
+}

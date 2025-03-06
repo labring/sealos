@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -126,7 +127,16 @@ type GroupBalanceConsumer struct {
 	Consumer     balance.PostGroupConsumer
 }
 
-func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+func GetGroupBalanceConsumer(c *gin.Context, group *model.GroupCache) (*GroupBalanceConsumer, error) {
+	gbcI, ok := c.Get(ctxkey.GroupBalance)
+	if ok {
+		groupBalanceConsumer, ok := gbcI.(*GroupBalanceConsumer)
+		if !ok {
+			return nil, errors.New("internal error: group balance consumer unavailable")
+		}
+		return groupBalanceConsumer, nil
+	}
+
 	var groupBalance float64
 	var consumer balance.PostGroupConsumer
 
@@ -135,27 +145,34 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	} else {
 		log := GetLogger(c)
 		var err error
-		groupBalance, consumer, err = balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
+		groupBalance, consumer, err = balance.GetGroupRemainBalance(c.Request.Context(), *group)
 		if err != nil {
-			if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
-				abortLogWithMessage(c, http.StatusForbidden, balance.ErrNoRealNameUsedAmountLimit.Error())
-				return false
-			}
-			log.Errorf("get group (%s) balance error: %v", group.ID, err)
-			abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
-			return false
+			return nil, err
 		}
 		log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
 	}
 
-	if groupBalance <= 0 {
+	gbc := &GroupBalanceConsumer{GroupBalance: groupBalance, Consumer: consumer}
+	c.Set(ctxkey.GroupBalance, gbc)
+	return gbc, nil
+}
+
+func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+	gbc, err := GetGroupBalanceConsumer(c, group)
+	if err != nil {
+		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
+			abortLogWithMessage(c, http.StatusForbidden, err.Error())
+			return false
+		}
+		notify.ErrorLimit("balance", time.Minute, fmt.Sprintf("get group (%s) balance error: %v", group.ID, err))
+		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
+		return false
+	}
+
+	if gbc.GroupBalance <= 0 {
 		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID))
 		return false
 	}
-	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
-		GroupBalance: groupBalance,
-		Consumer:     consumer,
-	})
 	return true
 }
 
