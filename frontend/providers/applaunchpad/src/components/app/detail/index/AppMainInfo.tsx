@@ -21,16 +21,34 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
   const networks = useMemo(
     () =>
-      app.networks.map((network) => ({
-        inline: `http://${app.appName}.${getUserNamespace()}.svc.cluster.local:${network.port}`,
-        public: network.openPublicDomain
-          ? `${ProtocolList.find((item) => item.value === network.protocol)?.label}${
-              network.customDomain
-                ? network.customDomain
-                : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
+      app.networks.map((network) => {
+        const protocol = ProtocolList.find((item) => item.value === network.protocol);
+        const appProtocol = ProtocolList.find((item) => item.value === network.appProtocol);
+
+        if (network.openNodePort) {
+          return {
+            inline: `${protocol?.inline}${app.appName}.${getUserNamespace()}.svc.cluster.local:${
+              network.port
+            }`,
+            public: `${protocol?.label}${network.domain}${
+              network?.nodePort ? `:${network.nodePort}` : ''
             }`
-          : ''
-      })),
+          };
+        }
+
+        return {
+          inline: `${appProtocol?.inline}${app.appName}.${getUserNamespace()}.svc.cluster.local:${
+            network.port
+          }`,
+          public: network.openPublicDomain
+            ? `${appProtocol?.label}${
+                network.customDomain
+                  ? network.customDomain
+                  : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
+              }`
+            : ''
+        };
+      }),
     [app]
   );
 
