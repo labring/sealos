@@ -6,7 +6,8 @@ import {
   maxReplicasKey,
   minReplicasKey,
   priorityKey,
-  publicDomainKey
+  publicDomainKey,
+  modelNameKey
 } from '@/constants/app';
 import { INGRESS_SECRET, SEALOS_DOMAIN } from '@/store/static';
 import type { AppEditContainerType, AppEditType } from '@/types/app';
@@ -22,6 +23,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     annotations: {
       [minReplicasKey]: `${data.hpa.use ? data.hpa.minReplicas : data.replicas}`,
       [maxReplicasKey]: `${data.hpa.use ? data.hpa.maxReplicas : data.replicas}`,
+      [modelNameKey]: `${data.modelName || ''}`,
       [deployPVCResizeKey]: `${totalStorage}Gi`
     },
     labels: {

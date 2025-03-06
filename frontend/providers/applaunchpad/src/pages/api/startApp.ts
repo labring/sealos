@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { authSession } from '@/services/backend/auth';
+import { authSession, getAdminAuthorization } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { pauseKey, minReplicasKey, maxReplicasKey } from '@/constants/app';
@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('appName is empty');
     }
     const { apiClient, getDeployApp, applyYamlList } = await getK8s({
-      kubeconfig: await authSession(req.headers)
+      kubeconfig: await getAdminAuthorization(req.headers)
     });
 
     const app = await getDeployApp(appName, reqNamespace);

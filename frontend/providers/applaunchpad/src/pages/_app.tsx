@@ -47,6 +47,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { loadUserSourcePrice } = useUserStore();
   const { Loading } = useLoading();
   const [refresh, setRefresh] = useState(false);
+  const [showMenu, setShowMenu] = useState(false)
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'jump_prompt',
     content: 'jump_message'
@@ -134,6 +135,8 @@ const App = ({ Component, pageProps }: AppProps) => {
   const [currentRoute, setCurrentRoute] = useState<string>('');
   useEffect(() => {
     setCurrentRoute(router.pathname)
+    const query = router.query;
+    setShowMenu(!!query.showMenu)
   }, [router.pathname]);
 
 
@@ -227,14 +230,17 @@ const App = ({ Component, pageProps }: AppProps) => {
               {
                 loginStatus ?
                   <>
-                    <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
-                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/imagehub')}>镜像管理</Text>
-                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/apps')}>应用管理</Text>
-                      {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
-                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/nodeManage')}>节点管理</Text>
-                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/user')}>租户管理</Text>
-                      <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push('/monitor')}>监控管理</Text>
-                    </Box>
+                    {
+                      showMenu ?
+                        <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/imagehub${showMenu ? '?showMenu=true' : ''}`)}>镜像管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/apps${showMenu ? '?showMenu=true' : ''}`)}>应用管理</Text>
+                          {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/nodeManage${showMenu ? '?showMenu=true' : ''}`)}>节点管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/user${showMenu ? '?showMenu=true' : ''}`)}>租户管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/monitor${showMenu ? '?showMenu=true' : ''}`)}>监控管理</Text>
+                        </Box> : null
+                    }
 
                     <Box flex={1}>
 

@@ -154,6 +154,17 @@ const AppList = ({
   >(
     () => [
       {
+        title: '模型名称',
+        key: 'modelName',
+        render: (item: AppListItemType) => {
+          return (
+            <Box pl={4} color={'myGray.900'} fontSize={'md'} fontWeight={'bold'}>
+              {item.modelName}
+            </Box>
+          );
+        }
+      },
+      {
         title: t('Name'),
         key: 'name',
         render: (item: AppListItemType) => {

@@ -32,7 +32,8 @@ import {
   gpuNodeSelectorKey,
   gpuResourceKey,
   stopKey,
-  priorityKey
+  priorityKey,
+  modelNameKey
 } from '@/constants/app';
 import {
   cpuFormatToM,
@@ -75,6 +76,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     isPause: !!app?.metadata?.annotations?.[pauseKey],
     isStop: !!app?.metadata?.annotations?.[stopKey],
     priority: app.metadata?.labels?.[priorityKey] || '1',
+    modelName: app.metadata?.annotations?.[modelNameKey] || '',
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(
