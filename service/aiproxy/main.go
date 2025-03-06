@@ -197,6 +197,7 @@ func main() {
 
 	go autoTestBannedModels(ctx)
 	go cleanLog(ctx)
+	go controller.UpdateChannelsBalance(time.Minute * 10)
 
 	<-ctx.Done()
 

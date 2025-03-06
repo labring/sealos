@@ -1,6 +1,7 @@
 package adaptor
 
 import (
+	"errors"
 	"io"
 	"net/http"
 
@@ -20,6 +21,8 @@ type Adaptor interface {
 	DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode)
 	GetModelList() []*model.ModelConfig
 }
+
+var ErrGetBalanceNotImplemented = errors.New("get balance not implemented")
 
 type Balancer interface {
 	GetBalance(channel *model.Channel) (float64, error)

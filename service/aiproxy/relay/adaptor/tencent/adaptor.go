@@ -2,6 +2,7 @@ package tencent
 
 import (
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 )
 
@@ -23,4 +24,8 @@ func (a *Adaptor) GetModelList() []*model.ModelConfig {
 
 func (a *Adaptor) GetChannelName() string {
 	return "tencent"
+}
+
+func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
+	return 0, adaptor.ErrGetBalanceNotImplemented
 }

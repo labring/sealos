@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -26,16 +28,16 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 	}
 	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
-		if err != nil {
-			return 0, err
+		if err != nil && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) {
+			return 0, fmt.Errorf("failed to get channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
 		}
 		err = channel.UpdateBalance(balance)
 		if err != nil {
-			log.Errorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
+			return 0, fmt.Errorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
 		}
 		return balance, nil
 	}
-	return 0, fmt.Errorf("channel type %d does not support get balance", channel.Type)
+	return 0, nil
 }
 
 func UpdateChannelBalance(c *gin.Context) {
@@ -57,6 +59,7 @@ func UpdateChannelBalance(c *gin.Context) {
 	}
 	balance, err := updateChannelBalance(channel)
 	if err != nil {
+		notify.Error(err.Error())
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
 			Message: err.Error(),
@@ -75,12 +78,24 @@ func updateAllChannelsBalance() error {
 	if err != nil {
 		return err
 	}
+
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 10)
+
 	for _, channel := range channels {
-		_, err := updateChannelBalance(channel)
-		if err != nil {
-			continue
-		}
+		wg.Add(1)
+		semaphore <- struct{}{}
+		go func(ch *model.Channel) {
+			defer wg.Done()
+			defer func() { <-semaphore }()
+			_, err := updateChannelBalance(ch)
+			if err != nil {
+				notify.Error(err.Error())
+			}
+		}(channel)
 	}
+
+	wg.Wait()
 	return nil
 }
 
@@ -93,12 +108,10 @@ func UpdateAllChannelsBalance(c *gin.Context) {
 	middleware.SuccessResponse(c, nil)
 }
 
-func AutomaticallyUpdateChannels(frequency int) {
+func UpdateChannelsBalance(frequency time.Duration) {
 	for {
-		time.Sleep(time.Duration(frequency) * time.Minute)
-		log.Info("updating all channels")
+		time.Sleep(frequency)
 		_ = updateAllChannelsBalance()
-		log.Info("channels update done")
 	}
 }
 
