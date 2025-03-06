@@ -43,6 +43,7 @@ export interface AppStatusMapType {
 export interface AppListItemType {
   id: string;
   name: string;
+  modelName: string;
   status: AppStatusMapType;
   isPause: boolean;
   isStop: boolean;
@@ -62,6 +63,7 @@ export interface AppListItemType {
 export interface AppEditType {
   appName: string;
   nodeName: string;
+  modelName: string;
   priority: string;
   replicas: number | '';
   gpu?: GpuType;

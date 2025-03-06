@@ -741,6 +741,20 @@ const Form = ({
                 </Flex>
               </FormControl>
 
+              <FormControl mb={7} isInvalid={!!errors.modelName} w={'500px'}>
+                <Flex alignItems={'center'}>
+                  <Label>{'模型名称'}</Label>
+                  <Input
+                    width={'350px'}
+                    type={'text'}
+                    placeholder={'模型名称'}
+                    {...register('modelName', {
+                      required: '模型名称不能为空'
+                    })}
+                  />
+                </Flex>
+              </FormControl>
+
               {/* priority */}
               <FormControl mb={7} isInvalid={!!errors.priority} w={'500px'}>
                 <Flex alignItems={'center'}>

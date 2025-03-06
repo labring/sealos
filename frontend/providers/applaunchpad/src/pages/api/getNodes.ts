@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { authSession } from '@/services/backend/auth';
+import { authSession, getAdminAuthorization } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 
@@ -17,7 +17,7 @@ export interface NodeInfo {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { k8sApp, namespace, k8sCore } = await getK8s({
-      kubeconfig: await authSession(req.headers)
+      kubeconfig: await getAdminAuthorization(req.headers)
     });
     const result = await k8sCore.listNode();
 
