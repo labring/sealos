@@ -62,6 +62,8 @@ spec:
           value: "Sealos@2024"
         - name: JWT_SECRET
           value: "SEALOS_SECRET"
+        - name: MONITOR_PAGE_URL
+          value: "http://172.20.22.234:31009/d/StarsL_cn_K8S/"
         ports:
         - containerPort: 3000
 ---
