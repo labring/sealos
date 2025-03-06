@@ -11,6 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
 from node import add_node_to_cluster, delete_node_from_cluster
+from press_test import *
 
 
 app = Flask(__name__)
@@ -923,17 +924,42 @@ def build_docker_image():
         return jsonify({"message": message}), 200
     else:
         return jsonify({"error": message}), 500
-# 创建定时任务调度器
-if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
-    scheduler = BackgroundScheduler()
-    if ENABLE_WORKLOAD_SCALING:
-        scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
-    if ENABLE_NODE_SCALING:
-        scheduler.add_job(scale_nodes, 'interval', minutes=1)
-    scheduler.start()
+
+@app.route('/api/stressTesting', methods=['GET'])
+def stress_testing():
+# 命名空间: string
+# 应用列表: [appname]
+# 端口: int
+# 核心接口: string
+# 测试数据: string
+# 期望的QPS: int
+# 最大时延(ms): int
+    try:
+        namespace = request.args.get('namespace')
+        app_list = request.args.get('app_list').split(',')
+        port = request.args.get('port')
+        core_api = request.args.get('core_api')
+        test_data = request.args.get('test_data')
+        qps = request.args.get('qps')
+        max_latency = request.args.get('max_latency')
+        print(namespace, app_list, port, core_api, test_data, qps, max_latency)
+        
+        return jsonify({'message': 'Stress testing started successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
+    init_db()
     init_configmap()
+    # 创建定时任务调度器
+    if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
+        scheduler = BackgroundScheduler()
+        if ENABLE_WORKLOAD_SCALING:
+            scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
+        if ENABLE_NODE_SCALING:
+            scheduler.add_job(scale_nodes, 'interval', minutes=1)
+        scheduler.start()
     try:
         app.run(debug=True, host='0.0.0.0', port=5002)
     finally:

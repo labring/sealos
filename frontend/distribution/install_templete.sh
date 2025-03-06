@@ -9,6 +9,8 @@ docker push sealos.hub:5000/luanshaotong/deployapp:LAUNCHPAD_TAG
 DOMAIN=`grep sealos.hub /etc/hosts | awk '{print $1}'`
 cp originlaunchpad.yaml launchpad.yaml
 sed -i "s/FLAG_SEALOS_DOMAIN/${DOMAIN}/g" launchpad.yaml
+KUBECONFIG=`base64 /etc/kubernetes/admin.conf | paste -s -d ''`
+sed -i "s/KUBECONFIGTEMPLATE/${KUBECONFIG}/g" launchpad.yaml
 kubectl apply -f launchpad.yaml
 
 dc=`which docker-compose`

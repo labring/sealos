@@ -1,4 +1,4 @@
-import { authSession } from '@/services/backend/auth';
+import { authSession, getLocalAdminKubeConfig } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
@@ -100,12 +100,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       step: step
     };
 
+    const adminkc = getLocalAdminKubeConfig();
+    console.log('kubeconfig')
+    console.log(adminkc)
+
     const result: MonitorDataResult = await monitorFetch(
       {
         url: '/query',
         params: params
       },
-      kubeconfig
+      // yaml.dump(JSON.parse(kubeconfig))
+      adminkc
     ).then((res) => {
       // console.log(res.data.result, res.data.result[0].values.length, 'AdapterChartData');
       // @ts-ignore
@@ -122,7 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   } catch (error) {
     jsonRes(res, {
       code: 200,
-      message: 'fetch monitor err'
+      message: 'fetch monitor err: ' + error
     });
   }
 }

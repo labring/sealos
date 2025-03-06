@@ -34,6 +34,7 @@
     "framer-motion": "^10.16.4",
     "i18next": "^22.5.1",
     "immer": "^9.0.21",
+    "js-base64": "^3.7.7",
     "js-cookie": "^3.0.5",
     "js-yaml": "^4.1.0",
     "jsonwebtoken": "^9.0.2",
