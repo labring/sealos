@@ -107,7 +107,6 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 	if err != nil {
 		return false, err
 	}
-	fmt.Println("val", val)
 	return val == 1, nil
 }
 
