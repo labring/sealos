@@ -18,7 +18,7 @@ func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 	if u == "" {
 		u = baseURL
 	}
-	url := u + "/v1/user/info"
+	url := u + "/user/info"
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
 	if err != nil {
 		return 0, err
