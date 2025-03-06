@@ -3,8 +3,6 @@ package notify
 import (
 	"fmt"
 	"time"
-
-	"github.com/labring/sealos/service/aiproxy/common/trylock"
 )
 
 type Level string
@@ -17,6 +15,7 @@ const (
 
 type Notifier interface {
 	Notify(level Level, message string)
+	NotifyThrottle(level Level, key string, expiration time.Duration, message string)
 }
 
 var defaultNotifier Notifier = &MockNotifier{}
@@ -45,34 +44,18 @@ func limitKey(level Level, key string) string {
 	return fmt.Sprintf("notifylimit:%s:%s", level, key)
 }
 
-func notifyLimit(level Level, key string, expiration time.Duration) bool {
-	return trylock.Lock(limitKey(level, key), expiration)
+func NotifyThrottle(level Level, key string, expiration time.Duration, message string) {
+	defaultNotifier.NotifyThrottle(level, limitKey(level, key), expiration, message)
 }
 
-func NotifyLimit(level Level, key string, expiration time.Duration, message string) {
-	if !notifyLimit(level, key, expiration) {
-		return
-	}
-	defaultNotifier.Notify(level, message)
+func InfoThrottle(key string, expiration time.Duration, message string) {
+	defaultNotifier.NotifyThrottle(LevelInfo, limitKey(LevelInfo, key), expiration, message)
 }
 
-func InfoLimit(key string, expiration time.Duration, message string) {
-	if !notifyLimit(LevelInfo, key, expiration) {
-		return
-	}
-	defaultNotifier.Notify(LevelInfo, message)
+func WarnThrottle(key string, expiration time.Duration, message string) {
+	defaultNotifier.NotifyThrottle(LevelWarn, limitKey(LevelWarn, key), expiration, message)
 }
 
-func WarnLimit(key string, expiration time.Duration, message string) {
-	if !notifyLimit(LevelWarn, key, expiration) {
-		return
-	}
-	defaultNotifier.Notify(LevelWarn, message)
-}
-
-func ErrorLimit(key string, expiration time.Duration, message string) {
-	if !notifyLimit(LevelError, key, expiration) {
-		return
-	}
-	defaultNotifier.Notify(LevelError, message)
+func ErrorThrottle(key string, expiration time.Duration, message string) {
+	defaultNotifier.NotifyThrottle(LevelError, limitKey(LevelError, key), expiration, message)
 }

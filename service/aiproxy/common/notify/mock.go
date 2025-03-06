@@ -1,6 +1,9 @@
 package notify
 
 import (
+	"time"
+
+	"github.com/labring/sealos/service/aiproxy/common/trylock"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -21,4 +24,11 @@ func (n *MockNotifier) Notify(level Level, message string) {
 	case LevelError:
 		errorLogrus.Error(message)
 	}
+}
+
+func (n *MockNotifier) NotifyThrottle(level Level, key string, expiration time.Duration, message string) {
+	if !trylock.MemLock(key, expiration) {
+		return
+	}
+	n.Notify(level, message)
 }
