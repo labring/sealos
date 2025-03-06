@@ -29,23 +29,24 @@ type ChannelConfig struct {
 }
 
 type Channel struct {
-	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
-	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
-	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
-	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
-	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
-	Key              string            `gorm:"type:text;index"                    json:"key"`
-	Name             string            `gorm:"index"                              json:"name"`
-	BaseURL          string            `gorm:"index"                              json:"base_url"`
-	Models           []string          `gorm:"serializer:fastjson;type:text"      json:"models"`
-	Balance          float64           `json:"balance"`
-	ID               int               `gorm:"primaryKey"                         json:"id"`
-	UsedAmount       float64           `gorm:"index"                              json:"used_amount"`
-	RequestCount     int               `gorm:"index"                              json:"request_count"`
-	Status           int               `gorm:"default:1;index"                    json:"status"`
-	Type             int               `gorm:"default:0;index"                    json:"type"`
-	Priority         int32             `json:"priority"`
-	Config           *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
+	CreatedAt               time.Time         `gorm:"index"                              json:"created_at"`
+	LastTestErrorAt         time.Time         `json:"last_test_error_at"`
+	ChannelTests            []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
+	BalanceUpdatedAt        time.Time         `json:"balance_updated_at"`
+	ModelMapping            map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
+	Key                     string            `gorm:"type:text;index"                    json:"key"`
+	Name                    string            `gorm:"index"                              json:"name"`
+	BaseURL                 string            `gorm:"index"                              json:"base_url"`
+	Models                  []string          `gorm:"serializer:fastjson;type:text"      json:"models"`
+	Balance                 float64           `json:"balance"`
+	ID                      int               `gorm:"primaryKey"                         json:"id"`
+	UsedAmount              float64           `gorm:"index"                              json:"used_amount"`
+	RequestCount            int               `gorm:"index"                              json:"request_count"`
+	Status                  int               `gorm:"default:1;index"                    json:"status"`
+	Type                    int               `gorm:"default:0;index"                    json:"type"`
+	Priority                int32             `json:"priority"`
+	BalanceWarningThreshold float64           `gorm:"default:100"                        json:"balance_warning_threshold"`
+	Config                  *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
@@ -61,6 +62,13 @@ func (c *Channel) GetPriority() int32 {
 		return DefaultPriority
 	}
 	return c.Priority
+}
+
+func (c *Channel) GetBalanceWarningThreshold() float64 {
+	if c.BalanceWarningThreshold == 0 {
+		return 100
+	}
+	return c.BalanceWarningThreshold
 }
 
 func GetModelConfigWithModels(models []string) ([]string, []string, error) {
@@ -286,7 +294,16 @@ func UpdateChannel(channel *Channel) error {
 	}
 	result := DB.
 		Model(channel).
-		Select("model_mapping", "key", "name", "base_url", "models", "type", "priority", "config").
+		Select(
+			"model_mapping",
+			"key",
+			"name",
+			"base_url",
+			"models",
+			"type",
+			"priority",
+			"config",
+			"balance_warning_threshold").
 		Clauses(clause.Returning{}).
 		Where("id = ?", channel.ID).
 		Updates(channel)

@@ -24,16 +24,20 @@ import (
 func updateChannelBalance(channel *model.Channel) (float64, error) {
 	adaptorI, ok := channeltype.GetAdaptor(channel.Type)
 	if !ok {
-		return 0, fmt.Errorf("invalid channel type: %d", channel.Type)
+		return 0, fmt.Errorf("invalid channel type: %d, channel: %s(%d)", channel.Type, channel.Name, channel.ID)
 	}
 	if getBalance, ok := adaptorI.(adaptor.Balancer); ok {
 		balance, err := getBalance.GetBalance(channel)
 		if err != nil && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) {
-			return 0, fmt.Errorf("failed to get channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
+			return 0, fmt.Errorf("failed to get channel[%d] %s(%d) balance: %s", channel.Type, channel.Name, channel.ID, err.Error())
 		}
-		err = channel.UpdateBalance(balance)
-		if err != nil {
-			return 0, fmt.Errorf("failed to update channel %s(%d) balance: %s", channel.Name, channel.ID, err.Error())
+		if err := channel.UpdateBalance(balance); err != nil {
+			return 0, fmt.Errorf("failed to update channel [%d] %s(%d) balance: %s", channel.Type, channel.Name, channel.ID, err.Error())
+		}
+		threshold := channel.GetBalanceWarningThreshold()
+		if threshold > 0 && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) &&
+			balance < threshold {
+			return 0, fmt.Errorf("channel[%d] %s(%d) balance: %f, warning threshold: %f", channel.Type, channel.Name, channel.ID, balance, threshold)
 		}
 		return balance, nil
 	}
