@@ -302,7 +302,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     crYamlList: configs,
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
-    modelName: '',
+    modelName: appDeploy.metadata?.annotations?.[modelNameKey] || '',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
