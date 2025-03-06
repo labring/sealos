@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/balance"
@@ -18,6 +20,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -176,7 +179,7 @@ func distribute(c *gin.Context, mode int) {
 		return
 	}
 
-	requestModel, err := getRequestModel(c)
+	requestModel, err := getRequestModel(c, mode)
 	if err != nil {
 		abortLogWithMessage(c, http.StatusBadRequest, err.Error())
 		return
@@ -259,21 +262,41 @@ type ModelRequest struct {
 	Model string `form:"model" json:"model"`
 }
 
-func getRequestModel(c *gin.Context) (string, error) {
+func getRequestModel(c *gin.Context, mode int) (string, error) {
 	path := c.Request.URL.Path
 	switch {
-	case strings.HasPrefix(path, "/v1/audio/transcriptions"),
-		strings.HasPrefix(path, "/v1/audio/translations"):
+	case mode == relaymode.ParsePdf:
+		query := c.Request.URL.Query()
+		model := query.Get("model")
+		if model != "" {
+			return model, nil
+		}
+
+		fallthrough
+	case mode == relaymode.AudioTranscription,
+		mode == relaymode.AudioTranslation:
 		return c.Request.FormValue("model"), nil
+
 	case strings.HasPrefix(path, "/v1/engines") && strings.HasSuffix(path, "/embeddings"):
 		// /engines/:model/embeddings
 		return c.Param("model"), nil
+
 	default:
-		var modelRequest ModelRequest
-		err := common.UnmarshalBodyReusable(c.Request, &modelRequest)
+		body, err := common.GetRequestBody(c.Request)
 		if err != nil {
 			return "", fmt.Errorf("get request model failed: %w", err)
 		}
-		return modelRequest.Model, nil
+		return GetModelFromJSON(body)
 	}
+}
+
+func GetModelFromJSON(body []byte) (string, error) {
+	node, err := sonic.GetWithOptions(body, ast.SearchOptions{}, "model")
+	if err != nil {
+		if errors.Is(err, ast.ErrNotExist) {
+			return "", nil
+		}
+		return "", fmt.Errorf("get request model failed: %w", err)
+	}
+	return node.String()
 }

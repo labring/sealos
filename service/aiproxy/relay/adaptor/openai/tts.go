@@ -6,30 +6,48 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
-func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
-	textRequest := relaymodel.TextToSpeechRequest{}
-	err := common.UnmarshalBodyReusable(req, &textRequest)
+func ConvertTTSRequest(meta *meta.Meta, req *http.Request, defaultVoice string) (string, http.Header, io.Reader, error) {
+	node, err := common.UnmarshalBody2Node(req)
 	if err != nil {
 		return "", nil, nil, err
 	}
-	if len(textRequest.Input) > 4096 {
+
+	input, err := node.Get("input").String()
+	if err != nil {
+		if errors.Is(err, ast.ErrNotExist) {
+			return "", nil, nil, errors.New("input is required")
+		}
+		return "", nil, nil, err
+	}
+	if len(input) > 4096 {
 		return "", nil, nil, errors.New("input is too long (over 4096 characters)")
 	}
-	reqMap := make(map[string]any)
-	err = common.UnmarshalBodyReusable(req, &reqMap)
+
+	voice, err := node.Get("voice").String()
+	if err != nil && !errors.Is(err, ast.ErrNotExist) {
+		return "", nil, nil, err
+	}
+	if voice == "" && defaultVoice != "" {
+		_, err = node.Set("voice", ast.NewString(defaultVoice))
+		if err != nil {
+			return "", nil, nil, err
+		}
+	}
+
+	_, err = node.Set("model", ast.NewString(meta.ActualModel))
 	if err != nil {
 		return "", nil, nil, err
 	}
-	reqMap["model"] = meta.ActualModel
-	jsonData, err := json.Marshal(reqMap)
+
+	jsonData, err := node.MarshalJSON()
 	if err != nil {
 		return "", nil, nil, err
 	}

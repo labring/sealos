@@ -2,11 +2,11 @@ package siliconflow
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 )
@@ -33,7 +33,7 @@ func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
 		return 0, fmt.Errorf("status code: %d", res.StatusCode)
 	}
 	response := UsageResponse{}
-	err = json.NewDecoder(res.Body).Decode(&response)
+	err = sonic.ConfigDefault.NewDecoder(res.Body).Decode(&response)
 	if err != nil {
 		return 0, err
 	}

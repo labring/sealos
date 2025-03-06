@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -91,7 +91,7 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 		},
 	}
 
-	data, err := json.Marshal(sttRequest)
+	data, err := sonic.Marshal(sttRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -150,7 +150,7 @@ func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 		}
 
 		var msg STTMessage
-		err = json.Unmarshal(data, &msg)
+		err = sonic.Unmarshal(data, &msg)
 		if err != nil {
 			return usage, openai.ErrorWrapperWithMessage("ali_wss_read_msg_failed", "ali_wss_read_msg_failed", http.StatusInternalServerError)
 		}
@@ -170,7 +170,7 @@ func STTDoResponse(meta *meta.Meta, c *gin.Context, _ *http.Response) (usage *re
 					Input: STTInput{},
 				},
 			}
-			finishData, err := json.Marshal(finishMsg)
+			finishData, err := sonic.Marshal(finishMsg)
 			if err != nil {
 				return usage, openai.ErrorWrapperWithMessage("ali_wss_write_msg_failed", "ali_wss_write_msg_failed", http.StatusInternalServerError)
 			}

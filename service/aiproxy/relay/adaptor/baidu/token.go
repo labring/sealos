@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
 )
@@ -72,7 +72,7 @@ func getBaiduAccessTokenHelper(ctx context.Context, apiKey string) (*AccessToken
 	defer res.Body.Close()
 
 	var accessToken AccessToken
-	err = json.NewDecoder(res.Body).Decode(&accessToken)
+	err = sonic.ConfigDefault.NewDecoder(res.Body).Decode(&accessToken)
 	if err != nil {
 		return nil, err
 	}

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
@@ -148,7 +148,7 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 		data = strings.TrimSuffix(data, "\r")
 
 		var cohereResponse StreamResponse
-		err := json.Unmarshal(conv.StringToBytes(data), &cohereResponse)
+		err := sonic.Unmarshal(conv.StringToBytes(data), &cohereResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -184,7 +184,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 	defer resp.Body.Close()
 
 	var cohereResponse Response
-	err := json.NewDecoder(resp.Body).Decode(&cohereResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cohereResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -207,7 +207,7 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 		TotalTokens:      cohereResponse.Meta.Tokens.InputTokens + cohereResponse.Meta.Tokens.OutputTokens,
 	}
 	fullTextResponse.Usage = usage
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}

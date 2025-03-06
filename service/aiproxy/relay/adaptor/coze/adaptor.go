@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -68,7 +68,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		}
 		cozeRequest.ChatHistory = append(cozeRequest.ChatHistory, cozeMessage)
 	}
-	data, err := json.Marshal(cozeRequest)
+	data, err := sonic.Marshal(cozeRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -136,6 +137,9 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 	method, header, body, err := a.ConvertRequest(meta, c.Request)
 	if err != nil {
 		return nil, openai.ErrorWrapperWithMessage("convert request failed: "+err.Error(), "convert_request_failed", http.StatusBadRequest)
+	}
+	if closer, ok := body.(io.Closer); ok {
+		defer closer.Close()
 	}
 
 	if meta.Channel.BaseURL == "" {

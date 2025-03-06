@@ -3,14 +3,16 @@ package openai
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"net/http"
 	"slices"
 	"strings"
 	"sync"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/render"
@@ -31,8 +33,6 @@ var (
 	DataPrefixBytes = conv.StringToBytes(DataPrefix)
 	DoneBytes       = conv.StringToBytes(Done)
 )
-
-var stdjson = json.ConfigCompatibleWithStandardLibrary
 
 type UsageAndChoicesResponse struct {
 	Usage   *model.Usage
@@ -58,6 +58,38 @@ func putScannerBuffer(buf *[]byte) {
 		return
 	}
 	scannerBufferPool.Put(buf)
+}
+
+func GetUsageAndChoicesResponseFromNode(node *ast.Node) (*UsageAndChoicesResponse, error) {
+	var usage *model.Usage
+	usageNode, err := node.Get("usage").Raw()
+	if err != nil {
+		if !errors.Is(err, ast.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		err = sonic.UnmarshalString(usageNode, &usage)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var choices []*ChatCompletionsStreamResponseChoice
+	choicesNode, err := node.Get("choices").Raw()
+	if err != nil {
+		if !errors.Is(err, ast.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		err = sonic.UnmarshalString(choicesNode, &choices)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &UsageAndChoicesResponse{
+		Usage:   usage,
+		Choices: choices,
+	}, nil
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
@@ -97,8 +129,12 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 		switch meta.Mode {
 		case relaymode.ChatCompletions:
-			var streamResponse UsageAndChoicesResponse
-			err := json.Unmarshal(data, &streamResponse)
+			node, err := sonic.Get(data)
+			if err != nil {
+				log.Error("error unmarshalling stream response: " + err.Error())
+				continue
+			}
+			streamResponse, err := GetUsageAndChoicesResponseFromNode(&node)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
@@ -115,25 +151,32 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 					hasReasoningContent = true
 				}
 			}
-			respMap := make(map[string]any)
-			err = json.Unmarshal(data, &respMap)
+
+			_, err = node.Set("model", ast.NewString(meta.OriginModel))
 			if err != nil {
-				log.Error("error unmarshalling stream response: " + err.Error())
-				continue
+				log.Error("error set model: " + err.Error())
 			}
-			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
-				respMap["model"] = meta.OriginModel
-			}
+
 			if meta.ChannelConfig.SplitThink && !hasReasoningContent {
+				respMap, err := node.Map()
+				if err != nil {
+					log.Error("error get node map: " + err.Error())
+					continue
+				}
 				StreamSplitThink(respMap, thinkSplitter, func(data map[string]any) {
 					_ = render.ObjectData(c, data)
 				})
 				continue
 			}
-			_ = render.ObjectData(c, respMap)
+
+			_ = render.ObjectData(c, &node)
 		case relaymode.Completions:
-			var streamResponse CompletionsStreamResponse
-			err := json.Unmarshal(data, &streamResponse)
+			node, err := sonic.Get(data)
+			if err != nil {
+				log.Error("error unmarshalling stream response: " + err.Error())
+				continue
+			}
+			streamResponse, err := GetUsageAndChoicesResponseFromNode(&node)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				continue
@@ -146,16 +189,11 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 					responseText.WriteString(choice.Text)
 				}
 			}
-			respMap := make(map[string]any)
-			err = json.Unmarshal(data, &respMap)
+			_, err = node.Set("model", ast.NewString(meta.OriginModel))
 			if err != nil {
-				log.Error("error unmarshalling stream response: " + err.Error())
-				continue
+				log.Error("error set model: " + err.Error())
 			}
-			if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
-				respMap["model"] = meta.OriginModel
-			}
-			_ = render.ObjectData(c, respMap)
+			_ = render.ObjectData(c, &node)
 		}
 	}
 
@@ -242,6 +280,50 @@ func SplitThink(data map[string]any) {
 	}
 }
 
+func GetSlimTextResponseFromNode(node *ast.Node) (*SlimTextResponse, error) {
+	var e model.Error
+	errorNode, err := node.Get("error").Raw()
+	if err != nil {
+		if !errors.Is(err, ast.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		err = sonic.UnmarshalString(errorNode, &e)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var choices []*TextResponseChoice
+	choicesNode, err := node.Get("choices").Raw()
+	if err != nil {
+		if !errors.Is(err, ast.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		err = sonic.UnmarshalString(choicesNode, &choices)
+		if err != nil {
+			return nil, err
+		}
+	}
+	var usage model.Usage
+	usageNode, err := node.Get("usage").Raw()
+	if err != nil {
+		if !errors.Is(err, ast.ErrNotExist) {
+			return nil, err
+		}
+	} else {
+		err = sonic.UnmarshalString(usageNode, &usage)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &SlimTextResponse{
+		Error:   e,
+		Choices: choices,
+		Usage:   usage,
+	}, nil
+}
+
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
 	defer resp.Body.Close()
 
@@ -252,8 +334,11 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 
-	var textResponse SlimTextResponse
-	err = json.Unmarshal(responseBody, &textResponse)
+	node, err := sonic.Get(responseBody)
+	if err != nil {
+		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
+	}
+	textResponse, err := GetSlimTextResponseFromNode(&node)
 	if err != nil {
 		return nil, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -278,21 +363,20 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 	}
 	textResponse.Usage.TotalTokens = textResponse.Usage.PromptTokens + textResponse.Usage.CompletionTokens
 
-	var respMap map[string]any
-	err = json.Unmarshal(responseBody, &respMap)
+	_, err = node.Set("model", ast.NewString(meta.OriginModel))
 	if err != nil {
-		return &textResponse.Usage, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
-	}
-
-	if _, ok := respMap["model"]; ok && meta.OriginModel != "" {
-		respMap["model"] = meta.OriginModel
+		return &textResponse.Usage, ErrorWrapper(err, "set_model_failed", http.StatusInternalServerError)
 	}
 
 	if meta.ChannelConfig.SplitThink {
+		respMap, err := node.Map()
+		if err != nil {
+			return &textResponse.Usage, ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
+		}
 		SplitThink(respMap)
 	}
 
-	newData, err := stdjson.Marshal(respMap)
+	newData, err := sonic.Marshal(&node)
 	if err != nil {
 		return &textResponse.Usage, ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

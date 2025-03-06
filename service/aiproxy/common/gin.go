@@ -9,8 +9,9 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/bytedance/sonic"
+	"github.com/bytedance/sonic/ast"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 )
 
 type RequestBodyKey struct{}
@@ -88,7 +89,15 @@ func UnmarshalBodyReusable(req *http.Request, v any) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(requestBody, &v)
+	return sonic.Unmarshal(requestBody, &v)
+}
+
+func UnmarshalBody2Node(req *http.Request) (ast.Node, error) {
+	requestBody, err := GetRequestBody(req)
+	if err != nil {
+		return ast.Node{}, err
+	}
+	return sonic.Get(requestBody)
 }
 
 func SetEventStreamHeaders(c *gin.Context) {

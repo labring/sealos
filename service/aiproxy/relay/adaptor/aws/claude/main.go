@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
@@ -116,7 +116,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 		return utils.WrapErr(errors.Wrap(err, "copy request")), nil
 	}
 
-	awsReq.Body, err = json.Marshal(awsClaudeReq)
+	awsReq.Body, err = sonic.Marshal(awsClaudeReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
@@ -132,7 +132,7 @@ func Handler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatusCode, 
 	}
 
 	claudeResponse := new(anthropic.Response)
-	err = json.Unmarshal(awsResp.Body, claudeResponse)
+	err = sonic.Unmarshal(awsResp.Body, claudeResponse)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "unmarshal response")), nil
 	}
@@ -172,7 +172,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 	if err = copier.Copy(awsClaudeReq, claudeReq); err != nil {
 		return utils.WrapErr(errors.Wrap(err, "copy request")), nil
 	}
-	awsReq.Body, err = json.Marshal(awsClaudeReq)
+	awsReq.Body, err = sonic.Marshal(awsClaudeReq)
 	if err != nil {
 		return utils.WrapErr(errors.Wrap(err, "marshal request")), nil
 	}
@@ -205,7 +205,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context) (*relaymodel.ErrorWithStatus
 		switch v := event.(type) {
 		case *types.ResponseStreamMemberChunk:
 			claudeResp := anthropic.StreamResponse{}
-			err := json.Unmarshal(v.Value.Bytes, &claudeResp)
+			err := sonic.Unmarshal(v.Value.Bytes, &claudeResp)
 			if err != nil {
 				log.Error("error unmarshalling stream response: " + err.Error())
 				return false

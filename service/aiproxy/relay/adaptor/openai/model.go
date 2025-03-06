@@ -123,6 +123,7 @@ type ChatCompletionsStreamResponseChoice struct {
 	FinishReason *string       `json:"finish_reason,omitempty"`
 	Delta        model.Message `json:"delta"`
 	Index        int           `json:"index"`
+	Text         string        `json:"text,omitempty"`
 }
 
 type ChatCompletionsStreamResponse struct {
@@ -132,14 +133,6 @@ type ChatCompletionsStreamResponse struct {
 	Model   string                                 `json:"model"`
 	Choices []*ChatCompletionsStreamResponseChoice `json:"choices"`
 	Created int64                                  `json:"created"`
-}
-
-type CompletionsStreamResponse struct {
-	Choices []*struct {
-		Text         string `json:"text"`
-		FinishReason string `json:"finish_reason"`
-	} `json:"choices"`
-	Usage *model.Usage `json:"usage"`
 }
 
 type SubscriptionResponse struct {

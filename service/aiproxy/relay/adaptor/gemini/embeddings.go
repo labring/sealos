@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
@@ -37,7 +37,7 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 		}
 	}
 
-	data, err := json.Marshal(BatchEmbeddingRequest{
+	data, err := sonic.Marshal(BatchEmbeddingRequest{
 		Requests: requests,
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.Usage, *model
 	defer resp.Body.Close()
 
 	var geminiEmbeddingResponse EmbeddingResponse
-	err := json.NewDecoder(resp.Body).Decode(&geminiEmbeddingResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&geminiEmbeddingResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -58,7 +58,7 @@ func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.Usage, *model
 		return nil, openai.ErrorWrapperWithMessage(geminiEmbeddingResponse.Error.Message, geminiEmbeddingResponse.Error.Code, resp.StatusCode)
 	}
 	fullTextResponse := embeddingResponseGemini2OpenAI(&geminiEmbeddingResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

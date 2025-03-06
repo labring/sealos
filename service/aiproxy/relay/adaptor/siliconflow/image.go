@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -46,7 +46,7 @@ func ConvertImageRequest(meta *meta.Meta, request *http.Request) (http.Header, i
 	reqMap["image_size"] = reqMap["size"]
 	delete(reqMap, "size")
 
-	data, err := json.Marshal(&reqMap)
+	data, err := sonic.Marshal(&reqMap)
 	if err != nil {
 		return nil, nil, err
 	}

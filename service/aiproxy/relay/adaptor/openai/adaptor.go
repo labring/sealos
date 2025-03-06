@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
@@ -85,7 +85,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	case relaymode.AudioTranscription, relaymode.AudioTranslation:
 		return ConvertSTTRequest(meta, req)
 	case relaymode.AudioSpeech:
-		return ConvertTTSRequest(meta, req)
+		return ConvertTTSRequest(meta, req, "")
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
 	default:
@@ -135,7 +135,7 @@ func ConvertTextRequest(meta *meta.Meta, req *http.Request, doNotPatchStreamOpti
 	}
 
 	reqMap["model"] = meta.ActualModel
-	jsonData, err := json.Marshal(reqMap)
+	jsonData, err := sonic.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}

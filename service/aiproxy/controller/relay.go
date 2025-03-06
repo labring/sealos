@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,6 +38,8 @@ func relayController(mode int) (RelayController, bool) {
 	case relaymode.AudioTranslation,
 		relaymode.AudioTranscription:
 		relayController = controller.RelaySTTHelper
+	case relaymode.ParsePdf:
+		relayController = controller.RelayParsePdfHelper
 	case relaymode.Rerank:
 		relayController = controller.RerankHelper
 	case relaymode.ChatCompletions,
@@ -80,15 +83,73 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 	return err, shouldRetry(c, err.StatusCode)
 }
 
-func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, failedChannelIDs ...int) (*dbmodel.Channel, error) {
-	channel, err := cache.GetRandomSatisfiedChannel(model, failedChannelIDs...)
+func filterChannels(channels []*dbmodel.Channel, ignoreChannel ...int) []*dbmodel.Channel {
+	filtered := make([]*dbmodel.Channel, 0)
+	for _, channel := range channels {
+		if channel.Status != dbmodel.ChannelStatusEnabled {
+			continue
+		}
+		if slices.Contains(ignoreChannel, channel.ID) {
+			continue
+		}
+		filtered = append(filtered, channel)
+	}
+	return filtered
+}
+
+var (
+	ErrChannelsNotFound  = errors.New("channels not found")
+	ErrChannelsExhausted = errors.New("channels exhausted")
+)
+
+func GetRandomChannel(c *dbmodel.ModelCaches, model string, ignoreChannel ...int) (*dbmodel.Channel, error) {
+	return getRandomChannel(c.EnabledModel2channels[model], ignoreChannel...)
+}
+
+//nolint:gosec
+func getRandomChannel(channels []*dbmodel.Channel, ignoreChannel ...int) (*dbmodel.Channel, error) {
+	if len(channels) == 0 {
+		return nil, ErrChannelsNotFound
+	}
+
+	channels = filterChannels(channels, ignoreChannel...)
+	if len(channels) == 0 {
+		return nil, ErrChannelsExhausted
+	}
+
+	if len(channels) == 1 {
+		return channels[0], nil
+	}
+
+	var totalWeight int32
+	for _, ch := range channels {
+		totalWeight += ch.GetPriority()
+	}
+
+	if totalWeight == 0 {
+		return channels[rand.IntN(len(channels))], nil
+	}
+
+	r := rand.Int32N(totalWeight)
+	for _, ch := range channels {
+		r -= ch.GetPriority()
+		if r < 0 {
+			return ch, nil
+		}
+	}
+
+	return channels[rand.IntN(len(channels))], nil
+}
+
+func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, ignoreChannelIDs ...int) (*dbmodel.Channel, error) {
+	channel, err := GetRandomChannel(cache, model, ignoreChannelIDs...)
 	if err == nil {
 		return channel, nil
 	}
-	if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
+	if !errors.Is(err, ErrChannelsExhausted) {
 		return nil, err
 	}
-	return cache.GetRandomSatisfiedChannel(model)
+	return GetRandomChannel(cache, model)
 }
 
 func NewRelay(mode int) func(c *gin.Context) {
@@ -103,28 +164,14 @@ func NewRelay(mode int) func(c *gin.Context) {
 
 func relay(c *gin.Context, mode int, relayController RelayController) {
 	log := middleware.GetLogger(c)
-
 	requestModel := middleware.GetOriginalModel(c)
 
-	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
-	if err != nil {
-		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
-	}
-
-	log.Debugf("%s model banned channels: %+v", requestModel, ids)
-
-	failedChannelIDs := []int{}
-	for _, id := range ids {
-		failedChannelIDs = append(failedChannelIDs, int(id))
-	}
-
-	mc := middleware.GetModelCaches(c)
-
-	channel, err := getChannelWithFallback(mc, requestModel, failedChannelIDs...)
-	if err != nil {
+	// Get initial channel
+	channel, ignoreChannelIDs, err := getInitialChannel(c, requestModel, log)
+	if err != nil || channel == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{
 			"error": &model.Error{
-				Message: "The upstream load is saturated, please try again later",
+				Message: "the upstream load is saturated, please try again later",
 				Code:    "upstream_load_saturated",
 				Type:    middleware.ErrorTypeAIPROXY,
 			},
@@ -132,53 +179,165 @@ func relay(c *gin.Context, mode int, relayController RelayController) {
 		return
 	}
 
+	// First attempt
 	meta := middleware.NewMetaByContext(c, channel, requestModel, mode)
 	bizErr, retry := RelayHelper(meta, c, relayController)
-	if bizErr == nil {
+	if handleRelayResult(c, bizErr, retry) {
 		return
 	}
-	failedChannelIDs = append(failedChannelIDs, channel.ID)
-	requestID := middleware.GetRequestID(c)
-	var retryTimes int64
-	if retry {
-		retryTimes = config.GetRetryTimes()
+
+	// Setup retry state
+	retryState := initRetryState(channel, bizErr, ignoreChannelIDs)
+
+	// Retry loop
+	retryLoop(c, mode, requestModel, retryState, relayController, log)
+}
+
+type retryState struct {
+	retryTimes             int64
+	lastCanContinueChannel *dbmodel.Channel
+	ignoreChannelIDs       []int
+	exhausted              bool
+	bizErr                 *model.ErrorWithStatusCode
+}
+
+func getInitialChannel(c *gin.Context, requestModel string, log *log.Entry) (*dbmodel.Channel, []int, error) {
+	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
+	if err != nil {
+		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}
-	for i := retryTimes; i > 0; i-- {
-		newChannel, err := mc.GetRandomSatisfiedChannel(requestModel, failedChannelIDs...)
-		if err != nil {
-			if errors.Is(err, dbmodel.ErrChannelsNotFound) {
-				break
-			}
-			// use first channel to retry
-			if !errors.Is(err, dbmodel.ErrChannelsExhausted) {
-				break
-			}
-			newChannel = channel
-		}
-		log.Warnf("using channel %s(%d) to retry (remain times %d)", newChannel.Name, newChannel.ID, i)
-		requestBody, err := common.GetRequestBody(c.Request)
-		if err != nil {
-			log.Errorf("GetRequestBody failed: %+v", err)
-			break
-		}
-		c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
-		meta.Reset(newChannel)
-		//nolint:gosec
-		// random wait 1-2 seconds
-		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
-		bizErr, retry = RelayHelper(meta, c, relayController)
-		if bizErr == nil {
-			return
-		}
-		if !retry {
-			break
-		}
-		failedChannelIDs = append(failedChannelIDs, newChannel.ID)
+	log.Debugf("%s model banned channels: %+v", requestModel, ids)
+
+	ignoreChannelIDs := make([]int, 0, len(ids))
+	for _, id := range ids {
+		ignoreChannelIDs = append(ignoreChannelIDs, int(id))
 	}
-	if bizErr != nil {
-		bizErr.Error.Message = middleware.MessageWithRequestID(bizErr.Error.Message, requestID)
+
+	mc := middleware.GetModelCaches(c)
+	channel, err := getChannelWithFallback(mc, requestModel, ignoreChannelIDs...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return channel, ignoreChannelIDs, nil
+}
+
+func handleRelayResult(c *gin.Context, bizErr *model.ErrorWithStatusCode, retry bool) bool {
+	if bizErr == nil {
+		return true
+	}
+	if !retry {
+		bizErr.Error.Message = middleware.MessageWithRequestID(c, bizErr.Error.Message)
 		c.JSON(bizErr.StatusCode, bizErr)
+		return true
 	}
+	return false
+}
+
+func initRetryState(channel *dbmodel.Channel, bizErr *model.ErrorWithStatusCode, ignoreChannelIDs []int) *retryState {
+	state := &retryState{
+		retryTimes:       config.GetRetryTimes(),
+		ignoreChannelIDs: ignoreChannelIDs,
+		bizErr:           bizErr,
+	}
+
+	if !channelCanContinue(bizErr.StatusCode) {
+		state.ignoreChannelIDs = append(state.ignoreChannelIDs, channel.ID)
+	} else {
+		state.lastCanContinueChannel = channel
+	}
+
+	return state
+}
+
+func retryLoop(c *gin.Context, mode int, requestModel string, state *retryState, relayController RelayController, log *log.Entry) {
+	mc := middleware.GetModelCaches(c)
+
+	for i := 0; i < int(state.retryTimes); i++ {
+		newChannel, err := getRetryChannel(mc, requestModel, state)
+		if err != nil {
+			break
+		}
+
+		log.Warnf("using channel %s (type: %d, id: %d) to retry (remain times %d)",
+			newChannel.Name,
+			newChannel.Type,
+			newChannel.ID,
+			state.retryTimes-int64(i),
+		)
+
+		if !prepareRetry(c, state.bizErr.StatusCode) {
+			break
+		}
+
+		meta := middleware.NewMetaByContext(c, newChannel, requestModel, mode)
+		bizErr, retry := RelayHelper(meta, c, relayController)
+
+		done := handleRetryResult(bizErr, retry, newChannel, state)
+		if done {
+			break
+		}
+	}
+
+	if state.bizErr != nil {
+		state.bizErr.Error.Message = middleware.MessageWithRequestID(c, state.bizErr.Error.Message)
+		c.JSON(state.bizErr.StatusCode, state.bizErr)
+	}
+}
+
+func getRetryChannel(mc *dbmodel.ModelCaches, requestModel string, state *retryState) (*dbmodel.Channel, error) {
+	if state.exhausted {
+		return state.lastCanContinueChannel, nil
+	}
+
+	newChannel, err := GetRandomChannel(mc, requestModel, state.ignoreChannelIDs...)
+	if err != nil {
+		if !errors.Is(err, ErrChannelsExhausted) || state.lastCanContinueChannel == nil {
+			return nil, err
+		}
+		state.exhausted = true
+		return state.lastCanContinueChannel, nil
+	}
+
+	return newChannel, nil
+}
+
+func prepareRetry(c *gin.Context, statusCode int) bool {
+	requestBody, err := common.GetRequestBody(c.Request)
+	if err != nil {
+		log.Errorf("get request body failed in prepare retry: %+v", err)
+		return false
+	}
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+
+	if shouldDelay(statusCode) {
+		//nolint:gosec
+		time.Sleep(time.Duration(rand.Float64()*float64(time.Second)) + time.Second)
+	}
+
+	return true
+}
+
+func handleRetryResult(bizErr *model.ErrorWithStatusCode, retry bool, newChannel *dbmodel.Channel, state *retryState) (done bool) {
+	state.bizErr = bizErr
+	if bizErr == nil || !retry {
+		return true
+	}
+
+	if state.exhausted {
+		if !channelCanContinue(bizErr.StatusCode) {
+			return true
+		}
+	} else {
+		if !channelCanContinue(bizErr.StatusCode) {
+			state.ignoreChannelIDs = append(state.ignoreChannelIDs, newChannel.ID)
+			state.retryTimes++
+		} else {
+			state.lastCanContinueChannel = newChannel
+		}
+	}
+
+	return false
 }
 
 var shouldRetryStatusCodesMap = map[int]struct{}{
@@ -193,6 +352,21 @@ var shouldRetryStatusCodesMap = map[int]struct{}{
 func shouldRetry(_ *gin.Context, statusCode int) bool {
 	_, ok := shouldRetryStatusCodesMap[statusCode]
 	return ok
+}
+
+var channelCanContinueStatusCodesMap = map[int]struct{}{
+	http.StatusTooManyRequests: {},
+	http.StatusRequestTimeout:  {},
+	http.StatusGatewayTimeout:  {},
+}
+
+func channelCanContinue(statusCode int) bool {
+	_, ok := channelCanContinueStatusCodesMap[statusCode]
+	return ok
+}
+
+func shouldDelay(statusCode int) bool {
+	return statusCode == http.StatusTooManyRequests
 }
 
 // 仅当是channel错误时，才需要记录，用户请求参数错误时，不需要记录

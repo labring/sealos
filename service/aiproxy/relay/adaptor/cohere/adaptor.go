@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -43,7 +43,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	if requestBody == nil {
 		return "", nil, nil, errors.New("request body is nil")
 	}
-	data, err := json.Marshal(requestBody)
+	data, err := sonic.Marshal(requestBody)
 	if err != nil {
 		return "", nil, nil, err
 	}

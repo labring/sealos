@@ -9,9 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -77,7 +76,7 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request) (string, http.Header,
 		meta.Set("stream", stream)
 	}
 
-	body, err := json.Marshal(reqMap)
+	body, err := sonic.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -121,7 +120,7 @@ func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymod
 	}
 
 	var result TTSResponse
-	if err := json.Unmarshal(body, &result); err != nil {
+	if err := sonic.Unmarshal(body, &result); err != nil {
 		return nil, openai.ErrorWrapper(err, "TTS_ERROR", http.StatusInternalServerError)
 	}
 	if result.BaseResp != nil && result.BaseResp.StatusCode != 0 {
@@ -174,7 +173,7 @@ func ttsStreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 		data = data[openai.DataPrefixLength:]
 
 		var result TTSResponse
-		if err := json.Unmarshal(conv.StringToBytes(data), &result); err != nil {
+		if err := sonic.UnmarshalString(data, &result); err != nil {
 			log.Error("unmarshal tts response failed: " + err.Error())
 			continue
 		}

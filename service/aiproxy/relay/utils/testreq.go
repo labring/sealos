@@ -2,11 +2,11 @@ package utils
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
 
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -70,6 +70,8 @@ func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, int, error) {
 			return nil, relaymode.Unknown, err
 		}
 		return body, relaymode.Rerank, nil
+	case relaymode.ParsePdf:
+		return nil, relaymode.Unknown, NewErrUnsupportedModelType("parse pdf")
 	default:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType(strconv.Itoa(modelConfig.Type))
 	}
@@ -86,7 +88,7 @@ func BuildChatCompletionRequest(model string) (io.Reader, error) {
 			},
 		},
 	}
-	jsonBytes, err := json.Marshal(testRequest)
+	jsonBytes, err := sonic.Marshal(testRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func BuildEmbeddingsRequest(model string) (io.Reader, error) {
 		Model: model,
 		Input: "hi",
 	}
-	jsonBytes, err := json.Marshal(embeddingsRequest)
+	jsonBytes, err := sonic.Marshal(embeddingsRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +112,7 @@ func BuildModerationsRequest(model string) (io.Reader, error) {
 		Model: model,
 		Input: "hi",
 	}
-	jsonBytes, err := json.Marshal(moderationsRequest)
+	jsonBytes, err := sonic.Marshal(moderationsRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +129,7 @@ func BuildImagesGenerationsRequest(modelConfig *model.ModelConfig) (io.Reader, e
 		imagesGenerationsRequest.Size = size
 		break
 	}
-	jsonBytes, err := json.Marshal(imagesGenerationsRequest)
+	jsonBytes, err := sonic.Marshal(imagesGenerationsRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +141,7 @@ func BuildAudioSpeechRequest(model string) (io.Reader, error) {
 		Model: model,
 		Input: "hi",
 	}
-	jsonBytes, err := json.Marshal(audioSpeechRequest)
+	jsonBytes, err := sonic.Marshal(audioSpeechRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +154,7 @@ func BuildRerankRequest(model string) (io.Reader, error) {
 		Query:     "hi",
 		Documents: []string{"hi"},
 	}
-	jsonBytes, err := json.Marshal(rerankRequest)
+	jsonBytes, err := sonic.Marshal(rerankRequest)
 	if err != nil {
 		return nil, err
 	}

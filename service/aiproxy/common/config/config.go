@@ -4,6 +4,7 @@ import (
 	"math"
 	"os"
 	"slices"
+	"strconv"
 	"sync/atomic"
 
 	"github.com/labring/sealos/service/aiproxy/common/env"
@@ -23,10 +24,11 @@ var (
 
 var (
 	disableServe                 atomic.Bool
+	logStorageHours              int64 = 0 // default 0 means no limit
 	saveAllLogDetail             atomic.Bool
 	logDetailRequestBodyMaxSize  int64 = 128 * 1024 // 128KB
 	logDetailResponseBodyMaxSize int64 = 128 * 1024 // 128KB
-	logDetailStorageHours        int64 = 3 * 24
+	logDetailStorageHours        int64 = 3 * 24     // 3 days
 	internalToken                atomic.Value
 )
 
@@ -99,6 +101,15 @@ func SetTimeoutWithModelType(timeout map[int]int64) {
 	timeoutWithModelType.Store(timeout)
 }
 
+func GetLogStorageHours() int64 {
+	return atomic.LoadInt64(&logStorageHours)
+}
+
+func SetLogStorageHours(hours int64) {
+	hours = env.Int64("LOG_STORAGE_HOURS", hours)
+	atomic.StoreInt64(&logStorageHours, hours)
+}
+
 func GetLogDetailStorageHours() int64 {
 	return atomic.LoadInt64(&logDetailStorageHours)
 }
@@ -168,6 +179,15 @@ func SetDefaultChannelModelMapping(mapping map[int]map[string]string) {
 
 func GetGroupConsumeLevelRatio() map[float64]float64 {
 	return groupConsumeLevelRatio.Load().(map[float64]float64)
+}
+
+func GetGroupConsumeLevelRatioStringKeyMap() map[string]float64 {
+	ratio := GetGroupConsumeLevelRatio()
+	stringMap := make(map[string]float64)
+	for k, v := range ratio {
+		stringMap[strconv.FormatFloat(k, 'f', -1, 64)] = v
+	}
+	return stringMap
 }
 
 func SetGroupConsumeLevelRatio(ratio map[float64]float64) {

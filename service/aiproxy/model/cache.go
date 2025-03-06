@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -36,11 +36,11 @@ var (
 type redisStringSlice []string
 
 func (r *redisStringSlice) ScanRedis(value string) error {
-	return json.Unmarshal(conv.StringToBytes(value), r)
+	return sonic.Unmarshal(conv.StringToBytes(value), r)
 }
 
 func (r redisStringSlice) MarshalBinary() ([]byte, error) {
-	return json.Marshal(r)
+	return sonic.Marshal(r)
 }
 
 type redisTime time.Time
@@ -195,11 +195,11 @@ var (
 )
 
 func (r *redisMapStringInt64) ScanRedis(value string) error {
-	return json.Unmarshal(conv.StringToBytes(value), r)
+	return sonic.Unmarshal(conv.StringToBytes(value), r)
 }
 
 func (r redisMapStringInt64) MarshalBinary() ([]byte, error) {
-	return json.Marshal(r)
+	return sonic.Marshal(r)
 }
 
 type GroupCache struct {
@@ -256,7 +256,7 @@ func CacheUpdateGroupRPM(id string, rpm map[string]int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	jsonRPM, err := json.Marshal(rpm)
+	jsonRPM, err := sonic.Marshal(rpm)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func CacheUpdateGroupTPM(id string, tpm map[string]int64) error {
 	if !common.RedisEnabled {
 		return nil
 	}
-	jsonTPM, err := json.Marshal(tpm)
+	jsonTPM, err := sonic.Marshal(tpm)
 	if err != nil {
 		return err
 	}
@@ -704,59 +704,4 @@ func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, fre
 			}
 		}
 	}
-}
-
-func filterChannels(channels []*Channel, ignoreChannel ...int) []*Channel {
-	filtered := make([]*Channel, 0)
-	for _, channel := range channels {
-		if channel.Status != ChannelStatusEnabled {
-			continue
-		}
-		if slices.Contains(ignoreChannel, channel.ID) {
-			continue
-		}
-		filtered = append(filtered, channel)
-	}
-	return filtered
-}
-
-var (
-	ErrChannelsNotFound  = errors.New("channels not found")
-	ErrChannelsExhausted = errors.New("channels exhausted")
-)
-
-//nolint:gosec
-func (c *ModelCaches) GetRandomSatisfiedChannel(model string, ignoreChannel ...int) (*Channel, error) {
-	_channels := c.EnabledModel2channels[model]
-	if len(_channels) == 0 {
-		return nil, ErrChannelsNotFound
-	}
-
-	channels := filterChannels(_channels, ignoreChannel...)
-	if len(channels) == 0 {
-		return nil, ErrChannelsExhausted
-	}
-
-	if len(channels) == 1 {
-		return channels[0], nil
-	}
-
-	var totalWeight int32
-	for _, ch := range channels {
-		totalWeight += ch.GetPriority()
-	}
-
-	if totalWeight == 0 {
-		return channels[rand.IntN(len(channels))], nil
-	}
-
-	r := rand.Int32N(totalWeight)
-	for _, ch := range channels {
-		r -= ch.GetPriority()
-		if r < 0 {
-			return ch, nil
-		}
-	}
-
-	return channels[rand.IntN(len(channels))], nil
 }

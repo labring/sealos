@@ -1,7 +1,7 @@
 package model
 
 import (
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 )
 
@@ -26,7 +26,7 @@ func (e *Error) JSONOrEmpty() string {
 	if e.IsEmpty() {
 		return ""
 	}
-	jsonBuf, err := json.Marshal(e)
+	jsonBuf, err := sonic.Marshal(e)
 	if err != nil {
 		return ""
 	}
@@ -42,7 +42,7 @@ func (e *ErrorWithStatusCode) JSONOrEmpty() string {
 	if e.Error.IsEmpty() {
 		return ""
 	}
-	jsonBuf, err := json.Marshal(e)
+	jsonBuf, err := sonic.Marshal(e)
 	if err != nil {
 		return ""
 	}

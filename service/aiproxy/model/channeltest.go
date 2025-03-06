@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	json "github.com/json-iterator/go"
+	"github.com/bytedance/sonic"
 )
 
 type ChannelTest struct {
@@ -22,7 +22,7 @@ type ChannelTest struct {
 
 func (ct *ChannelTest) MarshalJSON() ([]byte, error) {
 	type Alias ChannelTest
-	return json.Marshal(&struct {
+	return sonic.Marshal(&struct {
 		*Alias
 		TestAt int64 `json:"test_at"`
 	}{

@@ -25,7 +25,7 @@ var (
 	dataBytes = conv.StringToBytes(data)
 )
 
-func (r OpenAISSE) Render(w http.ResponseWriter) error {
+func (r *OpenAISSE) Render(w http.ResponseWriter) error {
 	r.WriteContentType(w)
 
 	for _, bytes := range [][]byte{
@@ -41,7 +41,7 @@ func (r OpenAISSE) Render(w http.ResponseWriter) error {
 	return nil
 }
 
-func (r OpenAISSE) WriteContentType(w http.ResponseWriter) {
+func (r *OpenAISSE) WriteContentType(w http.ResponseWriter) {
 	header := w.Header()
 	header["Content-Type"] = contentType
 

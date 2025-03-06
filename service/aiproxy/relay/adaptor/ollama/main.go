@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
@@ -67,7 +67,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 		})
 	}
 
-	data, err := json.Marshal(ollamaRequest)
+	data, err := sonic.Marshal(ollamaRequest)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -156,7 +156,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 		}
 
 		var ollamaResponse ChatResponse
-		err := json.Unmarshal(conv.StringToBytes(data), &ollamaResponse)
+		err := sonic.Unmarshal(conv.StringToBytes(data), &ollamaResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -186,7 +186,7 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 		return "", nil, nil, err
 	}
 	request.Model = meta.ActualModel
-	data, err := json.Marshal(&EmbeddingRequest{
+	data, err := sonic.Marshal(&EmbeddingRequest{
 		Model: request.Model,
 		Input: request.ParseInput(),
 		Options: &Options{
@@ -207,7 +207,7 @@ func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 	defer resp.Body.Close()
 
 	var ollamaResponse EmbeddingResponse
-	err := json.NewDecoder(resp.Body).Decode(&ollamaResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&ollamaResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -225,7 +225,7 @@ func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*re
 	}
 
 	fullTextResponse := embeddingResponseOllama2OpenAI(meta, &ollamaResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -260,7 +260,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.
 	defer resp.Body.Close()
 
 	var ollamaResponse ChatResponse
-	err := json.NewDecoder(resp.Body).Decode(&ollamaResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&ollamaResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -276,7 +276,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.
 		}, nil
 	}
 	fullTextResponse := responseOllama2OpenAI(meta, &ollamaResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
@@ -150,7 +150,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 			claudeMessage.Content = append(claudeMessage.Content, content)
 			for i := range message.ToolCalls {
 				inputParam := make(map[string]any)
-				_ = json.Unmarshal(conv.StringToBytes(message.ToolCalls[i].Function.Arguments), &inputParam)
+				_ = sonic.Unmarshal(conv.StringToBytes(message.ToolCalls[i].Function.Arguments), &inputParam)
 				claudeMessage.Content = append(claudeMessage.Content, Content{
 					Type:  toolUseType,
 					ID:    message.ToolCalls[i].ID,
@@ -278,7 +278,7 @@ func ResponseClaude2OpenAI(meta *meta.Meta, claudeResponse *Response) *openai.Te
 	tools := make([]*model.Tool, 0)
 	for _, v := range claudeResponse.Content {
 		if v.Type == toolUseType {
-			args, _ := json.Marshal(v.Input)
+			args, _ := sonic.Marshal(v.Input)
 			tools = append(tools, &model.Tool{
 				ID:   v.ID,
 				Type: "function", // compatible with other OpenAI derivative applications
@@ -355,7 +355,7 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 		}
 
 		var claudeResponse StreamResponse
-		err := json.Unmarshal(data, &claudeResponse)
+		err := sonic.Unmarshal(data, &claudeResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
@@ -420,7 +420,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	defer resp.Body.Close()
 
 	var claudeResponse Response
-	err := json.NewDecoder(resp.Body).Decode(&claudeResponse)
+	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&claudeResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
 	}
@@ -436,7 +436,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 		}, nil
 	}
 	fullTextResponse := ResponseClaude2OpenAI(meta, &claudeResponse)
-	jsonResponse, err := json.Marshal(fullTextResponse)
+	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
 		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
 	}

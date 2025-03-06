@@ -5,8 +5,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
-	json "github.com/json-iterator/go"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
@@ -48,7 +48,7 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Head
 		delete(reqMap, k)
 	}
 	reqMap["parameters"] = parameters
-	jsonData, err := json.Marshal(reqMap)
+	jsonData, err := sonic.Marshal(reqMap)
 	if err != nil {
 		return "", nil, nil, err
 	}
@@ -65,7 +65,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
 	}
 	var rerankResponse RerankResponse
-	err = json.Unmarshal(responseBody, &rerankResponse)
+	err = sonic.Unmarshal(responseBody, &rerankResponse)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
@@ -97,7 +97,7 @@ func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 		}
 	}
 
-	jsonResponse, err := json.Marshal(&rerankResp)
+	jsonResponse, err := sonic.Marshal(&rerankResp)
 	if err != nil {
 		return usage, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}

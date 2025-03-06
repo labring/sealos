@@ -5,8 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	json "github.com/json-iterator/go"
-
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
@@ -77,7 +76,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string
 		Stream:      claudeReq.Stream,
 		Tools:       claudeReq.Tools,
 	}
-	data, err := json.Marshal(req)
+	data, err := sonic.Marshal(req)
 	if err != nil {
 		return "", nil, nil, err
 	}
