@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math/rand/v2"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	dbmodel "github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
@@ -60,7 +62,7 @@ func relayController(mode int) (RelayController, bool) {
 func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayController) (*model.ErrorWithStatusCode, bool) {
 	err := relayController(meta, c)
 	if err == nil {
-		if err := monitor.AddRequest(
+		if _, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
@@ -71,13 +73,17 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		return nil, false
 	}
 	if shouldErrorMonitor(err.StatusCode) {
-		if err := monitor.AddRequest(
+		banned, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
 			true,
-		); err != nil {
+		)
+		if err != nil {
 			log.Errorf("add request failed: %+v", err)
+		}
+		if banned {
+			notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned", meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel))
 		}
 	}
 	return err, shouldRetry(c, err.StatusCode)
@@ -202,7 +208,7 @@ type retryState struct {
 }
 
 func getInitialChannel(c *gin.Context, requestModel string, log *log.Entry) (*dbmodel.Channel, []int, error) {
-	ids, err := monitor.GetBannedChannels(c.Request.Context(), requestModel)
+	ids, err := monitor.GetBannedChannelsWithModel(c.Request.Context(), requestModel)
 	if err != nil {
 		log.Errorf("get %s auto banned channels failed: %+v", requestModel, err)
 	}

@@ -17,10 +17,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/common/render"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -29,12 +31,29 @@ import (
 
 const channelTestRequestID = "channel-test"
 
+func guessModelType(model string) int {
+	for _, c := range channeltype.ChannelAdaptor {
+		for _, m := range c.GetModelList() {
+			if m.Model == model {
+				return m.Type
+			}
+		}
+	}
+	return relaymode.Unknown
+}
+
 // testSingleModel tests a single model in the channel
 func testSingleModel(mc *model.ModelCaches, channel *model.Channel, modelName string) (*model.ChannelTest, error) {
 	modelConfig, ok := mc.ModelConfig.GetModelConfig(modelName)
 	if !ok {
 		return nil, errors.New(modelName + " model config not found")
 	}
+	if modelConfig.Type == relaymode.Unknown {
+		newModelConfig := *modelConfig
+		newModelConfig.Type = guessModelType(modelName)
+		modelConfig = &newModelConfig
+	}
+
 	body, mode, err := utils.BuildRequest(modelConfig)
 	if err != nil {
 		return nil, err
@@ -372,11 +391,23 @@ func TestAllChannels(c *gin.Context) {
 	}
 }
 
+func tryTestChannel(channelID int, modelName string) (bool, error) {
+	if !common.RedisEnabled {
+		return true, nil
+	}
+	lockKey := fmt.Sprintf("channel_test_lock:%d:%s", channelID, modelName)
+	locked, err := common.RDB.SetNX(context.Background(), lockKey, true, 30*time.Second).Result()
+	if err != nil {
+		return false, err
+	}
+	return locked, nil
+}
+
 func AutoTestBannedModels() {
 	log := log.WithFields(log.Fields{
 		"auto_test_banned_models": "true",
 	})
-	channels, err := monitor.GetAllBannedChannels(context.Background())
+	channels, err := monitor.GetAllBannedModelChannels(context.Background())
 	if err != nil {
 		log.Errorf("failed to get banned channels: %s", err.Error())
 		return
@@ -389,6 +420,15 @@ func AutoTestBannedModels() {
 
 	for modelName, ids := range channels {
 		for _, id := range ids {
+			locked, err := tryTestChannel(int(id), modelName)
+			if err != nil {
+				log.Errorf("failed to try test channel %d: %s", id, err.Error())
+				notify.Error(fmt.Sprintf("failed to try test channel %d: %s", id, err.Error()))
+				continue
+			}
+			if !locked {
+				continue
+			}
 			channel, err := model.LoadChannelByID(int(id))
 			if err != nil {
 				log.Errorf("failed to get channel by model %s: %s", modelName, err.Error())
@@ -397,15 +437,20 @@ func AutoTestBannedModels() {
 			result, err := testSingleModel(mc, channel, modelName)
 			if err != nil {
 				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed: %s", channel.Type, channel.Name, channel.ID, modelName, err.Error()))
+				continue
 			}
 			if result.Success {
-				log.Infof("model %s(%d) test success, unban it", modelName, channel.ID)
+				log.Infof("channel[%d] %s(%d) model %s test success, unban it", channel.Type, channel.Name, channel.ID, modelName)
+				notify.Info(fmt.Sprintf("channel[%d] %s(%d) model %s test success, unban it", channel.Type, channel.Name, channel.ID, modelName))
 				err = monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
 				if err != nil {
 					log.Errorf("clear channel errors failed: %+v", err)
 				}
 			} else {
-				log.Infof("model %s(%d) test failed", modelName, channel.ID)
+				log.Infof("channel[%d] %s(%d) model %s test failed, code: %d, response: %s",
+					channel.Type, channel.Name, channel.ID, modelName, result.Code, result.Response)
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed, code: %d, response: %s", channel.Type, channel.Name, channel.ID, modelName, result.Code, result.Response))
 			}
 		}
 	}

@@ -137,7 +137,7 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 
 func autoTestBannedModels(ctx context.Context) {
 	log.Info("auto test banned models start")
-	ticker := time.NewTicker(time.Second * 15)
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {
