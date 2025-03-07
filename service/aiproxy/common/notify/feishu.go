@@ -90,7 +90,7 @@ type Headers struct {
 }
 
 type TenantAccessMeg struct {
-	AppId     string `json:"app_id"`
+	AppID     string `json:"app_id"`
 	AppSecret string `json:"app_secret"`
 }
 
