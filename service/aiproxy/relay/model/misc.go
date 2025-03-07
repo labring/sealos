@@ -34,17 +34,17 @@ func (e *Error) JSONOrEmpty() string {
 }
 
 type ErrorWithStatusCode struct {
-	Error      Error `json:"error"`
+	Error      Error `json:"error,omitempty"`
 	StatusCode int   `json:"-"`
 }
 
 func (e *ErrorWithStatusCode) JSONOrEmpty() string {
-	if e.Error.IsEmpty() {
+	if e.StatusCode == 0 && e.Error.IsEmpty() {
 		return ""
 	}
-	jsonBuf, err := sonic.Marshal(e)
+	jsonBuf, err := sonic.MarshalString(e)
 	if err != nil {
 		return ""
 	}
-	return conv.BytesToString(jsonBuf)
+	return jsonBuf
 }
