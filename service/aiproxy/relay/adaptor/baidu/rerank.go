@@ -3,7 +3,6 @@ package baidu
 import (
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -33,7 +32,7 @@ func RerankHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Us
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if reRankResp.Error != nil && reRankResp.Error.ErrorCode != 0 {
-		return nil, openai.ErrorWrapperWithMessage(reRankResp.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(reRankResp.Error.ErrorCode), http.StatusInternalServerError)
+		return nil, ErrorHandler(reRankResp.Error)
 	}
 	respMap := make(map[string]any)
 	err = sonic.Unmarshal(respBody, &respMap)

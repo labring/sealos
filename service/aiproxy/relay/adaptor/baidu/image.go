@@ -3,7 +3,6 @@ package baidu
 import (
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -45,7 +44,7 @@ func ImageHandler(_ *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usa
 	}
 
 	if imageResponse.Error != nil && imageResponse.Error.ErrorMsg != "" {
-		return usage, openai.ErrorWrapperWithMessage(imageResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(imageResponse.Error.ErrorCode), http.StatusBadRequest)
+		return usage, ErrorHandler(imageResponse.Error)
 	}
 
 	openaiResponse := ToOpenAIImageResponse(&imageResponse)
