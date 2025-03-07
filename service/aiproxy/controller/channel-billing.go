@@ -34,9 +34,9 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		if err := channel.UpdateBalance(balance); err != nil {
 			return 0, fmt.Errorf("failed to update channel [%d] %s(%d) balance: %s", channel.Type, channel.Name, channel.ID, err.Error())
 		}
-		if channel.BalanceWarningThreshold > 0 && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) &&
-			balance < channel.BalanceWarningThreshold {
-			return 0, fmt.Errorf("channel[%d] %s(%d) balance: %f, warning threshold: %f", channel.Type, channel.Name, channel.ID, balance, channel.BalanceWarningThreshold)
+		if !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) &&
+			balance < channel.GetBalanceThreshold() {
+			return 0, fmt.Errorf("channel[%d] %s(%d) balance is less than threshold: %f", channel.Type, channel.Name, channel.ID, balance)
 		}
 		return balance, nil
 	}
@@ -86,6 +86,9 @@ func updateAllChannelsBalance() error {
 	semaphore := make(chan struct{}, 10)
 
 	for _, channel := range channels {
+		if !channel.EnabledAutoBalanceCheck {
+			continue
+		}
 		wg.Add(1)
 		semaphore <- struct{}{}
 		go func(ch *model.Channel) {
