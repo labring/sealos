@@ -104,7 +104,10 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (*Request, error) {
 	if claudeRequest.Thinking != nil {
 		if claudeRequest.Thinking.BudgetTokens == 0 ||
 			claudeRequest.Thinking.BudgetTokens >= claudeRequest.MaxTokens {
-			claudeRequest.Thinking.BudgetTokens = claudeRequest.MaxTokens / 3 * 2
+			claudeRequest.Thinking.BudgetTokens = claudeRequest.MaxTokens / 2
+		}
+		if claudeRequest.Thinking.BudgetTokens < 1024 {
+			claudeRequest.Thinking.BudgetTokens = 1024
 		}
 		claudeRequest.Temperature = nil
 	}
