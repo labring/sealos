@@ -3,6 +3,7 @@ package notify
 import (
 	"time"
 
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/trylock"
 	log "github.com/sirupsen/logrus"
 )
@@ -16,13 +17,26 @@ var (
 )
 
 func (n *StdNotifier) Notify(level Level, title, message string) {
+	note := config.GetNotifyNote()
 	switch level {
 	case LevelInfo:
-		infoLogrus.Info("title: ", title, "message: ", message)
+		logrus := infoLogrus.WithField("title", title)
+		if note != "" {
+			logrus = logrus.WithField("note", note)
+		}
+		logrus.Info(message)
 	case LevelWarn:
-		warnLogrus.Warn("title: ", title, "message: ", message)
+		logrus := warnLogrus.WithField("title", title)
+		if note != "" {
+			logrus = logrus.WithField("note", note)
+		}
+		logrus.Warn(message)
 	case LevelError:
-		errorLogrus.Error("title: ", title, "message: ", message)
+		logrus := errorLogrus.WithField("title", title)
+		if note != "" {
+			logrus = logrus.WithField("note", note)
+		}
+		logrus.Error(message)
 	}
 }
 
