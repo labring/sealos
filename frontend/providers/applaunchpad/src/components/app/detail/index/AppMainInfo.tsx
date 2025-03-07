@@ -11,9 +11,10 @@ import { getUserNamespace } from '@/utils/user';
 import { Box, Button, Center, Flex, Grid, Text, useDisclosure } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import MonitorModal from './MonitorModal';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useQuery } from '@tanstack/react-query';
+import { checkReady } from '@/api/platform';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -34,18 +35,45 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       })),
     [app]
   );
-  const networkStatuses = useNetworkStatus(networks);
+
+  const retryCount = useRef(0);
+  const { data: networkStatus, refetch } = useQuery({
+    queryKey: ['networkStatus', app.appName],
+    queryFn: () => checkReady(app.appName),
+    retry: 5,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+    onSuccess: (data) => {
+      const hasUnready = data.some((item) => !item.ready);
+      if (!hasUnready) {
+        retryCount.current = 0;
+        return;
+      }
+      if (retryCount.current < 5) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
+        retryCount.current += 1;
+        setTimeout(() => {
+          refetch();
+        }, delay);
+      }
+    },
+    refetchIntervalInBackground: false,
+    staleTime: 1000 * 60 * 5
+  });
 
   const statusMap = useMemo(
     () =>
-      networkStatuses.reduce((acc, status) => {
-        if (status.data?.url) {
-          acc[status.data.url] = status.data;
-        }
-        return acc;
-      }, {} as Record<string, { isReady?: boolean; error?: string }>),
-    [networkStatuses]
+      networkStatus
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
+        : {},
+    [networkStatus]
   );
+
+  console.log(statusMap, networks, 'statusMap');
 
   return (
     <Box p={'24px'} position={'relative'}>
@@ -126,7 +154,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                       <Flex alignItems={'center'} gap={'2px'}>
                         {network.public && (
                           <>
-                            {statusMap[network.public]?.isReady ? (
+                            {statusMap[network.public]?.ready ? (
                               <Center
                                 fontSize={'12px'}
                                 fontWeight={400}
