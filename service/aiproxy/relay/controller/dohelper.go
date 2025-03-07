@@ -20,16 +20,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
-	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
 )
-
-func isErrorHappened(resp *http.Response) bool {
-	if resp == nil {
-		return false
-	}
-	return resp.StatusCode != http.StatusOK
-}
 
 const (
 	// 0.5MB
@@ -101,14 +93,14 @@ func DoHelper(
 	}
 
 	// 3. Handle error response
-	if isErrorHappened(resp) {
-		relayErr := utils.RelayErrorHandler(meta, resp)
+	if resp == nil {
+		relayErr := openai.ErrorWrapperWithMessage("response is nil", openai.ErrorCodeBadResponse, http.StatusInternalServerError)
 		detail.ResponseBody = relayErr.JSONOrEmpty()
 		return nil, &detail, relayErr
 	}
 
 	// 4. Handle success response
-	usage, relayErr := handleSuccessResponse(a, c, meta, resp, &detail)
+	usage, relayErr := handleResponse(a, c, meta, resp, &detail)
 	if relayErr != nil {
 		return nil, &detail, relayErr
 	}
@@ -203,7 +195,7 @@ func doRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, req *http.Req
 	return resp, nil
 }
 
-func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, resp *http.Response, detail *model.RequestDetail) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+func handleResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, resp *http.Response, detail *model.RequestDetail) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
 	buf := getBuffer()
 	defer putBuffer(buf)
 
@@ -216,10 +208,15 @@ func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, r
 	c.Writer = rw
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
+
 	usage, relayErr := a.DoResponse(meta, c, resp)
-	// copy body buffer
-	// do not use bytes conv
-	detail.ResponseBody = rw.body.String()
+	if relayErr != nil {
+		detail.ResponseBody = relayErr.JSONOrEmpty()
+	} else {
+		// copy body buffer
+		// do not use bytes conv
+		detail.ResponseBody = rw.body.String()
+	}
 
 	return usage, relayErr
 }

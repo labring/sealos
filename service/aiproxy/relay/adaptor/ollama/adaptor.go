@@ -62,12 +62,12 @@ func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*h
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(meta, c, resp)
+		usage, err = EmbeddingHandler(meta, c, resp)
 	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			err, usage = StreamHandler(meta, c, resp)
+			usage, err = StreamHandler(meta, c, resp)
 		} else {
-			err, usage = Handler(meta, c, resp)
+			usage, err = Handler(meta, c, resp)
 		}
 	default:
 		return nil, openai.ErrorWrapperWithMessage(fmt.Sprint("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)

@@ -319,7 +319,11 @@ func ResponseClaude2OpenAI(meta *meta.Meta, claudeResponse *Response) *openai.Te
 	return &fullTextResponse
 }
 
-func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -416,35 +420,28 @@ func StreamHandler(m *meta.Meta, c *gin.Context, resp *http.Response) (*model.Er
 
 	render.Done(c)
 
-	return nil, &usage
+	return &usage, nil
 }
 
-func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	var claudeResponse Response
 	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&claudeResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
-	}
-	if claudeResponse.Error.Type != "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: claudeResponse.Error.Message,
-				Type:    claudeResponse.Error.Type,
-				Param:   "",
-				Code:    claudeResponse.Error.Type,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	fullTextResponse := ResponseClaude2OpenAI(meta, &claudeResponse)
 	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
+	return &fullTextResponse.Usage, nil
 }

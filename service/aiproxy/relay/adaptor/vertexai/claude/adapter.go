@@ -85,9 +85,9 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if utils.IsStreamResponse(resp) {
-		err, usage = anthropic.StreamHandler(meta, c, resp)
+		usage, err = anthropic.StreamHandler(meta, c, resp)
 	} else {
-		err, usage = anthropic.Handler(meta, c, resp)
+		usage, err = anthropic.Handler(meta, c, resp)
 	}
 	return
 }
