@@ -60,8 +60,8 @@ func relayController(mode relaymode.Mode) (RelayController, bool) {
 }
 
 func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayController) (*model.ErrorWithStatusCode, bool) {
-	err := relayController(meta, c)
-	if err == nil {
+	relayErr := relayController(meta, c)
+	if relayErr == nil {
 		if _, _, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
@@ -72,7 +72,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		}
 		return nil, false
 	}
-	if shouldErrorMonitor(err.StatusCode) {
+	if shouldErrorMonitor(relayErr.StatusCode) {
 		beyondThreshold, autoBanned, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
@@ -88,17 +88,19 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
-				"autoBanned")
+				"last error detail: "+relayErr.JSONOrEmpty(),
+			)
 		} else if beyondThreshold {
 			notify.WarnThrottle(
 				fmt.Sprintf("beyondThreshold:%d:%s", meta.Channel.ID, meta.OriginModel),
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s error rate is beyond threshold",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
-				"beyondThreshold")
+				"last error detail: "+relayErr.JSONOrEmpty(),
+			)
 		}
 	}
-	return err, shouldRetry(c, err.StatusCode)
+	return relayErr, shouldRetry(c, relayErr.StatusCode)
 }
 
 func filterChannels(channels []*dbmodel.Channel, ignoreChannel ...int) []*dbmodel.Channel {
