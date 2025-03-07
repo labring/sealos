@@ -483,7 +483,7 @@ func InitModelConfigAndChannelCache() error {
 
 func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
-	err := DB.Where("status = ? or status = ?", ChannelStatusEnabled, ChannelStatusFail).Find(&channels).Error
+	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
 	if err != nil {
 		return nil, err
 	}

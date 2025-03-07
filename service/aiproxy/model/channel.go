@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/monitor"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -19,10 +21,8 @@ const (
 )
 
 const (
-	ChannelStatusUnknown  = 0
-	ChannelStatusEnabled  = 1 // don't use 0, 0 is the default value!
-	ChannelStatusDisabled = 2 // also don't use 0
-	ChannelStatusFail     = 3
+	ChannelStatusUnknown = 0
+	ChannelStatusEnabled = 1
 )
 
 type ChannelConfig struct {
@@ -279,7 +279,12 @@ func GetChannelByID(id int) (*Channel, error) {
 	return &channel, HandleNotFound(err, ErrChannelNotFound)
 }
 
-func BatchInsertChannels(channels []*Channel) error {
+func BatchInsertChannels(channels []*Channel) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	for _, channel := range channels {
 		if err := CheckModelConfigExist(channel.Models); err != nil {
 			return err
@@ -290,7 +295,13 @@ func BatchInsertChannels(channels []*Channel) error {
 	})
 }
 
-func UpdateChannel(channel *Channel) error {
+func UpdateChannel(channel *Channel) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			_ = monitor.ClearChannelAllModelErrors(context.Background(), channel.ID)
+		}
+	}()
 	if err := CheckModelConfigExist(channel.Models); err != nil {
 		return err
 	}
@@ -365,12 +376,26 @@ func (c *Channel) UpdateBalance(balance float64) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DeleteChannelByID(id int) error {
+func DeleteChannelByID(id int) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			_ = monitor.ClearChannelAllModelErrors(context.Background(), id)
+		}
+	}()
 	result := DB.Delete(&Channel{ID: id})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DeleteChannelsByIDs(ids []int) error {
+func DeleteChannelsByIDs(ids []int) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			for _, id := range ids {
+				_ = monitor.ClearChannelAllModelErrors(context.Background(), id)
+			}
+		}
+	}()
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return tx.
 			Where("id IN (?)", ids).
@@ -393,15 +418,5 @@ func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {
 			"used_amount":   gorm.Expr("used_amount + ?", amount),
 			"request_count": gorm.Expr("request_count + ?", requestCount),
 		})
-	return HandleUpdateResult(result, ErrChannelNotFound)
-}
-
-func DeleteDisabledChannel() error {
-	result := DB.Where("status = ?", ChannelStatusDisabled).Delete(&Channel{})
-	return HandleUpdateResult(result, ErrChannelNotFound)
-}
-
-func DeleteFailChannel() error {
-	result := DB.Where("status = ?", ChannelStatusFail).Delete(&Channel{})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }

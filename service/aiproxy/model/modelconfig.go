@@ -160,11 +160,21 @@ func SearchModelConfigs(keyword string, page int, perPage int, model string, own
 	return configs, total, err
 }
 
-func SaveModelConfig(config *ModelConfig) error {
+func SaveModelConfig(config *ModelConfig) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	return DB.Save(config).Error
 }
 
-func SaveModelConfigs(configs []*ModelConfig) error {
+func SaveModelConfigs(configs []*ModelConfig) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	return DB.Transaction(func(tx *gorm.DB) error {
 		for _, config := range configs {
 			if err := tx.Save(config).Error; err != nil {
