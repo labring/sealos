@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
@@ -179,7 +178,7 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if baiduResponse.Error != nil && baiduResponse.Error.ErrorCode != 0 {
-		return nil, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
+		return nil, ErrorHandler(baiduResponse.Error)
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
 	fullTextResponse.Model = meta.OriginModel
