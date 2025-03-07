@@ -93,6 +93,10 @@ func GetUsageAndChoicesResponseFromNode(node *ast.Node) (*UsageAndChoicesRespons
 }
 
 func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -325,6 +329,10 @@ func GetSlimTextResponseFromNode(node *ast.Node) (*SlimTextResponse, error) {
 }
 
 func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)

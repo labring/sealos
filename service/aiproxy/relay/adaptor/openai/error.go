@@ -1,4 +1,4 @@
-package utils
+package openai
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
-	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
@@ -54,26 +54,14 @@ func (e GeneralErrorResponse) ToMessage() string {
 }
 
 const (
+	ErrorTypeAIProxy     = middleware.ErrorTypeAIPROXY
 	ErrorTypeUpstream    = "upstream_error"
 	ErrorCodeBadResponse = "bad_response"
 )
 
-func RelayErrorHandler(_ *meta.Meta, resp *http.Response) *model.ErrorWithStatusCode {
-	if resp == nil {
-		return &model.ErrorWithStatusCode{
-			StatusCode: 500,
-			Error: model.Error{
-				Message: "resp is nil",
-				Type:    ErrorTypeUpstream,
-				Code:    ErrorCodeBadResponse,
-			},
-		}
-	}
-	return RelayDefaultErrorHanlder(resp)
-}
-
-func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
+func ErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 	defer resp.Body.Close()
+
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return &model.ErrorWithStatusCode{
@@ -89,10 +77,9 @@ func RelayDefaultErrorHanlder(resp *http.Response) *model.ErrorWithStatusCode {
 	ErrorWithStatusCode := &model.ErrorWithStatusCode{
 		StatusCode: resp.StatusCode,
 		Error: model.Error{
-			Message: "",
-			Type:    ErrorTypeUpstream,
-			Code:    ErrorCodeBadResponse,
-			Param:   strconv.Itoa(resp.StatusCode),
+			Type:  ErrorTypeUpstream,
+			Code:  ErrorCodeBadResponse,
+			Param: strconv.Itoa(resp.StatusCode),
 		},
 	}
 

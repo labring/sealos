@@ -10,7 +10,6 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
-	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -80,19 +79,11 @@ func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*h
 }
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
-	var responseText *string
 	if utils.IsStreamResponse(resp) {
-		err, responseText = StreamHandler(meta, c, resp)
+		usage, err = StreamHandler(meta, c, resp)
 	} else {
-		err, responseText = Handler(meta, c, resp)
+		usage, err = Handler(meta, c, resp)
 	}
-	if responseText != nil {
-		usage = openai.ResponseText2Usage(*responseText, meta.ActualModel, meta.InputTokens)
-	} else {
-		usage = &relaymodel.Usage{}
-	}
-	usage.PromptTokens = meta.InputTokens
-	usage.TotalTokens = usage.PromptTokens + usage.CompletionTokens
 	return
 }
 

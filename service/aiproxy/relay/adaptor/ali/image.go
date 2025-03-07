@@ -48,6 +48,12 @@ func ConvertImageRequest(meta *meta.Meta, req *http.Request) (string, http.Heade
 }
 
 func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
+	defer resp.Body.Close()
+
 	log := middleware.GetLogger(c)
 
 	responseFormat := meta.MustGet(MetaResponseFormat).(string)
@@ -56,10 +62,6 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "read_response_body_failed", http.StatusInternalServerError)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		return nil, openai.ErrorWrapper(err, "close_response_body_failed", http.StatusInternalServerError)
 	}
 	err = sonic.Unmarshal(responseBody, &aliTaskResponse)
 	if err != nil {
@@ -81,7 +83,6 @@ func ImageHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.
 			Error: model.Error{
 				Message: aliResponse.Output.Message,
 				Type:    "ali_error",
-				Param:   "",
 				Code:    aliResponse.Output.Code,
 			},
 			StatusCode: resp.StatusCode,
