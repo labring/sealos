@@ -47,8 +47,6 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     [networkStatuses]
   );
 
-  console.log(networks, networkStatuses);
-
   return (
     <Box p={'24px'} position={'relative'}>
       <>

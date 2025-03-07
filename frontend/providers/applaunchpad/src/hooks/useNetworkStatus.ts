@@ -14,23 +14,26 @@ interface ApiResponse {
 }
 
 export const useNetworkStatus = (networks: { inline: string; public: string }[]) => {
-  const publicUrls = networks
+  const urlPairs = networks
     .map((network) => network.public)
-    .filter((url) => url.startsWith('http'));
+    .filter(Boolean)
+    .map((originalUrl) => ({
+      originalUrl,
+      fetchUrl: originalUrl.replace(/^(wss|grpcs):\/\//, 'https://')
+    }));
 
   return useQueries({
-    queries: publicUrls.map((url) => ({
-      queryKey: ['networkStatus', url],
+    queries: urlPairs.map(({ originalUrl, fetchUrl }) => ({
+      queryKey: ['networkStatus', originalUrl],
       queryFn: async (): Promise<NetworkStatus> => {
-        const response = await fetch(`/api/check-ready?url=${encodeURIComponent(url)}`);
+        const response = await fetch(`/api/check-ready?url=${encodeURIComponent(fetchUrl)}`);
         const data: ApiResponse = await response.json();
-        console.log(data, 123123);
         if (data.code !== 200) {
           throw new Error(data.message || data.error || 'Service not ready');
         }
 
         return {
-          url,
+          url: originalUrl,
           isReady: data.data?.ready ?? false
         };
       },
