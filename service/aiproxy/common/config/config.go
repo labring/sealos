@@ -60,6 +60,7 @@ func init() {
 	geminiSafetySetting.Store("BLOCK_NONE")
 	billingEnabled.Store(true)
 	internalToken.Store(os.Getenv("INTERNAL_TOKEN"))
+	notifyNote.Store(os.Getenv("NOTIFY_NOTE"))
 }
 
 func GetDisableModelConfig() bool {
