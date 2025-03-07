@@ -147,7 +147,7 @@ export default function Desktop(props: any) {
       const { data: notification } = await getGlobalNotification();
       if (!notification) return;
       const newID = notification?.uid;
-      const title = notification?.i18n[i18n.language].title;
+      const title = notification?.i18n[i18n?.language]?.title;
 
       if (notification.licenseFrontend) {
         message({

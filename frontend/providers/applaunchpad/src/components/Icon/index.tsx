@@ -60,7 +60,8 @@ export const IconMap = {
   container: require('./icons/container.svg').default,
   arrowRight: require('./icons/arrowRight.svg').default,
   chart: require('./icons/chart.svg').default,
-  export: require('./icons/export.svg').default
+  export: require('./icons/export.svg').default,
+  loading: require('./icons/loading.svg').default
 };
 
 export type IconType = keyof typeof IconMap;
