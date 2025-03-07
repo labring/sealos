@@ -62,7 +62,7 @@ func UpdateChannelBalance(c *gin.Context) {
 	}
 	balance, err := updateChannelBalance(channel)
 	if err != nil {
-		notify.Error("check balance error", err.Error())
+		notify.Error(fmt.Sprintf("check channel[%d] %s(%d) balance error", channel.Type, channel.Name, channel.ID), err.Error())
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
 			Message: err.Error(),
@@ -93,7 +93,7 @@ func updateAllChannelsBalance() error {
 			defer func() { <-semaphore }()
 			_, err := updateChannelBalance(ch)
 			if err != nil {
-				notify.Error("check balance error", err.Error())
+				notify.Error(fmt.Sprintf("check channel[%d] %s(%d) balance error", ch.Type, ch.Name, ch.ID), err.Error())
 			}
 		}(channel)
 	}
