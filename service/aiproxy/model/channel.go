@@ -9,6 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -315,7 +316,7 @@ func ClearLastTestErrorAt(id int) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode int, took float64, success bool, response string, code int) (*ChannelTest, error) {
+func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode relaymode.Mode, took float64, success bool, response string, code int) (*ChannelTest, error) {
 	var ct *ChannelTest
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if !success {
@@ -335,7 +336,7 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 			ChannelName: c.Name,
 			Model:       model,
 			ActualModel: actualModel,
-			Mode:        mode,
+			Mode:        int(mode),
 			TestAt:      testAt,
 			Took:        took,
 			Success:     success,

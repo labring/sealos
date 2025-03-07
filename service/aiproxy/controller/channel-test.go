@@ -32,7 +32,7 @@ import (
 
 const channelTestRequestID = "channel-test"
 
-func guessModelType(model string) int {
+func guessModelType(model string) relaymode.Mode {
 	for _, c := range channeltype.ChannelAdaptor {
 		for _, m := range c.GetModelList() {
 			if m.Model == model {
