@@ -38,3 +38,6 @@ export const getPriceBonus = () =>
 
 export const checkPermission = (payload: { appName: string }) =>
   GET('/api/platform/checkPermission', payload);
+
+export const checkReady = (appName: string) =>
+  GET<{ url: string; ready: boolean; error?: string }[]>(`/api/checkReady?appName=${appName}`);
