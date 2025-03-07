@@ -62,8 +62,6 @@ const MainBody = () => {
     [networkStatus]
   );
 
-  console.log(statusMap, networkStatus, '12313');
-
   const networkColumn: {
     title: string;
     dataIndex?: keyof NetworkType;
