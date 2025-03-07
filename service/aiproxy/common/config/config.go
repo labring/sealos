@@ -36,7 +36,7 @@ var (
 var (
 	retryTimes              atomic.Int64
 	enableModelErrorAutoBan atomic.Bool
-	modelErrorAutoBanRate   = math.Float64bits(0.5)
+	modelErrorAutoBanRate   = math.Float64bits(0.3)
 	timeoutWithModelType    atomic.Value
 	disableModelConfig      = env.Bool("DISABLE_MODEL_CONFIG", false)
 )

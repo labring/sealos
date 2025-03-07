@@ -62,7 +62,7 @@ func relayController(mode relaymode.Mode) (RelayController, bool) {
 func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayController) (*model.ErrorWithStatusCode, bool) {
 	err := relayController(meta, c)
 	if err == nil {
-		if _, err := monitor.AddRequest(
+		if _, _, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
@@ -73,7 +73,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		return nil, false
 	}
 	if shouldErrorMonitor(err.StatusCode) {
-		banned, err := monitor.AddRequest(
+		beyondThreshold, autoBanned, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
@@ -82,13 +82,20 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 		if err != nil {
 			log.Errorf("add request failed: %+v", err)
 		}
-		if banned {
+		if autoBanned {
 			notify.ErrorThrottle(
-				fmt.Sprintf("banned:%d:%s", meta.Channel.ID, meta.OriginModel),
+				fmt.Sprintf("autoBanned:%d:%s", meta.Channel.ID, meta.OriginModel),
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
-				"banned")
+				"autoBanned")
+		} else if beyondThreshold {
+			notify.WarnThrottle(
+				fmt.Sprintf("beyondThreshold:%d:%s", meta.Channel.ID, meta.OriginModel),
+				time.Minute,
+				fmt.Sprintf("channel[%d] %s(%d) model %s error rate is beyond threshold",
+					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
+				"beyondThreshold")
 		}
 	}
 	return err, shouldRetry(c, err.StatusCode)
