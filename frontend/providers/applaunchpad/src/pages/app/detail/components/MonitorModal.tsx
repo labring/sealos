@@ -47,7 +47,7 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
               CPU&ensp;({appDetail.usedCpu.yData[appDetail.usedCpu.yData.length - 1]}%)
             </Box>
             <Box height={'100px'}>
-              <PodLineChart type={'blue'} data={appDetail.usedCpu} isShowLabel />
+              {/* <PodLineChart type={'blue'} data={appDetail.usedCpu} isShowLabel /> */}
             </Box>
           </Box>
           <Box p={'24px'} bg={'grayModern.25'} border={theme.borders.base} borderRadius={'lg'}>
@@ -56,7 +56,7 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
               {appDetail.usedMemory.yData[appDetail.usedMemory.yData.length - 1]}%)
             </Box>
             <Box height={'100px'}>
-              <PodLineChart type={'purple'} data={appDetail.usedMemory} isShowLabel />
+              {/* <PodLineChart type={'purple'} data={appDetail.usedMemory} isShowLabel /> */}
             </Box>
           </Box>
         </ModalBody>

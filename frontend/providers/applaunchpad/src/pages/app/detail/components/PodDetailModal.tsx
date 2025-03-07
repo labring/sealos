@@ -189,7 +189,7 @@ const Logs = ({
             />
           </Box>
         </Flex>
-        <Grid gridTemplateColumns={'1fr 1fr'} gridGap={2} py={2} px={7}>
+        {/* <Grid gridTemplateColumns={'1fr 1fr'} gridGap={2} py={2} px={7}>
           <Box>
             <Box mb={3}>CPU ({pod.usedCpu.yData[pod.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'80px'} w={'100%'}>
@@ -204,7 +204,7 @@ const Logs = ({
               <PodLineChart type={'purple'} data={pod.usedMemory} />
             </Box>
           </Box>
-        </Grid>
+        </Grid> */}
         <Grid py={5} flex={'1 0 0'} h={0} px={7} gridTemplateColumns={'450px 1fr'} gridGap={4}>
           <Flex flexDirection={'column'} h={'100%'}>
             <Box mb={4} color={'myGray.600'}>
