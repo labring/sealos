@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/trylock"
 )
 
@@ -118,6 +119,10 @@ func PostToFeiShuv2(ctx context.Context, color, title, text, wh string) error {
 	if wh == "" {
 		return errors.New("feishu webhook url is empty")
 	}
+	note := config.GetNotifyNote()
+	if note == "" {
+		note = "AI Proxy"
+	}
 	u := FSMessagev2{
 		MsgType: "interactive",
 		Card: Cards{
@@ -147,7 +152,7 @@ func PostToFeiShuv2(ctx context.Context, color, title, text, wh string) error {
 					Tag: "note",
 					Elements: []Element{
 						{
-							Content: title,
+							Content: note,
 							Tag:     "lark_md",
 						},
 					},

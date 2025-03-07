@@ -30,6 +30,7 @@ var (
 	logDetailResponseBodyMaxSize int64 = 128 * 1024 // 128KB
 	logDetailStorageHours        int64 = 3 * 24     // 3 days
 	internalToken                atomic.Value
+	notifyNote                   atomic.Value
 )
 
 var (
@@ -230,4 +231,13 @@ func GetInternalToken() string {
 func SetInternalToken(token string) {
 	token = env.String("INTERNAL_TOKEN", token)
 	internalToken.Store(token)
+}
+
+func GetNotifyNote() string {
+	return notifyNote.Load().(string)
+}
+
+func SetNotifyNote(note string) {
+	note = env.String("NOTIFY_NOTE", note)
+	notifyNote.Store(note)
 }
