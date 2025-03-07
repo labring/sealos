@@ -74,7 +74,7 @@ const AppMainInfo = ({
           >
             <MyIcon name="enlarge" width={'16px'} fill={'#667085'} />
           </Button>
-          <Box>
+          {/* <Box>
             <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'60px'}>
               <PodLineChart type={'blue'} data={app.usedCpu} />
@@ -87,7 +87,7 @@ const AppMainInfo = ({
             <Box h={'60px'}>
               <PodLineChart type={'purple'} data={app.usedMemory} />
             </Box>
-          </Box>
+          </Box> */}
         </Grid>
         <Flex
           mt={3}
