@@ -46,12 +46,20 @@ type Channel struct {
 	Status                  int               `gorm:"default:1;index"                    json:"status"`
 	Type                    int               `gorm:"default:0;index"                    json:"type"`
 	Priority                int32             `json:"priority"`
-	BalanceWarningThreshold float64           `json:"balance_warning_threshold"`
+	EnabledAutoBalanceCheck bool              `json:"enabled_auto_balance_check"`
+	BalanceThreshold        float64           `json:"balance_threshold"`
 	Config                  *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
+}
+
+func (c *Channel) GetBalanceThreshold() float64 {
+	if c.BalanceThreshold < 0 {
+		return 0
+	}
+	return c.BalanceThreshold
 }
 
 const (
@@ -297,7 +305,8 @@ func UpdateChannel(channel *Channel) error {
 			"type",
 			"priority",
 			"config",
-			"balance_warning_threshold").
+			"enabled_auto_balance_check",
+			"balance_threshold").
 		Clauses(clause.Returning{}).
 		Where("id = ?", channel.ID).
 		Updates(channel)
