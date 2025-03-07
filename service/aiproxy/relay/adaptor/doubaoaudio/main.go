@@ -19,7 +19,7 @@ func GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.AudioSpeech:
 		return u + "/api/v1/tts/ws_binary", nil
 	default:
-		return "", fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -44,7 +44,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	case relaymode.AudioSpeech:
 		return ConvertTTSRequest(meta, req)
 	default:
-		return "", nil, nil, fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -58,7 +58,7 @@ func (a *Adaptor) SetupRequestHeader(meta *meta.Meta, _ *gin.Context, req *http.
 		req.Header.Set("Authorization", "Bearer;"+token)
 		return nil
 	default:
-		return fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
+		return fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -67,7 +67,7 @@ func (a *Adaptor) DoRequest(meta *meta.Meta, _ *gin.Context, req *http.Request) 
 	case relaymode.AudioSpeech:
 		return TTSDoRequest(meta, req)
 	default:
-		return nil, fmt.Errorf("unsupported relay mode %d for doubao", meta.Mode)
+		return nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -77,7 +77,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		return TTSDoResponse(meta, c, resp)
 	default:
 		return nil, openai.ErrorWrapperWithMessage(
-			fmt.Sprintf("unsupported relay mode %d for doubao", meta.Mode),
+			fmt.Sprintf("unsupported mode: %s", meta.Mode),
 			nil,
 			http.StatusBadRequest,
 		)

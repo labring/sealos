@@ -44,7 +44,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ChatCompletions:
 		return meta.Channel.BaseURL + "/chat/completions", nil
 	default:
-		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -68,7 +68,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		}
 		return openai.ConvertRequest(meta, req)
 	default:
-		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -82,7 +82,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		return openai.DoResponse(meta, c, resp)
 	default:
 		return nil, openai.ErrorWrapperWithMessage(
-			fmt.Sprintf("unsupported mode: %d", meta.Mode),
+			fmt.Sprintf("unsupported mode: %s", meta.Mode),
 			nil,
 			http.StatusBadRequest,
 		)

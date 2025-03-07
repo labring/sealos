@@ -3,6 +3,7 @@ package openai
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -53,7 +54,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.Rerank:
 		path = "/rerank"
 	default:
-		return "", errors.New("unsupported mode")
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 
 	return u + path, nil
@@ -89,7 +90,7 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	case relaymode.Rerank:
 		return ConvertRerankRequest(meta, req)
 	default:
-		return "", nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -114,7 +115,7 @@ func DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *re
 			usage, err = Handler(meta, c, resp)
 		}
 	default:
-		return nil, ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
+		return nil, ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

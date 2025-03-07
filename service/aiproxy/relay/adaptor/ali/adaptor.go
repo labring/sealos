@@ -2,7 +2,7 @@ package ali
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -45,7 +45,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.Rerank:
 		return u + "/api/v1/services/rerank/text-rerank/text-rerank", nil
 	default:
-		return "", errors.New("unsupported mode")
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -69,7 +69,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	case relaymode.AudioTranscription:
 		return ConvertSTTRequest(meta, req)
 	default:
-		return "", nil, nil, errors.New("unsupported convert request mode")
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -114,7 +114,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.AudioTranscription:
 		usage, err = STTDoResponse(meta, c, resp)
 	default:
-		return nil, openai.ErrorWrapperWithMessage("unsupported response mode", "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprint("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }
