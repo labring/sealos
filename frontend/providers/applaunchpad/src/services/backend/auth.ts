@@ -46,7 +46,7 @@ users:
 export const authSession = async (header: IncomingHttpHeaders) => {
   if (!header) return Promise.reject('unAuthorization');
   // console.log('header:', header);
-  let {authorization} = header;
+  let { authorization } = header;
   if (!authorization) return Promise.reject('unAuthorization');
 
   try {
@@ -65,4 +65,4 @@ export const getAdminAuthorization = async (header: IncomingHttpHeaders) => {
   } catch (err) {
     return Promise.reject('unAuthorization');
   }
-}
+};
