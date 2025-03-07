@@ -46,7 +46,7 @@ type Channel struct {
 	Status                  int               `gorm:"default:1;index"                    json:"status"`
 	Type                    int               `gorm:"default:0;index"                    json:"type"`
 	Priority                int32             `json:"priority"`
-	BalanceWarningThreshold float64           `gorm:"default:100"                        json:"balance_warning_threshold"`
+	BalanceWarningThreshold float64           `json:"balance_warning_threshold"`
 	Config                  *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
@@ -63,13 +63,6 @@ func (c *Channel) GetPriority() int32 {
 		return DefaultPriority
 	}
 	return c.Priority
-}
-
-func (c *Channel) GetBalanceWarningThreshold() float64 {
-	if c.BalanceWarningThreshold == 0 {
-		return 100
-	}
-	return c.BalanceWarningThreshold
 }
 
 func GetModelConfigWithModels(models []string) ([]string, []string, error) {

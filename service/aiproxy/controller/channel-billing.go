@@ -34,10 +34,9 @@ func updateChannelBalance(channel *model.Channel) (float64, error) {
 		if err := channel.UpdateBalance(balance); err != nil {
 			return 0, fmt.Errorf("failed to update channel [%d] %s(%d) balance: %s", channel.Type, channel.Name, channel.ID, err.Error())
 		}
-		threshold := channel.GetBalanceWarningThreshold()
-		if threshold > 0 && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) &&
-			balance < threshold {
-			return 0, fmt.Errorf("channel[%d] %s(%d) balance: %f, warning threshold: %f", channel.Type, channel.Name, channel.ID, balance, threshold)
+		if channel.BalanceWarningThreshold > 0 && !errors.Is(err, adaptor.ErrGetBalanceNotImplemented) &&
+			balance < channel.BalanceWarningThreshold {
+			return 0, fmt.Errorf("channel[%d] %s(%d) balance: %f, warning threshold: %f", channel.Type, channel.Name, channel.ID, balance, channel.BalanceWarningThreshold)
 		}
 		return balance, nil
 	}
@@ -63,7 +62,7 @@ func UpdateChannelBalance(c *gin.Context) {
 	}
 	balance, err := updateChannelBalance(channel)
 	if err != nil {
-		notify.Error(err.Error())
+		notify.Error("check balance error", err.Error())
 		c.JSON(http.StatusOK, middleware.APIResponse{
 			Success: false,
 			Message: err.Error(),
@@ -94,7 +93,7 @@ func updateAllChannelsBalance() error {
 			defer func() { <-semaphore }()
 			_, err := updateChannelBalance(ch)
 			if err != nil {
-				notify.Error(err.Error())
+				notify.Error("check balance error", err.Error())
 			}
 		}(channel)
 	}

@@ -103,6 +103,7 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		config.GetModelErrorAutoBanRate(),
 		time.Second.Milliseconds()*15,
 		canAutoBan(),
+		time.Minute.Milliseconds()*15,
 	).Int64()
 	if err != nil {
 		return false, err
@@ -283,16 +284,13 @@ local now_ts = tonumber(ARGV[3])
 local max_error_rate = tonumber(ARGV[4])
 local statsExpiry = tonumber(ARGV[5])
 local can_auto_ban = tonumber(ARGV[6])
+local ban_duration = tonumber(ARGV[7])
 
 local banned_key = "model:" .. model .. ":banned"
 local stats_key = "model:" .. model .. ":channel:" .. channel_id .. ":stats"
 local model_stats_key = "model:" .. model .. ":total_stats"
 local maxSliceCount = 6
 local current_slice = math.floor(now_ts / 1000)
-
-if redis.call("SISMEMBER", banned_key, channel_id) == 1 then
-    return 2
-end
 
 local function parse_req_err(value)
     if not value then return 0, 0 end
@@ -321,10 +319,6 @@ end
 update_channel_stats()
 update_model_stats()
 
-if is_error == 0 or can_auto_ban == 0 then
-    return 0
-end
-
 local function check_channel_error()
     local total_req, total_err = 0, 0
     local min_valid_slice = current_slice - maxSliceCount
@@ -347,18 +341,23 @@ local function check_channel_error()
         redis.call("HDEL", stats_key, unpack(to_delete))
     end
     
-    if total_req >= 10 and (total_err / total_req) >= max_error_rate then
-        redis.call("SADD", banned_key, channel_id)
-        redis.call("DEL", stats_key)
-        return true
+    local already_banned = redis.call("SISMEMBER", banned_key, channel_id) == 1
+    
+    if total_req >= 10 and (total_err / total_req) < max_error_rate and already_banned then
+        redis.call("SREM", banned_key, channel_id)
+        return 0
     end
-    return false
+    
+    if total_req >= 10 and (total_err / total_req) >= max_error_rate and not already_banned and can_auto_ban == 1 then
+        redis.call("SADD", banned_key, channel_id)
+        redis.call("PEXPIRE", banned_key, ban_duration)
+        return 1
+    end
+    
+    return 2
 end
 
-if check_channel_error() then
-    return 1
-end
-return 0
+return check_channel_error()
 `
 
 	getModelErrorRateLuaScript = `

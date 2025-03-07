@@ -20,6 +20,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -35,6 +36,8 @@ func initializeServices() error {
 	if err := initializeBalance(); err != nil {
 		return err
 	}
+
+	initializeNotifier()
 
 	if err := initializeDatabases(); err != nil {
 		return err
@@ -52,6 +55,14 @@ func initializeBalance() error {
 
 	log.Info("SEALOS_JWT_KEY is set, balance will be enabled")
 	return balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL"))
+}
+
+func initializeNotifier() {
+	feishuWh := os.Getenv("FEISHU_WEBHOOK")
+	if feishuWh != "" {
+		notify.SetDefaultNotifier(notify.NewFeishuNotify(feishuWh))
+		log.Info("FEISHU_WEBHOOK is set, notifier will be use feishu")
+	}
 }
 
 var logCallerIgnoreFuncs = map[string]struct{}{

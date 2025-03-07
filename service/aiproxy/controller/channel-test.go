@@ -423,21 +423,18 @@ func AutoTestBannedModels() {
 			}
 			result, err := testSingleModel(mc, channel, modelName)
 			if err != nil {
-				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
-				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed: %s", channel.Type, channel.Name, channel.ID, modelName, err.Error()))
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed", channel.Type, channel.Name, channel.ID, modelName), err.Error())
 				continue
 			}
 			if result.Success {
-				log.Infof("channel[%d] %s(%d) model %s test success, unban it", channel.Type, channel.Name, channel.ID, modelName)
-				notify.Info(fmt.Sprintf("channel[%d] %s(%d) model %s test success, unban it", channel.Type, channel.Name, channel.ID, modelName))
+				notify.Info(fmt.Sprintf("channel[%d] %s(%d) model %s test success", channel.Type, channel.Name, channel.ID, modelName), "unban it")
 				err = monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
 				if err != nil {
 					log.Errorf("clear channel errors failed: %+v", err)
 				}
 			} else {
-				log.Infof("channel[%d] %s(%d) model %s test failed, code: %d, response: %s",
-					channel.Type, channel.Name, channel.ID, modelName, result.Code, result.Response)
-				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed, code: %d, response: %s", channel.Type, channel.Name, channel.ID, modelName, result.Code, result.Response))
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed", channel.Type, channel.Name, channel.ID, modelName),
+					fmt.Sprintf("code: %d, response: %s", result.Code, result.Response))
 			}
 		}
 	}

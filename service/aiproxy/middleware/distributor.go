@@ -164,7 +164,7 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 			abortLogWithMessage(c, http.StatusForbidden, err.Error())
 			return false
 		}
-		notify.ErrorThrottle("balance", time.Minute, fmt.Sprintf("get group (%s) balance error: %v", group.ID, err))
+		notify.ErrorThrottle("balance", time.Minute, fmt.Sprintf("get group (%s) balance error", group.ID), err.Error())
 		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
 		return false
 	}
