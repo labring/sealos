@@ -13,6 +13,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -142,7 +143,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 			return
 		case <-ticker.C:
 			if err := loadOptionsFromDatabase(false); err != nil {
-				log.Error("failed to sync options from database: " + err.Error())
+				notify.Error("failed to sync options", err.Error())
 			}
 		}
 	}

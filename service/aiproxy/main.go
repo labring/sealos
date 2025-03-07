@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	stdlog "log"
 	"net/http"
@@ -28,16 +29,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var port int
+
+func init() {
+	flag.IntVar(&port, "port", 3000, "http server port")
+}
+
 func initializeServices() error {
 	setLog(log.StandardLogger())
 
-	common.Init()
+	initializeNotifier()
 
 	if err := initializeBalance(); err != nil {
 		return err
 	}
-
-	initializeNotifier()
 
 	if err := initializeDatabases(); err != nil {
 		return err
@@ -134,13 +139,13 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 		Use(middleware.RequestID, middleware.CORS())
 	router.SetRouter(server)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = strconv.Itoa(*common.Port)
+	p := os.Getenv("PORT")
+	if p == "" {
+		p = strconv.Itoa(port)
 	}
 
 	return &http.Server{
-		Addr:              ":" + port,
+		Addr:              ":" + p,
 		ReadHeaderTimeout: 10 * time.Second,
 		Handler:           server,
 	}, server
@@ -173,13 +178,15 @@ func cleanLog(ctx context.Context) {
 		case <-ticker.C:
 			err := model.CleanLog()
 			if err != nil {
-				log.Errorf("clean log failed: %s", err)
+				notify.Error("clean log failed", err.Error())
 			}
 		}
 	}
 }
 
 func main() {
+	flag.Parse()
+
 	if err := initializeServices(); err != nil {
 		log.Fatal("failed to initialize services: " + err.Error())
 	}
