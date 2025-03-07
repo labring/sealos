@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
 from node import add_node_to_cluster, delete_node_from_cluster
-from press_test import *
+# from press_test import *
 
 
 app = Flask(__name__)
@@ -950,7 +950,7 @@ def stress_testing():
 
 
 if __name__ == '__main__':
-    init_db()
+    # init_db()
     init_configmap()
     # 创建定时任务调度器
     if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
