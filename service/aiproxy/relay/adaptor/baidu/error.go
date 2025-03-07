@@ -8,6 +8,8 @@ import (
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
+// https://cloud.baidu.com/doc/WENXINWORKSHOP/s/tlmyncueh
+
 func ErrorHandler(baiduError *Error) *relaymodel.ErrorWithStatusCode {
 	switch baiduError.ErrorCode {
 	case 13, 14, 100, 110:
