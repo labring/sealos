@@ -154,7 +154,7 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 	log.Debugf("request url: %s %s", method, fullRequestURL)
 
 	ctx := context.Background()
-	if timeout := config.GetTimeoutWithModelType()[meta.Mode]; timeout > 0 {
+	if timeout := config.GetTimeoutWithModelType()[int(meta.Mode)]; timeout > 0 {
 		// donot use c.Request.Context() because it will be canceled by the client
 		// which will cause the usage of non-streaming requests to be unable to be recorded
 		var cancel context.CancelFunc

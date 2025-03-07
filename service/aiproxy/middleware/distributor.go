@@ -176,13 +176,13 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	return true
 }
 
-func NewDistribute(mode int) gin.HandlerFunc {
+func NewDistribute(mode relaymode.Mode) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		distribute(c, mode)
 	}
 }
 
-func distribute(c *gin.Context, mode int) {
+func distribute(c *gin.Context, mode relaymode.Mode) {
 	if config.GetDisableServe() {
 		abortLogWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
 		return
@@ -258,7 +258,7 @@ func GetModelConfig(c *gin.Context) *model.ModelConfig {
 	return c.MustGet(ctxkey.ModelConfig).(*model.ModelConfig)
 }
 
-func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode int) *meta.Meta {
+func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode relaymode.Mode) *meta.Meta {
 	requestID := GetRequestID(c)
 	group := GetGroup(c)
 	token := GetToken(c)
@@ -279,7 +279,7 @@ type ModelRequest struct {
 	Model string `form:"model" json:"model"`
 }
 
-func getRequestModel(c *gin.Context, mode int) (string, error) {
+func getRequestModel(c *gin.Context, mode relaymode.Mode) (string, error) {
 	path := c.Request.URL.Path
 	switch {
 	case mode == relaymode.ParsePdf:

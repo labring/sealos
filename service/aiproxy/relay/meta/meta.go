@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type ChannelMeta struct {
@@ -28,7 +29,7 @@ type Meta struct {
 	RequestID     string
 	OriginModel   string
 	ActualModel   string
-	Mode          int
+	Mode          relaymode.Mode
 	InputTokens   int
 	IsChannelTest bool
 }
@@ -73,7 +74,7 @@ func WithToken(token *model.TokenCache) Option {
 
 func NewMeta(
 	channel *model.Channel,
-	mode int,
+	mode relaymode.Mode,
 	modelName string,
 	modelConfig *model.ModelConfig,
 	opts ...Option,

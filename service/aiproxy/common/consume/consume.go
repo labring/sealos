@@ -184,7 +184,7 @@ func recordConsume(
 		outputPrice,
 		meta.Endpoint,
 		content,
-		meta.Mode,
+		int(meta.Mode),
 		ip,
 		requestDetail,
 	)

@@ -29,7 +29,7 @@ import (
 
 type RelayController func(*meta.Meta, *gin.Context) *model.ErrorWithStatusCode
 
-func relayController(mode int) (RelayController, bool) {
+func relayController(mode relaymode.Mode) (RelayController, bool) {
 	var relayController RelayController
 	switch mode {
 	case relaymode.ImagesGenerations,
@@ -158,7 +158,7 @@ func getChannelWithFallback(cache *dbmodel.ModelCaches, model string, ignoreChan
 	return GetRandomChannel(cache, model)
 }
 
-func NewRelay(mode int) func(c *gin.Context) {
+func NewRelay(mode relaymode.Mode) func(c *gin.Context) {
 	relayController, ok := relayController(mode)
 	if !ok {
 		log.Fatalf("relay mode %d not implemented", mode)
@@ -168,7 +168,7 @@ func NewRelay(mode int) func(c *gin.Context) {
 	}
 }
 
-func relay(c *gin.Context, mode int, relayController RelayController) {
+func relay(c *gin.Context, mode relaymode.Mode, relayController RelayController) {
 	log := middleware.GetLogger(c)
 	requestModel := middleware.GetOriginalModel(c)
 
@@ -256,7 +256,7 @@ func initRetryState(channel *dbmodel.Channel, bizErr *model.ErrorWithStatusCode,
 	return state
 }
 
-func retryLoop(c *gin.Context, mode int, requestModel string, state *retryState, relayController RelayController, log *log.Entry) {
+func retryLoop(c *gin.Context, mode relaymode.Mode, requestModel string, state *retryState, relayController RelayController, log *log.Entry) {
 	mc := middleware.GetModelCaches(c)
 
 	for i := 0; i < int(state.retryTimes); i++ {
