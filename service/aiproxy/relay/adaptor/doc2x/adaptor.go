@@ -30,7 +30,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ParsePdf:
 		return meta.Channel.BaseURL + "/api/v2/parse/pdf", nil
 	default:
-		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -39,7 +39,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	case relaymode.ParsePdf:
 		return ConvertParsePdfRequest(meta, req)
 	default:
-		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -52,7 +52,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.ParsePdf:
 		return HandleParsePdfResponse(meta, c, resp)
 	default:
-		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %d", meta.Mode), "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 }
 

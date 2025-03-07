@@ -99,8 +99,10 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		return openai.ConvertRequest(meta, req)
 	case relaymode.ImagesGenerations:
 		return openai.ConvertRequest(meta, req)
-	default:
+	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, req)
+	default:
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -116,12 +118,14 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
-	default:
+	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(meta, c, resp)
 		} else {
 			usage, err = Handler(meta, c, resp)
 		}
+	default:
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprint("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

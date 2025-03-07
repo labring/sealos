@@ -1,7 +1,6 @@
 package gemini
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -64,7 +63,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, req)
 	default:
-		return "", nil, nil, errors.New("unsupported mode")
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -83,7 +82,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 			usage, err = Handler(meta, c, resp)
 		}
 	default:
-		return nil, openai.ErrorWrapperWithMessage("unsupported mode", "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

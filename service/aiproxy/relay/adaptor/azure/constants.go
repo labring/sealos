@@ -44,7 +44,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.Embeddings:
 		return fmt.Sprintf("%s/openai/deployments/%s/embeddings?api-version=%s", meta.Channel.BaseURL, model, apiVersion), nil
 	default:
-		return "", fmt.Errorf("azure unsupported mode: %s", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
