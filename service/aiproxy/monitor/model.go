@@ -82,9 +82,9 @@ func canAutoBan() int {
 }
 
 // AddRequest adds a request record and checks if channel should be banned
-func AddRequest(ctx context.Context, model string, channelID int64, isError bool) (banned bool, err error) {
+func AddRequest(ctx context.Context, model string, channelID int64, isError bool) (beyondThreshold bool, autoBanned bool, err error) {
 	if !common.RedisEnabled {
-		return false, nil
+		return false, false, nil
 	}
 
 	errorFlag := 0
@@ -105,9 +105,9 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		canAutoBan(),
 	).Int64()
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	return val == 1, nil
+	return val == 3, val == 1, nil
 }
 
 // GetChannelModelErrorRates gets error rates for a specific channel
@@ -287,8 +287,8 @@ local can_auto_ban = tonumber(ARGV[6])
 local banned_key = "model:" .. model .. ":banned"
 local stats_key = "model:" .. model .. ":channel:" .. channel_id .. ":stats"
 local model_stats_key = "model:" .. model .. ":total_stats"
-local maxSliceCount = 6
-local current_slice = math.floor(now_ts / 1000)
+local maxSliceCount = 12
+local current_slice = math.floor(now_ts / 10000)
 
 local function parse_req_err(value)
     if not value then return 0, 0 end
@@ -334,24 +334,30 @@ local function check_channel_error()
             total_err = total_err + err
         end
     end
-    
+
     if #to_delete > 0 then
         redis.call("HDEL", stats_key, unpack(to_delete))
     end
-    
+	if total_req < 20 then
+		return 0
+	end
+
     local already_banned = redis.call("SISMEMBER", banned_key, channel_id) == 1
-    
-    if total_req >= 10 and (total_err / total_req) < max_error_rate and already_banned then
-        redis.call("SREM", banned_key, channel_id)
-        return 0
-    end
-    
-    if total_req >= 10 and (total_err / total_req) >= max_error_rate and not already_banned and can_auto_ban == 1 then
-        redis.call("SADD", banned_key, channel_id)
-        return 1
-    end
-    
-    return 2
+	if (total_err / total_req) < max_error_rate then
+		if already_banned {
+			redis.call("SREM", banned_key, channel_id)
+		}
+		return 0
+	else
+		if already_banned {
+			return 2
+		}
+		if can_auto_ban == 0 then
+			return 3
+		end
+		redis.call("SADD", banned_key, channel_id)
+		return 1
+	end
 end
 
 return check_channel_error()
@@ -360,8 +366,8 @@ return check_channel_error()
 	getModelErrorRateLuaScript = `
 local model_stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
-local maxSliceCount = 6
-local current_slice = math.floor(now_ts / 1000)
+local maxSliceCount = 12
+local current_slice = math.floor(now_ts / 10000)
 local min_valid_slice = current_slice - maxSliceCount
 
 local function parse_req_err(value)
@@ -389,8 +395,8 @@ return total_err / total_req
 	getChannelModelErrorRateLuaScript = `
 local stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
-local maxSliceCount = 6
-local current_slice = math.floor(now_ts / 1000)
+local maxSliceCount = 12
+local current_slice = math.floor(now_ts / 10000)
 local min_valid_slice = current_slice - maxSliceCount
 
 local function parse_req_err(value)
