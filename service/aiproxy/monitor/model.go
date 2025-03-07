@@ -103,7 +103,6 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		config.GetModelErrorAutoBanRate(),
 		time.Second.Milliseconds()*15,
 		canAutoBan(),
-		time.Minute.Milliseconds()*15,
 	).Int64()
 	if err != nil {
 		return false, err
@@ -284,7 +283,6 @@ local now_ts = tonumber(ARGV[3])
 local max_error_rate = tonumber(ARGV[4])
 local statsExpiry = tonumber(ARGV[5])
 local can_auto_ban = tonumber(ARGV[6])
-local ban_duration = tonumber(ARGV[7])
 
 local banned_key = "model:" .. model .. ":banned"
 local stats_key = "model:" .. model .. ":channel:" .. channel_id .. ":stats"
@@ -350,7 +348,6 @@ local function check_channel_error()
     
     if total_req >= 10 and (total_err / total_req) >= max_error_rate and not already_banned and can_auto_ban == 1 then
         redis.call("SADD", banned_key, channel_id)
-        redis.call("PEXPIRE", banned_key, ban_duration)
         return 1
     end
     
