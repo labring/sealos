@@ -42,7 +42,7 @@ const AppMainInfo = ({
   return (
     <Box px={6} py={6} position={'relative'}>
       <>
-        <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
+        {/* <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
           <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
           <Box ml={'12px'} color={'grayModern.600'}>
             {t('Real-time Monitoring')}
@@ -74,7 +74,7 @@ const AppMainInfo = ({
           >
             <MyIcon name="enlarge" width={'16px'} fill={'#667085'} />
           </Button>
-          {/* <Box>
+          <Box>
             <Box mb={'4px'}>CPU&ensp;({app.usedCpu.yData[app.usedCpu.yData.length - 1]}%)</Box>
             <Box h={'60px'}>
               <PodLineChart type={'blue'} data={app.usedCpu} />
@@ -87,8 +87,8 @@ const AppMainInfo = ({
             <Box h={'60px'}>
               <PodLineChart type={'purple'} data={app.usedMemory} />
             </Box>
-          </Box> */}
-        </Grid>
+          </Box>
+        </Grid> */}
         <Flex
           mt={3}
           alignItems={'center'}
