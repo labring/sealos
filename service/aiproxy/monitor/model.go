@@ -75,7 +75,7 @@ func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 }
 
 func canAutoBan() int {
-	if common.RedisEnabled && config.GetEnableModelErrorAutoBan() {
+	if config.GetEnableModelErrorAutoBan() {
 		return 1
 	}
 	return 0
@@ -344,14 +344,14 @@ local function check_channel_error()
 
     local already_banned = redis.call("SISMEMBER", banned_key, channel_id) == 1
 	if (total_err / total_req) < max_error_rate then
-		if already_banned {
+		if already_banned then
 			redis.call("SREM", banned_key, channel_id)
-		}
+		end
 		return 0
 	else
-		if already_banned {
+		if already_banned then
 			return 2
-		}
+		end
 		if can_auto_ban == 0 then
 			return 3
 		end

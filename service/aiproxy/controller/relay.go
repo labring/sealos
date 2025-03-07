@@ -88,7 +88,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
-				"last error detail: "+relayErr.JSONOrEmpty(),
+				relayErr.JSONOrEmpty(),
 			)
 		} else if beyondThreshold {
 			notify.WarnThrottle(
@@ -96,7 +96,7 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s error rate is beyond threshold",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
-				"last error detail: "+relayErr.JSONOrEmpty(),
+				relayErr.JSONOrEmpty(),
 			)
 		}
 	}
