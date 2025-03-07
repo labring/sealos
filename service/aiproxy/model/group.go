@@ -17,8 +17,8 @@ const (
 )
 
 const (
-	GroupStatusEnabled  = 1 // don't use 0, 0 is the default value!
-	GroupStatusDisabled = 2 // also don't use 0
+	GroupStatusEnabled  = 1
+	GroupStatusDisabled = 2
 	GroupStatusInternal = 3
 )
 
