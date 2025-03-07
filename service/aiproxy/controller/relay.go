@@ -83,7 +83,12 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 			log.Errorf("add request failed: %+v", err)
 		}
 		if banned {
-			notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned", meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel), "banned")
+			notify.ErrorThrottle(
+				fmt.Sprintf("banned:%d:%s", meta.Channel.ID, meta.OriginModel),
+				time.Minute,
+				fmt.Sprintf("channel[%d] %s(%d) model %s is auto banned",
+					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
+				"banned")
 		}
 	}
 	return err, shouldRetry(c, err.StatusCode)
