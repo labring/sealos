@@ -245,6 +245,8 @@ func StreamSplitThink(data map[string]any, thinkSplitter *splitter.Splitter, ren
 	}
 	think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
 	if len(think) == 0 && len(remaining) == 0 {
+		delta["content"] = ""
+		delete(delta, "reasoning_content")
 		renderCallback(data)
 		return
 	}
@@ -260,6 +262,38 @@ func StreamSplitThink(data map[string]any, thinkSplitter *splitter.Splitter, ren
 	}
 }
 
+func StreamSplitThinkModeld(data *ChatCompletionsStreamResponse, thinkSplitter *splitter.Splitter, renderCallback func(data *ChatCompletionsStreamResponse)) {
+	choices := data.Choices
+	// only support one choice
+	if len(data.Choices) != 1 {
+		renderCallback(data)
+		return
+	}
+	choice := choices[0]
+	content, ok := choice.Delta.Content.(string)
+	if !ok {
+		renderCallback(data)
+		return
+	}
+	think, remaining := thinkSplitter.Process(conv.StringToBytes(content))
+	if len(think) == 0 && len(remaining) == 0 {
+		choice.Delta.Content = ""
+		choice.Delta.ReasoningContent = ""
+		renderCallback(data)
+		return
+	}
+	if len(think) > 0 {
+		choice.Delta.Content = ""
+		choice.Delta.ReasoningContent = conv.BytesToString(think)
+		renderCallback(data)
+	}
+	if len(remaining) > 0 {
+		choice.Delta.Content = conv.BytesToString(remaining)
+		choice.Delta.ReasoningContent = ""
+		renderCallback(data)
+	}
+}
+
 func SplitThink(data map[string]any) {
 	choices, ok := data["choices"].([]any)
 	if !ok {
@@ -270,17 +304,30 @@ func SplitThink(data map[string]any) {
 		if !ok {
 			continue
 		}
-		delta, ok := choiceMap["delta"].(map[string]any)
+		message, ok := choiceMap["message"].(map[string]any)
 		if !ok {
 			continue
 		}
-		content, ok := delta["content"].(string)
+		content, ok := message["content"].(string)
 		if !ok {
 			continue
 		}
 		think, remaining := splitter.NewThinkSplitter().Process(conv.StringToBytes(content))
-		delta["reasoning_content"] = conv.BytesToString(think)
-		delta["content"] = conv.BytesToString(remaining)
+		message["reasoning_content"] = conv.BytesToString(think)
+		message["content"] = conv.BytesToString(remaining)
+	}
+}
+
+func SplitThinkModeld(data *TextResponse) {
+	choices := data.Choices
+	for _, choice := range choices {
+		content, ok := choice.Message.Content.(string)
+		if !ok {
+			continue
+		}
+		think, remaining := splitter.NewThinkSplitter().Process(conv.StringToBytes(content))
+		choice.Message.ReasoningContent = conv.BytesToString(think)
+		choice.Message.Content = conv.BytesToString(remaining)
 	}
 }
 
