@@ -29,7 +29,7 @@ if [ ! -f docker-compose-bin ]; then
 fi
 
 cp install.sh originlaunchpad.yaml docker-compose-bin dist/
-cp app.py node.py docker-compose.yml dist/deployapp/
+cp app.py node.py stress_test.py docker-compose.yml dist/deployapp/
 rm -f originlaunchpad.yaml install.sh docker-compose.yml
 docker tag docker.io/library/sealos-applaunchpad:dev luanshaotong/sealos-applaunchpad:${VERSION}
 docker save -o dist/launchpad.tar luanshaotong/sealos-applaunchpad:${VERSION}

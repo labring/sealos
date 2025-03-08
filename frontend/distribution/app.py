@@ -11,7 +11,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
 from node import add_node_to_cluster, delete_node_from_cluster
-# from press_test import *
+from stress_test import *
 
 
 app = Flask(__name__)
@@ -31,8 +31,8 @@ SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：镜像上传路径
 UPLOAD_FOLDER = '/opt/image';
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
-ENABLE_WORKLOAD_SCALING = bool(os.getenv('ENABLE_WORKLOAD_SCALING') or 'false')
-ENABLE_NODE_SCALING = bool(os.getenv('ENABLE_NODE_SCALING') or 'false')
+ENABLE_WORKLOAD_SCALING = bool((os.getenv('ENABLE_WORKLOAD_SCALING') or 'false') == 'true')
+ENABLE_NODE_SCALING = bool((os.getenv('ENABLE_NODE_SCALING') or 'false') == 'true')
 NODE_DELETE_THRESHOLD = os.getenv('NODE_DOWN_THRESHOLD') or '15'
 NODE_ADD_THRESHOLD = os.getenv('NODE_UP_THRESHOLD') or '70'
 
@@ -926,7 +926,9 @@ def build_docker_image():
         return jsonify({"error": message}), 500
 
 @app.route('/api/stressTesting', methods=['GET'])
-def stress_testing():
+def stress_testing_api():
+# 压测ID: string
+# 压测类型: string
 # 命名空间: string
 # 应用列表: [appname]
 # 端口: int
@@ -934,7 +936,10 @@ def stress_testing():
 # 测试数据: string
 # 期望的QPS: int
 # 最大时延(ms): int
+# def stress_test(id, test_type, namespace, appnames, port, core_interface, test_data, qps, max_latency):
     try:
+        stress_id = request.args.get('stress_id')
+        stress_type = request.args.get('stress_type')
         namespace = request.args.get('namespace')
         app_list = request.args.get('app_list').split(',')
         port = request.args.get('port')
@@ -942,15 +947,44 @@ def stress_testing():
         test_data = request.args.get('test_data')
         qps = request.args.get('qps')
         max_latency = request.args.get('max_latency')
-        print(namespace, app_list, port, core_api, test_data, qps, max_latency)
-        
+        stress_test(stress_id, stress_type, namespace, app_list, port, core_api, test_data, qps, max_latency)
         return jsonify({'message': 'Stress testing started successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# def list_results(id, test_type):
+@app.route('/api/listResults', methods=['GET'])
+def list_results_api():
+    try:
+        stress_id = request.args.get('stress_id')
+        stress_type = request.args.get('stress_type')
+        results = list_results(stress_id, stress_type)
+        return jsonify({'results': results}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# def delete_result_by_id(id):
+@app.route('/api/deleteResult', methods=['POST'])
+def delete_result_api():
+    try:
+        stress_id = request.json.get('stress_id')
+        delete_result_by_id(stress_id)
+        return jsonify({'message': 'Result deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# def mock_run_test(id):
+@app.route('/api/mockRunTest', methods=['GET'])
+def mock_run_test_api():
+    try:
+        stress_id = request.args.get('stress_id')
+        mock_run_test(stress_id)
+        return jsonify({'message': 'Mock test started successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # init_db()
+    init_db()
     init_configmap()
     # 创建定时任务调度器
     if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
@@ -961,7 +995,7 @@ if __name__ == '__main__':
             scheduler.add_job(scale_nodes, 'interval', minutes=1)
         scheduler.start()
     try:
-        app.run(debug=True, host='0.0.0.0', port=5002)
+        app.run(debug=True, host='0.0.0.0', port=5003)
     finally:
         scheduler.shutdown()
 
