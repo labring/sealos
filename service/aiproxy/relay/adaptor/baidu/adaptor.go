@@ -125,7 +125,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 			usage, err = Handler(meta, c, resp)
 		}
 	default:
-		return nil, openai.ErrorWrapperWithMessage(fmt.Sprint("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

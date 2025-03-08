@@ -114,7 +114,7 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 	case relaymode.AudioTranscription:
 		usage, err = STTDoResponse(meta, c, resp)
 	default:
-		return nil, openai.ErrorWrapperWithMessage(fmt.Sprint("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }
