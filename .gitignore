@@ -22,3 +22,4 @@ pkg/registry/save/testdata/registry
 .dummy.report.md
 deploy/cloud/tars
 .vscode/
+/lifecycle/tools/
