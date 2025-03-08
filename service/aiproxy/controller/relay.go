@@ -399,7 +399,6 @@ func RelayNotImplemented(c *gin.Context) {
 		"error": &model.Error{
 			Message: "API not implemented",
 			Type:    middleware.ErrorTypeAIPROXY,
-			Param:   "",
 			Code:    "api_not_implemented",
 		},
 	})

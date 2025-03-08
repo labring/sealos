@@ -23,7 +23,7 @@ local cutoff = current_time - window
 
 redis.call('ZREMRANGEBYSCORE', key, '-inf', cutoff)
 redis.call('ZADD', key, current_time, current_time)
-redis.call('PEXPIRE', key, window)
+redis.call('PEXPIRE', key, window / 1000)
 return redis.call('ZCOUNT', key, cutoff, current_time)
 `
 
