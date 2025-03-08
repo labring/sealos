@@ -700,7 +700,7 @@ func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, fre
 		case <-ticker.C:
 			err := InitModelConfigAndChannelCache()
 			if err != nil {
-				notify.Error("failed to sync channels", err.Error())
+				notify.ErrorThrottle("syncModelChannel", time.Minute, "failed to sync channels", err.Error())
 			}
 		}
 	}
