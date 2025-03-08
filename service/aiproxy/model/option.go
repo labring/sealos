@@ -143,7 +143,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 			return
 		case <-ticker.C:
 			if err := loadOptionsFromDatabase(false); err != nil {
-				notify.Error("failed to sync options", err.Error())
+				notify.ErrorThrottle("syncOptions", time.Minute, "failed to sync options", err.Error())
 			}
 		}
 	}
