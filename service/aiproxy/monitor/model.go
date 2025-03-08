@@ -32,10 +32,6 @@ var (
 	clearAllModelErrorsScript        = redis.NewScript(clearAllModelErrorsLuaScript)
 )
 
-func buildStatsKey(model string, channelID interface{}) string {
-	return fmt.Sprintf("%s%s%s%v%s", modelKeyPrefix, model, channelKeyPart, channelID, statsKeySuffix)
-}
-
 // GetModelErrorRate gets error rate for a specific model across all channels
 func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 	if !common.RedisEnabled {
@@ -48,11 +44,8 @@ func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 	iter := common.RDB.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
 		key := iter.Val()
-		parts := strings.Split(key, ":")
-		if len(parts) != 3 || parts[2] != "total_stats" {
-			continue
-		}
-		model := parts[1]
+		model := strings.TrimPrefix(key, modelKeyPrefix)
+		model = strings.TrimSuffix(model, modelTotalStatsSuffix)
 
 		rate, err := getModelErrorRateScript.Run(
 			ctx,
@@ -101,13 +94,30 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		errorFlag,
 		now,
 		config.GetModelErrorAutoBanRate(),
-		time.Second.Milliseconds()*15,
 		canAutoBan(),
 	).Int64()
 	if err != nil {
 		return false, false, err
 	}
 	return val == 3, val == 1, nil
+}
+
+func buildStatsKey(model string, channelID string) string {
+	return fmt.Sprintf("%s%s%s%v%s", modelKeyPrefix, model, channelKeyPart, channelID, statsKeySuffix)
+}
+
+func getModelChannelID(key string) (string, int64, bool) {
+	content := strings.TrimPrefix(key, modelKeyPrefix)
+	content = strings.TrimSuffix(content, statsKeySuffix)
+	model, channelIDStr, ok := strings.Cut(content, channelKeyPart)
+	if !ok {
+		return "", 0, false
+	}
+	channelID, err := strconv.ParseInt(channelIDStr, 10, 64)
+	if err != nil {
+		return "", 0, false
+	}
+	return model, channelID, true
 }
 
 // GetChannelModelErrorRates gets error rates for a specific channel
@@ -117,17 +127,17 @@ func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string
 	}
 
 	result := make(map[string]float64)
-	pattern := buildStatsKey("*", channelID)
+	pattern := buildStatsKey("*", strconv.FormatInt(channelID, 10))
 	now := time.Now().UnixMilli()
 
 	iter := common.RDB.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
 		key := iter.Val()
-		parts := strings.Split(key, ":")
-		if len(parts) != 5 || parts[4] != "stats" {
+
+		model, _, ok := getModelChannelID(key)
+		if !ok {
 			continue
 		}
-		model := parts[1]
 
 		rate, err := getChannelModelErrorRateScript.Run(
 			ctx,
@@ -206,7 +216,8 @@ func GetAllBannedModelChannels(ctx context.Context) (map[string][]int64, error) 
 
 	for iter.Next(ctx) {
 		key := iter.Val()
-		model := strings.Split(key, ":")[1]
+		model := strings.TrimPrefix(key, modelKeyPrefix)
+		model = strings.TrimSuffix(model, bannedKeySuffix)
 
 		channels, err := getBannedChannelsScript.Run(
 			ctx,
@@ -233,20 +244,15 @@ func GetAllChannelModelErrorRates(ctx context.Context) (map[int64]map[string]flo
 	}
 
 	result := make(map[int64]map[string]float64)
-	pattern := modelKeyPrefix + "*" + channelKeyPart + "*" + statsKeySuffix
+	pattern := buildStatsKey("*", "*")
 	now := time.Now().UnixMilli()
 
 	iter := common.RDB.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
 		key := iter.Val()
-		parts := strings.Split(key, ":")
-		if len(parts) != 5 || parts[4] != "stats" {
-			continue
-		}
 
-		model := parts[1]
-		channelID, err := strconv.ParseInt(parts[3], 10, 64)
-		if err != nil {
+		model, channelID, ok := getModelChannelID(key)
+		if !ok {
 			continue
 		}
 
@@ -281,14 +287,14 @@ local channel_id = ARGV[1]
 local is_error = tonumber(ARGV[2])
 local now_ts = tonumber(ARGV[3])
 local max_error_rate = tonumber(ARGV[4])
-local statsExpiry = tonumber(ARGV[5])
-local can_auto_ban = tonumber(ARGV[6])
+local can_auto_ban = tonumber(ARGV[5])
 
 local banned_key = "model:" .. model .. ":banned"
 local stats_key = "model:" .. model .. ":channel:" .. channel_id .. ":stats"
 local model_stats_key = "model:" .. model .. ":total_stats"
 local maxSliceCount = 12
-local current_slice = math.floor(now_ts / 10000)
+local statsExpiry = maxSliceCount * 10 * 1000
+local current_slice = math.floor(now_ts / 10 / 1000)
 
 local function parse_req_err(value)
     if not value then return 0, 0 end
@@ -367,7 +373,7 @@ return check_channel_error()
 local model_stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
 local maxSliceCount = 12
-local current_slice = math.floor(now_ts / 10000)
+local current_slice = math.floor(now_ts / 10 / 1000)
 local min_valid_slice = current_slice - maxSliceCount
 
 local function parse_req_err(value)
@@ -389,14 +395,14 @@ for i = 1, #all_slices, 2 do
 end
 
 if total_req == 0 then return 0 end
-return total_err / total_req
+return string.format("%.2f", total_err / total_req)
 `
 
 	getChannelModelErrorRateLuaScript = `
 local stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
 local maxSliceCount = 12
-local current_slice = math.floor(now_ts / 10000)
+local current_slice = math.floor(now_ts / 10 / 1000)
 local min_valid_slice = current_slice - maxSliceCount
 
 local function parse_req_err(value)
