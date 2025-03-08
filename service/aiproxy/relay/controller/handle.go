@@ -92,12 +92,12 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			logDetail = detail
 			log.Errorf(
 				"handle failed: %+v\nrequest detail:\n%s\nresponse detail:\n%s",
-				respErr.Error,
+				respErr,
 				logDetail.RequestBody,
 				logDetail.ResponseBody,
 			)
 		} else {
-			log.Errorf("handle failed: %+v", respErr.Error)
+			log.Errorf("handle failed: %+v", respErr)
 		}
 
 		consume.AsyncConsume(
