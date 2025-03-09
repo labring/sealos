@@ -217,6 +217,10 @@ func main() {
 	go cleanLog(ctx)
 	go controller.UpdateChannelsBalance(time.Minute * 10)
 
+	batchProcessorCtx, batchProcessorCancel := context.WithCancel(context.Background())
+	wg.Add(1)
+	go model.StartBatchProcessor(batchProcessorCtx, &wg)
+
 	<-ctx.Done()
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 600*time.Second)
@@ -233,8 +237,13 @@ func main() {
 	log.Info("shutting down consumer...")
 	consume.Wait()
 
+	batchProcessorCancel()
+
 	log.Info("shutting down sync services...")
 	wg.Wait()
+
+	log.Info("shutting down batch processor...")
+	model.ProcessBatchUpdates()
 
 	log.Info("server exiting")
 }
