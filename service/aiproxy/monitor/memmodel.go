@@ -19,6 +19,7 @@ const (
 	maxSliceCount   = 12
 	banDuration     = 5 * time.Minute
 	minRequestCount = 20
+	cleanupInterval = time.Minute
 )
 
 type MemModelMonitor struct {
@@ -54,8 +55,42 @@ func NewTimeWindowStats() *TimeWindowStats {
 }
 
 func NewMemModelMonitor() *MemModelMonitor {
-	return &MemModelMonitor{
+	mm := &MemModelMonitor{
 		models: make(map[string]*ModelData),
+	}
+
+	go mm.periodicCleanup()
+
+	return mm
+}
+
+func (m *MemModelMonitor) periodicCleanup() {
+	ticker := time.NewTicker(cleanupInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		m.cleanupExpiredData()
+	}
+}
+
+func (m *MemModelMonitor) cleanupExpiredData() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	now := time.Now()
+
+	for modelName, modelData := range m.models {
+		for channelID, channelStats := range modelData.channels {
+			hasValidSlices := channelStats.timeWindows.HasValidSlices()
+			if !hasValidSlices && !channelStats.bannedUntil.After(now) {
+				delete(modelData.channels, channelID)
+			}
+		}
+
+		hasValidSlices := modelData.totalStats.HasValidSlices()
+		if !hasValidSlices && len(modelData.channels) == 0 {
+			delete(m.models, modelName)
+		}
 	}
 }
 
@@ -245,21 +280,27 @@ func (m *MemModelMonitor) ClearAllModelErrors(ctx context.Context) error {
 	return nil
 }
 
-func (t *TimeWindowStats) AddRequest(now time.Time, isError bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	currentWindow := now.Truncate(timeWindow)
-
-	cutoff := now.Add(-timeWindow * time.Duration(maxSliceCount))
+func (t *TimeWindowStats) cleanupLocked(callback func(slice *timeSlice)) {
+	cutoff := time.Now().Add(-timeWindow * time.Duration(maxSliceCount))
 	validSlices := t.slices[:0]
 	for _, s := range t.slices {
 		if s.windowStart.After(cutoff) || s.windowStart.Equal(cutoff) {
 			validSlices = append(validSlices, s)
+			if callback != nil {
+				callback(s)
+			}
 		}
 	}
 	t.slices = validSlices
+}
 
+func (t *TimeWindowStats) AddRequest(now time.Time, isError bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.cleanupLocked(nil)
+
+	currentWindow := now.Truncate(timeWindow)
 	var slice *timeSlice
 	for i := range t.slices {
 		if t.slices[i].windowStart.Equal(currentWindow) {
@@ -267,7 +308,6 @@ func (t *TimeWindowStats) AddRequest(now time.Time, isError bool) {
 			break
 		}
 	}
-
 	if slice == nil {
 		slice = &timeSlice{windowStart: currentWindow}
 		t.slices = append(t.slices, slice)
@@ -283,16 +323,17 @@ func (t *TimeWindowStats) GetStats(maxSlice int) (totalReq, totalErr int) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	cutoff := time.Now().Add(-timeWindow * time.Duration(maxSlice))
-
-	validSlices := t.slices[:0]
-	for _, s := range t.slices {
-		if s.windowStart.After(cutoff) || s.windowStart.Equal(cutoff) {
-			validSlices = append(validSlices, s)
-			totalReq += s.requests
-			totalErr += s.errors
-		}
-	}
-	t.slices = validSlices
+	t.cleanupLocked(func(slice *timeSlice) {
+		totalReq += slice.requests
+		totalErr += slice.errors
+	})
 	return
+}
+
+func (t *TimeWindowStats) HasValidSlices() bool {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.cleanupLocked(nil)
+	return len(t.slices) > 0
 }
