@@ -39,29 +39,30 @@ func (d *RequestDetail) BeforeSave(_ *gorm.DB) (err error) {
 }
 
 type Log struct {
-	RequestDetail        *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"                                                                                                                                                                                  json:"request_detail,omitempty"`
-	RequestAt            time.Time      `gorm:"index"                                                                                                                                                                                                                                          json:"request_at"`
+	RequestDetail        *RequestDetail `gorm:"foreignKey:LogID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"request_detail,omitempty"`
+	RequestAt            time.Time      `gorm:"index"                                                          json:"request_at"`
 	TimestampTruncByDay  int64          `json:"timestamp_trunc_by_day"`
 	TimestampTruncByHour int64          `json:"timestamp_trunc_by_hour"`
 	CreatedAt            time.Time      `json:"created_at"`
 	TokenName            string         `json:"token_name,omitempty"`
 	Endpoint             string         `json:"endpoint"`
-	Content              string         `gorm:"type:text"                                                                                                                                                                                                                                       json:"content,omitempty"`
-	GroupID              string         `gorm:"index"                                                                                                                                                                                                                                           json:"group,omitempty"`
-	Model                string         `gorm:"index"                                                                                                                                                                                                                                           json:"model"`
-	RequestID            string         `gorm:"index"                                                                                                                                                                                                                                           json:"request_id"`
-	Price                float64        `json:"price"`
-	ID                   int            `gorm:"primaryKey"                                                                                                                                                                                                                                      json:"id"`
-	CompletionPrice      float64        `json:"completion_price"`
-	TokenID              int            `gorm:"index"                                                                                                                                                                                                                                           json:"token_id,omitempty"`
-	UsedAmount           float64        `json:"used_amount"`
-	PromptTokens         int            `json:"prompt_tokens"`
-	CompletionTokens     int            `json:"completion_tokens"`
-	TotalTokens          int            `json:"total_tokens"`
-	ChannelID            int            `gorm:"index"                                                                                                                                                                                                                                           json:"channel"`
-	Code                 int            `gorm:"index"                                                                                                                                                                                                                                           json:"code"`
-	Mode                 int            `json:"mode"`
-	IP                   string         `gorm:"index"                                                                                                                                                                                                                                           json:"ip"`
+	Content              string         `gorm:"type:text"                                                      json:"content,omitempty"`
+	GroupID              string         `gorm:"index"                                                          json:"group,omitempty"`
+	Model                string         `gorm:"index"                                                          json:"model"`
+	RequestID            string         `gorm:"index"                                                          json:"request_id"`
+	Price                float64        `json:"price,omitempty"`
+	ID                   int            `gorm:"primaryKey"                                                     json:"id"`
+	CompletionPrice      float64        `json:"completion_price,omitempty"`
+	TokenID              int            `gorm:"index"                                                          json:"token_id,omitempty"`
+	UsedAmount           float64        `json:"used_amount,omitempty"`
+	PromptTokens         int            `json:"prompt_tokens,omitempty"`
+	CompletionTokens     int            `json:"completion_tokens,omitempty"`
+	TotalTokens          int            `json:"total_tokens,omitempty"`
+	ChannelID            int            `gorm:"index"                                                          json:"channel,omitempty"`
+	Code                 int            `gorm:"index"                                                          json:"code,omitempty"`
+	Mode                 int            `json:"mode,omitempty"`
+	IP                   string         `gorm:"index"                                                          json:"ip,omitempty"`
+	RetryTimes           int            `json:"retry_times,omitempty"`
 }
 
 func CreateLogIndexes(db *gorm.DB) error {
@@ -255,6 +256,7 @@ func RecordConsumeLog(
 	content string,
 	mode int,
 	ip string,
+	retryTimes int,
 	requestDetail *RequestDetail,
 ) error {
 	log := &Log{
@@ -277,6 +279,7 @@ func RecordConsumeLog(
 		ChannelID:        channelID,
 		Endpoint:         endpoint,
 		Content:          content,
+		RetryTimes:       retryTimes,
 		RequestDetail:    requestDetail,
 	}
 	return LogDB.Create(log).Error

@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-
 	// import webp decoder
 	_ "golang.org/x/image/webp"
 )

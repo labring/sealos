@@ -41,6 +41,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			0,
 			errMsg,
 			c.ClientIP(),
+			meta.RetryTimes,
 			nil,
 		)
 		return openai.ErrorWrapperWithMessage(
@@ -71,6 +72,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			0,
 			err.Error(),
 			c.ClientIP(),
+			meta.RetryTimes,
 			detail,
 		)
 		return openai.ErrorWrapper(err, "invalid_request", http.StatusBadRequest)
@@ -92,12 +94,12 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			logDetail = detail
 			log.Errorf(
 				"handle failed: %+v\nrequest detail:\n%s\nresponse detail:\n%s",
-				respErr.Error,
+				respErr,
 				logDetail.RequestBody,
 				logDetail.ResponseBody,
 			)
 		} else {
-			log.Errorf("handle failed: %+v", respErr.Error)
+			log.Errorf("handle failed: %+v", respErr)
 		}
 
 		consume.AsyncConsume(
@@ -109,6 +111,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 			preCheckReq.OutputPrice,
 			respErr.Error.JSONOrEmpty(),
 			c.ClientIP(),
+			meta.RetryTimes,
 			detail,
 		)
 		return respErr
@@ -133,6 +136,7 @@ func Handle(meta *meta.Meta, c *gin.Context, preProcess func() (*PreCheckGroupBa
 		preCheckReq.OutputPrice,
 		"",
 		c.ClientIP(),
+		meta.RetryTimes,
 		detail,
 	)
 

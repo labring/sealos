@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -24,7 +23,7 @@ func NewErrUnsupportedModelType(modelType string) *UnsupportedModelTypeError {
 	return &UnsupportedModelTypeError{ModelType: modelType}
 }
 
-func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, int, error) {
+func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, relaymode.Mode, error) {
 	switch modelConfig.Type {
 	case relaymode.ChatCompletions:
 		body, err := BuildChatCompletionRequest(modelConfig.Model)
@@ -73,7 +72,7 @@ func BuildRequest(modelConfig *model.ModelConfig) (io.Reader, int, error) {
 	case relaymode.ParsePdf:
 		return nil, relaymode.Unknown, NewErrUnsupportedModelType("parse pdf")
 	default:
-		return nil, relaymode.Unknown, NewErrUnsupportedModelType(strconv.Itoa(modelConfig.Type))
+		return nil, relaymode.Unknown, NewErrUnsupportedModelType(modelConfig.Type.String())
 	}
 }
 

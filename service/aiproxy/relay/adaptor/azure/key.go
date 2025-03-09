@@ -21,10 +21,12 @@ func (a *Adaptor) KeyHelp() string {
 	return "key or key|api-version"
 }
 
+const defaultAPIVersion = "2024-02-01"
+
 func getTokenAndAPIVersion(key string) (string, string, error) {
 	split := strings.Split(key, "|")
 	if len(split) == 1 {
-		return key, "", nil
+		return key, defaultAPIVersion, nil
 	}
 	if len(split) != 2 {
 		return "", "", errors.New("invalid key format")

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 )
 
 type ChannelMeta struct {
@@ -28,9 +29,10 @@ type Meta struct {
 	RequestID     string
 	OriginModel   string
 	ActualModel   string
-	Mode          int
+	Mode          relaymode.Mode
 	InputTokens   int
 	IsChannelTest bool
+	RetryTimes    int
 }
 
 type Option func(meta *Meta)
@@ -71,9 +73,15 @@ func WithToken(token *model.TokenCache) Option {
 	}
 }
 
+func WithRetryTimes(retryTimes int) Option {
+	return func(meta *Meta) {
+		meta.RetryTimes = retryTimes
+	}
+}
+
 func NewMeta(
 	channel *model.Channel,
-	mode int,
+	mode relaymode.Mode,
 	modelName string,
 	modelConfig *model.ModelConfig,
 	opts ...Option,
@@ -151,7 +159,6 @@ func (m *Meta) GetBool(key string) bool {
 	return b
 }
 
-//nolint:unparam
 func GetMappedModelName(modelName string, mapping map[string]string) (string, bool) {
 	if len(modelName) == 0 {
 		return modelName, false

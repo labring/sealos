@@ -131,7 +131,11 @@ func ResponseCohere2OpenAI(cohereResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *model.Usage) {
+func StreamHandler(c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -177,27 +181,23 @@ func StreamHandler(c *gin.Context, resp *http.Response) (*model.ErrorWithStatusC
 
 	render.Done(c)
 
-	return nil, &usage
+	return &usage, nil
 }
 
-func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.ErrorWithStatusCode, *model.Usage) {
+func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	var cohereResponse Response
 	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cohereResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if cohereResponse.ResponseID == "" {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: cohereResponse.Message,
-				Type:    cohereResponse.Message,
-				Param:   "",
-				Code:    resp.StatusCode,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapperWithMessage(cohereResponse.Message, resp.StatusCode, resp.StatusCode)
 	}
 	fullTextResponse := ResponseCohere2OpenAI(&cohereResponse)
 	fullTextResponse.Model = modelName
@@ -209,10 +209,10 @@ func Handler(c *gin.Context, resp *http.Response, _ int, modelName string) (*mod
 	fullTextResponse.Usage = usage
 	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &usage
+	return &usage, nil
 }

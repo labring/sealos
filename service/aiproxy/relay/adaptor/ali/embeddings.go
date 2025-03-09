@@ -65,7 +65,7 @@ func embeddingResponse2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *ope
 
 	for i, embedding := range response.Output.Embeddings {
 		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
-			Object:    `embedding`,
+			Object:    "embedding",
 			Index:     i,
 			Embedding: embedding.Embedding,
 		})

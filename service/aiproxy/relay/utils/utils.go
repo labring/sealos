@@ -64,5 +64,10 @@ func DoRequest(req *http.Request) (*http.Response, error) {
 }
 
 func IsStreamResponse(resp *http.Response) bool {
-	return strings.Contains(resp.Header.Get("Content-Type"), "event-stream")
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		return false
+	}
+	return strings.Contains(contentType, "event-stream") ||
+		strings.Contains(contentType, "x-ndjson")
 }

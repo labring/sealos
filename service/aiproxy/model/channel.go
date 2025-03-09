@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 	"slices"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
+	"github.com/labring/sealos/service/aiproxy/monitor"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -18,10 +21,8 @@ const (
 )
 
 const (
-	ChannelStatusUnknown  = 0
-	ChannelStatusEnabled  = 1 // don't use 0, 0 is the default value!
-	ChannelStatusDisabled = 2 // also don't use 0
-	ChannelStatusFail     = 3
+	ChannelStatusUnknown = 0
+	ChannelStatusEnabled = 1
 )
 
 type ChannelConfig struct {
@@ -29,31 +30,40 @@ type ChannelConfig struct {
 }
 
 type Channel struct {
-	CreatedAt        time.Time         `gorm:"index"                              json:"created_at"`
-	LastTestErrorAt  time.Time         `json:"last_test_error_at"`
-	ChannelTests     []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
-	BalanceUpdatedAt time.Time         `json:"balance_updated_at"`
-	ModelMapping     map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
-	Key              string            `gorm:"type:text;index"                    json:"key"`
-	Name             string            `gorm:"index"                              json:"name"`
-	BaseURL          string            `gorm:"index"                              json:"base_url"`
-	Models           []string          `gorm:"serializer:fastjson;type:text"      json:"models"`
-	Balance          float64           `json:"balance"`
-	ID               int               `gorm:"primaryKey"                         json:"id"`
-	UsedAmount       float64           `gorm:"index"                              json:"used_amount"`
-	RequestCount     int               `gorm:"index"                              json:"request_count"`
-	Status           int               `gorm:"default:1;index"                    json:"status"`
-	Type             int               `gorm:"default:0;index"                    json:"type"`
-	Priority         int32             `json:"priority"`
-	Config           *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
+	CreatedAt               time.Time         `gorm:"index"                              json:"created_at"`
+	LastTestErrorAt         time.Time         `json:"last_test_error_at"`
+	ChannelTests            []*ChannelTest    `gorm:"foreignKey:ChannelID;references:ID" json:"channel_tests,omitempty"`
+	BalanceUpdatedAt        time.Time         `json:"balance_updated_at"`
+	ModelMapping            map[string]string `gorm:"serializer:fastjson;type:text"      json:"model_mapping"`
+	Key                     string            `gorm:"type:text;index"                    json:"key"`
+	Name                    string            `gorm:"index"                              json:"name"`
+	BaseURL                 string            `gorm:"index"                              json:"base_url"`
+	Models                  []string          `gorm:"serializer:fastjson;type:text"      json:"models"`
+	Balance                 float64           `json:"balance"`
+	ID                      int               `gorm:"primaryKey"                         json:"id"`
+	UsedAmount              float64           `gorm:"index"                              json:"used_amount"`
+	RequestCount            int               `gorm:"index"                              json:"request_count"`
+	Status                  int               `gorm:"default:1;index"                    json:"status"`
+	Type                    int               `gorm:"default:0;index"                    json:"type"`
+	Priority                int32             `json:"priority"`
+	EnabledAutoBalanceCheck bool              `json:"enabled_auto_balance_check"`
+	BalanceThreshold        float64           `json:"balance_threshold"`
+	Config                  *ChannelConfig    `gorm:"serializer:fastjson;type:text"      json:"config,omitempty"`
 }
 
 func (c *Channel) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&ChannelTest{}).Where("channel_id = ?", c.ID).Delete(&ChannelTest{}).Error
 }
 
+func (c *Channel) GetBalanceThreshold() float64 {
+	if c.BalanceThreshold < 0 {
+		return 0
+	}
+	return c.BalanceThreshold
+}
+
 const (
-	DefaultPriority = 100
+	DefaultPriority = 10
 )
 
 func (c *Channel) GetPriority() int32 {
@@ -269,7 +279,12 @@ func GetChannelByID(id int) (*Channel, error) {
 	return &channel, HandleNotFound(err, ErrChannelNotFound)
 }
 
-func BatchInsertChannels(channels []*Channel) error {
+func BatchInsertChannels(channels []*Channel) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	for _, channel := range channels {
 		if err := CheckModelConfigExist(channel.Models); err != nil {
 			return err
@@ -280,13 +295,29 @@ func BatchInsertChannels(channels []*Channel) error {
 	})
 }
 
-func UpdateChannel(channel *Channel) error {
+func UpdateChannel(channel *Channel) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			_ = monitor.ClearChannelAllModelErrors(context.Background(), channel.ID)
+		}
+	}()
 	if err := CheckModelConfigExist(channel.Models); err != nil {
 		return err
 	}
 	result := DB.
 		Model(channel).
-		Select("model_mapping", "key", "name", "base_url", "models", "type", "priority", "config").
+		Select(
+			"model_mapping",
+			"key",
+			"name",
+			"base_url",
+			"models",
+			"type",
+			"priority",
+			"config",
+			"enabled_auto_balance_check",
+			"balance_threshold").
 		Clauses(clause.Returning{}).
 		Where("id = ?", channel.ID).
 		Updates(channel)
@@ -298,7 +329,7 @@ func ClearLastTestErrorAt(id int) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode int, took float64, success bool, response string, code int) (*ChannelTest, error) {
+func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, mode relaymode.Mode, took float64, success bool, response string, code int) (*ChannelTest, error) {
 	var ct *ChannelTest
 	err := DB.Transaction(func(tx *gorm.DB) error {
 		if !success {
@@ -318,7 +349,7 @@ func (c *Channel) UpdateModelTest(testAt time.Time, model, actualModel string, m
 			ChannelName: c.Name,
 			Model:       model,
 			ActualModel: actualModel,
-			Mode:        mode,
+			Mode:        int(mode),
 			TestAt:      testAt,
 			Took:        took,
 			Success:     success,
@@ -345,12 +376,26 @@ func (c *Channel) UpdateBalance(balance float64) error {
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DeleteChannelByID(id int) error {
+func DeleteChannelByID(id int) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			_ = monitor.ClearChannelAllModelErrors(context.Background(), id)
+		}
+	}()
 	result := DB.Delete(&Channel{ID: id})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }
 
-func DeleteChannelsByIDs(ids []int) error {
+func DeleteChannelsByIDs(ids []int) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+			for _, id := range ids {
+				_ = monitor.ClearChannelAllModelErrors(context.Background(), id)
+			}
+		}
+	}()
 	return DB.Transaction(func(tx *gorm.DB) error {
 		return tx.
 			Where("id IN (?)", ids).
@@ -373,15 +418,5 @@ func UpdateChannelUsedAmount(id int, amount float64, requestCount int) error {
 			"used_amount":   gorm.Expr("used_amount + ?", amount),
 			"request_count": gorm.Expr("request_count + ?", requestCount),
 		})
-	return HandleUpdateResult(result, ErrChannelNotFound)
-}
-
-func DeleteDisabledChannel() error {
-	result := DB.Where("status = ?", ChannelStatusDisabled).Delete(&Channel{})
-	return HandleUpdateResult(result, ErrChannelNotFound)
-}
-
-func DeleteFailChannel() error {
-	result := DB.Where("status = ?", ChannelStatusFail).Delete(&Channel{})
 	return HandleUpdateResult(result, ErrChannelNotFound)
 }

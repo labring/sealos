@@ -11,10 +11,10 @@ import (
 )
 
 type OneAPIChannel struct {
-	Type         int               `json:"type" gorm:"default:0"`
-	Key          string            `json:"key" gorm:"type:text"`
-	Status       int               `json:"status" gorm:"default:1"`
-	Name         string            `json:"name" gorm:"index"`
+	Type         int               `gorm:"default:0"                              json:"type"`
+	Key          string            `gorm:"type:text"                              json:"key"`
+	Status       int               `gorm:"default:1"                              json:"status"`
+	Name         string            `gorm:"index"                                  json:"name"`
 	BaseURL      string            `gorm:"column:base_url;default:''"`
 	Models       string            `json:"models"`
 	ModelMapping map[string]string `gorm:"type:varchar(1024);serializer:fastjson"`

@@ -77,6 +77,10 @@ func ConvertSTTRequest(meta *meta.Meta, request *http.Request) (string, http.Hea
 }
 
 func STTHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)

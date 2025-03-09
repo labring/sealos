@@ -2,11 +2,10 @@ package router
 
 import (
 	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/env"
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
-
-	"github.com/gin-gonic/gin"
 )
 
 func SetAPIRouter(router *gin.Engine) {
@@ -168,6 +167,7 @@ func SetAPIRouter(router *gin.Engine) {
 			monitorRoute.DELETE("/:id", controller.ClearChannelAllModelErrors)
 			monitorRoute.DELETE("/:id/:model", controller.ClearChannelModelErrors)
 			monitorRoute.GET("/models", controller.GetModelsErrorRate)
+			monitorRoute.GET("/banned_channels", controller.GetAllBannedModelChannels)
 		}
 	}
 }

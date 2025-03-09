@@ -6,11 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bytedance/sonic"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
 	"github.com/labring/sealos/service/aiproxy/common/render"

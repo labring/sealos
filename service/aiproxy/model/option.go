@@ -13,6 +13,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -89,6 +90,7 @@ func initOptionMap() error {
 	}
 	optionMap["GroupConsumeLevelRatio"] = conv.BytesToString(groupConsumeLevelRatioJSON)
 	optionMap["InternalToken"] = config.GetInternalToken()
+	optionMap["NotifyNote"] = config.GetNotifyNote()
 
 	optionKeys = make([]string, 0, len(optionMap))
 	for key := range optionMap {
@@ -141,7 +143,7 @@ func SyncOptions(ctx context.Context, wg *sync.WaitGroup, frequency time.Duratio
 			return
 		case <-ticker.C:
 			if err := loadOptionsFromDatabase(false); err != nil {
-				log.Error("failed to sync options from database: " + err.Error())
+				notify.ErrorThrottle("syncOptions", time.Minute, "failed to sync options", err.Error())
 			}
 		}
 	}
@@ -329,6 +331,8 @@ func updateOption(key string, value string, isInit bool) (err error) {
 			newGroupRpmRatioMap[consumeLevel] = v
 		}
 		config.SetGroupConsumeLevelRatio(newGroupRpmRatioMap)
+	case "NotifyNote":
+		config.SetNotifyNote(value)
 	default:
 		return ErrUnknownOptionKey
 	}

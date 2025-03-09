@@ -20,16 +20,8 @@ import (
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
-	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	log "github.com/sirupsen/logrus"
 )
-
-func isErrorHappened(resp *http.Response) bool {
-	if resp == nil {
-		return false
-	}
-	return resp.StatusCode != http.StatusOK
-}
 
 const (
 	// 0.5MB
@@ -101,14 +93,14 @@ func DoHelper(
 	}
 
 	// 3. Handle error response
-	if isErrorHappened(resp) {
-		relayErr := utils.RelayErrorHandler(meta, resp)
+	if resp == nil {
+		relayErr := openai.ErrorWrapperWithMessage("response is nil", openai.ErrorCodeBadResponse, http.StatusInternalServerError)
 		detail.ResponseBody = relayErr.JSONOrEmpty()
 		return nil, &detail, relayErr
 	}
 
 	// 4. Handle success response
-	usage, relayErr := handleSuccessResponse(a, c, meta, resp, &detail)
+	usage, relayErr := handleResponse(a, c, meta, resp, &detail)
 	if relayErr != nil {
 		return nil, &detail, relayErr
 	}
@@ -154,7 +146,7 @@ func prepareAndDoRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta) (*h
 	log.Debugf("request url: %s %s", method, fullRequestURL)
 
 	ctx := context.Background()
-	if timeout := config.GetTimeoutWithModelType()[meta.Mode]; timeout > 0 {
+	if timeout := config.GetTimeoutWithModelType()[int(meta.Mode)]; timeout > 0 {
 		// donot use c.Request.Context() because it will be canceled by the client
 		// which will cause the usage of non-streaming requests to be unable to be recorded
 		var cancel context.CancelFunc
@@ -198,12 +190,18 @@ func doRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, req *http.Req
 		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, openai.ErrorWrapperWithMessage("do request failed: request timeout", "request_timeout", http.StatusGatewayTimeout)
 		}
+		if errors.Is(err, io.EOF) {
+			return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusServiceUnavailable)
+		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusInternalServerError)
+		}
 		return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusBadRequest)
 	}
 	return resp, nil
 }
 
-func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, resp *http.Response, detail *model.RequestDetail) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+func handleResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, resp *http.Response, detail *model.RequestDetail) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
 	buf := getBuffer()
 	defer putBuffer(buf)
 
@@ -216,10 +214,15 @@ func handleSuccessResponse(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, r
 	c.Writer = rw
 
 	c.Header("Content-Type", resp.Header.Get("Content-Type"))
+
 	usage, relayErr := a.DoResponse(meta, c, resp)
-	// copy body buffer
-	// do not use bytes conv
-	detail.ResponseBody = rw.body.String()
+	if relayErr != nil {
+		detail.ResponseBody = relayErr.JSONOrEmpty()
+	} else {
+		// copy body buffer
+		// do not use bytes conv
+		detail.ResponseBody = rw.body.String()
+	}
 
 	return usage, relayErr
 }

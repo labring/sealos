@@ -39,8 +39,12 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ChatCompletions:
 		// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/chatgpt-quickstart?pivots=rest-api&tabs=command-line#rest-api
 		return fmt.Sprintf("%s/openai/deployments/%s/chat/completions?api-version=%s", meta.Channel.BaseURL, model, apiVersion), nil
+	case relaymode.Completions:
+		return fmt.Sprintf("%s/openai/deployments/%s/completions?api-version=%s", meta.Channel.BaseURL, model, apiVersion), nil
+	case relaymode.Embeddings:
+		return fmt.Sprintf("%s/openai/deployments/%s/embeddings?api-version=%s", meta.Channel.BaseURL, model, apiVersion), nil
 	default:
-		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 

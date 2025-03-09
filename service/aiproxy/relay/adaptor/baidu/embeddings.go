@@ -3,7 +3,6 @@ package baidu
 import (
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
@@ -32,8 +31,8 @@ func EmbeddingsHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*r
 	if err != nil {
 		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
-	if baiduResponse.Error != nil && baiduResponse.Error.ErrorCode != 0 {
-		return &baiduResponse.Usage, openai.ErrorWrapperWithMessage(baiduResponse.Error.ErrorMsg, "baidu_error_"+strconv.Itoa(baiduResponse.Error.ErrorCode), http.StatusInternalServerError)
+	if baiduResponse.Error != nil && baiduResponse.ErrorCode != 0 {
+		return &baiduResponse.Usage, ErrorHandler(baiduResponse.Error)
 	}
 
 	respMap := make(map[string]any)
