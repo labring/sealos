@@ -32,7 +32,7 @@ redis.call('ZREMRANGEBYSCORE', over_limit_key, '-inf', cutoff)
 local count = redis.call('ZCOUNT', key, cutoff, current_time)
 local over_limit_count = redis.call('ZCOUNT', over_limit_key, cutoff, current_time)
 
-if count < max_requests then
+if count <= max_requests then
     redis.call('ZADD', key, current_time, current_time)
     redis.call('PEXPIRE', key, window / 1000)
 	count = count + 1
