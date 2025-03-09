@@ -11,6 +11,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/env"
+
 	// import fastjson serializer
 	_ "github.com/labring/sealos/service/aiproxy/common/fastJSONSerializer"
 	log "github.com/sirupsen/logrus"
