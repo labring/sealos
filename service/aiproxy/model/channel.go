@@ -63,7 +63,7 @@ func (c *Channel) GetBalanceThreshold() float64 {
 }
 
 const (
-	DefaultPriority = 100
+	DefaultPriority = 10
 )
 
 func (c *Channel) GetPriority() int32 {
