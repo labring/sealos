@@ -27,6 +27,7 @@ func AsyncConsume(
 	outputPrice float64,
 	content string,
 	ip string,
+	retryTimes int,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -51,6 +52,7 @@ func AsyncConsume(
 		outputPrice,
 		content,
 		ip,
+		retryTimes,
 		requestDetail,
 	)
 }
@@ -65,6 +67,7 @@ func Consume(
 	outputPrice float64,
 	content string,
 	ip string,
+	retryTimes int,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -75,7 +78,7 @@ func Consume(
 
 	amount = consumeAmount(ctx, amount, postGroupConsumer, meta)
 
-	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount)
+	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount, retryTimes)
 	if err != nil {
 		log.Error("error batch record consume: " + err.Error())
 	}
@@ -155,6 +158,7 @@ func recordConsume(
 	ip string,
 	requestDetail *model.RequestDetail,
 	amount float64,
+	retryTimes int,
 ) error {
 	promptTokens := 0
 	completionTokens := 0
@@ -186,6 +190,7 @@ func recordConsume(
 		content,
 		int(meta.Mode),
 		ip,
+		retryTimes,
 		requestDetail,
 	)
 }

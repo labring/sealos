@@ -241,6 +241,7 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 			0,
 			errMsg,
 			c.ClientIP(),
+			0,
 			nil,
 		)
 		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg)
@@ -258,20 +259,30 @@ func GetModelConfig(c *gin.Context) *model.ModelConfig {
 	return c.MustGet(ctxkey.ModelConfig).(*model.ModelConfig)
 }
 
-func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode relaymode.Mode) *meta.Meta {
+func NewMetaByContext(c *gin.Context,
+	channel *model.Channel,
+	modelName string,
+	mode relaymode.Mode,
+	opts ...meta.Option,
+) *meta.Meta {
 	requestID := GetRequestID(c)
 	group := GetGroup(c)
 	token := GetToken(c)
+
+	opts = append(
+		opts,
+		meta.WithRequestID(requestID),
+		meta.WithGroup(group),
+		meta.WithToken(token),
+		meta.WithEndpoint(c.Request.URL.Path),
+	)
 
 	return meta.NewMeta(
 		channel,
 		mode,
 		modelName,
 		GetModelConfig(c),
-		meta.WithRequestID(requestID),
-		meta.WithGroup(group),
-		meta.WithToken(token),
-		meta.WithEndpoint(c.Request.URL.Path),
+		opts...,
 	)
 }
 

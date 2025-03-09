@@ -60,6 +60,7 @@ func BatchRecordConsume(
 	content string,
 	mode int,
 	ip string,
+	retryTimes int,
 	requestDetail *RequestDetail,
 ) error {
 	errs := []error{}
@@ -81,6 +82,7 @@ func BatchRecordConsume(
 		content,
 		mode,
 		ip,
+		retryTimes,
 		requestDetail,
 	)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -243,14 +244,13 @@ func relay(c *gin.Context, mode relaymode.Mode, relayController RelayController)
 }
 
 type retryState struct {
-	retryTimes               int64
+	retryTimes               int
 	lastHasPermissionChannel *dbmodel.Channel
 	ignoreChannelIDs         []int64
 	errorRates               map[int64]float64
 	exhausted                bool
 	bizErr                   *model.ErrorWithStatusCode
 	startTime                time.Time
-	maxRetryDuration         time.Duration
 }
 
 type initialChannel struct {
@@ -298,12 +298,11 @@ func handleRelayResult(c *gin.Context, bizErr *model.ErrorWithStatusCode, retry 
 
 func initRetryState(channel *dbmodel.Channel, bizErr *model.ErrorWithStatusCode, ignoreChannelIDs []int64, errorRates map[int64]float64) *retryState {
 	state := &retryState{
-		retryTimes:       config.GetRetryTimes(),
+		retryTimes:       int(config.GetRetryTimes()),
 		ignoreChannelIDs: ignoreChannelIDs,
 		errorRates:       errorRates,
 		bizErr:           bizErr,
 		startTime:        time.Now(),
-		maxRetryDuration: 30 * time.Second,
 	}
 
 	if !channelHasPermission(bizErr.StatusCode) {
@@ -318,16 +317,10 @@ func initRetryState(channel *dbmodel.Channel, bizErr *model.ErrorWithStatusCode,
 func retryLoop(c *gin.Context, mode relaymode.Mode, requestModel string, state *retryState, relayController RelayController, log *log.Entry) {
 	mc := middleware.GetModelCaches(c)
 
-retryLoopOuter:
-	for i := 0; i < int(state.retryTimes); i++ {
-		select {
-		case <-c.Request.Context().Done():
-			break retryLoopOuter
-		default:
-		}
-
-		if time.Since(state.startTime) > state.maxRetryDuration {
-			log.Warnf("retry timeout exceeded (max: %v), stopping retries", state.maxRetryDuration)
+	for i := 0; i < state.retryTimes; i++ {
+		ctxErr := c.Request.Context().Err()
+		if ctxErr != nil {
+			log.Warnf("retry loop context error: %+v", ctxErr)
 			break
 		}
 
@@ -336,18 +329,25 @@ retryLoopOuter:
 			break
 		}
 
+		log.Data["retry"] = strconv.Itoa(i + 1)
+
 		log.Warnf("using channel %s (type: %d, id: %d) to retry (remain times %d)",
 			newChannel.Name,
 			newChannel.Type,
 			newChannel.ID,
-			state.retryTimes-int64(i),
+			state.retryTimes-i,
 		)
 
 		if !prepareRetry(c, state.bizErr.StatusCode) {
 			break
 		}
 
-		meta := middleware.NewMetaByContext(c, newChannel, requestModel, mode)
+		meta := middleware.NewMetaByContext(c,
+			newChannel,
+			requestModel,
+			mode,
+			meta.WithRetryTimes(i+1),
+		)
 		bizErr, retry := RelayHelper(meta, c, relayController)
 
 		done := handleRetryResult(bizErr, retry, newChannel, state)
@@ -397,7 +397,7 @@ func prepareRetry(c *gin.Context, statusCode int) bool {
 
 func handleRetryResult(bizErr *model.ErrorWithStatusCode, retry bool, newChannel *dbmodel.Channel, state *retryState) (done bool) {
 	state.bizErr = bizErr
-	if bizErr == nil || !retry {
+	if !retry || bizErr == nil {
 		return true
 	}
 
@@ -431,15 +431,15 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 	return ok
 }
 
-var channelHasPermissionStatusCodesMap = map[int]struct{}{
-	http.StatusTooManyRequests: {},
-	http.StatusRequestTimeout:  {},
-	http.StatusGatewayTimeout:  {},
+var channelNoPermissionStatusCodesMap = map[int]struct{}{
+	http.StatusUnauthorized:    {},
+	http.StatusPaymentRequired: {},
+	http.StatusForbidden:       {},
 }
 
 func channelHasPermission(statusCode int) bool {
-	_, ok := channelHasPermissionStatusCodesMap[statusCode]
-	return ok
+	_, ok := channelNoPermissionStatusCodesMap[statusCode]
+	return !ok
 }
 
 func shouldDelay(statusCode int) bool {

@@ -32,6 +32,7 @@ type Meta struct {
 	Mode          relaymode.Mode
 	InputTokens   int
 	IsChannelTest bool
+	RetryTimes    int
 }
 
 type Option func(meta *Meta)
@@ -69,6 +70,12 @@ func WithGroup(group *model.GroupCache) Option {
 func WithToken(token *model.TokenCache) Option {
 	return func(meta *Meta) {
 		meta.Token = token
+	}
+}
+
+func WithRetryTimes(retryTimes int) Option {
+	return func(meta *Meta) {
+		meta.RetryTimes = retryTimes
 	}
 }
 
@@ -152,7 +159,6 @@ func (m *Meta) GetBool(key string) bool {
 	return b
 }
 
-//nolint:unparam
 func GetMappedModelName(modelName string, mapping map[string]string) (string, bool) {
 	if len(modelName) == 0 {
 		return modelName, false

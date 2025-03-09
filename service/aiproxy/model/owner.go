@@ -1,6 +1,5 @@
 package model
 
-//nolint:revive
 type ModelOwner string
 
 const (

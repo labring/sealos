@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"image"
-
 	// import gif decoder
 	_ "image/gif"
 	// import jpeg decoder
@@ -20,7 +19,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/service/aiproxy/common"
-
 	// import webp decoder
 	_ "golang.org/x/image/webp"
 )
