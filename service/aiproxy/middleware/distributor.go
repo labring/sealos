@@ -101,7 +101,7 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 			return ErrRequestRateLimitExceeded
 		}
 	} else if common.RedisEnabled {
-		_, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, time.Minute)
+		_, _, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, 1, time.Minute)
 		if err != nil {
 			log.Errorf("push request error: %s", err.Error())
 		}
