@@ -207,8 +207,6 @@ func processTestResult(mc *model.ModelCaches, channel *model.Channel, modelName 
 	return result
 }
 
-//nolint:goconst
-//nolint:gosec
 func TestChannelModels(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -295,8 +293,6 @@ func TestChannelModels(c *gin.Context) {
 	}
 }
 
-//nolint:goconst
-//nolint:gosec
 func TestAllChannels(c *gin.Context) {
 	testDisabled := c.Query("test_disabled") == "true"
 	var channels []*model.Channel

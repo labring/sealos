@@ -58,6 +58,6 @@ func getToken(ctx context.Context, channelID int, adcJSON string) (string, error
 	}
 	_ = resp
 
-	Cache.Set(cacheKey, resp.AccessToken, cache.DefaultExpiration)
-	return resp.AccessToken, nil
+	Cache.Set(cacheKey, resp.GetAccessToken(), cache.DefaultExpiration)
+	return resp.GetAccessToken(), nil
 }

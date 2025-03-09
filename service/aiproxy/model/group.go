@@ -39,7 +39,6 @@ func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&Token{}).Where("group_id = ?", g.ID).Delete(&Token{}).Error
 }
 
-//nolint:goconst
 func getGroupOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {

@@ -2,11 +2,10 @@ package router
 
 import (
 	"github.com/gin-contrib/gzip"
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common/env"
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
-
-	"github.com/gin-gonic/gin"
 )
 
 func SetAPIRouter(router *gin.Engine) {

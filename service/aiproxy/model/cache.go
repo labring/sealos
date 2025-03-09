@@ -407,14 +407,13 @@ func CacheGetGroupModelTPM(id string, model string) (int64, error) {
 	return tpm, nil
 }
 
-//nolint:revive
 type ModelConfigCache interface {
 	GetModelConfig(model string) (*ModelConfig, bool)
 }
 
 // read-only cache
 //
-//nolint:revive
+
 type ModelCaches struct {
 	ModelConfig                     ModelConfigCache
 	EnabledModel2channels           map[string][]*Channel

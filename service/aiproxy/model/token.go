@@ -38,7 +38,6 @@ type Token struct {
 	RequestCount int             `gorm:"index"                                     json:"request_count"`
 }
 
-//nolint:goconst
 func getTokenOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
