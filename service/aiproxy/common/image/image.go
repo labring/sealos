@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+
 	// import gif decoder
 	_ "image/gif"
 	// import jpeg decoder
