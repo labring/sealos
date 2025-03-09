@@ -67,17 +67,20 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 			meta.OriginModel,
 			int64(meta.Channel.ID),
 			false,
+			false,
 		); err != nil {
 			log.Errorf("add request failed: %+v", err)
 		}
 		return nil, false
 	}
 	if shouldErrorMonitor(relayErr.StatusCode) {
+		hasPermission := channelHasPermission(relayErr.StatusCode)
 		beyondThreshold, autoBanned, err := monitor.AddRequest(
 			context.Background(),
 			meta.OriginModel,
 			int64(meta.Channel.ID),
 			true,
+			!hasPermission,
 		)
 		if err != nil {
 			log.Errorf("add request failed: %+v", err)
@@ -95,6 +98,14 @@ func RelayHelper(meta *meta.Meta, c *gin.Context, relayController RelayControlle
 				fmt.Sprintf("beyondThreshold:%d:%s", meta.Channel.ID, meta.OriginModel),
 				time.Minute,
 				fmt.Sprintf("channel[%d] %s(%d) model %s error rate is beyond threshold",
+					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
+				relayErr.JSONOrEmpty(),
+			)
+		} else if !hasPermission {
+			notify.ErrorThrottle(
+				fmt.Sprintf("channelHasPermission:%d:%s", meta.Channel.ID, meta.OriginModel),
+				time.Minute,
+				fmt.Sprintf("channel[%d] %s(%d) model %s has no permission",
 					meta.Channel.Type, meta.Channel.Name, meta.Channel.ID, meta.OriginModel),
 				relayErr.JSONOrEmpty(),
 			)
@@ -214,11 +225,11 @@ func relay(c *gin.Context, mode relaymode.Mode, relayController RelayController)
 }
 
 type retryState struct {
-	retryTimes             int64
-	lastCanContinueChannel *dbmodel.Channel
-	ignoreChannelIDs       []int
-	exhausted              bool
-	bizErr                 *model.ErrorWithStatusCode
+	retryTimes               int64
+	lastHasPermissionChannel *dbmodel.Channel
+	ignoreChannelIDs         []int
+	exhausted                bool
+	bizErr                   *model.ErrorWithStatusCode
 }
 
 func getInitialChannel(c *gin.Context, requestModel string, log *log.Entry) (*dbmodel.Channel, []int, error) {
@@ -261,10 +272,10 @@ func initRetryState(channel *dbmodel.Channel, bizErr *model.ErrorWithStatusCode,
 		bizErr:           bizErr,
 	}
 
-	if !channelCanContinue(bizErr.StatusCode) {
+	if !channelHasPermission(bizErr.StatusCode) {
 		state.ignoreChannelIDs = append(state.ignoreChannelIDs, channel.ID)
 	} else {
-		state.lastCanContinueChannel = channel
+		state.lastHasPermissionChannel = channel
 	}
 
 	return state
@@ -307,16 +318,16 @@ func retryLoop(c *gin.Context, mode relaymode.Mode, requestModel string, state *
 
 func getRetryChannel(mc *dbmodel.ModelCaches, requestModel string, state *retryState) (*dbmodel.Channel, error) {
 	if state.exhausted {
-		return state.lastCanContinueChannel, nil
+		return state.lastHasPermissionChannel, nil
 	}
 
 	newChannel, err := GetRandomChannel(mc, requestModel, state.ignoreChannelIDs...)
 	if err != nil {
-		if !errors.Is(err, ErrChannelsExhausted) || state.lastCanContinueChannel == nil {
+		if !errors.Is(err, ErrChannelsExhausted) || state.lastHasPermissionChannel == nil {
 			return nil, err
 		}
 		state.exhausted = true
-		return state.lastCanContinueChannel, nil
+		return state.lastHasPermissionChannel, nil
 	}
 
 	return newChannel, nil
@@ -345,15 +356,15 @@ func handleRetryResult(bizErr *model.ErrorWithStatusCode, retry bool, newChannel
 	}
 
 	if state.exhausted {
-		if !channelCanContinue(bizErr.StatusCode) {
+		if !channelHasPermission(bizErr.StatusCode) {
 			return true
 		}
 	} else {
-		if !channelCanContinue(bizErr.StatusCode) {
+		if !channelHasPermission(bizErr.StatusCode) {
 			state.ignoreChannelIDs = append(state.ignoreChannelIDs, newChannel.ID)
 			state.retryTimes++
 		} else {
-			state.lastCanContinueChannel = newChannel
+			state.lastHasPermissionChannel = newChannel
 		}
 	}
 
@@ -374,14 +385,14 @@ func shouldRetry(_ *gin.Context, statusCode int) bool {
 	return ok
 }
 
-var channelCanContinueStatusCodesMap = map[int]struct{}{
+var channelHasPermissionStatusCodesMap = map[int]struct{}{
 	http.StatusTooManyRequests: {},
 	http.StatusRequestTimeout:  {},
 	http.StatusGatewayTimeout:  {},
 }
 
-func channelCanContinue(statusCode int) bool {
-	_, ok := channelCanContinueStatusCodesMap[statusCode]
+func channelHasPermission(statusCode int) bool {
+	_, ok := channelHasPermissionStatusCodesMap[statusCode]
 	return ok
 }
 

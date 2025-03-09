@@ -67,7 +67,7 @@ func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 	return result, nil
 }
 
-func canAutoBan() int {
+func canBan() int {
 	if config.GetEnableModelErrorAutoBan() {
 		return 1
 	}
@@ -75,7 +75,7 @@ func canAutoBan() int {
 }
 
 // AddRequest adds a request record and checks if channel should be banned
-func AddRequest(ctx context.Context, model string, channelID int64, isError bool) (beyondThreshold bool, autoBanned bool, err error) {
+func AddRequest(ctx context.Context, model string, channelID int64, isError bool, tryBan bool) (beyondThreshold bool, autoBanned bool, err error) {
 	if !common.RedisEnabled {
 		return false, false, nil
 	}
@@ -83,6 +83,8 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 	errorFlag := 0
 	if isError {
 		errorFlag = 1
+	} else {
+		tryBan = false
 	}
 
 	now := time.Now().UnixMilli()
@@ -94,7 +96,8 @@ func AddRequest(ctx context.Context, model string, channelID int64, isError bool
 		errorFlag,
 		now,
 		config.GetModelErrorAutoBanRate(),
-		canAutoBan(),
+		canBan(),
+		tryBan,
 	).Int64()
 	if err != nil {
 		return false, false, err
@@ -287,7 +290,8 @@ local channel_id = ARGV[1]
 local is_error = tonumber(ARGV[2])
 local now_ts = tonumber(ARGV[3])
 local max_error_rate = tonumber(ARGV[4])
-local can_auto_ban = tonumber(ARGV[5])
+local can_ban = tonumber(ARGV[5])
+local try_ban = tonumber(ARGV[6])
 
 local banned_key = "model:" .. model .. ":banned"
 local stats_key = "model:" .. model .. ":channel:" .. channel_id .. ":stats"
@@ -344,6 +348,12 @@ local function check_channel_error()
     if #to_delete > 0 then
         redis.call("HDEL", stats_key, unpack(to_delete))
     end
+
+	if try_ban == 1 and can_ban == 1 then
+		redis.call("SADD", banned_key, channel_id)
+		return 1
+	end
+
 	if total_req < 20 then
 		return 0
 	end
@@ -358,7 +368,7 @@ local function check_channel_error()
 		if already_banned then
 			return 2
 		end
-		if can_auto_ban == 0 then
+		if can_ban == 0 then
 			return 3
 		end
 		redis.call("SADD", banned_key, channel_id)

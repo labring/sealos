@@ -193,6 +193,9 @@ func doRequest(a adaptor.Adaptor, c *gin.Context, meta *meta.Meta, req *http.Req
 		if errors.Is(err, io.EOF) {
 			return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusServiceUnavailable)
 		}
+		if errors.Is(err, io.ErrUnexpectedEOF) {
+			return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusInternalServerError)
+		}
 		return nil, openai.ErrorWrapperWithMessage("do request failed: "+err.Error(), "request_failed", http.StatusBadRequest)
 	}
 	return resp, nil
