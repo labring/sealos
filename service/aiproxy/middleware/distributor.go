@@ -210,17 +210,9 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 
 	SetLogModelFields(log.Data, requestModel)
 
-	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
-	if !ok {
-		abortLogWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
-		return
-	}
-
-	c.Set(ctxkey.ModelConfig, mc)
-
 	token := GetToken(c)
-
-	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
+	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
+	if !ok || len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortLogWithMessage(c,
 			http.StatusForbidden,
 			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
@@ -229,6 +221,7 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 		)
 		return
 	}
+	c.Set(ctxkey.ModelConfig, mc)
 
 	if err := checkGroupModelRPMAndTPM(c, group, mc); err != nil {
 		errMsg := err.Error()
