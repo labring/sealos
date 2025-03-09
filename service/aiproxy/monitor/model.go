@@ -33,7 +33,7 @@ var (
 // GetModelErrorRate gets error rate for a specific model across all channels
 func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 	if !common.RedisEnabled {
-		return map[string]float64{}, nil
+		return memModelMonitor.GetModelsErrorRate(ctx)
 	}
 
 	result := make(map[string]float64)
@@ -75,9 +75,10 @@ func canBan() int {
 }
 
 // AddRequest adds a request record and checks if channel should be banned
-func AddRequest(ctx context.Context, model string, channelID int64, isError bool, tryBan bool) (beyondThreshold bool, autoBanned bool, err error) {
+func AddRequest(ctx context.Context, model string, channelID int64, isError, tryBan bool) (beyondThreshold bool, banExecution bool, err error) {
 	if !common.RedisEnabled {
-		return false, false, nil
+		beyondThreshold, banExecution = memModelMonitor.AddRequest(model, channelID, isError, tryBan)
+		return beyondThreshold, banExecution, nil
 	}
 
 	errorFlag := 0
@@ -126,7 +127,7 @@ func getModelChannelID(key string) (string, int64, bool) {
 // GetChannelModelErrorRates gets error rates for a specific channel
 func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string]float64, error) {
 	if !common.RedisEnabled {
-		return map[string]float64{}, nil
+		return memModelMonitor.GetChannelModelErrorRates(ctx, channelID)
 	}
 
 	result := make(map[string]float64)
@@ -164,7 +165,7 @@ func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string
 
 func GetModelChannelErrorRate(ctx context.Context, model string) (map[int64]float64, error) {
 	if !common.RedisEnabled {
-		return map[int64]float64{}, nil
+		return memModelMonitor.GetModelChannelErrorRate(ctx, model)
 	}
 
 	result := make(map[int64]float64)
@@ -202,8 +203,12 @@ func GetModelChannelErrorRate(ctx context.Context, model string) (map[int64]floa
 
 // GetBannedChannelsWithModel gets banned channels for a specific model
 func GetBannedChannelsWithModel(ctx context.Context, model string) ([]int64, error) {
-	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
+	if !config.GetEnableModelErrorAutoBan() {
 		return []int64{}, nil
+	}
+
+	if !common.RedisEnabled {
+		return memModelMonitor.GetBannedChannelsWithModel(ctx, model)
 	}
 
 	result := []int64{}
@@ -233,7 +238,7 @@ func GetBannedChannelsWithModel(ctx context.Context, model string) ([]int64, err
 // ClearChannelModelErrors clears errors for a specific channel and model
 func ClearChannelModelErrors(ctx context.Context, model string, channelID int) error {
 	if !common.RedisEnabled {
-		return nil
+		return memModelMonitor.ClearChannelModelErrors(ctx, model, channelID)
 	}
 	return clearChannelModelErrorsScript.Run(
 		ctx,
@@ -246,7 +251,7 @@ func ClearChannelModelErrors(ctx context.Context, model string, channelID int) e
 // ClearChannelAllModelErrors clears all errors for a specific channel
 func ClearChannelAllModelErrors(ctx context.Context, channelID int) error {
 	if !common.RedisEnabled {
-		return nil
+		return memModelMonitor.ClearChannelAllModelErrors(ctx, channelID)
 	}
 	return clearChannelAllModelErrorsScript.Run(
 		ctx,
@@ -259,15 +264,19 @@ func ClearChannelAllModelErrors(ctx context.Context, channelID int) error {
 // ClearAllModelErrors clears all error records
 func ClearAllModelErrors(ctx context.Context) error {
 	if !common.RedisEnabled {
-		return nil
+		return memModelMonitor.ClearAllModelErrors(ctx)
 	}
 	return clearAllModelErrorsScript.Run(ctx, common.RDB, []string{}).Err()
 }
 
 // GetAllBannedModelChannels gets all banned channels for all models
 func GetAllBannedModelChannels(ctx context.Context) (map[string][]int64, error) {
-	if !common.RedisEnabled || !config.GetEnableModelErrorAutoBan() {
+	if !config.GetEnableModelErrorAutoBan() {
 		return map[string][]int64{}, nil
+	}
+
+	if !common.RedisEnabled {
+		return memModelMonitor.GetAllBannedModelChannels(ctx)
 	}
 
 	result := make(map[string][]int64)
@@ -305,7 +314,7 @@ func GetAllBannedModelChannels(ctx context.Context) (map[string][]int64, error) 
 // GetAllChannelModelErrorRates gets error rates for all channels and models
 func GetAllChannelModelErrorRates(ctx context.Context) (map[int64]map[string]float64, error) {
 	if !common.RedisEnabled {
-		return map[int64]map[string]float64{}, nil
+		return memModelMonitor.GetAllChannelModelErrorRates(ctx)
 	}
 
 	result := make(map[int64]map[string]float64)
@@ -369,44 +378,36 @@ local function parse_req_err(value)
     return tonumber(r) or 0, tonumber(e) or 0
 end
 
-local function update_channel_stats()
-    local req, err = parse_req_err(redis.call("HGET", stats_key, current_slice))
+local function update_stats(key)
+    local req, err = parse_req_err(redis.call("HGET", key, current_slice))
     req = req + 1
     err = err + (is_error == 1 and 1 or 0)
-    redis.call("HSET", stats_key, current_slice, req .. ":" .. err)
-    redis.call("PEXPIRE", stats_key, statsExpiry)
+    redis.call("HSET", key, current_slice, req .. ":" .. err)
+    redis.call("PEXPIRE", key, statsExpiry)
     return req, err
 end
 
-local function update_model_stats()
-    local req, err = parse_req_err(redis.call("HGET", model_stats_key, current_slice))
-    req = req + 1
-    err = err + (is_error == 1 and 1 or 0)
-    redis.call("HSET", model_stats_key, current_slice, req .. ":" .. err)
-    redis.call("PEXPIRE", model_stats_key, statsExpiry)
-    return req, err
-end
-
-update_channel_stats()
-update_model_stats()
-
-local function check_channel_error()
-    local total_req, total_err = 0, 0
-    local min_valid_slice = current_slice - maxSliceCount
-    
-    local all_slices = redis.call("HGETALL", stats_key)
-    
+local function get_clean_req_err(key)
+	local total_req, total_err = 0, 0
+	local min_valid_slice = current_slice - maxSliceCount
+    local all_slices = redis.call("HGETALL", key)
     for i = 1, #all_slices, 2 do
         local slice = tonumber(all_slices[i])
         if slice < min_valid_slice then
-			redis.call("HDEL", stats_key, all_slices[i])
-        else
-            local req, err = parse_req_err(all_slices[i+1])
-            total_req = total_req + req
-            total_err = total_err + err
-        end
+            redis.call("HDEL", key, all_slices[i])
+		else
+			local req, err = parse_req_err(all_slices[i+1])
+			total_req = total_req + req
+			total_err = total_err + err
+		end
     end
+	return total_req, total_err
+end
 
+update_stats(stats_key)
+update_stats(model_stats_key)
+
+local function check_channel_error()
     local already_banned = redis.call("EXISTS", banned_key) == 1
 
 	if try_ban == 1 and can_ban == 1 then
@@ -418,6 +419,7 @@ local function check_channel_error()
 		return 1
 	end
 
+	local total_req, total_err = get_clean_req_err(stats_key)
 	if total_req < 20 then
 		return 0
 	end
@@ -428,10 +430,7 @@ local function check_channel_error()
 		end
 		return 0
 	else
-		if already_banned then
-			return 2
-		end
-		if can_ban == 0 then
+		if can_ban == 0 or already_banned then
 			return 3
 		end
 		redis.call("SET", banned_key, 1)
@@ -448,7 +447,6 @@ local stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
 local maxSliceCount = 12
 local current_slice = math.floor(now_ts / 10 / 1000)
-local min_valid_slice = current_slice - maxSliceCount
 
 local function parse_req_err(value)
     if not value then return 0, 0 end
@@ -456,20 +454,24 @@ local function parse_req_err(value)
     return tonumber(r) or 0, tonumber(e) or 0
 end
 
-local total_req, total_err = 0, 0
-local all_slices = redis.call("HGETALL", stats_key)
-
-for i = 1, #all_slices, 2 do
-    local slice = tonumber(all_slices[i])
-    if slice < min_valid_slice then
-		redis.call("HDEL", stats_key, all_slices[i])
-	else
-        local req, err = parse_req_err(all_slices[i+1])
-        total_req = total_req + req
-        total_err = total_err + err
+local function get_clean_req_err(key)
+	local total_req, total_err = 0, 0
+	local min_valid_slice = current_slice - maxSliceCount
+    local all_slices = redis.call("HGETALL", key)
+    for i = 1, #all_slices, 2 do
+        local slice = tonumber(all_slices[i])
+        if slice < min_valid_slice then
+            redis.call("HDEL", key, all_slices[i])
+		else
+			local req, err = parse_req_err(all_slices[i+1])
+			total_req = total_req + req
+			total_err = total_err + err
+		end
     end
+	return total_req, total_err
 end
 
+local total_req, total_err = get_clean_req_err(stats_key)
 if total_req < 20 then return 0 end
 return string.format("%.2f", total_err / total_req)
 `
