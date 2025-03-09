@@ -24,8 +24,7 @@ const (
 // Redis scripts
 var (
 	addRequestScript                 = redis.NewScript(addRequestLuaScript)
-	getChannelModelErrorRateScript   = redis.NewScript(getChannelModelErrorRateLuaScript)
-	getModelErrorRateScript          = redis.NewScript(getModelErrorRateLuaScript)
+	getErrorRateScript               = redis.NewScript(getErrorRateLuaScript)
 	getBannedChannelsScript          = redis.NewScript(getBannedChannelsLuaScript)
 	clearChannelModelErrorsScript    = redis.NewScript(clearChannelModelErrorsLuaScript)
 	clearChannelAllModelErrorsScript = redis.NewScript(clearChannelAllModelErrorsLuaScript)
@@ -41,17 +40,19 @@ func GetModelsErrorRate(ctx context.Context) (map[string]float64, error) {
 	result := make(map[string]float64)
 	pattern := modelKeyPrefix + "*" + modelTotalStatsSuffix
 
+	now := time.Now().UnixMilli()
+
 	iter := common.RDB.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
 		key := iter.Val()
 		model := strings.TrimPrefix(key, modelKeyPrefix)
 		model = strings.TrimSuffix(model, modelTotalStatsSuffix)
 
-		rate, err := getModelErrorRateScript.Run(
+		rate, err := getErrorRateScript.Run(
 			ctx,
 			common.RDB,
 			[]string{key},
-			time.Now().UnixMilli(),
+			now,
 		).Float64()
 		if err != nil {
 			return nil, err
@@ -142,7 +143,7 @@ func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string
 			continue
 		}
 
-		rate, err := getChannelModelErrorRateScript.Run(
+		rate, err := getErrorRateScript.Run(
 			ctx,
 			common.RDB,
 			[]string{key},
@@ -153,6 +154,44 @@ func GetChannelModelErrorRates(ctx context.Context, channelID int64) (map[string
 		}
 
 		result[model] = rate
+	}
+
+	if err := iter.Err(); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func GetModelChannelErrorRate(ctx context.Context, model string) (map[int64]float64, error) {
+	if !common.RedisEnabled {
+		return map[int64]float64{}, nil
+	}
+
+	result := make(map[int64]float64)
+	pattern := buildStatsKey(model, "*")
+	now := time.Now().UnixMilli()
+
+	iter := common.RDB.Scan(ctx, 0, pattern, 0).Iterator()
+	for iter.Next(ctx) {
+		key := iter.Val()
+
+		_, channelID, ok := getModelChannelID(key)
+		if !ok {
+			continue
+		}
+
+		rate, err := getErrorRateScript.Run(
+			ctx,
+			common.RDB,
+			[]string{key},
+			now,
+		).Float64()
+		if err != nil {
+			return nil, err
+		}
+
+		result[channelID] = rate
 	}
 
 	if err := iter.Err(); err != nil {
@@ -259,7 +298,7 @@ func GetAllChannelModelErrorRates(ctx context.Context) (map[int64]map[string]flo
 			continue
 		}
 
-		rate, err := getChannelModelErrorRateScript.Run(
+		rate, err := getErrorRateScript.Run(
 			ctx,
 			common.RDB,
 			[]string{key},
@@ -332,21 +371,16 @@ local function check_channel_error()
     local min_valid_slice = current_slice - maxSliceCount
     
     local all_slices = redis.call("HGETALL", stats_key)
-    local to_delete = {}
     
     for i = 1, #all_slices, 2 do
         local slice = tonumber(all_slices[i])
         if slice < min_valid_slice then
-            table.insert(to_delete, all_slices[i])
+			redis.call("HDEL", stats_key, all_slices[i])
         else
             local req, err = parse_req_err(all_slices[i+1])
             total_req = total_req + req
             total_err = total_err + err
         end
-    end
-
-    if #to_delete > 0 then
-        redis.call("HDEL", stats_key, unpack(to_delete))
     end
 
 	if try_ban == 1 and can_ban == 1 then
@@ -379,36 +413,7 @@ end
 return check_channel_error()
 `
 
-	getModelErrorRateLuaScript = `
-local model_stats_key = KEYS[1]
-local now_ts = tonumber(ARGV[1])
-local maxSliceCount = 12
-local current_slice = math.floor(now_ts / 10 / 1000)
-local min_valid_slice = current_slice - maxSliceCount
-
-local function parse_req_err(value)
-    if not value then return 0, 0 end
-    local r, e = value:match("^(%d+):(%d+)$")
-    return tonumber(r) or 0, tonumber(e) or 0
-end
-
-local total_req, total_err = 0, 0
-local all_slices = redis.call("HGETALL", model_stats_key)
-
-for i = 1, #all_slices, 2 do
-    local slice = tonumber(all_slices[i])
-    if slice >= min_valid_slice then
-        local req, err = parse_req_err(all_slices[i+1])
-        total_req = total_req + req
-        total_err = total_err + err
-    end
-end
-
-if total_req == 0 then return 0 end
-return string.format("%.2f", total_err / total_req)
-`
-
-	getChannelModelErrorRateLuaScript = `
+	getErrorRateLuaScript = `
 local stats_key = KEYS[1]
 local now_ts = tonumber(ARGV[1])
 local maxSliceCount = 12
@@ -426,14 +431,16 @@ local all_slices = redis.call("HGETALL", stats_key)
 
 for i = 1, #all_slices, 2 do
     local slice = tonumber(all_slices[i])
-    if slice >= min_valid_slice then
+    if slice < min_valid_slice then
+		redis.call("HDEL", stats_key, all_slices[i])
+	else
         local req, err = parse_req_err(all_slices[i+1])
         total_req = total_req + req
         total_err = total_err + err
     end
 end
 
-if total_req == 0 then return 0 end
+if total_req < 20 then return 0 end
 return string.format("%.2f", total_err / total_req)
 `
 
