@@ -52,6 +52,6 @@ auth: {{ .registryUsername }}:{{ .registryPassword }}
 
 * [semverCompare](http://masterminds.github.io/sprig/semver.html) 比较语义版本，而不是字符串比较。
 * [default](http://masterminds.github.io/sprig/defaults.html) default 可以在值为空或未定义时提供一个默认值。
-* [toYaml](https://github.com/labring/sealos/blob/main/pkg/template/funcmap.go#L66) 将当前值（对象，映射，数组）显示为 yaml 格式的字符串。
+* [toYaml](https://github.com/labring/sealos/blob/main/lifecycle/pkg/template/funcmap.go#L66) 将当前值（对象，映射，数组）显示为 yaml 格式的字符串。
 
 完整的支持函数列表，请[点击这里](http://masterminds.github.io/sprig/)。
