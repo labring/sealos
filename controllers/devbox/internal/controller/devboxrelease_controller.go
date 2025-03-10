@@ -39,8 +39,15 @@ import (
 // DevBoxReleaseReconciler reconciles a DevBoxRelease object
 type DevBoxReleaseReconciler struct {
 	client.Client
-	Registry *registry.Client
+	Registry *registry.Registry
 	Scheme   *runtime.Scheme
+}
+
+type ImageInfo struct {
+	TotalName  string
+	Repository string
+	ImageName  string
+	Tag        string
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxreleases,verbs=get;list;watch;create;update;patch;delete
@@ -114,17 +121,17 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	if err := r.Get(ctx, devboxInfo, devbox); err != nil {
 		return err
 	}
-	hostName, imageName, oldTag, err := r.GetImageInfo(devbox)
+	imageInfo, err := r.GetImageRef(devbox)
 	if err != nil {
 		return err
 	}
-	logger.Info("Tagging image", "host", hostName, "image", imageName, "oldTag", oldTag, "newTag", devboxRelease.Spec.NewTag)
-	devboxRelease.Status.OriginalImage = imageName + ":" + oldTag
+	logger.Info("Tagging image", "host", imageInfo.Repository, "image", imageInfo.ImageName, "oldTag", imageInfo.Tag, "newTag", devboxRelease.Spec.NewTag)
+	devboxRelease.Status.OriginalImage = fmt.Sprintf("%s:%s", imageInfo.ImageName, imageInfo.Tag)
 	if err = r.Status().Update(ctx, devboxRelease); err != nil {
 		logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 		return err
 	}
-	return r.Registry.TagImage(hostName, imageName, oldTag, devboxRelease.Spec.NewTag)
+	return r.Registry.Tag(imageInfo.TotalName, fmt.Sprintf("%s/%s:%s", imageInfo.Repository, imageInfo.ImageName, devboxRelease.Spec.NewTag))
 }
 
 func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv1alpha1.DevBoxRelease) error {
@@ -132,20 +139,26 @@ func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv
 	return nil
 }
 
-func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
+func (r *DevBoxReleaseReconciler) GetImageRef(devbox *devboxv1alpha1.Devbox) (ImageInfo, error) {
 	if len(devbox.Status.CommitHistory) == 0 {
-		return "", "", "", fmt.Errorf("commit history is empty")
+		return ImageInfo{}, fmt.Errorf("commit history is empty")
 	}
 	commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
 	if commitHistory == nil {
-		return "", "", "", fmt.Errorf("no successful commit history found")
+		return ImageInfo{}, fmt.Errorf("no successful commit history found")
 	}
+
 	res, err := reference.ParseReference(commitHistory.Image)
 	if err != nil {
-		return "", "", "", err
+		return ImageInfo{}, err
 	}
 	repo := res.Context()
-	return repo.RegistryStr(), repo.RepositoryStr(), res.Identifier(), nil
+	return ImageInfo{
+		TotalName:  commitHistory.Image,
+		Repository: repo.RegistryStr(),
+		ImageName:  repo.RepositoryStr(),
+		Tag:        res.Identifier(),
+	}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
