@@ -214,7 +214,7 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
 	if !ok || len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortLogWithMessage(c,
-			http.StatusBadRequest,
+			http.StatusNotFound,
 			fmt.Sprintf("model %s not exist", requestModel),
 		)
 		return
