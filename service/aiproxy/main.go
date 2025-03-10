@@ -179,7 +179,7 @@ func cleanLog(ctx context.Context) {
 		case <-ticker.C:
 			err := model.CleanLog(1000)
 			if err != nil {
-				notify.Error("clean log failed", err.Error())
+				notify.ErrorThrottle("cleanLog", time.Minute, "clean log failed", err.Error())
 			}
 		}
 	}
