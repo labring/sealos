@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
 	"github.com/labring/sealos/service/aiproxy/common/ctxkey"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
@@ -100,7 +101,7 @@ func checkGroupModelRPMAndTPM(c *gin.Context, group *model.GroupCache, mc *model
 			return ErrRequestRateLimitExceeded
 		}
 	} else if common.RedisEnabled {
-		_, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, time.Minute)
+		_, _, err := rpmlimit.PushRequest(c.Request.Context(), group.ID, mc.Model, 1, time.Minute)
 		if err != nil {
 			log.Errorf("push request error: %s", err.Error())
 		}
@@ -126,7 +127,16 @@ type GroupBalanceConsumer struct {
 	Consumer     balance.PostGroupConsumer
 }
 
-func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+func GetGroupBalanceConsumer(c *gin.Context, group *model.GroupCache) (*GroupBalanceConsumer, error) {
+	gbcI, ok := c.Get(ctxkey.GroupBalance)
+	if ok {
+		groupBalanceConsumer, ok := gbcI.(*GroupBalanceConsumer)
+		if !ok {
+			return nil, errors.New("internal error: group balance consumer unavailable")
+		}
+		return groupBalanceConsumer, nil
+	}
+
 	var groupBalance float64
 	var consumer balance.PostGroupConsumer
 
@@ -135,37 +145,50 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	} else {
 		log := GetLogger(c)
 		var err error
-		groupBalance, consumer, err = balance.Default.GetGroupRemainBalance(c.Request.Context(), *group)
+		groupBalance, consumer, err = balance.GetGroupRemainBalance(c.Request.Context(), *group)
 		if err != nil {
-			if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
-				abortLogWithMessage(c, http.StatusForbidden, balance.ErrNoRealNameUsedAmountLimit.Error())
-				return false
-			}
-			log.Errorf("get group (%s) balance error: %v", group.ID, err)
-			abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
-			return false
+			return nil, err
 		}
 		log.Data["balance"] = strconv.FormatFloat(groupBalance, 'f', -1, 64)
 	}
 
-	if groupBalance <= 0 {
-		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID))
+	gbc := &GroupBalanceConsumer{GroupBalance: groupBalance, Consumer: consumer}
+	c.Set(ctxkey.GroupBalance, gbc)
+	return gbc, nil
+}
+
+func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
+	gbc, err := GetGroupBalanceConsumer(c, group)
+	if err != nil {
+		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
+			abortLogWithMessage(c, http.StatusForbidden, err.Error(), &errorField{
+				Code: "no_real_name_used_amount_limit",
+			})
+			return false
+		}
+		notify.ErrorThrottle("balance", time.Minute, fmt.Sprintf("get group (%s) balance error", group.ID), err.Error())
+		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID), &errorField{
+			Code: "get_group_balance_error",
+		})
 		return false
 	}
-	c.Set(ctxkey.GroupBalance, &GroupBalanceConsumer{
-		GroupBalance: groupBalance,
-		Consumer:     consumer,
-	})
+
+	if gbc.GroupBalance <= 0 {
+		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID), &errorField{
+			Code: "group_balance_not_enough",
+		})
+		return false
+	}
 	return true
 }
 
-func NewDistribute(mode int) gin.HandlerFunc {
+func NewDistribute(mode relaymode.Mode) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		distribute(c, mode)
 	}
 }
 
-func distribute(c *gin.Context, mode int) {
+func distribute(c *gin.Context, mode relaymode.Mode) {
 	if config.GetDisableServe() {
 		abortLogWithMessage(c, http.StatusServiceUnavailable, "service is under maintenance")
 		return
@@ -181,11 +204,17 @@ func distribute(c *gin.Context, mode int) {
 
 	requestModel, err := getRequestModel(c, mode)
 	if err != nil {
-		abortLogWithMessage(c, http.StatusBadRequest, err.Error())
+		abortLogWithMessage(c, http.StatusInternalServerError, err.Error(), &errorField{
+			Type: "invalid_request_error",
+			Code: "get_request_model_error",
+		})
 		return
 	}
 	if requestModel == "" {
-		abortLogWithMessage(c, http.StatusBadRequest, "no model provided")
+		abortLogWithMessage(c, http.StatusBadRequest, "no model provided", &errorField{
+			Type: "invalid_request_error",
+			Code: "no_model_provided",
+		})
 		return
 	}
 
@@ -193,25 +222,20 @@ func distribute(c *gin.Context, mode int) {
 
 	SetLogModelFields(log.Data, requestModel)
 
-	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
-	if !ok {
-		abortLogWithMessage(c, http.StatusServiceUnavailable, requestModel+" is not available")
-		return
-	}
-
-	c.Set(ctxkey.ModelConfig, mc)
-
 	token := GetToken(c)
-
-	if len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
+	mc, ok := GetModelCaches(c).ModelConfig.GetModelConfig(requestModel)
+	if !ok || len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortLogWithMessage(c,
-			http.StatusForbidden,
-			fmt.Sprintf("token (%s[%d]) has no permission to use model: %s",
-				token.Name, token.ID, requestModel,
-			),
+			http.StatusNotFound,
+			fmt.Sprintf("The model `%s` does not exist or you do not have access to it.", requestModel),
+			&errorField{
+				Type: "invalid_request_error",
+				Code: "model_not_found",
+			},
 		)
 		return
 	}
+	c.Set(ctxkey.ModelConfig, mc)
 
 	if err := checkGroupModelRPMAndTPM(c, group, mc); err != nil {
 		errMsg := err.Error()
@@ -224,9 +248,13 @@ func distribute(c *gin.Context, mode int) {
 			0,
 			errMsg,
 			c.ClientIP(),
+			0,
 			nil,
 		)
-		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg)
+		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg, &errorField{
+			Type: "invalid_request_error",
+			Code: "request_rate_limit_exceeded",
+		})
 		return
 	}
 
@@ -241,20 +269,30 @@ func GetModelConfig(c *gin.Context) *model.ModelConfig {
 	return c.MustGet(ctxkey.ModelConfig).(*model.ModelConfig)
 }
 
-func NewMetaByContext(c *gin.Context, channel *model.Channel, modelName string, mode int) *meta.Meta {
+func NewMetaByContext(c *gin.Context,
+	channel *model.Channel,
+	modelName string,
+	mode relaymode.Mode,
+	opts ...meta.Option,
+) *meta.Meta {
 	requestID := GetRequestID(c)
 	group := GetGroup(c)
 	token := GetToken(c)
+
+	opts = append(
+		opts,
+		meta.WithRequestID(requestID),
+		meta.WithGroup(group),
+		meta.WithToken(token),
+		meta.WithEndpoint(c.Request.URL.Path),
+	)
 
 	return meta.NewMeta(
 		channel,
 		mode,
 		modelName,
 		GetModelConfig(c),
-		meta.WithRequestID(requestID),
-		meta.WithGroup(group),
-		meta.WithToken(token),
-		meta.WithEndpoint(c.Request.URL.Path),
+		opts...,
 	)
 }
 
@@ -262,7 +300,7 @@ type ModelRequest struct {
 	Model string `form:"model" json:"model"`
 }
 
-func getRequestModel(c *gin.Context, mode int) (string, error) {
+func getRequestModel(c *gin.Context, mode relaymode.Mode) (string, error) {
 	path := c.Request.URL.Path
 	switch {
 	case mode == relaymode.ParsePdf:

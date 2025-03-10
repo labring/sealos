@@ -86,7 +86,11 @@ func ResponseCoze2OpenAI(cozeResponse *Response) *openai.TextResponse {
 	return &fullTextResponse
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -136,10 +140,14 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model
 
 	render.Done(c)
 
-	return nil, &responseText
+	return openai.ResponseText2Usage(responseText, meta.ActualModel, meta.InputTokens), nil
 }
 
-func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.ErrorWithStatusCode, *string) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
@@ -147,22 +155,16 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	var cozeResponse Response
 	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&cozeResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if cozeResponse.Code != 0 {
-		return &model.ErrorWithStatusCode{
-			Error: model.Error{
-				Message: cozeResponse.Msg,
-				Code:    cozeResponse.Code,
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapperWithMessage(cozeResponse.Msg, cozeResponse.Code, resp.StatusCode)
 	}
 	fullTextResponse := ResponseCoze2OpenAI(&cozeResponse)
 	fullTextResponse.Model = meta.OriginModel
 	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
@@ -174,5 +176,5 @@ func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*model.Error
 	if len(fullTextResponse.Choices) > 0 {
 		responseText = fullTextResponse.Choices[0].Message.StringContent()
 	}
-	return nil, &responseText
+	return openai.ResponseText2Usage(responseText, meta.ActualModel, meta.InputTokens), nil
 }

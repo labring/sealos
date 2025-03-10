@@ -7,14 +7,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
-
-	"github.com/gin-gonic/gin"
-	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 type Adaptor struct{}
@@ -99,8 +98,10 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 		return openai.ConvertRequest(meta, req)
 	case relaymode.ImagesGenerations:
 		return openai.ConvertRequest(meta, req)
-	default:
+	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, req)
+	default:
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -116,12 +117,14 @@ func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Respons
 		usage, err = RerankHandler(meta, c, resp)
 	case relaymode.ImagesGenerations:
 		usage, err = ImageHandler(meta, c, resp)
-	default:
+	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
 			err, usage = StreamHandler(meta, c, resp)
 		} else {
 			usage, err = Handler(meta, c, resp)
 		}
+	default:
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

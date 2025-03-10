@@ -1,21 +1,23 @@
 package model
 
 import (
+	"context"
 	"database/sql/driver"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/labring/sealos/service/aiproxy/common/notify"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
-type NotFoundError string
-
-func (e NotFoundError) Error() string {
-	return string(e) + " not found"
+func NotFoundError(errMsg ...string) error {
+	return fmt.Errorf("%s %w", strings.Join(errMsg, " "), gorm.ErrRecordNotFound)
 }
 
 func HandleNotFound(err error, errMsg ...string) error {
@@ -42,6 +44,115 @@ func OnConflictDoNothing() *gorm.DB {
 	})
 }
 
+func IgnoreNotFound(err error) error {
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil
+	}
+	return err
+}
+
+type BatchUpdateData struct {
+	Groups   map[string]*GroupUpdate
+	Tokens   map[int]*TokenUpdate
+	Channels map[int]*ChannelUpdate
+	sync.Mutex
+}
+
+type GroupUpdate struct {
+	Amount float64
+	Count  int
+}
+
+type TokenUpdate struct {
+	Amount float64
+	Count  int
+}
+
+type ChannelUpdate struct {
+	Amount float64
+	Count  int
+}
+
+var batchData BatchUpdateData
+
+func init() {
+	batchData = BatchUpdateData{
+		Groups:   make(map[string]*GroupUpdate),
+		Tokens:   make(map[int]*TokenUpdate),
+		Channels: make(map[int]*ChannelUpdate),
+	}
+}
+
+func StartBatchProcessor(ctx context.Context, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			ProcessBatchUpdates()
+			return
+		case <-ticker.C:
+			ProcessBatchUpdates()
+		}
+	}
+}
+
+func ProcessBatchUpdates() {
+	batchData.Lock()
+	defer batchData.Unlock()
+
+	if len(batchData.Groups) > 0 {
+		for groupID, data := range batchData.Groups {
+			err := UpdateGroupUsedAmountAndRequestCount(groupID, data.Amount, data.Count)
+			if IgnoreNotFound(err) != nil {
+				notify.ErrorThrottle(
+					"batchUpdateGroupUsedAmountAndRequestCount",
+					time.Minute,
+					"failed to batch update group",
+					err.Error(),
+				)
+			} else {
+				delete(batchData.Groups, groupID)
+			}
+		}
+	}
+
+	if len(batchData.Tokens) > 0 {
+		for tokenID, data := range batchData.Tokens {
+			err := UpdateTokenUsedAmount(tokenID, data.Amount, data.Count)
+			if IgnoreNotFound(err) != nil {
+				notify.ErrorThrottle(
+					"batchUpdateTokenUsedAmount",
+					time.Minute,
+					"failed to batch update token",
+					err.Error(),
+				)
+			} else {
+				delete(batchData.Tokens, tokenID)
+			}
+		}
+	}
+
+	if len(batchData.Channels) > 0 {
+		for channelID, data := range batchData.Channels {
+			err := UpdateChannelUsedAmount(channelID, data.Amount, data.Count)
+			if IgnoreNotFound(err) != nil {
+				notify.ErrorThrottle(
+					"batchUpdateChannelUsedAmount",
+					time.Minute,
+					"failed to batch update channel",
+					err.Error(),
+				)
+			} else {
+				delete(batchData.Channels, channelID)
+			}
+		}
+	}
+}
+
 func BatchRecordConsume(
 	requestID string,
 	requestAt time.Time,
@@ -60,9 +171,9 @@ func BatchRecordConsume(
 	content string,
 	mode int,
 	ip string,
+	retryTimes int,
 	requestDetail *RequestDetail,
 ) error {
-	errs := []error{}
 	err := RecordConsumeLog(
 		requestID,
 		requestAt,
@@ -81,33 +192,55 @@ func BatchRecordConsume(
 		content,
 		mode,
 		ip,
+		retryTimes,
 		requestDetail,
 	)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to record log: %w", err))
-	}
+
+	amountDecimal := decimal.NewFromFloat(amount)
+
+	batchData.Lock()
+	defer batchData.Unlock()
+
 	if group != "" {
-		err = UpdateGroupUsedAmountAndRequestCount(group, amount, 1)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to update group used amount and request count: %w", err))
+		if _, ok := batchData.Groups[group]; !ok {
+			batchData.Groups[group] = &GroupUpdate{}
 		}
+
+		if amount > 0 {
+			batchData.Groups[group].Amount = amountDecimal.
+				Add(decimal.NewFromFloat(batchData.Groups[group].Amount)).
+				InexactFloat64()
+		}
+		batchData.Groups[group].Count += 1
 	}
+
 	if tokenID > 0 {
-		err = UpdateTokenUsedAmount(tokenID, amount, 1)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to update token used amount: %w", err))
+		if _, ok := batchData.Tokens[tokenID]; !ok {
+			batchData.Tokens[tokenID] = &TokenUpdate{}
 		}
+
+		if amount > 0 {
+			batchData.Tokens[tokenID].Amount = amountDecimal.
+				Add(decimal.NewFromFloat(batchData.Tokens[tokenID].Amount)).
+				InexactFloat64()
+		}
+		batchData.Tokens[tokenID].Count += 1
 	}
+
 	if channelID > 0 {
-		err = UpdateChannelUsedAmount(channelID, amount, 1)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to update channel used amount: %w", err))
+		if _, ok := batchData.Channels[channelID]; !ok {
+			batchData.Channels[channelID] = &ChannelUpdate{}
 		}
+
+		if amount > 0 {
+			batchData.Channels[channelID].Amount = amountDecimal.
+				Add(decimal.NewFromFloat(batchData.Channels[channelID].Amount)).
+				InexactFloat64()
+		}
+		batchData.Channels[channelID].Count += 1
 	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return errors.Join(errs...)
+
+	return err
 }
 
 type EmptyNullString string

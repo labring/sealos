@@ -30,12 +30,13 @@ var (
 	logDetailResponseBodyMaxSize int64 = 128 * 1024 // 128KB
 	logDetailStorageHours        int64 = 3 * 24     // 3 days
 	internalToken                atomic.Value
+	notifyNote                   atomic.Value
 )
 
 var (
 	retryTimes              atomic.Int64
 	enableModelErrorAutoBan atomic.Bool
-	modelErrorAutoBanRate   = math.Float64bits(0.5)
+	modelErrorAutoBanRate   = math.Float64bits(0.3)
 	timeoutWithModelType    atomic.Value
 	disableModelConfig      = env.Bool("DISABLE_MODEL_CONFIG", false)
 )
@@ -59,6 +60,7 @@ func init() {
 	geminiSafetySetting.Store("BLOCK_NONE")
 	billingEnabled.Store(true)
 	internalToken.Store(os.Getenv("INTERNAL_TOKEN"))
+	notifyNote.Store(os.Getenv("NOTIFY_NOTE"))
 }
 
 func GetDisableModelConfig() bool {
@@ -230,4 +232,13 @@ func GetInternalToken() string {
 func SetInternalToken(token string) {
 	token = env.String("INTERNAL_TOKEN", token)
 	internalToken.Store(token)
+}
+
+func GetNotifyNote() string {
+	return notifyNote.Load().(string)
+}
+
+func SetNotifyNote(note string) {
+	note = env.String("NOTIFY_NOTE", note)
+	notifyNote.Store(note)
 }

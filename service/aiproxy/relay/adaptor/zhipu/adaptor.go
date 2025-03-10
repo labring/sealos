@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -37,4 +38,8 @@ func (a *Adaptor) GetModelList() []*model.ModelConfig {
 
 func (a *Adaptor) GetChannelName() string {
 	return "zhipu"
+}
+
+func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
+	return 0, adaptor.ErrGetBalanceNotImplemented
 }

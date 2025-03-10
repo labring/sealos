@@ -11,6 +11,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/rpmlimit"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"gorm.io/gorm"
 )
 
 func getDashboardTime(t string) (time.Time, time.Time, model.TimeSpanType) {
@@ -190,7 +191,7 @@ func GetGroupDashboardModels(c *gin.Context) {
 	}
 	groupCache, err := model.CacheGetGroup(group)
 	if err != nil {
-		if errors.Is(err, model.NotFoundError(model.ErrGroupNotFound)) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			middleware.SuccessResponse(c, model.LoadModelCaches().EnabledModelConfigs)
 		} else {
 			middleware.ErrorResponse(c, http.StatusOK, fmt.Sprintf("failed to get group: %v", err))

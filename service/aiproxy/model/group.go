@@ -17,8 +17,8 @@ const (
 )
 
 const (
-	GroupStatusEnabled  = 1 // don't use 0, 0 is the default value!
-	GroupStatusDisabled = 2 // also don't use 0
+	GroupStatusEnabled  = 1
+	GroupStatusDisabled = 2
 	GroupStatusInternal = 3
 )
 
@@ -39,7 +39,6 @@ func (g *Group) BeforeDelete(tx *gorm.DB) (err error) {
 	return tx.Model(&Token{}).Where("group_id = ?", g.ID).Delete(&Token{}).Error
 }
 
-//nolint:goconst
 func getGroupOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
@@ -151,7 +150,7 @@ func UpdateGroup(id string, group *Group) (err error) {
 }
 
 func UpdateGroupUsedAmountAndRequestCount(id string, amount float64, count int) (err error) {
-	group := &Group{ID: id}
+	group := &Group{}
 	defer func() {
 		if amount > 0 && err == nil {
 			if err := CacheUpdateGroupUsedAmountOnlyIncrease(group.ID, group.UsedAmount); err != nil {

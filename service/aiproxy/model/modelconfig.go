@@ -7,6 +7,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"gorm.io/gorm"
 )
 
@@ -15,7 +16,6 @@ const (
 	PriceUnit = 1000
 )
 
-//nolint:revive
 type ModelConfig struct {
 	CreatedAt         time.Time              `gorm:"index;autoCreateTime"          json:"created_at"`
 	UpdatedAt         time.Time              `gorm:"index;autoUpdateTime"          json:"updated_at"`
@@ -24,7 +24,7 @@ type ModelConfig struct {
 	Model             string                 `gorm:"primaryKey"                    json:"model"`
 	Owner             ModelOwner             `gorm:"type:varchar(255);index"       json:"owner"`
 	ImageMaxBatchSize int                    `json:"image_batch_size,omitempty"`
-	Type              int                    `json:"type"` // relaymode/define.go
+	Type              relaymode.Mode         `json:"type"` // relaymode/define.go
 	InputPrice        float64                `json:"input_price,omitempty"`
 	OutputPrice       float64                `json:"output_price,omitempty"`
 	RPM               int64                  `json:"rpm,omitempty"`
@@ -159,11 +159,21 @@ func SearchModelConfigs(keyword string, page int, perPage int, model string, own
 	return configs, total, err
 }
 
-func SaveModelConfig(config *ModelConfig) error {
+func SaveModelConfig(config *ModelConfig) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	return DB.Save(config).Error
 }
 
-func SaveModelConfigs(configs []*ModelConfig) error {
+func SaveModelConfigs(configs []*ModelConfig) (err error) {
+	defer func() {
+		if err == nil {
+			_ = InitModelConfigAndChannelCache()
+		}
+	}()
 	return DB.Transaction(func(tx *gorm.DB) error {
 		for _, config := range configs {
 			if err := tx.Save(config).Error; err != nil {

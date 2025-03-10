@@ -16,6 +16,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/conv"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/maruel/natural"
 	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
@@ -406,14 +407,13 @@ func CacheGetGroupModelTPM(id string, model string) (int64, error) {
 	return tpm, nil
 }
 
-//nolint:revive
 type ModelConfigCache interface {
 	GetModelConfig(model string) (*ModelConfig, bool)
 }
 
 // read-only cache
 //
-//nolint:revive
+
 type ModelCaches struct {
 	ModelConfig                     ModelConfigCache
 	EnabledModel2channels           map[string][]*Channel
@@ -482,7 +482,7 @@ func InitModelConfigAndChannelCache() error {
 
 func LoadEnabledChannels() ([]*Channel, error) {
 	var channels []*Channel
-	err := DB.Where("status = ? or status = ?", ChannelStatusEnabled, ChannelStatusFail).Find(&channels).Error
+	err := DB.Where("status = ?", ChannelStatusEnabled).Find(&channels).Error
 	if err != nil {
 		return nil, err
 	}
@@ -699,8 +699,7 @@ func SyncModelConfigAndChannelCache(ctx context.Context, wg *sync.WaitGroup, fre
 		case <-ticker.C:
 			err := InitModelConfigAndChannelCache()
 			if err != nil {
-				log.Error("failed to sync channels: " + err.Error())
-				continue
+				notify.ErrorThrottle("syncModelChannel", time.Minute, "failed to sync channels", err.Error())
 			}
 		}
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/network"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/sirupsen/logrus"
 )
 
@@ -61,14 +62,17 @@ func TokenAuth(c *gin.Context) {
 
 	var token *model.TokenCache
 	var useInternalToken bool
-	if config.GetInternalToken() != "" && config.GetInternalToken() == key || config.AdminKey != "" && config.AdminKey == key {
+	if config.AdminKey != "" && config.AdminKey == key ||
+		config.GetInternalToken() != "" && config.GetInternalToken() == key {
 		token = &model.TokenCache{}
 		useInternalToken = true
 	} else {
 		var err error
 		token, err = model.ValidateAndGetToken(key)
 		if err != nil {
-			abortLogWithMessage(c, http.StatusUnauthorized, err.Error())
+			abortLogWithMessage(c, http.StatusUnauthorized, err.Error(), &errorField{
+				Code: "invalid_token",
+			})
 			return
 		}
 	}
@@ -174,8 +178,8 @@ func SetLogFieldsFromMeta(m *meta.Meta, fields logrus.Fields) {
 	SetLogChannelFields(fields, m.Channel)
 }
 
-func SetLogModeField(fields logrus.Fields, mode int) {
-	fields["mode"] = mode
+func SetLogModeField(fields logrus.Fields, mode relaymode.Mode) {
+	fields["mode"] = mode.String()
 }
 
 func SetLogIsChannelTestField(fields logrus.Fields, isChannelTest bool) {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -83,4 +84,8 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, req *http.Request) (string, ht
 
 func (a *Adaptor) GetChannelName() string {
 	return "doubao"
+}
+
+func (a *Adaptor) GetBalance(channel *model.Channel) (float64, error) {
+	return 0, adaptor.ErrGetBalanceNotImplemented
 }

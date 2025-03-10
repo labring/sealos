@@ -3,8 +3,10 @@ package consume
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -27,6 +29,7 @@ func AsyncConsume(
 	outputPrice float64,
 	content string,
 	ip string,
+	retryTimes int,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -51,6 +54,7 @@ func AsyncConsume(
 		outputPrice,
 		content,
 		ip,
+		retryTimes,
 		requestDetail,
 	)
 }
@@ -65,6 +69,7 @@ func Consume(
 	outputPrice float64,
 	content string,
 	ip string,
+	retryTimes int,
 	requestDetail *model.RequestDetail,
 ) {
 	if meta.IsChannelTest {
@@ -75,9 +80,10 @@ func Consume(
 
 	amount = consumeAmount(ctx, amount, postGroupConsumer, meta)
 
-	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount)
+	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount, retryTimes)
 	if err != nil {
 		log.Error("error batch record consume: " + err.Error())
+		notify.ErrorThrottle("recordConsume", time.Minute, "record consume failed", err.Error())
 	}
 }
 
@@ -155,6 +161,7 @@ func recordConsume(
 	ip string,
 	requestDetail *model.RequestDetail,
 	amount float64,
+	retryTimes int,
 ) error {
 	promptTokens := 0
 	completionTokens := 0
@@ -184,8 +191,9 @@ func recordConsume(
 		outputPrice,
 		meta.Endpoint,
 		content,
-		meta.Mode,
+		int(meta.Mode),
 		ip,
+		retryTimes,
 		requestDetail,
 	)
 }

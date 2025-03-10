@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
+	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
@@ -31,7 +32,7 @@ func (a *Adaptor) GetRequestURL(meta *meta.Meta) (string, error) {
 	case relaymode.ChatCompletions:
 		return u + "/api/chat", nil
 	default:
-		return "", fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -50,7 +51,7 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string
 	case relaymode.ChatCompletions:
 		return ConvertRequest(meta, request)
 	default:
-		return "", nil, nil, fmt.Errorf("unsupported mode: %d", meta.Mode)
+		return "", nil, nil, fmt.Errorf("unsupported mode: %s", meta.Mode)
 	}
 }
 
@@ -61,13 +62,15 @@ func (a *Adaptor) DoRequest(_ *meta.Meta, _ *gin.Context, req *http.Request) (*h
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	switch meta.Mode {
 	case relaymode.Embeddings:
-		err, usage = EmbeddingHandler(meta, c, resp)
-	default:
+		usage, err = EmbeddingHandler(meta, c, resp)
+	case relaymode.ChatCompletions:
 		if utils.IsStreamResponse(resp) {
-			err, usage = StreamHandler(meta, c, resp)
+			usage, err = StreamHandler(meta, c, resp)
 		} else {
-			err, usage = Handler(meta, c, resp)
+			usage, err = Handler(meta, c, resp)
 		}
+	default:
+		return nil, openai.ErrorWrapperWithMessage(fmt.Sprintf("unsupported mode: %s", meta.Mode), "unsupported_mode", http.StatusBadRequest)
 	}
 	return
 }

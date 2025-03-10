@@ -56,6 +56,10 @@ func ConvertRerankRequest(meta *meta.Meta, req *http.Request) (string, http.Head
 }
 
 func RerankHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)

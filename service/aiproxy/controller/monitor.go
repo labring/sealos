@@ -81,3 +81,12 @@ func GetModelsErrorRate(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, rates)
 }
+
+func GetAllBannedModelChannels(c *gin.Context) {
+	channels, err := monitor.GetAllBannedModelChannels(c.Request.Context())
+	if err != nil {
+		middleware.ErrorResponse(c, http.StatusOK, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, channels)
+}

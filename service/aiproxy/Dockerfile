@@ -9,7 +9,7 @@ ENV FFPROBE_ENABLED=true
 
 EXPOSE 3000
 
-RUN apk add --no-cache ca-certificates tzdata ffmpeg && \
+RUN apk add --no-cache ca-certificates tzdata ffmpeg curl && \
     rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["/aiproxy"]

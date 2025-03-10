@@ -5,16 +5,15 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
-	"github.com/labring/sealos/service/aiproxy/common/conv"
 	"github.com/labring/sealos/service/aiproxy/common/image"
 	"github.com/labring/sealos/service/aiproxy/common/random"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/common/splitter"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/openai"
 	"github.com/labring/sealos/service/aiproxy/relay/constant"
@@ -29,10 +28,9 @@ func ConvertRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io
 	if err != nil {
 		return "", nil, nil, err
 	}
-	request.Model = meta.ActualModel
 
 	ollamaRequest := ChatRequest{
-		Model: request.Model,
+		Model: meta.ActualModel,
 		Options: &Options{
 			Seed:             int(request.Seed),
 			Temperature:      request.Temperature,
@@ -127,45 +125,45 @@ func streamResponseOllama2OpenAI(meta *meta.Meta, ollamaResponse *ChatResponse) 
 	return &response
 }
 
-func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHandler(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
 
-	var usage relaymodel.Usage
+	var usage *relaymodel.Usage
 	scanner := bufio.NewScanner(resp.Body)
-	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		if atEOF && len(data) == 0 {
-			return 0, nil, nil
-		}
-		if i := strings.Index(conv.BytesToString(data), "}\n"); i >= 0 {
-			return i + 2, data[0 : i+1], nil
-		}
-		if atEOF {
-			return len(data), data, nil
-		}
-		return 0, nil, nil
-	})
 
 	common.SetEventStreamHeaders(c)
 
+	var thinkSplitter *splitter.Splitter
+	if meta.ChannelConfig.SplitThink {
+		thinkSplitter = splitter.NewThinkSplitter()
+	}
+
 	for scanner.Scan() {
-		data := scanner.Text()
-		if strings.HasPrefix(data, "}") {
-			data = strings.TrimPrefix(data, "}") + "}"
-		}
+		data := scanner.Bytes()
 
 		var ollamaResponse ChatResponse
-		err := sonic.Unmarshal(conv.StringToBytes(data), &ollamaResponse)
+		err := sonic.Unmarshal(data, &ollamaResponse)
 		if err != nil {
 			log.Error("error unmarshalling stream response: " + err.Error())
 			continue
 		}
 
 		response := streamResponseOllama2OpenAI(meta, &ollamaResponse)
-
 		if response.Usage != nil {
-			usage = *response.Usage
+			usage = response.Usage
+		}
+
+		if meta.ChannelConfig.SplitThink {
+			openai.StreamSplitThinkModeld(response, thinkSplitter, func(data *openai.ChatCompletionsStreamResponse) {
+				_ = render.ObjectData(c, data)
+			})
+			continue
 		}
 
 		_ = render.ObjectData(c, response)
@@ -177,7 +175,7 @@ func StreamHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relay
 
 	render.Done(c)
 
-	return nil, &usage
+	return usage, nil
 }
 
 func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.Header, io.Reader, error) {
@@ -203,52 +201,47 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 	return http.MethodPost, nil, bytes.NewReader(data), nil
 }
 
-func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func EmbeddingHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHandler(resp)
+	}
+
 	defer resp.Body.Close()
 
 	var ollamaResponse EmbeddingResponse
 	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&ollamaResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 
 	if ollamaResponse.Error != "" {
-		return &relaymodel.ErrorWithStatusCode{
-			Error: relaymodel.Error{
-				Message: ollamaResponse.Error,
-				Type:    "ollama_error",
-				Param:   "",
-				Code:    "ollama_error",
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapperWithMessage(ollamaResponse.Error, openai.ErrorTypeUpstream, resp.StatusCode)
 	}
 
 	fullTextResponse := embeddingResponseOllama2OpenAI(meta, &ollamaResponse)
 	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
+	return &fullTextResponse.Usage, nil
 }
 
 func embeddingResponseOllama2OpenAI(meta *meta.Meta, response *EmbeddingResponse) *openai.EmbeddingResponse {
 	openAIEmbeddingResponse := openai.EmbeddingResponse{
 		Object: "list",
-		Data:   make([]*openai.EmbeddingResponseItem, 0, 1),
+		Data:   make([]*openai.EmbeddingResponseItem, 0, len(response.Embeddings)),
 		Model:  meta.OriginModel,
 		Usage: relaymodel.Usage{
 			PromptTokens: response.PromptEvalCount,
 			TotalTokens:  response.PromptEvalCount,
 		},
 	}
-
 	for i, embedding := range response.Embeddings {
 		openAIEmbeddingResponse.Data = append(openAIEmbeddingResponse.Data, &openai.EmbeddingResponseItem{
-			Object:    `embedding`,
+			Object:    "embedding",
 			Index:     i,
 			Embedding: embedding,
 		})
@@ -256,32 +249,33 @@ func embeddingResponseOllama2OpenAI(meta *meta.Meta, response *EmbeddingResponse
 	return &openAIEmbeddingResponse
 }
 
-func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.ErrorWithStatusCode, *relaymodel.Usage) {
+func Handler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHandler(resp)
+	}
+
 	defer resp.Body.Close()
 
 	var ollamaResponse ChatResponse
 	err := sonic.ConfigDefault.NewDecoder(resp.Body).Decode(&ollamaResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "unmarshal_response_body_failed", http.StatusInternalServerError)
 	}
 	if ollamaResponse.Error != "" {
-		return &relaymodel.ErrorWithStatusCode{
-			Error: relaymodel.Error{
-				Message: ollamaResponse.Error,
-				Type:    "ollama_error",
-				Param:   "",
-				Code:    "ollama_error",
-			},
-			StatusCode: resp.StatusCode,
-		}, nil
+		return nil, openai.ErrorWrapperWithMessage(ollamaResponse.Error, openai.ErrorTypeUpstream, resp.StatusCode)
 	}
 	fullTextResponse := responseOllama2OpenAI(meta, &ollamaResponse)
+
+	if meta.ChannelConfig.SplitThink {
+		openai.SplitThinkModeld(fullTextResponse)
+	}
+
 	jsonResponse, err := sonic.Marshal(fullTextResponse)
 	if err != nil {
-		return openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
+		return nil, openai.ErrorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError)
 	}
 	c.Writer.Header().Set("Content-Type", "application/json")
 	c.Writer.WriteHeader(resp.StatusCode)
 	_, _ = c.Writer.Write(jsonResponse)
-	return nil, &fullTextResponse.Usage
+	return &fullTextResponse.Usage, nil
 }

@@ -15,16 +15,30 @@ func MessageWithRequestID(c *gin.Context, message string) string {
 	return fmt.Sprintf("%s (aiproxy: %s)", message, GetRequestID(c))
 }
 
-func abortLogWithMessage(c *gin.Context, statusCode int, message string) {
+func abortLogWithMessage(c *gin.Context, statusCode int, message string, fields ...*errorField) {
 	GetLogger(c).Error(message)
-	abortWithMessage(c, statusCode, message)
+	abortWithMessage(c, statusCode, message, fields...)
 }
 
-func abortWithMessage(c *gin.Context, statusCode int, message string) {
+type errorField struct {
+	Type string `json:"type"`
+	Code any    `json:"code"`
+}
+
+func abortWithMessage(c *gin.Context, statusCode int, message string, fields ...*errorField) {
+	typeName := ErrorTypeAIPROXY
+	var code any = nil
+	if len(fields) > 0 {
+		if fields[0].Type != "" {
+			typeName = fields[0].Type
+		}
+		code = fields[0].Code
+	}
 	c.JSON(statusCode, gin.H{
 		"error": &model.Error{
 			Message: MessageWithRequestID(c, message),
-			Type:    ErrorTypeAIPROXY,
+			Type:    typeName,
+			Code:    code,
 		},
 	})
 	c.Abort()

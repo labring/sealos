@@ -9,12 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/adaptor/anthropic"
+	"github.com/labring/sealos/service/aiproxy/relay/meta"
+	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
 	"github.com/pkg/errors"
-
-	"github.com/labring/sealos/service/aiproxy/relay/meta"
-	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
 )
 
 var ModelList = []*model.ModelConfig{
@@ -85,9 +84,9 @@ func (a *Adaptor) ConvertRequest(meta *meta.Meta, request *http.Request) (string
 
 func (a *Adaptor) DoResponse(meta *meta.Meta, c *gin.Context, resp *http.Response) (usage *relaymodel.Usage, err *relaymodel.ErrorWithStatusCode) {
 	if utils.IsStreamResponse(resp) {
-		err, usage = anthropic.StreamHandler(meta, c, resp)
+		usage, err = anthropic.StreamHandler(meta, c, resp)
 	} else {
-		err, usage = anthropic.Handler(meta, c, resp)
+		usage, err = anthropic.Handler(meta, c, resp)
 	}
 	return
 }

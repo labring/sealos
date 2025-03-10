@@ -17,10 +17,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/aiproxy/common"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/common/render"
+	"github.com/labring/sealos/service/aiproxy/common/trylock"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/monitor"
+	"github.com/labring/sealos/service/aiproxy/relay/channeltype"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	"github.com/labring/sealos/service/aiproxy/relay/relaymode"
 	"github.com/labring/sealos/service/aiproxy/relay/utils"
@@ -29,12 +32,40 @@ import (
 
 const channelTestRequestID = "channel-test"
 
+var (
+	modelTypeCache     map[string]relaymode.Mode = make(map[string]relaymode.Mode)
+	modelTypeCacheOnce sync.Once
+)
+
+func guessModelType(model string) relaymode.Mode {
+	modelTypeCacheOnce.Do(func() {
+		for _, c := range channeltype.ChannelAdaptor {
+			for _, m := range c.GetModelList() {
+				if _, ok := modelTypeCache[m.Model]; !ok {
+					modelTypeCache[m.Model] = m.Type
+				}
+			}
+		}
+	})
+
+	if cachedType, ok := modelTypeCache[model]; ok {
+		return cachedType
+	}
+	return relaymode.Unknown
+}
+
 // testSingleModel tests a single model in the channel
 func testSingleModel(mc *model.ModelCaches, channel *model.Channel, modelName string) (*model.ChannelTest, error) {
 	modelConfig, ok := mc.ModelConfig.GetModelConfig(modelName)
 	if !ok {
 		return nil, errors.New(modelName + " model config not found")
 	}
+	if modelConfig.Type == relaymode.Unknown {
+		newModelConfig := *modelConfig
+		newModelConfig.Type = guessModelType(modelName)
+		modelConfig = &newModelConfig
+	}
+
 	body, mode, err := utils.BuildRequest(modelConfig)
 	if err != nil {
 		return nil, err
@@ -187,8 +218,6 @@ func processTestResult(mc *model.ModelCaches, channel *model.Channel, modelName 
 	return result
 }
 
-//nolint:goconst
-//nolint:gosec
 func TestChannelModels(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -275,8 +304,6 @@ func TestChannelModels(c *gin.Context) {
 	}
 }
 
-//nolint:goconst
-//nolint:gosec
 func TestAllChannels(c *gin.Context) {
 	testDisabled := c.Query("test_disabled") == "true"
 	var channels []*model.Channel
@@ -372,11 +399,15 @@ func TestAllChannels(c *gin.Context) {
 	}
 }
 
+func tryTestChannel(channelID int, modelName string) bool {
+	return trylock.Lock(fmt.Sprintf("channel_test_lock:%d:%s", channelID, modelName), 30*time.Second)
+}
+
 func AutoTestBannedModels() {
 	log := log.WithFields(log.Fields{
 		"auto_test_banned_models": "true",
 	})
-	channels, err := monitor.GetAllBannedChannels(context.Background())
+	channels, err := monitor.GetAllBannedModelChannels(context.Background())
 	if err != nil {
 		log.Errorf("failed to get banned channels: %s", err.Error())
 		return
@@ -389,6 +420,9 @@ func AutoTestBannedModels() {
 
 	for modelName, ids := range channels {
 		for _, id := range ids {
+			if !tryTestChannel(int(id), modelName) {
+				continue
+			}
 			channel, err := model.LoadChannelByID(int(id))
 			if err != nil {
 				log.Errorf("failed to get channel by model %s: %s", modelName, err.Error())
@@ -396,16 +430,18 @@ func AutoTestBannedModels() {
 			}
 			result, err := testSingleModel(mc, channel, modelName)
 			if err != nil {
-				log.Errorf("failed to test channel %s(%d) model %s: %s", channel.Name, channel.ID, modelName, err.Error())
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed", channel.Type, channel.Name, channel.ID, modelName), err.Error())
+				continue
 			}
 			if result.Success {
-				log.Infof("model %s(%d) test success, unban it", modelName, channel.ID)
+				notify.Info(fmt.Sprintf("channel[%d] %s(%d) model %s test success", channel.Type, channel.Name, channel.ID, modelName), "unban it")
 				err = monitor.ClearChannelModelErrors(context.Background(), modelName, channel.ID)
 				if err != nil {
 					log.Errorf("clear channel errors failed: %+v", err)
 				}
 			} else {
-				log.Infof("model %s(%d) test failed", modelName, channel.ID)
+				notify.Error(fmt.Sprintf("channel[%d] %s(%d) model %s test failed", channel.Type, channel.Name, channel.ID, modelName),
+					fmt.Sprintf("code: %d, response: %s", result.Code, result.Response))
 			}
 		}
 	}

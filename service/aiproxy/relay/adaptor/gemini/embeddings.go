@@ -47,6 +47,10 @@ func ConvertEmbeddingRequest(meta *meta.Meta, req *http.Request) (string, http.H
 }
 
 func EmbeddingHandler(c *gin.Context, resp *http.Response) (*model.Usage, *model.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, openai.ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	var geminiEmbeddingResponse EmbeddingResponse

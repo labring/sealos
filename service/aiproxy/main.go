@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	stdlog "log"
 	"net/http"
@@ -20,6 +21,7 @@ import (
 	"github.com/labring/sealos/service/aiproxy/common/balance"
 	"github.com/labring/sealos/service/aiproxy/common/config"
 	"github.com/labring/sealos/service/aiproxy/common/consume"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/controller"
 	"github.com/labring/sealos/service/aiproxy/middleware"
 	"github.com/labring/sealos/service/aiproxy/model"
@@ -27,10 +29,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var port int
+
+func init() {
+	flag.IntVar(&port, "port", 3000, "http server port")
+}
+
 func initializeServices() error {
 	setLog(log.StandardLogger())
 
-	common.Init()
+	initializeNotifier()
 
 	if err := initializeBalance(); err != nil {
 		return err
@@ -52,6 +60,14 @@ func initializeBalance() error {
 
 	log.Info("SEALOS_JWT_KEY is set, balance will be enabled")
 	return balance.InitSealos(sealosJwtKey, os.Getenv("SEALOS_ACCOUNT_URL"))
+}
+
+func initializeNotifier() {
+	feishuWh := os.Getenv("NOTIFY_FEISHU_WEBHOOK")
+	if feishuWh != "" {
+		notify.SetDefaultNotifier(notify.NewFeishuNotify(feishuWh))
+		log.Info("NOTIFY_FEISHU_WEBHOOK is set, notifier will be use feishu")
+	}
 }
 
 var logCallerIgnoreFuncs = map[string]struct{}{
@@ -123,13 +139,13 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 		Use(middleware.RequestID, middleware.CORS())
 	router.SetRouter(server)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = strconv.Itoa(*common.Port)
+	p := os.Getenv("PORT")
+	if p == "" {
+		p = strconv.Itoa(port)
 	}
 
 	return &http.Server{
-		Addr:              ":" + port,
+		Addr:              ":" + p,
 		ReadHeaderTimeout: 10 * time.Second,
 		Handler:           server,
 	}, server
@@ -137,7 +153,7 @@ func setupHTTPServer() (*http.Server, *gin.Engine) {
 
 func autoTestBannedModels(ctx context.Context) {
 	log.Info("auto test banned models start")
-	ticker := time.NewTicker(time.Second * 15)
+	ticker := time.NewTicker(time.Second * 30)
 	defer ticker.Stop()
 
 	for {
@@ -152,7 +168,8 @@ func autoTestBannedModels(ctx context.Context) {
 
 func cleanLog(ctx context.Context) {
 	log.Info("clean log start")
-	ticker := time.NewTicker(time.Minute * 15)
+	// the interval should not be too large to avoid cleaning too much at once
+	ticker := time.NewTicker(time.Second * 15)
 	defer ticker.Stop()
 
 	for {
@@ -160,15 +177,17 @@ func cleanLog(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			err := model.CleanLog()
+			err := model.CleanLog(1000)
 			if err != nil {
-				log.Errorf("clean log failed: %s", err)
+				notify.ErrorThrottle("cleanLog", time.Minute, "clean log failed", err.Error())
 			}
 		}
 	}
 }
 
 func main() {
+	flag.Parse()
+
 	if err := initializeServices(); err != nil {
 		log.Fatal("failed to initialize services: " + err.Error())
 	}
@@ -197,6 +216,11 @@ func main() {
 
 	go autoTestBannedModels(ctx)
 	go cleanLog(ctx)
+	go controller.UpdateChannelsBalance(time.Minute * 10)
+
+	batchProcessorCtx, batchProcessorCancel := context.WithCancel(context.Background())
+	wg.Add(1)
+	go model.StartBatchProcessor(batchProcessorCtx, &wg)
 
 	<-ctx.Done()
 
@@ -214,8 +238,13 @@ func main() {
 	log.Info("shutting down consumer...")
 	consume.Wait()
 
+	batchProcessorCancel()
+
 	log.Info("shutting down sync services...")
 	wg.Wait()
+
+	log.Info("shutting down batch processor...")
+	model.ProcessBatchUpdates()
 
 	log.Info("server exiting")
 }

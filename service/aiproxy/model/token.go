@@ -18,8 +18,8 @@ const (
 )
 
 const (
-	TokenStatusEnabled  = 1 // don't use 0, 0 is the default value!
-	TokenStatusDisabled = 2 // also don't use 0
+	TokenStatusEnabled  = 1
+	TokenStatusDisabled = 2
 )
 
 type Token struct {
@@ -38,7 +38,6 @@ type Token struct {
 	RequestCount int             `gorm:"index"                                     json:"request_count"`
 }
 
-//nolint:goconst
 func getTokenOrder(order string) string {
 	prefix, suffix, _ := strings.Cut(order, "-")
 	switch prefix {
@@ -429,7 +428,7 @@ func UpdateGroupToken(id int, group string, token *Token) (err error) {
 }
 
 func UpdateTokenUsedAmount(id int, amount float64, requestCount int) (err error) {
-	token := &Token{ID: id}
+	token := &Token{}
 	defer func() {
 		if amount > 0 && err == nil && token.Quota > 0 {
 			if err := CacheUpdateTokenUsedAmountOnlyIncrease(token.Key, token.UsedAmount); err != nil {

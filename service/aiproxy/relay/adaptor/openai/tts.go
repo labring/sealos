@@ -55,6 +55,10 @@ func ConvertTTSRequest(meta *meta.Meta, req *http.Request, defaultVoice string) 
 }
 
 func TTSHandler(meta *meta.Meta, c *gin.Context, resp *http.Response) (*relaymodel.Usage, *relaymodel.ErrorWithStatusCode) {
+	if resp.StatusCode != http.StatusOK {
+		return nil, ErrorHanlder(resp)
+	}
+
 	defer resp.Body.Close()
 
 	log := middleware.GetLogger(c)
