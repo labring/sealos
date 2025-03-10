@@ -143,7 +143,6 @@ const AppList = ({
   const [calcLoading, setCalcLoading] = useState<any>('')
 
   useEffect(() => {
-    console.log('aaaa', apps)
     initComputePowerList();
     initNameSpace();
   }, [])
@@ -414,7 +413,7 @@ const AppList = ({
                   }}
                 >
                   {
-                    nameSpaceList.map(val => <option value={val}>{val}</option>)
+                    nameSpaceList.map(val => <option value={val} key={val}>{val}</option>)
                   }
                 </Select>
               </Flex>
