@@ -206,26 +206,28 @@ const App = ({ Component, pageProps }: AppProps) => {
 
           {/* <Route path="/login" component={Login} /> */}
           <Flex minH="100vh" direction="column">
+            {
+              showMenu ?
+                <Box bg="#001529" color="white" px={4} py={5} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
 
-            <Box bg="#001529" color="white" px={4} py={5} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
+                  <Heading size="md">容器云</Heading>
 
-              <Heading size="md">容器云</Heading>
-              {
-                loginStatus ?
-                  <Button
-                    size={'sm'}
-                    ml={'12px'}
-                    variant={'outline'}
-                    onClick={() => {
-                      setUserIsLogin(false, '');
-                      router.replace('/login');
-                    }}
-                  >
-                    登出
-                  </Button> : null
-              }
-            </Box>
+                  {loginStatus ?
+                    <Button
+                      size={'sm'}
+                      ml={'12px'}
+                      variant={'outline'}
+                      onClick={() => {
+                        setUserIsLogin(false, '');
+                        router.replace('/login');
+                      }}
+                    >
+                      登出
+                    </Button> : null}
 
+                </Box>
+                : null
+            }
             <Flex flex={1}>
               {
                 loginStatus ?
@@ -238,6 +240,7 @@ const App = ({ Component, pageProps }: AppProps) => {
                           {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/nodeManage${showMenu ? '?showMenu=true' : ''}`)}>节点管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/user${showMenu ? '?showMenu=true' : ''}`)}>租户管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/computePower' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/computePower${showMenu ? '?showMenu=true' : ''}`)}>算力测算</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/monitor${showMenu ? '?showMenu=true' : ''}`)}>监控管理</Text>
                         </Box> : null
                     }

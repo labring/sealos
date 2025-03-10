@@ -48,7 +48,7 @@ export const deleteBackupNodes = (data: any) => DELETE<any>('/api/node/deleteBac
 export const addNodes = (data: any) => POST<any>('/api/node/addNode', data, {
   timeout: 30000 * 4
 });
-
+export const getComputePowerList = () => GET<any>('/api/node/computePower');
 export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data, {
   timeout: 30000 * 2
 });
@@ -68,6 +68,12 @@ export const uploadImageFiles = (data: any) => {
 
 export const buildDockerImage = (data: any) =>
   POST<any>('/api/imagehub/buildDockerImage', data);
+
+export const deleteResult = (data: any) =>
+  POST<any>('/api/node/deleteResult', data);
+
+export const startCalcById = (data: any) =>
+  GET<any>(`/api/node/startCalcById?stress_id=${data}`);
 
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
@@ -128,6 +134,8 @@ export const getMyApps = (namespace: string) =>
   GET<V1Deployment & V1StatefulSet[]>(`/api/getApps?namespace=${namespace}`)
     .then((res) => res.map(adaptAppListItem))
     .then(sortAppListByTime);
+
+export const addStressTesting = (params: string) => GET(`/api/node/stressTesting?${params}`)
 
 export const delAppByName = (namespace: string, name: string) =>
   DELETE(`/api/delApp?namespace=${namespace}`, { name });

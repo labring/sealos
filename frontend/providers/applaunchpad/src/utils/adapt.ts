@@ -33,7 +33,8 @@ import {
   gpuResourceKey,
   stopKey,
   priorityKey,
-  modelNameKey
+  modelNameKey,
+  modelVersionKey
 } from '@/constants/app';
 import {
   cpuFormatToM,
@@ -77,6 +78,7 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     isStop: !!app?.metadata?.annotations?.[stopKey],
     priority: app.metadata?.labels?.[priorityKey] || '1',
     modelName: app.metadata?.annotations?.[modelNameKey] || '',
+    modelVersion: app.metadata?.annotations?.[modelVersionKey] || "",
     createTime: dayjs(app.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(app.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'),
     memory: memoryFormatToMi(
@@ -303,6 +305,7 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
     id: appDeploy.metadata?.uid || ``,
     appName: appDeploy.metadata?.name || 'app Name',
     modelName: appDeploy.metadata?.annotations?.[modelNameKey] || '',
+    modelVersion: appDeploy.metadata?.annotations?.[modelVersionKey] || '',
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
