@@ -425,9 +425,6 @@ local function check_channel_error()
 	end
 
 	if (total_err / total_req) < max_error_rate then
-		if already_banned then
-			redis.call("DEL", banned_key)
-		end
 		return 0
 	else
 		if can_ban == 0 or already_banned then

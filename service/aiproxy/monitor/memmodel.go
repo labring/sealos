@@ -139,15 +139,13 @@ func (m *MemModelMonitor) checkAndBan(now time.Time, channel *ChannelStats, tryB
 		return false, false
 	}
 
-	errorRate := float64(err) / float64(req)
-	if errorRate >= config.GetModelErrorAutoBanRate() {
+	if float64(err)/float64(req) >= config.GetModelErrorAutoBanRate() {
 		if !canBan || channel.bannedUntil.After(now) {
 			return true, false
 		}
 		channel.bannedUntil = now.Add(banDuration)
 		return false, true
 	}
-	channel.bannedUntil = time.Time{}
 	return false, false
 }
 
