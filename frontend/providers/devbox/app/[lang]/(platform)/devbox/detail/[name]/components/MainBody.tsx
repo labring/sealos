@@ -130,7 +130,7 @@ const MainBody = () => {
                       bg={'rgba(3, 152, 85, 0.05)'}
                       color={'#039855'}
                       borderRadius={'full'}
-                      p={'2px 4px'}
+                      p={'2px 8px 2px 4px'}
                       gap={'2px'}
                       minW={'63px'}
                     >
@@ -144,7 +144,7 @@ const MainBody = () => {
                       bg={'rgba(17, 24, 36, 0.05)'}
                       color={'#485264'}
                       borderRadius={'full'}
-                      p={'2px 4px'}
+                      p={'2px 8px 2px 4px'}
                       gap={'2px'}
                       minW={'63px'}
                     >

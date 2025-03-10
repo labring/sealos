@@ -197,7 +197,7 @@
   "pause_success": "Shutdown succeeded",
   "please_enter_devbox_name_confirm": "Please enter <strong>{name}</strong> to confirm: ",
   "port": "Port",
-  "prepare": "Preparing",
+  "prepare": "Waiting",
   "privacy_and_security_agreement": "Privacy and Security Agreement",
   "privacy_and_security_agreement_tips": "Please read and agree to the Privacy and Security Agreement.",
   "private": "Private",

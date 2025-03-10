@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
         const url = `https://${host}`;
 
         try {
-          const response = await fetch(fetchUrl);
+          const response = await fetch(fetchUrl, {
+            cache: 'no-store'
+          });
 
           if (response.status === 503) {
             return { ready: false, url, error: 'Service Unavailable (503)' };
