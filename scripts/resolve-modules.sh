@@ -8,7 +8,7 @@ echo "Resolving modules in $(pwd)"
 
 PATHS=$(find $FIND_VAR -type f -name go.mod -printf '{"workdir":"%h"},')
 if [[ $FIND_VAR == "." ]]; then
-  PATHS=$(find $FIND_VAR ! -path './controllers/*' ! -path './deprecated/*' ! -path './webhooks/*' ! -path './service/*' ! -path './test/*' -type f -name go.mod -printf '{"workdir":"%h"},')
+  PATHS=$(find $FIND_VAR ! -path './controllers/*' ! -path './deprecated/*' ! -path './webhooks/*' ! -path './service/*' ! -path './lifecycle/*' -type f -name go.mod -printf '{"workdir":"%h"},')
 fi
 set -ex
 echo matrix="{\"include\":[${PATHS%?}]}" >> $GITHUB_OUTPUT
