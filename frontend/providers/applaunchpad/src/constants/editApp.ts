@@ -24,6 +24,7 @@ export const editModeMap = (isEdit: boolean) => {
 
 export const defaultEditVal: AppEditType = {
   appName: 'hello-world',
+  modelVersion: '',
   nodeName: '',
   replicas: 1,
   currentContainerName: 'hello-world',
