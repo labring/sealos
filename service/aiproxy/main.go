@@ -63,10 +63,10 @@ func initializeBalance() error {
 }
 
 func initializeNotifier() {
-	feishuWh := os.Getenv("FEISHU_WEBHOOK")
+	feishuWh := os.Getenv("NOTIFY_FEISHU_WEBHOOK")
 	if feishuWh != "" {
 		notify.SetDefaultNotifier(notify.NewFeishuNotify(feishuWh))
-		log.Info("FEISHU_WEBHOOK is set, notifier will be use feishu")
+		log.Info("NOTIFY_FEISHU_WEBHOOK is set, notifier will be use feishu")
 	}
 }
 
