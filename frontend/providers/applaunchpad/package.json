@@ -54,6 +54,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
+    "uuid": "^9.0.1",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
