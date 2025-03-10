@@ -116,3 +116,7 @@ docker logs -f deployapp
 ## 查看applaunchpad日志
 POD_NAME=$(kubectl get pods -n default | grep "sealos-applaunchpad-deployment" | awk '{print $1}')
 kubectl logs -f $POD_NAME
+
+## 更新pnpm
+docker run -it -p 32294:3000 --user root --rm -v /root/sealos/:/sealos --entrypoint=sh sealos-applaunchpad:dev
+export PATH=/usr/local/lib/node_modules/corepack/shims:$PATH
