@@ -62,14 +62,17 @@ func TokenAuth(c *gin.Context) {
 
 	var token *model.TokenCache
 	var useInternalToken bool
-	if config.GetInternalToken() != "" && config.GetInternalToken() == key || config.AdminKey != "" && config.AdminKey == key {
+	if config.AdminKey != "" && config.AdminKey == key ||
+		config.GetInternalToken() != "" && config.GetInternalToken() == key {
 		token = &model.TokenCache{}
 		useInternalToken = true
 	} else {
 		var err error
 		token, err = model.ValidateAndGetToken(key)
 		if err != nil {
-			abortLogWithMessage(c, http.StatusUnauthorized, err.Error())
+			abortLogWithMessage(c, http.StatusUnauthorized, err.Error(), &errorField{
+				Code: "invalid_token",
+			})
 			return
 		}
 	}

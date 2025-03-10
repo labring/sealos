@@ -416,18 +416,8 @@ func handleRetryResult(bizErr *model.ErrorWithStatusCode, retry bool, newChannel
 	return false
 }
 
-var shouldRetryStatusCodesMap = map[int]struct{}{
-	http.StatusTooManyRequests: {},
-	http.StatusUnauthorized:    {},
-	http.StatusPaymentRequired: {},
-	http.StatusRequestTimeout:  {},
-	http.StatusGatewayTimeout:  {},
-	http.StatusForbidden:       {},
-}
-
 func shouldRetry(_ *gin.Context, statusCode int) bool {
-	_, ok := shouldRetryStatusCodesMap[statusCode]
-	return ok
+	return statusCode != http.StatusBadRequest
 }
 
 var channelNoPermissionStatusCodesMap = map[int]struct{}{

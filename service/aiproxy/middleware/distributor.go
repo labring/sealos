@@ -161,16 +161,22 @@ func checkGroupBalance(c *gin.Context, group *model.GroupCache) bool {
 	gbc, err := GetGroupBalanceConsumer(c, group)
 	if err != nil {
 		if errors.Is(err, balance.ErrNoRealNameUsedAmountLimit) {
-			abortLogWithMessage(c, http.StatusForbidden, err.Error())
+			abortLogWithMessage(c, http.StatusForbidden, err.Error(), &errorField{
+				Code: "no_real_name_used_amount_limit",
+			})
 			return false
 		}
 		notify.ErrorThrottle("balance", time.Minute, fmt.Sprintf("get group (%s) balance error", group.ID), err.Error())
-		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID))
+		abortWithMessage(c, http.StatusInternalServerError, fmt.Sprintf("get group (%s) balance error", group.ID), &errorField{
+			Code: "get_group_balance_error",
+		})
 		return false
 	}
 
 	if gbc.GroupBalance <= 0 {
-		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID))
+		abortLogWithMessage(c, http.StatusForbidden, fmt.Sprintf("group (%s) balance not enough", group.ID), &errorField{
+			Code: "group_balance_not_enough",
+		})
 		return false
 	}
 	return true
@@ -198,11 +204,17 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 
 	requestModel, err := getRequestModel(c, mode)
 	if err != nil {
-		abortLogWithMessage(c, http.StatusBadRequest, err.Error())
+		abortLogWithMessage(c, http.StatusInternalServerError, err.Error(), &errorField{
+			Type: "invalid_request_error",
+			Code: "get_request_model_error",
+		})
 		return
 	}
 	if requestModel == "" {
-		abortLogWithMessage(c, http.StatusBadRequest, "no model provided")
+		abortLogWithMessage(c, http.StatusBadRequest, "no model provided", &errorField{
+			Type: "invalid_request_error",
+			Code: "no_model_provided",
+		})
 		return
 	}
 
@@ -215,7 +227,11 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 	if !ok || len(token.Models) == 0 || !slices.Contains(token.Models, requestModel) {
 		abortLogWithMessage(c,
 			http.StatusNotFound,
-			fmt.Sprintf("model %s not exist", requestModel),
+			fmt.Sprintf("The model `%s` does not exist or you do not have access to it.", requestModel),
+			&errorField{
+				Type: "invalid_request_error",
+				Code: "model_not_found",
+			},
 		)
 		return
 	}
@@ -235,7 +251,10 @@ func distribute(c *gin.Context, mode relaymode.Mode) {
 			0,
 			nil,
 		)
-		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg)
+		abortLogWithMessage(c, http.StatusTooManyRequests, errMsg, &errorField{
+			Type: "invalid_request_error",
+			Code: "request_rate_limit_exceeded",
+		})
 		return
 	}
 
