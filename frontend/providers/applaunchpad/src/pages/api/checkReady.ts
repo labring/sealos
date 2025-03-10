@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const fetchUrl = `http://${host}`;
         const protocol =
-          ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https';
+          ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https://';
         const url = `${protocol}${host}${port ? `${port}` : ''}`;
 
         try {
