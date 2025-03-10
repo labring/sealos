@@ -168,7 +168,8 @@ func autoTestBannedModels(ctx context.Context) {
 
 func cleanLog(ctx context.Context) {
 	log.Info("clean log start")
-	ticker := time.NewTicker(time.Minute * 15)
+	// the interval should not be too large to avoid cleaning too much at once
+	ticker := time.NewTicker(time.Second * 15)
 	defer ticker.Stop()
 
 	for {
@@ -176,7 +177,7 @@ func cleanLog(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			err := model.CleanLog()
+			err := model.CleanLog(1000)
 			if err != nil {
 				notify.Error("clean log failed", err.Error())
 			}

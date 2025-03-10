@@ -43,7 +43,7 @@ type Log struct {
 	RequestAt            time.Time      `gorm:"index"                                                          json:"request_at"`
 	TimestampTruncByDay  int64          `json:"timestamp_trunc_by_day"`
 	TimestampTruncByHour int64          `json:"timestamp_trunc_by_hour"`
-	CreatedAt            time.Time      `json:"created_at"`
+	CreatedAt            time.Time      `gorm:"autoCreateTime;index"                                           json:"created_at"`
 	TokenName            string         `json:"token_name,omitempty"`
 	Endpoint             string         `json:"endpoint"`
 	Content              string         `gorm:"type:text"                                                      json:"content,omitempty"`
@@ -204,37 +204,49 @@ func GetGroupLogDetail(logID int, group string) (*RequestDetail, error) {
 	return &detail, nil
 }
 
-func CleanLog() error {
-	err := cleanLog()
+const defaultCleanLogBatchSize = 1000
+
+func CleanLog(batchSize int) error {
+	err := cleanLog(batchSize)
 	if err != nil {
 		return err
 	}
-	return cleanLogDetail()
+	return cleanLogDetail(batchSize)
 }
 
-func cleanLog() error {
+func cleanLog(batchSize int) error {
 	logStorageHours := config.GetLogStorageHours()
 	if logStorageHours <= 0 {
 		return nil
 	}
+	if batchSize <= 0 {
+		batchSize = defaultCleanLogBatchSize
+	}
 	return LogDB.
+		Session(&gorm.Session{SkipDefaultTransaction: true}).
 		Where(
 			"created_at < ?",
 			time.Now().Add(-time.Duration(logStorageHours)*time.Hour),
 		).
+		Limit(batchSize).
 		Delete(&Log{}).Error
 }
 
-func cleanLogDetail() error {
+func cleanLogDetail(batchSize int) error {
 	detailStorageHours := config.GetLogDetailStorageHours()
 	if detailStorageHours <= 0 {
 		return nil
 	}
+	if batchSize <= 0 {
+		batchSize = defaultCleanLogBatchSize
+	}
 	return LogDB.
+		Session(&gorm.Session{SkipDefaultTransaction: true}).
 		Where(
 			"created_at < ?",
 			time.Now().Add(-time.Duration(detailStorageHours)*time.Hour),
 		).
+		Limit(batchSize).
 		Delete(&RequestDetail{}).Error
 }
 

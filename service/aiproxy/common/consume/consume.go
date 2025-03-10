@@ -3,8 +3,10 @@ package consume
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/labring/sealos/service/aiproxy/common/balance"
+	"github.com/labring/sealos/service/aiproxy/common/notify"
 	"github.com/labring/sealos/service/aiproxy/model"
 	"github.com/labring/sealos/service/aiproxy/relay/meta"
 	relaymodel "github.com/labring/sealos/service/aiproxy/relay/model"
@@ -81,6 +83,7 @@ func Consume(
 	err := recordConsume(meta, code, usage, inputPrice, outputPrice, content, ip, requestDetail, amount, retryTimes)
 	if err != nil {
 		log.Error("error batch record consume: " + err.Error())
+		notify.ErrorThrottle("recordConsume", time.Minute, "record consume failed", err.Error())
 	}
 }
 
