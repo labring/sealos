@@ -43,6 +43,7 @@ export interface AppStatusMapType {
 export interface AppListItemType {
   id: string;
   name: string;
+  modelVersion: string;
   modelName: string;
   status: AppStatusMapType;
   isPause: boolean;
@@ -64,6 +65,7 @@ export interface AppEditType {
   appName: string;
   nodeName: string;
   modelName: string;
+  modelVersion: string;
   priority: string;
   replicas: number | '';
   gpu?: GpuType;
@@ -175,3 +177,5 @@ export type AppPatchPropsType = (
   | { type: 'patch'; kind: `${YamlKindEnum}`; value: Record<string, any> }
   | { type: 'create'; kind: `${YamlKindEnum}`; value: string }
 )[];
+
+declare module 'uuid'

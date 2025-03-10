@@ -755,6 +755,20 @@ const Form = ({
                 </Flex>
               </FormControl>
 
+              <FormControl mb={7} isInvalid={!!errors.modelVersion} w={'500px'}>
+                <Flex alignItems={'center'}>
+                  <Label>{'模型版本'}</Label>
+                  <Input
+                    width={'350px'}
+                    type={'text'}
+                    placeholder={'模型版本'}
+                    {...register('modelVersion', {
+                      required: '模型版本不能为空'
+                    })}
+                  />
+                </Flex>
+              </FormControl>
+
               {/* priority */}
               <FormControl mb={7} isInvalid={!!errors.priority} w={'500px'}>
                 <Flex alignItems={'center'}>
