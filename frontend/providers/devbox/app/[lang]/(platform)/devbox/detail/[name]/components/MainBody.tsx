@@ -37,8 +37,8 @@ const MainBody = () => {
         retryCount.current = 0;
         return;
       }
-      if (retryCount.current < 5) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
+      if (retryCount.current < 14) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 32000);
         retryCount.current += 1;
         setTimeout(() => {
           refetch();
