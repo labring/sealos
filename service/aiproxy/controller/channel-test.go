@@ -32,13 +32,24 @@ import (
 
 const channelTestRequestID = "channel-test"
 
+var (
+	modelTypeCache     map[string]relaymode.Mode = make(map[string]relaymode.Mode)
+	modelTypeCacheOnce sync.Once
+)
+
 func guessModelType(model string) relaymode.Mode {
-	for _, c := range channeltype.ChannelAdaptor {
-		for _, m := range c.GetModelList() {
-			if m.Model == model {
-				return m.Type
+	modelTypeCacheOnce.Do(func() {
+		for _, c := range channeltype.ChannelAdaptor {
+			for _, m := range c.GetModelList() {
+				if _, ok := modelTypeCache[m.Model]; !ok {
+					modelTypeCache[m.Model] = m.Type
+				}
 			}
 		}
+	})
+
+	if cachedType, ok := modelTypeCache[model]; ok {
+		return cachedType
 	}
 	return relaymode.Unknown
 }
