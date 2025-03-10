@@ -139,14 +139,13 @@ func GetRandomChannel(c *dbmodel.ModelCaches, model string, errorRates map[int64
 }
 
 func getPriority(channel *dbmodel.Channel, errorRate float64) int32 {
-	if errorRate > 0 {
-		priority := int32(float64(channel.GetPriority()) * (1 - errorRate))
-		if priority <= 0 {
-			return 1
-		}
-		return priority
+	priority := channel.GetPriority()
+	if errorRate > 1 {
+		errorRate = 1
+	} else if errorRate < 0.1 {
+		errorRate = 0.1
 	}
-	return channel.GetPriority()
+	return int32(float64(priority) / errorRate)
 }
 
 //nolint:gosec
