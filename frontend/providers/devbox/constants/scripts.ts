@@ -127,7 +127,7 @@ if [ ! -f "\$SSH_CONFIG_FILE" ]; then
 fi
 
 if [ ! -s "\$SSH_CONFIG_FILE" ]; then
-    echo "Include \$CONFIG_FILE_TXT\\n" >> "\$SSH_CONFIG_FILE"
+    echo -e "Include \$CONFIG_FILE_TXT\\n" >> "\$SSH_CONFIG_FILE"
 else
     if ! grep -q "Include \$CONFIG_FILE_TXT" "\$SSH_CONFIG_FILE"; then
         temp_file="\$(mktemp)"

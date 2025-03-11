@@ -51,6 +51,6 @@ Here we use `semverCompare` to check whether the user is running on k8s version 
 
 * [semverCompare](http://masterminds.github.io/sprig/semver.html) compares semantic versions, not string comparisons.
 * [default](http://masterminds.github.io/sprig/defaults.html) default can provide a default value when a value is empty or undefined.
-* [toYaml](https://github.com/labring/sealos/blob/main/pkg/template/funcmap.go#L66) displays the current value (object, map, array) as a yaml formatted string.
+* [toYaml](https://github.com/labring/sealos/blob/main/lifecycle/pkg/template/funcmap.go#L66) displays the current value (object, map, array) as a yaml formatted string.
 
 For a complete list of supported functions, [click here](http://masterminds.github.io/sprig/).
