@@ -59,6 +59,7 @@ func CreateCheckoutSession(amount int64, currency, successURL, cancelURL string)
 			},
 		},
 		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		AllowPromotionCodes: stripe.Bool(true),
 		SuccessURL: stripe.String(successURL),
 		CancelURL:  stripe.String(cancelURL),
 	}
