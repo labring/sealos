@@ -3,7 +3,6 @@ go 1.22.7
 use (
 	.
 	./account
-	./aiproxy
 	./database
 	./exceptionmonitor
 	./launchpad
