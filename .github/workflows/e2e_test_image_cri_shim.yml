@@ -6,16 +6,16 @@ on:
     branches: [ "**" ]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
-      - "cmd/**"
-      - "staging/src/github.com/image-cri-shim/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/staging/src/github.com/image-cri-shim/**"
+      - "lifecycle/test/**"
   pull_request:
     branches: [ "*" ]
     paths:
       - ".github/workflows/e2e_test_image_cri_shim.yml"
-      - "cmd/**"
-      - "staging/src/github.com/image-cri-shim/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/staging/src/github.com/image-cri-shim/**"
+      - "lifecycle/test/**"
 
 jobs:
   call_ci_workflow:
