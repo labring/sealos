@@ -17,7 +17,8 @@ import {
   Input,
   InputGroup,
   InputRightElement,
-  Badge
+  Badge,
+  useDisclosure
 } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
@@ -40,6 +41,7 @@ import { getTranslationWithFallback } from '@/utils/common'
 import { useBackendStore } from '@/store/backend'
 import { modelIcons } from '@/ui/icons/mode-icons'
 import { SingleSelectComboboxUnstyle } from '@/components/common/SingleSelectComboboxUnStyle'
+import ApiDocDrawer from './component/ApiDoc'
 import { useDebounce } from '@/hooks/useDebounce'
 
 type SortDirection = 'asc' | 'desc' | false
@@ -639,6 +641,13 @@ function PriceTable({
 }) {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+  const [selectedModel, setSelectedModel] = useState<ModelConfig | null>(null)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const handleOpenApiDoc = (modelConfig: ModelConfig) => {
+    setSelectedModel(modelConfig)
+    onOpen()
+  }
 
   const { currencySymbol } = useBackendStore()
 
@@ -1008,6 +1017,78 @@ function PriceTable({
           {info.getValue()}
         </Text>
       )
+    }),
+
+    columnHelper.display({
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          letterSpacing="0.5px">
+          {t('logs.actions')}
+        </Text>
+      ),
+      cell: ({ row }) => {
+        const modelConfig = row.original
+        return (
+          <Button
+            onClick={() => handleOpenApiDoc(modelConfig)}
+            h="28px"
+            variant="unstyled"
+            display="inline-flex"
+            padding="6px 8px"
+            justifyContent="center"
+            alignItems="center"
+            gap="4px"
+            borderRadius="4px"
+            background="grayModern.150"
+            whiteSpace="nowrap"
+            transition="all 0.2s ease"
+            _hover={{
+              transform: 'scale(1.05)',
+              transition: 'transform 0.2s ease'
+            }}
+            _active={{
+              transform: 'scale(0.92)',
+              animation: 'pulse 0.3s ease'
+            }}
+            sx={{
+              '@keyframes pulse': {
+                '0%': { transform: 'scale(0.92)' },
+                '50%': { transform: 'scale(0.96)' },
+                '100%': { transform: 'scale(0.92)' }
+              }
+            }}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none">
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M0.899414 3.04352C0.899414 2.76738 1.13738 2.54352 1.43092 2.54352H10.5696C10.8631 2.54352 11.1011 2.76738 11.1011 3.04352C11.1011 3.31966 10.8631 3.54352 10.5696 3.54352H1.43092C1.13738 3.54352 0.899414 3.31966 0.899414 3.04352ZM0.899414 5.96889C0.899414 5.69274 1.13738 5.46889 1.43092 5.46889H10.5696C10.8631 5.46889 11.1011 5.69274 11.1011 5.96889C11.1011 6.24503 10.8631 6.46889 10.5696 6.46889H1.43092C1.13738 6.46889 0.899414 6.24503 0.899414 5.96889ZM0.899414 8.9565C0.899414 8.68035 1.13738 8.4565 1.43092 8.4565H7.28546C7.579 8.4565 7.81696 8.68035 7.81696 8.9565C7.81696 9.23264 7.579 9.4565 7.28546 9.4565H1.43092C1.13738 9.4565 0.899414 9.23264 0.899414 8.9565Z"
+                fill="#485264"
+              />
+            </svg>
+            <Text
+              color="grayModern.900"
+              fontFamily="PingFang SC"
+              fontStyle="normal"
+              fontSize="11px"
+              fontWeight={500}
+              lineHeight="16px"
+              letterSpacing="0.5px">
+              {t('logs.detail')}
+            </Text>
+          </Button>
+        )
+      },
+      id: 'detail'
     })
   ]
 
@@ -1039,55 +1120,62 @@ function PriceTable({
   })
 
   return (
-    <TableContainer w="full" h="full" flex="1 0 0" minHeight="0" overflowY="auto">
-      <Table variant="simple" w="full" size="md">
-        <Thead position="sticky" top={0} zIndex={1} bg="white">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <Tr key={headerGroup.id} height="42px" alignSelf="stretch" bg="grayModern.100">
-              {headerGroup.headers.map((header, i) => (
-                <Th
-                  key={header.id}
-                  border={'none'}
-                  borderTopLeftRadius={i === 0 ? '6px' : '0'}
-                  borderBottomLeftRadius={i === 0 ? '6px' : '0'}
-                  borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
-                  borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </Th>
-              ))}
-            </Tr>
-          ))}
-        </Thead>
-        <Tbody>
-          {isLoading ? (
-            <Tr>
-              <Td
-                colSpan={columns.length}
-                textAlign="center"
-                border="none"
-                height="100%"
-                width="100%">
-                <Center h="200px">
-                  <Spinner size="md" color="grayModern.800" />
-                </Center>
-              </Td>
-            </Tr>
-          ) : (
-            table.getRowModel().rows.map((row) => (
-              <Tr
-                key={row.id}
-                height="48px"
-                alignSelf="stretch"
-                borderBottom="1px solid"
-                borderColor="grayModern.150">
-                {row.getVisibleCells().map((cell) => (
-                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+    <>
+      <TableContainer w="full" h="full" flex="1 0 0" minHeight="0" overflowY="auto">
+        <Table variant="simple" w="full" size="md">
+          <Thead position="sticky" top={0} zIndex={1} bg="white">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <Tr key={headerGroup.id} height="42px" alignSelf="stretch" bg="grayModern.100">
+                {headerGroup.headers.map((header, i) => (
+                  <Th
+                    key={header.id}
+                    border={'none'}
+                    borderTopLeftRadius={i === 0 ? '6px' : '0'}
+                    borderBottomLeftRadius={i === 0 ? '6px' : '0'}
+                    borderTopRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}
+                    borderBottomRightRadius={i === headerGroup.headers.length - 1 ? '6px' : '0'}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </Th>
                 ))}
               </Tr>
-            ))
-          )}
-        </Tbody>
-      </Table>
-    </TableContainer>
+            ))}
+          </Thead>
+          <Tbody>
+            {isLoading ? (
+              <Tr>
+                <Td
+                  colSpan={columns.length}
+                  textAlign="center"
+                  border="none"
+                  height="100%"
+                  width="100%">
+                  <Center h="200px">
+                    <Spinner size="md" color="grayModern.800" />
+                  </Center>
+                </Td>
+              </Tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <Tr
+                  key={row.id}
+                  height="48px"
+                  alignSelf="stretch"
+                  borderBottom="1px solid"
+                  borderColor="grayModern.150">
+                  {row.getVisibleCells().map((cell) => (
+                    <Td key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </Td>
+                  ))}
+                </Tr>
+              ))
+            )}
+          </Tbody>
+        </Table>
+      </TableContainer>
+      {selectedModel && (
+        <ApiDocDrawer isOpen={isOpen} onClose={onClose} modelConfig={selectedModel} />
+      )}
+    </>
   )
 }

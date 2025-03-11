@@ -308,7 +308,7 @@ export default function Logs(): React.JSX.Element {
               />
             </svg>
             <Text
-              color="grayModern.600"
+              color="grayModern.900"
               fontFamily="PingFang SC"
               fontStyle="normal"
               fontSize="11px"

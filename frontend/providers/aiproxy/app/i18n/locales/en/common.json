@@ -131,7 +131,9 @@
     "export": "Export",
     "exportAll": "Export All",
     "importSuccess": "Import successful",
-    "importError": "Import failed"
+    "importError": "Import failed",
+    "doc": "Docs",
+    "invite": "Invite"
   },
   "channelStatus": {
     "autoDisabled": "System disabled"

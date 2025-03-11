@@ -5,7 +5,7 @@ import SideBar from '@/components/user/Sidebar'
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   return (
     <Flex height="full" width="full" direction="row">
-      <Box w="88px" h="full" minW="88px">
+      <Box w="80px" h="full" minW="80px">
         <SideBar />
       </Box>
       {/* Main Content */}

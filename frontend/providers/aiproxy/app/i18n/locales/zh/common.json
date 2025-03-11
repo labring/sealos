@@ -131,7 +131,9 @@
     "export": "导出",
     "exportAll": "全部导出",
     "importSuccess": "导入成功",
-    "importError": "导入失败"
+    "importError": "导入失败",
+    "doc": "文档",
+    "invite": "邀请"
   },
   "channelStatus": {
     "autoDisabled": "系统禁用"

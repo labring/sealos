@@ -68,7 +68,7 @@ const SideBar = (): JSX.Element => {
     <Flex
       flexDirection="column"
       py="16px"
-      px="12px"
+      px="8px"
       gap="var(--md, 8px)"
       alignContent="center"
       flex="1">
