@@ -58,10 +58,10 @@ func CreateCheckoutSession(amount int64, currency, successURL, cancelURL string)
 				Quantity: stripe.Int64(1),
 			},
 		},
-		Mode:       stripe.String(string(stripe.CheckoutSessionModePayment)),
+		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
 		AllowPromotionCodes: stripe.Bool(true),
 		SuccessURL: stripe.String(successURL),
-		CancelURL:  stripe.String(cancelURL),
+		CancelURL: stripe.String(cancelURL),
 	}
 
 	s, err := session.New(params)
