@@ -1,4 +1,5 @@
 {
+  "Accessible": "Accessible",
   "Add Port": "Add Port",
   "Amount": "Amount",
   "CNAME Tips": "To set up a custom domain, please add a `CNAME` record for your domain pointing to {domain} at your domain registrar. You can bind your custom domain once the DNS resolution takes effect.",
@@ -8,6 +9,7 @@
   "Delete": "Deleting",
   "Error": "Error",
   "Failed": "Failed",
+  "GPU": "GPU",
   "Gpu under inventory Tip": "{gputype} is out of stock. Please select a different type or reduce the quantity",
   "Input your custom domain": "Enter your custom domain",
   "Inventory": "Stock",
@@ -101,6 +103,8 @@
   "export_yaml": "Export YAML",
   "external_address": "Public Address",
   "framework": "Framework",
+  "gpu": "GPU",
+  "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin.",
   "guide": {
     "click_shadow_skip": "Click on any shadow to skip",
     "deploy_cost": "Current resource usage and estimated daily consumption",
@@ -193,6 +197,7 @@
   "pause_success": "Shutdown succeeded",
   "please_enter_devbox_name_confirm": "Please enter <strong>{name}</strong> to confirm: ",
   "port": "Port",
+  "prepare": "Waiting",
   "privacy_and_security_agreement": "Privacy and Security Agreement",
   "privacy_and_security_agreement_tips": "Please read and agree to the Privacy and Security Agreement.",
   "private": "Private",
@@ -284,8 +289,5 @@
   "vm": "vm",
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML",
-  "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin.",
-  "GPU": "GPU",
-  "gpu": "GPU"
+  "yaml_file": "YAML"
 }

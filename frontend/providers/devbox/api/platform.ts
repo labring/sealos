@@ -25,3 +25,8 @@ export const checkUserTask = () =>
   POST('/api/guide/checkTask', {
     desktopToAppToken: getDesktopSessionFromSessionStorage()?.token
   });
+
+export const checkReady = (devboxName: string) =>
+  GET<{ url: string; ready: boolean; error?: string }[]>(
+    `/api/checkReady?devboxName=${devboxName}`
+  );
