@@ -6,16 +6,16 @@ on:
     branches: [ "**" ]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "cmd/**"
-      - "pkg/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/pkg/**"
+      - "lifecycle/test/**"
   pull_request:
     branches: [ "*" ]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "cmd/**"
-      - "pkg/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/pkg/**"
+      - "lifecycle/test/**"
 
 
 jobs:
