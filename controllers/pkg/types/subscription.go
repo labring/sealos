@@ -1,0 +1,94 @@
+package types
+
+import (
+	"time"
+
+	"github.com/lib/pq"
+
+	"github.com/google/uuid"
+)
+
+type Subscription struct {
+	ID            uuid.UUID          `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 订阅 ID
+	PlanID        uuid.UUID          `gorm:"type:uuid;column:plan_id"`                                 // 计划 ID
+	PlanName      string             `gorm:"type:varchar(50);column:plan_name"`                        // 计划名称
+	UserUID       uuid.UUID          `gorm:"unique;not null;type:uuid;column:user_uid"`                // 用户 ID
+	Status        SubscriptionStatus `gorm:"type:varchar(50);column:status"`                           // 状态
+	StartAt       time.Time          `gorm:"column:start_at;autoCreateTime"`                           // 开始时间
+	UpdateAt      time.Time          `gorm:"column:update_at;autoCreateTime"`                          // 更新时间
+	ExpireAt      time.Time          `gorm:"column:expire_at;autoCreateTime"`                          // 过期时间
+	CardID        *uuid.UUID         `gorm:"type:uuid;column:card_id"`                                 // 银行卡 ID
+	NextCycleDate time.Time          `gorm:"column:next_cycle_date"`                                   // 下一个周期的日期
+}
+
+type SubscriptionStatus string
+
+const (
+	SubscriptionStatusNormal SubscriptionStatus = "NORMAL"
+	SubscriptionStatusDebt   SubscriptionStatus = "DEBT"
+)
+
+//// 订阅支付订单
+//type SubscriptionBilling struct {
+//	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 订单 ID
+//	PlanID           uuid.UUID `gorm:"type:uuid;column:plan_id"`                                 // 计划 ID
+//	PlanName         string    `gorm:"type:varchar(50);column:plan_name"`                        // 计划名称
+//	Amount           float64   `gorm:"column:amount"`                                            // 交易金额
+//	PaymentStatus    string    `gorm:"type:varchar(50);column:payment_status"`                   // 支付状态（pending/paid/failed/refunded）
+//	PaymentRequestID string    `gorm:"type:varchar(100);column:payment_request_id"`              // 支付订单 ID 后续查询订单信息
+//	CardID           uuid.UUID `gorm:"type:uuid;column:card_id"`                                 // 银行卡 ID
+//	PaymentTime      time.Time `gorm:"column:payment_time"`                                      // 支付时间
+//}
+
+// 订阅变更记录表
+type SubscriptionTransaction struct {
+	SubscriptionID  uuid.UUID `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
+	UserUID         uuid.UUID `gorm:"type:uuid;not null;index;column:user_uid"`        // 用户 ID
+	OldPlanID       uuid.UUID `gorm:"type:uuid;column:old_plan_id"`                    // 旧的订阅计划 ID
+	NewPlanID       uuid.UUID `gorm:"type:uuid;column:new_plan_id"`                    // 新的订阅计划 ID
+	OldPlanName     string    `gorm:"type:varchar(50);column:old_plan_name"`           // 旧的订阅计划名称
+	NewPlanName     string    `gorm:"type:varchar(50);column:new_plan_name"`           // 新的订阅计划名称
+	OldStatus       string    `gorm:"type:varchar(50);column:old_status"`              // 旧的订阅状态
+	NewStatus       string    `gorm:"type:varchar(50);column:new_status"`              // 新的订阅状态
+	TransactionType string    `gorm:"type:varchar(50);column:transaction_type"`        // 交易类型（created/upgraded/downgraded/canceled/renewed）
+	TransactionAt   time.Time `gorm:"column:transaction_at"`                           // 交易发生时间
+	EffectiveAt     time.Time `gorm:"column:effective_at"`                             // 变更生效时间
+	ExpireAt        time.Time `gorm:"column:expire_at"`                                // 变更导致的到期时间
+	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime"`                // 创建时间
+	UpdatedAt       time.Time `gorm:"column:updated_at;autoUpdateTime"`                // 更新时间
+}
+
+type SubscriptionPlan struct {
+	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 计划 ID
+	Name              string         `gorm:"unique;not null;column:name;type:text"`                    // 计划名称
+	Description       string         `gorm:"type:text;column:description"`                             // 描述
+	Amount            string         `gorm:"type:varchar(50);column:amount"`                           // 套餐价格
+	GiftAmount        string         `gorm:"type:varchar(50);column:gift_amount"`                      // 赠送金额
+	Period            string         `gorm:"type:varchar(50);column:period"`                           // 周期
+	UpgradePlanList   pq.StringArray `gorm:"type:text[];column:upgrade_plan_list"`                     // 可升级的计划列表
+	DowngradePlanList pq.StringArray `gorm:"type:text[];column:downgrade_plan_list"`                   // 可降级的计划列表
+	// <0 Unrestricted
+	MaxSeats      int       `gorm:"not null;column:max_seats"`        // 最大席位数
+	MaxWorkspaces int       `gorm:"not null;column:max_workspaces"`   // 最大 Workspace 数量
+	MaxResources  string    `gorm:"column:max_resources"`             // 最大资源数: map[string]string: {"cpu": "4", "memory": "8Gi", "storage": "100Gi"}
+	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime"` // 创建时间
+	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime"` // 更新时间
+	//Most Popular
+	MostPopular bool `gorm:"column:most_popular"`
+}
+
+func (Subscription) TableName() string {
+	return "Subscription"
+}
+
+func (SubscriptionPlan) TableName() string {
+	return "SubscriptionPlan"
+}
+
+//func (SubscriptionBilling) TableName() string {
+//	return "SubscriptionBilling"
+//}
+
+func (SubscriptionTransaction) TableName() string {
+	return "SubscriptionTransaction"
+}

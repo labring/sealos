@@ -47,6 +47,14 @@ type UsableBalanceWithCredits struct {
 	CreateRegionID   string
 }
 
+type BalanceWithCredits struct {
+	UserUID          uuid.UUID `json:"userUid"`
+	Balance          int64     `json:"balance"`
+	DeductionBalance int64     `json:"deductionBalance"`
+	Credits          int64     `json:"credits"`
+	DeductionCredits int64     `json:"deductionCredits"`
+}
+
 type Region struct {
 	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	DisplayName string    `gorm:"column:displayName;type:text"`
@@ -197,44 +205,13 @@ func (RegionUserCr) TableName() string {
 	return "UserCr"
 }
 
-type PaymentRaw struct {
-	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
-	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
-	Method          string    `gorm:"type:text;not null"`
-	Amount          int64     `gorm:"type:bigint;not null"`
-	Gift            int64     `gorm:"type:bigint"`
-	TradeNO         string    `gorm:"type:text;unique;not null"`
-	// CodeURL is the codeURL of wechatpay
-	CodeURL      string       `gorm:"type:text"`
-	InvoicedAt   bool         `gorm:"type:boolean;default:false"`
-	Remark       string       `gorm:"type:text"`
-	ActivityType ActivityType `gorm:"type:text;column:activityType"`
-	Message      string       `gorm:"type:text;not null"`
-}
-
-type ActivityType string
-
-const (
-	ActivityTypeFirstRecharge ActivityType = "FIRST_RECHARGE"
-)
-
-type Payment struct {
-	ID string `gorm:"type:text;primary_key"`
-	PaymentRaw
-}
-
-func (Payment) TableName() string {
-	return "Payment"
-}
-
 type InvoiceStatus string
 
 const (
-	PendingInvoiceStatus   = "PENDING"
-	CompletedInvoiceStatus = "COMPLETED"
-	RejectedInvoiceStatus  = "REJECTED"
+	PendingInvoiceStatus    = "PENDING"
+	ProcessingInvoiceStatus = "PROCESSING"
+	CompletedInvoiceStatus  = "COMPLETED"
+	RejectedInvoiceStatus   = "REJECTED"
 )
 
 type Invoice struct {

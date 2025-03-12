@@ -57,6 +57,8 @@ type Interface interface {
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
 	GetWorkspaceName(namespaces []string) ([][]string, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
+	CreatePaymentOrder(order *types.PaymentOrder) error
+	SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, orderID string) error
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
@@ -73,6 +75,17 @@ type Interface interface {
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
 	ActiveBilling(req resources.ActiveBilling) error
 	GetCockroach() *cockroach.Cockroach
+	SetCardInfo(info *types.CardInfo) error
+	GetCardInfo(id uuid.UUID) (*types.CardInfo, error)
+	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error
+	NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error
+	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
+	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
+	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
+	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
 }
 
 type Account struct {
@@ -90,7 +103,8 @@ type MongoDB struct {
 }
 
 type Cockroach struct {
-	ck *cockroach.Cockroach
+	ck                   *cockroach.Cockroach
+	subscriptionPlanList []types.SubscriptionPlan
 }
 
 func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
@@ -155,8 +169,86 @@ func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentR
 	}, req.Invoiced)
 }
 
+func (g *Cockroach) CreatePayment(req *types.Payment) error {
+	return g.ck.Payment(req)
+}
+
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
 	return g.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, req.PaymentIDList)
+}
+
+func (g *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
+	return g.ck.CreatePaymentOrder(order)
+}
+
+func (g *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, orderID string) error {
+	return g.ck.SetPaymentOrderStatusWithTradeNo(status, orderID)
+}
+
+func (g *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error {
+	return g.ck.PaymentWithFunc(payment, preDo, postDo)
+}
+
+func (g *Cockroach) SetCardInfo(info *types.CardInfo) error {
+	return g.ck.SetCardInfo(info)
+}
+
+func (g *Cockroach) GetCardInfo(id uuid.UUID) (*types.CardInfo, error) {
+	return g.ck.GetCardInfo(id)
+}
+
+func (g *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	return g.ck.GetAllCardInfo(ops)
+}
+
+func (g *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error) {
+	return g.ck.GetSubscription(ops)
+}
+
+func (g *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) {
+	var err error
+	if len(g.subscriptionPlanList) == 0 {
+		g.subscriptionPlanList, err = g.ck.GetSubscriptionPlanList()
+	}
+	return g.subscriptionPlanList, err
+}
+
+func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error {
+	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+	if err != nil {
+		return fmt.Errorf("failed to get payment order with trade no: %v", err)
+	}
+	if card.ID == uuid.Nil {
+		card.ID = uuid.New()
+	}
+	card.UserUID = order.UserUID
+	order.PaymentRaw.CardUID = &card.ID
+	// TODO
+	err = g.ck.PaymentWithFunc(&types.Payment{
+		ID:         order.ID,
+		PaymentRaw: order.PaymentRaw,
+	}, func() error {
+		return g.ck.SetCardInfo(&card)
+	}, func() error {
+		return g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusSuccess, order.TradeNO)
+	})
+	return err
+}
+
+func (g *Cockroach) GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	return g.ck.GetCardList(ops)
+}
+
+func (g *Cockroach) DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error {
+	return g.ck.DeleteCardInfo(id, userUID)
+}
+
+func (g *Cockroach) SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error {
+	return g.ck.SetDefaultCard(cardID, userUID)
+}
+
+func (g *Cockroach) GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error) {
+	return g.ck.GetBalanceWithCredits(ops)
 }
 
 func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {

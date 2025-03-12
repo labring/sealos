@@ -40,6 +40,18 @@ const (
 	AdminGetUserRealNameInfo     = "/real-name-info"
 )
 
+const (
+	PaymentGroup         = "/payment/v1alpha1"
+	CreatePay            = "/pay"
+	Notification         = "/notification"
+	SubscriptionUserInfo = "/subscription/user-info"
+	SubscriptionPlanList = "/subscription/plan-list"
+	CardList             = "/card/list"
+	CardDelete           = "/card/delete"
+	CardSetDefault       = "/card/set-default"
+	CreditsInfo          = "/credits/info"
+)
+
 // env
 const (
 	ConfigPath         = "/config/config.json"
@@ -48,4 +60,13 @@ const (
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"
 	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
+)
+
+const (
+	EnvAlipayGatewayURL = "ALIPAY_GATEWAY_URL"
+	EnvAlipayClientID   = "ALIPAY_CLIENT_ID"
+	EnvAlipayPublicKey  = "ALIPAY_PUBLIC_KEY"
+	EnvAlipayPrivateKey = "ALIPAY_PRIVATE_KEY"
+
+	EnvPaymentCurrency = "PAYMENT_CURRENCY"
 )
