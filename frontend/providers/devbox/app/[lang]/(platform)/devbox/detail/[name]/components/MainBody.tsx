@@ -82,7 +82,7 @@ const MainBody = () => {
       width: '0.5fr'
     },
     {
-      title: t('internal_address'),
+      title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
         return (
@@ -113,7 +113,7 @@ const MainBody = () => {
       }
     },
     {
-      title: t('external_address'),
+      title: t('external_debug_address'),
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
@@ -138,34 +138,29 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Center
-                      fontSize={'12px'}
-                      fontWeight={400}
-                      bg={'rgba(17, 24, 36, 0.05)'}
-                      color={'#485264'}
-                      borderRadius={'full'}
-                      p={'2px 8px 2px 4px'}
-                      gap={'2px'}
-                      minW={'63px'}
-                    >
-                      <MyIcon
-                        name={'loadingCircle'}
-                        w={'12px'}
-                        h={'12px'}
-                        animation={'spin 1s linear infinite'}
-                        sx={{
-                          '@keyframes spin': {
-                            '0%': {
-                              transform: 'rotate(0deg)'
-                            },
-                            '100%': {
-                              transform: 'rotate(360deg)'
-                            }
-                          }
-                        }}
-                      />
-                      {t('prepare')}
-                    </Center>
+                    <Flex>
+                      <Tooltip
+                        label={t('public_debug_address_tooltip')}
+                        hasArrow
+                        bg={'#FFFFFF'}
+                        color={'grayModern.900'}
+                        fontSize={'12px'}
+                        fontWeight={400}
+                        py={2}
+                        borderRadius={'md'}
+                      >
+                        <MyIcon name={'help'} w={'16px'} color={'grayModern.500'} />
+                      </Tooltip>
+                      <Text
+                        cursor="pointer"
+                        fontSize={'12px'}
+                        _hover={{ color: 'blue.500' }}
+                        w={'full'}
+                        color={'#485264'}
+                      >
+                        {t('prepare')}
+                      </Text>
+                    </Flex>
                   )}
                 </>
               )}

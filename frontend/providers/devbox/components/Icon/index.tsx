@@ -86,7 +86,8 @@ const map = {
   gift: require('./icons/gift.svg').default,
   fileConfig: require('./icons/fileConfig.svg').default,
   trae: require('./icons/trae.svg').default,
-  loadingCircle: require('./icons/loadingCircle.svg').default
+  loadingCircle: require('./icons/loadingCircle.svg').default,
+  help: require('./icons/help.svg').default
 };
 
 const MyIcon = ({
