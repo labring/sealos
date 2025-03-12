@@ -118,7 +118,7 @@ func Init(ctx context.Context) error {
 		}
 		payRedirectURL := "https://" + Cfg.LocalRegionDomain
 		fmt.Printf("init alipay client with payNotificationURL: %s , payRedirectURL: %s\n", payNotificationURL, payRedirectURL)
-		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, Cfg.LocalRegionDomain)
+		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, payRedirectURL)
 	}
 	if PaymentCurrency = os.Getenv(helper.EnvPaymentCurrency); PaymentCurrency == "" {
 		PaymentCurrency = "USD"
