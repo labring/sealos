@@ -1,8 +1,13 @@
 package api
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 
@@ -127,44 +132,149 @@ func CreateCardPay(c *gin.Context) {
 	c.JSON(http.StatusBadGateway, gin.H{"error": "unsupported payment method"})
 }
 
+type requestInfoStruct struct {
+	Path         string
+	Method       string
+	ResponseTime string
+	ClientID     string
+	Signature    string
+	Body         []byte
+}
+
 func NewPayNotificationHandler(c *gin.Context) {
-	var notification types.PaymentNotification
-	err := c.ShouldBind(&notification)
+	requestInfo := requestInfoStruct{
+		Path:         c.Request.RequestURI,
+		Method:       c.Request.Method,
+		ResponseTime: c.GetHeader("response-time"),
+		ClientID:     c.GetHeader("client-id"),
+		Signature:    c.GetHeader("signature"),
+	}
+
+	var err error
+	requestInfo.Body, err = c.GetRawData()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprint("failed to parse request: ", err)})
+		sendError(c, http.StatusBadRequest, "failed to get raw data", err)
 		return
 	}
-	paymentRequestID, paymentID := notification.PaymentRequestID, notification.PaymentID
+
+	if ok, err := dao.PaymentService.CheckRspSign(
+		requestInfo.Path,
+		requestInfo.Method,
+		requestInfo.ClientID,
+		requestInfo.ResponseTime,
+		string(requestInfo.Body),
+		requestInfo.Signature,
+	); err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to check response sign", err)
+		return
+	} else if !ok {
+		sendError(c, http.StatusBadRequest, "check signature fail", nil)
+		return
+	}
+
+	var notification types.PaymentNotification
+	if err := json.Unmarshal(requestInfo.Body, &notification); err != nil {
+		sendError(c, http.StatusBadRequest, "failed to unmarshal notification", err)
+		return
+	}
+
+	logNotification(notification)
+
+	if err := processPaymentResult(c, notification); err != nil {
+		return // 错误已在 processPaymentResult 中处理
+	}
+
+	sendSuccessResponse(c, requestInfo)
+}
+
+func sendError(c *gin.Context, status int, message string, err error) {
+	if err != nil {
+		message = fmt.Sprintf("%s: %v", message, err)
+	}
+	c.JSON(status, gin.H{"error": message})
+}
+
+// TODO delete
+func logNotification(notification types.PaymentNotification) {
+	if prettyJSON, err := json.MarshalIndent(notification, "", "    "); err != nil {
+		logrus.Errorf("Failed to marshal notification: %v", err)
+	} else {
+		logrus.Infof("Notification: %s", string(prettyJSON))
+	}
+}
+
+// 辅助函数：处理支付结果
+func processPaymentResult(c *gin.Context, notification types.PaymentNotification) error {
+	paymentRequestID := notification.PaymentRequestID
+	paymentID := notification.PaymentID
 
 	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
-		if err = dao.DBClient.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusFailed, paymentRequestID); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to set payment order status: ", err)})
-			return
-		}
-	} else {
-		resp, err := dao.PaymentService.GetPayment(paymentRequestID, paymentID)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get payment: ", err)})
-			return
-		}
-		if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not SUCCESS: %#+v", resp.Result)})
-			return
-		}
-		paymentResultInfo := resp.PaymentResultInfo
-		card := types.CardInfo{
-			ID:                   uuid.New(),
-			CardNo:               paymentResultInfo.CardNo,
-			CardBrand:            paymentResultInfo.CardBrand,
-			CardToken:            paymentResultInfo.CardToken,
-			NetworkTransactionID: paymentResultInfo.NetworkTransactionId,
-		}
-
-		err = dao.DBClient.NewCardPaymentHandler(paymentRequestID, card)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to handle payment: ", err)})
-			return
-		}
+		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
 	}
-	c.JSON(http.StatusOK, "success")
+
+	resp, err := dao.PaymentService.GetPayment(paymentRequestID, paymentID)
+	if err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to get payment", err)
+		return err
+	}
+
+	if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
+		sendError(c, http.StatusInternalServerError,
+			fmt.Sprintf("payment result is not SUCCESS: %#+v", resp.Result), nil)
+		return errors.New("payment not successful")
+	}
+
+	card := types.CardInfo{
+		ID:                   uuid.New(),
+		CardNo:               resp.PaymentResultInfo.CardNo,
+		CardBrand:            resp.PaymentResultInfo.CardBrand,
+		CardToken:            resp.PaymentResultInfo.CardToken,
+		NetworkTransactionID: resp.PaymentResultInfo.NetworkTransactionId,
+	}
+
+	if err := dao.DBClient.NewCardPaymentHandler(paymentRequestID, card); err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to handle payment", err)
+		return err
+	}
+	return nil
 }
+
+func updatePaymentStatus(c *gin.Context, paymentRequestID string, status types.PaymentOrderStatus) error {
+	if err := dao.DBClient.SetPaymentOrderStatusWithTradeNo(status, paymentRequestID); err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to set payment order status", err)
+		return err
+	}
+	return nil
+}
+
+// 辅助函数：发送成功响应
+func sendSuccessResponse(c *gin.Context, requestInfo requestInfoStruct) {
+	resp := types.NewSuccessResponse()
+	now := time.Now()
+
+	genSign, err := dao.PaymentService.GenSign(
+		requestInfo.Method,
+		requestInfo.Path,
+		now.Format(time.RFC3339Nano),
+		string(resp.Raw()),
+	)
+	if err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to generate sign", err)
+		return
+	}
+
+	c.Header("response-time", now.Format(time.RFC3339))
+	c.Header("client-id", dao.PaymentService.Client.ClientId)
+	c.Header("signature", genSign)
+	c.Header("Content-Type", jsonContentType)
+
+	if _, err := c.Writer.Write(resp.Raw()); err != nil {
+		sendError(c, http.StatusInternalServerError, "failed to write response", err)
+		return
+	}
+	c.Status(http.StatusOK)
+}
+
+var (
+	jsonContentType = "application/json; charset=utf-8"
+)

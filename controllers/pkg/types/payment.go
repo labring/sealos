@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -171,6 +172,11 @@ type Amount struct {
 // CommonResponse 通用响应结构体
 type CommonResponse struct {
 	Result Result `json:"result"`
+}
+
+func (c *CommonResponse) Raw() []byte {
+	data, _ := json.Marshal(c)
+	return data
 }
 
 // NewSuccessResponse 创建成功响应
