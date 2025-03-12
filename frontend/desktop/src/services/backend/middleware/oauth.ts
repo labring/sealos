@@ -108,21 +108,18 @@ export const googleOAuthGuard =
       locale: string;
       iat: number;
       exp: number;
-      email: string;
-      email_verified: boolean;
     };
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;
 
-    const email = userInfo.email || '';
-
     if (!id) throw Error('get userInfo error');
 
     console.log('userInfo', userInfo);
+    console.log('__data', __data);
 
-    let finalEmail = email;
-    if (!finalEmail && __data.access_token) {
+    let email = '';
+    if (__data.access_token) {
       try {
         const peopleApiUrl =
           'https://people.googleapis.com/v1/people/me?personFields=emailAddresses';
@@ -132,6 +129,8 @@ export const googleOAuthGuard =
             Accept: 'application/json'
           }
         });
+        console.log('peopleResponse', peopleResponse);
+        console.log('peopleResponse.json()', await peopleResponse.json());
 
         if (peopleResponse.ok) {
           const peopleData = await peopleResponse.json();
@@ -139,7 +138,7 @@ export const googleOAuthGuard =
           if (peopleData.emailAddresses && peopleData.emailAddresses.length > 0) {
             // 尝试找到主邮箱或第一个邮箱
             const primaryEmail = peopleData.emailAddresses.find((e: any) => e.metadata?.primary);
-            finalEmail = primaryEmail ? primaryEmail.value : peopleData.emailAddresses[0].value;
+            email = primaryEmail ? primaryEmail.value : peopleData.emailAddresses[0].value;
           }
         }
       } catch (error) {
