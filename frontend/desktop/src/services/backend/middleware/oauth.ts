@@ -115,9 +115,6 @@ export const googleOAuthGuard =
 
     if (!id) throw Error('get userInfo error');
 
-    console.log('userInfo', userInfo);
-    console.log('__data', __data);
-
     let email = '';
     if (__data.access_token) {
       try {
@@ -129,12 +126,11 @@ export const googleOAuthGuard =
             Accept: 'application/json'
           }
         });
-        console.log('peopleResponse', peopleResponse);
-        console.log('peopleResponse.json()', await peopleResponse.json());
 
+        console.log('peopleResponse', peopleResponse);
         if (peopleResponse.ok) {
           const peopleData = await peopleResponse.json();
-          console.log('peopleData', peopleData);
+
           if (peopleData.emailAddresses && peopleData.emailAddresses.length > 0) {
             // 尝试找到主邮箱或第一个邮箱
             const primaryEmail = peopleData.emailAddresses.find((e: any) => e.metadata?.primary);
@@ -187,7 +183,6 @@ export const githubOAuthGuard =
         message: 'Unauthorized'
       });
     const result = (await response.json()) as TgithubUser;
-    console.log('result', result);
     const id = result.id;
     if (!isNumber(id)) throw Error();
 
