@@ -90,7 +90,7 @@ type CardInfo struct {
 	UserUID              uuid.UUID `gorm:"type:uuid;not null"`
 	CardNo               string    `gorm:"type:text"`
 	CardBrand            string    `gorm:"type:text"`
-	CardToken            string    `gorm:"type:text"`
+	CardToken            string    `gorm:"type:text;unique"`
 	CreatedAt            time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
 	NetworkTransactionID string    `gorm:"type:text"`
 	Default              bool      `gorm:"type:boolean;default:false"`

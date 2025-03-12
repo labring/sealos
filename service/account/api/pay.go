@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -190,7 +189,7 @@ func NewPayNotificationHandler(c *gin.Context) {
 		return // 错误已在 processPaymentResult 中处理
 	}
 
-	sendSuccessResponse(c, requestInfo)
+	sendSuccessResponse(c)
 }
 
 func sendError(c *gin.Context, status int, message string, err error) {
@@ -216,6 +215,9 @@ func processPaymentResult(c *gin.Context, notification types.PaymentNotification
 
 	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
 		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
+	}
+	if notification.NotifyType != "CAPTURE_RESULT" {
+		return fmt.Errorf("unsupported notify type: %s", notification.NotifyType)
 	}
 
 	resp, err := dao.PaymentService.GetPayment(paymentRequestID, paymentID)
@@ -254,33 +256,11 @@ func updatePaymentStatus(c *gin.Context, paymentRequestID string, status types.P
 }
 
 // 辅助函数：发送成功响应
-func sendSuccessResponse(c *gin.Context, requestInfo requestInfoStruct) {
+func sendSuccessResponse(c *gin.Context) {
 	resp := types.NewSuccessResponse()
-	now := time.Now()
-
-	genSign, err := dao.PaymentService.GenSign(
-		requestInfo.Method,
-		requestInfo.Path,
-		now.Format(time.RFC3339Nano),
-		string(resp.Raw()),
-	)
-	if err != nil {
-		sendError(c, http.StatusInternalServerError, "failed to generate sign", err)
-		return
-	}
-
-	c.Header("response-time", now.Format(time.RFC3339))
-	c.Header("client-id", dao.PaymentService.Client.ClientId)
-	c.Header("signature", genSign)
-	c.Header("Content-Type", jsonContentType)
-
 	if _, err := c.Writer.Write(resp.Raw()); err != nil {
 		sendError(c, http.StatusInternalServerError, "failed to write response", err)
 		return
 	}
 	c.Status(http.StatusOK)
 }
-
-var (
-	jsonContentType = "application/json; charset=utf-8"
-)
