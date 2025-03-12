@@ -109,7 +109,16 @@ func Init(ctx context.Context) error {
 	gatewayURL, clientID, privateKey, publicKey := os.Getenv(helper.EnvAlipayGatewayURL), os.Getenv(helper.EnvAlipayClientID), os.Getenv(helper.EnvAlipayPrivateKey), os.Getenv(helper.EnvAlipayPublicKey)
 	if gatewayURL != "" && clientID != "" && privateKey != "" && publicKey != "" {
 		fmt.Printf("init alipay client with gatewayUrl: %s, clientID: %s\n", gatewayURL, clientID)
-		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey))
+		if Cfg.LocalRegionDomain == "" {
+			return fmt.Errorf("empty local region domain, please check config")
+		}
+		payNotificationURL := "https://" + "account-api." + Cfg.LocalRegionDomain + helper.PayNotificationPath
+		if err != nil {
+			return fmt.Errorf("join pay notification url error: %v", err)
+		}
+		payRedirectURL := "https://" + Cfg.LocalRegionDomain
+		fmt.Printf("init alipay client with payNotificationURL: %s , payRedirectURL: %s\n", payNotificationURL, payRedirectURL)
+		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, Cfg.LocalRegionDomain)
 	}
 	if PaymentCurrency = os.Getenv(helper.EnvPaymentCurrency); PaymentCurrency == "" {
 		PaymentCurrency = "USD"
