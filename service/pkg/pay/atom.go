@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/alipay/global-open-sdk-go/com/alipay/api/tools"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
@@ -14,14 +16,14 @@ import (
 )
 
 type AtomPaymentService struct {
-	client             *defaultAlipayClient.DefaultAlipayClient
+	Client             *defaultAlipayClient.DefaultAlipayClient
 	PaymentRedirectURL string
 	PaymentNotifyURL   string
 }
 
 func NewPaymentService(client *defaultAlipayClient.DefaultAlipayClient, notifyURL, redirectURL string) *AtomPaymentService {
 	return &AtomPaymentService{
-		client:             client,
+		Client:             client,
 		PaymentNotifyURL:   notifyURL,
 		PaymentRedirectURL: redirectURL,
 	}
@@ -38,6 +40,14 @@ type PaymentRequest struct {
 	DeviceTokenID string
 }
 
+func (s *AtomPaymentService) CheckRspSign(requestURI, httpMethod, clientID, respTime, responseBody, signature string) (bool, error) {
+	return tools.CheckSignature(requestURI, httpMethod, clientID, respTime, responseBody, signature, s.Client.AlipayPublicKey)
+}
+
+func (s *AtomPaymentService) GenSign(httpMethod string, path string, reqTime string, reqBody string) (string, error) {
+	return tools.GenSign(httpMethod, path, s.Client.ClientId, reqTime, reqBody, s.Client.MerchantPrivateKey)
+}
+
 func (s *AtomPaymentService) CreateNewPayment(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
 	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod())
 }
@@ -47,7 +57,7 @@ func (s *AtomPaymentService) GetPayment(paymentRequestID, paymentID string) (*re
 	queryRequest.PaymentRequestId = paymentRequestID
 	queryRequest.PaymentId = paymentID
 	request := queryRequest.NewRequest()
-	execute, err := s.client.Execute(request)
+	execute, err := s.Client.Execute(request)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query request: %v", err)
 	}
@@ -93,7 +103,7 @@ func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method 
 	request.ProductCode = model.CASHIER_PAYMENT
 
 	// 执行支付请求
-	execute, err := s.client.Execute(payRequest)
+	execute, err := s.Client.Execute(payRequest)
 	if err != nil {
 		return nil, err
 	}
