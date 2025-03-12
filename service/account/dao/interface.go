@@ -218,6 +218,9 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 	if err != nil {
 		return fmt.Errorf("failed to get payment order with trade no: %v", err)
 	}
+	if order.Status != types.PaymentOrderStatusPending {
+		return fmt.Errorf("payment order status is not pending: %v", order.Status)
+	}
 	if card.ID == uuid.Nil {
 		card.ID = uuid.New()
 	}
