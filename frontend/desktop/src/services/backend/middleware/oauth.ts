@@ -108,11 +108,46 @@ export const googleOAuthGuard =
       locale: string;
       iat: number;
       exp: number;
+      email: string;
+      email_verified: boolean;
     };
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;
+
+    const email = userInfo.email || '';
+
     if (!id) throw Error('get userInfo error');
+
+    console.log('userInfo', userInfo);
+
+    let finalEmail = email;
+    if (!finalEmail && __data.access_token) {
+      try {
+        const peopleApiUrl =
+          'https://people.googleapis.com/v1/people/me?personFields=emailAddresses';
+        const peopleResponse = await fetch(peopleApiUrl, {
+          headers: {
+            Authorization: `Bearer ${__data.access_token}`,
+            Accept: 'application/json'
+          }
+        });
+
+        if (peopleResponse.ok) {
+          const peopleData = await peopleResponse.json();
+          console.log('peopleData', peopleData);
+          if (peopleData.emailAddresses && peopleData.emailAddresses.length > 0) {
+            // 尝试找到主邮箱或第一个邮箱
+            const primaryEmail = peopleData.emailAddresses.find((e: any) => e.metadata?.primary);
+            finalEmail = primaryEmail ? primaryEmail.value : peopleData.emailAddresses[0].value;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch additional user email info:', error);
+        // 继续使用已有信息，不中断认证流程
+      }
+    }
+
     // @ts-ignore
     await Promise.resolve(
       next?.({
@@ -122,6 +157,7 @@ export const googleOAuthGuard =
       })
     );
   };
+
 export const githubOAuthGuard =
   (clientId: string, clientSecret: string, code: string) =>
   async (
@@ -154,6 +190,49 @@ export const githubOAuthGuard =
     const result = (await response.json()) as TgithubUser;
     const id = result.id;
     if (!isNumber(id)) throw Error();
+
+    // 获取用户邮箱
+    let email = '';
+    try {
+      // 尝试获取用户邮箱列表
+      const emailsUrl = `https://api.github.com/user/emails`;
+      const emailsResponse = await fetch(emailsUrl, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          Accept: 'application/json'
+        }
+      });
+
+      console.log('emailsResponse', await emailsResponse.json());
+
+      if (emailsResponse.ok) {
+        const emails = (await emailsResponse.json()) as Array<{
+          email: string;
+          primary: boolean;
+          verified: boolean;
+          visibility: string | null;
+        }>;
+
+        // 优先使用主邮箱
+        const primaryEmail = emails.find((e) => e.primary && e.verified);
+        if (primaryEmail) {
+          email = primaryEmail.email;
+        } else {
+          // 如果没有主邮箱，使用第一个已验证的邮箱
+          const verifiedEmail = emails.find((e) => e.verified);
+          if (verifiedEmail) {
+            email = verifiedEmail.email;
+          } else if (emails.length > 0) {
+            // 如果没有已验证的邮箱，使用第一个邮箱
+            email = emails[0].email;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch user emails:', error);
+      // 邮箱获取失败不阻止认证流程，继续使用已获取的信息
+    }
+
     // @ts-ignore
     await Promise.resolve(
       next?.({
