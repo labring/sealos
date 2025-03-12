@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -88,6 +89,8 @@ func main() {
 	// config qps and burst
 	var configQPS int
 	var configBurst int
+	// config restart predicate duration
+	var restartPredicateDuration time.Duration
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -118,6 +121,8 @@ func main() {
 	// config qps and burst
 	flag.IntVar(&configQPS, "config-qps", 50, "The qps of the config")
 	flag.IntVar(&configBurst, "config-burst", 100, "The burst of the config")
+	// config restart predicate duration
+	flag.DurationVar(&restartPredicateDuration, "restart-predicate-duration", 2*time.Hour, "Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -240,8 +245,9 @@ func main() {
 			DefaultLimit:   resource.MustParse(limitEphemeralStorage),
 			MaximumLimit:   resource.MustParse(maximumLimitEphemeralStorage),
 		},
-		PodMatchers: podMatchers,
-		DebugMode:   debugMode,
+		PodMatchers:              podMatchers,
+		DebugMode:                debugMode,
+		RestartPredicateDuration: restartPredicateDuration,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
