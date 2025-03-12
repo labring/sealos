@@ -115,7 +115,7 @@ func CreateCardPay(c *gin.Context) {
 					CodeURL:   paySvcResp.NormalUrl,
 					Type:      types.PaymentTypeAccountRecharge,
 				},
-				Status: types.ProcessingInvoiceStatus,
+				Status: types.PaymentOrderStatusPending,
 			})
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})

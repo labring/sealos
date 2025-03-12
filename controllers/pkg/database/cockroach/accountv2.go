@@ -1144,12 +1144,12 @@ func (c *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
 }
 
 func (c *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, tradeNo string) error {
-	return c.DB.Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Update("status", status).Error
+	return c.DB.Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Update("status", status).Error
 }
 
 func (c *Cockroach) GetPaymentOrderWithTradeNo(tradeNo string) (*types.PaymentOrder, error) {
 	var order types.PaymentOrder
-	if err := c.DB.Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Find(&order).Error; err != nil {
+	if err := c.DB.Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Find(&order).Error; err != nil {
 		return nil, fmt.Errorf("failed to get payment order: %v", err)
 	}
 	return &order, nil
