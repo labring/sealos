@@ -120,7 +120,7 @@ type AccountV2 interface {
 	CreatePaymentOrder(order *types.PaymentOrder) error
 	CreateSubscription(subscription *types.Subscription) error
 	SetCardInfo(info *types.CardInfo) error
-	GetCardInfo(id uuid.UUID) (*types.CardInfo, error)
+	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
 	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)

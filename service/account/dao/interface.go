@@ -76,7 +76,7 @@ type Interface interface {
 	ActiveBilling(req resources.ActiveBilling) error
 	GetCockroach() *cockroach.Cockroach
 	SetCardInfo(info *types.CardInfo) error
-	GetCardInfo(id uuid.UUID) (*types.CardInfo, error)
+	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
 	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error
 	NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error
@@ -193,8 +193,8 @@ func (g *Cockroach) SetCardInfo(info *types.CardInfo) error {
 	return g.ck.SetCardInfo(info)
 }
 
-func (g *Cockroach) GetCardInfo(id uuid.UUID) (*types.CardInfo, error) {
-	return g.ck.GetCardInfo(id)
+func (g *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error) {
+	return g.ck.GetCardInfo(cardID, userUID)
 }
 
 func (g *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error) {

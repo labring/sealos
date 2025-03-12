@@ -1241,9 +1241,9 @@ func (c *Cockroach) CreateSubscription(subscription *types.Subscription) error {
 	return c.DB.Save(subscription).Error
 }
 
-func (c *Cockroach) GetCardInfo(id uuid.UUID) (*types.CardInfo, error) {
+func (c *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error) {
 	var cardInfo types.CardInfo
-	if err := c.DB.Where(types.CardInfo{ID: id}).First(&cardInfo).Error; err != nil {
+	if err := c.DB.Where(types.CardInfo{ID: cardID, UserUID: userUID}).First(&cardInfo).Error; err != nil {
 		return nil, err
 	}
 	return &cardInfo, nil
