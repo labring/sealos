@@ -187,6 +187,7 @@ export const githubOAuthGuard =
         message: 'Unauthorized'
       });
     const result = (await response.json()) as TgithubUser;
+    console.log('result', result);
     const id = result.id;
     if (!isNumber(id)) throw Error();
 
