@@ -66,6 +66,7 @@ func main() {
 		minRequeueDuration         time.Duration
 		maxRequeueDuration         time.Duration
 		operationReqExpirationTime time.Duration
+		restartPredicateDuration   time.Duration
 		operationReqRetentionTime  time.Duration
 	)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -78,6 +79,7 @@ func main() {
 	flag.DurationVar(&maxRequeueDuration, "max-requeue-duration", time.Hour*24*2, "The maximum duration between requeue options of a resource.")
 	flag.DurationVar(&operationReqExpirationTime, "operation-req-expiration-time", time.Minute*3, "Sets the expiration time duration for an operation request. By default, the duration is set to 3 minutes.")
 	flag.DurationVar(&operationReqRetentionTime, "operation-req-retention-time", time.Minute*3, "Sets the retention time duration for an operation request. By default, the duration is set to 3 minutes.")
+	flag.DurationVar(&restartPredicateDuration, "restart-predicate-time", time.Hour*2, "Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.")
 	flag.StringVar(&configFilePath, "config-file-path", "/config.yaml", "The path to the configuration file.")
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
@@ -132,7 +134,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration); err != nil {
+	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr, rateLimiterOptions, minRequeueDuration, maxRequeueDuration, restartPredicateDuration); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}
