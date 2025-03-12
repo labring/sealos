@@ -145,7 +145,7 @@ func NewPayNotificationHandler(c *gin.Context) {
 	requestInfo := requestInfoStruct{
 		Path:         c.Request.RequestURI,
 		Method:       c.Request.Method,
-		ResponseTime: c.GetHeader("response-time"),
+		ResponseTime: c.GetHeader("request-time"),
 		ClientID:     c.GetHeader("client-id"),
 		Signature:    c.GetHeader("signature"),
 	}
