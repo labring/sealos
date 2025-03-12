@@ -212,24 +212,24 @@ export const githubOAuthGuard =
           visibility: string | null;
         }>;
 
-        // 优先使用主邮箱
         const primaryEmail = emails.find((e) => e.primary && e.verified);
+        // prefer primary email
         if (primaryEmail) {
           email = primaryEmail.email;
         } else {
-          // 如果没有主邮箱，使用第一个已验证的邮箱
+          // next verified email
           const verifiedEmail = emails.find((e) => e.verified);
           if (verifiedEmail) {
             email = verifiedEmail.email;
           } else if (emails.length > 0) {
-            // 如果没有已验证的邮箱，使用第一个邮箱
+            // no verified email, use first email
             email = emails[0].email;
           }
         }
       }
     } catch (error) {
-      console.error('Failed to fetch user emails:', error);
-      // 邮箱获取失败不阻止认证流程，继续使用已获取的信息
+      console.error('failed to fetch user github emails:', error);
+      // email fetch failed, continue
     }
 
     // @ts-ignore
