@@ -52,6 +52,8 @@ const (
 	CreditsInfo          = "/credits/info"
 )
 
+const PayNotificationPath = PaymentGroup + Notification
+
 // env
 const (
 	ConfigPath         = "/config/config.json"

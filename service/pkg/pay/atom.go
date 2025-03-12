@@ -15,14 +15,15 @@ import (
 
 type AtomPaymentService struct {
 	client             *defaultAlipayClient.DefaultAlipayClient
-	PaymentRedirectUrl string
-	// PaymentNotifyUrl + /payment/notification
-	PaymentNotifyUrl string
+	PaymentRedirectURL string
+	PaymentNotifyURL   string
 }
 
-func NewPaymentService(client *defaultAlipayClient.DefaultAlipayClient) *AtomPaymentService {
+func NewPaymentService(client *defaultAlipayClient.DefaultAlipayClient, notifyURL, redirectURL string) *AtomPaymentService {
 	return &AtomPaymentService{
-		client: client,
+		client:             client,
+		PaymentNotifyURL:   notifyURL,
+		PaymentRedirectURL: redirectURL,
 	}
 }
 
@@ -80,8 +81,8 @@ func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method 
 	}
 
 	// TODO 设置其他必要信息
-	request.PaymentRedirectUrl = s.PaymentRedirectUrl
-	request.PaymentNotifyUrl = s.PaymentNotifyUrl + "/payment/notification"
+	request.PaymentRedirectUrl = s.PaymentRedirectURL
+	request.PaymentNotifyUrl = s.PaymentNotifyURL
 	request.PaymentFactor = &model.PaymentFactor{
 		IsAuthorization: true,
 		CaptureMode:     "AUTOMATIC",
