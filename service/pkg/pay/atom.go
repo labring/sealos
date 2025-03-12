@@ -1,0 +1,152 @@
+package services
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/labring/sealos/controllers/pkg/types"
+
+	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
+	"github.com/alipay/global-open-sdk-go/com/alipay/api/model"
+	"github.com/alipay/global-open-sdk-go/com/alipay/api/request/pay"
+	responsePay "github.com/alipay/global-open-sdk-go/com/alipay/api/response/pay"
+	"github.com/google/uuid"
+)
+
+type AtomPaymentService struct {
+	client             *defaultAlipayClient.DefaultAlipayClient
+	PaymentRedirectUrl string
+	// PaymentNotifyUrl + /payment/notification
+	PaymentNotifyUrl string
+}
+
+func NewPaymentService(client *defaultAlipayClient.DefaultAlipayClient) *AtomPaymentService {
+	return &AtomPaymentService{
+		client: client,
+	}
+}
+
+// PaymentRequest 支付请求参数
+type PaymentRequest struct {
+	RequestID     string
+	UserUID       uuid.UUID
+	Amount        int64
+	Currency      string
+	UserAgent     string
+	ClientIP      string
+	DeviceTokenID string
+}
+
+func (s *AtomPaymentService) CreateNewPayment(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod())
+}
+
+func (s *AtomPaymentService) GetPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayQueryResponse, error) {
+	queryRequest := pay.AlipayPayQueryRequest{}
+	queryRequest.PaymentRequestId = paymentRequestID
+	queryRequest.PaymentId = paymentID
+	request := queryRequest.NewRequest()
+	execute, err := s.client.Execute(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query request: %v", err)
+	}
+	response := execute.(*responsePay.AlipayPayQueryResponse)
+	return response, nil
+}
+
+func (s *AtomPaymentService) CreatePaymentWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card))
+}
+
+func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method *model.PaymentMethod) (*responsePay.AlipayPayResponse, error) {
+	payRequest, request := pay.NewAlipayPayRequest()
+	request.PaymentRequestId = req.RequestID
+
+	// 设置订单信息
+	order := s.createOrder(req)
+	request.Order = order
+
+	request.PaymentAmount = model.NewAmount(strconv.FormatInt(req.Amount/10000, 10), req.Currency)
+
+	// 设置支付方法
+	request.PaymentMethod = method
+
+	// 设置环境信息
+	request.Env = &model.Env{
+		TerminalType:  "WEB",
+		UserAgent:     req.UserAgent,
+		ClientIp:      req.ClientIP,
+		DeviceTokenId: req.DeviceTokenID,
+	}
+
+	// TODO 设置其他必要信息
+	request.PaymentRedirectUrl = s.PaymentRedirectUrl
+	request.PaymentNotifyUrl = s.PaymentNotifyUrl + "/payment/notification"
+	request.PaymentFactor = &model.PaymentFactor{
+		IsAuthorization: true,
+		CaptureMode:     "AUTOMATIC",
+	}
+	request.SettlementStrategy = &model.SettlementStrategy{
+		SettlementCurrency: req.Currency,
+	}
+	request.ProductCode = model.CASHIER_PAYMENT
+
+	// 执行支付请求
+	execute, err := s.client.Execute(payRequest)
+	if err != nil {
+		return nil, err
+	}
+	return execute.(*responsePay.AlipayPayResponse), nil
+}
+
+func (s *AtomPaymentService) createOrder(req PaymentRequest) *model.Order {
+	amount := strconv.FormatInt(req.Amount/10000, 10)
+	return &model.Order{
+		OrderDescription: "payment",
+		ReferenceOrderId: uuid.NewString(),
+		OrderAmount:      model.NewAmount(amount, req.Currency),
+		Buyer: &model.Buyer{
+			ReferenceBuyerId: req.UserUID.String(),
+		},
+		Goods: []model.Goods{
+			{
+				ReferenceGoodsId:   uuid.NewString(),
+				GoodsName:          fmt.Sprintf("account %b balance", req.Amount/10000),
+				GoodsQuantity:      amount,
+				DeliveryMethodType: "DIGITAL",
+				GoodsUnitAmount: &model.Amount{
+					Currency: req.Currency,
+					Value:    "1",
+				},
+				GoodsCategory: "Hosting",
+			},
+		},
+	}
+}
+
+func (s *AtomPaymentService) createNewCardPaymentMethod() *model.PaymentMethod {
+	return &model.PaymentMethod{
+		PaymentMethodType: "CARD",
+		PaymentMethodMetaData: map[string]any{
+			"is3DSAuthentication": false,
+			"tokenize":            true,
+			"billingAddress": map[string]string{
+				"region": "GLOBAL",
+			},
+		},
+	}
+}
+
+func (s *AtomPaymentService) createCardPaymentMethod(card *types.CardInfo) *model.PaymentMethod {
+	return &model.PaymentMethod{
+		PaymentMethodType: "CARD",
+		PaymentMethodMetaData: map[string]any{
+			"is3DSAuthentication": false,
+			"billingAddress": map[string]string{
+				"region": "GLOBAL",
+			},
+			"isCardOnFile": true,
+		},
+		PaymentMethodId: card.CardToken,
+	}
+}

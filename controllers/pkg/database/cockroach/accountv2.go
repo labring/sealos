@@ -560,6 +560,41 @@ func (c *Cockroach) GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalan
 	return result, nil
 }
 
+func (c *Cockroach) GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error) {
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	ctx := context.Background()
+	result := &types.BalanceWithCredits{
+		UserUID: userUID,
+	}
+
+	err = c.DB.WithContext(ctx).Raw(`
+        SELECT 
+            a.balance,
+            a.deduction_balance,
+            COALESCE((
+                SELECT SUM(c.amount)
+                FROM "Credits" c
+                WHERE c.user_uid = a."userUid"
+                AND (c.expire_at IS NULL OR c.expire_at > CURRENT_TIMESTAMP)
+                AND (c.start_at IS NULL OR c.start_at <= CURRENT_TIMESTAMP)
+            ), 0) as credits,
+            COALESCE((
+                SELECT SUM(c.used_amount)
+                FROM "Credits" c
+                WHERE c.user_uid = a."userUid"
+                AND (c.expire_at IS NULL OR c.expire_at > CURRENT_TIMESTAMP)
+                AND (c.start_at IS NULL OR c.start_at <= CURRENT_TIMESTAMP)
+            ), 0) as deduction_credits
+        FROM "Account" a
+        WHERE a."userUid" = ?
+        LIMIT 1
+    `, userUID).Scan(result).Error
+	return result, err
+}
+
 func (c *Cockroach) SetAccountCreateLocalRegion(account *types.Account, region string) error {
 	account.CreateRegionID = region
 	return c.DB.Save(account).Error
@@ -909,6 +944,10 @@ func (c *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 	return account, nil
 }
 
+func (c *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error {
+	return c.paymentWithFunc(payment, true, preDo, postDo)
+}
+
 func (c *Cockroach) Payment(payment *types.Payment) error {
 	return c.payment(payment, true)
 }
@@ -918,6 +957,10 @@ func (c *Cockroach) SavePayment(payment *types.Payment) error {
 }
 
 func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
+	return c.paymentWithFunc(payment, updateBalance, nil, nil)
+}
+
+func (c *Cockroach) paymentWithFunc(payment *types.Payment, updateBalance bool, preDo, postDo func() error) error {
 	if payment.ID == "" {
 		id, err := gonanoid.New(12)
 		if err != nil {
@@ -943,6 +986,11 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	}
 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
+		if preDo != nil {
+			if err := preDo(); err != nil {
+				return fmt.Errorf("failed to preDo: %w", err)
+			}
+		}
 		if err := tx.First(&types.Payment{ID: payment.ID}).Error; err == nil {
 			return nil
 		}
@@ -952,6 +1000,11 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 		if updateBalance {
 			if err := c.updateBalance(tx, &types.UserQueryOpts{UID: payment.UserUID}, payment.Amount+payment.Gift, false, true); err != nil {
 				return fmt.Errorf("failed to add balance: %w", err)
+			}
+		}
+		if postDo != nil {
+			if err := postDo(); err != nil {
+				return fmt.Errorf("failed to postDo: %w", err)
 			}
 		}
 		return nil
@@ -1062,6 +1115,157 @@ func (c *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []
 		return fmt.Errorf("failed to save payment: %v", err)
 	}
 	return nil
+}
+
+func (c *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
+	if order.UserUID == uuid.Nil {
+		return fmt.Errorf("empty user uid")
+	}
+	if order.ID == "" {
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate payment order id: %v", err)
+		}
+		order.ID = id
+	}
+	if order.RegionUID == uuid.Nil {
+		order.RegionUID = c.LocalRegion.UID
+	}
+	if order.Status == "" {
+		order.Status = types.PaymentOrderStatusPending
+	}
+	if order.CreatedAt.IsZero() {
+		order.CreatedAt = time.Now()
+	}
+	if err := c.DB.Create(order).Error; err != nil {
+		return fmt.Errorf("failed to save payment order: %v", err)
+	}
+	return nil
+}
+
+func (c *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, tradeNo string) error {
+	return c.DB.Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Update("status", status).Error
+}
+
+func (c *Cockroach) GetPaymentOrderWithTradeNo(tradeNo string) (*types.PaymentOrder, error) {
+	var order types.PaymentOrder
+	if err := c.DB.Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Find(&order).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payment order: %v", err)
+	}
+	return &order, nil
+}
+
+func (c *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var cardInfos []types.CardInfo
+	if err := c.DB.Where(types.CardInfo{UserUID: userUID}).Find(&cardInfos).Error; err != nil {
+		return nil, err
+	}
+	return cardInfos, nil
+}
+
+func (c *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) {
+	var plans []types.SubscriptionPlan
+	if err := c.DB.Find(&plans).Error; err != nil {
+		return nil, fmt.Errorf("failed to get subscription plan: %v", err)
+	}
+	return plans, nil
+}
+
+func (c *Cockroach) SetSubscriptionPlanList(plans []types.SubscriptionPlan) error {
+	return c.DB.Create(plans).Error
+}
+
+func (c *Cockroach) GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var cards []types.CardInfo
+	if err := c.DB.Where(types.CardInfo{UserUID: userUID}).Find(&cards).Error; err != nil {
+		return nil, err
+	}
+	return cards, nil
+}
+
+func (c *Cockroach) DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error {
+	if userUID == uuid.Nil || id == uuid.Nil {
+		return fmt.Errorf("empty user uid or card id")
+	}
+	var card types.CardInfo
+	if err := c.DB.Where(types.CardInfo{ID: id, UserUID: userUID}).First(&card).Error; err != nil {
+		return fmt.Errorf("failed to get card info: %v", err)
+	}
+	if card.Default {
+		return fmt.Errorf("can not delete default card")
+	}
+	return c.DB.Delete(&card).Error
+}
+
+func (c *Cockroach) SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error {
+	if userUID == uuid.Nil || cardID == uuid.Nil {
+		return fmt.Errorf("empty user uid or card id")
+	}
+	var card types.CardInfo
+	if err := c.DB.Where(types.CardInfo{ID: cardID, UserUID: userUID}).First(&card).Error; err != nil {
+		return fmt.Errorf("failed to get card info: %v", err)
+	}
+	if card.Default {
+		return nil
+	}
+	if err := c.DB.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: userUID}).Update("default", false).Error; err != nil {
+		return fmt.Errorf("failed to update card info: %v", err)
+	}
+	return c.DB.Model(&types.CardInfo{}).Where(types.CardInfo{ID: cardID, UserUID: userUID}).Update("default", true).Error
+}
+
+func (c *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error) {
+	userUID, err := c.GetUserUID(ops)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user uid: %v", err)
+	}
+	var subscription types.Subscription
+	if err := c.DB.Where(types.Subscription{UserUID: userUID}).First(&subscription).Error; err != nil {
+		return nil, err
+	}
+	return &subscription, nil
+}
+
+func (c *Cockroach) CreateSubscription(subscription *types.Subscription) error {
+	if subscription.PlanID == uuid.Nil || subscription.PlanName == "" || subscription.UserUID == uuid.Nil || subscription.Status == "" {
+		return fmt.Errorf("empty subscription info")
+	}
+	return c.DB.Save(subscription).Error
+}
+
+func (c *Cockroach) GetCardInfo(id uuid.UUID) (*types.CardInfo, error) {
+	var cardInfo types.CardInfo
+	if err := c.DB.Where(types.CardInfo{ID: id}).First(&cardInfo).Error; err != nil {
+		return nil, err
+	}
+	return &cardInfo, nil
+}
+
+func (c *Cockroach) SetCardInfo(info *types.CardInfo) error {
+	if info.ID == uuid.Nil {
+		info.ID = uuid.New()
+	}
+	if info.CreatedAt.IsZero() {
+		info.CreatedAt = time.Now()
+	}
+	var count int64
+	// 如果没有设置默认卡片，设置第一张卡片为默认卡片
+	err := c.DB.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("failed to get card count: %v", err)
+	}
+	if count == 0 {
+		info.Default = true
+	}
+	return c.DB.Save(info).Error
 }
 
 func (c *Cockroach) SetPaymentInvoiceWithDB(ops *types.UserQueryOpts, paymentIDList []string, DB *gorm.DB) error {
@@ -1289,7 +1493,10 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{}, types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{})
+	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
+		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
+		types.CardInfo{}, types.PaymentOrder{},
+		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
@@ -1309,6 +1516,20 @@ func (c *Cockroach) InitTables() error {
 			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "deduction_credit" bigint;`,
 			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "billing_id_list" text[];`,
 			`ALTER TABLE "AccountTransaction" ADD COLUMN IF NOT EXISTS "credit_id_list" text[];`,
+		}
+		for _, sql := range sqls {
+			err := c.DB.Exec(sql).Error
+			if err != nil {
+				return fmt.Errorf("failed to add column credit_id_list: %v", err)
+			}
+		}
+	}
+
+	if !c.DB.Migrator().HasColumn(&types.Payment{}, "card_uid") {
+		sqls := []string{
+			`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "card_uid" uuid;`,
+			`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "type" text;`,
+			`ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "charge_source" text;`,
 		}
 		for _, sql := range sqls {
 			err := c.DB.Exec(sql).Error

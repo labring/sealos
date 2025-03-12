@@ -6,6 +6,9 @@ import (
 	"os"
 	"time"
 
+	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
+	services "github.com/labring/sealos/service/pkg/pay"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"github.com/goccy/go-json"
@@ -28,11 +31,13 @@ type Region struct {
 }
 
 var (
-	DBClient    Interface
-	JwtMgr      *helper.JWTManager
-	Cfg         *Config
-	BillingTask *helper.TaskQueue
-	Debug       bool
+	DBClient        Interface
+	PaymentService  *services.AtomPaymentService
+	PaymentCurrency string
+	JwtMgr          *helper.JWTManager
+	Cfg             *Config
+	BillingTask     *helper.TaskQueue
+	Debug           bool
 )
 
 func Init(ctx context.Context) error {
@@ -100,5 +105,14 @@ func Init(ctx context.Context) error {
 		return fmt.Errorf("empty jwt secret env: %s", helper.EnvJwtSecret)
 	}
 	JwtMgr = helper.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
+
+	gatewayURL, clientID, privateKey, publicKey := os.Getenv(helper.EnvAlipayGatewayURL), os.Getenv(helper.EnvAlipayClientID), os.Getenv(helper.EnvAlipayPrivateKey), os.Getenv(helper.EnvAlipayPublicKey)
+	if gatewayURL != "" && clientID != "" && privateKey != "" && publicKey != "" {
+		fmt.Printf("init alipay client with gatewayUrl: %s, clientID: %s\n", gatewayURL, clientID)
+		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey))
+	}
+	if PaymentCurrency = os.Getenv(helper.EnvPaymentCurrency); PaymentCurrency == "" {
+		PaymentCurrency = "USD"
+	}
 	return nil
 }

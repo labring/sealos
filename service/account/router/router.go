@@ -77,6 +77,15 @@ func RegisterPayRouter() {
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling)
+	router.Group(helper.PaymentGroup).
+		POST(helper.CreatePay, api.CreateCardPay).
+		POST(helper.Notification, api.NewPayNotificationHandler).
+		POST(helper.SubscriptionUserInfo, api.GetSubscriptionUserInfo).
+		POST(helper.SubscriptionPlanList, api.GetSubscriptionPlanList).
+		POST(helper.CardList, api.ListCard).
+		POST(helper.CardDelete, api.DeleteCard).
+		POST(helper.CardSetDefault, api.SetDefaultCard).
+		POST(helper.CreditsInfo, api.GetCreditsInfo)
 	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))

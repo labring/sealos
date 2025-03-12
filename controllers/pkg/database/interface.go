@@ -98,6 +98,7 @@ type AccountV2 interface {
 	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error)
+	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
 	GetAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
@@ -113,8 +114,20 @@ type AccountV2 interface {
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	Payment(payment *types.Payment) error
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error
 	SavePayment(payment *types.Payment) error
 	GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error)
+	CreatePaymentOrder(order *types.PaymentOrder) error
+	CreateSubscription(subscription *types.Subscription) error
+	SetCardInfo(info *types.CardInfo) error
+	GetCardInfo(id uuid.UUID) (*types.CardInfo, error)
+	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
+	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	SetSubscriptionPlanList(plans []types.SubscriptionPlan) error
+	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
+	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
