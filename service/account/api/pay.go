@@ -153,6 +153,7 @@ func NewPayNotificationHandler(c *gin.Context) {
 	var err error
 	requestInfo.Body, err = c.GetRawData()
 	if err != nil {
+		logrus.Errorf("Failed to get raw data: %v", err)
 		sendError(c, http.StatusBadRequest, "failed to get raw data", err)
 		return
 	}
@@ -165,15 +166,19 @@ func NewPayNotificationHandler(c *gin.Context) {
 		string(requestInfo.Body),
 		requestInfo.Signature,
 	); err != nil {
+		logrus.Errorf("Failed to check response sign: %v", err)
+		logrus.Errorf("Path: %s\n Method: %s\n ClientID: %s\n ResponseTime: %s\n Body: %s\n Signature: %s", requestInfo.Path, requestInfo.Method, requestInfo.ClientID, requestInfo.ResponseTime, string(requestInfo.Body), requestInfo.Signature)
 		sendError(c, http.StatusInternalServerError, "failed to check response sign", err)
 		return
 	} else if !ok {
+		logrus.Errorf("Check signature fail")
 		sendError(c, http.StatusBadRequest, "check signature fail", nil)
 		return
 	}
 
 	var notification types.PaymentNotification
 	if err := json.Unmarshal(requestInfo.Body, &notification); err != nil {
+		logrus.Errorf("Failed to unmarshal notification: %v", err)
 		sendError(c, http.StatusBadRequest, "failed to unmarshal notification", err)
 		return
 	}
@@ -181,6 +186,7 @@ func NewPayNotificationHandler(c *gin.Context) {
 	logNotification(notification)
 
 	if err := processPaymentResult(c, notification); err != nil {
+		logrus.Errorf("Failed to process payment result: %v", err)
 		return // 错误已在 processPaymentResult 中处理
 	}
 
