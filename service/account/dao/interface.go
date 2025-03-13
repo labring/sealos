@@ -232,6 +232,7 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 	}
 	card.UserUID = order.UserUID
 	order.PaymentRaw.CardUID = &card.ID
+	order.PaymentRaw.ChargeSource = types.ChargeSourceCard
 	// TODO
 	err = g.ck.PaymentWithFunc(&types.Payment{
 		ID:         order.ID,
