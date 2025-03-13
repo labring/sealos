@@ -3,14 +3,13 @@ import yaml from 'js-yaml';
 
 export const getUserKubeConfig = () => {
   let kubeConfig: string = '';
-    //process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
+  //process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
     const store = localStorage.getItem('session');
-    console.log(store);
+
     if (!kubeConfig && store) {
       kubeConfig = JSON.parse(store)?.state.session.kubeconfig;
-      console.log('kubeConfig:', kubeConfig);
     }
   } catch (err) {
     err;
@@ -37,7 +36,7 @@ export const getCurrentNamespace = (namespace: string) => {
     return ns;
   }
   return namespace;
-}
+};
 
 export const setUserIsLogin = (isLogin: boolean, session: string) => {
   localStorage.setItem('user-login', isLogin.toString());
