@@ -128,10 +128,9 @@ export const googleOAuthGuard =
           }
         });
 
-        console.log('peopleResponse', peopleResponse);
-        console.log(peopleResponse.json());
         if (peopleResponse.ok) {
           const peopleData = await peopleResponse.json();
+          console.log('peopleData', peopleData);
 
           if (peopleData.emailAddresses && peopleData.emailAddresses.length > 0) {
             // 尝试找到主邮箱或第一个邮箱
