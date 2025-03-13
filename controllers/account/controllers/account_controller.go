@@ -26,6 +26,10 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	corev1 "k8s.io/api/core/v1"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/google/uuid"
@@ -104,6 +108,8 @@ type AccountReconciler struct {
 	MongoDBURI                  string
 	Activities                  pkgtypes.Activities
 	DefaultDiscount             pkgtypes.RechargeDiscount
+	SubscriptionQuotaLimit      map[string]corev1.ResourceList
+	SyncNSQuotaFunc             func(ctx context.Context, owner, nsName string) error
 	SkipExpiredUserTimeDuration time.Duration
 }
 
@@ -140,23 +146,23 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (*pkgtypes.Account, error) {
-	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-	}
 	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
 	if getUsername(userNamespace) != owner {
-		return nil, nil
+		account, err := r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
+		if err != nil {
+			return nil, err
+		}
+		return account, nil
 	}
-	account, err := r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
-	if err != nil {
-		return nil, err
+	if err := r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
+		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
-	return account, nil
+	return nil, nil
 }
 
-func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
 	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
 	for i := range objs {
 		err := retry.Retry(10, 1*time.Second, func() error {
@@ -170,6 +176,46 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 		}
 	}
 	return nil
+}
+
+func (r *AccountReconciler) syncResourceQuotaAndLimitRangeBySubscription(ctx context.Context, owner, nsName string) error {
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: owner})
+	if err != nil {
+		return fmt.Errorf("get userUID failed: %v", err)
+	}
+	userSub, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return fmt.Errorf("get user subscription failed: %v", err)
+	}
+	quota, ok := r.SubscriptionQuotaLimit[userSub.PlanName]
+	if !ok {
+		return fmt.Errorf("subscription plan %s not found", userSub.PlanName)
+	}
+	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(getDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName, quota))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
+		}
+	}
+	return nil
+}
+
+func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: hard,
+		},
+	}
 }
 
 //func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
@@ -195,8 +241,49 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
 	if os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
 		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
+		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
+		plans, err := r.AccountV2.GetSubscriptionPlanList()
+		if err != nil {
+			return fmt.Errorf("get subscription plan list failed: %v", err)
+		}
+		if len(plans) == 0 {
+			return fmt.Errorf("subscription plan list is empty")
+		}
+		for i := range plans {
+			//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
+			res := plans[i].MaxResources
+			if res == "" {
+				r.SubscriptionQuotaLimit[plans[i].Name] = resources.DefaultResourceQuotaHard()
+			} else {
+				var maxResources map[string]string
+				if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
+					return fmt.Errorf("parse max_resources failed: %v", err)
+				}
+				r.Logger.Info("maxResources", "plan", plans[i].Name, "maxResources", maxResources)
+				rl := make(corev1.ResourceList)
+				for k, v := range maxResources {
+					switch k {
+					case "cpu":
+						rl[corev1.ResourceLimitsCPU], _ = resource.ParseQuantity(v)
+					case "memory":
+						rl[corev1.ResourceLimitsMemory], _ = resource.ParseQuantity(v)
+					case "storage":
+						rl[corev1.ResourceRequestsStorage], _ = resource.ParseQuantity(v)
+					case "nodeports":
+						rl[corev1.ResourceServicesNodePorts], _ = resource.ParseQuantity(v)
+					case resources.ResourceObjectStorageSize.String():
+						rl[resources.ResourceObjectStorageSize], _ = resource.ParseQuantity(v)
+					case resources.ResourceObjectStorageBucket.String():
+						rl[resources.ResourceObjectStorageBucket], _ = resource.ParseQuantity(v)
+					}
+				}
+				r.SubscriptionQuotaLimit[plans[i].Name] = rl
+			}
+			r.Logger.Info("subscription plan", "name", plans[i].Name, "quota", r.SubscriptionQuotaLimit[plans[i].Name])
+		}
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
+		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
