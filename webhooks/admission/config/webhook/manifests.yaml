@@ -66,6 +66,30 @@ webhooks:
     resources:
     - namespaces
   sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-core-v1-pod
+  failurePolicy: Ignore
+  name: mpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
