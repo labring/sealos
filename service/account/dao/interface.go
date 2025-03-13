@@ -246,6 +246,9 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 }
 
 func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error {
+	if paymentRequestID == "" {
+		return fmt.Errorf("payment request id is empty")
+	}
 	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
 	if err != nil {
 		return fmt.Errorf("failed to get payment order with trade no: %v", err)

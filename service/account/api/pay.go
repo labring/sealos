@@ -177,7 +177,7 @@ func NewPayNotifyHandler(c *gin.Context) {
 		return
 	}
 
-	var notification types.PaymentNotification
+	var notification types.CaptureNotification
 	if err := json.Unmarshal(requestInfo.Body, &notification); err != nil {
 		logrus.Errorf("Failed to unmarshal notification: %v", err)
 		sendError(c, http.StatusBadRequest, "failed to unmarshal notification", err)
@@ -202,7 +202,7 @@ func sendError(c *gin.Context, status int, message string, err error) {
 }
 
 // TODO delete
-func logNotification(notification types.PaymentNotification) {
+func logNotification(notification types.CaptureNotification) {
 	if prettyJSON, err := json.MarshalIndent(notification, "", "    "); err != nil {
 		logrus.Errorf("Failed to marshal notification: %v", err)
 	} else {
@@ -211,30 +211,32 @@ func logNotification(notification types.PaymentNotification) {
 }
 
 // 辅助函数：处理支付结果
-func processPaymentResult(c *gin.Context, notification types.PaymentNotification) error {
+func processPaymentResult(c *gin.Context, notification types.CaptureNotification) error {
 	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardPaymentHandler)
 }
 
-func processSubscriptionPayResult(c *gin.Context, notification types.PaymentNotification) error {
+func processSubscriptionPayResult(c *gin.Context, notification types.CaptureNotification) error {
 	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardSubscriptionPaymentHandler)
 }
 
-func processPaymentResultWithHandler(c *gin.Context, notification types.PaymentNotification, handler func(paymentID string, card types.CardInfo) error) error {
-	paymentRequestID := notification.PaymentRequestID
+func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureNotification, handler func(paymentID string, card types.CardInfo) error) error {
+	paymentRequestID := notification.CaptureRequestID
 	paymentID := notification.PaymentID
 	if notification.NotifyType != "CAPTURE_RESULT" {
 		return nil
 	}
-	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
-		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
-	}
-
 	resp, err := dao.PaymentService.GetPayment(paymentRequestID, paymentID)
 	if err != nil {
 		sendError(c, http.StatusInternalServerError, "failed to get payment", err)
 		return err
 	}
-
+	if paymentRequestID == "" || paymentID == "" {
+		sendError(c, http.StatusBadRequest, "payment request id or payment id is empty", nil)
+		return errors.New("payment request id or payment id is empty")
+	}
+	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
+		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
+	}
 	if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
 		sendError(c, http.StatusInternalServerError,
 			fmt.Sprintf("payment result is not SUCCESS: %#+v", resp.Result), nil)

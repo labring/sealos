@@ -1168,6 +1168,9 @@ func SetPaymentOrderStatusWithTradeNo(db *gorm.DB, status types.PaymentOrderStat
 }
 
 func (c *Cockroach) GetPaymentOrderWithTradeNo(tradeNo string) (*types.PaymentOrder, error) {
+	if tradeNo == "" {
+		return nil, fmt.Errorf("empty trade no")
+	}
 	var order types.PaymentOrder
 	if err := c.DB.Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Find(&order).Error; err != nil {
 		return nil, fmt.Errorf("failed to get payment order: %v", err)
