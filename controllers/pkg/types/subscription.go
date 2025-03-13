@@ -42,28 +42,54 @@ const (
 
 // 订阅变更记录表
 type SubscriptionTransaction struct {
-	SubscriptionID  uuid.UUID `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
-	UserUID         uuid.UUID `gorm:"type:uuid;not null;index;column:user_uid"`        // 用户 ID
-	OldPlanID       uuid.UUID `gorm:"type:uuid;column:old_plan_id"`                    // 旧的订阅计划 ID
-	NewPlanID       uuid.UUID `gorm:"type:uuid;column:new_plan_id"`                    // 新的订阅计划 ID
-	OldPlanName     string    `gorm:"type:varchar(50);column:old_plan_name"`           // 旧的订阅计划名称
-	NewPlanName     string    `gorm:"type:varchar(50);column:new_plan_name"`           // 新的订阅计划名称
-	OldStatus       string    `gorm:"type:varchar(50);column:old_status"`              // 旧的订阅状态
-	NewStatus       string    `gorm:"type:varchar(50);column:new_status"`              // 新的订阅状态
-	TransactionType string    `gorm:"type:varchar(50);column:transaction_type"`        // 交易类型（created/upgraded/downgraded/canceled/renewed）
-	TransactionAt   time.Time `gorm:"column:transaction_at"`                           // 交易发生时间
-	EffectiveAt     time.Time `gorm:"column:effective_at"`                             // 变更生效时间
-	ExpireAt        time.Time `gorm:"column:expire_at"`                                // 变更导致的到期时间
-	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime"`                // 创建时间
-	UpdatedAt       time.Time `gorm:"column:updated_at;autoUpdateTime"`                // 更新时间
+	SubscriptionID uuid.UUID            `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
+	UserUID        uuid.UUID            `gorm:"type:uuid;not null;index;column:user_uid"`        // 用户 ID
+	OldPlanID      uuid.UUID            `gorm:"type:uuid;column:old_plan_id"`                    // 旧的订阅计划 ID
+	NewPlanID      uuid.UUID            `gorm:"type:uuid;column:new_plan_id"`                    // 新的订阅计划 ID
+	OldPlanName    string               `gorm:"type:varchar(50);column:old_plan_name"`           // 旧的订阅计划名称
+	NewPlanName    string               `gorm:"type:varchar(50);column:new_plan_name"`           // 新的订阅计划名称
+	OldPlanStatus  SubscriptionStatus   `gorm:"type:varchar(50);column:old_plan_status"`         // 旧的订阅状态
+	NewPlanStatus  SubscriptionStatus   `gorm:"type:varchar(50);column:new_plan_status"`         // 新的订阅状态
+	Operator       SubscriptionOperator `gorm:"type:varchar(50);column:operator"`                // 操作类型(created/upgraded/downgraded/canceled/renewed)
+	EffectiveAt    time.Time            `gorm:"column:effective_at"`                             // 变更生效时间
+	//ExpireAt       time.Time                     `gorm:"column:expire_at"`                                // 变更导致的到期时间
+	CreatedAt  time.Time                     `gorm:"column:created_at;autoCreateTime"`   // 创建时间
+	UpdatedAt  time.Time                     `gorm:"column:updated_at;autoUpdateTime"`   // 更新时间
+	Status     SubscriptionTransactionStatus `gorm:"type:varchar(50);column:status"`     // 状态
+	PayStatus  SubscriptionPayStatus         `gorm:"type:varchar(50);column:pay_status"` // 支付状态
+	PayTradeNo string                        `gorm:"type:text;column:pay_trade_no"`      // 支付订单号
+	Amount     int64                         `gorm:"type:bigint;column:amount"`          // 金额
 }
+
+type SubscriptionTransactionStatus string
+
+type SubscriptionOperator string
+
+type SubscriptionPayStatus string
+
+const (
+	SubscriptionTransactionTypeCreated    SubscriptionOperator = "created"
+	SubscriptionTransactionTypeUpgraded   SubscriptionOperator = "upgraded"
+	SubscriptionTransactionTypeDowngraded SubscriptionOperator = "downgraded"
+	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
+	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
+
+	SubscriptionTransactionStatusCompleted  SubscriptionTransactionStatus = "completed"
+	SubscriptionTransactionStatusPending    SubscriptionTransactionStatus = "pending"
+	SubscriptionTransactionStatusProcessing SubscriptionTransactionStatus = "processing"
+	SubscriptionTransactionStatusFailed     SubscriptionTransactionStatus = "failed"
+
+	SubscriptionPayStatusPending SubscriptionPayStatus = "pending"
+	SubscriptionPayStatusPaid    SubscriptionPayStatus = "paid"
+	SubscriptionPayStatusFailed  SubscriptionPayStatus = "failed"
+)
 
 type SubscriptionPlan struct {
 	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 计划 ID
 	Name              string         `gorm:"unique;not null;column:name;type:text"`                    // 计划名称
 	Description       string         `gorm:"type:text;column:description"`                             // 描述
-	Amount            string         `gorm:"type:varchar(50);column:amount"`                           // 套餐价格
-	GiftAmount        string         `gorm:"type:varchar(50);column:gift_amount"`                      // 赠送金额
+	Amount            int64          `gorm:"type:bigint;column:amount"`                                // 金额
+	GiftAmount        int64          `gorm:"type:bigint;column:gift_amount"`                           // 赠送金额
 	Period            string         `gorm:"type:varchar(50);column:period"`                           // 周期
 	UpgradePlanList   pq.StringArray `gorm:"type:text[];column:upgrade_plan_list"`                     // 可升级的计划列表
 	DowngradePlanList pq.StringArray `gorm:"type:text[];column:downgrade_plan_list"`                   // 可降级的计划列表

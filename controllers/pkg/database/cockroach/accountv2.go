@@ -944,7 +944,7 @@ func (c *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 	return account, nil
 }
 
-func (c *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error {
+func (c *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error {
 	return c.paymentWithFunc(payment, true, preDo, postDo)
 }
 
@@ -960,7 +960,7 @@ func (c *Cockroach) payment(payment *types.Payment, updateBalance bool) error {
 	return c.paymentWithFunc(payment, updateBalance, nil, nil)
 }
 
-func (c *Cockroach) paymentWithFunc(payment *types.Payment, updateBalance bool, preDo, postDo func() error) error {
+func (c *Cockroach) paymentWithFunc(payment *types.Payment, updateBalance bool, preDo, postDo func(db *gorm.DB) error) error {
 	if payment.ID == "" {
 		id, err := gonanoid.New(12)
 		if err != nil {
@@ -987,7 +987,7 @@ func (c *Cockroach) paymentWithFunc(payment *types.Payment, updateBalance bool, 
 
 	return c.DB.Transaction(func(tx *gorm.DB) error {
 		if preDo != nil {
-			if err := preDo(); err != nil {
+			if err := preDo(tx); err != nil {
 				return fmt.Errorf("failed to preDo: %w", err)
 			}
 		}
@@ -1003,8 +1003,23 @@ func (c *Cockroach) paymentWithFunc(payment *types.Payment, updateBalance bool, 
 			}
 		}
 		if postDo != nil {
-			if err := postDo(); err != nil {
+			if err := postDo(tx); err != nil {
 				return fmt.Errorf("failed to postDo: %w", err)
+			}
+		}
+		return nil
+	})
+}
+
+func (c *Cockroach) GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error {
+	return GlobalTransactionHandler(c.DB, funcs...)
+}
+
+func GlobalTransactionHandler(db *gorm.DB, funcs ...func(tx *gorm.DB) error) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, f := range funcs {
+			if err := f(tx); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -1118,6 +1133,10 @@ func (c *Cockroach) SetPaymentInvoice(ops *types.UserQueryOpts, paymentIDList []
 }
 
 func (c *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
+	return CreatePaymentOrder(c.DB, order)
+}
+
+func CreatePaymentOrder(tx *gorm.DB, order *types.PaymentOrder) error {
 	if order.UserUID == uuid.Nil {
 		return fmt.Errorf("empty user uid")
 	}
@@ -1128,23 +1147,24 @@ func (c *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
 		}
 		order.ID = id
 	}
-	if order.RegionUID == uuid.Nil {
-		order.RegionUID = c.LocalRegion.UID
-	}
 	if order.Status == "" {
 		order.Status = types.PaymentOrderStatusPending
 	}
 	if order.CreatedAt.IsZero() {
 		order.CreatedAt = time.Now()
 	}
-	if err := c.DB.Create(order).Error; err != nil {
+	if err := tx.Create(order).Error; err != nil {
 		return fmt.Errorf("failed to save payment order: %v", err)
 	}
 	return nil
 }
 
 func (c *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, tradeNo string) error {
-	return c.DB.Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Update("status", status).Error
+	return SetPaymentOrderStatusWithTradeNo(c.DB, status, tradeNo)
+}
+
+func SetPaymentOrderStatusWithTradeNo(db *gorm.DB, status types.PaymentOrderStatus, tradeNo string) error {
+	return db.Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: tradeNo}}).Update("status", status).Error
 }
 
 func (c *Cockroach) GetPaymentOrderWithTradeNo(tradeNo string) (*types.PaymentOrder, error) {
@@ -1241,6 +1261,36 @@ func (c *Cockroach) CreateSubscription(subscription *types.Subscription) error {
 	return c.DB.Save(subscription).Error
 }
 
+func CreateSubscriptionTransaction(db *gorm.DB, transaction *types.SubscriptionTransaction) error {
+	if transaction.SubscriptionID == uuid.Nil {
+		return fmt.Errorf("empty subscription id")
+	}
+	if transaction.CreatedAt.IsZero() {
+		transaction.CreatedAt = time.Now()
+	}
+	return db.Create(transaction).Error
+}
+
+func GetActiveSubscriptionTransactionCount(db *gorm.DB, userUID uuid.UUID) (int64, error) {
+	nulActiveStatus := []types.SubscriptionTransactionStatus{
+		types.SubscriptionTransactionStatusCompleted,
+		types.SubscriptionTransactionStatusFailed,
+	}
+	var count int64
+	if err := db.Model(&types.SubscriptionTransaction{}).Where("user_uid = ? AND status NOT IN ?", userUID, nulActiveStatus).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func GetSubscriptionTransactionByPayTradeNo(db *gorm.DB, tradeNo string) (*types.SubscriptionTransaction, error) {
+	var transaction types.SubscriptionTransaction
+	if err := db.Where(types.SubscriptionTransaction{PayTradeNo: tradeNo}).First(&transaction).Error; err != nil {
+		return nil, err
+	}
+	return &transaction, nil
+}
+
 func (c *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error) {
 	var cardInfo types.CardInfo
 	if err := c.DB.Where(types.CardInfo{ID: cardID, UserUID: userUID}).First(&cardInfo).Error; err != nil {
@@ -1250,6 +1300,10 @@ func (c *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, err
 }
 
 func (c *Cockroach) SetCardInfo(info *types.CardInfo) error {
+	return SetCardInfo(c.DB, info)
+}
+
+func SetCardInfo(db *gorm.DB, info *types.CardInfo) error {
 	if info.ID == uuid.Nil {
 		info.ID = uuid.New()
 	}
@@ -1258,14 +1312,14 @@ func (c *Cockroach) SetCardInfo(info *types.CardInfo) error {
 	}
 	var count int64
 	// 如果没有设置默认卡片，设置第一张卡片为默认卡片
-	err := c.DB.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error
+	err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error
 	if err != nil {
 		return fmt.Errorf("failed to get card count: %v", err)
 	}
 	if count == 0 {
 		info.Default = true
 	}
-	return c.DB.Save(info).Error
+	return db.Save(info).Error
 }
 
 func (c *Cockroach) SetPaymentInvoiceWithDB(ops *types.UserQueryOpts, paymentIDList []string, DB *gorm.DB) error {

@@ -79,9 +79,11 @@ func RegisterPayRouter() {
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling)
 	router.Group(helper.PaymentGroup).
 		POST(helper.CreatePay, api.CreateCardPay).
-		POST(helper.Notification, api.NewPayNotificationHandler).
+		POST(helper.Notify, api.NewPayNotifyHandler).
 		POST(helper.SubscriptionUserInfo, api.GetSubscriptionUserInfo).
 		POST(helper.SubscriptionPlanList, api.GetSubscriptionPlanList).
+		POST(helper.SubscriptionPay, api.CreateSubscriptionPay).
+		POST(helper.SubscriptionNotify, api.NewSubscriptionPayNotifyHandler).
 		POST(helper.CardList, api.ListCard).
 		POST(helper.CardDelete, api.DeleteCard).
 		POST(helper.CardSetDefault, api.SetDefaultCard).

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"gorm.io/gorm"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
@@ -75,7 +77,7 @@ func CreateCardPay(c *gin.Context) {
 					CodeURL:   paySvcResp.NormalUrl,
 					Type:      types.PaymentTypeAccountRecharge,
 				},
-			}, nil, func() error {
+			}, nil, func(_ *gorm.DB) error {
 				paySvcResp, err = dao.PaymentService.CreatePaymentWithCard(paymentReq, card)
 				if err != nil {
 					return fmt.Errorf("failed to create payment with card: %w", err)
@@ -140,7 +142,7 @@ type requestInfoStruct struct {
 	Body         []byte
 }
 
-func NewPayNotificationHandler(c *gin.Context) {
+func NewPayNotifyHandler(c *gin.Context) {
 	requestInfo := requestInfoStruct{
 		Path:         c.Request.RequestURI,
 		Method:       c.Request.Method,
@@ -204,12 +206,20 @@ func logNotification(notification types.PaymentNotification) {
 	if prettyJSON, err := json.MarshalIndent(notification, "", "    "); err != nil {
 		logrus.Errorf("Failed to marshal notification: %v", err)
 	} else {
-		logrus.Infof("Notification: %s", string(prettyJSON))
+		logrus.Infof("Notify: %s", string(prettyJSON))
 	}
 }
 
 // 辅助函数：处理支付结果
 func processPaymentResult(c *gin.Context, notification types.PaymentNotification) error {
+	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardPaymentHandler)
+}
+
+func processSubscriptionPayResult(c *gin.Context, notification types.PaymentNotification) error {
+	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardSubscriptionPaymentHandler)
+}
+
+func processPaymentResultWithHandler(c *gin.Context, notification types.PaymentNotification, handler func(paymentID string, card types.CardInfo) error) error {
 	paymentRequestID := notification.PaymentRequestID
 	paymentID := notification.PaymentID
 
@@ -240,7 +250,7 @@ func processPaymentResult(c *gin.Context, notification types.PaymentNotification
 		NetworkTransactionID: resp.PaymentResultInfo.NetworkTransactionId,
 	}
 
-	if err := dao.DBClient.NewCardPaymentHandler(paymentRequestID, card); err != nil {
+	if err := handler(paymentRequestID, card); err != nil {
 		sendError(c, http.StatusInternalServerError, "failed to handle payment", err)
 		return err
 	}
