@@ -109,10 +109,10 @@ func CreateSubscriptionPay(c *gin.Context) {
 	var userCurrentPlan, userDescribePlan types.SubscriptionPlan
 	for _, plan := range planList {
 		if plan.Name == req.PlanName {
-			userCurrentPlan = plan
+			userDescribePlan = plan
 		}
 		if plan.Name == userSubscription.PlanName {
-			userDescribePlan = plan
+			userCurrentPlan = plan
 		}
 	}
 
@@ -136,7 +136,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 	case helper.Upgrade:
 		// TODO implement subscription upgrade
 		if !contain(userCurrentPlan.UpgradePlanList, req.PlanName) {
-			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "plan name is not in upgrade plan list"})
+			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in upgrade plan list: %v", userCurrentPlan.UpgradePlanList)})
 			return
 		}
 
@@ -165,7 +165,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 		// TODO implement subscription downgrade
 		// 符合降级规则
 		if !contain(userCurrentPlan.DowngradePlanList, req.PlanName) {
-			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "plan name is not in downgrade plan list"})
+			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in downgrade plan list: %v", userCurrentPlan.DowngradePlanList)})
 			return
 		}
 		//执行时间为计划的下个周期开始变为对应的版本，目前降级为Free
