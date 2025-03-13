@@ -1315,12 +1315,19 @@ func SetCardInfo(db *gorm.DB, info *types.CardInfo) error {
 	}
 	var count int64
 	// 如果没有设置默认卡片，设置第一张卡片为默认卡片
-	err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error
-	if err != nil {
+	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to get card count: %v", err)
 	}
 	if count == 0 {
 		info.Default = true
+		return db.Save(info).Error
+	}
+	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{CardToken: info.CardToken}).Count(&count).Error; err != nil {
+		return fmt.Errorf("failed to get card count: %v", err)
+	}
+	// if a card already exists do not add it again
+	if count > 0 {
+		return nil
 	}
 	return db.Save(info).Error
 }
