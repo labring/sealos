@@ -256,16 +256,13 @@ export class RemoteSSHConnector extends Disposable {
       vscode.env.uriScheme === 'vscode' ||
       vscode.env.uriScheme === 'vscode-insiders' ||
       vscode.env.uriScheme === 'cursor'
-    const isTrae = vscode.env.uriScheme === 'trae'
 
-    // windsurf has remote-ssh inside already
-    if (!isOfficialVscode && !isTrae) {
+    // windsurf and trae has remote-ssh inside already
+    if (!isOfficialVscode) {
       return true
     }
 
-    const remoteSSHId = isOfficialVscode
-      ? 'ms-vscode-remote.remote-ssh'
-      : 'labring.open-remote-ssh-for-trae'
+    const remoteSSHId = 'ms-vscode-remote.remote-ssh'
 
     const msVscodeRemoteExt = vscode.extensions.getExtension(remoteSSHId)
 
