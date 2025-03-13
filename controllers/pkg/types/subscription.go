@@ -84,6 +84,10 @@ const (
 	SubscriptionPayStatusFailed  SubscriptionPayStatus = "failed"
 )
 
+const (
+	FreeSubscriptionPlanName = "Free"
+)
+
 type SubscriptionPlan struct {
 	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 计划 ID
 	Name              string         `gorm:"unique;not null;column:name;type:text"`                    // 计划名称

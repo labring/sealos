@@ -92,10 +92,11 @@ const (
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
-	AccountV2          database.AccountV2
-	Scheme             *runtime.Scheme
-	DebtDetectionCycle time.Duration
-	LocalRegionID      string
+	AccountV2           database.AccountV2
+	InitUserAccountFunc func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
+	Scheme              *runtime.Scheme
+	DebtDetectionCycle  time.Duration
+	LocalRegionID       string
 	logr.Logger
 	accountSystemNamespace      string
 	SmsConfig                   *SmsConfig
@@ -192,7 +193,7 @@ func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) e
 		if userOwner.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
 			return nil
 		}
-		_, err = r.AccountV2.NewAccount(ops)
+		_, err = r.InitUserAccountFunc(ops)
 		if err != nil {
 			return fmt.Errorf("failed to create account %s: %v", userCr, err)
 		}
