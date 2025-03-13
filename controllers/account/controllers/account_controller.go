@@ -149,7 +149,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
-	if getUsername(userNamespace) != owner {
+	if getUsername(userNamespace) == owner {
 		account, err := r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
 		if err != nil {
 			return nil, err
