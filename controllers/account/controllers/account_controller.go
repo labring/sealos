@@ -249,6 +249,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		if len(plans) == 0 {
 			return fmt.Errorf("subscription plan list is empty")
 		}
+		r.SubscriptionQuotaLimit = make(map[string]corev1.ResourceList)
 		for i := range plans {
 			//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
 			res := plans[i].MaxResources
