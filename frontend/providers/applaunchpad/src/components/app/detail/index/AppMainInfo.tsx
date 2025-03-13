@@ -8,7 +8,20 @@ import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Box, Button, Center, Flex, Grid, Text, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Grid,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  useDisclosure
+} from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import { useMemo, useRef } from 'react';
@@ -172,34 +185,52 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                 {t('Accessible')}
                               </Center>
                             ) : (
-                              <Center
-                                fontSize={'12px'}
-                                fontWeight={400}
-                                bg={'rgba(17, 24, 36, 0.05)'}
-                                color={'#485264'}
-                                borderRadius={'full'}
-                                p={'2px 8px 2px 4px'}
-                                gap={'2px'}
-                                minW={'63px'}
-                              >
-                                <MyIcon
-                                  name={'loading'}
-                                  w={'12px'}
-                                  h={'12px'}
-                                  animation={'spin 1s linear infinite'}
-                                  sx={{
-                                    '@keyframes spin': {
-                                      '0%': {
-                                        transform: 'rotate(0deg)'
-                                      },
-                                      '100%': {
-                                        transform: 'rotate(360deg)'
-                                      }
-                                    }
-                                  }}
-                                />
-                                {t('Ready')}
-                              </Center>
+                              <Popover trigger="hover">
+                                <PopoverTrigger>
+                                  <Center
+                                    fontSize={'12px'}
+                                    fontWeight={400}
+                                    bg={'rgba(17, 24, 36, 0.05)'}
+                                    color={'#485264'}
+                                    borderRadius={'full'}
+                                    p={'2px 8px 2px 4px'}
+                                    gap={'2px'}
+                                    minW={'63px'}
+                                    cursor={'pointer'}
+                                  >
+                                    <MyIcon
+                                      name={'loading'}
+                                      w={'12px'}
+                                      h={'12px'}
+                                      animation={'spin 1s linear infinite'}
+                                      sx={{
+                                        '@keyframes spin': {
+                                          '0%': {
+                                            transform: 'rotate(0deg)'
+                                          },
+                                          '100%': {
+                                            transform: 'rotate(360deg)'
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    {t('Ready')}
+                                  </Center>
+                                </PopoverTrigger>
+                                <PopoverContent w={'254px'} h={'40px'} borderRadius={'10px'}>
+                                  <PopoverArrow />
+                                  <PopoverBody p={'10px'}>
+                                    <Box
+                                      color={'grayModern.900'}
+                                      fontSize={'12px'}
+                                      fontWeight={'400'}
+                                      lineHeight={'16px'}
+                                    >
+                                      {t('network_not_ready')}
+                                    </Box>
+                                  </PopoverBody>
+                                </PopoverContent>
+                              </Popover>
                             )}
                           </>
                         )}

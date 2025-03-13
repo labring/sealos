@@ -319,5 +319,6 @@
   "refetching_success": "刷新成功",
   "refresh": "刷新",
   "Ready": "准备中",
-  "Accessible": "可访问"
+  "Accessible": "可访问",
+  "network_not_ready": "内部网关需要 2~5 分钟准备，请耐心等待"
 }
