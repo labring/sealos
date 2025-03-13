@@ -109,6 +109,7 @@ export const googleOAuthGuard =
       iat: number;
       exp: number;
     };
+    console.log('userInfo', userInfo);
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;
@@ -128,6 +129,7 @@ export const googleOAuthGuard =
         });
 
         console.log('peopleResponse', peopleResponse);
+        console.log(peopleResponse.json());
         if (peopleResponse.ok) {
           const peopleData = await peopleResponse.json();
 
@@ -197,8 +199,6 @@ export const githubOAuthGuard =
           Accept: 'application/json'
         }
       });
-
-      console.log('emailsResponse', await emailsResponse.json());
 
       if (emailsResponse.ok) {
         const emails = (await emailsResponse.json()) as Array<{
