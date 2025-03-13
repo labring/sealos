@@ -145,21 +145,20 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (*pkgtypes.Account, error) {
+func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (account *pkgtypes.Account, err error) {
 	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
 	if getUsername(userNamespace) == owner {
-		account, err := r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
+		account, err = r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
 		if err != nil {
 			return nil, err
 		}
-		return account, nil
 	}
-	if err := r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
+	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
-	return nil, nil
+	return
 }
 
 func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
