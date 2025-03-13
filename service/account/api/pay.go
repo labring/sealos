@@ -235,7 +235,7 @@ func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureN
 		return errors.New("payment request id or payment id is empty")
 	}
 	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
-		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
+		return updatePaymentOrderStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
 	}
 	if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
 		sendError(c, http.StatusInternalServerError,
@@ -258,7 +258,7 @@ func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureN
 	return nil
 }
 
-func updatePaymentStatus(c *gin.Context, paymentRequestID string, status types.PaymentOrderStatus) error {
+func updatePaymentOrderStatus(c *gin.Context, paymentRequestID string, status types.PaymentOrderStatus) error {
 	if err := dao.DBClient.SetPaymentOrderStatusWithTradeNo(status, paymentRequestID); err != nil {
 		sendError(c, http.StatusInternalServerError, "failed to set payment order status", err)
 		return err

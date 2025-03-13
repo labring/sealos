@@ -284,7 +284,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 						RegionUID:    dao.DBClient.GetLocalRegion().UID,
 						TradeNO:      paySvcResp.PaymentRequestId,
 						CodeURL:      paySvcResp.NormalUrl,
-						Type:         types.PaymentTypeAccountRecharge,
+						Type:         types.PaymentTypeSubscription,
 						ChargeSource: types.ChargeSourceCard,
 					},
 					Status: types.PaymentOrderStatusPending,

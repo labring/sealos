@@ -262,14 +262,6 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 	card.UserUID = order.UserUID
 	order.PaymentRaw.CardUID = &card.ID
 	order.PaymentRaw.ChargeSource = types.ChargeSourceCard
-	err = g.ck.PaymentWithFunc(&types.Payment{
-		ID:         order.ID,
-		PaymentRaw: order.PaymentRaw,
-	}, func(tx *gorm.DB) error {
-		return cockroach.SetCardInfo(tx, &card)
-	}, func(tx *gorm.DB) error {
-		return cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
-	})
 	err = g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
 		// TODO List
 		// 1. set payment order status with tradeNo
