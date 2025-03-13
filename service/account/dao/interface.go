@@ -278,7 +278,7 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 		}).Error; err != nil {
 			return fmt.Errorf("failed to save payment: %v", err)
 		}
-		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayTradeNo: order.TradeNO}).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayTradeNo: order.TradeNO}).Update("pay_trade_no", order.TradeNO).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
 			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
 		}
 		if err = cockroach.SetCardInfo(tx, &card); err != nil {
