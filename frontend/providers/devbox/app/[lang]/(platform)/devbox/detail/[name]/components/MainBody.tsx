@@ -120,7 +120,7 @@ const MainBody = () => {
           const address = item.customDomain || item.publicDomain;
           const displayAddress = `https://${address}`;
           return (
-            <Flex gap={'2px'} alignItems={'center'}>
+            <Flex gap={'2'} alignItems={'center'}>
               {displayAddress && (
                 <>
                   {statusMap[displayAddress]?.ready ? (
@@ -138,29 +138,34 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Flex>
-                      <Tooltip
-                        label={t('public_debug_address_tooltip')}
-                        hasArrow
-                        bg={'#FFFFFF'}
-                        color={'grayModern.900'}
-                        fontSize={'12px'}
-                        fontWeight={400}
-                        py={2}
-                        borderRadius={'md'}
-                      >
-                        <MyIcon name={'help'} w={'16px'} color={'grayModern.500'} />
-                      </Tooltip>
-                      <Text
+                    <Tooltip
+                      label={t('public_debug_address_tooltip')}
+                      hasArrow
+                      bg={'#FFFFFF'}
+                      color={'grayModern.900'}
+                      fontSize={'12px'}
+                      fontWeight={400}
+                      py={2}
+                      borderRadius={'md'}
+                    >
+                      <Flex
+                        alignItems={'center'}
+                        gap={'2px'}
                         cursor="pointer"
                         fontSize={'12px'}
-                        _hover={{ color: 'blue.500' }}
-                        w={'full'}
+                        fontWeight={400}
+                        w={'fit-content'}
+                        bg={'rgba(17, 24, 36, 0.05)'}
                         color={'#485264'}
+                        borderRadius={'full'}
+                        p={'2px 8px 2px 4px'}
                       >
-                        {t('prepare')}
-                      </Text>
-                    </Flex>
+                        <MyIcon name={'help'} w={'16px'} color={'grayModern.500'} />
+                        <Text fontSize={'12px'} w={'full'} color={'#485264'}>
+                          {t('prepare')}
+                        </Text>
+                      </Flex>
+                    </Tooltip>
                   )}
                 </>
               )}
