@@ -114,7 +114,8 @@ type AccountV2 interface {
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	Payment(payment *types.Payment) error
-	PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
+	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 	SavePayment(payment *types.Payment) error
 	GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error)
 	CreatePaymentOrder(order *types.PaymentOrder) error

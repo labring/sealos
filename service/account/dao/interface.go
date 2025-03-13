@@ -78,14 +78,16 @@ type Interface interface {
 	SetCardInfo(info *types.CardInfo) error
 	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
 	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
-	PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error
+	NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
 	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
 	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
 	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
+	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 }
 
 type Account struct {
@@ -109,6 +111,10 @@ type Cockroach struct {
 
 func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
 	return g.ck
+}
+
+func (g *Cockroach) GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error {
+	return g.ck.GlobalTransactionHandler(funcs...)
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -185,7 +191,7 @@ func (g *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderSt
 	return g.ck.SetPaymentOrderStatusWithTradeNo(status, orderID)
 }
 
-func (g *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func() error) error {
+func (g *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error {
 	return g.ck.PaymentWithFunc(payment, preDo, postDo)
 }
 
@@ -230,10 +236,59 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 	err = g.ck.PaymentWithFunc(&types.Payment{
 		ID:         order.ID,
 		PaymentRaw: order.PaymentRaw,
-	}, func() error {
-		return g.ck.SetCardInfo(&card)
-	}, func() error {
-		return g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusSuccess, order.TradeNO)
+	}, func(tx *gorm.DB) error {
+		return cockroach.SetCardInfo(tx, &card)
+	}, func(tx *gorm.DB) error {
+		return cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
+	})
+	return err
+}
+
+func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error {
+	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+	if err != nil {
+		return fmt.Errorf("failed to get payment order with trade no: %v", err)
+	}
+	if order.Status != types.PaymentOrderStatusPending {
+		return fmt.Errorf("payment order status is not pending: %v", order.Status)
+	}
+	if card.ID == uuid.Nil {
+		card.ID = uuid.New()
+	}
+	card.UserUID = order.UserUID
+	order.PaymentRaw.CardUID = &card.ID
+	order.PaymentRaw.ChargeSource = types.ChargeSourceCard
+	err = g.ck.PaymentWithFunc(&types.Payment{
+		ID:         order.ID,
+		PaymentRaw: order.PaymentRaw,
+	}, func(tx *gorm.DB) error {
+		return cockroach.SetCardInfo(tx, &card)
+	}, func(tx *gorm.DB) error {
+		return cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
+	})
+	err = g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// TODO List
+		// 1. set payment order status with tradeNo
+		// 2. save success payment
+		// 3. set transaction pay status to paid
+		// 4. save card info
+		err = cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
+		if err != nil {
+			return fmt.Errorf("failed to set payment order status: %v", err)
+		}
+		if err = tx.Model(&types.Payment{}).Create(&types.Payment{
+			ID:         order.ID,
+			PaymentRaw: order.PaymentRaw,
+		}).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %v", err)
+		}
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayTradeNo: order.TradeNO}).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
+			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
+		}
+		if err = cockroach.SetCardInfo(tx, &card); err != nil {
+			return fmt.Errorf("failed to set card info: %v", err)
+		}
+		return nil
 	})
 	return err
 }

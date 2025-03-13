@@ -43,16 +43,18 @@ const (
 const (
 	PaymentGroup         = "/payment/v1alpha1"
 	CreatePay            = "/pay"
-	Notification         = "/notification"
+	Notify               = "/notify"
 	SubscriptionUserInfo = "/subscription/user-info"
 	SubscriptionPlanList = "/subscription/plan-list"
+	SubscriptionNotify   = "/subscription/notify"
+	SubscriptionPay      = "/subscription/pay"
 	CardList             = "/card/list"
 	CardDelete           = "/card/delete"
 	CardSetDefault       = "/card/set-default"
 	CreditsInfo          = "/credits/info"
 )
 
-const PayNotificationPath = PaymentGroup + Notification
+const PayNotificationPath = PaymentGroup + Notify
 
 // env
 const (
