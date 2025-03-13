@@ -64,6 +64,8 @@ spec:
           value: "SEALOS_SECRET"
         - name: ADMINTOKEN
           value: KUBECONFIGTEMPLATE
+        - name: GUIDE_ENABLED
+          value: "true"
         ports:
         - containerPort: 3000
 ---
