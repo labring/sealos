@@ -26,8 +26,8 @@ type Credits struct {
 	UserUID    uuid.UUID       `json:"user_uid" gorm:"column:user_uid;type:uuid"`                                                        // 用户ID
 	Amount     int64           `json:"amount" gorm:"column:amount;type:bigint"`                                                          // 总额度
 	UsedAmount int64           `json:"used_amount" gorm:"column:used_amount;type:bigint"`                                                // 已使用额度
-	FromID     string          `json:"source_id" gorm:"column:source_id;type:text"`                                                      // 来源ID
-	FromType   CreditsFromType `json:"source_type" gorm:"column:source_type;type:text"`                                                  // 来源类型
+	FromID     string          `json:"from_id" gorm:"column:from_id;type:text"`                                                          // 来源ID
+	FromType   CreditsFromType `json:"from_type" gorm:"column:from_type;type:text"`                                                      // 来源类型
 	ExpireAt   time.Time       `json:"expire_at" gorm:"column:expire_at;type:timestamp"`                                                 // 过期时间
 	CreatedAt  time.Time       `json:"created_at" gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"` // 创建时间
 	StartAt    time.Time       `json:"start_at" gorm:"column:start_at;type:timestamp"`                                                   // 开始时间
