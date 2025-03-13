@@ -25,9 +25,10 @@ if [ -f /etc/systemd/system/deployapp.service ]; then
     rm -rf /etc/systemd/system/deployapp.service
 fi
 
-rm -rf /usr/bin/deployapp
-cp -r deployapp /usr/bin/deployapp
+rm -rf /usr/bin/deployapp/*.py /usr/bin/deployapp/__pycache__
+cp -r deployapp/* /usr/bin/deployapp/
 cd /usr/bin/deployapp
+sed -i "s/FLAG_SEALOS_DOMAIN/${DOMAIN}/g" docker-compose.yml
 docker-compose up -d
 
 # cp origindeployapp.service deployapp.service

@@ -243,12 +243,36 @@ def stress_test_subprocess(id, test_type, namespace, appnames, port, url, test_d
     for appname in appnames:
         usages[appname] = [1, 2]
         change_resource(appname, namespace, '1', '2Gi')
+        
         ready = False
         for _ in range(100):
             time.sleep(1)
             if check_pod_status(appname, namespace):
                 ready = True
                 break
+        if not ready:
+            conn = sqlite3.connect(DATABASE)
+            cursor = conn.cursor()
+            cursor.execute('''
+            UPDATE results SET status = 'failed' WHERE id = ?
+            ''', (id,))
+            conn.commit()
+            conn.close()
+
+            print("result: ", list_results(id, test_type))
+            return 'Failed'
+        
+        
+        ready = False
+        for _ in range(60):
+            try:
+                get_pod_usage(appname, namespace)
+                ready = True
+                break
+            except Exception as e:
+                print('Error: ', e)
+                time.sleep(1)
+        
         if not ready:
             conn = sqlite3.connect(DATABASE)
             cursor = conn.cursor()
@@ -275,19 +299,46 @@ def stress_test_subprocess(id, test_type, namespace, appnames, port, url, test_d
         for thread in threads:
             thread.join()
 
+        max_limit = False
         for appname, (cpu_usage, memory_usage) in results.items():
             max_usages[appname] = (cpu_usage * usages[appname][0], memory_usage * usages[appname][1])
-            if cpu_usage > 0.5 or memory_usage > 0.9:
+            if cpu_usage/usages[appname][0] > 0.5 or memory_usage/usages[appname][1] > 0.9:
                 any_scaled = True
+                if usages[appname][0] >= 4 or usages[appname][1] >= 8:
+                    max_limit = True
+                    break
                 usages[appname][0] = usages[appname][0] * 2
                 usages[appname][1] = usages[appname][1] * 2
                 change_resource(appname, namespace, str(usages[appname][0]), str(usages[appname][1])+ 'Gi')
+
                 ready = False
                 for _ in range(100):
                     time.sleep(1)
                     if check_pod_status(appname, namespace):
                         ready = True
                         break
+                if not ready:
+                    conn = sqlite3.connect(DATABASE)
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                    UPDATE results SET status = 'failed' WHERE id = ?
+                    ''', (id,))
+                    conn.commit()
+                    conn.close()
+
+                    print("result: ", list_results(id, test_type))
+                    return 'Failed'
+                
+                ready = False
+                for _ in range(60):
+                    try:
+                        get_pod_usage(appname, namespace)
+                        ready = True
+                        break
+                    except Exception as e:
+                        print('Error: ', e)
+                        time.sleep(1)
+                
                 if not ready:
                     conn = sqlite3.connect(DATABASE)
                     cursor = conn.cursor()
@@ -306,6 +357,19 @@ def stress_test_subprocess(id, test_type, namespace, appnames, port, url, test_d
 
         if not any_scaled:
             break
+    
+    if max_limit:
+        suggested_resources = ' | '.join([f'cpu: {usages[appname][0]}, memory: {usages[appname][1]}Gi' for appname in appnames])
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        cursor.execute('''
+        UPDATE results SET status = 'failed', suggested_resources = ? WHERE id = ?
+        ''', (id, suggested_resources))
+        conn.commit()
+        conn.close()
+
+        print("result: ", list_results(id, test_type))
+        return 'Failed'
     
     if latency > 1e8:
         conn = sqlite3.connect(DATABASE)
