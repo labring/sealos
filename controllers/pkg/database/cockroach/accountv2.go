@@ -41,12 +41,13 @@ import (
 )
 
 type Cockroach struct {
-	DB            *gorm.DB
-	Localdb       *gorm.DB
-	LocalRegion   *types.Region
-	ZeroAccount   *types.Account
-	accountConfig *types.AccountConfig
-	tasks         map[uuid.UUID]types.Task
+	DB                *gorm.DB
+	Localdb           *gorm.DB
+	LocalRegion       *types.Region
+	ZeroAccount       *types.Account
+	accountConfig     *types.AccountConfig
+	tasks             map[uuid.UUID]types.Task
+	subscriptionPlans *sync.Map
 	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can be reduced when multiple processes operate on different keys
 	ownerUsrUIDMap *sync.Map
 	ownerUsrIDMap  *sync.Map
@@ -1477,6 +1478,82 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 	return account, nil
 }
 
+// NewAccountWithFreeSubscriptionPlan create a new account with free plan
+func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts) (*types.Account, error) {
+	if ops.UID == uuid.Nil {
+		userUID, err := c.GetUserUID(ops)
+		if err != nil {
+			return nil, err
+		}
+		ops.UID = userUID
+	}
+	freePlan, err := c.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get free plan: %w", err)
+	}
+	account := &types.Account{
+		UserUID:                 ops.UID,
+		EncryptDeductionBalance: c.ZeroAccount.EncryptDeductionBalance,
+		EncryptBalance:          c.ZeroAccount.EncryptBalance,
+		Balance:                 0,
+		DeductionBalance:        0,
+		CreateRegionID:          c.LocalRegion.UID.String(),
+		CreatedAt:               time.Now(),
+	}
+	// 1. create credits
+	// 2. create account
+	// 3. create subscription
+	err = c.DB.Transaction(func(tx *gorm.DB) error {
+		if freePlan.GiftAmount > 0 {
+			credits := &types.Credits{
+				ID:         uuid.New(),
+				UserUID:    ops.UID,
+				Amount:     freePlan.GiftAmount,
+				UsedAmount: 0,
+				FromID:     freePlan.ID.String(),
+				FromType:   types.CreditsFromTypeSubscription,
+				ExpireAt:   time.Now().UTC().AddDate(0, 1, 0),
+				CreatedAt:  time.Now(),
+				StartAt:    time.Now(),
+				Status:     types.CreditsStatusActive,
+			}
+			if err := tx.Where("from_id = ? AND from_type = ?", credits.FromID, credits.FromType).FirstOrCreate(credits).Error; err != nil {
+				return fmt.Errorf("failed to create credits: %w", err)
+			}
+		}
+		if err := tx.FirstOrCreate(account).Error; err != nil {
+			return fmt.Errorf("failed to create account: %w", err)
+		}
+		userSubscription := types.Subscription{
+			ID:            uuid.New(),
+			UserUID:       ops.UID,
+			PlanID:        freePlan.ID,
+			PlanName:      freePlan.Name,
+			Status:        types.SubscriptionStatusNormal,
+			StartAt:       time.Now(),
+			ExpireAt:      time.Now().AddDate(0, 1, 0),
+			NextCycleDate: time.Now().AddDate(0, 1, 0),
+		}
+		if err := tx.Where("user_uid = ?", userSubscription.UserUID).FirstOrCreate(&userSubscription).Error; err != nil {
+			return fmt.Errorf("failed to create subscription: %w", err)
+		}
+		return nil
+	})
+	return account, err
+}
+
+func (c *Cockroach) GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error) {
+	if planLoad, ok := c.subscriptionPlans.Load(planName); ok {
+		return planLoad.(*types.SubscriptionPlan), nil
+	}
+	var plan types.SubscriptionPlan
+	if err := c.DB.Where(types.SubscriptionPlan{Name: planName}).Find(&plan).Error; err != nil {
+		return nil, fmt.Errorf("failed to get subscription plan: %v", err)
+	}
+	c.subscriptionPlans.Store(planName, &plan)
+	return &plan, nil
+}
+
 const (
 	BaseUnit           = 1_000_000
 	MinBalance         = 10 * BaseUnit
@@ -1649,6 +1726,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
 	cockroach.ownerUsrUIDMap = &sync.Map{}
 	cockroach.ownerUsrIDMap = &sync.Map{}
+	cockroach.subscriptionPlans = &sync.Map{}
 	//TODO region with local
 	localRegionStr := os.Getenv(EnvLocalRegion)
 	if localRegionStr != "" {

@@ -310,7 +310,7 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 		return fmt.Errorf("get account failed: %w", err)
 	}
 	if account == nil {
-		_, err := r.Account.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
+		_, err := r.Account.InitUserAccountFunc(&pkgtypes.UserQueryOpts{ID: payment.Spec.UserID})
 		if err != nil {
 			return fmt.Errorf("create account failed: %w", err)
 		}

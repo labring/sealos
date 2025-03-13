@@ -22,24 +22,32 @@ import (
 
 // Credits 表示用户的credits信息
 type Credits struct {
-	ID         uuid.UUID     `json:"id" gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`                              // credits ID
-	UserUID    uuid.UUID     `json:"user_uid" gorm:"column:user_uid;type:uuid"`                                                        // 用户ID
-	Amount     int64         `json:"amount" gorm:"column:amount;type:bigint"`                                                          // 总额度
-	UsedAmount int64         `json:"used_amount" gorm:"column:used_amount;type:bigint"`                                                // 已使用额度
-	ExpireAt   time.Time     `json:"expire_at" gorm:"column:expire_at;type:timestamp"`                                                 // 过期时间
-	CreatedAt  time.Time     `json:"created_at" gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"` // 创建时间
-	StartAt    time.Time     `json:"start_at" gorm:"column:start_at;type:timestamp"`                                                   // 开始时间
-	Status     CreditsStatus `json:"status" gorm:"column:status;type:text"`                                                            // 状态
+	ID         uuid.UUID       `json:"id" gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`                              // credits ID
+	UserUID    uuid.UUID       `json:"user_uid" gorm:"column:user_uid;type:uuid"`                                                        // 用户ID
+	Amount     int64           `json:"amount" gorm:"column:amount;type:bigint"`                                                          // 总额度
+	UsedAmount int64           `json:"used_amount" gorm:"column:used_amount;type:bigint"`                                                // 已使用额度
+	FromID     string          `json:"source_id" gorm:"column:source_id;type:text"`                                                      // 来源ID
+	FromType   CreditsFromType `json:"source_type" gorm:"column:source_type;type:text"`                                                  // 来源类型
+	ExpireAt   time.Time       `json:"expire_at" gorm:"column:expire_at;type:timestamp"`                                                 // 过期时间
+	CreatedAt  time.Time       `json:"created_at" gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"` // 创建时间
+	StartAt    time.Time       `json:"start_at" gorm:"column:start_at;type:timestamp"`                                                   // 开始时间
+	Status     CreditsStatus   `json:"status" gorm:"column:status;type:text"`                                                            // 状态
 }
 
-type CreditsStatus string
-type CreditsRecordType string
-type CreditsRecordReason string
+type (
+	CreditsStatus       string
+	CreditsRecordType   string
+	CreditsRecordReason string
+
+	CreditsFromType string
+)
 
 const (
 	CreditsStatusActive  CreditsStatus = "active"
 	CreditsStatusExpired CreditsStatus = "expired"
 	CreditsStatusUsedUp  CreditsStatus = "used_up"
+
+	CreditsFromTypeSubscription CreditsFromType = "subscription"
 
 	CreditsRecordTypeIssue   CreditsRecordType = "issue"
 	CreditsRecordTypeConsume CreditsRecordType = "consume"

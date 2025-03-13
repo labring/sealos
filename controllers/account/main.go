@@ -212,6 +212,7 @@ func main() {
 		Scheme:                      mgr.GetScheme(),
 		AccountV2:                   v2Account,
 		DebtUserMap:                 debtUserMap,
+		InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Debt")

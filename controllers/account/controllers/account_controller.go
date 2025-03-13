@@ -95,6 +95,7 @@ const (
 type AccountReconciler struct {
 	client.Client
 	AccountV2                   database.AccountV2
+	InitUserAccountFunc         func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
 	Scheme                      *runtime.Scheme
 	Logger                      logr.Logger
 	AccountSystemNamespace      string
@@ -148,7 +149,7 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	if getUsername(userNamespace) != owner {
 		return nil, nil
 	}
-	account, err := r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
+	account, err := r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +193,11 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
+	if os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
+		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
+	} else {
+		r.InitUserAccountFunc = r.AccountV2.NewAccount
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).
