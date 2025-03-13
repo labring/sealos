@@ -210,6 +210,13 @@
   "prompt": "提示",
   "public": "公开",
   "public_debug_address_tooltip": "调试地址为预分配地址，需要在 Devbox 实例中启动服务，监听 0.0.0.0 及对应端口才能正常访问调试。",
+  "public_debug_address_tooltip_1": "如果您的地址长时间处于<blue>「准备中」</blue>状态，请先检查以下事项：",
+  "public_debug_address_tooltip_2_1": "启动服务：",
+  "public_debug_address_tooltip_2_2": "在 Devbox 实例中运行启动命令 (如: npm run dev)",
+  "public_debug_address_tooltip_3_1": "监听地址：",
+  "public_debug_address_tooltip_3_2": "确保开发服务器运行在在 0.0.0.0 而非 localhost",
+  "public_debug_address_tooltip_4_1": "等待时间：",
+  "public_debug_address_tooltip_4_2": "启动服务后，内部网关需要 2~5 分钟准备，请耐心等待",
   "publish": "发版",
   "read_event_detail": "查看事件详情",
   "recent_error": "最近错误",
@@ -223,6 +230,7 @@
   "release_successful": "发版成功",
   "release_version": "发布版本",
   "release_version_info": "发布前，请确认 entrypoint.sh 文件已按要求完成配置",
+  "release_version_info_2": "详细步骤请参阅：<underline>应用启动配置</underline> ",
   "remaining": "剩余",
   "resource_quota": "资源配额",
   "restart": "重启",
@@ -295,6 +303,5 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML 文件",
-  "release_version_info_2": "详细步骤请参阅：<underline>应用启动配置</underline> "
+  "yaml_file": "YAML 文件"
 }

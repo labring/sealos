@@ -1,4 +1,17 @@
-import { Box, Button, Center, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  Tooltip,
+  useDisclosure
+} from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -138,34 +151,99 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Tooltip
-                      label={t('public_debug_address_tooltip')}
-                      hasArrow
-                      bg={'#FFFFFF'}
-                      color={'grayModern.900'}
-                      fontSize={'12px'}
-                      fontWeight={400}
-                      py={2}
-                      borderRadius={'md'}
-                    >
-                      <Flex
-                        alignItems={'center'}
-                        gap={'2px'}
-                        cursor="pointer"
-                        fontSize={'12px'}
-                        fontWeight={400}
-                        w={'fit-content'}
-                        bg={'rgba(17, 24, 36, 0.05)'}
-                        color={'#485264'}
-                        borderRadius={'full'}
-                        p={'2px 8px 2px 4px'}
-                      >
-                        <MyIcon name={'help'} w={'16px'} color={'grayModern.500'} />
-                        <Text fontSize={'12px'} w={'full'} color={'#485264'}>
-                          {t('prepare')}
-                        </Text>
-                      </Flex>
-                    </Tooltip>
+                    <Popover trigger={'hover'}>
+                      <PopoverTrigger>
+                        <Flex
+                          alignItems={'center'}
+                          gap={'2px'}
+                          cursor="pointer"
+                          fontSize={'12px'}
+                          fontWeight={400}
+                          w={'fit-content'}
+                          bg={'rgba(17, 24, 36, 0.05)'}
+                          color={'#485264'}
+                          borderRadius={'full'}
+                          p={'2px 8px 2px 4px'}
+                        >
+                          <MyIcon
+                            name={'loadingCircle'}
+                            w={'12px'}
+                            h={'12px'}
+                            animation={'spin 1s linear infinite'}
+                            sx={{
+                              '@keyframes spin': {
+                                '0%': {
+                                  transform: 'rotate(0deg)'
+                                },
+                                '100%': {
+                                  transform: 'rotate(360deg)'
+                                }
+                              }
+                            }}
+                          />
+                          <Text fontSize={'12px'} w={'full'} color={'#485264'}>
+                            {t('prepare')}
+                          </Text>
+                        </Flex>
+                      </PopoverTrigger>
+                      <PopoverContent w={'410px'} h={'114px'} borderRadius={'10px'}>
+                        <PopoverArrow />
+                        <PopoverBody>
+                          <Box h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                            {t.rich('public_debug_address_tooltip_1', {
+                              blue: (chunks) => (
+                                <Text as={'span'} color={'brightBlue.600'}>
+                                  {chunks}
+                                </Text>
+                              )
+                            })}
+                          </Box>
+                          <Flex mt={'12px'} gap={'4px'}>
+                            <Flex alignItems={'center'} direction={'column'} mt={'2px'}>
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                            </Flex>
+                            <Flex gap={'6px'} alignItems={'center'} direction={'column'}>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_2_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t('public_debug_address_tooltip_2_2')}
+                                </Box>
+                                FB
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_3_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_3_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_4_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_4_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                              BB
+                            </Flex>
+                          </Flex>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
                   )}
                 </>
               )}
