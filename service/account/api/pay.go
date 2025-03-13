@@ -222,12 +222,11 @@ func processSubscriptionPayResult(c *gin.Context, notification types.PaymentNoti
 func processPaymentResultWithHandler(c *gin.Context, notification types.PaymentNotification, handler func(paymentID string, card types.CardInfo) error) error {
 	paymentRequestID := notification.PaymentRequestID
 	paymentID := notification.PaymentID
-
+	if notification.NotifyType != "CAPTURE_RESULT" {
+		return nil
+	}
 	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
 		return updatePaymentStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
-	}
-	if notification.NotifyType != "CAPTURE_RESULT" {
-		return fmt.Errorf("unsupported notify type: %s", notification.NotifyType)
 	}
 
 	resp, err := dao.PaymentService.GetPayment(paymentRequestID, paymentID)
