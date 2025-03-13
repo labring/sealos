@@ -13,7 +13,7 @@ import {
   Textarea
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 import { pauseDevbox, releaseDevbox, startDevbox } from '@/api/devbox';
@@ -21,6 +21,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import { useEnvStore } from '@/stores/env';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 import { versionSchema } from '@/utils/vaildate';
+import MyIcon from '../Icon';
 
 const ReleaseModal = ({
   onClose,
@@ -32,6 +33,7 @@ const ReleaseModal = ({
   onSuccess: () => void;
 }) => {
   const t = useTranslations();
+  const locale = useLocale();
   const { message: toast } = useMessage();
 
   const { env } = useEnvStore();
@@ -107,13 +109,63 @@ const ReleaseModal = ({
         <ModalOverlay />
         <ModalContent minW={'500px'} mt={'100px'} minH={'300px'} top={'50px'}>
           <ModalHeader>
-            <Flex alignItems={'center'} gap={'10px'} ml={'14px'}>
+            <Flex alignItems={'center'} gap={'10px'} ml={'14px'} fontSize={'16px'}>
               {t('release_version')}
             </Flex>
           </ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
           <ModalBody pb={4}>
-            <Flex alignItems={'start'} gap={'5px'} mb={'24px'}>
+            <Flex
+              alignItems={'center'}
+              gap={'8px'}
+              p={'12px'}
+              mb={'24px'}
+              borderRadius={'6px'}
+              bg={'brightBlue.50'}
+            >
+              <MyIcon name="infoRounded" w="16px" h="16px" color={'brightBlue.600'} />
+              <Box
+                color={'brightBlue.600'}
+                fontSize={'12px'}
+                fontWeight={'500'}
+                lineHeight={'16px'}
+                letterSpacing={'0.5px'}
+              >
+                <Box>{t('release_version_info')}</Box>
+                <Box>
+                  {t.rich('release_version_info_2', {
+                    underline: (chunks) => (
+                      <Button
+                        variant={'link'}
+                        display={'inline-block'}
+                        textDecoration={'underline'}
+                        cursor={'pointer'}
+                        fontWeight={'500'}
+                        fontSize={'12px'}
+                        color={'brightBlue.600'}
+                        rightIcon={<MyIcon name="arrowUpRight" w="16px" h="16px" />}
+                        onClick={() => {
+                          if (locale === 'zh') {
+                            window.open(
+                              'https://sealos.run/docs/guides/fundamentals/entrypoint-sh',
+                              '_blank'
+                            );
+                          } else {
+                            window.open(
+                              'https://sealos.io/docs/guides/fundamentals/release',
+                              '_blank'
+                            );
+                          }
+                        }}
+                      >
+                        {chunks}
+                      </Button>
+                    )
+                  })}
+                </Box>
+              </Box>
+            </Flex>
+            <Flex alignItems={'start'} gap={'auto'} mb={'24px'}>
               <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('image_name')}
               </Box>
@@ -122,7 +174,7 @@ const ReleaseModal = ({
                 isReadOnly
               />
             </Flex>
-            <Flex alignItems={'start'} gap={'5px'}>
+            <Flex alignItems={'start'} gap={'auto'}>
               <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
                 {t('version_config')}
               </Box>
@@ -146,6 +198,9 @@ const ReleaseModal = ({
                   minH={'150px'}
                   onChange={(e) => setReleaseDes(e.target.value)}
                   placeholder={t('enter_version_description')}
+                  _placeholder={{
+                    color: 'grayModern.500'
+                  }}
                 />
               </Flex>
             </Flex>

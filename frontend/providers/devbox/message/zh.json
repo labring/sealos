@@ -222,6 +222,7 @@
   "release_success": "发版成功",
   "release_successful": "发版成功",
   "release_version": "发布版本",
+  "release_version_info": "发布前，请确认 entrypoint.sh 文件已按要求完成配置",
   "remaining": "剩余",
   "resource_quota": "资源配额",
   "restart": "重启",
@@ -294,5 +295,6 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "release_version_info_2": "详细步骤请参阅：<underline>应用启动配置</underline> "
 }
