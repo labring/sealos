@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import { GlobalStateManager } from "./globalStateManager";
-import { Logger } from "../common/logger";
+import * as vscode from 'vscode';
+import { GlobalStateManager } from './globalStateManager';
+import { Logger } from '../common/logger';
 
 const message = {
   sshPortNotCorrect: vscode.l10n.t(
@@ -14,12 +14,12 @@ export class UriHandler {
   public handle(uri: vscode.Uri): void {
     Logger.info(`Handling URI: ${uri.toString()}`);
     if (
-      uri.scheme !== "vscode" &&
-      uri.scheme !== "cursor" &&
-      uri.scheme !== "vscode-insiders" &&
-      uri.scheme !== "windsurf" &&
-      uri.scheme !== "trae" &&
-      uri.scheme !== "trae-cn"
+      uri.scheme !== 'vscode' &&
+      uri.scheme !== 'cursor' &&
+      uri.scheme !== 'vscode-insiders' &&
+      uri.scheme !== 'windsurf' &&
+      uri.scheme !== 'trae' &&
+      uri.scheme !== 'trae-cn'
     ) {
       return;
     }
@@ -36,28 +36,28 @@ export class UriHandler {
     }
 
     if (params.sshDomain && params.sshHostLabel) {
-      const region = params.sshDomain.split("@")[1];
+      const region = params.sshDomain.split('@')[1];
       GlobalStateManager.setRegion(params.sshHostLabel, region);
     }
 
-    if (params.sshPort === "0") {
+    if (params.sshPort === '0') {
       vscode.window.showInformationMessage(message.sshPortNotCorrect);
       return;
     }
 
     if (this.validateParams(params)) {
-      vscode.commands.executeCommand("devbox.connectRemoteSSH", params);
+      vscode.commands.executeCommand('devbox.connectRemoteSSH', params);
     }
   }
 
   private extractParams(queryParams: URLSearchParams) {
     return {
-      sshDomain: queryParams.get("sshDomain"),
-      sshPort: queryParams.get("sshPort"),
-      base64PrivateKey: queryParams.get("base64PrivateKey"),
-      workingDir: queryParams.get("workingDir"),
-      sshHostLabel: queryParams.get("sshHostLabel"), // usw.sailos.io_ns-admin_devbox-1
-      token: queryParams.get("token"),
+      sshDomain: queryParams.get('sshDomain'),
+      sshPort: queryParams.get('sshPort'),
+      base64PrivateKey: queryParams.get('base64PrivateKey'),
+      workingDir: queryParams.get('workingDir'),
+      sshHostLabel: queryParams.get('sshHostLabel'), // usw.sailos.io_ns-admin_devbox-1
+      token: queryParams.get('token'),
     };
   }
 

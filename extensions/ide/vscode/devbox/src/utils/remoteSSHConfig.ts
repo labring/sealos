@@ -1,13 +1,13 @@
-import * as vscode from "vscode";
-import { Logger } from "../common/logger";
+import * as vscode from 'vscode';
+import { Logger } from '../common/logger';
 
 // update Remote-SSH config
 export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   Logger.info(`Modifying Remote-SSH config for ${sshHostLabel}`);
 
   const existingSSHHostPlatforms = vscode.workspace
-    .getConfiguration("remote.SSH")
-    .get<{ [host: string]: string }>("remotePlatform", {});
+    .getConfiguration('remote.SSH')
+    .get<{ [host: string]: string }>('remotePlatform', {});
 
   // delete repeated remotePlatform by sshDomain_namespace_devboxName
   const newSSHHostPlatforms = Object.keys(existingSSHHostPlatforms).reduce(
@@ -21,14 +21,14 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
     {}
   );
   // add new ssh host label
-  newSSHHostPlatforms[sshHostLabel] = "linux";
+  newSSHHostPlatforms[sshHostLabel] = 'linux';
 
   const appName = vscode.env.appName;
-  if (appName !== "Windsurf" && appName !== "Trae" && appName !== "Trae-CN") {
+  if (appName !== 'Windsurf' && appName !== 'Trae' && appName !== 'Trae-CN') {
     await vscode.workspace
-      .getConfiguration("remote.SSH")
+      .getConfiguration('remote.SSH')
       .update(
-        "remotePlatform",
+        'remotePlatform',
         newSSHHostPlatforms,
         vscode.ConfigurationTarget.Global
       );
