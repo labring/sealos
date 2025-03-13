@@ -1504,6 +1504,9 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 	// 2. create account
 	// 3. create subscription
 	err = c.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where(&types.Account{UserUID: ops.UID}).FirstOrCreate(account).Error; err != nil {
+			return fmt.Errorf("failed to create account: %w", err)
+		}
 		if freePlan.GiftAmount > 0 {
 			credits := &types.Credits{
 				ID:         uuid.New(),
@@ -1517,12 +1520,15 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 				StartAt:    time.Now(),
 				Status:     types.CreditsStatusActive,
 			}
-			if err := tx.Where("from_id = ? AND from_type = ?", credits.FromID, credits.FromType).FirstOrCreate(credits).Error; err != nil {
+			creditsCount := int64(0)
+			if err := tx.Model(&types.Credits{}).Where(&types.Credits{UserUID: ops.UID, FromID: credits.FromID, FromType: credits.FromType}).Count(&creditsCount).Error; err != nil {
 				return fmt.Errorf("failed to create credits: %w", err)
 			}
-		}
-		if err := tx.FirstOrCreate(account).Error; err != nil {
-			return fmt.Errorf("failed to create account: %w", err)
+			if creditsCount == 0 {
+				if err := tx.Create(credits).Error; err != nil {
+					return fmt.Errorf("failed to create credits: %w", err)
+				}
+			}
 		}
 		userSubscription := types.Subscription{
 			ID:            uuid.New(),
@@ -1534,8 +1540,14 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 			ExpireAt:      time.Now().AddDate(0, 1, 0),
 			NextCycleDate: time.Now().AddDate(0, 1, 0),
 		}
-		if err := tx.Where("user_uid = ?", userSubscription.UserUID).FirstOrCreate(&userSubscription).Error; err != nil {
+		subCount := int64(0)
+		if err := tx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: ops.UID}).Count(&subCount).Error; err != nil {
 			return fmt.Errorf("failed to create subscription: %w", err)
+		}
+		if subCount == 0 {
+			if err := tx.Create(&userSubscription).Error; err != nil {
+				return fmt.Errorf("failed to create subscription: %w", err)
+			}
 		}
 		return nil
 	})
