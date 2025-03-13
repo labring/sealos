@@ -212,7 +212,6 @@ const MainBody = () => {
                                 <Box color={'grayModern.600'}>
                                   {t('public_debug_address_tooltip_2_2')}
                                 </Box>
-                                FB
                               </Flex>
                               <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
                                 <Box>{t('public_debug_address_tooltip_3_1')}</Box>
@@ -238,7 +237,6 @@ const MainBody = () => {
                                   })}
                                 </Box>
                               </Flex>
-                              BB
                             </Flex>
                           </Flex>
                         </PopoverBody>
