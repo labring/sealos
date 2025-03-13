@@ -945,9 +945,10 @@ def stress_testing_api():
         port = request.args.get('port')
         core_api = request.args.get('core_api')
         test_data = request.args.get('test_data')
-        qps = request.args.get('qps')
-        max_latency = request.args.get('max_latency')
-        stress_test(stress_id, stress_type, namespace, app_list, port, core_api, test_data, qps, max_latency)
+        qps = int(request.args.get('qps'))
+        max_latency = float(request.args.get('max_latency'))
+        url = 'http://{}:{}{}'.format(CLUSTER_DOMAIN, port, core_api)
+        stress_test(stress_id, stress_type, namespace, app_list, port, url, test_data, qps, max_latency)
         return jsonify({'message': 'Stress testing started successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -995,7 +996,7 @@ if __name__ == '__main__':
             scheduler.add_job(scale_nodes, 'interval', minutes=1)
         scheduler.start()
     try:
-        app.run(debug=True, host='0.0.0.0', port=5003)
+        app.run(debug=True, host='0.0.0.0', port=5002)
     finally:
         scheduler.shutdown()
 

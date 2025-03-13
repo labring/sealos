@@ -5,13 +5,13 @@ BASE_URL="http://127.0.0.1:5003"
 
 # 定义压测所需的参数
 STRESS_ID="test_stress_id_1"
-STRESS_TYPE="test_stress_type"
-NAMESPACE="test_namespace"
-APP_LIST="app1,app2"
-PORT=8080
-CORE_API="/test/api"
-TEST_DATA="test_data"
-QPS=100
+STRESS_TYPE="two"
+NAMESPACE="test01"
+APP_LIST="nginx,python-app-lst"
+PORT="32567"
+CORE_API="/test"
+TEST_DATA="1234"
+QPS=1000
 MAX_LATENCY=200
 
 # 测试 /api/stressTesting 接口
