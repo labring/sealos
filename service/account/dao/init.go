@@ -113,7 +113,7 @@ func Init(ctx context.Context) error {
 		if Cfg.LocalRegionDomain == "" {
 			return fmt.Errorf("empty local region domain, please check config")
 		}
-		payNotificationURL := "https://" + "account-api." + Cfg.LocalRegionDomain + helper.PayNotificationPath
+		payNotificationURL := "https://" + "account-api." + Cfg.LocalRegionDomain
 		if err != nil {
 			return fmt.Errorf("join pay notification url error: %v", err)
 		}

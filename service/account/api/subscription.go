@@ -131,7 +131,6 @@ func CreateSubscriptionPay(c *gin.Context) {
 	}
 	//TODO 预检测同一个用户同时只能有一个未处理或处理中(status: Pending,Processing)的订阅操作订单
 
-	amount := int64(0)
 	switch req.PlanType {
 	case helper.Upgrade:
 		// TODO implement subscription upgrade
@@ -144,7 +143,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 		if userCurrentPlan.Amount <= 0 {
 			subTransaction.Operator = types.SubscriptionTransactionTypeCreated
 			//TODO 新订阅
-			amount = userDescribePlan.Amount
+			subTransaction.Amount = userDescribePlan.Amount
 		} else {
 			//TODO 升级订阅
 			subTransaction.Operator = types.SubscriptionTransactionTypeUpgraded
@@ -156,7 +155,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 			currentPlanSurplusValue := math.Ceil(float64(userCurrentPlan.Amount) * math.Ceil(remainingDays/30))
 			describePlanSurplusValue := math.Ceil(float64(userDescribePlan.Amount) * math.Ceil(remainingDays/30))
 			// amount
-			amount = int64(describePlanSurplusValue - currentPlanSurplusValue)
+			subTransaction.Amount = int64(describePlanSurplusValue - currentPlanSurplusValue)
 
 			//TODO 临近到期的情况处理
 		}
@@ -175,10 +174,10 @@ func CreateSubscriptionPay(c *gin.Context) {
 
 	case helper.Renewal:
 		// TODO 只变更到期时间
-		amount = userDescribePlan.Amount
+		subTransaction.Amount = userDescribePlan.Amount
 		subTransaction.Operator = types.SubscriptionTransactionTypeRenewed
 	}
-	if amount > 0 {
+	if subTransaction.Amount > 0 {
 		PayForSubscription(c, req, subTransaction)
 		return
 	}
