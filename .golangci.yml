@@ -30,7 +30,6 @@ linters:
     - misspell
     - whitespace
     - ineffassign
-    - typecheck
     - errcheck
     - govet
     - staticcheck
