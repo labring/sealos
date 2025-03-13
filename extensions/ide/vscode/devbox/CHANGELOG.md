@@ -6,6 +6,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-03-13
+
+### Added
+
+- Support Trae-CN.
+
 ## [1.3.4] - 2025-02-18
 
 ### Fixed
