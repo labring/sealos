@@ -143,7 +143,6 @@ const ReleaseModal = ({
                         fontWeight={'500'}
                         fontSize={'12px'}
                         color={'brightBlue.600'}
-                        rightIcon={<MyIcon name="arrowUpRight" w="16px" h="16px" />}
                         onClick={() => {
                           if (locale === 'zh') {
                             window.open(
@@ -159,6 +158,7 @@ const ReleaseModal = ({
                         }}
                       >
                         {chunks}
+                        <MyIcon name="arrowUpRight" w="11px" h="11px" mr={'6px'} />
                       </Button>
                     )
                   })}
