@@ -189,3 +189,26 @@ func NewSuccessResponse() CommonResponse {
 		},
 	}
 }
+
+// CaptureNotification 请款通知请求结构体
+type CaptureNotification struct {
+	Result              Result     `json:"result"`
+	NotifyType          string     `json:"notifyType"`                    // 通知类型，固定为CAPTURE_RESULT
+	CaptureRequestID    string     `json:"captureRequestId"`              // 商户分配的请款请求ID
+	PaymentID           string     `json:"paymentId"`                     // 支付ID
+	CaptureID           string     `json:"captureId"`                     // 请款ID
+	CaptureAmount       Amount     `json:"captureAmount"`                 // 请款金额
+	CaptureTime         *time.Time `json:"captureTime,omitempty"`         // 请款完成时间
+	AcquirerReferenceNo string     `json:"acquirerReferenceNo,omitempty"` // 收单机构交易ID
+}
+
+// CaptureResponse 请款通知响应结构体
+type CaptureResponse struct {
+	Result Result `json:"result"`
+}
+
+// Raw 返回JSON格式的字节数组
+func (c *CaptureResponse) Raw() []byte {
+	data, _ := json.Marshal(c)
+	return data
+}

@@ -339,7 +339,7 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 		return
 	}
 
-	var notification types.PaymentNotification
+	var notification types.CaptureNotification
 	if err := json.Unmarshal(requestInfo.Body, &notification); err != nil {
 		logrus.Errorf("Failed to unmarshal notification: %v", err)
 		sendError(c, http.StatusBadRequest, "failed to unmarshal notification", err)
