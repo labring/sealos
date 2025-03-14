@@ -100,10 +100,10 @@ export const googleOAuthGuard =
       azp: string;
       aud: string;
       sub: string;
-      email: string;
       at_hash: string;
       name: string;
       picture: string;
+      email: string;
       given_name: string;
       family_name: string;
       locale: string;
@@ -113,9 +113,31 @@ export const googleOAuthGuard =
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;
-    const email = userInfo.email || '';
 
     if (!id) throw Error('get userInfo error');
+
+    let email = '';
+    if (__data.access_token) {
+      try {
+        const userinfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+        const userinfoResponse = await fetch(userinfoUrl, {
+          headers: {
+            Authorization: `Bearer ${__data.access_token}`,
+            Accept: 'application/json'
+          }
+        });
+
+        if (userinfoResponse.ok) {
+          const userinfoData: {
+            email: string;
+          } = await userinfoResponse.json();
+
+          email = userinfoData.email || userInfo.email || '';
+        }
+      } catch (error) {
+        console.error('get google email error:', error);
+      }
+    }
 
     // @ts-ignore
     await Promise.resolve(
