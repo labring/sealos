@@ -118,6 +118,8 @@ export const googleOAuthGuard =
     let email = '';
     if (__data.access_token) {
       console.log('__data.access_token', __data.access_token);
+      console.log(__data);
+      console.log('userInfo', userInfo);
       try {
         const userinfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
         const userinfoResponse = await fetch(userinfoUrl, {
