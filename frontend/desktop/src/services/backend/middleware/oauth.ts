@@ -222,8 +222,6 @@ export const githubOAuthGuard =
       console.error('failed to fetch user github emails:', error);
     }
 
-    console.log('email', email);
-
     // @ts-ignore
     await Promise.resolve(
       next?.({

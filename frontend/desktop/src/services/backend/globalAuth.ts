@@ -15,7 +15,7 @@ import {
 import { enableSignUp, enableTracking } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
-import { bindEmailSvc } from './svc/bindProvider';
+import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
 
 type TransactionClient = Omit<
   PrismaClient,
@@ -403,21 +403,23 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new Error('Failed to edit db');
 
-  console.log('email', email);
-  console.log('user', user);
-
   if (email) {
-    const emailProvider = await globalPrisma.oauthProvider.findFirst({
-      where: {
-        providerType: ProviderType.EMAIL,
-        userUid: user.uid
+    try {
+      const emailProvider = await globalPrisma.oauthProvider.findFirst({
+        where: {
+          providerType: ProviderType.EMAIL,
+          userUid: user.uid
+        }
+      });
+      if (!emailProvider) {
+        await addOauthProvider({
+          providerType: ProviderType.EMAIL,
+          providerId: email,
+          userUid: user.uid
+        });
       }
-    });
-    console.log('emailProvider', emailProvider);
-    if (!emailProvider) {
-      console.log('bindEmailSvc', email, user.uid);
-      bindEmailSvc(email, user.uid);
-      console.log('bindEmailSvc success');
+    } catch (error) {
+      console.error('globalAuth: Error during sign in bind email:', error);
     }
   }
 
