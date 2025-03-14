@@ -72,7 +72,7 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 	// 查询待处理事务并加锁
 	err := sp.db.WithContext(ctx).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Where("pay_status = ? AND effective_at <= ? AND status NOT IN (?, ?)",
+		Where("pay_status = ? AND start_at <= ? AND status NOT IN (?, ?)",
 			types.SubscriptionPayStatusPaid,
 			now,
 			types.SubscriptionTransactionStatusCompleted,
@@ -83,6 +83,7 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 	}
 
 	for i := range transactions {
+		sp.AccountReconciler.Logger.Info("Processing transaction", "id", transactions[i].SubscriptionID, "operator", transactions[i].Operator, "status", transactions[i].Status, "plan", transactions[i].NewPlanName)
 		if err := sp.processTransaction(ctx, &transactions[i]); err != nil {
 			log.Printf("Failed to process transaction %s: %v", transactions[i].SubscriptionID, err)
 		}
