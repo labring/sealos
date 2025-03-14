@@ -62,8 +62,8 @@ func CreateCardPay(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
 				return
 			}
-			if card.CardNo != req.BindCardInfo.CardNo || card.CardBrand != req.BindCardInfo.CardBrand {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "card info not match"})
+			if card == nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "card not found"})
 				return
 			}
 
