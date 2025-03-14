@@ -49,7 +49,7 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
   <a href="https://twitter.com/Sealos_io">Twitter</a> •
   <a href="./README_zh.md">简体中文</a>
   <p>Availability Regions: Quick Start on Sealos Cloud</p>
-  <a href="https://usw.sealos.io">Western United State</a>
+  <a href="https://usw.sealos.io">Western United States</a>
   <br />
   <a href="https://cloud.sealos.run">Hangzhou China</a>
 </p>
