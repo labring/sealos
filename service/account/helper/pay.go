@@ -24,7 +24,9 @@ type CreatePayReq struct {
 }
 
 type BindCardInfo struct {
-	CardUID uuid.UUID `json:"cardUID" bson:"cardUID" example:"123e4567-e89b-12d3-a456-426614174000"`
+	// @Summary CardID
+	// @Description CardID
+	CardID uuid.UUID `json:"cardID" bson:"cardID" example:"123e4567-e89b-12d3-a456-426614174000"`
 
 	// @Summary CardNo
 	// @Description CardNo
@@ -55,9 +57,7 @@ type CardOperationReq struct {
 	// @Description Authentication information
 	AuthBase `json:",inline" bson:",inline"`
 
-	// @Summary CardID
-	// @Description CardID
-	CardID uuid.UUID `json:"cardID" bson:"cardID" example:"123e4567-e89b-12d3-a456-426614174000"`
+	*BindCardInfo `json:",inline" bson:",inline"`
 }
 
 func ParseCardOperationReq(c *gin.Context) (*CardOperationReq, error) {
