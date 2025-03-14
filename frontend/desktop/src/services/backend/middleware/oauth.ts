@@ -109,7 +109,6 @@ export const googleOAuthGuard =
       iat: number;
       exp: number;
     };
-    console.log('userInfo', userInfo);
     const name = userInfo.name;
     const id = userInfo.sub;
     const avatar_url = userInfo.picture;
@@ -120,8 +119,7 @@ export const googleOAuthGuard =
     if (__data.access_token) {
       console.log('__data.access_token', __data.access_token);
       try {
-        // 使用 userinfo 端点而不是 People API
-        const userinfoUrl = 'https://www.googleapis.com/auth/userinfo.email';
+        const userinfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
         const userinfoResponse = await fetch(userinfoUrl, {
           headers: {
             Authorization: `Bearer ${__data.access_token}`,
@@ -130,38 +128,16 @@ export const googleOAuthGuard =
         });
 
         if (userinfoResponse.ok) {
-          const userinfoData = await userinfoResponse.json();
+          const userinfoData: {
+            email: string;
+          } = await userinfoResponse.json();
+
           console.log('userinfoData', userinfoData);
+
           email = userinfoData.email || '';
         }
       } catch (error) {
-        console.error('获取用户邮箱信息失败:', error);
-      }
-    }
-    if (__data.access_token) {
-      try {
-        const peopleApiUrl =
-          'https://people.googleapis.com/v1/people/me?personFields=emailAddresses';
-        const peopleResponse = await fetch(peopleApiUrl, {
-          headers: {
-            Authorization: `Bearer ${__data.access_token}`,
-            Accept: 'application/json'
-          }
-        });
-
-        if (peopleResponse.ok) {
-          const peopleData = await peopleResponse.json();
-          console.log('peopleData', peopleData);
-
-          if (peopleData.emailAddresses && peopleData.emailAddresses.length > 0) {
-            // 尝试找到主邮箱或第一个邮箱
-            const primaryEmail = peopleData.emailAddresses.find((e: any) => e.metadata?.primary);
-            email = primaryEmail ? primaryEmail.value : peopleData.emailAddresses[0].value;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch additional user email info:', error);
-        // 继续使用已有信息，不中断认证流程
+        console.error('get google email error:', error);
       }
     }
 

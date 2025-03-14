@@ -413,8 +413,11 @@ export const getGlobalToken = async ({
         userUid: user.uid
       }
     });
+    console.log('emailProvider', emailProvider);
     if (!emailProvider) {
+      console.log('bindEmailSvc', email, user.uid);
       bindEmailSvc(email, user.uid);
+      console.log('bindEmailSvc success');
     }
   }
 
