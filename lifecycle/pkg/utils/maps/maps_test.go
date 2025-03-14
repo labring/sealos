@@ -17,15 +17,132 @@ limitations under the License.
 package maps
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
 
-func TestMergeMap(t *testing.T) {
+func TestToString(t *testing.T) {
+	tests := []struct {
+		name string
+		data map[string]string
+		sep  string
+		want string
+	}{
+		{
+			name: "empty map",
+			data: map[string]string{},
+			sep:  ",",
+			want: "",
+		},
+		{
+			name: "single key-value",
+			data: map[string]string{"key": "value"},
+			sep:  ",",
+			want: "key=value",
+		},
+		{
+			name: "multiple key-values",
+			data: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			sep:  ";",
+			want: "key1=value1;key2=value2",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToString(tt.data, tt.sep); got != tt.want {
+				t.Errorf("ToString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFromString(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		sep  string
+		want map[string]string
+	}{
+		{
+			name: "empty string",
+			data: "",
+			sep:  ",",
+			want: map[string]string{},
+		},
+		{
+			name: "single key-value",
+			data: "key=value",
+			sep:  ",",
+			want: map[string]string{"key": "value"},
+		},
+		{
+			name: "multiple key-values",
+			data: "key1=value1,key2=value2",
+			sep:  ",",
+			want: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name: "invalid format",
+			data: "invalid,key=value",
+			sep:  ",",
+			want: map[string]string{"key": "value"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FromString(tt.data, tt.sep); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FromString() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFromSlice(t *testing.T) {
+	tests := []struct {
+		name string
+		data []string
+		want map[string]string
+	}{
+		{
+			name: "empty slice",
+			data: []string{},
+			want: map[string]string{},
+		},
+		{
+			name: "valid key-values",
+			data: []string{"key1=value1", "key2=value2"},
+			want: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+		},
+		{
+			name: "invalid entries",
+			data: []string{"invalid", "key=value", ""},
+			want: map[string]string{"key": "value"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FromSlice(tt.data); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FromSlice() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMerge(t *testing.T) {
 	type args struct {
-		dst map[string]string
-		src map[string]string
+		ms []map[string]string
 	}
 	tests := []struct {
 		name string
@@ -33,92 +150,191 @@ func TestMergeMap(t *testing.T) {
 		want map[string]string
 	}{
 		{
-			name: "default",
+			name: "empty maps",
 			args: args{
-				dst: map[string]string{
-					"aa": "cc",
-				},
-				src: map[string]string{
-					"aa": "bb",
-				},
+				ms: []map[string]string{},
 			},
-			want: map[string]string{
-				"aa": "bb",
-			},
+			want: map[string]string{},
 		},
 		{
-			name: "default-add",
+			name: "single map",
 			args: args{
-				dst: map[string]string{
-					"aa": "cc",
-				},
-				src: map[string]string{
-					"aa": "bb",
-					"bb": "bb",
+				ms: []map[string]string{
+					{"key": "value"},
 				},
 			},
-			want: map[string]string{
-				"aa": "bb",
-				"bb": "bb",
-			},
+			want: map[string]string{"key": "value"},
 		},
 		{
-			name: "default-replace",
+			name: "multiple maps",
 			args: args{
-				dst: map[string]string{
-					"aa": "bb",
-					"bb": "bb",
-				},
-				src: map[string]string{
-					"bb": "dd",
+				ms: []map[string]string{
+					{"key1": "value1"},
+					{"key2": "value2"},
+					{"key1": "newvalue"},
 				},
 			},
 			want: map[string]string{
-				"aa": "bb",
-				"bb": "dd",
-			},
-		},
-		{
-			name: "default-delete",
-			args: args{
-				dst: map[string]string{
-					"aa": "bb",
-					"bb": "bb",
-				},
-				src: map[string]string{
-					"cc": "cc",
-				},
-			},
-			want: map[string]string{
-				"aa": "bb",
-				"bb": "bb",
-				"cc": "cc",
-			},
-		},
-		{
-			name: "default-delete-dest",
-			args: args{
-				dst: map[string]string{},
-				src: map[string]string{
-					"cc": "cc",
-				},
-			},
-			want: map[string]string{
-				"cc": "cc",
+				"key1": "newvalue",
+				"key2": "value2",
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data := Merge(tt.args.dst, tt.args.src)
-			if !reflect.DeepEqual(data, tt.want) {
-				t.Errorf("MergeMap() = %v, want %v", data, tt.want)
+			if got := Merge(tt.args.ms...); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Merge() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestStringToMap(_ *testing.T) {
-	data := FromString("address=reg.real-ai.cn,auth=xxx", ",")
-	fmt.Println(data["address"])
+func TestDeepMerge(t *testing.T) {
+	tests := []struct {
+		name string
+		dst  map[string]interface{}
+		src  map[string]interface{}
+		want map[string]interface{}
+	}{
+		{
+			name: "simple merge",
+			dst: map[string]interface{}{
+				"key1": "value1",
+				"key2": map[string]interface{}{
+					"nested": "old",
+				},
+			},
+			src: map[string]interface{}{
+				"key2": map[string]interface{}{
+					"nested": "new",
+				},
+			},
+			want: map[string]interface{}{
+				"key1": "value1",
+				"key2": map[string]interface{}{
+					"nested": "new",
+				},
+			},
+		},
+		{
+			name: "nested merge",
+			dst: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"key": "old",
+					},
+				},
+			},
+			src: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"key": "new",
+					},
+				},
+			},
+			want: map[string]interface{}{
+				"level1": map[string]interface{}{
+					"level2": map[string]interface{}{
+						"key": "new",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			DeepMerge(&tt.dst, &tt.src)
+			if !reflect.DeepEqual(tt.dst, tt.want) {
+				t.Errorf("DeepMerge() = %v, want %v", tt.dst, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetFromKeys(t *testing.T) {
+	m := map[string]string{
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "",
+	}
+
+	tests := []struct {
+		name string
+		keys []string
+		want string
+	}{
+		{
+			name: "first key exists",
+			keys: []string{"key1", "key2"},
+			want: "value1",
+		},
+		{
+			name: "second key exists",
+			keys: []string{"missing", "key2"},
+			want: "value2",
+		},
+		{
+			name: "no keys exist",
+			keys: []string{"missing1", "missing2"},
+			want: "",
+		},
+		{
+			name: "empty value",
+			keys: []string{"key3"},
+			want: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetFromKeys(m, tt.keys...); got != tt.want {
+				t.Errorf("GetFromKeys() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSetKeys(t *testing.T) {
+	tests := []struct {
+		name  string
+		m     map[string]string
+		keys  []string
+		value string
+		want  map[string]string
+	}{
+		{
+			name:  "empty map",
+			m:     map[string]string{},
+			keys:  []string{"key1", "key2"},
+			value: "value",
+			want: map[string]string{
+				"key1": "value",
+				"key2": "value",
+			},
+		},
+		{
+			name: "existing keys",
+			m: map[string]string{
+				"key1": "old",
+				"key3": "keep",
+			},
+			keys:  []string{"key1", "key2"},
+			value: "new",
+			want: map[string]string{
+				"key1": "new",
+				"key2": "new",
+				"key3": "keep",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SetKeys(tt.m, tt.keys, tt.value); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SetKeys() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
