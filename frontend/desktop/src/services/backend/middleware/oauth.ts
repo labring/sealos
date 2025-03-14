@@ -118,9 +118,10 @@ export const googleOAuthGuard =
 
     let email = '';
     if (__data.access_token) {
+      console.log('__data.access_token', __data.access_token);
       try {
         // 使用 userinfo 端点而不是 People API
-        const userinfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+        const userinfoUrl = 'https://www.googleapis.com/auth/userinfo.email';
         const userinfoResponse = await fetch(userinfoUrl, {
           headers: {
             Authorization: `Bearer ${__data.access_token}`,
