@@ -92,6 +92,7 @@ type Traffic interface {
 
 type AccountV2 interface {
 	Close() error
+	GetGlobalDB() *gorm.DB
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
 	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
@@ -114,6 +115,7 @@ type AccountV2 interface {
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts) (*types.Account, error)
+	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	Payment(payment *types.Payment) error
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error

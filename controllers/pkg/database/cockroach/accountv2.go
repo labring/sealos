@@ -821,6 +821,10 @@ func RetryTransaction(retryCount int, interval time.Duration, db *gorm.DB, f fun
 }
 
 func (c *Cockroach) CreateCredits(credits *types.Credits) error {
+	return c.DB.Create(credits).Error
+}
+
+func CreateCredits(db *gorm.DB, credits *types.Credits) error {
 	if credits.ID == uuid.Nil {
 		credits.ID = uuid.New()
 	}
@@ -833,7 +837,7 @@ func (c *Cockroach) CreateCredits(credits *types.Credits) error {
 	if credits.Status == "" {
 		credits.Status = types.CreditsStatusActive
 	}
-	return c.DB.Create(credits).Error
+	return db.Create(credits).Error
 }
 
 func (c *Cockroach) updateBalance(tx *gorm.DB, ops *types.UserQueryOpts, amount int64, isDeduction, add bool) error {
@@ -1769,6 +1773,10 @@ func (c *Cockroach) Close() error {
 		return fmt.Errorf("failed to get localdb: %w", err)
 	}
 	return db.Close()
+}
+
+func (c *Cockroach) GetGlobalDB() *gorm.DB {
+	return c.DB
 }
 
 func (c *Cockroach) GetGiftCodeWithCode(code string) (*types.GiftCode, error) {

@@ -281,6 +281,10 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 			}
 			r.Logger.Info("subscription plan", "name", plans[i].Name, "quota", r.SubscriptionQuotaLimit[plans[i].Name])
 		}
+		// manager 添加 subscription controller
+		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {
+			return fmt.Errorf("add subscription processor failed: %v", err)
+		}
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
