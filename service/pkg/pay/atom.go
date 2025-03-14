@@ -53,7 +53,7 @@ func (s *AtomPaymentService) CreateNewPayment(req PaymentRequest) (*responsePay.
 }
 
 func (s *AtomPaymentService) CreatePaymentWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card), s.PaymentNotifyURL+"/payment/v1alpha1/notification")
+	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card), s.PaymentNotifyURL+"/payment/v1alpha1/notify")
 }
 
 func (s *AtomPaymentService) CreateNewSubscriptionPay(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
@@ -150,7 +150,7 @@ func (s *AtomPaymentService) createNewCardPaymentMethod() *model.PaymentMethod {
 			"is3DSAuthentication": false,
 			"tokenize":            true,
 			"billingAddress": map[string]string{
-				"region": "GLOBAL",
+				"region": "CN",
 			},
 		},
 	}
@@ -162,7 +162,7 @@ func (s *AtomPaymentService) createCardPaymentMethod(card *types.CardInfo) *mode
 		PaymentMethodMetaData: map[string]any{
 			"is3DSAuthentication": false,
 			"billingAddress": map[string]string{
-				"region": "GLOBAL",
+				"region": "CN",
 			},
 			"isCardOnFile": true,
 		},
