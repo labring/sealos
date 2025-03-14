@@ -58,8 +58,7 @@ const MainBody = () => {
         }, delay);
       }
     },
-    refetchIntervalInBackground: false,
-    staleTime: 1000 * 60 * 5
+    refetchIntervalInBackground: false
   });
 
   const statusMap = useMemo(
@@ -143,7 +142,7 @@ const MainBody = () => {
                       bg={'rgba(3, 152, 85, 0.05)'}
                       color={'#039855'}
                       borderRadius={'full'}
-                      p={'2px 8px 2px 4px'}
+                      p={'2px 8px 2px 8px'}
                       gap={'2px'}
                       minW={'63px'}
                     >
