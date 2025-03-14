@@ -159,7 +159,7 @@ func (sp *SubscriptionProcessor) updateQuota(ctx context.Context, userUID uuid.U
 // handleCreated 处理创建订阅
 func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
@@ -196,6 +196,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 	}); err != nil {
 		return fmt.Errorf("failed to create credits: %w", err)
 	}
+	//TODO create Credits Transaction
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
 	return dbTx.Save(tx).Error
@@ -204,7 +205,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 // handleUpgrade 处理升级
 func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 	// 更新订阅信息
@@ -246,7 +247,7 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 // handleDowngrade 处理降级
 func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
@@ -278,7 +279,7 @@ func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm
 // handleRenewal 处理续订
 func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
 	var sub types.Subscription
-	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(sub).Error; err != nil {
+	if err := dbTx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: tx.UserUID, ID: tx.SubscriptionID}).Find(&sub).Error; err != nil {
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
