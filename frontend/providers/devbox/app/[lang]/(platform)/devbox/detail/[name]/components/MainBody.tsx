@@ -186,7 +186,12 @@ const MainBody = () => {
                           </Text>
                         </Flex>
                       </PopoverTrigger>
-                      <PopoverContent w={'410px'} h={'114px'} borderRadius={'10px'}>
+                      <PopoverContent
+                        minW={'410px'}
+                        h={'114px'}
+                        borderRadius={'10px'}
+                        w={'fit-content'}
+                      >
                         <PopoverArrow />
                         <PopoverBody>
                           <Box h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
