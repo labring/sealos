@@ -57,7 +57,7 @@ func CreateCardPay(c *gin.Context) {
 		}
 		var paySvcResp *responsePay.AlipayPayResponse
 		if req.BindCardInfo != nil {
-			card, err := dao.DBClient.GetCardInfo(req.BindCardInfo.CardUID, req.UserUID)
+			card, err := dao.DBClient.GetCardInfo(req.BindCardInfo.CardID, req.UserUID)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
 				return
