@@ -60,6 +60,12 @@ https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
 
+<div>
+  <h2>Availability Region<h2>
+    [Western United States](https://usw.sealos.io) <br />
+    [China Hangzhou](https://cloud.sealos.run)
+</div>
+
 </div>
 
 
