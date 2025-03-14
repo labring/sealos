@@ -119,6 +119,26 @@ export const googleOAuthGuard =
     let email = '';
     if (__data.access_token) {
       try {
+        // 使用 userinfo 端点而不是 People API
+        const userinfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+        const userinfoResponse = await fetch(userinfoUrl, {
+          headers: {
+            Authorization: `Bearer ${__data.access_token}`,
+            Accept: 'application/json'
+          }
+        });
+
+        if (userinfoResponse.ok) {
+          const userinfoData = await userinfoResponse.json();
+          console.log('userinfoData', userinfoData);
+          email = userinfoData.email || '';
+        }
+      } catch (error) {
+        console.error('获取用户邮箱信息失败:', error);
+      }
+    }
+    if (__data.access_token) {
+      try {
         const peopleApiUrl =
           'https://people.googleapis.com/v1/people/me?personFields=emailAddresses';
         const peopleResponse = await fetch(peopleApiUrl, {
