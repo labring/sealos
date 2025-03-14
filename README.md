@@ -62,8 +62,9 @@ https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <div>
   <h2>Availability Region<h2>
-    [Western United States](https://usw.sealos.io) <br />
-    [China Hangzhou](https://cloud.sealos.run)
+    <a href="https://usw.sealos.io">Western United State</a>
+    <br />
+    <a href="https://cloud.sealos.run">China Hangzhou</a>
 </div>
 
 </div>
