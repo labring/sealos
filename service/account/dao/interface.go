@@ -249,20 +249,20 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 	if paymentRequestID == "" {
 		return fmt.Errorf("payment request id is empty")
 	}
-	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
-	if err != nil {
-		return fmt.Errorf("failed to get payment order with trade no: %v", err)
-	}
-	if order.Status != types.PaymentOrderStatusPending {
-		return fmt.Errorf("payment order status is not pending: %v", order.Status)
-	}
-	if card.ID == uuid.Nil {
-		card.ID = uuid.New()
-	}
-	card.UserUID = order.UserUID
-	order.PaymentRaw.CardUID = &card.ID
-	order.PaymentRaw.ChargeSource = types.ChargeSourceCard
-	err = g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+	err := g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+		if err != nil {
+			return fmt.Errorf("failed to get payment order with trade no: %v", err)
+		}
+		if order.Status != types.PaymentOrderStatusPending {
+			return fmt.Errorf("payment order status is not pending: %v", order.Status)
+		}
+		if card.ID == uuid.Nil {
+			card.ID = uuid.New()
+		}
+		card.UserUID = order.UserUID
+		order.PaymentRaw.CardUID = &card.ID
+		order.PaymentRaw.ChargeSource = types.ChargeSourceCard
 		// TODO List
 		// 1. set payment order status with tradeNo
 		// 2. save success payment
@@ -278,7 +278,7 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 		}).Error; err != nil {
 			return fmt.Errorf("failed to save payment: %v", err)
 		}
-		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayTradeNo: order.TradeNO}).Update("pay_trade_no", order.TradeNO).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
 			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
 		}
 		if err = cockroach.SetCardInfo(tx, &card); err != nil {
