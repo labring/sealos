@@ -7,7 +7,6 @@ import {
   BackupSupportedDBTypeList,
   DBTypeEnum,
   DBTypeList,
-  RedisHAConfig,
   SelectTimeList,
   WeekSelectList
 } from '@/constants/db';
@@ -151,6 +150,49 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
+  function numberInputOnChange(value: string) {
+    // e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
+    const dbType = getValues('dbType');
+    let minChange = 1;
+    switch (dbType) {
+      case DBTypeEnum.redis:
+        minChange = 2;
+        break;
+      case DBTypeEnum.kafka:
+        minChange = 4;
+        break;
+      case DBTypeEnum.milvus:
+        minChange = 3;
+        break;
+      default:
+        break;
+    }
+    if (value === '') {
+      setValue('storage', minStorage);
+    } else {
+      setValue('storage', +value < minChange ? +minChange : +value);
+    }
+  }
+
+  const minNumberChange = useMemo(() => {
+    const dbType = getValues('dbType');
+    let minChange = 1;
+    switch (dbType) {
+      case DBTypeEnum.redis:
+        minChange = 2;
+        break;
+      case DBTypeEnum.kafka:
+        minChange = 4;
+        break;
+      case DBTypeEnum.milvus:
+        minChange = 3;
+        break;
+      default:
+        break;
+    }
+    return minChange;
+  }, [getValues('dbType')]);
+
   return (
     <>
       <Grid
@@ -230,18 +272,7 @@ const Form = ({
                     memory: getValues('memory'),
                     storage: getValues('storage'),
                     replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
-                  },
-                  ...(getValues('dbType') === DBTypeEnum.redis
-                    ? (() => {
-                        const config = RedisHAConfig(getValues('replicas') > 1);
-                        return [
-                          {
-                            ...config,
-                            replicas: [config.replicas, config.replicas]
-                          }
-                        ];
-                      })()
-                    : [])
+                  }
                 ]}
               />
             </Box>
@@ -460,10 +491,10 @@ const Form = ({
                     <NumberInput
                       w={'180px'}
                       max={SystemEnv.STORAGE_MAX_SIZE}
-                      min={minStorage}
-                      step={1}
+                      min={Math.max(minStorage, minStorage)}
+                      step={minNumberChange}
                       position={'relative'}
-                      value={getValues('storage')}
+                      value={Math.round(getValues('storage') / minNumberChange) * minNumberChange}
                       onChange={(e) => {
                         e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
                       }}

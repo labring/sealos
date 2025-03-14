@@ -2,7 +2,7 @@ import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { DBComponentNameMap, DBStatusEnum, DBTypeList } from '@/constants/db';
+import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
