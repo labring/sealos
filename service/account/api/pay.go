@@ -66,16 +66,15 @@ func CreateCardPay(c *gin.Context) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "card not found"})
 				return
 			}
-
 			err = dao.DBClient.PaymentWithFunc(&types.Payment{
 				PaymentRaw: types.PaymentRaw{
-					UserUID:   req.UserUID,
-					Amount:    req.Amount,
-					Method:    req.Method,
-					RegionUID: dao.DBClient.GetLocalRegion().UID,
-					TradeNO:   paySvcResp.PaymentRequestId,
-					CodeURL:   paySvcResp.NormalUrl,
-					Type:      types.PaymentTypeAccountRecharge,
+					UserUID:      req.UserUID,
+					Amount:       req.Amount,
+					Method:       req.Method,
+					RegionUID:    dao.DBClient.GetLocalRegion().UID,
+					TradeNO:      paymentReq.RequestID,
+					Type:         types.PaymentTypeAccountRecharge,
+					ChargeSource: types.ChargeSourceBindCard,
 				},
 			}, nil, func(_ *gorm.DB) error {
 				paySvcResp, err = dao.PaymentService.CreatePaymentWithCard(paymentReq, card)
@@ -108,13 +107,14 @@ func CreateCardPay(c *gin.Context) {
 			// do something
 			err = dao.DBClient.CreatePaymentOrder(&types.PaymentOrder{
 				PaymentRaw: types.PaymentRaw{
-					UserUID:   req.UserUID,
-					Amount:    req.Amount,
-					Method:    req.Method,
-					RegionUID: dao.DBClient.GetLocalRegion().UID,
-					TradeNO:   paySvcResp.PaymentRequestId,
-					CodeURL:   paySvcResp.NormalUrl,
-					Type:      types.PaymentTypeAccountRecharge,
+					UserUID:      req.UserUID,
+					Amount:       req.Amount,
+					Method:       req.Method,
+					RegionUID:    dao.DBClient.GetLocalRegion().UID,
+					TradeNO:      paySvcResp.PaymentRequestId,
+					CodeURL:      paySvcResp.NormalUrl,
+					Type:         types.PaymentTypeAccountRecharge,
+					ChargeSource: types.ChargeSourceNewCard,
 				},
 				Status: types.PaymentOrderStatusPending,
 			})

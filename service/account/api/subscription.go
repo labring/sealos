@@ -225,7 +225,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 				CodeURL:      paySvcResp.NormalUrl,
 				Type:         types.PaymentTypeSubscription,
 				CardUID:      req.CardID,
-				ChargeSource: types.ChargeSourceCard,
+				ChargeSource: types.ChargeSourceBindCard,
 			},
 		}, func(tx *gorm.DB) error {
 			// TODO 检查没有订阅变更
@@ -292,7 +292,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 						TradeNO:      paySvcResp.PaymentRequestId,
 						CodeURL:      paySvcResp.NormalUrl,
 						Type:         types.PaymentTypeSubscription,
-						ChargeSource: types.ChargeSourceCard,
+						ChargeSource: types.ChargeSourceNewCard,
 					},
 					Status: types.PaymentOrderStatusPending,
 				})

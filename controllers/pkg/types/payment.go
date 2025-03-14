@@ -32,8 +32,9 @@ type PaymentRaw struct {
 type ChargeSource string
 
 const (
-	ChargeSourceBalance ChargeSource = "BALANCE"
-	ChargeSourceCard    ChargeSource = "CARD"
+	ChargeSourceBalance  ChargeSource = "BALANCE"
+	ChargeSourceNewCard  ChargeSource = "CARD"
+	ChargeSourceBindCard ChargeSource = "BIND_CARD"
 )
 
 type PaymentOrder struct {
