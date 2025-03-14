@@ -163,7 +163,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 		return fmt.Errorf("failed to fetch subscription: %w", err)
 	}
 
-	now := time.Now()
+	now := time.Now().UTC()
 	sub.PlanID = tx.NewPlanID
 	sub.PlanName = tx.NewPlanName
 	sub.Status = types.SubscriptionStatusNormal
@@ -199,6 +199,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 	//TODO create Credits Transaction
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
+	tx.UpdatedAt = now
 	return dbTx.Save(tx).Error
 }
 
@@ -241,6 +242,7 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 	}
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
+	tx.UpdatedAt = time.Now().UTC()
 	return dbTx.Save(tx).Error
 }
 
@@ -273,6 +275,7 @@ func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm
 	}
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
+	tx.UpdatedAt = now
 	return dbTx.Save(tx).Error
 }
 
@@ -312,6 +315,7 @@ func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.D
 	}
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
+	tx.UpdatedAt = now
 	return dbTx.Save(tx).Error
 }
 

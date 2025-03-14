@@ -119,6 +119,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 	}
 
 	subTransaction := types.SubscriptionTransaction{
+		ID:             uuid.New(),
 		SubscriptionID: userSubscription.ID,
 		UserUID:        req.UserUID,
 		OldPlanID:      userCurrentPlan.ID,
