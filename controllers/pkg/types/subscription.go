@@ -28,18 +28,6 @@ const (
 	SubscriptionStatusDebt   SubscriptionStatus = "DEBT"
 )
 
-//// 订阅支付订单
-//type SubscriptionBilling struct {
-//	ID               uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 订单 ID
-//	PlanID           uuid.UUID `gorm:"type:uuid;column:plan_id"`                                 // 计划 ID
-//	PlanName         string    `gorm:"type:varchar(50);column:plan_name"`                        // 计划名称
-//	Amount           float64   `gorm:"column:amount"`                                            // 交易金额
-//	PaymentStatus    string    `gorm:"type:varchar(50);column:payment_status"`                   // 支付状态（pending/paid/failed/refunded）
-//	PaymentRequestID string    `gorm:"type:varchar(100);column:payment_request_id"`              // 支付订单 ID 后续查询订单信息
-//	CardID           uuid.UUID `gorm:"type:uuid;column:card_id"`                                 // 银行卡 ID
-//	PaymentTime      time.Time `gorm:"column:payment_time"`                                      // 支付时间
-//}
-
 // 订阅变更记录表
 type SubscriptionTransaction struct {
 	SubscriptionID uuid.UUID                     `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
@@ -79,6 +67,7 @@ const (
 
 	SubscriptionPayStatusPending SubscriptionPayStatus = "pending"
 	SubscriptionPayStatusPaid    SubscriptionPayStatus = "paid"
+	SubscriptionPayStatusNoNeed  SubscriptionPayStatus = "no_need"
 	SubscriptionPayStatusFailed  SubscriptionPayStatus = "failed"
 )
 
@@ -112,10 +101,6 @@ func (Subscription) TableName() string {
 func (SubscriptionPlan) TableName() string {
 	return "SubscriptionPlan"
 }
-
-//func (SubscriptionBilling) TableName() string {
-//	return "SubscriptionBilling"
-//}
 
 func (SubscriptionTransaction) TableName() string {
 	return "SubscriptionTransaction"
