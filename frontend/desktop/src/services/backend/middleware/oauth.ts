@@ -80,7 +80,7 @@ export const googleOAuthGuard =
   (clientId: string, clientSecret: string, code: string, callbackUrl: string) =>
   async (
     res: NextApiResponse,
-    next: (data: { id: string; name: string; avatar_url: string }) => void
+    next: (data: { id: string; name: string; avatar_url: string; email: string }) => void
   ) => {
     const url = `https://oauth2.googleapis.com/token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}&redirect_uri=${callbackUrl}&grant_type=authorization_code`;
     const response = await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } });
@@ -170,7 +170,8 @@ export const googleOAuthGuard =
       next?.({
         id,
         name,
-        avatar_url
+        avatar_url,
+        email
       })
     );
   };
@@ -179,7 +180,7 @@ export const githubOAuthGuard =
   (clientId: string, clientSecret: string, code: string) =>
   async (
     res: NextApiResponse,
-    next: (data: { id: string; name: string; avatar_url: string }) => void
+    next: (data: { id: string; name: string; avatar_url: string; email: string }) => void
   ) => {
     const url = ` https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`;
     const __data = (await (
@@ -208,10 +209,8 @@ export const githubOAuthGuard =
     const id = result.id;
     if (!isNumber(id)) throw Error();
 
-    // 获取用户邮箱
     let email = '';
     try {
-      // 尝试获取用户邮箱列表
       const emailsUrl = `https://api.github.com/user/emails`;
       const emailsResponse = await fetch(emailsUrl, {
         headers: {
@@ -245,7 +244,6 @@ export const githubOAuthGuard =
       }
     } catch (error) {
       console.error('failed to fetch user github emails:', error);
-      // email fetch failed, continue
     }
 
     // @ts-ignore
@@ -253,7 +251,8 @@ export const githubOAuthGuard =
       next?.({
         id: id + '',
         name: result.login,
-        avatar_url: result.avatar_url
+        avatar_url: result.avatar_url,
+        email
       })
     );
   };

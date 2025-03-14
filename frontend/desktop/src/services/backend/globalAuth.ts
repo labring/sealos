@@ -14,6 +14,8 @@ import {
 } from 'prisma/global/generated/client';
 import { enableSignUp, enableTracking } from '../enable';
 import { trackSignUp } from './tracking';
+import { emit } from 'process';
+import { bindEmailSvc } from './svc/bindProvider';
 
 type TransactionClient = Omit<
   PrismaClient,
@@ -290,6 +292,7 @@ export const getGlobalToken = async ({
   provider,
   providerId,
   name,
+  email,
   avatar_url,
   password,
   inviterId,
@@ -299,6 +302,7 @@ export const getGlobalToken = async ({
   provider: ProviderType;
   providerId: string;
   name: string;
+  email?: string;
   avatar_url: string;
   password?: string;
   inviterId?: string;
@@ -398,6 +402,19 @@ export const getGlobalToken = async ({
     }
   }
   if (!user) throw new Error('Failed to edit db');
+
+  if (email) {
+    const emailProvider = await globalPrisma.oauthProvider.findFirst({
+      where: {
+        providerType: ProviderType.EMAIL,
+        userUid: user.uid
+      }
+    });
+    if (!emailProvider) {
+      bindEmailSvc(email, user.uid);
+    }
+  }
+
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
   const token = generateAuthenticationToken({
