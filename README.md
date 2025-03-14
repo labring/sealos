@@ -117,7 +117,7 @@ https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 - Install Sealos cloud: 
    - Self host guide (coming soon) | Chinese: [集群部署](https://sealos.run/docs/self-hosting/install)
 - Install Kubernetes and kubernetes lifecycle managemant: 
-   - One command install kubernetes HA cluster (coming soon) | Chinese: [安装K8s集群](https://sealos.run/docs/k8s/quick-start/deploy-kubernetes#install-single-node-kubernetes)
+   - One command install kubernetes HA cluster (coming soon) | Chinese: [安装K8s集群](https://sealos.run/docs/k8s/quick-start/deploy-kubernetes)
 
 ## 💡 Core features
 
