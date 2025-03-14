@@ -208,7 +208,7 @@
   "prompt": "Prompt",
   "public": "Public",
   "public_debug_address_tooltip": "The debugging address is a pre-allocated address, and the service needs to be started in the Devbox instance, listening on 0.0.0.0 and the corresponding port for normal debugging access.",
-  "public_debug_address_tooltip_1": "If your address is stuck in <blue>「Preparing」</blue> for a long time, please check the following items first:",
+  "public_debug_address_tooltip_1": "If your address is stuck in <blue>「Pending」</blue> for a long time, please check the following items first:",
   "public_debug_address_tooltip_2_1": "Start service:",
   "public_debug_address_tooltip_2_2": "Execute the start command (e.g., npm run dev) in the Devbox instance.",
   "public_debug_address_tooltip_3_1": "Listening address:",
