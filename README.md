@@ -48,6 +48,10 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
   <a href="https://discord.gg/wdUn538zVP">Discord</a> •
   <a href="https://twitter.com/Sealos_io">Twitter</a> •
   <a href="./README_zh.md">简体中文</a>
+  <p>Availability Region</p>
+  <a href="https://usw.sealos.io">Western United State</a>
+  <br />
+  <a href="https://cloud.sealos.run">China Hangzhou</a>
 </p>
 
 <br />
@@ -59,13 +63,6 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
 https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 <img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
-
-<div>
-    <p>Availability Region</p>
-    <a href="https://usw.sealos.io">Western United State</a>
-    <br />
-    <a href="https://cloud.sealos.run">China Hangzhou</a>
-</div>
 
 </div>
 
