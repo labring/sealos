@@ -403,6 +403,9 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new Error('Failed to edit db');
 
+  console.log('email', email);
+  console.log('user', user);
+
   if (email) {
     const emailProvider = await globalPrisma.oauthProvider.findFirst({
       where: {
