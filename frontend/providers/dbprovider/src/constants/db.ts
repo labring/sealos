@@ -4,7 +4,8 @@ import {
   PodDetailType,
   DBType,
   ReconfigStatusMapType,
-  DBSourceType
+  DBSourceType,
+  DBComponentsName
 } from '@/types/db';
 import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 import { I18nCommonKey } from '@/types/i18next';
@@ -228,16 +229,16 @@ export const DBTypeList = [
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
 
-export const DBComponentNameMap = {
-  [DBTypeEnum.postgresql]: 'postgresql',
-  [DBTypeEnum.mongodb]: 'mongodb',
-  [DBTypeEnum.mysql]: 'mysql',
-  [DBTypeEnum.redis]: 'redis',
-  [DBTypeEnum.kafka]: 'kafka',
-  [DBTypeEnum.qdrant]: 'qdrant',
-  [DBTypeEnum.nebula]: 'nebula',
-  [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
+  [DBTypeEnum.postgresql]: ['postgresql'],
+  [DBTypeEnum.mongodb]: ['mongodb'],
+  [DBTypeEnum.mysql]: ['mysql'],
+  [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
+  [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
+  [DBTypeEnum.qdrant]: ['qdrant'],
+  [DBTypeEnum.nebula]: ['nebula-console', 'nebula-graphd', 'nebula-metad', 'nebula-storaged'],
+  [DBTypeEnum.weaviate]: ['weaviate'],
+  [DBTypeEnum.milvus]: ['milvus', 'etcd', 'minio']
 };
 
 export const DBBackupPolicyNameMap = {
@@ -311,23 +312,6 @@ export const defaultPod: PodDetailType = {
   cpu: 1,
   memory: 1,
   hostIp: ''
-};
-
-export const RedisHAConfig = (ha = true) => {
-  if (ha) {
-    return {
-      cpu: 200,
-      memory: 200,
-      storage: 1,
-      replicas: 3
-    };
-  }
-  return {
-    cpu: 100,
-    memory: 100,
-    storage: 0,
-    replicas: 1
-  };
 };
 
 export const DBTypeSecretMap = {

@@ -61,6 +61,27 @@ export interface DBListItemType {
   source: DBSource;
 }
 
+export type DBComponentsName =
+  | 'postgresql'
+  | 'mongodb'
+  | 'mysql'
+  | 'redis'
+  | 'redis-sentinel'
+  | 'kafka'
+  | 'kafka-server'
+  | 'kafka-broker'
+  | 'controller'
+  | 'kafka-exporter'
+  | 'milvus'
+  | 'etcd'
+  | 'minio'
+  | 'qdrant'
+  | 'nebula-console'
+  | 'nebula-graphd'
+  | 'nebula-metad'
+  | 'nebula-storaged'
+  | 'weaviate';
+
 export interface DBEditType {
   dbType: DBType;
   dbVersion: string;
