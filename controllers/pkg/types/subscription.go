@@ -42,23 +42,21 @@ const (
 
 // 订阅变更记录表
 type SubscriptionTransaction struct {
-	SubscriptionID uuid.UUID            `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
-	UserUID        uuid.UUID            `gorm:"type:uuid;not null;index;column:user_uid"`        // 用户 ID
-	OldPlanID      uuid.UUID            `gorm:"type:uuid;column:old_plan_id"`                    // 旧的订阅计划 ID
-	NewPlanID      uuid.UUID            `gorm:"type:uuid;column:new_plan_id"`                    // 新的订阅计划 ID
-	OldPlanName    string               `gorm:"type:varchar(50);column:old_plan_name"`           // 旧的订阅计划名称
-	NewPlanName    string               `gorm:"type:varchar(50);column:new_plan_name"`           // 新的订阅计划名称
-	OldPlanStatus  SubscriptionStatus   `gorm:"type:varchar(50);column:old_plan_status"`         // 旧的订阅状态
-	NewPlanStatus  SubscriptionStatus   `gorm:"type:varchar(50);column:new_plan_status"`         // 新的订阅状态
-	Operator       SubscriptionOperator `gorm:"type:varchar(50);column:operator"`                // 操作类型(created/upgraded/downgraded/canceled/renewed)
-	EffectiveAt    time.Time            `gorm:"column:effective_at"`                             // 变更生效时间
-	//ExpireAt       time.Time                     `gorm:"column:expire_at"`                                // 变更导致的到期时间
-	CreatedAt  time.Time                     `gorm:"column:created_at;autoCreateTime"`   // 创建时间
-	UpdatedAt  time.Time                     `gorm:"column:updated_at;autoUpdateTime"`   // 更新时间
-	Status     SubscriptionTransactionStatus `gorm:"type:varchar(50);column:status"`     // 状态
-	PayStatus  SubscriptionPayStatus         `gorm:"type:varchar(50);column:pay_status"` // 支付状态
-	PayTradeNo string                        `gorm:"type:text;column:pay_trade_no"`      // 支付订单号
-	Amount     int64                         `gorm:"type:bigint;column:amount"`          // 金额
+	SubscriptionID uuid.UUID                     `gorm:"type:uuid;not null;index;column:subscription_id"` // 关联的订阅 ID
+	UserUID        uuid.UUID                     `gorm:"type:uuid;not null;index;column:user_uid"`        // 用户 ID
+	OldPlanID      uuid.UUID                     `gorm:"type:uuid;column:old_plan_id"`                    // 旧的订阅计划 ID
+	NewPlanID      uuid.UUID                     `gorm:"type:uuid;column:new_plan_id"`                    // 新的订阅计划 ID
+	OldPlanName    string                        `gorm:"type:varchar(50);column:old_plan_name"`           // 旧的订阅计划名称
+	NewPlanName    string                        `gorm:"type:varchar(50);column:new_plan_name"`           // 新的订阅计划名称
+	OldPlanStatus  SubscriptionStatus            `gorm:"type:varchar(50);column:old_plan_status"`         // 旧的订阅状态
+	Operator       SubscriptionOperator          `gorm:"type:varchar(50);column:operator"`                // 操作类型(created/upgraded/downgraded/canceled/renewed)
+	StartAt        time.Time                     `gorm:"column:start_at"`                                 // 变更开始时间
+	CreatedAt      time.Time                     `gorm:"column:created_at;autoCreateTime"`                // 创建时间
+	UpdatedAt      time.Time                     `gorm:"column:updated_at;autoUpdateTime"`                // 更新时间
+	Status         SubscriptionTransactionStatus `gorm:"type:varchar(50);column:status"`                  // 状态
+	PayStatus      SubscriptionPayStatus         `gorm:"type:varchar(50);column:pay_status"`              // 支付状态
+	PayID          string                        `gorm:"type:text;column:pay_id"`                         // 支付订单号
+	Amount         int64                         `gorm:"type:bigint;column:amount"`                       // 金额
 }
 
 type SubscriptionTransactionStatus string

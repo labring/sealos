@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	gonanoid "github.com/matoous/go-nanoid/v2"
+
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"gorm.io/gorm"
 
@@ -122,10 +124,9 @@ func CreateSubscriptionPay(c *gin.Context) {
 		OldPlanID:      userCurrentPlan.ID,
 		OldPlanName:    userCurrentPlan.Name,
 		OldPlanStatus:  userSubscription.Status,
-		EffectiveAt:    time.Now(),
+		StartAt:        time.Now(),
 		NewPlanID:      userDescribePlan.ID,
 		NewPlanName:    userDescribePlan.Name,
-		NewPlanStatus:  userSubscription.Status,
 		CreatedAt:      time.Now(),
 		Status:         types.SubscriptionTransactionStatusProcessing,
 	}
@@ -168,7 +169,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 			return
 		}
 		//执行时间为计划的下个周期开始变为对应的版本，目前降级为Free
-		subTransaction.EffectiveAt = userSubscription.NextCycleDate
+		subTransaction.StartAt = userSubscription.NextCycleDate
 		subTransaction.Operator = types.SubscriptionTransactionTypeDowngraded
 		subTransaction.Status = types.SubscriptionTransactionStatusPending
 
@@ -200,8 +201,13 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 		ClientIP:      c.ClientIP(),
 		DeviceTokenID: c.GetHeader("Device-Token-ID"),
 	}
+	paymentID, err := gonanoid.New(12)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment id: ", err)})
+		return
+	}
+	subTransaction.PayID = paymentID
 	var paySvcResp *responsePay.AlipayPayResponse
-	var err error
 	if req.CardID != nil {
 		card, err := dao.DBClient.GetCardInfo(*req.CardID, req.UserUID)
 		if err != nil {
@@ -209,6 +215,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			return
 		}
 		err = dao.DBClient.PaymentWithFunc(&types.Payment{
+			ID: paymentID,
 			PaymentRaw: types.PaymentRaw{
 				UserUID:      req.UserUID,
 				Amount:       subTransaction.Amount,
@@ -230,7 +237,6 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 				return fmt.Errorf("there is active subscription transaction")
 			}
 			subTransaction.PayStatus = types.SubscriptionPayStatusPaid
-			subTransaction.PayTradeNo = paySvcResp.PaymentRequestId
 			return cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
 		}, func(_ *gorm.DB) error {
 			paySvcResp, err = dao.PaymentService.CreateSubscriptionPayWithCard(paymentReq, card)
@@ -277,6 +283,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 		}, func(tx *gorm.DB) error {
 			err := cockroach.CreatePaymentOrder(
 				tx, &types.PaymentOrder{
+					ID: paymentID,
 					PaymentRaw: types.PaymentRaw{
 						UserUID:      req.UserUID,
 						Amount:       subTransaction.Amount,

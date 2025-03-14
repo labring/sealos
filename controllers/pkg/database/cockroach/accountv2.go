@@ -1287,14 +1287,6 @@ func GetActiveSubscriptionTransactionCount(db *gorm.DB, userUID uuid.UUID) (int6
 	return count, nil
 }
 
-func GetSubscriptionTransactionByPayTradeNo(db *gorm.DB, tradeNo string) (*types.SubscriptionTransaction, error) {
-	var transaction types.SubscriptionTransaction
-	if err := db.Where(types.SubscriptionTransaction{PayTradeNo: tradeNo}).First(&transaction).Error; err != nil {
-		return nil, err
-	}
-	return &transaction, nil
-}
-
 func (c *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error) {
 	var cardInfo types.CardInfo
 	if err := c.DB.Where(types.CardInfo{ID: cardID, UserUID: userUID}).First(&cardInfo).Error; err != nil {
