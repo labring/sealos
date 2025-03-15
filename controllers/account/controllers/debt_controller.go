@@ -279,9 +279,11 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status.AccountDebtStatus
-	currentStatus := determineCurrentStatus(oweamount, account.Balance, updateIntervalSeconds, lastStatus)
+	currentStatus, err := r.DetermineCurrentStatus(oweamount, account.UserUID, updateIntervalSeconds, lastStatus)
+	if err != nil {
+		return fmt.Errorf("failed to determine current status: %w", err)
+	}
 	update := false
-	var err error
 	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
 	if lastStatus == currentStatus {
 		return nil
@@ -375,7 +377,8 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 	return true
 }
 
-func determineCurrentStatus(oweamount, _ int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
+// TODO 外加判断订阅状态
+func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
 	if oweamount > 0 {
 		if oweamount > 50*BaseUnit {
 			return accountv1.NormalPeriod
@@ -394,6 +397,39 @@ func determineCurrentStatus(oweamount, _ int64, updateIntervalSeconds int64, las
 		return accountv1.FinalDeletionPeriod
 	}
 	return lastStatus // Maintain current debt state if no transition
+}
+
+func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+	userSubscription, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return accountv1.NormalPeriod, fmt.Errorf("failed to get user subscription: %w", err)
+	}
+
+	if oweamount > 0 && userSubscription.Status == pkgtypes.SubscriptionStatusNormal {
+		if oweamount > 50*BaseUnit {
+			return accountv1.NormalPeriod, nil
+		} else if oweamount > 1*BaseUnit {
+			return accountv1.LowBalancePeriod, nil
+		}
+		return accountv1.CriticalBalancePeriod, nil
+	}
+	if lastStatus == accountv1.NormalPeriod || lastStatus == accountv1.LowBalancePeriod || lastStatus == accountv1.CriticalBalancePeriod {
+		return accountv1.DebtPeriod, nil
+	}
+	if lastStatus == accountv1.DebtPeriod && updateIntervalSeconds >= DebtConfig[accountv1.DebtDeletionPeriod] {
+		return accountv1.DebtDeletionPeriod, nil
+	}
+	if lastStatus == accountv1.DebtDeletionPeriod && updateIntervalSeconds >= DebtConfig[accountv1.FinalDeletionPeriod] {
+		return accountv1.FinalDeletionPeriod, nil
+	}
+	return lastStatus, nil // Maintain current debt state if no transition
+}
+
+func (r *DebtReconciler) DetermineCurrentStatus(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+	if SubscriptionEnabled {
+		return r.determineCurrentStatusWithSubscription(oweamount, userUID, updateIntervalSeconds, lastStatus)
+	}
+	return determineCurrentStatus(oweamount, updateIntervalSeconds, lastStatus), nil
 }
 
 func (r *DebtReconciler) syncDebt(ctx context.Context, owner, userID string, debt *accountv1.Debt) error {
