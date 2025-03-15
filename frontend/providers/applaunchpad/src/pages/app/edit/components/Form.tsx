@@ -745,6 +745,7 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label>{'模型名称'}</Label>
                   <Input
+                    disabled={true}
                     width={'350px'}
                     type={'text'}
                     placeholder={'模型名称'}
@@ -759,6 +760,7 @@ const Form = ({
                 <Flex alignItems={'center'}>
                   <Label>{'模型版本'}</Label>
                   <Input
+                    disabled={true}
                     width={'350px'}
                     type={'text'}
                     placeholder={'模型版本'}
