@@ -37,11 +37,11 @@ const SuccessStatus = "SUCCESS"
 func CreateCardPay(c *gin.Context) {
 	req, err := helper.ParseCreatePayReq(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprint("failed to parse request: ", err)})
+		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprint("failed to parse request: ", err)})
 		return
 	}
 	if err := authenticateRequest(c, req); err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		SetErrorResp(c, http.StatusUnauthorized, gin.H{"error": fmt.Sprint("authenticate error: ", err)})
 		return
 	}
 
@@ -59,11 +59,11 @@ func CreateCardPay(c *gin.Context) {
 		if req.BindCardInfo != nil {
 			card, err := dao.DBClient.GetCardInfo(req.BindCardInfo.CardID, req.UserUID)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
+				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
 				return
 			}
 			if card == nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "card not found"})
+				SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "card not found"})
 				return
 			}
 			err = dao.DBClient.PaymentWithFunc(&types.Payment{
@@ -87,20 +87,19 @@ func CreateCardPay(c *gin.Context) {
 				return nil
 			})
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
-				return
+				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+			} else {
+				SetSuccessResp(c)
 			}
-			c.JSON(http.StatusOK, gin.H{
-				"data": "success",
-			})
+			return
 		} else {
 			paySvcResp, err = dao.PaymentService.CreateNewPayment(paymentReq)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 				return
 			}
 			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
+				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
 				return
 			}
 
@@ -119,18 +118,17 @@ func CreateCardPay(c *gin.Context) {
 				Status: types.PaymentOrderStatusPending,
 			})
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
+				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
 				return
 			}
+			c.JSON(http.StatusOK, gin.H{
+				"redirectUrl": paySvcResp.NormalUrl,
+				"success":     true,
+			})
 		}
-		//paySvcResp
-		c.JSON(http.StatusOK, gin.H{"data": helper.CreatePayResp{
-			RedirectURL: paySvcResp.NormalUrl,
-		}})
 		return
 	}
-
-	c.JSON(http.StatusBadGateway, gin.H{"error": "unsupported payment method"})
+	SetErrorResp(c, http.StatusBadGateway, gin.H{"error": "unsupported payment method"})
 }
 
 type requestInfoStruct struct {

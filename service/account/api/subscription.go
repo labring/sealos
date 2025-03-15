@@ -86,26 +86,26 @@ func GetSubscriptionPlanList(c *gin.Context) {
 func CreateSubscriptionPay(c *gin.Context) {
 	req, err := helper.ParseSubscriptionOperatorReq(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
+		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse request: %v", err)})
 		return
 	}
 	if err := authenticateRequest(c, req); err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		SetErrorResp(c, http.StatusUnauthorized, gin.H{"error": fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
 
 	userSubscription, err := dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: req.UserUID})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get subscription info: %v", err)})
+		SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get subscription info: %v", err)})
 		return
 	}
 	if userSubscription.PlanName == req.PlanName && req.PlanType != helper.Renewal {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "plan name is same as current plan"})
+		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "plan name is same as current plan"})
 		return
 	}
 	planList, err := dao.DBClient.GetSubscriptionPlanList()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get subscription plan list: %v", err)})
+		SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get subscription plan list: %v", err)})
 		return
 	}
 	var userCurrentPlan, userDescribePlan types.SubscriptionPlan
@@ -137,7 +137,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 	case helper.Upgrade:
 		// TODO implement subscription upgrade
 		if !contain(userCurrentPlan.UpgradePlanList, req.PlanName) {
-			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in upgrade plan list: %v", userCurrentPlan.UpgradePlanList)})
+			SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprintf("plan name is not in upgrade plan list: %v", userCurrentPlan.UpgradePlanList)})
 			return
 		}
 
@@ -166,7 +166,7 @@ func CreateSubscriptionPay(c *gin.Context) {
 		// TODO implement subscription downgrade
 		// 符合降级规则
 		if !contain(userCurrentPlan.DowngradePlanList, req.PlanName) {
-			c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in downgrade plan list: %v", userCurrentPlan.DowngradePlanList)})
+			SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprintf("plan name is not in downgrade plan list: %v", userCurrentPlan.DowngradePlanList)})
 			return
 		}
 		//执行时间为计划的下个周期开始变为对应的版本，目前降级为Free
@@ -183,14 +183,21 @@ func CreateSubscriptionPay(c *gin.Context) {
 		PayForSubscription(c, req, subTransaction)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"data": "success",
-	})
+	SetSuccessResp(c)
+}
+
+func SetSuccessResp(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"success": "true"})
+}
+
+func SetErrorResp(c *gin.Context, code int, h map[string]any) {
+	h["success"] = false
+	c.JSON(code, h)
 }
 
 func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, subTransaction types.SubscriptionTransaction) {
 	if req.PayMethod != helper.CARD {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid pay method"})
+		SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "invalid pay method"})
 		return
 	}
 	paymentReq := services.PaymentRequest{
@@ -204,7 +211,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 	}
 	paymentID, err := gonanoid.New(12)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment id: ", err)})
+		SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment id: ", err)})
 		return
 	}
 	subTransaction.PayID = paymentID
@@ -212,7 +219,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 	if req.CardID != nil {
 		card, err := dao.DBClient.GetCardInfo(*req.CardID, req.UserUID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
 			return
 		}
 		err = dao.DBClient.PaymentWithFunc(&types.Payment{
@@ -250,20 +257,19 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			return nil
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"data": "success",
-		})
+		SetSuccessResp(c)
+		return
 	} else {
 		paySvcResp, err = dao.PaymentService.CreateNewSubscriptionPay(paymentReq)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 			return
 		}
 		if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
 			return
 		}
 		err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -303,13 +309,11 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			return nil
 		})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
 			return
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"data": helper.CreatePayResp{
-		RedirectURL: paySvcResp.NormalUrl,
-	}})
+	c.JSON(http.StatusOK, gin.H{"redirectUrl": paySvcResp.NormalUrl, "success": true})
 }
 
 func NewSubscriptionPayNotifyHandler(c *gin.Context) {
