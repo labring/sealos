@@ -93,7 +93,11 @@ const (
 	DEFAULTACCOUNTNAMESPACE = "sealos-system"
 	RECHARGEGIFT            = "recharge-gift"
 	SEALOS                  = "sealos"
+
+	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 )
+
+var SubscriptionEnabled = false
 
 // AccountReconciler reconciles an Account object
 type AccountReconciler struct {
@@ -238,7 +242,7 @@ func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
-	if os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
+	if SubscriptionEnabled {
 		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
 		plans, err := r.AccountV2.GetSubscriptionPlanList()
@@ -426,4 +430,8 @@ func (r *AccountReconciler) BillingCVM() error {
 		fmt.Printf("billing cvm success %#+v\n", billing)
 	}
 	return nil
+}
+
+func init() {
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == "true"
 }
