@@ -110,6 +110,15 @@ const Pods = ({
       )
     },
     {
+      title: '所在节点',
+      key: 'nodeName',
+      render: (item: PodDetailType) => (
+        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+          {item.nodeName}
+        </Box>
+      )
+    },
+    {
       title: 'Restarts Num',
       key: 'restarts',
       render: (item: PodDetailType) => (
