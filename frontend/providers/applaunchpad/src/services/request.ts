@@ -25,7 +25,6 @@ request.interceptors.request.use(
 
     //获取token，并将其添加至请求头中
     let kc = JSON.stringify(getUserKubeConfig());
-    console.log('kc:', kc);
     _headers['Authorization'] = encodeURIComponent(kc);
     console.log('Authorization:', _headers['Authorization']);
     if (!config.headers || config.headers['Content-Type'] === '') {

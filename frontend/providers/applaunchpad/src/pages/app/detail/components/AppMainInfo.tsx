@@ -42,7 +42,7 @@ const AppMainInfo = ({
   return (
     <Box px={6} py={6} position={'relative'}>
       <>
-        {/* <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
+        <Flex alignItems={'center'} fontSize={'12px'} fontWeight={'bold'}>
           <MyIcon name={'listen'} w={'14px'} color={'grayModern.600'} />
           <Box ml={'12px'} color={'grayModern.600'}>
             {t('Real-time Monitoring')}
@@ -88,7 +88,7 @@ const AppMainInfo = ({
               <PodLineChart type={'purple'} data={app.usedMemory} />
             </Box>
           </Box>
-        </Grid> */}
+        </Grid>
         <Flex
           mt={3}
           alignItems={'center'}

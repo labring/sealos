@@ -9,6 +9,7 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
       Authorization: encodeURIComponent(kubeconfig)
     }
   };
+
   const doMain = process.env.MONITOR_URL || 'http://monitor-system.cloud.sealos.run';
 
   try {
