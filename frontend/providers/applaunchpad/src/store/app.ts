@@ -114,6 +114,7 @@ export const useAppStore = create<State>()(
       },
       loadDetailMonitorData: async (namespace, appName) => {
         const pods = await getAppPodsByAppName(namespace, appName);
+
         const queryName = pods[0].podName || appName;
 
         set((state) => {

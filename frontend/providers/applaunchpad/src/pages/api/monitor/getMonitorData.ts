@@ -101,8 +101,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     };
 
     const adminkc = getLocalAdminKubeConfig();
-    console.log('kubeconfig')
-    console.log(adminkc)
+    console.log('kubeconfig');
+    console.log(adminkc);
 
     const result: MonitorDataResult = await monitorFetch(
       {
@@ -125,6 +125,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: result
     });
   } catch (error) {
+    console.log(error, 'monitor error');
     jsonRes(res, {
       code: 200,
       message: 'fetch monitor err: ' + error

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { authSession } from '@/services/backend/auth';
+import { authSession,getAdminAuthorization } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { appDeployKey } from '@/constants/app';
@@ -31,7 +31,7 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
   const reqNamespace = req.query.namespace as string;
   const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } =
     await getK8s({
-      kubeconfig: await authSession(req.headers)
+      kubeconfig: await getAdminAuthorization(req.headers)
     });
 
   // delete Certificate

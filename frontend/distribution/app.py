@@ -17,8 +17,8 @@ from stress_test import *
 app = Flask(__name__)
 
 # 环境变量：集群域名
-#CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
-CLUSTER_DOMAIN = '192.168.0.134'
+CLUSTER_DOMAIN = os.getenv('CLUSTER_DOMAIN')
+#CLUSTER_DOMAIN = '192.168.0.134'
 # 环境变量：镜像仓库地址
 REGISTRY_URL = os.getenv('REGISTRY_URL')
 # 环境变量：镜像仓库用户名
@@ -306,6 +306,9 @@ def upload_app():
 def deploy_app_with_image():
     # 获取请求参数
     file_path = request.json.get('path')
+    modelName = request.json.get('modelName')
+    modelCode = request.json.get('modelCode')
+    modelVersion = request.json.get('versionTag')
     if not file_path:
         return jsonify({'error': 'Path is required'}), 400  
     ports = request.json.get('ports')
@@ -340,7 +343,11 @@ def deploy_app_with_image():
             labels['cloud.sealos.io/app-deploy-manager'] = appname
         if labels.get('app') == old_appname:
             labels['app'] = appname
-            
+        # 替换annotations中的模型信息
+        annotations = single_yaml.get('metadata', {}).get('annotations', {})
+        annotations['cloud.sealos.io/model-name'] = modelName
+        annotations['cloud.sealos.io/model-version'] = modelCode
+        annotations['cloud.sealos.io/model-type'] = 'model'
         # 替换selector中的app名称
         if single_yaml.get('kind') == 'Service':
             if 'selector' in single_yaml['spec']:
@@ -916,7 +923,8 @@ def build_docker_image():
 
     if not all([path, namespace, imageName, version, dockerfile]):
         return jsonify({"error": "缺少必要参数"}), 400
-
+    # 登录镜像仓库
+    err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
     # 调用构建和推送镜像的方法
     success, message = build_and_push_docker_image(path, namespace, imageName, version, dockerfile)
 
@@ -945,9 +953,10 @@ def stress_testing_api():
         port = request.args.get('port')
         core_api = request.args.get('core_api')
         test_data = request.args.get('test_data')
-        qps = request.args.get('qps')
-        max_latency = request.args.get('max_latency')
-        stress_test(stress_id, stress_type, namespace, app_list, port, core_api, test_data, qps, max_latency)
+        qps = int(request.args.get('qps'))
+        max_latency = float(request.args.get('max_latency'))
+        url = 'http://{}:{}{}'.format(CLUSTER_DOMAIN, port, core_api)
+        stress_test(stress_id, stress_type, namespace, app_list, port, url, test_data, qps, max_latency)
         return jsonify({'message': 'Stress testing started successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -995,7 +1004,7 @@ if __name__ == '__main__':
             scheduler.add_job(scale_nodes, 'interval', minutes=1)
         scheduler.start()
     try:
-        app.run(debug=True, host='0.0.0.0', port=5003)
+        app.run(debug=True, host='0.0.0.0', port=5002)
     finally:
         scheduler.shutdown()
 

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
-import { authSession } from '@/services/backend/auth';
+import { authSession,getAdminAuthorization } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import dayjs from 'dayjs';
@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const { k8sCore, namespace } = await getK8s({
-      kubeconfig: await authSession(req.headers)
+      kubeconfig: await getAdminAuthorization(req.headers)
     });
 
     // get pods
