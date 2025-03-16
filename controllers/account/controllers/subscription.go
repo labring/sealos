@@ -96,7 +96,7 @@ func (sp *SubscriptionProcessor) processTransaction(ctx context.Context, tx *typ
 	return sp.db.Transaction(func(dbTx *gorm.DB) error {
 		var latestTx types.SubscriptionTransaction
 		if err := dbTx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			First(&latestTx, "subscription_id = ?", tx.SubscriptionID).Error; err != nil {
+			Find(&latestTx, "subscription_id = ?", tx.SubscriptionID).Error; err != nil {
 			return fmt.Errorf("failed to lock transaction %s: %w", tx.SubscriptionID, err)
 		}
 
