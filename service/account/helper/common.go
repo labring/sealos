@@ -60,6 +60,8 @@ const PayNotificationPath = PaymentGroup + Notify
 const (
 	ConfigPath         = "/config/config.json"
 	EnvMongoURI        = "MONGO_URI"
+	EnvClientIP        = "CLIENT_IP"
+	EnvDeviceTokenID   = "DEVICE_TOKEN_ID"
 	ENVGlobalCockroach = "GLOBAL_COCKROACH_URI"
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"

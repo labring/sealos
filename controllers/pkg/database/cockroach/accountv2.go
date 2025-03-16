@@ -855,6 +855,12 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 	return c.updateWithAccount(userUID, isDeduction, add, isActive, amount, tx)
 }
 
+func AddDeductionAccount(tx *gorm.DB, userUID uuid.UUID, amount int64) error {
+	return tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(map[string]interface{}{
+		`"deduction_balance"`: gorm.Expr("deduction_balance + ?", amount),
+	}).Error
+}
+
 func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isActive bool, amount int64, db *gorm.DB) error {
 	exprs := map[string]interface{}{}
 	control := "-"

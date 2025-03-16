@@ -34,6 +34,7 @@ import (
 )
 
 type Interface interface {
+	GetGlobalDB() *gorm.DB
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
 	GetAccountWithWorkspace(workspace string) (*types.Account, error)
 	GetProperties() ([]common.PropertyQuery, error)
@@ -88,6 +89,7 @@ type Interface interface {
 	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
 	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
+	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 }
 
 type Account struct {
@@ -111,6 +113,10 @@ type Cockroach struct {
 
 func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
 	return g.ck
+}
+
+func (g *Cockroach) GetGlobalDB() *gorm.DB {
+	return g.ck.GetGlobalDB()
 }
 
 func (g *Cockroach) GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error {
@@ -318,6 +324,10 @@ func (g *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 
 func (g *Cockroach) GetRegions() ([]types.Region, error) {
 	return g.ck.GetRegions()
+}
+
+func (g *Cockroach) GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error) {
+	return g.ck.GetSubscriptionPlan(planName)
 }
 
 func (g *Cockroach) GetLocalRegion() types.Region {

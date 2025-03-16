@@ -217,50 +217,12 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 	subTransaction.PayID = paymentID
 	var paySvcResp *responsePay.AlipayPayResponse
 	if req.CardID != nil {
-		card, err := dao.DBClient.GetCardInfo(*req.CardID, req.UserUID)
+		err := SubscriptionPayForBindCard(paymentReq, req, &subTransaction)
 		if err != nil {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to get card info: ", err)})
-			return
+			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to pay for subscription with bind card: ", err)})
+		} else {
+			SetSuccessResp(c)
 		}
-		err = dao.DBClient.PaymentWithFunc(&types.Payment{
-			ID: paymentID,
-			PaymentRaw: types.PaymentRaw{
-				UserUID:      req.UserUID,
-				Amount:       subTransaction.Amount,
-				Method:       req.PayMethod,
-				RegionUID:    dao.DBClient.GetLocalRegion().UID,
-				TradeNO:      paySvcResp.PaymentRequestId,
-				CodeURL:      paySvcResp.NormalUrl,
-				Type:         types.PaymentTypeSubscription,
-				CardUID:      req.CardID,
-				ChargeSource: types.ChargeSourceBindCard,
-			},
-		}, func(tx *gorm.DB) error {
-			// TODO 检查没有订阅变更
-			count, err := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
-			if err != nil {
-				return fmt.Errorf("failed to get active subscription transaction count: %w", err)
-			}
-			if count > 0 {
-				return fmt.Errorf("there is active subscription transaction")
-			}
-			subTransaction.PayStatus = types.SubscriptionPayStatusPaid
-			return cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
-		}, func(_ *gorm.DB) error {
-			paySvcResp, err = dao.PaymentService.CreateSubscriptionPayWithCard(paymentReq, card)
-			if err != nil {
-				return fmt.Errorf("failed to create payment with card: %w", err)
-			}
-			if paySvcResp.Result.ResultCode != SuccessStatus || paySvcResp.Result.ResultStatus != "S" {
-				return fmt.Errorf("payment result is not SUCCESS: %#+v", paySvcResp.Result)
-			}
-			return nil
-		})
-		if err != nil {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
-			return
-		}
-		SetSuccessResp(c)
 		return
 	} else {
 		paySvcResp, err = dao.PaymentService.CreateNewSubscriptionPay(paymentReq)
@@ -314,6 +276,106 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"redirectUrl": paySvcResp.NormalUrl, "success": true})
+}
+
+func SubscriptionPayForBindCard(paymentReq services.PaymentRequest, req *helper.SubscriptionOperatorReq, subTransaction *types.SubscriptionTransaction) error {
+	paymentID, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("failed to create payment id: %w", err)
+	}
+	subTransaction.PayID = paymentID
+	var paySvcResp *responsePay.AlipayPayResponse
+	card, err := dao.DBClient.GetCardInfo(*req.CardID, req.UserUID)
+	if err != nil {
+		return fmt.Errorf("failed to get card info: %w", err)
+	}
+
+	err = dao.DBClient.PaymentWithFunc(&types.Payment{
+		ID: paymentID,
+		PaymentRaw: types.PaymentRaw{
+			UserUID:      req.UserUID,
+			Amount:       subTransaction.Amount,
+			Method:       req.PayMethod,
+			RegionUID:    dao.DBClient.GetLocalRegion().UID,
+			TradeNO:      paySvcResp.PaymentRequestId,
+			CodeURL:      paySvcResp.NormalUrl,
+			Type:         types.PaymentTypeSubscription,
+			CardUID:      req.CardID,
+			ChargeSource: types.ChargeSourceBindCard,
+		},
+	}, func(tx *gorm.DB) error {
+		// TODO 检查没有订阅变更
+		count, err := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get active subscription transaction count: %w", err)
+		}
+		if count > 0 {
+			return fmt.Errorf("there is active subscription transaction")
+		}
+		subTransaction.PayStatus = types.SubscriptionPayStatusPaid
+		return cockroach.CreateSubscriptionTransaction(tx, subTransaction)
+	}, func(tx *gorm.DB) error {
+		paySvcResp, err = dao.PaymentService.CreateSubscriptionPayWithCard(paymentReq, card)
+		if err != nil {
+			return fmt.Errorf("failed to create payment with card: %w", err)
+		}
+		if paySvcResp.Result.ResultCode != SuccessStatus || paySvcResp.Result.ResultStatus != "S" {
+			return fmt.Errorf("payment result is not SUCCESS: %#+v", paySvcResp.Result)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create payment: %w", err)
+	}
+	return nil
+}
+
+func SubscriptionPayByBalance(req *helper.SubscriptionOperatorReq, subTransaction *types.SubscriptionTransaction) error {
+	paymentID, err := gonanoid.New(12)
+	if err != nil {
+		return fmt.Errorf("failed to create payment id: %w", err)
+	}
+	subTransaction.PayID = paymentID
+	err = dao.DBClient.PaymentWithFunc(&types.Payment{
+		ID: paymentID,
+		PaymentRaw: types.PaymentRaw{
+			UserUID:      req.UserUID,
+			Amount:       subTransaction.Amount,
+			Method:       req.PayMethod,
+			RegionUID:    dao.DBClient.GetLocalRegion().UID,
+			Type:         types.PaymentTypeSubscription,
+			ChargeSource: types.ChargeSourceBalance,
+		},
+	}, func(tx *gorm.DB) error {
+		// TODO 检查没有订阅变更
+		count, err := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get active subscription transaction count: %w", err)
+		}
+		if count > 0 {
+			return fmt.Errorf("there is active subscription transaction")
+		}
+		subTransaction.PayStatus = types.SubscriptionPayStatusPaid
+		return cockroach.CreateSubscriptionTransaction(tx, subTransaction)
+	}, func(tx *gorm.DB) error {
+		// check account balance
+		var account types.Account
+		if err := tx.Where(types.Account{UserUID: subTransaction.UserUID}).First(&account).Error; err != nil {
+			return fmt.Errorf("failed to get account: %w", err)
+		}
+		if account.Balance-account.DeductionBalance < subTransaction.Amount {
+			return fmt.Errorf("insufficient balance")
+		}
+		err = cockroach.AddDeductionAccount(tx, subTransaction.UserUID, subTransaction.Amount)
+		if err != nil {
+			return fmt.Errorf("failed to add deduction account: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create payment: %w", err)
+	}
+	return nil
 }
 
 func NewSubscriptionPayNotifyHandler(c *gin.Context) {
