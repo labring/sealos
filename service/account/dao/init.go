@@ -33,6 +33,8 @@ type Region struct {
 
 var (
 	DBClient        Interface
+	ClientIP        string
+	DeviceTokenID   string
 	PaymentService  *services.AtomPaymentService
 	PaymentCurrency string
 	JwtMgr          *helper.JWTManager
@@ -120,6 +122,10 @@ func Init(ctx context.Context) error {
 		payRedirectURL := "https://" + Cfg.LocalRegionDomain
 		fmt.Printf("init alipay client with payNotificationURL: %s , payRedirectURL: %s\n", payNotificationURL, payRedirectURL)
 		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, payRedirectURL)
+		ClientIP, DeviceTokenID = os.Getenv(helper.EnvClientIP), os.Getenv(helper.EnvDeviceTokenID)
+		if ClientIP == "" {
+			return fmt.Errorf("empty client ip, please check env: %s", helper.EnvClientIP)
+		}
 	}
 	if PaymentCurrency = os.Getenv(helper.EnvPaymentCurrency); PaymentCurrency == "" {
 		PaymentCurrency = "USD"
