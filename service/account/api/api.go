@@ -535,6 +535,36 @@ func GetAPPCosts(c *gin.Context) {
 	})
 }
 
+// GetAppTypeCosts
+// @Summary Get app type costs
+// @Description Get app type costs within a specified time range
+// @Tags AppTypeCosts
+// @Accept json
+// @Produce json
+// @Param request body helper.AppCostsReq true "App type costs request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved app type costs"
+// @Failure 400 {object} map[string]interface{} "failed to parse get app type cost request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get app type cost"
+// @Router /account/v1alpha1/costs/app-type [post]
+func GetAppTypeCosts(c *gin.Context) {
+	req, err := helper.ParseAppCostsReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get app type cost request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	cost, err := dao.DBClient.GetAppResourceCosts(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app type cost : %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, cost)
+}
+
 // CheckPermission
 // @Summary Check permission
 // @Description Check permission
