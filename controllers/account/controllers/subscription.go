@@ -85,7 +85,7 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 	for i := range transactions {
 		sp.AccountReconciler.Logger.Info("Processing transaction", "id", transactions[i].SubscriptionID, "operator", transactions[i].Operator, "status", transactions[i].Status, "plan", transactions[i].NewPlanName)
 		if err := sp.processTransaction(ctx, &transactions[i]); err != nil {
-			log.Printf("Failed to process transaction %s: %v", transactions[i].SubscriptionID, err)
+			sp.Logger.Error(fmt.Errorf("failed to process transaction: %w", err), "", "id", transactions[i].ID)
 		}
 	}
 	return nil
@@ -102,6 +102,7 @@ func (sp *SubscriptionProcessor) processTransaction(ctx context.Context, tx *typ
 
 		// 检查是否仍需处理
 		if !sp.shouldProcessTransaction(&latestTx) {
+			sp.Logger.Info("Transaction needn't processed", "id", latestTx.ID)
 			return nil
 		}
 
@@ -113,6 +114,7 @@ func (sp *SubscriptionProcessor) processTransaction(ctx context.Context, tx *typ
 			types.SubscriptionTransactionTypeRenewed:    sp.handleRenewal,
 		}[latestTx.Operator]
 		if !exists {
+			sp.Logger.Info("Unknown operator", "operator", latestTx.Operator)
 			return nil // 未知操作类型，跳过
 		}
 
