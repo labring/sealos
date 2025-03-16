@@ -94,12 +94,12 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 // processTransaction 处理单个事务
 func (sp *SubscriptionProcessor) processTransaction(ctx context.Context, tx *types.SubscriptionTransaction) error {
 	return sp.db.Transaction(func(dbTx *gorm.DB) error {
-		var latestTx types.SubscriptionTransaction
-		if err := dbTx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Find(&latestTx, "subscription_id = ?", tx.SubscriptionID).Error; err != nil {
-			return fmt.Errorf("failed to lock transaction %s: %w", tx.SubscriptionID, err)
-		}
-
+		//var latestTx types.SubscriptionTransaction
+		//if err := dbTx.Clauses(clause.Locking{Strength: "UPDATE"}).
+		//	Find(&latestTx, "subscription_id = ?", tx.SubscriptionID).Error; err != nil {
+		//	return fmt.Errorf("failed to lock transaction %s: %w", tx.SubscriptionID, err)
+		//}
+		latestTx := *tx
 		// 检查是否仍需处理
 		if !sp.shouldProcessTransaction(&latestTx) {
 			sp.Logger.Info("Transaction needn't processed", "id", latestTx.ID)
