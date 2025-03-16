@@ -557,12 +557,22 @@ func GetAppTypeCosts(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	cost, err := dao.DBClient.GetAppResourceCosts(req)
+	costs, err := dao.DBClient.GetAppResourceCosts(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app type cost : %v", err)})
 		return
 	}
-	c.JSON(http.StatusOK, cost)
+	appCosts := common.AppCosts{}
+	for _type, resourceUsage := range costs.ResourcesByType {
+		appCosts.Costs = append(appCosts.Costs, common.AppCost{
+			AppType:    int32(resources.AppType[_type]),
+			Used:       resourceUsage.Used,
+			UsedAmount: resourceUsage.UsedAmount,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"app_costs": appCosts,
+	})
 }
 
 // CheckPermission
