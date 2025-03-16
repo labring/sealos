@@ -106,6 +106,19 @@ type UserTimeRangeReq struct {
 	AuthBase `json:",inline" bson:",inline"`
 }
 
+// ResourceUsage 定义资源使用情况的结构体
+type ResourceUsage struct {
+	Used       map[uint8]int64 `json:"used"`        // 资源使用量，key为资源类型
+	UsedAmount map[uint8]int64 `json:"used_amount"` // 资源使用花费，key为资源类型
+	Count      int             `json:"count"`       // 记录数量
+}
+
+// AppResourceCostsResponse 定义返回结果的结构体
+type AppResourceCostsResponse struct {
+	ResourcesByType map[string]*ResourceUsage `json:"resources_by_type,omitempty"`
+	AppType         string                    `json:"app_type"`
+}
+
 type AppCostsReq struct {
 	// @Summary Order ID
 	// @Description Order ID

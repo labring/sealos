@@ -40,6 +40,7 @@ type Interface interface {
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
+	GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResourceCostsResponse, error)
 	ChargeBilling(req *helper.AdminChargeBillingReq) error
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
@@ -478,6 +479,120 @@ func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
 	return err
 }
 
+// GetAppResourceCosts 获取指定时间范围内应用资源的使用情况和花费
+func (m *MongoDB) GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResourceCostsResponse, error) {
+	appType := strings.ToUpper(req.AppType)
+	result := &helper.AppResourceCostsResponse{
+		AppType: appType,
+	}
+	result.ResourcesByType = map[string]*helper.ResourceUsage{
+		appType: {
+			Used:       make(map[uint8]int64),
+			UsedAmount: make(map[uint8]int64),
+			Count:      0,
+		},
+	}
+	if appType == resources.AppStore {
+		delete(result.ResourcesByType, appType)
+	}
+	matchConditions := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "time", Value: bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		}},
+	}
+	if req.Namespace != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	if strings.ToUpper(req.AppType) == resources.AppStore {
+		if req.AppName != "" {
+			matchConditions = append(matchConditions, bson.E{Key: "app_name", Value: req.AppName})
+		}
+		matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]})
+
+		cursor, err := m.getBillingCollection().Find(context.Background(), matchConditions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find billing collection: %v", err)
+		}
+		defer cursor.Close(context.Background())
+
+		for cursor.Next(context.Background()) {
+			var billing resources.Billing
+			if err := cursor.Decode(&billing); err != nil {
+				return nil, fmt.Errorf("failed to decode billing: %v", err)
+			}
+			appTypeMap := make(map[string]struct{})
+			for _, appCost := range billing.AppCosts {
+				appTypeStr := resources.AppTypeReverse[appCost.Type]
+				if appTypeStr == "" {
+					appTypeStr = "UNKNOWN"
+				}
+				if _, exists := result.ResourcesByType[appTypeStr]; !exists {
+					result.ResourcesByType[appTypeStr] = &helper.ResourceUsage{
+						Used:       make(map[uint8]int64),
+						UsedAmount: make(map[uint8]int64),
+						Count:      0,
+					}
+				}
+				for k, v := range appCost.Used {
+					result.ResourcesByType[appTypeStr].Used[k] += v
+					result.ResourcesByType[appTypeStr].UsedAmount[k] += appCost.UsedAmount[k]
+				}
+				appTypeMap[appTypeStr] = struct{}{}
+			}
+			for _type := range appTypeMap {
+				result.ResourcesByType[_type].Count++
+			}
+		}
+		if err := cursor.Err(); err != nil {
+			return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+		}
+	} else {
+		if req.AppType != "" {
+			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[appType]})
+		}
+
+		pipeline := mongo.Pipeline{
+			{{Key: "$match", Value: matchConditions}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+		}
+
+		if req.AppName != "" {
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		}
+
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+		if err != nil {
+			return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+		}
+		defer cursor.Close(context.Background())
+
+		for cursor.Next(context.Background()) {
+			var resultDoc struct {
+				AppCosts resources.AppCost `bson:"app_costs"`
+			}
+			if err := cursor.Decode(&resultDoc); err != nil {
+				return nil, fmt.Errorf("failed to decode result doc: %v", err)
+			}
+			for resourceKey, usedValue := range resultDoc.AppCosts.Used {
+				result.ResourcesByType[appType].Used[resourceKey] += usedValue
+				result.ResourcesByType[appType].UsedAmount[resourceKey] += resultDoc.AppCosts.UsedAmount[resourceKey]
+			}
+			result.ResourcesByType[appType].Count++
+		}
+		if err := cursor.Err(); err != nil {
+			return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+		}
+	}
+	for _, resourceUsage := range result.ResourcesByType {
+		for k, v := range resourceUsage.Used {
+			resourceUsage.Used[k] = v / int64(resourceUsage.Count)
+		}
+	}
+	return result, nil
+}
 func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts, rErr error) {
 	if req.Page <= 0 {
 		req.Page = 1

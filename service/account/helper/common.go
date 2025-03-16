@@ -11,6 +11,7 @@ const (
 	GetAllRegionConsumptionAmount = "/costs/all-region-consumption"
 	GetPropertiesUsed             = "/costs/properties"
 	GetAPPCosts                   = "/costs/app"
+	GetAppTypeCosts               = "/costs/app-type"
 	SetPaymentInvoice             = "/payment/set-invoice"
 	GetUserCosts                  = "/costs"
 	SetTransfer                   = "/transfer"
