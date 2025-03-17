@@ -40,7 +40,7 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
-import { throttle } from 'lodash';
+import { min, throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
@@ -49,11 +49,11 @@ import { UseFormReturn } from 'react-hook-form';
 const Form = ({
   formHook,
   pxVal,
-  minStorage
+  allocatedStorage
 }: {
   formHook: UseFormReturn<DBEditType, any>;
   pxVal: number;
-  minStorage: number;
+  allocatedStorage: number;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -150,47 +150,42 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
-  function numberInputOnChange(value: string) {
-    // e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
+  const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
-    let minChange = 1;
+    let minStorageChange = 1,
+      minCPU = 0,
+      minMemory = 0;
+    let specialUse = 0;
     switch (dbType) {
       case DBTypeEnum.redis:
-        minChange = 2;
+        minStorageChange = 1;
+        specialUse = 2;
         break;
       case DBTypeEnum.kafka:
-        minChange = 4;
+        [minStorageChange, minCPU, minMemory] = [4, 1, 1];
         break;
       case DBTypeEnum.milvus:
-        minChange = 3;
+        [minStorageChange, minCPU, minMemory] = [3, 1, 1];
         break;
       default:
         break;
     }
-    if (value === '') {
-      setValue('storage', minStorage);
-    } else {
-      setValue('storage', +value < minChange ? +minChange : +value);
-    }
-  }
+    let minStorage = Math.max(allocatedStorage, minStorageChange, specialUse);
+    return {
+      minStorageChange,
+      minCPU: minCPU * 1000,
+      minMemory: minMemory * 1024,
+      minStorage
+    };
+  }, [getValues('dbType')]);
 
-  const minNumberChange = useMemo(() => {
-    const dbType = getValues('dbType');
-    let minChange = 1;
-    switch (dbType) {
-      case DBTypeEnum.redis:
-        minChange = 2;
-        break;
-      case DBTypeEnum.kafka:
-        minChange = 4;
-        break;
-      case DBTypeEnum.milvus:
-        minChange = 3;
-        break;
-      default:
-        break;
+  useEffect(() => {
+    if (getValues('cpu') < minCPU) {
+      setValue('cpu', minCPU);
     }
-    return minChange;
+    if (getValues('memory') < minMemory) {
+      setValue('memory', minMemory);
+    }
   }, [getValues('dbType')]);
 
   return (
@@ -393,7 +388,11 @@ const Form = ({
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
                   setVal={(e) => {
-                    setValue('cpu', CpuSlideMarkList[e].value);
+                    if (CpuSlideMarkList[e].value < minCPU) {
+                      setValue('cpu', minCPU);
+                    } else {
+                      setValue('cpu', CpuSlideMarkList[e].value);
+                    }
                   }}
                   max={CpuSlideMarkList.length - 1}
                   min={0}
@@ -409,14 +408,18 @@ const Form = ({
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
                   setVal={(e) => {
-                    setValue('memory', MemorySlideMarkList[e].value);
+                    if (MemorySlideMarkList[e].value < minMemory) {
+                      setValue('memory', minMemory);
+                    } else {
+                      setValue('memory', MemorySlideMarkList[e].value);
+                    }
                   }}
                   max={MemorySlideMarkList.length - 1}
                   min={0}
                   step={1}
                 />
               </Flex>
-              <Flex mb={8} alignItems={'center'}>
+              <Flex mb={7} alignItems={'center'}>
                 <Label w={100}>{t('Replicas')}</Label>
                 <RangeInput
                   w={180}
@@ -458,15 +461,6 @@ const Form = ({
                     borderRadius={'md'}
                   />
                 )}
-                {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
-                  <Tip
-                    ml={4}
-                    icon={<InfoOutlineIcon />}
-                    text={t('multi_replica_redis_tip')}
-                    size="sm"
-                    borderRadius={'md'}
-                  />
-                )}
                 {(getValues('dbType') === DBTypeEnum.mongodb ||
                   getValues('dbType') === DBTypeEnum.mysql) &&
                   getValues('replicas') > 1 && (
@@ -482,7 +476,7 @@ const Form = ({
                   )}
               </Flex>
 
-              <FormControl isInvalid={!!errors.storage} w={'500px'}>
+              <FormControl isInvalid={!!errors.storage} paddingTop={1}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('storage')}</Label>
                   <MyTooltip
@@ -491,10 +485,13 @@ const Form = ({
                     <NumberInput
                       w={'180px'}
                       max={SystemEnv.STORAGE_MAX_SIZE}
-                      min={Math.max(minStorage, minStorage)}
-                      step={minNumberChange}
+                      min={minStorage}
+                      step={minStorageChange}
                       position={'relative'}
-                      value={Math.round(getValues('storage') / minNumberChange) * minNumberChange}
+                      value={
+                        Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                        minStorageChange
+                      }
                       onChange={(e) => {
                         e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
                       }}
@@ -548,6 +545,20 @@ const Form = ({
                       </Box>
                     </NumberInput>
                   </MyTooltip>
+                  {[DBTypeEnum.redis, DBTypeEnum.kafka, DBTypeEnum.milvus].includes(
+                    getValues('dbType') as DBTypeEnum
+                  ) && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={t('multi_components_tip')}
+                      size="sm"
+                      borderRadius={'md'}
+                      height={'fit-content'}
+                      maxWidth={310}
+                      maxHeight={'100%'}
+                    />
+                  )}
                 </Flex>
               </FormControl>
             </Box>
