@@ -99,6 +99,61 @@ func GetLastSubscriptionTransaction(c *gin.Context) {
 	})
 }
 
+// GetSubscriptionUpgradeAmount
+// @Summary Get subscription upgrade amount
+// @Description Get subscription upgrade amount
+// @Tags Subscription
+// @Accept json
+// @Produce json
+// @Param req body SubscriptionUpgradeAmountReq true "SubscriptionUpgradeAmountReq"
+// @Success 200 {object} SubscriptionUpgradeAmountResp
+// @Router /payment/v1alpha1/subscription/upgrade-amount [post]
+func GetSubscriptionUpgradeAmount(c *gin.Context) {
+	req, err := helper.ParseSubscriptionOperatorReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	userSubscription, err := dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: req.UserUID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get subscription info: %v", err)})
+		return
+	}
+	if userSubscription.PlanName == req.PlanName {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "plan name is same as current plan"})
+		return
+	}
+	currentSubPlan, err := dao.DBClient.GetSubscriptionPlan(userSubscription.PlanName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get current plan: %v", err)})
+		return
+	}
+	if currentSubPlan.Amount <= 0 {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "current plan is free plan"})
+		return
+	}
+	describeSubPlan, err := dao.DBClient.GetSubscriptionPlan(req.PlanName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get describe plan: %v", err)})
+		return
+	}
+	if describeSubPlan.Amount <= currentSubPlan.Amount {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "describe plan amount is less than current plan amount"})
+		return
+	}
+	alreadyUsedDays := time.Since(userSubscription.StartAt).Hours() / 24
+	remainingDays := float64(30) - alreadyUsedDays
+	currentPlanSurplusValue := math.Ceil(float64(currentSubPlan.Amount) * math.Ceil(remainingDays/30))
+	describePlanSurplusValue := math.Ceil(float64(describeSubPlan.Amount) * math.Ceil(remainingDays/30))
+	c.JSON(http.StatusOK, gin.H{
+		"amount": int64(describePlanSurplusValue - currentPlanSurplusValue),
+	})
+}
+
 // SubscriptionPay
 // @Summary Subscription pay
 // @Description Subscription pay
