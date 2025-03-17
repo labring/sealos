@@ -48,6 +48,7 @@ const (
 	SubscriptionUserInfo        = "/subscription/user-info"
 	SubscriptionPlanList        = "/subscription/plan-list"
 	SubscriptionLastTransaction = "/subscription/last-transaction"
+	SubscriptionUpgradeAmount   = "/subscription/upgrade-amount"
 	SubscriptionNotify          = "/subscription/notify"
 	SubscriptionPay             = "/subscription/pay"
 	CardList                    = "/card/list"
