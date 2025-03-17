@@ -74,6 +74,31 @@ func GetSubscriptionPlanList(c *gin.Context) {
 	})
 }
 
+// GetSubscriptionLastTransaction
+// @Summary Get user last subscription transaction
+// @Description Get user last subscription transaction
+// @Tags Subscription
+// @Accept json
+// @Produce json
+// @Param req body SubscriptionLastTransactionReq true "SubscriptionLastTransactionReq"
+// @Success 200 {object} SubscriptionLastTransactionResp
+// @Router /payment/v1alpha1/subscription/last-transaction [post]
+func GetLastSubscriptionTransaction(c *gin.Context) {
+	req := &helper.AuthBase{}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	transaction, err := dao.DBClient.GetLastSubscriptionTransaction(req.UserUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get last subscription transaction: %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"transaction": transaction,
+	})
+}
+
 // SubscriptionPay
 // @Summary Subscription pay
 // @Description Subscription pay

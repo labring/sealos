@@ -85,6 +85,7 @@ type Interface interface {
 	NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error)
 	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
 	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
@@ -224,6 +225,15 @@ func (g *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) 
 		g.subscriptionPlanList, err = g.ck.GetSubscriptionPlanList()
 	}
 	return g.subscriptionPlanList, err
+}
+
+func (g *Cockroach) GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error) {
+	transaction := &types.SubscriptionTransaction{}
+	err := g.ck.DB.Where("user_uid = ?", userUID).Order("created_at desc").First(transaction)
+	if err.Error != nil {
+		return nil, fmt.Errorf("failed to get last subscription transaction: %v", err.Error)
+	}
+	return transaction, nil
 }
 
 func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error {
