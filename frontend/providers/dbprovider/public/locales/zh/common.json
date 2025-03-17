@@ -256,7 +256,6 @@
   "min_replicas": "实例数最小为: ",
   "minute": "分",
   "monitor_list": "实时监控",
-  "multi_replica_redis_tip": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用",
   "name": "名字",
   "no_data_available": "暂无数据",
   "no_logs_for_now": "暂无日志",
@@ -338,5 +337,6 @@
   "VerticalScalingMemory": "纵向扩展（内存）",
   "HorizontalScaling": "横向扩展（实例数）",
   "VolumeExpansion": "卷扩展（磁盘）",
-  "Stop": "停止"
+  "Stop": "停止",
+  "multi_components_tip": "多组件数据库磁盘将会分配给各个组件"
 }

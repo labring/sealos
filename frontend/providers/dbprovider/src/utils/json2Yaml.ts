@@ -45,14 +45,18 @@ export const json2CreateCluster = (
     Record<
       DBComponentsName,
       {
-        limits: {
-          cpu: string;
-          memory: string;
+        cpuMemory: {
+          limits: {
+            cpu: string;
+            memory: string;
+          };
+          requests: {
+            cpu: string;
+            memory: string;
+          };
         };
-        requests: {
-          cpu: string;
-          memory: string;
-        };
+        storage: number;
+        other?: Record<string, any>;
       }
     >
   >;
@@ -77,15 +81,27 @@ export const json2CreateCluster = (
       case DBTypeEnum.mongodb:
       case DBTypeEnum.mysql:
         return {
-          [DBComponentNameMap[dbType][0]]: getPercentResource(1)
+          [DBComponentNameMap[dbType][0]]: {
+            cpuMemory: getPercentResource(0.8),
+            storage: data.storage
+          }
         };
       case DBTypeEnum.redis:
         return {
-          redis: getPercentResource(0.8),
-          'redis-sentinel': getPercentResource(0.2)
+          redis: {
+            cpuMemory: getPercentResource(0.8),
+            storage: Math.max(data.storage - 1, 1)
+          },
+          'redis-sentinel': {
+            cpuMemory: getPercentResource(0.2),
+            storage: 1
+          }
         };
       case DBTypeEnum.kafka:
-        const quarterResource = getPercentResource(0.25);
+        const quarterResource = {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+        };
         return {
           'kafka-server': quarterResource,
           'kafka-broker': quarterResource,
@@ -94,14 +110,26 @@ export const json2CreateCluster = (
         };
       case DBTypeEnum.milvus:
         return {
-          milvus: getPercentResource(0.4),
-          etcd: getPercentResource(0.3),
-          minio: getPercentResource(0.3)
+          milvus: {
+            cpuMemory: getPercentResource(0.4),
+            storage: Math.max(Math.round(data.storage / 3), 1)
+          },
+          etcd: {
+            cpuMemory: getPercentResource(0.3),
+            storage: Math.max(Math.round(data.storage / 3), 1)
+          },
+          minio: {
+            cpuMemory: getPercentResource(0.3),
+            storage: Math.max(Math.round(data.storage / 3), 1)
+          }
         };
       default:
         const resource = getPercentResource(DBComponentNameMap[dbType].length);
         return DBComponentNameMap[dbType].reduce((acc: resourcesDistributeMap, cur) => {
-          acc[cur] = resource;
+          acc[cur] = {
+            cpuMemory: getPercentResource(DBComponentNameMap[dbType].length),
+            storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+          };
           return acc;
         }, {});
     }
@@ -167,13 +195,13 @@ export const json2CreateCluster = (
           },
           clusterDefinitionRef: dbType,
           clusterVersionRef: data.dbVersion,
-          componentSpecs: Object.entries(resources).map(([key, value]) => {
+          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
             return {
               componentDefRef: key,
               monitor: true,
               name: key,
               replicas: data.replicas,
-              resources: value,
+              resources: resourceData.cpuMemory,
               serviceAccountName: data.dbName,
               switchPolicy: {
                 type: 'Noop'
@@ -185,10 +213,7 @@ export const json2CreateCluster = (
                     accessModes: ['ReadWriteOnce'],
                     resources: {
                       requests: {
-                        storage: `${Math.max(
-                          Math.round(data.storage / DBComponentNameMap[dbType].length),
-                          1
-                        )}Gi`
+                        storage: `${resourceData.storage}Gi`
                       }
                     },
                     ...storageClassName

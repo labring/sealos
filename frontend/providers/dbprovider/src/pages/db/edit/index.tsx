@@ -41,7 +41,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [forceUpdate, setForceUpdate] = useState(false);
-  const [minStorage, setMinStorage] = useState(1);
+  const [allocatedStorage, setAllocatedStorage] = useState(1);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail, dbDetail } = useDBStore();
@@ -185,7 +185,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         if (!res) return;
         oldDBEditData.current = res;
         formHook.reset(adaptDBForm(res));
-        setMinStorage(res.storage);
+        setAllocatedStorage(res.storage);
       },
       onError(err) {
         toast({
@@ -223,7 +223,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} minStorage={minStorage} pxVal={pxVal} />
+            <Form formHook={formHook} allocatedStorage={allocatedStorage} pxVal={pxVal} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}

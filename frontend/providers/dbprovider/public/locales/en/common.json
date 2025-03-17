@@ -255,7 +255,6 @@
   "migration_task_created_successfully": "Migration task created",
   "min_replicas": "Min Replicas: ",
   "monitor_list": "Monitoring",
-  "multi_replica_redis_tip": "Note: The price for multi-replica Redis includes HA nodes",
   "name": "Name",
   "no_data_available": "No Data Available",
   "no_logs_for_now": "No logs for now",
@@ -337,5 +336,6 @@
   "VerticalScalingMemory": "Vertical Scaling (Memory)",
   "HorizontalScaling": "Horizontal Scaling (Instance)",
   "VolumeExpansion": "Volume Expansion (Disk)",
-  "Stop": "Stop"
+  "Stop": "Stop",
+  "multi_components_tip": "The storage of the multi-component database will be allocated to each component."
 }
