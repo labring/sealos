@@ -73,6 +73,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     if (isGuided) {
       formHook.setValue('storage', 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGuided]);
 
   const generateYamlList = (data: DBEditType) => {

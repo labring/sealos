@@ -20,10 +20,8 @@ import { I18nCommonKey } from '@/types/i18next';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
-  Button,
   Center,
   Checkbox,
-  Collapse,
   Flex,
   FormControl,
   Grid,
@@ -36,14 +34,12 @@ import {
   NumberInputStepper,
   Switch,
   Text,
-  useDisclosure,
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
-import { min, throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 
 const Form = ({
@@ -69,47 +65,23 @@ const Form = ({
     formState: { errors }
   } = formHook;
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
-    {
-      id: 'baseInfo',
-      label: 'basic',
-      icon: 'formInfo'
-    },
-    {
-      id: 'backupSettings',
-      label: 'backup_settings',
-      icon: 'backupSettings'
-    }
-  ];
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
+    () => [
+      {
+        id: 'baseInfo',
+        label: 'basic',
+        icon: 'formInfo'
+      },
+      {
+        id: 'backupSettings',
+        label: 'backup_settings',
+        icon: 'backupSettings'
+      }
+    ],
+    []
+  );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
-
-  // listen scroll and set activeNav
-  useEffect(() => {
-    const scrollFn = throttle((e: Event) => {
-      if (!e.target) return;
-      const doms = navList.map((item) => ({
-        dom: document.getElementById(item.id),
-        id: item.id
-      }));
-
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
-
-      for (let i = doms.length - 1; i >= 0; i--) {
-        const offsetTop = doms[i].dom?.offsetTop || 0;
-        if (scrollTop + 200 >= offsetTop) {
-          setActiveNav(doms[i].id);
-          break;
-        }
-      }
-    }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
-    return () => {
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
-    };
-    // eslint-disable-next-line
-  }, []);
 
   const Label = ({
     children,
@@ -150,6 +122,12 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
+  const supportBackup = useMemo(
+    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [getValues('dbType')]
+  );
+
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
     let minStorageChange = 1,
@@ -177,6 +155,7 @@ const Form = ({
       minMemory: minMemory * 1024,
       minStorage
     };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType')]);
 
   useEffect(() => {
@@ -186,7 +165,39 @@ const Form = ({
     if (getValues('memory') < minMemory) {
       setValue('memory', minMemory);
     }
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType')]);
+
+  const backupSettingsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const tempRef = backupSettingsRef.current;
+    const observerCallback = (
+      entries: IntersectionObserverEntry[],
+      observer: IntersectionObserver
+    ) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
+          setActiveNav(navList[1].id);
+        } else {
+          setActiveNav(navList[0].id);
+        }
+      });
+    };
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      threshold: 0.85
+    });
+    if (tempRef) {
+      observer.observe(tempRef);
+    }
+    return () => {
+      if (tempRef) {
+        observer.unobserve(tempRef);
+      }
+    };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backupSettingsRef, supportBackup]);
 
   return (
     <>
@@ -221,7 +232,7 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}
           >
-            {navList.map((item) => (
+            {navList.slice(0, supportBackup ? 2 : 1).map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
                   borderRadius={'base'}
@@ -563,8 +574,8 @@ const Form = ({
               </FormControl>
             </Box>
           </Box>
-          {BackupSupportedDBTypeList.includes(getValues('dbType')) && (
-            <Box id={'backupSettings'} {...boxStyles}>
+          {supportBackup && (
+            <Box id={'backupSettings'} ref={backupSettingsRef} {...boxStyles}>
               <Box {...headerStyles}>
                 <MyIcon name={'backupSettings'} mr={5} w={'20px'} color={'grayModern.600'} />
                 {t('backup_settings')}
