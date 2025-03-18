@@ -58,8 +58,7 @@ const MainBody = () => {
         }, delay);
       }
     },
-    refetchIntervalInBackground: false,
-    staleTime: 1000 * 60 * 5
+    refetchIntervalInBackground: false
   });
 
   const statusMap = useMemo(
@@ -143,7 +142,7 @@ const MainBody = () => {
                       bg={'rgba(3, 152, 85, 0.05)'}
                       color={'#039855'}
                       borderRadius={'full'}
-                      p={'2px 8px 2px 4px'}
+                      p={'2px 8px 2px 8px'}
                       gap={'2px'}
                       minW={'63px'}
                     >
@@ -163,24 +162,9 @@ const MainBody = () => {
                           bg={'rgba(17, 24, 36, 0.05)'}
                           color={'#485264'}
                           borderRadius={'full'}
-                          p={'2px 8px 2px 4px'}
+                          p={'2px 8px 2px 8px'}
                         >
-                          <MyIcon
-                            name={'loadingCircle'}
-                            w={'12px'}
-                            h={'12px'}
-                            animation={'spin 1s linear infinite'}
-                            sx={{
-                              '@keyframes spin': {
-                                '0%': {
-                                  transform: 'rotate(0deg)'
-                                },
-                                '100%': {
-                                  transform: 'rotate(360deg)'
-                                }
-                              }
-                            }}
-                          />
+                          <MyIcon name={'help'} w={'18px'} h={'18px'} />
                           <Text fontSize={'12px'} w={'full'} color={'#485264'}>
                             {t('prepare')}
                           </Text>

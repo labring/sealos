@@ -2,8 +2,7 @@ import { devboxKey } from '@/constants/devbox';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ProtocolType } from '@/types/devbox';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 

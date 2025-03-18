@@ -191,66 +191,79 @@ const IDEButton = ({
           fontSize={'12px'}
           defaultValue={currentIDE}
           p={'6px'}
-          w={'186px'}
+          px={'4px'}
+          w={'210px'}
           display={'flex'}
           flexDirection={'column'}
-          gap={'4px'}
+          gap={'2px'}
         >
           {menuItems.map((item) => {
             if (item.group === 'trae') {
               return (
                 <Flex key={item.value} gap={'4px'}>
-                  {item.options?.map((option) => (
-                    <MenuItem
-                      h={'30px'}
-                      w={'90px'}
-                      borderRadius={'4px'}
-                      bg={'grayModern.50'}
-                      key={option.value}
-                      value={option.value}
-                      onClick={() => {
-                        updateDevboxIDE(option.value as IDEType, devboxName);
-                        handleGotoIDE(option.value as IDEType);
-                      }}
-                      _hover={{
-                        bg: 'grayModern.150',
-                        borderRadius: 4
-                      }}
-                      _focus={{
-                        bg: '#1118240D',
-                        borderRadius: 4
-                      }}
-                      {...(currentIDE === option.value && {
-                        bg: 'grayModern.50',
-                        borderWidth: '1px',
-                        borderColor: 'brightBlue.500',
-                        color: 'brightBlue.600'
-                      })}
-                    >
-                      <Flex alignItems="center" w={'100%'}>
-                        <MyIcon name="trae" w={'16px'} mr={'6px'} />
-                        <Text whiteSpace="nowrap" mr={'2px'}>
-                          {option.menuLabel}
-                        </Text>
-                      </Flex>
-                    </MenuItem>
+                  {item.options?.map((option, index) => (
+                    <Flex key={option.value} alignItems={'center'}>
+                      <MenuItem
+                        h={'32px'}
+                        {...(index === 0 && {
+                          pl: '8px',
+                          pr: '4px',
+                          w: '80px'
+                        })}
+                        {...(index === 1 && {
+                          pr: '8px',
+                          w: '110px'
+                        })}
+                        borderRadius={'4px'}
+                        value={option.value}
+                        onClick={() => {
+                          updateDevboxIDE(option.value as IDEType, devboxName);
+                          handleGotoIDE(option.value as IDEType);
+                        }}
+                        _hover={{
+                          bg: 'grayModern.100',
+                          borderRadius: 4
+                        }}
+                        _focus={{
+                          bg: '#1118240D',
+                          borderRadius: 4
+                        }}
+                        {...(currentIDE === option.value && {
+                          color: 'brightBlue.600'
+                        })}
+                      >
+                        <Flex alignItems="center" w={'100%'}>
+                          <MyIcon name="trae" w={'16px'} mr={'6px'} />
+                          <Text whiteSpace="nowrap" mr={'2px'} fontWeight={500}>
+                            {option.menuLabel}
+                          </Text>
+                          {currentIDE === option.value && (
+                            <MyIcon name="check" w={'12px'} ml={'6px'} />
+                          )}
+                        </Flex>
+                      </MenuItem>
+                      {index === 0 && (
+                        <Box h={'12px'} w={'2px'} bg={'grayModern.200'} ml={'4px'}></Box>
+                      )}
+                    </Flex>
                   ))}
                 </Flex>
               );
             } else {
               return (
                 <MenuItem
+                  h={'32px'}
+                  w={'100%'}
+                  p={'6px'}
                   borderRadius={'4px'}
                   key={item.value}
                   value={item.value}
-                  bg={'grayModern.50'}
-                  fontWeight={500}
                   onClick={() => {
                     updateDevboxIDE(item.value as IDEType, devboxName);
                     handleGotoIDE(item.value as IDEType);
                   }}
                   _hover={{
-                    bg: 'grayModern.150',
+                    bg: 'grayModern.100',
                     borderRadius: 4
                   }}
                   _focus={{
@@ -258,17 +271,28 @@ const IDEButton = ({
                     borderRadius: 4
                   }}
                   {...(currentIDE === item.value && {
-                    bg: 'grayModern.50',
-                    borderWidth: '1px',
-                    borderColor: 'brightBlue.500',
                     color: 'brightBlue.600'
                   })}
                 >
-                  <Flex alignItems="center" w={'100%'}>
-                    <MyIcon name={getIconName(item.value as IDEType)} w={'16px'} mr={'6px'} />
-                    <Text whiteSpace="nowrap" overflow="hidden" textOverflow="ellipsis" mr={'4px'}>
-                      {item?.menuLabel}
-                    </Text>
+                  <Flex
+                    alignItems="center"
+                    w={'100%'}
+                    p={'7px 2px'}
+                    justifyContent={'space-between'}
+                  >
+                    <Flex alignItems={'center'}>
+                      <MyIcon name={getIconName(item.value as IDEType)} w={'16px'} mr={'6px'} />
+                      <Text
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                        mr={'4px'}
+                        fontWeight={500}
+                      >
+                        {item?.menuLabel}
+                      </Text>
+                    </Flex>
+                    {currentIDE === item.value && <MyIcon name="check" w={'12px'} />}
                   </Flex>
                 </MenuItem>
               );
