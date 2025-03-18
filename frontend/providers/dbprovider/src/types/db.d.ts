@@ -80,7 +80,12 @@ export type DBComponentsName =
   | 'nebula-graphd'
   | 'nebula-metad'
   | 'nebula-storaged'
-  | 'weaviate';
+  | 'weaviate'
+  | 'bookies'
+  | 'pulsar-proxy'
+  | 'ch-keeper'
+  | 'clickhouse'
+  | 'zookeeper';
 
 export interface DBEditType {
   dbType: DBType;

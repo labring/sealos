@@ -337,5 +337,8 @@
   "HorizontalScaling": "Horizontal Scaling (Instance)",
   "VolumeExpansion": "Volume Expansion (Disk)",
   "Stop": "Stop",
-  "multi_components_tip": "The storage of the multi-component database will be allocated to each component."
+  "multi_components_tip": "The storage of the multi-component database will be allocated to each component.",
+  "backup_saveTime_max": "Retain up to",
+  "backup_saveTime_min": "Minimum retention period: ",
+  "controlled_by": "Controlled By"
 }

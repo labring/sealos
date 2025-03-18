@@ -32,7 +32,9 @@ export enum DBTypeEnum {
   qdrant = 'qdrant',
   nebula = 'nebula',
   weaviate = 'weaviate',
-  milvus = 'milvus'
+  milvus = 'milvus',
+  pulsar = 'pulsar',
+  clickhouse = 'clickhouse'
 }
 
 export enum DBStatusEnum {
@@ -223,8 +225,10 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
-  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
+  { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  { id: DBTypeEnum.pulsar, label: 'pulsar' },
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
@@ -238,7 +242,9 @@ export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.qdrant]: ['qdrant'],
   [DBTypeEnum.nebula]: ['nebula-console', 'nebula-graphd', 'nebula-metad', 'nebula-storaged'],
   [DBTypeEnum.weaviate]: ['weaviate'],
-  [DBTypeEnum.milvus]: ['milvus', 'etcd', 'minio']
+  [DBTypeEnum.milvus]: ['milvus', 'etcd', 'minio'],
+  [DBTypeEnum.pulsar]: ['bookies', 'pulsar-proxy', 'zookeeper'],
+  [DBTypeEnum.clickhouse]: ['ch-keeper', 'clickhouse', 'zookeeper']
 };
 
 export const DBBackupPolicyNameMap = {

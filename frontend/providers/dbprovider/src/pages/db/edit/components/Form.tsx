@@ -670,42 +670,75 @@ const Form = ({
                     </Flex>
                   </Flex>
 
-                  <Flex mt={7} alignItems={'center'}>
-                    <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
-                    <Input
-                      height={'35px'}
-                      maxW={'100px'}
-                      bg={'#F7F8FA'}
-                      borderTopRightRadius={0}
-                      borderBottomRightRadius={0}
-                      _focus={{
-                        boxShadow: 'none',
-                        borderColor: 'myGray.200',
-                        bg: 'white'
-                      }}
-                      {...register('autoBackup.saveTime', {
-                        min: 1,
-                        valueAsNumber: true
-                      })}
-                    />
-                    <MySelect
-                      width={'80px'}
-                      value={getValues('autoBackup.saveType').toString()}
-                      borderLeft={0}
-                      boxShadow={'none !important'}
-                      borderColor={'myGray.200'}
-                      list={[
-                        { value: 'd', label: t('Day') },
-                        { value: 'h', label: t('Hour') }
-                      ]}
-                      h={'35px'}
-                      borderTopLeftRadius={0}
-                      borderBottomLeftRadius={0}
-                      onchange={(val: any) => {
-                        setValue('autoBackup.saveType', val);
-                      }}
-                    />
-                  </Flex>
+                  <FormControl isInvalid={Boolean(errors?.autoBackup?.saveTime)} mt={7}>
+                    <Flex alignItems={'center'}>
+                      <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
+                      <MyTooltip label={'1~100' + t('Day')}>
+                        <NumberInput
+                          w={'100px'}
+                          max={SystemEnv.STORAGE_MAX_SIZE}
+                          min={1}
+                          step={1}
+                          position={'relative'}
+                          value={getValues('autoBackup.saveTime')}
+                          onChange={(e) => {
+                            e !== ''
+                              ? setValue('autoBackup.saveTime', +e)
+                              : setValue('autoBackup.saveTime', 1);
+                          }}
+                        >
+                          <NumberInputField
+                            {...register('autoBackup.saveTime', {
+                              required: t('storage_cannot_empty'),
+                              min: {
+                                value: 1,
+                                message: `${t('backup_saveTime_max')}${minStorage} t('Day')`
+                              },
+                              max: {
+                                value: 100,
+                                message: `${t('backup_saveTime_min')}${100} t('Day')`
+                              },
+                              valueAsNumber: true
+                            })}
+                            min={0}
+                            max={100}
+                            borderRadius={'md'}
+                            borderColor={'#E8EBF0'}
+                            bg={'#F7F8FA'}
+                            _focusVisible={{
+                              borderColor: 'brightBlue.500',
+                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                              bg: '#FFF',
+                              color: '#111824'
+                            }}
+                            _hover={{
+                              borderColor: 'brightBlue.300'
+                            }}
+                          />
+
+                          <NumberInputStepper>
+                            <NumberIncrementStepper>
+                              <MyIcon name="arrowUp" width={'12px'} />
+                            </NumberIncrementStepper>
+                            <NumberDecrementStepper>
+                              <MyIcon name="arrowDown" width={'12px'} />
+                            </NumberDecrementStepper>
+                          </NumberInputStepper>
+                          <Box
+                            zIndex={1}
+                            position={'absolute'}
+                            right={10}
+                            top={'50%'}
+                            transform={'translateY(-50%)'}
+                            color={'grayModern.600'}
+                          >
+                            {t('Day')}
+                          </Box>
+                        </NumberInput>
+                      </MyTooltip>
+                    </Flex>
+                  </FormControl>
+
                   <Flex mt={7} alignItems={'start'}>
                     <Box flex={'0 0 110px'}>{t('termination_policy')}</Box>
                     {/* <Switch
