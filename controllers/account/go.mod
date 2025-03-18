@@ -3,6 +3,7 @@ module github.com/labring/sealos/controllers/account
 go 1.22
 
 replace (
+	github.com/apecloud/kubeblocks => github.com/apecloud/kubeblocks v0.8.4
 	k8s.io/api => k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.28.3
