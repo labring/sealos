@@ -9,6 +9,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
+
+	"github.com/google/uuid"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"gorm.io/gorm"
 
@@ -175,7 +180,7 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create request: %v", err)})
 			return
 		}
-		token, err := dao.JwtMgr.GenerateToken(helper.JwtUser{
+		token, err := dao.JwtMgr.GenerateToken(utils.JwtUser{
 			UserID: req.GetAuth().UserID,
 		})
 		if err != nil {
@@ -758,12 +763,17 @@ func GetAppCostTimeRange(c *gin.Context) {
 }
 
 func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
-	user, err := dao.JwtMgr.ParseUser(c)
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		return nil, fmt.Errorf("null auth found")
+	}
+	token := strings.TrimPrefix(tokenString, "Bearer ")
+	user, err := dao.JwtMgr.ParseUser(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse user: %v", err)
 	}
-	if user.UserID == "" {
-		return nil, fmt.Errorf("invalid user: %v", user)
+	if user.UserID == "" && user.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("invalid user: %v", *user)
 	}
 	auth = &helper.Auth{
 		Owner:   user.UserCrName,
