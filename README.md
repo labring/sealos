@@ -41,24 +41,23 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
 
 <hr />
 
-<p align="center">
+<div align="center">
  <a href="https://sealos.io">Website</a> •
-  <a href="https://usw.sealos.io">Cloud</a> •
   <a href="https://sealos.io/docs">Docs</a> •
   <a href="https://discord.gg/wdUn538zVP">Discord</a> •
   <a href="https://twitter.com/Sealos_io">Twitter</a> •
   <a href="./README_zh.md">简体中文</a>
-  <p>Availability Regions: Quick Start on Sealos Cloud</p>
-  <a href="https://usw.sealos.io">Western United States</a>
-  <br />
-  <a href="https://cloud.sealos.run">Hangzhou China</a>
-</p>
+</div>
 
 <br />
 
 <div align="center">
 
-[![Deploy on Sealos][deploy-badge]][deploy-link]
+| Global | China |
+| ------------- | ------------- |
+| Default: US-West  | Default: Hangzhou  |
+| [![Deploy on Sealos][deploy-badge]][deploy-link]  | [![Deploy on Sealos - China][deploy-badge]][deploy-link-cn] |
+
 
 https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
@@ -68,13 +67,6 @@ https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 
 ## Get started
-
-<div align="center">
-  
-  [![Deploy on Sealos][deploy-badge]][deploy-link]
-  
-</div>
-
 
 ### Create your Development Environment in Sealos with just one click
 
@@ -122,8 +114,10 @@ https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
 
 ## Self hosting
 
-* Install Sealos cloud: [Self host guide](https://sealos.io/self-hosting)
-* Install Kubernetes and kubernetes lifecycle managemant: [One command install kubernetes HA cluster](https://sealos.io/docs/self-hosting/lifecycle-management/quick-start/deploy-kubernetes#install-single-node-kubernetes)
+- Install Sealos cloud: 
+   - Self host guide (coming soon) | Chinese: [集群部署](https://sealos.run/docs/self-hosting/install)
+- Install Kubernetes and kubernetes lifecycle managemant: 
+   - One command install kubernetes HA cluster (coming soon) | Chinese: [安装K8s集群](https://sealos.run/docs/k8s/quick-start/deploy-kubernetes)
 
 ## 💡 Core features
 
@@ -163,7 +157,8 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 [deploy-badge]: https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg
-[deploy-link]: https://usw.sealos.io
+[deploy-link]: https://os.sealos.io
+[deploy-link-cn]: https://cloud.sealos.io
 
 <!-- ## License -->
 
