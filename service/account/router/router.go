@@ -86,11 +86,12 @@ func RegisterPayRouter() {
 		POST(helper.CardSetDefault, api.SetDefaultCard).
 		POST(helper.CreditsInfo, api.GetCreditsInfo)
 
-	if os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
+	if os.Getenv(helper.EnvSubscriptionEnabled) == "true" {
 		paymentGroup.POST(helper.SubscriptionUserInfo, api.GetSubscriptionUserInfo).
 			POST(helper.SubscriptionPlanList, api.GetSubscriptionPlanList).
 			POST(helper.SubscriptionLastTransaction, api.GetLastSubscriptionTransaction).
 			POST(helper.SubscriptionUpgradeAmount, api.GetSubscriptionUpgradeAmount).
+			POST(helper.SubscriptionFlushQuota, api.FlushSubscriptionQuota).
 			POST(helper.SubscriptionPay, api.CreateSubscriptionPay).
 			POST(helper.SubscriptionNotify, api.NewSubscriptionPayNotifyHandler)
 

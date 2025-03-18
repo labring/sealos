@@ -26,8 +26,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/resource"
-
 	corev1 "k8s.io/api/core/v1"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -252,38 +250,12 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		if len(plans) == 0 {
 			return fmt.Errorf("subscription plan list is empty")
 		}
-		r.SubscriptionQuotaLimit = make(map[string]corev1.ResourceList)
-		for i := range plans {
-			//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
-			res := plans[i].MaxResources
-			if res == "" {
-				r.SubscriptionQuotaLimit[plans[i].Name] = resources.DefaultResourceQuotaHard()
-			} else {
-				var maxResources map[string]string
-				if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
-					return fmt.Errorf("parse max_resources failed: %v", err)
-				}
-				r.Logger.Info("maxResources", "plan", plans[i].Name, "maxResources", maxResources)
-				rl := make(corev1.ResourceList)
-				for k, v := range maxResources {
-					switch k {
-					case "cpu":
-						rl[corev1.ResourceLimitsCPU], _ = resource.ParseQuantity(v)
-					case "memory":
-						rl[corev1.ResourceLimitsMemory], _ = resource.ParseQuantity(v)
-					case "storage":
-						rl[corev1.ResourceRequestsStorage], _ = resource.ParseQuantity(v)
-					case "nodeports":
-						rl[corev1.ResourceServicesNodePorts], _ = resource.ParseQuantity(v)
-					case resources.ResourceObjectStorageSize.String():
-						rl[resources.ResourceObjectStorageSize], _ = resource.ParseQuantity(v)
-					case resources.ResourceObjectStorageBucket.String():
-						rl[resources.ResourceObjectStorageBucket], _ = resource.ParseQuantity(v)
-					}
-				}
-				r.SubscriptionQuotaLimit[plans[i].Name] = rl
-			}
-			r.Logger.Info("subscription plan", "name", plans[i].Name, "quota", r.SubscriptionQuotaLimit[plans[i].Name])
+		r.SubscriptionQuotaLimit, err = resources.ParseResourceLimitWithSubscription(plans)
+		if err != nil {
+			return fmt.Errorf("parse resource limit with subscription failed: %v", err)
+		}
+		for plan, limit := range r.SubscriptionQuotaLimit {
+			r.Logger.Info("subscription plan", "name", plan, "quota", limit)
 		}
 		// manager 添加 subscription controller
 		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {

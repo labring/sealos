@@ -49,6 +49,7 @@ const (
 	SubscriptionPlanList        = "/subscription/plan-list"
 	SubscriptionLastTransaction = "/subscription/last-transaction"
 	SubscriptionUpgradeAmount   = "/subscription/upgrade-amount"
+	SubscriptionFlushQuota      = "/subscription/flush-quota"
 	SubscriptionNotify          = "/subscription/notify"
 	SubscriptionPay             = "/subscription/pay"
 	CardList                    = "/card/list"
@@ -69,6 +70,8 @@ const (
 	ENVLocalCockroach  = "LOCAL_COCKROACH_URI"
 	EnvLocalRegion     = "LOCAL_REGION"
 	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
+
+	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 )
 
 const (

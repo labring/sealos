@@ -1,11 +1,18 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
 	"time"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
 
@@ -152,6 +159,97 @@ func GetSubscriptionUpgradeAmount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"amount": int64(describePlanSurplusValue - currentPlanSurplusValue),
 	})
+}
+
+// FlushSubscriptionQuota
+// @Summary flush user quota with subscription
+// @Description flush user quota with subscription
+// @Tags Subscription
+// @Accept json
+// @Produce json
+// @Success 200 {object} SubscriptionFlushQuotaResp
+// @Router /payment/v1alpha1/subscription/flush-quota [post]
+func FlushSubscriptionQuota(c *gin.Context) {
+	req := &helper.AuthBase{}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get in cluster config failed: %v", err)})
+		return
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("new client set failed: %v", err)})
+		return
+	}
+	nsList, err := getOwnNsList(clientset, req.Owner)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
+		return
+	}
+	userSub, err := dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: req.UserUID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get user subscription failed: %v", err)})
+		return
+	}
+	for _, ns := range nsList {
+		quota := getDefaultResourceQuota(ns, "quota-"+ns, dao.SubPlanResourceQuota[userSub.PlanName])
+		err = Retry(10, time.Second, func() error {
+			_, err := clientset.CoreV1().ResourceQuotas(ns).Update(context.Background(), quota, metav1.UpdateOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to update resource quota for %s: %w", ns, err)
+			}
+			return nil
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
+			return
+		}
+	}
+}
+
+func Retry(attempts int, sleep time.Duration, f func() error) error {
+	var err error
+	for i := 0; i < attempts; i++ {
+		err = f()
+		if err == nil {
+			return nil
+		}
+		time.Sleep(sleep)
+	}
+	return err
+}
+
+// getOwnNsWith *kubernetes.Clientset
+func getOwnNsList(clientset *kubernetes.Clientset, user string) ([]string, error) {
+	if user == "" {
+		return nil, fmt.Errorf("user is empty")
+	}
+	nsList, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", userv1.UserLabelOwnerKey, user)})
+	if err != nil {
+		return nil, fmt.Errorf("list namespace failed: %w", err)
+	}
+	nsListStr := make([]string, len(nsList.Items))
+	for i := range nsList.Items {
+		nsListStr[i] = nsList.Items[i].Name
+	}
+	return nsListStr, nil
+}
+
+func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: hard,
+		},
+	}
 }
 
 // SubscriptionPay

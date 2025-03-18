@@ -135,6 +135,8 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 			return fmt.Errorf("failed to get subscription plan: %w", err)
 		}
 
+		// TODO Gets a subscription transaction record and skips if there are already unprocessed renewal transactions
+
 		subTransaction := types.SubscriptionTransaction{
 			ID:             uuid.New(),
 			SubscriptionID: subscription.ID,
@@ -190,7 +192,7 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 		// update the transaction status
 		subscription.Status = types.SubscriptionStatusDebt
 		err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-			return tx.Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
+			return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
 		})
 		if err != nil {
 			return fmt.Errorf("failed to update subscription status: %w", err)
