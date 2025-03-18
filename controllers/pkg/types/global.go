@@ -175,7 +175,7 @@ const (
 	OauthProviderTypePhone    OauthProviderType = "PHONE"
 	OauthProviderTypeEmail    OauthProviderType = "EMAIL"
 	OauthProviderTypePassword OauthProviderType = "PASSWORD"
-	//OauthProviderTypeGithub   OauthProviderType = "GITHUB"
+	OauthProviderTypeGithub   OauthProviderType = "GITHUB"
 	//OauthProviderTypeWechat   OauthProviderType = "WECHAT"
 
 	RoleOwner Role = "OWNER"

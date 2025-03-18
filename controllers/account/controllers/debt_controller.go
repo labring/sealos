@@ -293,12 +293,6 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		return nil
 	}
 	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
-	if lastStatus == "" {
-		lastStatus = accountv1.NormalPeriod
-		update = true
-	} else if lastStatus == currentStatus {
-		return nil
-	}
 	update = SetDebtStatus(debt, lastStatus, currentStatus)
 	nonDebtStates := []accountv1.DebtStatusType{accountv1.NormalPeriod, accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod}
 	debtStates := []accountv1.DebtStatusType{accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod}
