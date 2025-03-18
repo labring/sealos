@@ -210,6 +210,7 @@ func FlushSubscriptionQuota(c *gin.Context) {
 			return
 		}
 	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func Retry(attempts int, sleep time.Duration, f func() error) error {
