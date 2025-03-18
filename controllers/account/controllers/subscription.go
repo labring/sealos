@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -9,9 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils/retry"
-
 	"github.com/labring/sealos/controllers/pkg/utils"
+	"github.com/labring/sealos/controllers/pkg/utils/retry"
 
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -160,35 +160,73 @@ func (sp *SubscriptionProcessor) updateQuota(ctx context.Context, userUID uuid.U
 			return fmt.Errorf("failed to update resource quota for %s: %w", ns, err)
 		}
 	}
+	if err := sp.sendFlushQuotaRequest(userUID); err != nil {
+		return fmt.Errorf("failed to send flush quota request: %w", err)
+	}
+	return nil
+}
+
+func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID uuid.UUID) error {
 	for _, domain := range sp.allRegionDomain {
 		if domain == sp.localDomain {
 			continue
 		}
+
 		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
 			UserUID: userUID,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to generate token: %w", err)
 		}
-		req, err := http.NewRequest("POST", fmt.Sprintf("https://account-api.%s/payment/v1alpha1/subscription/flush-quota", domain), nil)
-		if err != nil {
-			return fmt.Errorf("failed to create request: %w", err)
+
+		url := fmt.Sprintf("https://account-api.%s/payment/v1alpha1/subscription/flush-quota", domain)
+
+		var lastErr error
+		backoffTime := time.Second
+
+		maxRetries := 3
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			req, err := http.NewRequest("POST", url, bytes.NewBuffer(nil))
+			if err != nil {
+				return fmt.Errorf("failed to create request: %w", err)
+			}
+
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("Content-Type", "application/json")
+
+			client := http.Client{
+				Timeout: 5 * time.Second,
+			}
+
+			resp, err := client.Do(req)
+			if err != nil {
+				lastErr = fmt.Errorf("failed to send request: %w", err)
+			} else {
+				defer resp.Body.Close()
+
+				// 读取响应
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					lastErr = fmt.Errorf("failed to read response: %w", err)
+				} else if resp.StatusCode == http.StatusOK {
+					break
+				} else if resp.StatusCode >= 500 {
+					lastErr = fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
+				} else {
+					return fmt.Errorf("client error: %d; %s", resp.StatusCode, string(body))
+				}
+			}
+
+			// 进行重试
+			if attempt < maxRetries {
+				fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", attempt, lastErr, backoffTime)
+				time.Sleep(backoffTime)
+				backoffTime *= 2 // 指数增长退避时间
+			}
 		}
-		req.Header.Set("Authorization", "Bearer "+token)
-		req.Header.Set("Content-Type", "application/json")
-		client := http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return fmt.Errorf("failed to send request: %w", err)
-		}
-		defer resp.Body.Close()
-		body := make([]byte, 1024)
-		_, err = resp.Body.Read(body)
-		if err != nil && err != io.EOF {
-			return fmt.Errorf("failed to read response: %w", err)
-		}
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
+
+		if lastErr != nil {
+			return lastErr
 		}
 	}
 	return nil
