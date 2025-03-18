@@ -104,6 +104,7 @@ type DebtReconciler struct {
 	smtpConfig                  *utils.SMTPConfig
 	DebtUserMap                 *maps.ConcurrentMap
 	SkipExpiredUserTimeDuration time.Duration
+	SendDebtStatusEmailBody     map[accountv1.DebtStatusType]string
 }
 
 type VmsConfig struct {
@@ -557,7 +558,7 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 	//	}
 	//}
 	if r.smtpConfig != nil && email != "" {
-		if err = r.smtpConfig.SendEmail(EmailTemplateZHMap[noticeType]+"\n"+EmailTemplateENMap[noticeType], email); err != nil {
+		if err = r.smtpConfig.SendEmail(r.SendDebtStatusEmailBody[noticeType], email); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
@@ -771,6 +772,16 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		if err := setupList[i](); err != nil {
 			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
 		}
+	}
+	r.SendDebtStatusEmailBody = make(map[accountv1.DebtStatusType]string)
+	for _, status := range []accountv1.DebtStatusType{accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod, accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod} {
+		email := os.Getenv(string(status) + "EmailBody")
+		if email == "" {
+			email = EmailTemplateZHMap[status] + "\n" + EmailTemplateENMap[status]
+		} else {
+			r.Logger.Info("set email body", "status", status, "body", email)
+		}
+		r.SendDebtStatusEmailBody[status] = email
 	}
 
 	/*
