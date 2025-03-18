@@ -106,10 +106,8 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 		return tx.Raw(`
 			SELECT s.* FROM "Subscription" s
 			WHERE s.expire_at < ?AND s.status = ?
-			AND s.plan_name != ?
 			LIMIT ?
-		`, time.Now(), types.SubscriptionStatusNormal,
-			types.FreeSubscriptionPlanName, BatchSize).Scan(&expiredSubscriptions).Error
+		`, time.Now(), types.SubscriptionStatusNormal, BatchSize).Scan(&expiredSubscriptions).Error
 	})
 
 	if err != nil {
@@ -129,76 +127,126 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 		// 4. Renewal failure to send a payment failure notification
 		// 5. Change the subscription transaction pay_status
 		// 6. The specific updating of the subscription table is handled by another controller and is not required here
-
-		subPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
-		if err != nil {
-			return fmt.Errorf("failed to get subscription plan: %w", err)
-		}
-
-		// TODO Gets a subscription transaction record and skips if there are already unprocessed renewal transactions
-
-		subTransaction := types.SubscriptionTransaction{
-			ID:             uuid.New(),
-			SubscriptionID: subscription.ID,
-			UserUID:        subscription.UserUID,
-			OldPlanID:      subPlan.ID,
-			OldPlanName:    subPlan.Name,
-			OldPlanStatus:  subscription.Status,
-			StartAt:        time.Now(),
-			NewPlanID:      subPlan.ID,
-			NewPlanName:    subPlan.Name,
-			Amount:         subPlan.Amount,
-			Operator:       types.SubscriptionTransactionTypeRenewed,
-			CreatedAt:      time.Now(),
-			Status:         types.SubscriptionTransactionStatusProcessing,
-		}
-
-		//TODO card binding payment
-		if subscription.CardID != nil {
-			paymentReq := services.PaymentRequest{
-				RequestID:     uuid.NewString(),
-				UserUID:       subTransaction.UserUID,
-				Amount:        subTransaction.Amount,
-				Currency:      dao.PaymentCurrency,
-				UserAgent:     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-				ClientIP:      dao.ClientIP,
-				DeviceTokenID: dao.DeviceTokenID,
-			}
-			err = SubscriptionPayForBindCard(paymentReq, &helper.SubscriptionOperatorReq{
-				AuthBase:  helper.AuthBase{Auth: &helper.Auth{UserUID: subTransaction.UserUID}},
-				CardID:    subscription.CardID,
-				PayMethod: "CARD",
-			}, &subTransaction)
-			if err == nil {
-				return nil
-			}
-			logrus.Errorf("Failed to pay for bind card: %v, subscription: %v", err, subscription)
-		}
-
-		// if card payment fails, deduct payment by balance
-		if err = SubscriptionPayByBalance(&helper.SubscriptionOperatorReq{
-			AuthBase: helper.AuthBase{Auth: &helper.Auth{UserUID: subTransaction.UserUID}},
-		}, &subTransaction); err == nil {
-			return nil
-		}
-		logrus.Errorf("Failed to pay by balance: %v, subscription: %v", err, subscription)
-
-		//TODO Send a subscription failure notification
-
-		if err := p.sendRenewalFailureNotification(subscription, subTransaction); err != nil {
-			logrus.Errorf("Failed to send renewal failure notification for subscription %s: %v",
-				subscription.ID, err)
-		}
-		// update the transaction status
-		subscription.Status = types.SubscriptionStatusDebt
-		err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-			return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update subscription status: %w", err)
+		if err := p.HandlerSubscriptionTransaction(&subscription); err != nil {
+			logrus.Errorf("Failed to process subscription %s: %v", subscription.ID, err)
 		}
 	}
 	return nil
+}
+
+func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *types.Subscription) error {
+	subPlan, err := dao.DBClient.GetSubscriptionPlan(subscription.PlanName)
+	if err != nil {
+		return fmt.Errorf("failed to get subscription plan: %w", err)
+	}
+
+	// TODO Gets a subscription transaction record and skips if there are already unprocessed renewal transactions
+
+	subTransaction := types.SubscriptionTransaction{
+		ID:             uuid.New(),
+		SubscriptionID: subscription.ID,
+		UserUID:        subscription.UserUID,
+		OldPlanID:      subPlan.ID,
+		OldPlanName:    subPlan.Name,
+		OldPlanStatus:  subscription.Status,
+		StartAt:        time.Now(),
+		NewPlanID:      subPlan.ID,
+		NewPlanName:    subPlan.Name,
+		Amount:         subPlan.Amount,
+		Operator:       types.SubscriptionTransactionTypeRenewed,
+		CreatedAt:      time.Now(),
+		Status:         types.SubscriptionTransactionStatusProcessing,
+	}
+
+	//TODO if free subscription, determine whether to bind github account. If bound, renewal subscription; otherwise, the status changes to Debt
+	if subscription.PlanName == types.FreeSubscriptionPlanName {
+		ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to check github oauth provider: %w", err)
+		}
+		if ok {
+			subTransaction.PayStatus = types.SubscriptionPayStatusNoNeed
+			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+				return tx.Create(&subTransaction).Error
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create subscription transaction: %w", err)
+			}
+		} else {
+			subscription.Status = types.SubscriptionStatusDebt
+			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+				return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
+			})
+			if err != nil {
+				return fmt.Errorf("failed to update subscription status: %w", err)
+			}
+		}
+		return nil
+	}
+
+	//TODO card binding payment
+	if subscription.CardID != nil {
+		paymentReq := services.PaymentRequest{
+			RequestID:     uuid.NewString(),
+			UserUID:       subTransaction.UserUID,
+			Amount:        subTransaction.Amount,
+			Currency:      dao.PaymentCurrency,
+			UserAgent:     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+			ClientIP:      dao.ClientIP,
+			DeviceTokenID: dao.DeviceTokenID,
+		}
+		err = SubscriptionPayForBindCard(paymentReq, &helper.SubscriptionOperatorReq{
+			AuthBase:  helper.AuthBase{Auth: &helper.Auth{UserUID: subTransaction.UserUID}},
+			CardID:    subscription.CardID,
+			PayMethod: "CARD",
+		}, &subTransaction)
+		if err == nil {
+			return nil
+		}
+		logrus.Errorf("Failed to pay for bind card: %v, subscription: %v", err, subscription)
+	}
+
+	// if card payment fails, deduct payment by balance
+	if err = SubscriptionPayByBalance(&helper.SubscriptionOperatorReq{
+		AuthBase: helper.AuthBase{Auth: &helper.Auth{UserUID: subTransaction.UserUID}},
+	}, &subTransaction); err == nil {
+		return nil
+	}
+	logrus.Errorf("Failed to pay by balance: %v, subscription: %v", err, subscription)
+
+	//TODO Send a subscription failure notification
+
+	if err := p.sendRenewalFailureNotification(subscription, subTransaction); err != nil {
+		logrus.Errorf("Failed to send renewal failure notification for subscription %s: %v",
+			subscription.ID, err)
+	}
+	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		subTransaction.Status = types.SubscriptionTransactionStatusFailed
+		subTransaction.PayStatus = types.SubscriptionPayStatusFailed
+		subscription.Status = types.SubscriptionStatusDebt
+		dErr := tx.Create(&subTransaction).Error
+		if dErr != nil {
+			return fmt.Errorf("failed to create subscription transaction: %w", dErr)
+		}
+		return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update subscription status: %w", err)
+	}
+	return nil
+}
+
+func HasGithubOauthProvider(db *gorm.DB, userUID uuid.UUID) (bool, error) {
+	var provider types.OauthProvider
+	err := db.
+		Where(`"userUid" = ? AND "providerType" = ?`, userUID, types.OauthProviderTypeGithub).
+		Limit(1).
+		Find(&provider).Error
+
+	if err != nil {
+		return false, err
+	}
+	return provider.UID != uuid.Nil, nil
 }
 
 func InitSubscriptionProcessorTables(db *gorm.DB) error {
@@ -214,7 +262,7 @@ func InitSubscriptionProcessorTables(db *gorm.DB) error {
 }
 
 // sendRenewalFailureNotification 发送续费失败通知
-func (p *SubscriptionProcessor) sendRenewalFailureNotification(subscription types.Subscription, transaction types.SubscriptionTransaction) error {
+func (p *SubscriptionProcessor) sendRenewalFailureNotification(subscription *types.Subscription, transaction types.SubscriptionTransaction) error {
 	logrus.Infof("Sending renewal failure notification to user %s for subscription %s. Plan: %s, transaction ID: %s",
 		subscription.UserUID, subscription.ID, subscription.PlanName, transaction.ID)
 

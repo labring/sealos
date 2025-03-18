@@ -377,17 +377,19 @@ func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.D
 	if err != nil {
 		return fmt.Errorf("failed to get subscription plan: %w", err)
 	}
-	if err := cockroach.CreateCredits(dbTx, &types.Credits{
-		UserUID:   sub.UserUID,
-		Amount:    plan.GiftAmount,
-		FromID:    sub.ID.String(),
-		FromType:  types.CreditsFromTypeSubscription,
-		ExpireAt:  sub.ExpireAt,
-		CreatedAt: now,
-		StartAt:   now,
-		Status:    types.CreditsStatusActive,
-	}); err != nil {
-		return fmt.Errorf("failed to create credits: %w", err)
+	if plan.GiftAmount > 0 {
+		if err := cockroach.CreateCredits(dbTx, &types.Credits{
+			UserUID:   sub.UserUID,
+			Amount:    plan.GiftAmount,
+			FromID:    sub.ID.String(),
+			FromType:  types.CreditsFromTypeSubscription,
+			ExpireAt:  sub.ExpireAt,
+			CreatedAt: now,
+			StartAt:   now,
+			Status:    types.CreditsStatusActive,
+		}); err != nil {
+			return fmt.Errorf("failed to create credits: %w", err)
+		}
 	}
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
