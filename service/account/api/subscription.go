@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -230,7 +229,7 @@ func getOwnNsList(clientset *kubernetes.Clientset, user string) ([]string, error
 	if user == "" {
 		return nil, fmt.Errorf("user is empty")
 	}
-	nsList, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", userv1.UserLabelOwnerKey, user)})
+	nsList, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{LabelSelector: fmt.Sprintf("%s=%s", "user.sealos.io/owner", user)})
 	if err != nil {
 		return nil, fmt.Errorf("list namespace failed: %w", err)
 	}

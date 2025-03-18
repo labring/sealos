@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
 	"github.com/labring/sealos/controllers/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
@@ -42,7 +44,7 @@ var (
 	PaymentService       *services.AtomPaymentService
 	PaymentCurrency      string
 	SubPlanResourceQuota map[string]corev1.ResourceList
-	JwtMgr               *helper.JWTManager
+	JwtMgr               *utils.JWTManager
 	Cfg                  *Config
 	BillingTask          *helper.TaskQueue
 	Debug                bool
@@ -112,7 +114,7 @@ func Init(ctx context.Context) error {
 	if jwtSecret == "" {
 		return fmt.Errorf("empty jwt secret env: %s", helper.EnvJwtSecret)
 	}
-	JwtMgr = helper.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
+	JwtMgr = utils.NewJWTManager(os.Getenv(helper.EnvJwtSecret), time.Minute*30)
 
 	gatewayURL, clientID, privateKey, publicKey := os.Getenv(helper.EnvAlipayGatewayURL), os.Getenv(helper.EnvAlipayClientID), os.Getenv(helper.EnvAlipayPrivateKey), os.Getenv(helper.EnvAlipayPublicKey)
 	if gatewayURL != "" && clientID != "" && privateKey != "" && publicKey != "" {

@@ -181,6 +181,13 @@ const (
 )
 
 const (
+	// Consumption 消费
+	Consumption common.Type = iota
+	//Subconsumption 子消费
+	SubConsumption
+)
+
+const (
 	// 	DB       = 1
 	//	APP      = 2
 	//	TERMINAL = 3

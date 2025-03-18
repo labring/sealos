@@ -1,13 +1,10 @@
-package helper
+package utils
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
-
-	"github.com/gin-gonic/gin"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -75,13 +72,7 @@ func (manager *JWTManager) VerifyToken(tokenString string) (*UserClaims, error) 
 	return claims, nil
 }
 
-func (manager *JWTManager) ParseUser(c *gin.Context) (*JwtUser, error) {
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		return nil, ErrNullAuth
-	}
-	token := strings.TrimPrefix(tokenString, "Bearer ")
-
+func (manager *JWTManager) ParseUser(token string) (*JwtUser, error) {
 	claims, err := manager.VerifyToken(token)
 	if err != nil {
 		return nil, fmt.Errorf("invalid token: %w", err)

@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -93,6 +95,7 @@ const (
 	SEALOS                  = "sealos"
 
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
+	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
 )
 
 var SubscriptionEnabled = false
@@ -113,6 +116,9 @@ type AccountReconciler struct {
 	SubscriptionQuotaLimit      map[string]corev1.ResourceList
 	SyncNSQuotaFunc             func(ctx context.Context, owner, nsName string) error
 	SkipExpiredUserTimeDuration time.Duration
+	localDomain                 string
+	allRegionDomain             []string
+	jwtManager                  *utils.JWTManager
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -261,6 +267,16 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {
 			return fmt.Errorf("add subscription processor failed: %v", err)
 		}
+		regions, err := r.AccountV2.GetRegions()
+		if err != nil {
+			return fmt.Errorf("get regions failed: %v", err)
+		}
+		r.allRegionDomain = make([]string, len(regions))
+		for i, region := range regions {
+			r.allRegionDomain[i] = region.Domain
+		}
+		r.localDomain = r.AccountV2.GetLocalRegion().Domain
+		r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), time.Minute)
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
