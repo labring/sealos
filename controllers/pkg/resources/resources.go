@@ -15,8 +15,12 @@
 package resources
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -438,6 +442,41 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		ResourceObjectStorageBucket:           resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageBucket, DefaultQuotaObjectStorageBucket)),
 		//TODO storage.diskio.read, storage.diskio.write
 	}
+}
+
+func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[string]corev1.ResourceList, error) {
+	subPlansLimit := make(map[string]corev1.ResourceList)
+	for i := range plans {
+		//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
+		res := plans[i].MaxResources
+		if res == "" {
+			subPlansLimit[plans[i].Name] = DefaultResourceQuotaHard()
+		} else {
+			var maxResources map[string]string
+			if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
+				return nil, fmt.Errorf("parse max_resources failed: %v", err)
+			}
+			rl := make(corev1.ResourceList)
+			for k, v := range maxResources {
+				switch k {
+				case "cpu":
+					rl[corev1.ResourceLimitsCPU], _ = resource.ParseQuantity(v)
+				case "memory":
+					rl[corev1.ResourceLimitsMemory], _ = resource.ParseQuantity(v)
+				case "storage":
+					rl[corev1.ResourceRequestsStorage], _ = resource.ParseQuantity(v)
+				case "nodeports":
+					rl[corev1.ResourceServicesNodePorts], _ = resource.ParseQuantity(v)
+				case ResourceObjectStorageSize.String():
+					rl[ResourceObjectStorageSize], _ = resource.ParseQuantity(v)
+				case ResourceObjectStorageBucket.String():
+					rl[ResourceObjectStorageBucket], _ = resource.ParseQuantity(v)
+				}
+			}
+			subPlansLimit[plans[i].Name] = rl
+		}
+	}
+	return subPlansLimit, nil
 }
 
 func DefaultLimitRangeLimits() []corev1.LimitRangeItem {

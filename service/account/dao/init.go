@@ -6,6 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/resources"
+
+	corev1 "k8s.io/api/core/v1"
+
 	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
 
 	services "github.com/labring/sealos/service/pkg/pay"
@@ -32,15 +36,16 @@ type Region struct {
 }
 
 var (
-	DBClient        Interface
-	ClientIP        string
-	DeviceTokenID   string
-	PaymentService  *services.AtomPaymentService
-	PaymentCurrency string
-	JwtMgr          *helper.JWTManager
-	Cfg             *Config
-	BillingTask     *helper.TaskQueue
-	Debug           bool
+	DBClient             Interface
+	ClientIP             string
+	DeviceTokenID        string
+	PaymentService       *services.AtomPaymentService
+	PaymentCurrency      string
+	SubPlanResourceQuota map[string]corev1.ResourceList
+	JwtMgr               *helper.JWTManager
+	Cfg                  *Config
+	BillingTask          *helper.TaskQueue
+	Debug                bool
 )
 
 func Init(ctx context.Context) error {
@@ -129,6 +134,16 @@ func Init(ctx context.Context) error {
 	}
 	if PaymentCurrency = os.Getenv(helper.EnvPaymentCurrency); PaymentCurrency == "" {
 		PaymentCurrency = "USD"
+	}
+	if os.Getenv(helper.EnvSubscriptionEnabled) == "true" {
+		plans, err := DBClient.GetSubscriptionPlanList()
+		if err != nil {
+			return fmt.Errorf("get subscription plan list error: %v", err)
+		}
+		SubPlanResourceQuota, err = resources.ParseResourceLimitWithSubscription(plans)
+		if err != nil {
+			return fmt.Errorf("parse resource limit with subscription error: %v", err)
+		}
 	}
 	return nil
 }
