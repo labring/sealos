@@ -417,7 +417,7 @@ func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64,
 	}
 
 	if oweamount > 0 && userSubscription.Status == pkgtypes.SubscriptionStatusNormal {
-		if oweamount > 50*BaseUnit {
+		if oweamount > 5*BaseUnit {
 			return accountv1.NormalPeriod, nil
 		} else if oweamount > 1*BaseUnit {
 			return accountv1.LowBalancePeriod, nil
