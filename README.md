@@ -158,7 +158,7 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 
 [deploy-badge]: https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg
 [deploy-link]: https://os.sealos.io
-[deploy-link-cn]: https://cloud.sealos.io
+[deploy-link-cn]: https://cloud.sealos.run
 
 <!-- ## License -->
 
