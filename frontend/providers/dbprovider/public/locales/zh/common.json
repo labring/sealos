@@ -338,5 +338,8 @@
   "HorizontalScaling": "横向扩展（实例数）",
   "VolumeExpansion": "卷扩展（磁盘）",
   "Stop": "停止",
-  "multi_components_tip": "多组件数据库磁盘将会分配给各个组件"
+  "multi_components_tip": "多组件数据库磁盘将会分配给各个组件",
+  "backup_saveTime_max": "最多保留",
+  "backup_saveTime_min": "最少保留",
+  "controlled_by": "控制者"
 }

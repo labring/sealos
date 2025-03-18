@@ -17,7 +17,7 @@ import type {
   DBType
 } from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
-import { encodeToHex, formatTime, str2Num } from '@/utils/tools';
+import { encodeToHex, formatNumber, formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
@@ -63,11 +63,12 @@ export const json2CreateCluster = (
 
   function distributeResources(dbType: DBType): resourcesDistributeMap {
     const [cpu, memory] = [str2Num(Math.floor(data.cpu)), str2Num(data.memory)];
+
     function getPercentResource(percent: number) {
       return {
         limits: {
-          cpu: `${cpu * percent}m`,
-          memory: `${memory * percent}Mi`
+          cpu: `${formatNumber(cpu * percent)}m`,
+          memory: `${formatNumber(memory * percent)}Mi`
         },
         requests: {
           cpu: `${Math.floor(cpu * percent * 0.1)}m`,
@@ -355,7 +356,9 @@ export const json2Account = (data: DBEditType, ownerId?: string) => {
     [DBTypeEnum.qdrant]: pgAccountTemplate,
     [DBTypeEnum.nebula]: pgAccountTemplate,
     [DBTypeEnum.weaviate]: pgAccountTemplate,
-    [DBTypeEnum.milvus]: pgAccountTemplate
+    [DBTypeEnum.milvus]: pgAccountTemplate,
+    [DBTypeEnum.pulsar]: pgAccountTemplate,
+    [DBTypeEnum.clickhouse]: pgAccountTemplate
   };
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
@@ -520,7 +523,9 @@ export const json2MigrateCR = (data: MigrateForm) => {
     qdrant: '',
     nebula: '',
     weaviate: '',
-    milvus: ''
+    milvus: '',
+    pulsar: '',
+    clickhouse: ''
   };
 
   const template = {

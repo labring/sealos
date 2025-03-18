@@ -413,3 +413,18 @@ export const adjustDifferencesForIni = (
 export const formatMoney = (mone: number) => {
   return mone / 1000000;
 };
+
+/**
+ * Formats a number by rounding to 2 decimal places and removing trailing zeros
+ * @param num - The number to format
+ * @returns The formatted number as a string
+ */
+export function formatNumber(num: number) {
+  let rounded = Math.round(num * 100) / 100;
+  let str = rounded.toString();
+  if (str.indexOf('.') === -1) {
+    return str;
+  } else {
+    return str.replaceAll('0', '');
+  }
+}
