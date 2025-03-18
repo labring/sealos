@@ -360,6 +360,8 @@ func CreateSubscriptionPay(c *gin.Context) {
 	if subTransaction.Amount > 0 {
 		PayForSubscription(c, req, subTransaction)
 		return
+	} else {
+		SubscriptionWithOutPay(c, req, subTransaction)
 	}
 	SetSuccessResp(c)
 }
@@ -454,6 +456,29 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"redirectUrl": paySvcResp.NormalUrl, "success": true})
+}
+
+func SubscriptionWithOutPay(c *gin.Context, req *helper.SubscriptionOperatorReq, subTransaction types.SubscriptionTransaction) {
+	err := dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// TODO 检查没有订阅变更
+		count, err := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get active subscription transaction count: %w", err)
+		}
+		if count > 0 {
+			return fmt.Errorf("there is active subscription transaction")
+		}
+		subTransaction.PayStatus = types.SubscriptionPayStatusNoNeed
+		err = cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
+		if err != nil {
+			return fmt.Errorf("failed to create subscription transaction: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create subscription transaction: ", err)})
+		return
+	}
 }
 
 func SubscriptionPayForBindCard(paymentReq services.PaymentRequest, req *helper.SubscriptionOperatorReq, subTransaction *types.SubscriptionTransaction) error {
