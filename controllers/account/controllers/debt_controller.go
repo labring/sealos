@@ -280,11 +280,18 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
 	lastStatus := debt.Status.AccountDebtStatus
+	update := false
+	if lastStatus == "" {
+		lastStatus = accountv1.NormalPeriod
+		update = true
+	}
 	currentStatus, err := r.DetermineCurrentStatus(oweamount, account.UserUID, updateIntervalSeconds, lastStatus)
 	if err != nil {
 		return fmt.Errorf("failed to determine current status: %w", err)
 	}
-	update := false
+	if lastStatus == currentStatus && !update {
+		return nil
+	}
 	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
 	if lastStatus == "" {
 		lastStatus = accountv1.NormalPeriod
