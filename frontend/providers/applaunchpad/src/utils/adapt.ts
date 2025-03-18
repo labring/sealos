@@ -438,7 +438,9 @@ export const adaptEditAppData = (app: AppDetailType): AppEditType => {
     'storeList',
     'gpu',
     'nodeName',
-    'priority'
+    'priority',
+    'modelName',
+    'modelVersion'
   ];
   const res: Record<string, any> = {};
 
