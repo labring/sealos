@@ -159,7 +159,7 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 	}
 
 	//TODO if free subscription, determine whether to bind github account. If bound, renewal subscription; otherwise, the status changes to Debt
-	if subscription.PlanName == types.FreeSubscriptionPlanName {
+	if subscription.PlanName == types.FreeSubscriptionPlanName && subscription.Status == types.SubscriptionStatusNormal {
 		ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
 		if err != nil {
 			return fmt.Errorf("failed to check github oauth provider: %w", err)
