@@ -363,7 +363,6 @@ func CreateSubscriptionPay(c *gin.Context) {
 	} else {
 		SubscriptionWithOutPay(c, req, subTransaction)
 	}
-	SetSuccessResp(c)
 }
 
 func SetSuccessResp(c *gin.Context) {
@@ -399,7 +398,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 	if req.CardID != nil {
 		err := SubscriptionPayForBindCard(paymentReq, req, &subTransaction)
 		if err != nil {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to pay for subscription with bind card: ", err)})
+			SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to pay for subscription with bind card: ", err)})
 		} else {
 			SetSuccessResp(c)
 		}
@@ -411,7 +410,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			return
 		}
 		if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
+			SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
 			return
 		}
 		err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
@@ -451,7 +450,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			return nil
 		})
 		if err != nil {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
+			SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
 			return
 		}
 	}
@@ -476,9 +475,10 @@ func SubscriptionWithOutPay(c *gin.Context, req *helper.SubscriptionOperatorReq,
 		return nil
 	})
 	if err != nil {
-		SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create subscription transaction: ", err)})
+		SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create subscription transaction: ", err)})
 		return
 	}
+	SetSuccessResp(c)
 }
 
 func SubscriptionPayForBindCard(paymentReq services.PaymentRequest, req *helper.SubscriptionOperatorReq, subTransaction *types.SubscriptionTransaction) error {
@@ -608,7 +608,7 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 	); err != nil {
 		logrus.Errorf("Failed to check response sign: %v", err)
 		logrus.Errorf("Path: %s\n Method: %s\n ClientID: %s\n ResponseTime: %s\n Body: %s\n Signature: %s", requestInfo.Path, requestInfo.Method, requestInfo.ClientID, requestInfo.ResponseTime, string(requestInfo.Body), requestInfo.Signature)
-		sendError(c, http.StatusInternalServerError, "failed to check response sign", err)
+		sendError(c, http.StatusUnauthorized, "failed to check response sign", err)
 		return
 	} else if !ok {
 		logrus.Errorf("Check signature fail")
