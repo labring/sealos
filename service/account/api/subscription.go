@@ -96,9 +96,12 @@ func GetLastSubscriptionTransaction(c *gin.Context) {
 		return
 	}
 	transaction, err := dao.DBClient.GetLastSubscriptionTransaction(req.UserUID)
-	if err != nil {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get last subscription transaction: %v", err)})
 		return
+	}
+	if transaction == nil {
+		transaction = &types.SubscriptionTransaction{}
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"transaction": transaction,
@@ -422,6 +425,22 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			if count > 0 {
 				return fmt.Errorf("there is active subscription transaction")
 			}
+			//lastSub, err := dao.GetLastSubscriptionTransaction(tx, req.UserUID)
+			//if err != nil && err != gorm.ErrRecordNotFound {
+			//	return fmt.Errorf("failed to get last subscription transaction: %w", err)
+			//}
+			//if lastSub != nil && (lastSub.Status == types.SubscriptionTransactionStatusProcessing || lastSub.Status == types.SubscriptionTransactionStatusPending) {
+			//
+			//	// TODO If the previous operation is the same as this one: xxx
+			//	if lastSub.PayStatus == types.SubscriptionPayStatusPending {
+			//
+			//		if lastSub.NewPlanName == subTransaction.NewPlanName {
+			//			// Returns the connection to the last payment, and reinitiates the payment if it times out or has already failed
+			//
+			//		}
+			//	}
+			//	return fmt.Errorf("there is active subscription transaction")
+			//}
 			subTransaction.PayStatus = types.SubscriptionPayStatusPending
 			err = cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
 			if err != nil {
@@ -622,10 +641,26 @@ func NewSubscriptionPayNotifyHandler(c *gin.Context) {
 		sendError(c, http.StatusBadRequest, "failed to unmarshal notification", err)
 		return
 	}
+	notifyType := notification.NotifyType
+	notifyResult := notification.Result
+	paymentRequestID := notification.CaptureRequestID
+	paymentID := notification.PaymentID
+	if notification.NotifyType == types.NotifyTypePaymentResult {
+		var paymentNotification types.PaymentNotification
+		if err := json.Unmarshal(requestInfo.Body, &paymentNotification); err != nil {
+			logrus.Errorf("Failed to unmarshal payment notification: %v", err)
+			sendError(c, http.StatusBadRequest, "failed to unmarshal payment notification", err)
+			return
+		}
+		notifyResult = paymentNotification.Result
+		paymentRequestID = paymentNotification.PaymentRequestID
+		paymentID = paymentNotification.PaymentID
+		logNotification(paymentNotification)
+	} else {
+		logNotification(notification)
+	}
 
-	logNotification(notification)
-
-	if err := processSubscriptionPayResult(c, notification); err != nil {
+	if err := processSubscriptionPayResult(c, notifyType, notifyResult, paymentRequestID, paymentID); err != nil {
 		logrus.Errorf("Failed to process payment result: %v", err)
 		return // 错误已在 processPaymentResult 中处理
 	}

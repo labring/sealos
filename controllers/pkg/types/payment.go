@@ -164,6 +164,11 @@ type Result struct {
 	ResultStatus  string `json:"resultStatus"`
 }
 
+const NotifyTypePaymentResult = "PAYMENT_RESULT"
+const NotifyTypeCaptureResult = "CAPTURE_RESULT"
+
+const OrderClosedResultCode = "ORDER_IS_CLOSED"
+
 // Amount 通用金额结构体
 type Amount struct {
 	Currency string `json:"currency"`

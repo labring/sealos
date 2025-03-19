@@ -228,10 +228,14 @@ func (g *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) 
 }
 
 func (g *Cockroach) GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error) {
+	return GetLastSubscriptionTransaction(g.ck.GetGlobalDB(), userUID)
+}
+
+func GetLastSubscriptionTransaction(db *gorm.DB, userUID uuid.UUID) (*types.SubscriptionTransaction, error) {
 	transaction := &types.SubscriptionTransaction{}
-	err := g.ck.DB.Where("user_uid = ?", userUID).Order("created_at desc").First(transaction)
-	if err.Error != nil {
-		return nil, fmt.Errorf("failed to get last subscription transaction: %v", err.Error)
+	err := db.Where("user_uid = ?", userUID).Order("created_at desc").First(transaction).Error
+	if err != nil {
+		return nil, err
 	}
 	return transaction, nil
 }
@@ -242,7 +246,9 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 		return fmt.Errorf("failed to get payment order with trade no: %v", err)
 	}
 	if order.Status != types.PaymentOrderStatusPending {
-		return fmt.Errorf("payment order status is not pending: %v", order.Status)
+		fmt.Printf("payment order status is not pending: %v\n", order)
+		return nil
+		//return fmt.Errorf("payment order status is not pending: %v", order)
 	}
 	if card.ID == uuid.Nil {
 		card.ID = uuid.New()
@@ -271,7 +277,8 @@ func (g *Cockroach) NewCardPaymentFailureHandler(paymentRequestID string) error 
 		return nil
 	}
 	if order.Status != types.PaymentOrderStatusPending {
-		return fmt.Errorf("payment order status is not pending: %v", order.Status)
+		fmt.Printf("payment order status is not pending: %v\n", order)
+		return nil
 	}
 	return g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusFailed, order.TradeNO)
 }
@@ -286,7 +293,7 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 			return fmt.Errorf("failed to get payment order with trade no: %v", err)
 		}
 		if order.Status != types.PaymentOrderStatusPending {
-			return fmt.Errorf("payment order status is not pending: %v", order.Status)
+			return fmt.Errorf("payment order status is not pending: %v", order)
 		}
 		if card.ID == uuid.Nil {
 			card.ID = uuid.New()
@@ -330,7 +337,7 @@ func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(paymentRequestID st
 			return fmt.Errorf("failed to get payment order with trade no: %v", err)
 		}
 		if order.Status != types.PaymentOrderStatusPending {
-			return fmt.Errorf("payment order status is not pending: %v", order.Status)
+			return fmt.Errorf("payment order status is not pending: %v", order)
 		}
 		// 1. set payment order status with tradeNo
 		// 2. set transaction pay status to failed
@@ -338,7 +345,8 @@ func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(paymentRequestID st
 		if err != nil {
 			return fmt.Errorf("failed to set payment order status: %v", err)
 		}
-		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusFailed).Error; err != nil {
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusFailed).Update("status", types.SubscriptionTransactionStatusFailed).
+			Error; err != nil {
 			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
 		}
 		return nil

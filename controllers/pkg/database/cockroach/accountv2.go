@@ -1325,7 +1325,7 @@ func SetCardInfo(db *gorm.DB, info *types.CardInfo) error {
 		info.Default = true
 		return db.Save(info).Error
 	}
-	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{CardToken: info.CardToken}).Count(&count).Error; err != nil {
+	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{CardNo: info.CardNo, CardBrand: info.CardBrand}).Count(&count).Error; err != nil {
 		return fmt.Errorf("failed to get card count: %v", err)
 	}
 	// if a card already exists do not add it again

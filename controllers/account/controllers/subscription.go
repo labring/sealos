@@ -33,7 +33,7 @@ type SubscriptionProcessor struct {
 func NewSubscriptionProcessor(reconciler *AccountReconciler) *SubscriptionProcessor {
 	return &SubscriptionProcessor{
 		db:                reconciler.AccountV2.GetGlobalDB(),
-		pollInterval:      time.Minute, // 使用常量简化
+		pollInterval:      time.Second, // 使用常量简化
 		stopChan:          make(chan struct{}),
 		AccountReconciler: reconciler,
 	}
