@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/alipay/global-open-sdk-go/com/alipay/api/tools"
 
@@ -89,6 +90,7 @@ func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method 
 
 	// 设置支付方法
 	request.PaymentMethod = method
+	request.PaymentExpiryTime = time.Now().Add(10 * time.Minute).Format(time.RFC3339)
 
 	// 设置环境信息
 	request.Env = &model.Env{

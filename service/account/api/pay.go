@@ -210,14 +210,14 @@ func logNotification(notification types.CaptureNotification) {
 
 // 辅助函数：处理支付结果
 func processPaymentResult(c *gin.Context, notification types.CaptureNotification) error {
-	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardPaymentHandler)
+	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardPaymentHandler, dao.DBClient.NewCardPaymentFailureHandler)
 }
 
 func processSubscriptionPayResult(c *gin.Context, notification types.CaptureNotification) error {
-	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardSubscriptionPaymentHandler)
+	return processPaymentResultWithHandler(c, notification, dao.DBClient.NewCardSubscriptionPaymentHandler, dao.DBClient.NewCardSubscriptionPaymentFailureHandler)
 }
 
-func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureNotification, handler func(paymentID string, card types.CardInfo) error) error {
+func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureNotification, paySuccessHandler func(paymentID string, card types.CardInfo) error, payFailureHandler func(paymentRequestID string) error) error {
 	paymentRequestID := notification.CaptureRequestID
 	paymentID := notification.PaymentID
 	if notification.NotifyType != "CAPTURE_RESULT" {
@@ -233,7 +233,13 @@ func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureN
 		return errors.New("payment request id or payment id is empty")
 	}
 	if notification.Result.ResultCode != SuccessStatus || notification.Result.ResultStatus != "S" {
-		return updatePaymentOrderStatus(c, paymentRequestID, types.PaymentOrderStatusFailed)
+		err = payFailureHandler(paymentRequestID)
+		if err != nil {
+			sendError(c, http.StatusInternalServerError, "failed to set payment order status", err)
+		} else {
+			sendSuccessResponse(c)
+		}
+		return err
 	}
 	if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
 		sendError(c, http.StatusInternalServerError,
@@ -249,16 +255,8 @@ func processPaymentResultWithHandler(c *gin.Context, notification types.CaptureN
 		NetworkTransactionID: resp.PaymentResultInfo.NetworkTransactionId,
 	}
 
-	if err := handler(paymentRequestID, card); err != nil {
+	if err := paySuccessHandler(paymentRequestID, card); err != nil {
 		sendError(c, http.StatusInternalServerError, "failed to handle payment", err)
-		return err
-	}
-	return nil
-}
-
-func updatePaymentOrderStatus(c *gin.Context, paymentRequestID string, status types.PaymentOrderStatus) error {
-	if err := dao.DBClient.SetPaymentOrderStatusWithTradeNo(status, paymentRequestID); err != nil {
-		sendError(c, http.StatusInternalServerError, "failed to set payment order status", err)
 		return err
 	}
 	return nil
