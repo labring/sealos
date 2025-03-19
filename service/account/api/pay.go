@@ -87,7 +87,7 @@ func CreateCardPay(c *gin.Context) {
 				return nil
 			})
 			if err != nil {
-				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 			} else {
 				SetSuccessResp(c)
 			}
@@ -95,11 +95,11 @@ func CreateCardPay(c *gin.Context) {
 		} else {
 			paySvcResp, err = dao.PaymentService.CreateNewPayment(paymentReq)
 			if err != nil {
-				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
+				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 				return
 			}
 			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
+				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
 				return
 			}
 
@@ -118,7 +118,7 @@ func CreateCardPay(c *gin.Context) {
 				Status: types.PaymentOrderStatusPending,
 			})
 			if err != nil {
-				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
+				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
 				return
 			}
 			c.JSON(http.StatusOK, gin.H{
@@ -167,7 +167,7 @@ func NewPayNotifyHandler(c *gin.Context) {
 	); err != nil {
 		logrus.Errorf("Failed to check response sign: %v", err)
 		logrus.Errorf("Path: %s\n Method: %s\n ClientID: %s\n ResponseTime: %s\n Body: %s\n Signature: %s", requestInfo.Path, requestInfo.Method, requestInfo.ClientID, requestInfo.ResponseTime, string(requestInfo.Body), requestInfo.Signature)
-		sendError(c, http.StatusInternalServerError, "failed to check response sign", err)
+		sendError(c, http.StatusUnauthorized, "failed to check response sign", err)
 		return
 	} else if !ok {
 		logrus.Errorf("Check signature fail")
