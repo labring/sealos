@@ -81,6 +81,8 @@ type Interface interface {
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) error
 	NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error
+	NewCardSubscriptionPaymentFailureHandler(paymentRequestID string) error
+	NewCardPaymentFailureHandler(paymentRequestID string) error
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
 	GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error)
@@ -260,6 +262,20 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 	return err
 }
 
+func (g *Cockroach) NewCardPaymentFailureHandler(paymentRequestID string) error {
+	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+	if err != nil {
+		return fmt.Errorf("failed to get payment order with trade no: %v", err)
+	}
+	if order.Status == types.PaymentOrderStatusFailed {
+		return nil
+	}
+	if order.Status != types.PaymentOrderStatusPending {
+		return fmt.Errorf("payment order status is not pending: %v", order.Status)
+	}
+	return g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusFailed, order.TradeNO)
+}
+
 func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) error {
 	if paymentRequestID == "" {
 		return fmt.Errorf("payment request id is empty")
@@ -298,6 +314,32 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 		}
 		if err = cockroach.SetCardInfo(tx, &card); err != nil {
 			return fmt.Errorf("failed to set card info: %v", err)
+		}
+		return nil
+	})
+	return err
+}
+
+func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(paymentRequestID string) error {
+	if paymentRequestID == "" {
+		return fmt.Errorf("payment request id is empty")
+	}
+	err := g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+		if err != nil {
+			return fmt.Errorf("failed to get payment order with trade no: %v", err)
+		}
+		if order.Status != types.PaymentOrderStatusPending {
+			return fmt.Errorf("payment order status is not pending: %v", order.Status)
+		}
+		// 1. set payment order status with tradeNo
+		// 2. set transaction pay status to failed
+		err = cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusFailed, order.TradeNO)
+		if err != nil {
+			return fmt.Errorf("failed to set payment order status: %v", err)
+		}
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusFailed).Error; err != nil {
+			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
 		}
 		return nil
 	})
