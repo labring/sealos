@@ -187,6 +187,10 @@ const (
 	DevboxPhaseStopped DevboxPhase = "Stopped"
 	//DevboxPhaseStopping means Devbox is stopping
 	DevboxPhaseStopping DevboxPhase = "Stopping"
+	//DevboxPhaseShutdown means Devbox is shutdown and service is deleted
+	DevboxPhaseShutdown DevboxPhase = "Shutdown"
+	//DevboxPhaseShutting means Devbox is shutting
+	DevboxPhaseShutting DevboxPhase = "Shutting"
 	//DevboxPhaseError means Devbox is error
 	DevboxPhaseError DevboxPhase = "Error"
 	//DevboxPhaseUnknown means Devbox is unknown
