@@ -382,7 +382,10 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		if err != nil {
 			return err
 		}
-		return nil
+		devbox.Status.Network = devboxv1alpha1.NetworkStatus{
+			Type: devboxv1alpha1.NetworkTypeNodePort,
+		}
+		return r.Status().Update(ctx, devbox)
 	} else {
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
