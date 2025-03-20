@@ -225,10 +225,10 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' },
-  { id: DBTypeEnum.qdrant, label: 'qdrant' },
-  { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' }
+  // { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  // { id: DBTypeEnum.pulsar, label: 'pulsar' },
+  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
@@ -256,7 +256,9 @@ export const DBBackupPolicyNameMap = {
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
   [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+  [DBTypeEnum.milvus]: 'milvus',
+  [DBTypeEnum.pulsar]: 'pulsar',
+  [DBTypeEnum.clickhouse]: 'clickhouse'
 };
 
 export const DBBackupMethodNameMap = {
@@ -269,7 +271,9 @@ export const DBBackupMethodNameMap = {
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
   [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+  [DBTypeEnum.milvus]: 'milvus',
+  [DBTypeEnum.pulsar]: 'pulsar',
+  [DBTypeEnum.clickhouse]: 'clickhouse'
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -291,6 +295,23 @@ export const defaultDBEditValue: DBEditType = {
     saveType: 'd'
   },
   terminationPolicy: 'Delete'
+};
+
+export const RedisHAConfig = (ha = true) => {
+  if (ha) {
+    return {
+      cpu: 200,
+      memory: 200,
+      storage: 1,
+      replicas: 3
+    };
+  }
+  return {
+    cpu: 100,
+    memory: 100,
+    storage: 0,
+    replicas: 1
+  };
 };
 
 export const defaultDBDetail: DBDetailType = {
@@ -347,6 +368,12 @@ export const DBTypeSecretMap = {
   },
   milvus: {
     connectKey: 'milvus'
+  },
+  pulsar: {
+    connectKey: 'pulsar'
+  },
+  clickhouse: {
+    connectKey: 'clickhouse'
   }
 };
 
@@ -416,6 +443,20 @@ export const DBReconfigureMap: {
     reconfigureKey: ''
   },
   milvus: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  pulsar: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  clickhouse: {
     type: 'ini',
     configMapName: '',
     configMapKey: '',

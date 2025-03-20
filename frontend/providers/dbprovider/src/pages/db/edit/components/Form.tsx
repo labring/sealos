@@ -7,6 +7,7 @@ import {
   BackupSupportedDBTypeList,
   DBTypeEnum,
   DBTypeList,
+  RedisHAConfig,
   SelectTimeList,
   WeekSelectList
 } from '@/constants/db';
@@ -140,10 +141,10 @@ const Form = ({
         specialUse = 2;
         break;
       case DBTypeEnum.kafka:
-        [minStorageChange, minCPU, minMemory] = [4, 1, 1];
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.milvus:
-        [minStorageChange, minCPU, minMemory] = [3, 1, 1];
+        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
         break;
       default:
         break;
@@ -156,7 +157,7 @@ const Form = ({
       minStorage
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getValues('dbType')]);
+  }, [getValues('dbType'), allocatedStorage]);
 
   useEffect(() => {
     if (getValues('cpu') < minCPU) {
@@ -278,7 +279,18 @@ const Form = ({
                     memory: getValues('memory'),
                     storage: getValues('storage'),
                     replicas: [getValues('replicas') || 1, getValues('replicas') || 1]
-                  }
+                  },
+                  ...(getValues('dbType') === DBTypeEnum.redis
+                    ? (() => {
+                        const config = RedisHAConfig(getValues('replicas') > 1);
+                        return [
+                          {
+                            ...config,
+                            replicas: [config.replicas, config.replicas]
+                          }
+                        ];
+                      })()
+                    : [])
                 ]}
               />
             </Box>
@@ -407,6 +419,7 @@ const Form = ({
                   }}
                   max={CpuSlideMarkList.length - 1}
                   min={0}
+                  minVal={minCPU / 1000}
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
@@ -427,6 +440,7 @@ const Form = ({
                   }}
                   max={MemorySlideMarkList.length - 1}
                   min={0}
+                  minVal={minMemory / 1024}
                   step={1}
                 />
               </Flex>
@@ -472,6 +486,16 @@ const Form = ({
                     borderRadius={'md'}
                   />
                 )}
+                {getValues('dbType') === DBTypeEnum.redis && getValues('replicas') > 1 && (
+                  <Tip
+                    ml={4}
+                    icon={<InfoOutlineIcon />}
+                    text={t('multi_replica_redis_tip')}
+                    size="sm"
+                    borderRadius={'md'}
+                  />
+                )}
+
                 {(getValues('dbType') === DBTypeEnum.mongodb ||
                   getValues('dbType') === DBTypeEnum.mysql) &&
                   getValues('replicas') > 1 && (
@@ -692,11 +716,11 @@ const Form = ({
                               required: t('storage_cannot_empty'),
                               min: {
                                 value: 1,
-                                message: `${t('backup_saveTime_max')}${minStorage} t('Day')`
+                                message: `${t('backup_saveTime_max')}1${t('Day')}`
                               },
                               max: {
                                 value: 100,
-                                message: `${t('backup_saveTime_min')}${100} t('Day')`
+                                message: `${t('backup_saveTime_min')}100${t('Day')} `
                               },
                               valueAsNumber: true
                             })}

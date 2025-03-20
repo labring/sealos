@@ -44,6 +44,45 @@ export const useCopyData = () => {
 };
 
 /**
+ * A hook that provides clipboard functionality with error handling and i18n support.
+ *
+ * @returns {Object} An object containing clipboard utility functions
+ * @returns {Function} getClipboardData - Async function to read text from clipboard
+ * @throws {Error} When clipboard API is not supported or permission is denied
+ *
+ * @example
+ * const { getClipboardData } = useClipboard();
+ * const text = await getClipboardData();
+ */
+export const useClipboard = () => {
+  const { message: toast } = useMessage();
+  const { t } = useTranslation();
+
+  return {
+    getClipboardData: async () => {
+      try {
+        if (!navigator.clipboard) {
+          toast({
+            title: t('clipboard_unsupported'),
+            status: 'error'
+          });
+          return;
+        }
+
+        const clipboardData = await navigator.clipboard.readText();
+        return clipboardData;
+      } catch (error) {
+        console.error(error);
+        toast({
+          title: t('clipboard_read_failed'),
+          status: 'error'
+        });
+      }
+    }
+  };
+};
+
+/**
  * format string to number or ''
  */
 export const str2Num = (str?: string | number) => {
@@ -426,5 +465,34 @@ export function formatNumber(num: number) {
     return str;
   } else {
     return str.replaceAll('0', '');
+  }
+}
+
+/**
+ * Parses a database connection URL string into its components
+ * @param url - The database connection URL to parse
+ * @returns An object containing the parsed URL components:
+ *          - protocol: The URL protocol without trailing colon
+ *          - hostname: The host name
+ *          - port: The port number
+ *          - username: The username for authentication
+ *          - password: The password for authentication
+ *          - pathname: The database name without leading slash
+ * @throws {Error} When the URL format is invalid
+ */
+export function parseDatabaseUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url);
+
+    return {
+      protocol: parsedUrl.protocol.slice(0, -1),
+      hostname: parsedUrl.hostname,
+      port: parsedUrl.port,
+      username: parsedUrl.username,
+      password: parsedUrl.password,
+      pathname: parsedUrl.pathname.substring(1)
+    };
+  } catch (error) {
+    throw new Error('Invalid URL format');
   }
 }

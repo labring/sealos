@@ -128,6 +128,7 @@
   "database_config": "parameters",
   "database_edit_config": "Update Parameters",
   "database_empty": "You don't have any databases yet",
+  "database_connection": "Database Connection",
   "database_host": "Database Hostname",
   "database_host_empty": "Please enter the database hostname",
   "database_name": "Database Name",
@@ -340,5 +341,10 @@
   "multi_components_tip": "The storage of the multi-component database will be allocated to each component.",
   "backup_saveTime_max": "Retain up to",
   "backup_saveTime_min": "Minimum retention period: ",
-  "controlled_by": "Controlled By"
+  "controlled_by": "Controlled By",
+  "identify_clipboard": "Identify clipboard contents",
+  "clipboard_unsupported": "Browser does not support Clipper API",
+  "clipboard_read_failed": "Reading clipboard failed!",
+  "parse_url_failed": "Content is illegal, recognition failed!",
+  "multi_replica_redis_tip": "Note: The price for multi-replica Redis includes HA nodes"
 }
