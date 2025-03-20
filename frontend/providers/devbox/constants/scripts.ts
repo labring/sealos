@@ -179,3 +179,6 @@ export const sshConfig = (
 
 export const sshConnectCommand = (configHost: string) => `ssh ${configHost}
 `;
+
+export const sshConfigInclude = `Include ~/.ssh/sealos/devbox_config
+`;
