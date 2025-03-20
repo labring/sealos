@@ -379,6 +379,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	}
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateShutdown:
+		fmt.Println("进入1")
 		err := r.Client.Delete(ctx, service)
 		if err != nil {
 			return err
@@ -389,6 +390,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		}
 		return r.Status().Update(ctx, devbox)
 	case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
+		fmt.Println("进入2")
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector
