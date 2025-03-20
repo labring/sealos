@@ -828,6 +828,8 @@ spec:
                         type: array
                     type: object
                 type: object
+              coldShutdown:
+                type: boolean
               config:
                 properties:
                   annotations:
