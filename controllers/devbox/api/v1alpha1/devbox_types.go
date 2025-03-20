@@ -125,6 +125,9 @@ type DevboxSpec struct {
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
 
+	// +kubebuilder:validation:Required
+	ColdShutdown bool `json:"coldShutdown,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	RuntimeClassName string `json:"runtimeClassName,omitempty"`
 	// +kubebuilder:validation:Optional

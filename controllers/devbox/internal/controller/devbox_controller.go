@@ -377,51 +377,56 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 			Labels:    recLabels,
 		},
 	}
-
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
-		// only update some specific fields
-		service.Spec.Selector = expectServiceSpec.Selector
-		service.Spec.Type = expectServiceSpec.Type
-		if len(service.Spec.Ports) == 0 {
-			service.Spec.Ports = expectServiceSpec.Ports
-		} else {
-			service.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
-			service.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
-			service.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
-			service.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
+	if devbox.Spec.State == devboxv1alpha1.DevboxStateStopped && devbox.Spec.ColdShutdown {
+		err := r.Client.Delete(ctx, service)
+		if err != nil {
+			return err
 		}
-		return controllerutil.SetControllerReference(devbox, service, r.Scheme)
-	}); err != nil {
-		return err
-	}
-
-	// Retrieve the updated Service to get the NodePort
-	var updatedService corev1.Service
-	err := retry.OnError(
-		retry.DefaultRetry,
-		func(err error) bool { return client.IgnoreNotFound(err) == nil },
-		func() error {
-			return r.Client.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, &updatedService)
-		})
-	if err != nil {
-		return fmt.Errorf("failed to get updated service: %w", err)
-	}
-
-	// Extract the NodePort
-	nodePort := int32(0)
-	for _, port := range updatedService.Spec.Ports {
-		if port.NodePort != 0 {
-			nodePort = port.NodePort
-			break
+		return nil
+	} else {
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
+			// only update some specific fields
+			service.Spec.Selector = expectServiceSpec.Selector
+			service.Spec.Type = expectServiceSpec.Type
+			if len(service.Spec.Ports) == 0 {
+				service.Spec.Ports = expectServiceSpec.Ports
+			} else {
+				service.Spec.Ports[0].Name = expectServiceSpec.Ports[0].Name
+				service.Spec.Ports[0].Port = expectServiceSpec.Ports[0].Port
+				service.Spec.Ports[0].TargetPort = expectServiceSpec.Ports[0].TargetPort
+				service.Spec.Ports[0].Protocol = expectServiceSpec.Ports[0].Protocol
+			}
+			return controllerutil.SetControllerReference(devbox, service, r.Scheme)
+		}); err != nil {
+			return err
 		}
-	}
-	if nodePort == 0 {
-		return fmt.Errorf("NodePort not found for service %s", service.Name)
-	}
-	devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
-	devbox.Status.Network.NodePort = nodePort
+		// Retrieve the updated Service to get the NodePort
+		var updatedService corev1.Service
+		err := retry.OnError(
+			retry.DefaultRetry,
+			func(err error) bool { return client.IgnoreNotFound(err) == nil },
+			func() error {
+				return r.Client.Get(ctx, client.ObjectKey{Namespace: service.Namespace, Name: service.Name}, &updatedService)
+			})
+		if err != nil {
+			return fmt.Errorf("failed to get updated service: %w", err)
+		}
 
-	return r.Status().Update(ctx, devbox)
+		// Extract the NodePort
+		nodePort := int32(0)
+		for _, port := range updatedService.Spec.Ports {
+			if port.NodePort != 0 {
+				nodePort = port.NodePort
+				break
+			}
+		}
+		if nodePort == 0 {
+			return fmt.Errorf("NodePort not found for service %s", service.Name)
+		}
+		devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
+		devbox.Status.Network.NodePort = nodePort
+		return r.Status().Update(ctx, devbox)
+	}
 }
 
 // create a new pod, add predicated status to nextCommitHistory
