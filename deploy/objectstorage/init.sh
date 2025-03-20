@@ -43,8 +43,8 @@ retryPullImage() {
     fi
 }
 
-retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-controller:latest
-retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-frontend:latest
+retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-controller:0320
+retryPullImage ghcr.io/labring/sealos-cloud-objectstorage-frontend:0320
 retryPullImage ghcr.io/labring/sealos-cloud-minio-service:latest
 retryPullFile https://dl.min.io/client/mc/release/linux-amd64/mc
 
