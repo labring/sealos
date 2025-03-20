@@ -151,7 +151,7 @@ const ReleaseModal = ({
                             );
                           } else {
                             window.open(
-                              'https://sealos.io/docs/guides/fundamentals/release',
+                              'https://sealos.io/docs/guides/fundamentals/entrypoint-sh',
                               '_blank'
                             );
                           }
