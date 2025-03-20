@@ -377,7 +377,8 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 			Labels:    recLabels,
 		},
 	}
-	if devbox.Spec.State == devboxv1alpha1.DevboxStateShutdown {
+	switch devbox.Spec.State {
+	case devboxv1alpha1.DevboxStateShutdown:
 		err := r.Client.Delete(ctx, service)
 		if err != nil {
 			return err
@@ -387,7 +388,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 			NodePort: int32(0),
 		}
 		return r.Status().Update(ctx, devbox)
-	} else {
+	case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector
@@ -431,6 +432,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		devbox.Status.Network.NodePort = nodePort
 		return r.Status().Update(ctx, devbox)
 	}
+	return nil
 }
 
 // create a new pod, add predicated status to nextCommitHistory
