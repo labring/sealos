@@ -92,6 +92,11 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 			return devboxv1alpha1.DevboxPhaseStopped
 		}
 		return devboxv1alpha1.DevboxPhaseStopping
+	case devboxv1alpha1.DevboxStateShutdown:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhaseShutdown
+		}
+		return devboxv1alpha1.DevboxPhaseShutting
 	}
 	return devboxv1alpha1.DevboxPhaseUnknown
 }
