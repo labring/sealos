@@ -64,17 +64,21 @@ export const json2CreateCluster = (
   function distributeResources(dbType: DBType): resourcesDistributeMap {
     const [cpu, memory] = [str2Num(Math.floor(data.cpu)), str2Num(data.memory)];
 
-    function getPercentResource(percent: number) {
+    function allocateCM(cpu: number, memory: number) {
       return {
         limits: {
-          cpu: `${formatNumber(cpu * percent)}m`,
-          memory: `${formatNumber(memory * percent)}Mi`
+          cpu: `${formatNumber(cpu)}m`,
+          memory: `${formatNumber(memory)}Mi`
         },
         requests: {
-          cpu: `${Math.floor(cpu * percent * 0.1)}m`,
-          memory: `${Math.floor(memory * percent * 0.1)}Mi`
+          cpu: `${Math.floor(cpu * 0.1)}m`,
+          memory: `${Math.floor(memory * 0.1)}Mi`
         }
       };
+    }
+
+    function getPercentResource(percent: number) {
+      return allocateCM(cpu * percent, memory * percent);
     }
 
     switch (dbType) {
@@ -83,19 +87,27 @@ export const json2CreateCluster = (
       case DBTypeEnum.mysql:
         return {
           [DBComponentNameMap[dbType][0]]: {
-            cpuMemory: getPercentResource(0.8),
+            cpuMemory: getPercentResource(1),
             storage: data.storage
           }
         };
       case DBTypeEnum.redis:
+        // Please ref RedisHAConfig in  /constants/db.ts
+        let rsRes = [100, 100, 0, 1];
+        if (data.replicas > 1) {
+          rsRes = [200, 200, 1, 3];
+        }
         return {
           redis: {
-            cpuMemory: getPercentResource(0.8),
+            cpuMemory: getPercentResource(1),
             storage: Math.max(data.storage - 1, 1)
           },
           'redis-sentinel': {
-            cpuMemory: getPercentResource(0.2),
-            storage: 1
+            cpuMemory: allocateCM(rsRes[0], rsRes[1]),
+            storage: rsRes[2],
+            other: {
+              replicas: rsRes[3]
+            }
           }
         };
       case DBTypeEnum.kafka:
@@ -201,26 +213,30 @@ export const json2CreateCluster = (
               componentDefRef: key,
               monitor: true,
               name: key,
-              replicas: data.replicas,
+              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
               resources: resourceData.cpuMemory,
               serviceAccountName: data.dbName,
               switchPolicy: {
                 type: 'Noop'
               },
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${resourceData.storage}Gi`
+              ...(resourceData.storage > 0
+                ? {
+                    volumeClaimTemplates: [
+                      {
+                        name: 'data',
+                        spec: {
+                          accessModes: ['ReadWriteOnce'],
+                          resources: {
+                            requests: {
+                              storage: `${resourceData.storage}Gi`
+                            }
+                          },
+                          ...storageClassName
+                        }
                       }
-                    },
-                    ...storageClassName
+                    ]
                   }
-                }
-              ]
+                : {})
             };
           }),
           terminationPolicy,
@@ -615,7 +631,9 @@ export const json2NetworkService = ({
     qdrant: '',
     nebula: '',
     weaviate: '',
-    milvus: 19530
+    milvus: 19530,
+    pulsar: 6650,
+    clickhouse: 8123
   };
   const labelMap = {
     postgresql: {
@@ -638,7 +656,9 @@ export const json2NetworkService = ({
     weaviate: {},
     milvus: {
       'apps.kubeblocks.io/component-name': 'milvus'
-    }
+    },
+    pulsar: {},
+    clickhouse: {}
   };
 
   const template = {

@@ -23,6 +23,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
+    console.log('DB Edit Operation:', {
+      dbName: dbForm.dbName,
+      changes: dbForm
+    });
+
     if (isEdit) {
       const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
         'apps.kubeblocks.io',
@@ -100,6 +105,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const cluster = json2CreateCluster(dbForm, backupInfo, {
       storageClassName: process.env.STORAGE_CLASSNAME
     });
+
+    console.log('DB Edit Operation:', cluster);
+
     await applyYamlList([account, cluster], 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',

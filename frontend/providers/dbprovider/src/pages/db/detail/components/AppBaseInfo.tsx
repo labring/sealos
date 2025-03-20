@@ -211,7 +211,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       [DBTypeEnum.qdrant]: ``,
       [DBTypeEnum.nebula]: ``,
       [DBTypeEnum.weaviate]: ``,
-      [DBTypeEnum.milvus]: ``
+      [DBTypeEnum.milvus]: ``,
+      [DBTypeEnum.clickhouse]: ``,
+      [DBTypeEnum.pulsar]: ``
     };
 
     const defaultCommand = commandMap[db.dbType];

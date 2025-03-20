@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
+  Button,
   Center,
   Flex,
   FormControl,
@@ -17,17 +18,19 @@ import {
   Input,
   Switch,
   Text,
+  Textarea,
   useTheme
 } from '@chakra-ui/react';
-import { Tabs } from '@sealos/ui';
+import { MyTooltip, Tabs, useMessage } from '@sealos/ui';
 import 'github-markdown-css/github-markdown-light.css';
-import { throttle } from 'lodash';
+import { debounce, throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import PrepareBox from './Prepare';
 import { I18nCommonKey } from '@/types/i18next';
+import { parseDatabaseUrl, useClipboard, useCopyData } from '@/utils/tools';
 
 const Form = ({
   formHook,
@@ -37,6 +40,7 @@ const Form = ({
   pxVal: number;
 }) => {
   if (!formHook) return null;
+  const { message: toast } = useMessage();
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
@@ -45,59 +49,91 @@ const Form = ({
     dbType: SupportMigrationDBType;
   };
 
+  const { getClipboardData } = useClipboard();
+
   const {
     register,
     setValue,
     getValues,
+    watch,
     formState: { errors }
   } = formHook;
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
-    {
-      id: 'preparation',
-      label: t('migration_preparation'),
-      icon: 'book'
-    },
-    {
-      id: 'baseInfo',
-      label: t('basic'),
-      icon: 'formInfo'
-    },
-    {
-      id: 'settings',
-      label: t('advanced_configuration'),
-      icon: 'settings'
-    }
-  ];
+  const [connection, setConnection] = useState('');
+
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
+    () => [
+      {
+        id: 'preparation',
+        label: t('migration_preparation'),
+        icon: 'book'
+      },
+      {
+        id: 'baseInfo',
+        label: t('basic'),
+        icon: 'formInfo'
+      },
+      {
+        id: 'settings',
+        label: t('advanced_configuration'),
+        icon: 'settings'
+      }
+    ], // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
 
+  const baseInfoRef = useRef<HTMLDivElement | null>(null);
+  const settingRef = useRef<HTMLDivElement | null>(null);
+  const [accordionOpened, setAccordionOpened] = useState(false);
+
   // listen scroll and set activeNav
   useEffect(() => {
-    const scrollFn = throttle((e: Event) => {
-      if (!e.target) return;
-      const doms = navList.map((item) => ({
-        dom: document.getElementById(item.id),
-        id: item.id
-      }));
+    const baseInfo = baseInfoRef.current;
+    const setting = settingRef.current;
 
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
-
-      for (let i = doms.length - 1; i >= 0; i--) {
-        const offsetTop = doms[i].dom?.offsetTop || 0;
-        if (scrollTop + 200 >= offsetTop) {
-          setActiveNav(doms[i].id);
-          break;
+    const observerCallback = (
+      entries: IntersectionObserverEntry[],
+      observer: IntersectionObserver
+    ) => {
+      entries.forEach((entry) => {
+        if (entry.target === baseInfo) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
+            setActiveNav(navList[1].id);
+          } else {
+            setActiveNav(navList[0].id);
+          }
+        } else if (entry.target === setting && accordionOpened == true) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 1) {
+            setActiveNav(navList[2].id);
+          }
         }
-      }
-    }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
-    return () => {
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
+      });
     };
-    // eslint-disable-next-line
-  }, []);
+
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      threshold: [0.85, 1] // 设置两个阈值，分别用于 baseInfo 和 setting
+    });
+
+    if (baseInfo) {
+      observer.observe(baseInfo);
+    }
+    if (setting) {
+      observer.observe(setting);
+    }
+
+    return () => {
+      if (baseInfo) {
+        observer.unobserve(baseInfo);
+      }
+      if (setting) {
+        observer.unobserve(setting);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseInfoRef.current, settingRef.current, accordionOpened]);
 
   const Label = ({
     children,
@@ -136,6 +172,67 @@ const Form = ({
     alignItems: 'center',
     backgroundColor: 'grayModern.50'
   };
+
+  function processURL(url: string) {
+    try {
+      const data = parseDatabaseUrl(url);
+      setConnection(url);
+      setValue('sourceHost', data.hostname + (data.pathname ? '/' + data.pathname : ''));
+      setValue('sourcePort', data.port);
+      setValue('sourceUsername', data.username);
+      setValue('sourcePassword', data.password);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: t('parse_url_failed'),
+        status: 'error'
+      });
+    }
+  }
+
+  async function identifyClipboard() {
+    const text = await getClipboardData();
+    if (text !== undefined) {
+      processURL(text);
+    }
+  }
+
+  const [sourceHost, sourcePort, sourceUsername, sourcePassword] = watch([
+    'sourceHost',
+    'sourcePort',
+    'sourceUsername',
+    'sourcePassword'
+  ]);
+
+  function process2URL() {
+    for (const text of [sourceHost, sourcePort, sourceUsername, sourcePassword]) {
+      if (text === '') {
+        return '';
+      }
+    }
+    return `${dbType}://${sourceUsername}:${sourcePassword}@${sourceHost}:${sourcePort}`;
+  }
+
+  const url = process2URL();
+
+  const connectionRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (url !== connection && url !== '') {
+      setConnection(url);
+    }
+    if (connectionRef.current !== null) {
+      connectionRef.current.value = connection;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]);
+
+  useEffect(() => {
+    if (url !== connection) {
+      processURL(connection);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connection]);
 
   return (
     <>
@@ -226,15 +323,47 @@ const Form = ({
             </Box>
           </Box>
           {/* base info */}
-          <Box id={'baseInfo'} {...boxStyles}>
+          <Box ref={baseInfoRef} id="baseInfo" {...boxStyles}>
             <Box {...headerStyles}>
               <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
               {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
-              <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
-                {t('source_database')}
-              </Text>
+              <Flex alignItems={'center'} justifyContent={'space-between'} w={400}>
+                <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
+                  {t('source_database')}
+                </Text>
+                <MyTooltip label={t('identify_clipboard')}>
+                  <Button variant={'square'} onClick={identifyClipboard}>
+                    <MyIcon name="copy" w={'16px'} h={'16px'} />
+                  </Button>
+                </MyTooltip>
+              </Flex>
+              <FormControl mt={'16px'} w={'500px'}>
+                <Flex alignItems={'start'}>
+                  <Label w={94} style={{ lineHeight: '32px' }}>
+                    {t('database_connection')}
+                  </Label>
+                  <Textarea
+                    ref={connectionRef}
+                    placeholder={t('database_connection')}
+                    size="md"
+                    w={300}
+                    resize="none"
+                    onChangeCapture={debounce((e) => {
+                      if (e.target.value) {
+                        setConnection(e.target?.value);
+                      }
+                    }, 300)}
+                    onKeyDown={(e) => {
+                      if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
+                        e.preventDefault();
+                        identifyClipboard();
+                      }
+                    }}
+                  />
+                </Flex>
+              </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceHost} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('database_host')}</Label>
@@ -292,7 +421,9 @@ const Form = ({
               </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceDatabaseTable} w={'500px'}>
                 <Flex alignItems={'start'}>
-                  <Label w={94}>{t('db_table')}</Label>
+                  <Label w={94} style={{ lineHeight: '32px' }}>
+                    {t('db_table')}
+                  </Label>
                   <TagTextarea
                     defaultValues={getValues('sourceDatabaseTable') || []}
                     onUpdate={(e) => {
@@ -304,14 +435,19 @@ const Form = ({
               <FormControl mt={'16px'} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('remark')}</Label>
-                  <Input placeholder={t('remark')} {...register('remark')} />
+                  <Input placeholder={t('remark')} flex={1} {...register('remark')} />
                 </Flex>
               </FormControl>
             </Box>
           </Box>
 
           {/* settings */}
-          <Accordion id={'settings'} allowToggle>
+          <Accordion
+            ref={settingRef}
+            id="settings"
+            allowToggle
+            onChange={() => setAccordionOpened(!accordionOpened)}
+          >
             <AccordionItem {...boxStyles}>
               <AccordionButton
                 {...headerStyles}

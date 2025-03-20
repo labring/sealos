@@ -128,6 +128,7 @@
   "database_config": "数据库参数",
   "database_edit_config": "变更参数",
   "database_empty": "您还没有数据库",
+  "database_connection": "数据库链接",
   "database_host": "数据库主机名",
   "database_host_empty": "缺少数据库主机名",
   "database_name": "新数据库名",
@@ -341,5 +342,10 @@
   "multi_components_tip": "多组件数据库磁盘将会分配给各个组件",
   "backup_saveTime_max": "最多保留",
   "backup_saveTime_min": "最少保留",
-  "controlled_by": "控制者"
+  "controlled_by": "控制者",
+  "identify_clipboard": "识别剪切板内容",
+  "clipboard_unsupported": "浏览器不支持 Clipboard API",
+  "clipboard_read_failed": "读取剪切板失败！",
+  "parse_url_failed": "内容不合法，识别失败！",
+  "multi_replica_redis_tip": "Redis 多副本包含 HA 节点，请悉知，预估价格已包含 HA 节点费用"
 }
