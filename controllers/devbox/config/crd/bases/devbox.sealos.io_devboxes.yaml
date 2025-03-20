@@ -828,8 +828,6 @@ spec:
                         type: array
                     type: object
                 type: object
-              coldShutdown:
-                type: boolean
               config:
                 properties:
                   annotations:
@@ -2827,6 +2825,7 @@ spec:
                 enum:
                 - Running
                 - Stopped
+                - Shutdown
                 type: string
               templateID:
                 type: string

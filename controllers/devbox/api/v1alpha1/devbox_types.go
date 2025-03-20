@@ -36,6 +36,8 @@ const (
 	DevboxStatePending DevboxState = "Pending"
 	// DevboxStateStopped means the Devbox is stopped
 	DevboxStateStopped DevboxState = "Stopped"
+	// DevboxStateShutdown means the devbox is shutdown
+	DevboxStateShutdown DevboxState = "Shutdown"
 )
 
 type NetworkType string
@@ -104,7 +106,7 @@ type Config struct {
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Running;Stopped
+	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
@@ -124,10 +126,6 @@ type DevboxSpec struct {
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
-
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default=false
-	ColdShutdown bool `json:"coldShutdown"`
 
 	// +kubebuilder:validation:Optional
 	RuntimeClassName string `json:"runtimeClassName,omitempty"`

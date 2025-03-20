@@ -322,7 +322,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				return r.deletePod(ctx, devbox, pod)
 			}
 		}
-	case devboxv1alpha1.DevboxStateStopped:
+	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
 		switch len(podList.Items) {
 		case 0:
 			return nil
@@ -377,13 +377,14 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 			Labels:    recLabels,
 		},
 	}
-	if devbox.Spec.State == devboxv1alpha1.DevboxStateStopped && devbox.Spec.ColdShutdown {
+	if devbox.Spec.State == devboxv1alpha1.DevboxStateShutdown {
 		err := r.Client.Delete(ctx, service)
 		if err != nil {
 			return err
 		}
 		devbox.Status.Network = devboxv1alpha1.NetworkStatus{
-			Type: devboxv1alpha1.NetworkTypeNodePort,
+			Type:     devboxv1alpha1.NetworkTypeNodePort,
+			NodePort: int32(0),
 		}
 		return r.Status().Update(ctx, devbox)
 	} else {
