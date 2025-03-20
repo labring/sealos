@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -379,9 +380,8 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 	}
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateShutdown:
-		fmt.Println("进入1")
 		err := r.Client.Delete(ctx, service)
-		if err != nil {
+		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
 		devbox.Status.Network = devboxv1alpha1.NetworkStatus{
@@ -390,7 +390,6 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		}
 		return r.Status().Update(ctx, devbox)
 	case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
-		fmt.Println("进入2")
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector
