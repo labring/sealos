@@ -35,6 +35,8 @@ spec:
           env:
             - name: MONITOR_URL
               value: https://object-storage-monitor.{{ .cloudDomain }}/q
+            - name: APP_LAUNCHPAD_URL
+              value: https://applaunchpad.{{ .cloudDomain }}/api/v1alpha
           resources:
             limits:
               cpu: 2000m

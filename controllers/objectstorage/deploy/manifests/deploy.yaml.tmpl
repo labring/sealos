@@ -74,8 +74,8 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: [ ]
-  storedVersions: [ ]
+  conditions: []
+  storedVersions: []
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
@@ -112,6 +112,11 @@ spec:
               type: object
             spec:
               description: ObjectStorageUserSpec defines the desired state of ObjectStorageUser
+              properties:
+                secretKeyVersion:
+                  default: 0
+                  format: int64
+                  type: integer
               type: object
             status:
               description: ObjectStorageUserStatus defines the observed state of ObjectStorageUser
@@ -130,6 +135,10 @@ spec:
                   type: integer
                 secretKey:
                   type: string
+                secretKeyVersion:
+                  default: 0
+                  format: int64
+                  type: integer
                 size:
                   description: unit is byte
                   format: int64
@@ -144,8 +153,8 @@ status:
   acceptedNames:
     kind: ""
     plural: ""
-  conditions: [ ]
-  storedVersions: [ ]
+  conditions: []
+  storedVersions: []
 ---
 apiVersion: v1
 kind: ServiceAccount
