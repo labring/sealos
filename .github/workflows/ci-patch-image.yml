@@ -177,7 +177,7 @@ jobs:
           sudo sealos load -i /tmp/sealos/images/patch-arm64.tar
           sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh
+          bash lifecycle/docker/patch/manifest-cluster-images.sh
         env:
           OWNER: ${{ github.repository_owner }}
       - name: Manifest Cluster Images for latest
@@ -185,7 +185,7 @@ jobs:
           sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-amd64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-amd64
           sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-arm64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-arm64
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh ghcr.io/${{ github.repository_owner }}/sealos-patch:latest
+          bash lifecycle/docker/patch/manifest-cluster-images.sh ghcr.io/${{ github.repository_owner }}/sealos-patch:latest
         env:
           OWNER: ${{ github.repository_owner }}
       - name: Renew issue and Sync Images
