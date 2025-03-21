@@ -269,8 +269,8 @@ jobs:
         # if push to master, then patch images to ghcr.io
         run: |
           sudo sealos images
-          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
-          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
+          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
+          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
         env:
           OWNER: ${{ github.repository_owner }}
 
