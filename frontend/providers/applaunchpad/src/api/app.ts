@@ -210,3 +210,12 @@ export const uploadApp = (data: UploadAppPayload) => {
     }
   });
 };
+
+export const createConfigMap = (name: string) =>
+  POST(`/api/createConfigMap?name=${name}`);
+
+export const updateConfigMap = (name: string, data: any) =>
+  POST(`/api/updateConfigMap?name=${name}`, { data });
+
+export const syncConfigMap = (name: string) =>
+  POST(`/api/syncConfigMap?name=${name}`);
