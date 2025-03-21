@@ -130,12 +130,14 @@ jobs:
           
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
-        run: |
-          sudo sealos images
-          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
-          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.repo }}:latest
         env:
           OWNER: ${{ github.repository_owner }}
+          REPO: ${{ steps.prepare.outputs.repo }}
+          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
+          bash scripts/manifest-cluster-images.sh "$REPO:latest"
 
       # todo: build multi-arch images
 

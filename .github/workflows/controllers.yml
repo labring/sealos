@@ -142,9 +142,15 @@ jobs:
           fi
       - name: Prepare
         id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ matrix.module.name }}
         run: |
-          bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
-          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
+          bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
+          echo "docker_repo=ghcr.io/$REPO_OWNER/sealos-$MODULE_NAME-controller" >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -225,13 +231,19 @@ jobs:
           fi
       - name: Prepare
         id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ matrix.module.name }}
         run: |
-          tag_name=$(bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}")
-          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
-          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
-          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
-          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:${tag_name} >> $GITHUB_OUTPUT
-          echo latest_cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller:latest >> $GITHUB_OUTPUT
+          tag_name=$(bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG")
+          echo "old_docker_repo=ghcr.io/labring/sealos-$MODULE_NAME-controller" >> $GITHUB_OUTPUT
+          echo "new_docker_repo=ghcr.io/$REPO_OWNER/sealos-$MODULE_NAME-controller" >> $GITHUB_OUTPUT
+          echo "cluster_repo=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-controller" >> $GITHUB_OUTPUT
+          echo "cluster_image=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-controller:$tag_name" >> $GITHUB_OUTPUT
+          echo "latest_cluster_image=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-controller:latest" >> $GITHUB_OUTPUT
 
       - name: Download sealos
         uses: actions/download-artifact@v4
@@ -267,12 +279,14 @@ jobs:
 
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
-        run: |
-          sudo sealos images
-          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
-          bash scripts/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
         env:
           OWNER: ${{ github.repository_owner }}
+          REPO: ${{ steps.prepare.outputs.repo }}
+          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
+          bash scripts/manifest-cluster-images.sh "$REPO:latest"
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
         uses: labring/gh-rebot@v0.0.6
