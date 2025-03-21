@@ -59,7 +59,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh ./service
+        run: bash scripts/resolve-modules.sh ./service
 
   golangci-lint:
     needs: [  resolve-modules ]
@@ -131,7 +131,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+          bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
           echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
@@ -205,7 +205,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+          bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
@@ -248,8 +248,8 @@ jobs:
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-amd64  ${CLUSTER_IMAGE_NAME_LATEST}-amd64
           sudo sealos tag ${CLUSTER_IMAGE_NAME}-arm64  ${CLUSTER_IMAGE_NAME_LATEST}-arm64
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
-          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
+          bash lifecycle/docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
+          bash lifecycle/docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME_LATEST
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
