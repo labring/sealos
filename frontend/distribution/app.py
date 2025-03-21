@@ -12,6 +12,8 @@ import re
 import requests
 from node import add_node_to_cluster, delete_node_from_cluster
 from stress_test import *
+from scheduling import *
+import threading
 
 
 app = Flask(__name__)
@@ -708,7 +710,7 @@ def init_configmap():
     cmd = f"kubectl create configmap {CONFIGMAP_NAME} -n {NAMESPACE} --from-literal=backup_nodes='[]' --kubeconfig=/etc/kubernetes/admin.conf"
     try:
         subprocess.run(cmd, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         # print(f"Error creating configmap: {e}")
         pass
 
@@ -992,19 +994,108 @@ def mock_run_test_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/ping', methods=['GET'])
+def api_ping():
+    return ping()
+
+@app.route('/api/register_backend', methods=['POST'])
+def api_register_backend():
+    ip = request.json["ip"]
+    register_backend(ip)
+    return "success"
+
+@app.route('/api/delete_backend', methods=['POST'])
+def api_delete_backend():
+    ip = request.json["ip"]
+    delete_backend(ip)
+    return "success"
+
+@app.route('/api/get_backends', methods=['GET'])
+def api_get_backends():
+    return jsonify(get_backends()) 
+
+@app.route('/api/test_latency', methods=['GET'])
+def api_test_latency():
+    return jsonify(test_latency()) 
+
+@app.route('/api/register_app', methods=['POST'])
+def api_register_app():
+    app_name = request.json["app_name"]
+    namespace = request.json["namespace"]
+    app2 = request.json["app2"]
+    namespace2 = request.json["namespace2"]
+    url_key = request.json["url_key"]
+    current_backend = request.json["current_backend"]
+    ports = request.json["ports"]
+    register_app(app_name, namespace, app2, namespace2, url_key, current_backend, ports)
+    return "success"
+
+@app.route('/api/delete_app', methods=['POST'])
+def api_delete_app():
+    app_name = request.json["app_name"]
+    return delete_app(app_name)
+
+@app.route('/api/get_app_list', methods=['GET'])
+def api_get_app_list():
+    return jsonify(get_app_list())
+
+@app.route('/api/change_deploy_env', methods=['POST'])
+def api_change_deploy_env():
+    app2 = request.json["app2"]
+    namespace2 = request.json["namespace2"]
+    url_key = request.json["url_key"]
+    new_backend = request.json["new_backend"]
+    return change_deploy_env(app2, namespace2, url_key, new_backend)
+
+@app.route('/api/check_all_apps', methods=['GET'])
+def api_check_all_apps():
+    try:
+        check_all_apps()
+        return jsonify({'message': 'All apps are running successfully'}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'error': str(e)}), 500
+    
+def cron_job():
+    while True:
+        time.sleep(60)
+        
+        if ENABLE_WORKLOAD_SCALING:
+            try:
+                scale_high_priority_workloads()
+            except Exception as e:
+                print("Error in scale_high_priority_workloads: {}".format(str(e)))
+
+        if ENABLE_NODE_SCALING:
+            try:
+                scale_nodes()
+            except Exception as e:
+                print("Error in scale_nodes: {}".format(str(e)))
+        
+        try:
+            check_all_apps()
+        except Exception as e:
+            print("Error in check_all_apps: {}".format(str(e)))
+
 if __name__ == '__main__':
     init_db()
     init_configmap()
+    init_scheduling()
     # 创建定时任务调度器
-    if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
-        scheduler = BackgroundScheduler()
-        if ENABLE_WORKLOAD_SCALING:
-            scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
-        if ENABLE_NODE_SCALING:
-            scheduler.add_job(scale_nodes, 'interval', minutes=1)
-        scheduler.start()
-    try:
-        app.run(debug=True, host='0.0.0.0', port=5002)
-    finally:
-        scheduler.shutdown()
+    # scheduler = BackgroundScheduler()
+    # if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
+    #     if ENABLE_WORKLOAD_SCALING:
+    #         scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
+    #     if ENABLE_NODE_SCALING:
+    #         scheduler.add_job(scale_nodes, 'interval', minutes=1)
+    # scheduler.add_job(check_all_apps, 'interval', minutes=1)
+    # scheduler.start()
+    
+    # 创建线程执行定时任务
+    thread = threading.Thread(target=cron_job)
+    thread.start()
+
+    app.run(debug=True, host='0.0.0.0', port=5002)
+        
 

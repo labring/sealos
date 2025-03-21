@@ -25,6 +25,7 @@ if [ -f /etc/systemd/system/deployapp.service ]; then
     rm -rf /etc/systemd/system/deployapp.service
 fi
 
+mkdir -p /usr/bin/deployapp
 rm -rf /usr/bin/deployapp/*.py /usr/bin/deployapp/__pycache__
 cp -r deployapp/* /usr/bin/deployapp/
 cd /usr/bin/deployapp
