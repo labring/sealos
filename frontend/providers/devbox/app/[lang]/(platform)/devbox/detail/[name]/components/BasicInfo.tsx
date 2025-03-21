@@ -225,7 +225,7 @@ const BasicInfo = () => {
                 onClick={handleCopySSHCommand}
                 w={'full'}
               >
-                {`ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
+                {`ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
               </Text>
             </Tooltip>
           </Flex>
@@ -265,7 +265,7 @@ const BasicInfo = () => {
                       downLoadBlob(
                         devboxDetail?.sshConfig?.sshPrivateKey as string,
                         'application/octet-stream',
-                        `${devboxDetail?.name}`
+                        `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
                       )
                     }
                   />

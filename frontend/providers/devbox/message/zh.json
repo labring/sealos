@@ -143,6 +143,7 @@
   "jetbrains_guide_connecting_info": "第一次连接需要 3-5 min，请耐心等待",
   "jetbrains_guide_documentation": "使用文档",
   "jetbrains_guide_download_private_key": "下载 <blue>私钥</blue>。",
+  "jetbrains_guide_modified_config": "确保 <blue>~/.ssh/config</blue> 文件开头存在下列代码：",
   "jetbrains_guide_modified_file": "修改<blue> ~/.ssh/sealos/devbox_config</blue> 文件（如果不存在需要新建一个文件），在文件末尾追加：",
   "jetbrains_guide_move_to_path": "将下载好的私钥移动到目录：<blue>~/.ssh/sealos/</blue> 。",
   "jetbrains_guide_one_click_setup": "一键配置",
