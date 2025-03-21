@@ -38,7 +38,7 @@ jobs:
           git config --global --add safe.directory /github/workspace
           git config --global user.email "sealos-ci-robot"
           git config --global user.name "sealos-ci-robot@sealos.io"
-          bash ./scripts/cherry-pick.sh
+          bash ./${{ env.PROJECT_PATH }}/scripts/cherry-pick.sh
       - uses: peter-evans/create-pull-request@v5
         with:
           title: 'docs: Automated CherryPick Update for ${{ steps.set-target.outputs.target }} '

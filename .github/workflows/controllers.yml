@@ -59,7 +59,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh ./controllers
+        run: bash scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
     if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
@@ -143,7 +143,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
+          bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}"
           echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
@@ -226,7 +226,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          tag_name=$(bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}")
+          tag_name=$(bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}"  "${{ inputs.push_image_tag }}")
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module.name }}-controller >> $GITHUB_OUTPUT
@@ -269,8 +269,8 @@ jobs:
         # if push to master, then patch images to ghcr.io
         run: |
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
+          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
+          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
         env:
           OWNER: ${{ github.repository_owner }}
 
