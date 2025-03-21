@@ -138,7 +138,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}"
+          bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}"
 
       - name: Docker meta
         id: meta
@@ -190,7 +190,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          tag_name=$(bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}")
+          tag_name=$(bash scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}")
           echo old_docker_repo=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
           echo old_docker_image=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend:latest >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
@@ -228,8 +228,8 @@ jobs:
       - name: Manifest Cluster Images
         run: |
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
+          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
+          bash lifecycle/docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
         env:
           OWNER: ${{ github.repository_owner }}
 
