@@ -22,10 +22,8 @@ func TestClient_TagImage(t1 *testing.T) {
 		Password string
 	}
 	type args struct {
-		hostName  string
-		imageName string
-		oldTag    string
-		newTag    string
+		originName string
+		newName    string
 	}
 	tests := []struct {
 		name    string
@@ -40,20 +38,18 @@ func TestClient_TagImage(t1 *testing.T) {
 				Password: "passw0rd",
 			},
 			args: args{
-				hostName:  "sealos.hub:5000",
-				imageName: "default/devbox-sample",
-				oldTag:    "2024-08-21-072021",
-				newTag:    "test",
+				originName: "sealos.hub:5000/default/devbox-sample:2024-08-21-072021",
+				newName:    "sealos.hub:5000/default/devbox-sample:test",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &Client{
+			t := &Registry{
 				Username: tt.fields.Username,
 				Password: tt.fields.Password,
 			}
-			if err := t.TagImage(tt.args.hostName, tt.args.imageName, tt.args.oldTag, tt.args.newTag); (err != nil) != tt.wantErr {
+			if err := t.Tag(tt.args.originName, tt.args.newName); (err != nil) != tt.wantErr {
 				t1.Errorf("TagImage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
