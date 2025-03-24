@@ -106,3 +106,77 @@ func (SubscriptionPlan) TableName() string {
 func (SubscriptionTransaction) TableName() string {
 	return "SubscriptionTransaction"
 }
+
+type AccountRegionUserTask struct {
+	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // ID
+	//RegionUID uuid.UUID `gorm:"type:uuid;not null;index;column:region_uid"`               // Region ID
+	RegionDomain string    `gorm:"type:varchar(50);not null;column:region_domain"` // Region Domain
+	UserUID      uuid.UUID `gorm:"type:uuid;not null;index;column:user_uid"`       // 用户 ID
+	CreatedAt    time.Time `gorm:"column:created_at;autoCreateTime"`               // 创建时间
+	// flush-quota
+	Type AccountRegionUserTaskType `gorm:"column:type"` // 类型
+	//TaskID    uuid.UUID                 `gorm:"type:uuid;column:task_id"`                                 // 任务 ID
+	//Executed bool      `gorm:"column:executed"` // 是否已执行
+	StartAt time.Time `gorm:"column:start_at"` // 开始时间
+	EndAt   time.Time `gorm:"column:end_at"`   // 结束时间
+	Status  AccountRegionUserTaskStatus
+}
+
+func (AccountRegionUserTask) TableName() string {
+	return "AccountRegionUserTask"
+}
+
+type AccountRegionUserTaskType string
+
+type AccountRegionUserTaskStatus string
+
+const (
+	AccountRegionUserTaskTypeFlushQuota AccountRegionUserTaskType = "flush-quota"
+
+	AccountRegionUserTaskStatusPending   AccountRegionUserTaskStatus = "pending"
+	AccountRegionUserTaskStatusCompleted AccountRegionUserTaskStatus = "completed"
+	AccountRegionUserTaskStatusFailed    AccountRegionUserTaskStatus = "failed"
+)
+
+type UserKYC struct {
+	UserUID   uuid.UUID `gorm:"type:uuid;not null;primaryKey;column:user_uid"` // 用户 ID
+	Status    KYCStatus `gorm:"type:varchar(50);column:status"`                // KYC 状态
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`              // 创建时间
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`              // 更新时间
+	NextAt    time.Time `gorm:"column:next_at"`                                // 下次credits时间
+}
+
+func (UserKYC) TableName() string {
+	return "UserKYC"
+}
+
+type KYCStatus string
+
+const (
+	UserKYCStatusPending   KYCStatus = "pending"
+	UserKYCStatusCompleted KYCStatus = "completed"
+	UserKYCStatusFailed    KYCStatus = "failed"
+)
+
+//
+//type KYCTransaction struct {
+//	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // ID
+//	UserUID   uuid.UUID `gorm:"type:uuid;not null;index;column:user_uid"`                 // 用户 ID
+//	Amount    int64     `gorm:"type:bigint;column:amount"`                                // 金额
+//	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`                         // 创建时间
+//	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`                         // 更新时间
+//	NextAt    time.Time `gorm:"column:next_at"`                                           // 下次时间
+//	Status    KYCTransactionStatus
+//}
+//
+//func (KYCTransaction) TableName() string {
+//	return "KYCTransaction"
+//}
+//
+//type KYCTransactionStatus string
+//
+//const (
+//	KYCTransactionStatusPending   KYCTransactionStatus = "pending"
+//	KYCTransactionStatusCompleted KYCTransactionStatus = "completed"
+//	KYCTransactionStatusFailed    KYCTransactionStatus = "failed"
+//)

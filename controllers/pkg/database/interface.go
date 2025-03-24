@@ -123,7 +123,7 @@ type AccountV2 interface {
 	GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error)
 	CreatePaymentOrder(order *types.PaymentOrder) error
 	CreateSubscription(subscription *types.Subscription) error
-	SetCardInfo(info *types.CardInfo) error
+	SetCardInfo(info *types.CardInfo) (uuid.UUID, error)
 	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
 	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)

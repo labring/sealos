@@ -185,3 +185,31 @@ func (s *AtomPaymentService) CreateSubscriptionPay(card *types.CardInfo) *model.
 		PaymentMethodId: card.CardToken,
 	}
 }
+
+// QueryPayment 查询支付状态
+func (s *AtomPaymentService) QueryPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayQueryResponse, error) {
+	if paymentRequestID == "" && paymentID == "" {
+		return nil, fmt.Errorf("paymentRequestID and paymentID cannot both be empty")
+	}
+	resp, err := s.GetPayment(paymentRequestID, paymentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query payment: %v", err)
+	}
+	return resp, nil
+}
+
+// check resultStatus = "S" And ResultCode = "SUCCESS"
+func (s *AtomPaymentService) CancelPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayCancelResponse, error) {
+	if paymentRequestID == "" && paymentID == "" {
+		return nil, fmt.Errorf("paymentRequestID and paymentID cannot both be empty")
+	}
+	request, cancelRequest := pay.NewAlipayPayCancelRequest()
+	cancelRequest.PaymentRequestId = paymentRequestID
+	cancelRequest.PaymentId = paymentID
+	execute, err := s.Client.Execute(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute cancel request: %v", err)
+	}
+	response := execute.(*responsePay.AlipayPayCancelResponse)
+	return response, nil
+}

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
 	"gorm.io/gorm"
 
 	"github.com/sirupsen/logrus"
@@ -89,6 +91,10 @@ func CreateCardPay(c *gin.Context) {
 			if err != nil {
 				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 			} else {
+				// TODO 发邮箱通知
+				if err := SendUserPayEmail(req.UserUID, utils.EnvPaySuccessEmailTmpl); err != nil {
+					logrus.Errorf("failed to send user %s email: %v", req.UserID, err)
+				}
 				SetSuccessResp(c)
 			}
 			return
@@ -226,11 +232,63 @@ func logNotification(notification interface{}) {
 
 // 辅助函数：处理支付结果
 func processPaymentResult(c *gin.Context, notifyType string, notifyResult types.Result, paymentRequestID, paymentID string) error {
-	return processPaymentResultWithHandler(c, notifyType, notifyResult, paymentRequestID, paymentID, dao.DBClient.NewCardPaymentHandler, dao.DBClient.NewCardPaymentFailureHandler)
+	return processPaymentResultWithHandler(c, notifyType, notifyResult, paymentRequestID, paymentID, newCardPaymentHandler, newCardPaymentFailureHandler)
+}
+
+func newCardPaymentHandler(paymentID string, card types.CardInfo) error {
+	userUID, err := dao.DBClient.NewCardPaymentHandler(paymentID, card)
+	if err != nil {
+		return err
+	}
+	if userUID != uuid.Nil {
+		if err := SendUserPayEmail(userUID, utils.EnvPaySuccessEmailTmpl); err != nil {
+			logrus.Errorf("Failed to send PAY_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
+		}
+	}
+	return nil
+}
+
+func newCardPaymentFailureHandler(paymentRequestID string) error {
+	userUID, err := dao.DBClient.NewCardPaymentFailureHandler(paymentRequestID)
+	if err != nil {
+		return err
+	}
+	if userUID != uuid.Nil {
+		if err := SendUserPayEmail(userUID, utils.EnvPayFailedEmailTmpl); err != nil {
+			logrus.Errorf("Failed to send PAY_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
+		}
+	}
+	return nil
+}
+
+func newCardSubscriptionPaymentHandler(paymentReqID string, card types.CardInfo) error {
+	userUID, err := dao.DBClient.NewCardSubscriptionPaymentHandler(paymentReqID, card)
+	if err != nil {
+		return err
+	}
+	if userUID != uuid.Nil {
+		if err := SendUserPayEmail(userUID, utils.EnvSubSuccessEmailTmpl); err != nil {
+			logrus.Errorf("Failed to send SUB_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
+		}
+	}
+	return nil
+}
+
+func newCardSubscriptionPaymentFailureHandler(paymentRequestID string) error {
+	userUID, err := dao.DBClient.NewCardSubscriptionPaymentFailureHandler(paymentRequestID)
+	if err != nil {
+		return err
+	}
+	if userUID != uuid.Nil {
+		if err := SendUserPayEmail(userUID, utils.EnvSubFailedEmailTmpl); err != nil {
+			logrus.Errorf("Failed to send SUB_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
+		}
+	}
+	return nil
 }
 
 func processSubscriptionPayResult(c *gin.Context, notifyType string, notifyResult types.Result, paymentRequestID, paymentID string) error {
-	return processPaymentResultWithHandler(c, notifyType, notifyResult, paymentRequestID, paymentID, dao.DBClient.NewCardSubscriptionPaymentHandler, dao.DBClient.NewCardSubscriptionPaymentFailureHandler)
+	return processPaymentResultWithHandler(c, notifyType, notifyResult, paymentRequestID, paymentID, newCardSubscriptionPaymentHandler, newCardSubscriptionPaymentFailureHandler)
 }
 
 func processPaymentResultWithHandler(c *gin.Context, notifyType string, notifyResult types.Result, paymentRequestID, paymentID string, paySuccessHandler func(paymentID string, card types.CardInfo) error, payFailureHandler func(paymentRequestID string) error) error {

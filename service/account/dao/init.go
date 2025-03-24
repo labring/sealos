@@ -39,6 +39,8 @@ type Region struct {
 
 var (
 	DBClient             Interface
+	EmailTmplMap         map[string]string
+	SMTPConfig           *utils.SMTPConfig
 	ClientIP             string
 	DeviceTokenID        string
 	PaymentService       *services.AtomPaymentService
@@ -47,6 +49,7 @@ var (
 	JwtMgr               *utils.JWTManager
 	Cfg                  *Config
 	BillingTask          *helper.TaskQueue
+	FlushQuotaProcesser  *FlushQuotaTask
 	Debug                bool
 )
 
@@ -126,7 +129,7 @@ func Init(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("join pay notification url error: %v", err)
 		}
-		payRedirectURL := "https://" + Cfg.LocalRegionDomain
+		payRedirectURL := "https://" + "account-center." + Cfg.LocalRegionDomain
 		fmt.Printf("init alipay client with payNotificationURL: %s , payRedirectURL: %s\n", payNotificationURL, payRedirectURL)
 		PaymentService = services.NewPaymentService(defaultAlipayClient.NewDefaultAlipayClient(gatewayURL, clientID, privateKey, publicKey), payNotificationURL, payRedirectURL)
 		ClientIP, DeviceTokenID = os.Getenv(helper.EnvClientIP), os.Getenv(helper.EnvDeviceTokenID)
@@ -146,6 +149,25 @@ func Init(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("parse resource limit with subscription error: %v", err)
 		}
+		FlushQuotaProcesser = &FlushQuotaTask{
+			LocalDomain: Cfg.LocalRegionDomain,
+		}
+	}
+	EmailTmplMap = map[string]string{
+		utils.EnvPaySuccessEmailTmpl: os.Getenv(utils.EnvPaySuccessEmailTmpl),
+		utils.EnvPayFailedEmailTmpl:  os.Getenv(utils.EnvPayFailedEmailTmpl),
+		utils.EnvSubSuccessEmailTmpl: os.Getenv(utils.EnvSubSuccessEmailTmpl),
+		utils.EnvSubFailedEmailTmpl:  os.Getenv(utils.EnvSubFailedEmailTmpl),
+	}
+	SMTPConfig = &utils.SMTPConfig{
+		ServerHost: os.Getenv(utils.EnvSMTPHost),
+		ServerPort: env.GetIntEnvWithDefault(utils.EnvSMTPPort, 465),
+		FromEmail:  os.Getenv(utils.EnvSMTPFrom),
+		Passwd:     os.Getenv(utils.EnvSMTPPassword),
+		EmailTitle: os.Getenv(utils.EnvSMTPTitle),
+	}
+	if SMTPConfig.ServerHost == "" || SMTPConfig.FromEmail == "" || SMTPConfig.Passwd == "" || SMTPConfig.EmailTitle == "" {
+		return fmt.Errorf("empty smtp config: %v", SMTPConfig)
 	}
 	return nil
 }

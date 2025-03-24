@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils"
+
 	"github.com/labring/sealos/service/account/helper"
 
 	services "github.com/labring/sealos/service/pkg/pay"
@@ -44,7 +46,7 @@ func NewSubscriptionProcessor(db *gorm.DB) *SubscriptionProcessor {
 func (p *SubscriptionProcessor) StartProcessing(ctx context.Context) {
 	logrus.Info("Starting subscription expiration processor")
 
-	ticker := time.NewTicker(PollingInterval)
+	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
 	// 立即执行一次，然后按照间隔定期执行
@@ -56,6 +58,50 @@ func (p *SubscriptionProcessor) StartProcessing(ctx context.Context) {
 			p.processSubscriptions()
 		case <-ctx.Done():
 			logrus.Info("Stopping subscription expiration processor")
+			return
+		}
+	}
+}
+
+// StartKYCProcessing 开始处理 KYC
+func (p *SubscriptionProcessor) StartKYCProcessing(ctx context.Context) {
+	logrus.Info("Starting KYC processor")
+
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	p.ProcessKYCCredits()
+	for {
+		select {
+		case <-ticker.C:
+			p.ProcessKYCCredits()
+		case <-ctx.Done():
+			logrus.Info("Stopping KYC processor")
+			return
+		}
+	}
+}
+
+func (p *SubscriptionProcessor) StartFlushQuotaProcessing(ctx context.Context) {
+	logrus.Info("Starting flush quota processor")
+
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
+
+	err := dao.FlushQuotaProcesser.Execute()
+	if err != nil {
+		logrus.Errorf("Failed to execute flush quota task: %v", err)
+	}
+
+	for {
+		select {
+		case <-ticker.C:
+			err := dao.FlushQuotaProcesser.Execute()
+			if err != nil {
+				logrus.Errorf("Failed to execute flush quota task: %v", err)
+			}
+		case <-ctx.Done():
+			logrus.Info("Stopping flush quota processor")
 			return
 		}
 	}
@@ -106,8 +152,9 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 		return tx.Raw(`
 			SELECT s.* FROM "Subscription" s
 			WHERE s.expire_at < ?AND s.status = ?
+			AND s.plan_name != ?
 			LIMIT ?
-		`, time.Now(), types.SubscriptionStatusNormal, BatchSize).Scan(&expiredSubscriptions).Error
+		`, time.Now().Add(10*time.Minute), types.SubscriptionStatusNormal, types.FreeSubscriptionPlanName, BatchSize).Scan(&expiredSubscriptions).Error
 	})
 
 	if err != nil {
@@ -160,27 +207,28 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 
 	//TODO if free subscription, determine whether to bind github account. If bound, renewal subscription; otherwise, the status changes to Debt
 	if subscription.PlanName == types.FreeSubscriptionPlanName && subscription.Status == types.SubscriptionStatusNormal {
-		ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
-		if err != nil {
-			return fmt.Errorf("failed to check github oauth provider: %w", err)
-		}
-		if ok {
-			subTransaction.PayStatus = types.SubscriptionPayStatusNoNeed
-			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-				return tx.Create(&subTransaction).Error
-			})
-			if err != nil {
-				return fmt.Errorf("failed to create subscription transaction: %w", err)
-			}
-		} else {
-			subscription.Status = types.SubscriptionStatusDebt
-			err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-				return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
-			})
-			if err != nil {
-				return fmt.Errorf("failed to update subscription status: %w", err)
-			}
-		}
+		// TODO 待删除逻辑
+		//ok, err := HasGithubOauthProvider(p.db, subscription.UserUID)
+		//if err != nil {
+		//	return fmt.Errorf("failed to check github oauth provider: %w", err)
+		//}
+		//if ok {
+		//	subTransaction.PayStatus = types.SubscriptionPayStatusNoNeed
+		//	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		//		return tx.Create(&subTransaction).Error
+		//	})
+		//	if err != nil {
+		//		return fmt.Errorf("failed to create subscription transaction: %w", err)
+		//	}
+		//} else {
+		//	subscription.Status = types.SubscriptionStatusDebt
+		//	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		//		return tx.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", types.SubscriptionStatusDebt).Error
+		//	})
+		//	if err != nil {
+		//		return fmt.Errorf("failed to update subscription status: %w", err)
+		//	}
+		//}
 		return nil
 	}
 
@@ -201,6 +249,9 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 			PayMethod: "CARD",
 		}, &subTransaction)
 		if err == nil {
+			if err = SendUserPayEmail(subscription.UserUID, utils.EnvSubSuccessEmailTmpl); err != nil {
+				logrus.Errorf("Failed to send subscription success email: %v", err)
+			}
 			return nil
 		}
 		logrus.Errorf("Failed to pay for bind card: %v, subscription: %v", err, subscription)
@@ -267,6 +318,9 @@ func (p *SubscriptionProcessor) sendRenewalFailureNotification(subscription *typ
 		subscription.UserUID, subscription.ID, subscription.PlanName, transaction.ID)
 
 	// TODO: implement the actual notification logic
+	if err := SendUserPayEmail(subscription.UserUID, utils.EnvSubFailedEmailTmpl); err != nil {
+		logrus.Errorf("Failed to send subscription success email: %v", err)
+	}
 
 	return nil
 }
@@ -295,4 +349,169 @@ func (p *SubscriptionProcessor) processSubscriptions() {
 	if err = p.processExpiredSubscriptions(); err != nil {
 		logrus.Errorf("Failed to process expired subscriptions: %v", err)
 	}
+}
+
+//func (p *SubscriptionProcessor) ProcessKYCStatus() {
+//	logrus.Info("Processing KYC")
+//
+//	// 获取分布式锁
+//	lockID := "kyc_processor"
+//	acquired, err := p.acquireProcessingLock(lockID)
+//	if err != nil {
+//		logrus.Errorf("Failed to acquire processing lock: %v", err)
+//		return
+//	}
+//
+//	if !acquired {
+//		logrus.Info("Another instance is currently processing KYC")
+//		return
+//	}
+//
+//	defer func() {
+//		if err := p.releaseProcessingLock(lockID); err != nil {
+//			logrus.Errorf("Failed to release processing lock: %v", err)
+//		}
+//	}()
+//
+//	if err = p.processKYCStatus(); err != nil {
+//		logrus.Errorf("Failed to process KYC: %v", err)
+//	}
+//}
+//
+//func (p *SubscriptionProcessor) processKYCStatus() error {
+//	logrus.Info("Processing KYC status")
+//
+//	var users []types.UserKYC
+//	err := p.db.Transaction(func(tx *gorm.DB) error {
+//		return tx.Where("status = ?", types.UserKYCStatusPending).Find(&users).Error
+//	})
+//	if err != nil {
+//		return fmt.Errorf("failed to query pending KYC: %w", err)
+//	}
+//
+//	logrus.Infof("Found %d pending KYC", len(users))
+//
+//	for _, user := range users {
+//		// If KYC is not processed within 30 days, the status is set to failed
+//		if !user.CreatedAt.Add(30 * 24 * time.Hour).Before(time.Now()) {
+//			dErr := p.db.Transaction(func(tx *gorm.DB) error {
+//				return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusFailed).Error
+//			})
+//			if dErr != nil {
+//				logrus.Errorf("Failed to update KYC status: %v", dErr)
+//			}
+//			continue
+//		}
+//
+//		// If github is bound, set the KYC status to completed
+//		err = p.db.Transaction(func(tx *gorm.DB) error {
+//			bindCount := int64(0)
+//			dErr := tx.Model(&types.OauthProvider{}).Where(`"userUid" = ? AND "providerType" = ?`, user.UserUID, types.OauthProviderTypeGithub).Count(&bindCount).Error
+//			if dErr != nil {
+//				return fmt.Errorf("failed to check github oauth provider: %w", dErr)
+//			}
+//			if bindCount == 0 {
+//				return nil
+//			}
+//			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
+//		})
+//		if err != nil {
+//			logrus.Errorf("Failed to update KYC status: %v", err)
+//		}
+//	}
+//	return nil
+//}
+
+func (p *SubscriptionProcessor) ProcessKYCCredits() {
+	logrus.Info("Processing KYC credits")
+
+	// 获取分布式锁
+	lockID := "kyc_credits_processor"
+	acquired, err := p.acquireProcessingLock(lockID)
+	if err != nil {
+		logrus.Errorf("Failed to acquire processing lock: %v", err)
+		return
+	}
+
+	if !acquired {
+		logrus.Info("Another instance is currently processing KYC credits")
+		return
+	}
+
+	defer func() {
+		if err := p.releaseProcessingLock(lockID); err != nil {
+			logrus.Errorf("Failed to release processing lock: %v", err)
+		}
+	}()
+
+	if err = p.processKYCCredits(); err != nil {
+		logrus.Errorf("Failed to process KYC credits: %v", err)
+	}
+}
+
+func (p *SubscriptionProcessor) processKYCCredits() error {
+	logrus.Info("Processing KYC credits")
+
+	var users []types.UserKYC
+	err := p.db.Transaction(func(tx *gorm.DB) error {
+		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
+	})
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("failed to query completed KYC: %w", err)
+	}
+	logrus.Infof("Found %d completed KYC", len(users))
+	if len(users) == 0 {
+		return nil
+	}
+	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
+	if err != nil {
+		return fmt.Errorf("failed to get subscription plan: %w", err)
+	}
+
+	for _, user := range users {
+		err = p.db.Transaction(func(tx *gorm.DB) error {
+			// If the status is Pending, check whether KYC has been completed
+			if user.Status == types.UserKYCStatusPending {
+				isBind, dErr := HasGithubOauthProvider(tx, user.UserUID)
+				if dErr != nil {
+					return fmt.Errorf("failed to check github oauth provider: %w", dErr)
+				}
+				if !isBind {
+					// If the github account is not bound, set the status to Failed
+					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusFailed).Error
+				}
+				// 设置为Completed状态
+				dErr = tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
+				if dErr != nil {
+					return fmt.Errorf("failed to update KYC status: %w", dErr)
+				}
+			}
+			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one
+			dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now()).Update("status", types.CreditsStatusExpired).Error
+			if dErr != nil && dErr != gorm.ErrRecordNotFound {
+				return fmt.Errorf("failed to check credits: %w", dErr)
+			}
+			now := time.Now().UTC()
+			credits := &types.Credits{
+				ID:         uuid.New(),
+				UserUID:    user.UserUID,
+				Amount:     freePlan.GiftAmount,
+				UsedAmount: 0,
+				FromID:     freePlan.ID.String(),
+				FromType:   types.CreditsFromTypeSubscription,
+				ExpireAt:   now.AddDate(0, 1, 0),
+				CreatedAt:  now,
+				StartAt:    now,
+				Status:     types.CreditsStatusActive,
+			}
+			if dErr = tx.Create(credits).Error; dErr != nil {
+				return fmt.Errorf("failed to create credits: %w", dErr)
+			}
+			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", now.AddDate(0, 1, 0)).Error
+		})
+		if err != nil {
+			logrus.Errorf("Failed to update %#+v credits: %v", user, err)
+		}
+	}
+	return nil
 }
