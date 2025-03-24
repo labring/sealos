@@ -101,6 +101,8 @@ func RegisterPayRouter() {
 			log.Fatalf("Error initializing subscription processor tables: %v", err)
 		}
 		go processor.StartProcessing(ctx)
+		go processor.StartKYCProcessing(ctx)
+		go processor.StartFlushQuotaProcessing(ctx)
 	}
 	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")

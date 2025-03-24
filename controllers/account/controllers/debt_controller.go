@@ -411,7 +411,7 @@ func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64,
 	}
 
 	if oweamount > 0 && userSubscription.Status == pkgtypes.SubscriptionStatusNormal {
-		if oweamount > 5*BaseUnit {
+		if oweamount >= 5*BaseUnit {
 			return accountv1.NormalPeriod, nil
 		} else if oweamount > 1*BaseUnit {
 			return accountv1.LowBalancePeriod, nil
@@ -612,7 +612,10 @@ func (r *DebtReconciler) sendDesktopNoticeAndSms(ctx context.Context, user strin
 	if err := r.sendDesktopNotice(ctx, noticeType, namespaces); err != nil {
 		return fmt.Errorf("send notice error: %w", err)
 	}
-	if !smsEnable || (isBasicUser && (noticeType == accountv1.LowBalancePeriod || noticeType == accountv1.CriticalBalancePeriod)) {
+	if !smsEnable {
+		return nil
+	}
+	if isBasicUser && noticeType != accountv1.DebtPeriod && noticeType != accountv1.DebtDeletionPeriod && noticeType != accountv1.FinalDeletionPeriod {
 		return nil
 	}
 	return r.sendSMSNotice(user, oweAmount, noticeType)

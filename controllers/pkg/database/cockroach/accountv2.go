@@ -1203,7 +1203,7 @@ func (c *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, 
 
 func (c *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) {
 	var plans []types.SubscriptionPlan
-	if err := c.DB.Find(&plans).Error; err != nil {
+	if err := c.DB.Model(types.SubscriptionPlan{}).Find(&plans).Error; err != nil {
 		return nil, fmt.Errorf("failed to get subscription plan: %v", err)
 	}
 	return plans, nil
@@ -1305,11 +1305,11 @@ func (c *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, err
 	return &cardInfo, nil
 }
 
-func (c *Cockroach) SetCardInfo(info *types.CardInfo) error {
+func (c *Cockroach) SetCardInfo(info *types.CardInfo) (uuid.UUID, error) {
 	return SetCardInfo(c.DB, info)
 }
 
-func SetCardInfo(db *gorm.DB, info *types.CardInfo) error {
+func SetCardInfo(db *gorm.DB, info *types.CardInfo) (uuid.UUID, error) {
 	if info.ID == uuid.Nil {
 		info.ID = uuid.New()
 	}
@@ -1319,20 +1319,20 @@ func SetCardInfo(db *gorm.DB, info *types.CardInfo) error {
 	var count int64
 	// 如果没有设置默认卡片，设置第一张卡片为默认卡片
 	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID}).Count(&count).Error; err != nil {
-		return fmt.Errorf("failed to get card count: %v", err)
+		return uuid.Nil, fmt.Errorf("failed to get card count: %v", err)
 	}
 	if count == 0 {
 		info.Default = true
-		return db.Save(info).Error
+		return info.ID, db.Save(info).Error
 	}
-	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{CardNo: info.CardNo, CardBrand: info.CardBrand}).Count(&count).Error; err != nil {
-		return fmt.Errorf("failed to get card count: %v", err)
+	cardInfo := types.CardInfo{}
+	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID, CardNo: info.CardNo, CardBrand: info.CardBrand}).Find(&cardInfo).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, fmt.Errorf("failed to get card info: %v", err)
+		}
+		return info.ID, db.Save(info).Error
 	}
-	// if a card already exists do not add it again
-	if count > 0 {
-		return nil
-	}
-	return db.Save(info).Error
+	return cardInfo.ID, nil
 }
 
 func (c *Cockroach) SetPaymentInvoiceWithDB(ops *types.UserQueryOpts, paymentIDList []string, DB *gorm.DB) error {
@@ -1493,6 +1493,7 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get free plan: %w", err)
 	}
+	now := time.Now().UTC()
 	account := &types.Account{
 		UserUID:                 ops.UID,
 		EncryptDeductionBalance: c.ZeroAccount.EncryptDeductionBalance,
@@ -1500,7 +1501,7 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 		Balance:                 0,
 		DeductionBalance:        0,
 		CreateRegionID:          c.LocalRegion.UID.String(),
-		CreatedAt:               time.Now(),
+		CreatedAt:               now,
 	}
 	// 1. create credits
 	// 2. create account
@@ -1517,9 +1518,9 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 				UsedAmount: 0,
 				FromID:     freePlan.ID.String(),
 				FromType:   types.CreditsFromTypeSubscription,
-				ExpireAt:   time.Now().UTC().AddDate(0, 1, 0),
-				CreatedAt:  time.Now(),
-				StartAt:    time.Now(),
+				ExpireAt:   now.AddDate(0, 1, 0),
+				CreatedAt:  now,
+				StartAt:    now,
 				Status:     types.CreditsStatusActive,
 			}
 			creditsCount := int64(0)
@@ -1538,9 +1539,9 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 			PlanID:        freePlan.ID,
 			PlanName:      freePlan.Name,
 			Status:        types.SubscriptionStatusNormal,
-			StartAt:       time.Now(),
-			ExpireAt:      time.Now().AddDate(0, 1, 0),
-			NextCycleDate: time.Now().AddDate(0, 1, 0),
+			StartAt:       now,
+			ExpireAt:      now.AddDate(0, 1, 0),
+			NextCycleDate: now.AddDate(0, 1, 0),
 		}
 		subCount := int64(0)
 		if err := tx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: ops.UID}).Count(&subCount).Error; err != nil {
@@ -1550,6 +1551,16 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 			if err := tx.Create(&userSubscription).Error; err != nil {
 				return fmt.Errorf("failed to create subscription: %w", err)
 			}
+		}
+		err = tx.Model(&types.UserKYC{}).Where(&types.UserKYC{UserUID: ops.UID}).FirstOrCreate(&types.UserKYC{
+			UserUID:   ops.UID,
+			Status:    types.UserKYCStatusPending,
+			CreatedAt: now,
+			UpdatedAt: now,
+			NextAt:    now.AddDate(0, 1, 0),
+		}).Error
+		if err != nil {
+			return fmt.Errorf("failed to create user kyc: %w", err)
 		}
 		return nil
 	})
@@ -1651,7 +1662,8 @@ func (c *Cockroach) InitTables() error {
 	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{},
-		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{})
+		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
+		types.AccountRegionUserTask{}, types.UserKYC{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
@@ -1677,6 +1689,18 @@ func (c *Cockroach) InitTables() error {
 			if err != nil {
 				return fmt.Errorf("failed to add column credit_id_list: %v", err)
 			}
+		}
+	}
+	// alter table "CardInfo"
+	//    drop constraint "CardInfo_card_token_key";
+	//ALTER TABLE DROP CONSTRAINT, use DROP INDEX CASCADE instead
+	if c.DB.Migrator().HasColumn(&types.CardInfo{}, "card_token") {
+		// use DROP INDEX CASCADE instead
+		//DROP INDEX CASCADE instead
+		//sql := `DROP INDEX IF EXISTS "card_token_key" CASCADE;`
+		err := c.DB.Exec(`DROP INDEX IF EXISTS "CardInfo_card_token_key" CASCADE`).Error
+		if err != nil {
+			return fmt.Errorf("failed to drop unique constraint: %v", err)
 		}
 	}
 

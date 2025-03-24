@@ -161,7 +161,7 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}
-	if account.Balance+account.UsableCredits < account.DeductionBalance {
+	if account.Balance+account.UsableCredits <= account.DeductionBalance {
 		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
 	}
 	return admission.Allowed(fmt.Sprintf("pass user %s , namespace %s", user, ns.Name))

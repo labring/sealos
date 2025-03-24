@@ -312,3 +312,14 @@ type EnterpriseRealNameInfo struct {
 func (EnterpriseRealNameInfo) TableName() string {
 	return "EnterpriseRealNameInfo"
 }
+
+type UserInfo struct {
+	ID        uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID   uuid.UUID `gorm:"column:userUid;type:uuid;unique"`
+	FirstName string    `gorm:"column:firstname;type:text;default:''::STRING"`
+	LastName  string    `gorm:"column:lastname;type:text;default:''::STRING"`
+}
+
+func (UserInfo) TableName() string {
+	return "UserInfo"
+}

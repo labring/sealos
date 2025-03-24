@@ -55,6 +55,7 @@ const (
 	CardList                    = "/card/list"
 	CardDelete                  = "/card/delete"
 	CardSetDefault              = "/card/set-default"
+	CreditsList                 = "/credits/list"
 	CreditsInfo                 = "/credits/info"
 )
 

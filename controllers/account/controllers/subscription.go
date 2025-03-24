@@ -1,16 +1,12 @@
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
 	"github.com/labring/sealos/controllers/pkg/utils/retry"
 
 	"github.com/google/uuid"
@@ -88,6 +84,16 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 	}
 
 	for i := range transactions {
+		acc := &types.Account{}
+		dErr := sp.db.Model(&types.Account{}).Where(&types.Account{UserUID: transactions[i].UserUID}).Find(acc).Error
+		if dErr != nil {
+			sp.Logger.Error(fmt.Errorf("failed to fetch account: %w", dErr), "", "user_uid", transactions[i].UserUID)
+			continue
+		}
+		if acc.CreateRegionID != sp.AccountV2.GetLocalRegion().UID.String() {
+			sp.Logger.Info("Account not in local region, skip", "user_uid", transactions[i].UserUID)
+			continue
+		}
 		sp.AccountReconciler.Logger.Info("Processing transaction", "id", transactions[i].SubscriptionID, "operator", transactions[i].Operator, "status", transactions[i].Status, "plan", transactions[i].NewPlanName)
 		if err := sp.processTransaction(ctx, &transactions[i]); err != nil {
 			sp.Logger.Error(fmt.Errorf("failed to process transaction: %w", err), "", "id", transactions[i].ID)
@@ -136,101 +142,136 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 		tx.Status != types.SubscriptionTransactionStatusFailed
 }
 
-// updateQuota 更新用户的资源配额
-func (sp *SubscriptionProcessor) updateQuota(ctx context.Context, userUID uuid.UUID, planName string) error {
-	userCr, err := sp.AccountV2.GetUserCr(&types.UserQueryOpts{UID: userUID})
-	if err != nil {
-		return fmt.Errorf("failed to get user CR: %w", err)
-	}
-	nsList, err := getOwnNsList(sp.Client, userCr.CrName)
-	if err != nil {
-		return fmt.Errorf("failed to get namespace list: %w", err)
-	}
-	subQuota, ok := sp.SubscriptionQuotaLimit[planName]
-	if !ok {
-		return fmt.Errorf("subscription plan %s not found", planName)
-	}
-
-	for _, ns := range nsList {
-		quota := getDefaultResourceQuota(ns, ResourceQuotaPrefix+ns, subQuota)
-		err = retry.Retry(10, time.Second, func() error {
-			return sp.Client.Update(ctx, quota)
-		})
-		if err != nil {
-			return fmt.Errorf("failed to update resource quota for %s: %w", ns, err)
-		}
-	}
-	if err := sp.sendFlushQuotaRequest(userUID); err != nil {
-		return fmt.Errorf("failed to send flush quota request: %w", err)
-	}
-	return nil
-}
-
-func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID uuid.UUID) error {
+func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
+	var regionTaskList []*types.AccountRegionUserTask
 	for _, domain := range sp.allRegionDomain {
 		if domain == sp.localDomain {
 			continue
 		}
-
-		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
-			UserUID: userUID,
+		regionTaskList = append(regionTaskList, &types.AccountRegionUserTask{
+			UserUID:      userUID,
+			RegionDomain: domain,
+			Type:         types.AccountRegionUserTaskTypeFlushQuota,
+			StartAt:      time.Now().UTC(),
+			Status:       types.AccountRegionUserTaskStatusPending,
 		})
-		if err != nil {
-			return fmt.Errorf("failed to generate token: %w", err)
-		}
-
-		url := fmt.Sprintf("https://account-api.%s/payment/v1alpha1/subscription/flush-quota", domain)
-
-		var lastErr error
-		backoffTime := time.Second
-
-		maxRetries := 3
-		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest("POST", url, bytes.NewBuffer(nil))
-			if err != nil {
-				return fmt.Errorf("failed to create request: %w", err)
-			}
-
-			req.Header.Set("Authorization", "Bearer "+token)
-			req.Header.Set("Content-Type", "application/json")
-
-			client := http.Client{
-				Timeout: 5 * time.Second,
-			}
-
-			resp, err := client.Do(req)
-			if err != nil {
-				lastErr = fmt.Errorf("failed to send request: %w", err)
-			} else {
-				defer resp.Body.Close()
-
-				// 读取响应
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					lastErr = fmt.Errorf("failed to read response: %w", err)
-				} else if resp.StatusCode == http.StatusOK {
-					break
-				} else if resp.StatusCode >= 500 {
-					lastErr = fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
-				} else {
-					return fmt.Errorf("client error: %d; %s", resp.StatusCode, string(body))
-				}
-			}
-
-			// 进行重试
-			if attempt < maxRetries {
-				fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", attempt, lastErr, backoffTime)
-				time.Sleep(backoffTime)
-				backoffTime *= 2 // 指数增长退避时间
+	}
+	err := sp.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		for _, task := range regionTaskList {
+			if err := tx.Create(task).Error; err != nil {
+				return err
 			}
 		}
-
-		if lastErr != nil {
-			return lastErr
-		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create account region user task: %w", err)
 	}
 	return nil
 }
+
+// updateQuota 更新用户的资源配额
+func (sp *SubscriptionProcessor) updateQuota(ctx context.Context, userUID uuid.UUID, planName string) error {
+	userCr, err := sp.AccountV2.GetUserCr(&types.UserQueryOpts{UID: userUID})
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("failed to get user CR: %w", err)
+	}
+	if userCr != nil {
+		nsList, err := getOwnNsList(sp.Client, userCr.CrName)
+		if err != nil {
+			return fmt.Errorf("failed to get namespace list: %w", err)
+		}
+		subQuota, ok := sp.SubscriptionQuotaLimit[planName]
+		if !ok {
+			return fmt.Errorf("subscription plan %s not found", planName)
+		}
+
+		for _, ns := range nsList {
+			quota := getDefaultResourceQuota(ns, ResourceQuotaPrefix+ns, subQuota)
+			err = retry.Retry(10, time.Second, func() error {
+				return sp.Client.Update(ctx, quota)
+			})
+			if err != nil {
+				return fmt.Errorf("failed to update resource quota for %s: %w", ns, err)
+			}
+		}
+	}
+
+	if err := sp.flushOtherDomainQuota(ctx, userUID); err != nil {
+		return fmt.Errorf("failed to flush other domain quota: %w", err)
+	}
+	//if err := sp.sendFlushQuotaRequest(userUID); err != nil {
+	//	return fmt.Errorf("failed to send flush quota request: %w", err)
+	//}
+	return nil
+}
+
+// 延迟过高
+//func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID uuid.UUID) error {
+//	for _, domain := range sp.allRegionDomain {
+//		if domain == sp.localDomain {
+//			continue
+//		}
+//
+//		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
+//			UserUID: userUID,
+//		})
+//		if err != nil {
+//			return fmt.Errorf("failed to generate token: %w", err)
+//		}
+//
+//		url := fmt.Sprintf("https://account-api.%s/payment/v1alpha1/subscription/flush-quota", domain)
+//
+//		var lastErr error
+//		backoffTime := time.Second
+//
+//		maxRetries := 3
+//		for attempt := 1; attempt <= maxRetries; attempt++ {
+//			req, err := http.NewRequest("POST", url, bytes.NewBuffer(nil))
+//			if err != nil {
+//				return fmt.Errorf("failed to create request: %w", err)
+//			}
+//
+//			req.Header.Set("Authorization", "Bearer "+token)
+//			req.Header.Set("Content-Type", "application/json")
+//
+//			client := http.Client{
+//				Timeout: 10 * time.Minute,
+//			}
+//
+//			resp, err := client.Do(req)
+//			if err != nil {
+//				lastErr = fmt.Errorf("failed to send request: %w", err)
+//			} else {
+//				defer resp.Body.Close()
+//
+//				// 读取响应
+//				body, err := io.ReadAll(resp.Body)
+//				if err != nil {
+//					lastErr = fmt.Errorf("failed to read response: %w", err)
+//				} else if resp.StatusCode == http.StatusOK {
+//					break
+//				} else if resp.StatusCode >= 500 {
+//					lastErr = fmt.Errorf("unexpected status code: %d; %s", resp.StatusCode, string(body))
+//				} else {
+//					return fmt.Errorf("client error: %d; %s", resp.StatusCode, string(body))
+//				}
+//			}
+//
+//			// 进行重试
+//			if attempt < maxRetries {
+//				fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", attempt, lastErr, backoffTime)
+//				time.Sleep(backoffTime)
+//				backoffTime *= 2 // 指数增长退避时间
+//			}
+//		}
+//
+//		if lastErr != nil {
+//			return lastErr
+//		}
+//	}
+//	return nil
+//}
 
 // handleCreated 处理创建订阅
 func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.DB, tx *types.SubscriptionTransaction) error {
@@ -263,7 +304,7 @@ func (sp *SubscriptionProcessor) handleCreated(ctx context.Context, dbTx *gorm.D
 	if err := cockroach.CreateCredits(dbTx, &types.Credits{
 		UserUID:   sub.UserUID,
 		Amount:    plan.GiftAmount,
-		FromID:    sub.ID.String(),
+		FromID:    sub.PlanID.String(),
 		FromType:  types.CreditsFromTypeSubscription,
 		ExpireAt:  sub.ExpireAt,
 		CreatedAt: now,
@@ -312,6 +353,7 @@ func (sp *SubscriptionProcessor) handleUpgrade(ctx context.Context, dbTx *gorm.D
 		return fmt.Errorf("failed to get subscription plan: %w", err)
 	}
 	credits.Amount = plan.GiftAmount
+	credits.FromID = sub.PlanID.String()
 	credits.Status = types.CreditsStatusActive
 	if err := dbTx.Save(&credits).Error; err != nil {
 		return fmt.Errorf("failed to update credits: %w", err)
@@ -344,15 +386,13 @@ func (sp *SubscriptionProcessor) handleDowngrade(ctx context.Context, dbTx *gorm
 	if err := dbTx.Save(&sub).Error; err != nil {
 		return fmt.Errorf("failed to update subscription: %w", err)
 	}
-
-	// 更新配额
-	if err := sp.updateQuota(ctx, sub.UserUID, tx.NewPlanName); err != nil {
-		return err
-	}
-
 	tx.Status = types.SubscriptionTransactionStatusCompleted
 	tx.UpdatedAt = now
-	return dbTx.Save(tx).Error
+	if err := dbTx.Save(tx).Error; err != nil {
+		return fmt.Errorf("failed to update transaction: %w", err)
+	}
+	// 更新配额
+	return sp.updateQuota(ctx, sub.UserUID, tx.NewPlanName)
 }
 
 // handleRenewal 处理续订
@@ -378,12 +418,21 @@ func (sp *SubscriptionProcessor) handleRenewal(ctx context.Context, dbTx *gorm.D
 		return fmt.Errorf("failed to get subscription plan: %w", err)
 	}
 	if plan.GiftAmount > 0 {
+		// 过期之前的 credits
+		err := dbTx.Model(&types.Credits{}).Where(&types.Credits{
+			UserUID:  sub.UserUID,
+			FromID:   sub.PlanID.String(),
+			FromType: types.CreditsFromTypeSubscription,
+		}).Update("status", types.CreditsStatusExpired).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("failed to update credits: %w", err)
+		}
 		if err := cockroach.CreateCredits(dbTx, &types.Credits{
 			UserUID:   sub.UserUID,
 			Amount:    plan.GiftAmount,
-			FromID:    sub.ID.String(),
+			FromID:    sub.PlanID.String(),
 			FromType:  types.CreditsFromTypeSubscription,
-			ExpireAt:  sub.ExpireAt,
+			ExpireAt:  sub.NextCycleDate,
 			CreatedAt: now,
 			StartAt:   now,
 			Status:    types.CreditsStatusActive,

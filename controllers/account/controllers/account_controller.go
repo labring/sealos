@@ -276,7 +276,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 			r.allRegionDomain[i] = region.Domain
 		}
 		r.localDomain = r.AccountV2.GetLocalRegion().Domain
-		r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), time.Minute)
+		r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
