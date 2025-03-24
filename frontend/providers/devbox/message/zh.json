@@ -215,7 +215,7 @@
   "public_debug_address_tooltip_2_1": "启动服务：",
   "public_debug_address_tooltip_2_2": "在 Devbox 实例中运行启动命令 (如: npm run dev)",
   "public_debug_address_tooltip_3_1": "监听地址：",
-  "public_debug_address_tooltip_3_2": "确保开发服务器运行在在 0.0.0.0 而非 localhost",
+  "public_debug_address_tooltip_3_2": "确保开发服务器运行在 0.0.0.0 而非 localhost，并且代码中使用端口和此处开放端口一致",
   "public_debug_address_tooltip_4_1": "等待时间：",
   "public_debug_address_tooltip_4_2": "启动服务后，内部网关需要 2~5 分钟准备，请耐心等待",
   "publish": "发版",

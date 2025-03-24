@@ -13,7 +13,7 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import dynamic from 'next/dynamic';
 
 import MyIcon from '@/components/Icon';
@@ -33,6 +33,7 @@ const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'));
 
 const MainBody = () => {
   const t = useTranslations();
+  const locale = useLocale();
   const { copyData } = useCopyData();
   const { devboxDetail } = useDevboxStore();
   const { env } = useEnvStore();
@@ -150,7 +151,7 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Popover trigger={'hover'}>
+                    <Popover trigger={'click'}>
                       <PopoverTrigger>
                         <Flex
                           alignItems={'center'}
@@ -175,6 +176,7 @@ const MainBody = () => {
                         h={'114px'}
                         borderRadius={'10px'}
                         w={'fit-content'}
+                        minH={'fit-content'}
                       >
                         <PopoverArrow />
                         <PopoverBody>
@@ -187,24 +189,48 @@ const MainBody = () => {
                               )
                             })}
                           </Box>
-                          <Flex mt={'12px'} gap={'4px'}>
+                          <Flex mt={'12px'} gap={'4px'} maxW={locale === 'zh' ? '410px' : '610px'}>
                             <Flex alignItems={'center'} direction={'column'} mt={'2px'}>
                               <MyIcon name="ellipse" w={'6px'} h={'6px'} />
-                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <Box
+                                h={locale === 'zh' ? '20px' : '22px'}
+                                w={'1px'}
+                                bg={'grayModern.250'}
+                              />
                               <MyIcon name="ellipse" w={'6px'} h={'6px'} />
-                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <Box
+                                h={locale === 'zh' ? '38px' : '36px'}
+                                w={'1px'}
+                                bg={'grayModern.250'}
+                              />
                               <MyIcon name="ellipse" w={'6px'} h={'6px'} />
                             </Flex>
                             <Flex gap={'6px'} alignItems={'center'} direction={'column'}>
-                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
-                                <Box>{t('public_debug_address_tooltip_2_1')}</Box>
-                                <Box color={'grayModern.600'}>
+                              <Flex
+                                h={'16px'}
+                                w={'100%'}
+                                fontSize={'12px'}
+                                fontWeight={400}
+                                minH={'fit-content'}
+                              >
+                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
+                                  {t('public_debug_address_tooltip_2_1')}
+                                </Box>
+                                <Box color={'grayModern.600'} w={'80%'}>
                                   {t('public_debug_address_tooltip_2_2')}
                                 </Box>
                               </Flex>
-                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
-                                <Box>{t('public_debug_address_tooltip_3_1')}</Box>
-                                <Box color={'grayModern.600'}>
+                              <Flex
+                                h={'16px'}
+                                w={'100%'}
+                                fontSize={'12px'}
+                                fontWeight={400}
+                                minH={'fit-content'}
+                              >
+                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
+                                  {t('public_debug_address_tooltip_3_1')}
+                                </Box>
+                                <Box color={'grayModern.600'} w={'80%'}>
                                   {t.rich('public_debug_address_tooltip_3_2', {
                                     underline: (chunks) => (
                                       <Text as={'span'} textDecoration={'underline'}>
@@ -214,9 +240,17 @@ const MainBody = () => {
                                   })}
                                 </Box>
                               </Flex>
-                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
-                                <Box>{t('public_debug_address_tooltip_4_1')}</Box>
-                                <Box color={'grayModern.600'}>
+                              <Flex
+                                h={'16px'}
+                                w={'100%'}
+                                fontSize={'12px'}
+                                fontWeight={400}
+                                minH={'fit-content'}
+                              >
+                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
+                                  {t('public_debug_address_tooltip_4_1')}
+                                </Box>
+                                <Box color={'grayModern.600'} w={'80%'}>
                                   {t.rich('public_debug_address_tooltip_4_2', {
                                     underline: (chunks) => (
                                       <Text as={'span'} textDecoration={'underline'}>
