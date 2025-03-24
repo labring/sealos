@@ -59,12 +59,12 @@ export class DeleteUserCrJob implements CronJobStatus {
       workspaceList.map(async (workspace) => {
         await setWorkspaceLock(workspace.id);
         // kick out all user workspace except owner
-        await prisma.userWorkspace.deleteMany({
+        await prisma.userWorkspace.updateMany({
           where: {
-            workspaceUid: workspace.uid,
-            role: {
-              not: Role.OWNER
-            }
+            workspaceUid: workspace.uid
+          },
+          data: {
+            status: 'NOT_IN_WORKSPACE'
           }
         });
         await globalPrisma.eventLog.create({
@@ -84,12 +84,15 @@ export class DeleteUserCrJob implements CronJobStatus {
     );
 
     // kick off self from other workspace, igonre rolebinding
-    const clearResult = await prisma.userWorkspace.deleteMany({
+    const clearResult = await prisma.userWorkspace.updateMany({
       where: {
         userCrUid: userCr.uid,
         role: {
           not: Role.OWNER
         }
+      },
+      data: {
+        status: 'NOT_IN_WORKSPACE'
       }
     });
 

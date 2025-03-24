@@ -319,5 +319,6 @@
   "refetching_success": "Refresh Successful",
   "refresh": "refresh",
   "Ready": "Preparing",
-  "Accessible": "Accessible"
+  "Accessible": "Accessible",
+  "network_not_ready": "The internal gateway requires 2 to 5 minutes to prepare. Please be patient."
 }

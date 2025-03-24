@@ -137,8 +137,12 @@ jobs:
 
       - name: Prepare
         id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          ISTAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
         run: |
-          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}"
+          bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
 
       - name: Docker meta
         id: meta
@@ -189,15 +193,21 @@ jobs:
           fi
       - name: Prepare
         id: prepare
+        env:
+          PUSH_IMAGE: ${{ inputs.push_image }}
+          IS_TAG: ${{ steps.check_tag.outputs.isTag }}
+          PUSH_IMAGE_TAG: ${{ inputs.push_image_tag }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          MODULE_NAME: ${{ env.MODULE_NAME }}
         run: |
-          tag_name=$(bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ steps.check_tag.outputs.isTag }}" "${{ inputs.push_image_tag }}")
-          echo old_docker_repo=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
-          echo old_docker_image=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend:latest >> $GITHUB_OUTPUT
-          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
-          echo new_docker_image=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend:${tag_name} >> $GITHUB_OUTPUT
-          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
-          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${tag_name} >> $GITHUB_OUTPUT
-          echo latest_cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:latest >> $GITHUB_OUTPUT
+          tag_name=$(bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG")
+          echo "old_docker_repo=ghcr.io/labring/sealos-$MODULE_NAME-frontend" >> $GITHUB_OUTPUT
+          echo "old_docker_image=ghcr.io/labring/sealos-$MODULE_NAME-frontend:latest" >> $GITHUB_OUTPUT
+          echo "new_docker_repo=ghcr.io/$REPO_OWNER/sealos-$MODULE_NAME-frontend" >> $GITHUB_OUTPUT
+          echo "new_docker_image=ghcr.io/$REPO_OWNER/sealos-$MODULE_NAME-frontend:$tag_name" >> $GITHUB_OUTPUT
+          echo "cluster_repo=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-frontend" >> $GITHUB_OUTPUT
+          echo "cluster_image=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-frontend:$tag_name" >> $GITHUB_OUTPUT
+          echo "latest_cluster_image=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE_NAME-frontend:latest" >> $GITHUB_OUTPUT
 
       - name: Download sealos
         uses: actions/download-artifact@v4
@@ -225,13 +235,15 @@ jobs:
           sudo sealos build -t ${{ steps.prepare.outputs.cluster_image }}-arm64 --platform linux/arm64 -f Kubefile
           sudo sealos build -t ${{ steps.prepare.outputs.latest_cluster_image }}-arm64 --platform linux/arm64 -f Kubefile
 
-      - name: Manifest Cluster Images
-        run: |
-          sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.cluster_image }}
-          bash docker/patch/manifest-cluster-images.sh ${{ steps.prepare.outputs.latest_cluster_image }}
+      - name: Manifest Cluster Images'
         env:
           OWNER: ${{ github.repository_owner }}
+          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
+          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
         uses: labring/gh-rebot@v0.0.6

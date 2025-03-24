@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-export type IDEType = 'vscode' | 'cursor' | 'vscodeInsiders' | 'windsurf' | 'jetbrains';
+export type IDEType =
+  | 'vscode'
+  | 'cursor'
+  | 'vscodeInsiders'
+  | 'windsurf'
+  | 'jetbrains'
+  | 'trae'
+  | 'traeCN';
 
 type State = {
   devboxIDEList: { ide: IDEType; devboxName: string }[];

@@ -1,4 +1,17 @@
-import { Box, Button, Center, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  Tooltip,
+  useDisclosure
+} from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -45,8 +58,7 @@ const MainBody = () => {
         }, delay);
       }
     },
-    refetchIntervalInBackground: false,
-    staleTime: 1000 * 60 * 5
+    refetchIntervalInBackground: false
   });
 
   const statusMap = useMemo(
@@ -82,7 +94,7 @@ const MainBody = () => {
       width: '0.5fr'
     },
     {
-      title: t('internal_address'),
+      title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
         return (
@@ -113,14 +125,14 @@ const MainBody = () => {
       }
     },
     {
-      title: t('external_address'),
+      title: t('external_debug_address'),
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
           const address = item.customDomain || item.publicDomain;
           const displayAddress = `https://${address}`;
           return (
-            <Flex gap={'2px'} alignItems={'center'}>
+            <Flex gap={'2'} alignItems={'center'}>
               {displayAddress && (
                 <>
                   {statusMap[displayAddress]?.ready ? (
@@ -130,7 +142,7 @@ const MainBody = () => {
                       bg={'rgba(3, 152, 85, 0.05)'}
                       color={'#039855'}
                       borderRadius={'full'}
-                      p={'2px 8px 2px 4px'}
+                      p={'2px 8px 2px 8px'}
                       gap={'2px'}
                       minW={'63px'}
                     >
@@ -138,34 +150,87 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Center
-                      fontSize={'12px'}
-                      fontWeight={400}
-                      bg={'rgba(17, 24, 36, 0.05)'}
-                      color={'#485264'}
-                      borderRadius={'full'}
-                      p={'2px 8px 2px 4px'}
-                      gap={'2px'}
-                      minW={'63px'}
-                    >
-                      <MyIcon
-                        name={'loadingCircle'}
-                        w={'12px'}
-                        h={'12px'}
-                        animation={'spin 1s linear infinite'}
-                        sx={{
-                          '@keyframes spin': {
-                            '0%': {
-                              transform: 'rotate(0deg)'
-                            },
-                            '100%': {
-                              transform: 'rotate(360deg)'
-                            }
-                          }
-                        }}
-                      />
-                      {t('prepare')}
-                    </Center>
+                    <Popover trigger={'hover'}>
+                      <PopoverTrigger>
+                        <Flex
+                          alignItems={'center'}
+                          gap={'2px'}
+                          cursor="pointer"
+                          fontSize={'12px'}
+                          fontWeight={400}
+                          w={'fit-content'}
+                          bg={'rgba(17, 24, 36, 0.05)'}
+                          color={'#485264'}
+                          borderRadius={'full'}
+                          p={'2px 8px 2px 8px'}
+                        >
+                          <MyIcon name={'help'} w={'18px'} h={'18px'} />
+                          <Text fontSize={'12px'} w={'full'} color={'#485264'}>
+                            {t('prepare')}
+                          </Text>
+                        </Flex>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        minW={'410px'}
+                        h={'114px'}
+                        borderRadius={'10px'}
+                        w={'fit-content'}
+                      >
+                        <PopoverArrow />
+                        <PopoverBody>
+                          <Box h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                            {t.rich('public_debug_address_tooltip_1', {
+                              blue: (chunks) => (
+                                <Text as={'span'} color={'brightBlue.600'}>
+                                  {chunks}
+                                </Text>
+                              )
+                            })}
+                          </Box>
+                          <Flex mt={'12px'} gap={'4px'}>
+                            <Flex alignItems={'center'} direction={'column'} mt={'2px'}>
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                            </Flex>
+                            <Flex gap={'6px'} alignItems={'center'} direction={'column'}>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_2_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t('public_debug_address_tooltip_2_2')}
+                                </Box>
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_3_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_3_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_4_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_4_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                            </Flex>
+                          </Flex>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
                   )}
                 </>
               )}
