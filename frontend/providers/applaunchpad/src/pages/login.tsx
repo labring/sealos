@@ -14,13 +14,26 @@ import {
   useToast
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const toast = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!username && !password) {
+      setUsername('admin');
+      setPassword('Sealos@2024');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (username && password) {
+      handleLogin();
+    }
+  }, [username, password]);
 
   const handleLogin = async () => {
     try {
