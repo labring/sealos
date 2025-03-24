@@ -213,7 +213,7 @@
   "public_debug_address_tooltip_2_1": "Start service:",
   "public_debug_address_tooltip_2_2": "Execute the start command (e.g., npm run dev) in the Devbox instance.",
   "public_debug_address_tooltip_3_1": "Listening address:",
-  "public_debug_address_tooltip_3_2": "Make sure the development server runs on 0.0.0.0 instead of localhost.",
+  "public_debug_address_tooltip_3_2": "Make sure the development server runs on 0.0.0.0 instead of localhost and ensure that the port used in the code matches the port opened here.",
   "public_debug_address_tooltip_4_1": "Wait time:",
   "public_debug_address_tooltip_4_2": "After starting the service, the internal gateway needs 2 to 5 minutes to prepare. Please be patient.",
   "publish": "Publish",
