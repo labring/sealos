@@ -41,6 +41,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -57,8 +58,9 @@ type DevboxReconciler struct {
 	DebugMode bool
 
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme                   *runtime.Scheme
+	Recorder                 record.EventRecorder
+	RestartPredicateDuration time.Duration
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
@@ -608,6 +610,24 @@ func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) stri
 	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
+type ControllerRestartPredicate struct {
+	predicate.Funcs
+	duration  time.Duration
+	checkTime time.Time
+}
+
+func NewControllerRestartPredicate(duration time.Duration) *ControllerRestartPredicate {
+	return &ControllerRestartPredicate{
+		checkTime: time.Now().Add(-duration),
+		duration:  duration,
+	}
+}
+
+// skip create event p.duration ago
+func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
+	return e.Object.GetCreationTimestamp().Time.After(p.checkTime)
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -616,5 +636,6 @@ func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		WithEventFilter(NewControllerRestartPredicate(r.RestartPredicateDuration)).
 		Complete(r)
 }

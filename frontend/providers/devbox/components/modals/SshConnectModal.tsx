@@ -9,7 +9,6 @@ import {
   Flex,
   Text,
   Button,
-  Divider,
   Stepper,
   Step,
   StepIndicator,
@@ -30,6 +29,7 @@ import ScriptCode from '../ScriptCode';
 import {
   macosAndLinuxScriptsTemplate,
   sshConfig,
+  sshConfigInclude,
   sshConnectCommand,
   windowsScriptsTemplate
 } from '@/constants/scripts';
@@ -414,6 +414,39 @@ const SshConnectModal = ({
                             onClick={() => copyData('~/.ssh/sealos')}
                           />
                         </Box>
+                      </Flex>
+                      <StepSeparator />
+                    </Step>
+                  </Box>
+                  {/* extra add */}
+                  <Box w={'100%'}>
+                    <Step>
+                      <StepIndicator
+                        backgroundColor={'grayModern.100'}
+                        borderColor={'grayModern.100'}
+                      >
+                        <StepStatus incomplete={<StepNumber />} />
+                      </StepIndicator>
+                      <Flex mt={1} ml={2} mb={5} flexDirection={'column'} gap={4} flex={1}>
+                        <Box fontSize={'14px'}>
+                          {t.rich('jetbrains_guide_modified_config', {
+                            blue: (chunks) => (
+                              <Text
+                                fontWeight={'bold'}
+                                display={'inline-block'}
+                                color={'brightBlue.600'}
+                              >
+                                {chunks}
+                              </Text>
+                            )
+                          })}
+                        </Box>
+                        <ScriptCode
+                          oneLine={true}
+                          defaultOpen={true}
+                          platform={script.platform}
+                          script={sshConfigInclude}
+                        />
                       </Flex>
                       <StepSeparator />
                     </Step>

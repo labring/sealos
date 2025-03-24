@@ -58,7 +58,18 @@ spec:
             - name: CURRENCY_SYMBOL
               value: usd #  'shellCoin' | 'cny' | 'usd'
             - name: GPU_ENABLE
-              value: 'true'
+              value: 'false'
+            - name: PRIVACY_URL
+              value: https://sealos.run/docs/5.0.0/msa/terms-of-service
+            - name: RETAG_SVC_URL
+              value: http://devbox-service.devbox-system.svc.cluster.local:8092
+            - name: JWT_SECRET
+              value: {{ .jwtSecret }} # -nsealos cm desktop-frontend-config ->jwt->Internal
+            - name: REGION_UID
+              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
+            - name: DATABASE_URL
+              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

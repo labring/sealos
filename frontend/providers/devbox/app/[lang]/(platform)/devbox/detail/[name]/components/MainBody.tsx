@@ -1,4 +1,17 @@
-import { Box, Button, Flex, Text, Tooltip, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  Tooltip,
+  useDisclosure
+} from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -12,6 +25,9 @@ import { useCopyData } from '@/utils/tools';
 
 import { useDevboxStore } from '@/stores/devbox';
 import { useEnvStore } from '@/stores/env';
+import { useMemo, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { checkReady } from '@/api/platform';
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'));
 
@@ -21,6 +37,42 @@ const MainBody = () => {
   const { devboxDetail } = useDevboxStore();
   const { env } = useEnvStore();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const retryCount = useRef(0);
+  const { data: networkStatus, refetch } = useQuery({
+    queryKey: ['networkStatus', devboxDetail?.name],
+    queryFn: () => (devboxDetail?.name ? checkReady(devboxDetail?.name) : []),
+    retry: 5,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+    onSuccess: (data) => {
+      const hasUnready = data.some((item) => !item.ready);
+      if (!hasUnready) {
+        retryCount.current = 0;
+        return;
+      }
+      if (retryCount.current < 14) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 32000);
+        retryCount.current += 1;
+        setTimeout(() => {
+          refetch();
+        }, delay);
+      }
+    },
+    refetchIntervalInBackground: false
+  });
+
+  const statusMap = useMemo(
+    () =>
+      networkStatus
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
+        : {},
+    [networkStatus]
+  );
 
   const networkColumn: {
     title: string;
@@ -42,7 +94,7 @@ const MainBody = () => {
       width: '0.5fr'
     },
     {
-      title: t('internal_address'),
+      title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
         return (
@@ -73,38 +125,143 @@ const MainBody = () => {
       }
     },
     {
-      title: t('external_address'),
+      title: t('external_debug_address'),
       key: 'externalAddress',
       render: (item: NetworkType) => {
         if (item.openPublicDomain) {
           const address = item.customDomain || item.publicDomain;
+          const displayAddress = `https://${address}`;
           return (
-            <Tooltip
-              label={t('open_link')}
-              hasArrow
-              bg={'#FFFFFF'}
-              color={'grayModern.900'}
-              fontSize={'12px'}
-              fontWeight={400}
-              py={2}
-              borderRadius={'md'}
-            >
-              <Text
-                className="guide-network-address"
-                cursor="pointer"
-                color={'grayModern.600'}
-                _hover={{ textDecoration: 'underline' }}
-                onClick={() => window.open(`https://${address}`, '_blank')}
+            <Flex gap={'2'} alignItems={'center'}>
+              {displayAddress && (
+                <>
+                  {statusMap[displayAddress]?.ready ? (
+                    <Center
+                      fontSize={'12px'}
+                      fontWeight={400}
+                      bg={'rgba(3, 152, 85, 0.05)'}
+                      color={'#039855'}
+                      borderRadius={'full'}
+                      p={'2px 8px 2px 8px'}
+                      gap={'2px'}
+                      minW={'63px'}
+                    >
+                      <Center w={'6px'} h={'6px'} borderRadius={'full'} bg={'#039855'}></Center>
+                      {t('Accessible')}
+                    </Center>
+                  ) : (
+                    <Popover trigger={'hover'}>
+                      <PopoverTrigger>
+                        <Flex
+                          alignItems={'center'}
+                          gap={'2px'}
+                          cursor="pointer"
+                          fontSize={'12px'}
+                          fontWeight={400}
+                          w={'fit-content'}
+                          bg={'rgba(17, 24, 36, 0.05)'}
+                          color={'#485264'}
+                          borderRadius={'full'}
+                          p={'2px 8px 2px 8px'}
+                        >
+                          <MyIcon name={'help'} w={'18px'} h={'18px'} />
+                          <Text fontSize={'12px'} w={'full'} color={'#485264'}>
+                            {t('prepare')}
+                          </Text>
+                        </Flex>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        minW={'410px'}
+                        h={'114px'}
+                        borderRadius={'10px'}
+                        w={'fit-content'}
+                      >
+                        <PopoverArrow />
+                        <PopoverBody>
+                          <Box h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                            {t.rich('public_debug_address_tooltip_1', {
+                              blue: (chunks) => (
+                                <Text as={'span'} color={'brightBlue.600'}>
+                                  {chunks}
+                                </Text>
+                              )
+                            })}
+                          </Box>
+                          <Flex mt={'12px'} gap={'4px'}>
+                            <Flex alignItems={'center'} direction={'column'} mt={'2px'}>
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                              <Box height={'20px'} w={'1px'} bg={'grayModern.250'} />
+                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
+                            </Flex>
+                            <Flex gap={'6px'} alignItems={'center'} direction={'column'}>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_2_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t('public_debug_address_tooltip_2_2')}
+                                </Box>
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_3_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_3_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                              <Flex h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
+                                <Box>{t('public_debug_address_tooltip_4_1')}</Box>
+                                <Box color={'grayModern.600'}>
+                                  {t.rich('public_debug_address_tooltip_4_2', {
+                                    underline: (chunks) => (
+                                      <Text as={'span'} textDecoration={'underline'}>
+                                        {chunks}
+                                      </Text>
+                                    )
+                                  })}
+                                </Box>
+                              </Flex>
+                            </Flex>
+                          </Flex>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </>
+              )}
+              <Tooltip
+                label={t('open_link')}
+                hasArrow
+                bg={'#FFFFFF'}
+                color={'grayModern.900'}
+                fontSize={'12px'}
+                fontWeight={400}
+                py={2}
+                borderRadius={'md'}
               >
-                https://{address}
-              </Text>
-            </Tooltip>
+                <Text
+                  className="guide-network-address"
+                  cursor="pointer"
+                  color={'grayModern.600'}
+                  _hover={{ textDecoration: 'underline' }}
+                  onClick={() => window.open(`https://${address}`, '_blank')}
+                >
+                  https://{address}
+                </Text>
+              </Tooltip>
+            </Flex>
           );
         }
         return <Text>-</Text>;
       }
     }
   ];
+
   return (
     <Box bg={'white'} borderRadius="lg" pl={6} pt={2} pr={6} pb={6} h={'full'} borderWidth={1}>
       {/* monitor */}

@@ -28,4 +28,4 @@ spec:
   tls:
     - hosts:
         - devbox.{{ .cloudDomain }}
-      secretName: {{ .certSecretName }}
+      secretName: {{ .certSecretName }} # wildcard-cert

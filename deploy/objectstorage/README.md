@@ -18,6 +18,10 @@ log: add resourcequota/status role to objectstorage-manager-role clusterrole
 
 log: add resourcequota & resourcequota/statuc role to objectstorage-manager-role clusterrole
 
+### date 2025.3.19
+
+log: update controller version
+
 ## components
 
 1. minio

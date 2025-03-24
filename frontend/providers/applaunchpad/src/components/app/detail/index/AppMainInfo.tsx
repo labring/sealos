@@ -8,12 +8,26 @@ import { DOMAIN_PORT } from '@/store/static';
 import type { AppDetailType } from '@/types/app';
 import { useCopyData } from '@/utils/tools';
 import { getUserNamespace } from '@/utils/user';
-import { Box, Button, Center, Flex, Grid, Text, useDisclosure } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Grid,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  useDisclosure
+} from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import MonitorModal from './MonitorModal';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useQuery } from '@tanstack/react-query';
+import { checkReady } from '@/api/platform';
 
 const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
   const { t } = useTranslation();
@@ -34,17 +48,42 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
       })),
     [app]
   );
-  const networkStatuses = useNetworkStatus(networks);
+
+  const retryCount = useRef(0);
+  const { data: networkStatus, refetch } = useQuery({
+    queryKey: ['networkStatus', app.appName],
+    queryFn: () => checkReady(app.appName),
+    retry: 5,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+    onSuccess: (data) => {
+      const hasUnready = data.some((item) => !item.ready);
+      if (!hasUnready) {
+        retryCount.current = 0;
+        return;
+      }
+      if (retryCount.current < 14) {
+        const delay = Math.min(1000 * Math.pow(2, retryCount.current), 32000);
+        retryCount.current += 1;
+        setTimeout(() => {
+          refetch();
+        }, delay);
+      }
+    },
+    refetchIntervalInBackground: false,
+    staleTime: 1000 * 60 * 5
+  });
 
   const statusMap = useMemo(
     () =>
-      networkStatuses.reduce((acc, status) => {
-        if (status.data?.url) {
-          acc[status.data.url] = status.data;
-        }
-        return acc;
-      }, {} as Record<string, { isReady?: boolean; error?: string }>),
-    [networkStatuses]
+      networkStatus
+        ? networkStatus.reduce((acc, item) => {
+            if (item?.url) {
+              acc[item.url] = item;
+            }
+            return acc;
+          }, {} as Record<string, { ready: boolean; url: string }>)
+        : {},
+    [networkStatus]
   );
 
   return (
@@ -123,17 +162,17 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                       </Flex>
                     </th>
                     <th>
-                      <Flex alignItems={'center'} gap={'2px'} justifyContent={'space-between'}>
+                      <Flex alignItems={'center'} gap={'2px'}>
                         {network.public && (
                           <>
-                            {statusMap[network.public]?.isReady ? (
+                            {statusMap[network.public]?.ready ? (
                               <Center
                                 fontSize={'12px'}
                                 fontWeight={400}
                                 bg={'rgba(3, 152, 85, 0.05)'}
                                 color={'#039855'}
                                 borderRadius={'full'}
-                                p={'2px 4px'}
+                                p={'2px 8px 2px 4px'}
                                 gap={'2px'}
                                 minW={'63px'}
                               >
@@ -146,34 +185,52 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                                 {t('Accessible')}
                               </Center>
                             ) : (
-                              <Center
-                                fontSize={'12px'}
-                                fontWeight={400}
-                                bg={'rgba(17, 24, 36, 0.05)'}
-                                color={'#485264'}
-                                borderRadius={'full'}
-                                p={'2px 4px'}
-                                gap={'2px'}
-                                minW={'63px'}
-                              >
-                                <MyIcon
-                                  name={'loading'}
-                                  w={'12px'}
-                                  h={'12px'}
-                                  animation={'spin 1s linear infinite'}
-                                  sx={{
-                                    '@keyframes spin': {
-                                      '0%': {
-                                        transform: 'rotate(0deg)'
-                                      },
-                                      '100%': {
-                                        transform: 'rotate(360deg)'
-                                      }
-                                    }
-                                  }}
-                                />
-                                {t('Ready')}
-                              </Center>
+                              <Popover trigger="hover">
+                                <PopoverTrigger>
+                                  <Center
+                                    fontSize={'12px'}
+                                    fontWeight={400}
+                                    bg={'rgba(17, 24, 36, 0.05)'}
+                                    color={'#485264'}
+                                    borderRadius={'full'}
+                                    p={'2px 8px 2px 4px'}
+                                    gap={'2px'}
+                                    minW={'63px'}
+                                    cursor={'pointer'}
+                                  >
+                                    <MyIcon
+                                      name={'loading'}
+                                      w={'12px'}
+                                      h={'12px'}
+                                      animation={'spin 1s linear infinite'}
+                                      sx={{
+                                        '@keyframes spin': {
+                                          '0%': {
+                                            transform: 'rotate(0deg)'
+                                          },
+                                          '100%': {
+                                            transform: 'rotate(360deg)'
+                                          }
+                                        }
+                                      }}
+                                    />
+                                    {t('Ready')}
+                                  </Center>
+                                </PopoverTrigger>
+                                <PopoverContent w={'254px'} h={'40px'} borderRadius={'10px'}>
+                                  <PopoverArrow />
+                                  <PopoverBody p={'10px'}>
+                                    <Box
+                                      color={'grayModern.900'}
+                                      fontSize={'12px'}
+                                      fontWeight={'400'}
+                                      lineHeight={'16px'}
+                                    >
+                                      {t('network_not_ready')}
+                                    </Box>
+                                  </PopoverBody>
+                                </PopoverContent>
+                              </Popover>
                             )}
                           </>
                         )}
@@ -200,6 +257,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
                         {!!network.public && (
                           <Center
+                            ml={'auto'}
                             flexShrink={0}
                             w={'24px'}
                             h={'24px'}

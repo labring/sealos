@@ -9,7 +9,8 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
-  Tooltip
+  Tooltip,
+  Text
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
@@ -42,6 +43,13 @@ export interface JetBrainsGuideData {
   host: string;
   port: string;
   configHost: string;
+}
+
+interface MenuItem {
+  value: string;
+  menuLabel: string;
+  group?: string;
+  options?: { value: string; menuLabel: string }[];
 }
 
 const IDEButton = ({
@@ -138,13 +146,13 @@ const IDEButton = ({
         >
           {isBigButton ? (
             <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
-              <MyIcon name={currentIDE} w={'25%'} />
-              <Box w={'75%'} textAlign={'center'} px={'7px'}>
+              <MyIcon name={getIconName(currentIDE)} w={'25%'} />
+              <Box w={'75%'} textAlign={'center'} px={'7px'} whiteSpace="nowrap">
                 {ideObj[currentIDE]?.label}
               </Box>
             </Flex>
           ) : (
-            <MyIcon name={currentIDE} w={'16px'} />
+            <MyIcon name={getIconName(currentIDE)} w={'16px'} />
           )}
         </Button>
       </Tooltip>
@@ -182,32 +190,114 @@ const IDEButton = ({
           fontWeight={500}
           fontSize={'12px'}
           defaultValue={currentIDE}
-          px={1}
+          p={'6px'}
+          px={'4px'}
+          w={'210px'}
+          display={'flex'}
+          flexDirection={'column'}
+          gap={'2px'}
         >
-          {menuItems.map((item) => (
-            <MenuItem
-              key={item.value}
-              value={item.value}
-              onClick={() => {
-                updateDevboxIDE(item.value as IDEType, devboxName);
-                handleGotoIDE(item.value as IDEType);
-              }}
-              icon={<MyIcon name={item.value as IDEType} w={'16px'} />}
-              _hover={{
-                bg: '#1118240D',
-                borderRadius: 4
-              }}
-              _focus={{
-                bg: '#1118240D',
-                borderRadius: 4
-              }}
-            >
-              <Flex justifyContent="space-between" alignItems="center" width="100%">
-                {item?.menuLabel}
-                {currentIDE === item.value && <MyIcon name="check" w={'16px'} />}
-              </Flex>
-            </MenuItem>
-          ))}
+          {menuItems.map((item) => {
+            if (item.group === 'trae') {
+              return (
+                <Flex key={item.value} gap={'4px'}>
+                  {item.options?.map((option, index) => (
+                    <Flex key={option.value} alignItems={'center'}>
+                      <MenuItem
+                        h={'32px'}
+                        {...(index === 0 && {
+                          pl: '8px',
+                          pr: '4px',
+                          w: '80px'
+                        })}
+                        {...(index === 1 && {
+                          pr: '8px',
+                          w: '110px'
+                        })}
+                        borderRadius={'4px'}
+                        value={option.value}
+                        onClick={() => {
+                          updateDevboxIDE(option.value as IDEType, devboxName);
+                          handleGotoIDE(option.value as IDEType);
+                        }}
+                        _hover={{
+                          bg: 'grayModern.100',
+                          borderRadius: 4
+                        }}
+                        _focus={{
+                          bg: '#1118240D',
+                          borderRadius: 4
+                        }}
+                        {...(currentIDE === option.value && {
+                          color: 'brightBlue.600'
+                        })}
+                      >
+                        <Flex alignItems="center" w={'100%'}>
+                          <MyIcon name="trae" w={'16px'} mr={'6px'} />
+                          <Text whiteSpace="nowrap" mr={'2px'} fontWeight={500}>
+                            {option.menuLabel}
+                          </Text>
+                          {currentIDE === option.value && (
+                            <MyIcon name="check" w={'12px'} ml={'6px'} />
+                          )}
+                        </Flex>
+                      </MenuItem>
+                      {index === 0 && (
+                        <Box h={'12px'} w={'2px'} bg={'grayModern.200'} ml={'4px'}></Box>
+                      )}
+                    </Flex>
+                  ))}
+                </Flex>
+              );
+            } else {
+              return (
+                <MenuItem
+                  h={'32px'}
+                  w={'100%'}
+                  p={'6px'}
+                  borderRadius={'4px'}
+                  key={item.value}
+                  value={item.value}
+                  onClick={() => {
+                    updateDevboxIDE(item.value as IDEType, devboxName);
+                    handleGotoIDE(item.value as IDEType);
+                  }}
+                  _hover={{
+                    bg: 'grayModern.100',
+                    borderRadius: 4
+                  }}
+                  _focus={{
+                    bg: '#1118240D',
+                    borderRadius: 4
+                  }}
+                  {...(currentIDE === item.value && {
+                    color: 'brightBlue.600'
+                  })}
+                >
+                  <Flex
+                    alignItems="center"
+                    w={'100%'}
+                    p={'7px 2px'}
+                    justifyContent={'space-between'}
+                  >
+                    <Flex alignItems={'center'}>
+                      <MyIcon name={getIconName(item.value as IDEType)} w={'16px'} mr={'6px'} />
+                      <Text
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                        mr={'4px'}
+                        fontWeight={500}
+                      >
+                        {item?.menuLabel}
+                      </Text>
+                    </Flex>
+                    {currentIDE === item.value && <MyIcon name="check" w={'12px'} />}
+                  </Flex>
+                </MenuItem>
+              );
+            }
+          })}
         </MenuList>
       </Menu>
       {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
@@ -228,7 +318,8 @@ export const ideObj = {
     icon: 'vscode',
     prefix: 'vscode://',
     value: 'vscode',
-    sortId: 0
+    sortId: 0,
+    group: ''
   },
   vscodeInsiders: {
     label: 'Insiders',
@@ -236,7 +327,8 @@ export const ideObj = {
     icon: 'vscodeInsiders',
     prefix: 'vscode-insiders://',
     value: 'vscodeInsiders',
-    sortId: 1
+    sortId: 1,
+    group: ''
   },
   cursor: {
     label: 'Cursor',
@@ -244,7 +336,8 @@ export const ideObj = {
     icon: 'cursor',
     prefix: 'cursor://',
     value: 'cursor',
-    sortId: 2
+    sortId: 2,
+    group: ''
   },
   windsurf: {
     label: 'Windsurf',
@@ -252,7 +345,8 @@ export const ideObj = {
     icon: 'windsurf',
     prefix: 'windsurf://',
     value: 'windsurf',
-    sortId: 3
+    sortId: 3,
+    group: ''
   },
   trae: {
     label: 'Trae',
@@ -260,7 +354,17 @@ export const ideObj = {
     icon: 'trae',
     prefix: 'trae://',
     value: 'trae',
-    sortId: 4
+    sortId: 4,
+    group: 'trae'
+  },
+  traeCN: {
+    label: 'Trae CN',
+    menuLabel: 'Trae CN',
+    icon: 'trae',
+    prefix: 'trae-cn://',
+    value: 'traeCN',
+    sortId: 4,
+    group: 'trae'
   },
   jetbrains: {
     label: 'JetBrains',
@@ -268,12 +372,45 @@ export const ideObj = {
     menuLabel: 'JetBrains',
     prefix: '-',
     value: 'jetbrains',
-    sortId: 4
+    sortId: 5,
+    group: ''
   }
 } as const;
 
+const getIconName = (
+  ide: IDEType
+):
+  | 'link'
+  | 'search'
+  | 'template'
+  | 'ellipse'
+  | 'cursor'
+  | 'vscode'
+  | 'vscodeInsiders'
+  | 'windsurf'
+  | 'trae'
+  | 'jetbrains' => {
+  if (ide === 'traeCN') return 'trae';
+  return ide;
+};
+
 const menuItems = Object.values(ideObj)
   .sort((a, b) => a.sortId - b.sortId)
-  .map(({ value, menuLabel }) => ({ value, menuLabel }));
+  .reduce((acc, item) => {
+    if (item.group === 'trae' && !acc.some((i) => i.group === 'trae')) {
+      acc.push({
+        value: 'trae-group',
+        menuLabel: 'Trae',
+        group: 'trae',
+        options: [
+          { value: 'trae', menuLabel: 'Trae' },
+          { value: 'traeCN', menuLabel: 'Trae CN' }
+        ]
+      });
+    } else if (item.group === '') {
+      acc.push({ value: item.value, menuLabel: item.menuLabel });
+    }
+    return acc;
+  }, [] as MenuItem[]);
 
 export default IDEButton;
