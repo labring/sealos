@@ -6,6 +6,7 @@ import { MigrateTable } from './Migrate/Table';
 import DumpImport from './DumpImport';
 import useEnvStore from '@/store/env';
 import { useRouter } from 'next/router';
+import AutoComplete from './AutoComplete';
 
 enum MenuType {
   DumpImport = 'DumpImport',
@@ -26,7 +27,7 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
         <Flex>
           {[
             { id: MenuType.InternetMigration, label: t('online_import') },
-            ...(!!SystemEnv.minio_url
+            ...(Boolean(SystemEnv.minio_url)
               ? [{ id: MenuType.DumpImport, label: t('import_through_file') }]
               : [])
           ].map((item) => (

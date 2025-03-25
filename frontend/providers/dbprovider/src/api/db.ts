@@ -17,6 +17,7 @@ import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { AxiosRequestConfig } from 'axios';
+import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -71,6 +72,8 @@ export const pauseDBByName = (data: { dbName: string; dbType: DBType }) =>
 
 export const startDBByName = (data: { dbName: string; dbType: DBType }) =>
   POST('/api/startDBByName', data);
+
+export const switchPodMs = (data: SwitchMsData) => POST('/api/pod/switchPodMs', data);
 
 export const getDBServiceByName = (name: string) =>
   GET<V1Service>(`/api/getServiceByName?name=${name}`);

@@ -16,14 +16,15 @@ import {
   FormControl,
   Grid,
   Input,
+  Portal,
   Switch,
   Text,
   Textarea,
+  useDisclosure,
   useTheme
 } from '@chakra-ui/react';
 import { MyTooltip, Tabs, useMessage } from '@sealos/ui';
 import 'github-markdown-css/github-markdown-light.css';
-import { debounce, throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -31,6 +32,18 @@ import { UseFormReturn } from 'react-hook-form';
 import PrepareBox from './Prepare';
 import { I18nCommonKey } from '@/types/i18next';
 import { parseDatabaseUrl, useClipboard, useCopyData } from '@/utils/tools';
+
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverFooter,
+  PopoverArrow,
+  PopoverCloseButton,
+  PopoverAnchor
+} from '@chakra-ui/react';
 
 const Form = ({
   formHook,
@@ -48,8 +61,6 @@ const Form = ({
     name: string;
     dbType: SupportMigrationDBType;
   };
-
-  const { getClipboardData } = useClipboard();
 
   const {
     register,
@@ -181,8 +192,8 @@ const Form = ({
       setValue('sourcePort', data.port);
       setValue('sourceUsername', data.username);
       setValue('sourcePassword', data.password);
+      onClose();
     } catch (error) {
-      console.error(error);
       toast({
         title: t('parse_url_failed'),
         status: 'error'
@@ -190,49 +201,16 @@ const Form = ({
     }
   }
 
-  async function identifyClipboard() {
-    const text = await getClipboardData();
-    if (text !== undefined) {
-      processURL(text);
-    }
-  }
-
-  const [sourceHost, sourcePort, sourceUsername, sourcePassword] = watch([
-    'sourceHost',
-    'sourcePort',
-    'sourceUsername',
-    'sourcePassword'
-  ]);
-
-  function process2URL() {
-    for (const text of [sourceHost, sourcePort, sourceUsername, sourcePassword]) {
-      if (text === '') {
-        return '';
-      }
-    }
-    return `${dbType}://${sourceUsername}:${sourcePassword}@${sourceHost}:${sourcePort}`;
-  }
-
-  const url = process2URL();
+  const { onOpen, onClose, isOpen } = useDisclosure();
 
   const connectionRef = useRef<HTMLTextAreaElement | null>(null);
 
-  useEffect(() => {
-    if (url !== connection && url !== '') {
-      setConnection(url);
-    }
+  function identifyClipboard() {
     if (connectionRef.current !== null) {
-      connectionRef.current.value = connection;
+      const text = connectionRef.current.value;
+      processURL(text);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url]);
-
-  useEffect(() => {
-    if (url !== connection) {
-      processURL(connection);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connection]);
+  }
 
   return (
     <>
@@ -329,41 +307,35 @@ const Form = ({
               {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
-              <Flex alignItems={'center'} justifyContent={'space-between'} w={400}>
-                <Text color={'#24282C'} fontSize={'16px'} fontWeight={500}>
+              <Flex alignItems={'center'} w={400}>
+                <Text color={'#24282C'} fontSize={'16px'} fontWeight={500} w={94}>
                   {t('source_database')}
                 </Text>
-                <MyTooltip label={t('identify_clipboard')}>
-                  <Button variant={'square'} onClick={identifyClipboard}>
-                    <MyIcon name="copy" w={'16px'} h={'16px'} />
-                  </Button>
-                </MyTooltip>
+                <Popover placement="bottom-start" onOpen={onOpen} onClose={onClose} isOpen={isOpen}>
+                  <PopoverTrigger>
+                    <Button variant="outline" gap={'6px'}>
+                      <MyIcon name="textRecognition" w={'16px'} h={'16px'} />
+                      {t('paste_database_connection')}
+                    </Button>
+                  </PopoverTrigger>
+                  <Portal>
+                    <PopoverContent width={'426px'}>
+                      <PopoverBody>
+                        <Text color="#667085" fontSize={14}>
+                          {t('paste_database_connection_desc')}
+                        </Text>
+                        <Textarea my={2} ref={connectionRef} />
+                        <Box display={'flex'} justifyContent={'flex-end'} mt={2} gap={2}>
+                          <Button variant="outline" onClick={onClose}>
+                            {t('cancel')}
+                          </Button>
+                          <Button onClick={identifyClipboard}>{t('identify')}</Button>
+                        </Box>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Portal>
+                </Popover>
               </Flex>
-              <FormControl mt={'16px'} w={'500px'}>
-                <Flex alignItems={'start'}>
-                  <Label w={94} style={{ lineHeight: '32px' }}>
-                    {t('database_connection')}
-                  </Label>
-                  <Textarea
-                    ref={connectionRef}
-                    placeholder={t('database_connection')}
-                    size="md"
-                    w={300}
-                    resize="none"
-                    onChangeCapture={debounce((e) => {
-                      if (e.target.value) {
-                        setConnection(e.target?.value);
-                      }
-                    }, 300)}
-                    onKeyDown={(e) => {
-                      if (e.ctrlKey && (e.key === 'c' || e.key === 'C')) {
-                        e.preventDefault();
-                        identifyClipboard();
-                      }
-                    }}
-                  />
-                </Flex>
-              </FormControl>
               <FormControl mt={'16px'} isInvalid={!!errors.sourceHost} w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label w={94}>{t('database_host')}</Label>

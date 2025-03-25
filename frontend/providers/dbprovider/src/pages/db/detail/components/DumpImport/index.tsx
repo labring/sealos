@@ -16,6 +16,7 @@ import {
   Button,
   Divider,
   Flex,
+  HStack,
   Input,
   Modal,
   ModalBody,
@@ -23,15 +24,20 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Spinner,
   Text,
-  useDisclosure
+  useDisclosure,
+  VStack
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -40,6 +46,115 @@ enum MigrateStatusEnum {
   Fail = 'Fail',
   Running = 'Running'
 }
+
+const DatabaseNameSelect = ({
+  templateList
+}: {
+  templateList: { uid: string; name: string }[];
+}) => {
+  const { watch, setValue } = useFormContext<any>();
+  const [inputValue, setInputValue] = useState('');
+
+  const handleDatabaseNameSelect = (databasename: string) => {
+    setInputValue(databasename);
+    setValue('databasename', inputValue);
+    handler.onClose();
+  };
+  const handler = useDisclosure();
+  const { t } = useTranslation();
+
+  const handleCreateDatabaseName = () => {
+    setValue('databasename', inputValue);
+    handler.onClose();
+  };
+  return (
+    <>
+      <Popover
+        placement="bottom-start"
+        isOpen={handler.isOpen}
+        onOpen={handler.onOpen}
+        onClose={handler.onClose}
+      >
+        <PopoverTrigger>
+          <Flex
+            width={'350px'}
+            bgColor={'grayModern.50'}
+            border={'1px solid'}
+            borderColor={'grayModern.200'}
+            borderRadius={'6px'}
+            py={'8px'}
+            px={'12px'}
+            justify={'space-between'}
+          >
+            <Text fontSize={'12px'} width={400}>
+              {watch('databasename')}
+            </Text>
+            <MyIcon name="chevronDown" boxSize={'16px'} color={'grayModern.500'} />
+          </Flex>
+        </PopoverTrigger>
+        <PopoverContent>
+          <PopoverBody
+            p="6px"
+            width="280px"
+            boxShadow="box-shadow: 0px 0px 1px 0px #13336B1A,box-shadow: 0px 4px 10px 0px #13336B1A"
+            border="none"
+            borderRadius="6px"
+          >
+            <Input
+              width="full"
+              height="32px"
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+              }}
+              // border="1px solid #219BF4"
+              // boxShadow="0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)"
+              borderRadius="4px"
+              fontSize="12px"
+              placeholder={t('search_or_create_database')}
+              _focus={{
+                border: '1px solid #219BF4',
+                boxShadow: '0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)'
+              }}
+            />
+            <VStack spacing="0" align="stretch" mt={'4px'}>
+              {templateList
+                .filter((v) => v.name.toLowerCase().includes(inputValue.toLowerCase()))
+                .map((v) => (
+                  <Box
+                    key={v.uid}
+                    p="8px 12px"
+                    borderRadius={'4px'}
+                    fontSize="12px"
+                    cursor="pointer"
+                    _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
+                    onClick={() => handleDatabaseNameSelect(v.name)}
+                  >
+                    {v.name}
+                  </Box>
+                ))}
+
+              {inputValue && !templateList.find((v) => v.name === inputValue) && (
+                <HStack
+                  p="8px 12px"
+                  spacing="8px"
+                  cursor="pointer"
+                  _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
+                  onClick={handleCreateDatabaseName}
+                >
+                  <MyIcon name="add" w={'16px'} h={'16px'} />
+                  <Text fontSize="12px" lineHeight="16px" letterSpacing="0.004em" color="#111824">
+                    {`${t('create_database')} ${inputValue}`}
+                  </Text>
+                </HStack>
+              )}
+            </VStack>
+          </PopoverBody>
+        </PopoverContent>
+      </Popover>
+    </>
+  );
+};
 
 export default function DumpImport({ db }: { db?: DBDetailType }) {
   const { t } = useTranslation();
@@ -195,106 +310,84 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   );
 
   return (
-    <Box h={'100%'} position={'relative'}>
-      <Flex h="100%" justifyContent={'center'}>
-        <Box flex={1} pt="32px" px="40px" overflowY={'auto'} maxW={'720px'}>
-          <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
-            {t('upload_dump_file')}
+    <FormProvider {...formHook}>
+      <Box h={'100%'} position={'relative'}>
+        <Flex align={'center'}>
+          <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
+            {t('db_name')}
           </Text>
-          <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
+          <DatabaseNameSelect templateList={[]} />
+        </Flex>
 
-          <Flex alignItems={'center'} mt="22px">
-            <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-              {t('db_name')}
+        <Flex h="100%" justifyContent={'center'}>
+          <Box flex={1} pt="32px" px="40px" overflowY={'auto'} maxW={'720px'}>
+            <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
+              {t('upload_dump_file')}
             </Text>
-            <Input
-              width={'380px'}
-              maxW={'400px'}
-              isInvalid={!!formHook.formState?.errors?.databaseName}
-              {...formHook.register('databaseName', {
-                required: t('database_name_empty')
-              })}
-            />
-          </Flex>
-          {db?.dbType === 'mongodb' && (
+            <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
+
             <Flex alignItems={'center'} mt="22px">
               <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-                {t('collection_name')}
+                {t('db_name')}
               </Text>
-              <Input width={'380px'} maxW={'400px'} {...formHook.register('collectionName')} />
+              <DatabaseNameSelect templateList={[]} />
+              {/* <Input
+                width={'380px'}
+                maxW={'400px'}
+                isInvalid={!!formHook.formState?.errors?.databaseName}
+                {...formHook.register('databaseName', {
+                  required: t('database_name_empty')
+                })}
+              /> */}
             </Flex>
-          )}
-          <Flex justifyContent={'end'}>
-            <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
-              {t('migrate_now')}
-            </Button>
-          </Flex>
-        </Box>
-      </Flex>
-
-      <Modal
-        isOpen={isOpen}
-        onClose={closeMigrate}
-        closeOnOverlayClick={false}
-        lockFocusAcrossFrames={false}
-      >
-        <ModalOverlay />
-        {migrateStatus === MigrateStatusEnum.Prepare && (
-          <ModalContent>
-            <ModalHeader>{t('prompt')}</ModalHeader>
-            <ModalBody>
-              <ModalCloseButton top={'10px'} right={'10px'} />
-              <Flex mb={'44px'}>
-                <Text> {t('are_you_sure_to_perform_database_migration')} </Text>
+            {db?.dbType === 'mongodb' && (
+              <Flex alignItems={'center'} mt="22px">
+                <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
+                  {t('collection_name')}
+                </Text>
+                <Input width={'380px'} maxW={'400px'} {...formHook.register('collectionName')} />
               </Flex>
+            )}
+            <Flex justifyContent={'end'}>
+              <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
+                {t('migrate_now')}
+              </Button>
+            </Flex>
+          </Box>
+        </Flex>
 
-              <Flex justifyContent={'flex-end'}>
-                <Button variant={'outline'} onClick={closeMigrate}>
-                  {t('Cancel')}
-                </Button>
-                <Button ml={3} variant={'solid'} onClick={handleConfirm}>
-                  {t('confirm')}
-                </Button>
-              </Flex>
-            </ModalBody>
-          </ModalContent>
-        )}
-
-        {migrateStatus === MigrateStatusEnum.Progress && (
-          <ModalContent>
-            <ModalCloseButton />
-            <ModalBody>
-              <Flex
-                flexDirection={'column'}
-                alignItems={'center'}
-                justifyContent={'center'}
-                pt="75px"
-                pb="42px"
-                px="24px"
-              >
-                <Flex alignItems={'center'} justifyContent={'center'} gap="10px">
-                  <Spinner />
-                  <Text fontSize={'24px'} fontWeight={500} color={'#24282C'}>
-                    {t('Migrating')}
-                  </Text>
+        <Modal
+          isOpen={isOpen}
+          onClose={closeMigrate}
+          closeOnOverlayClick={false}
+          lockFocusAcrossFrames={false}
+        >
+          <ModalOverlay />
+          {migrateStatus === MigrateStatusEnum.Prepare && (
+            <ModalContent>
+              <ModalHeader>{t('prompt')}</ModalHeader>
+              <ModalBody>
+                <ModalCloseButton top={'10px'} right={'10px'} />
+                <Flex mb={'44px'}>
+                  <Text> {t('are_you_sure_to_perform_database_migration')} </Text>
                 </Flex>
-                <Text mt="28px" mb="8px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
-                  {fileProgressText}
-                </Text>
-                <Text fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
-                  {t('migration_prompt_information')}
-                </Text>
-              </Flex>
-            </ModalBody>
-          </ModalContent>
-        )}
 
-        {(migrateStatus === MigrateStatusEnum.Success ||
-          migrateStatus === MigrateStatusEnum.Fail) && (
-          <ModalContent maxW={migrateStatus === MigrateStatusEnum.Fail ? '60%' : '392px'}>
-            <ModalCloseButton />
-            <ModalBody>
-              {migrateStatus === MigrateStatusEnum.Success && (
+                <Flex justifyContent={'flex-end'}>
+                  <Button variant={'outline'} onClick={closeMigrate}>
+                    {t('Cancel')}
+                  </Button>
+                  <Button ml={3} variant={'solid'} onClick={handleConfirm}>
+                    {t('confirm')}
+                  </Button>
+                </Flex>
+              </ModalBody>
+            </ModalContent>
+          )}
+
+          {migrateStatus === MigrateStatusEnum.Progress && (
+            <ModalContent>
+              <ModalCloseButton />
+              <ModalBody>
                 <Flex
                   flexDirection={'column'}
                   alignItems={'center'}
@@ -303,39 +396,71 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   pb="42px"
                   px="24px"
                 >
-                  <MyIcon name="success" w={'42px'} h="42px"></MyIcon>
-                  <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
-                    {t('migration_successful')}
+                  <Flex alignItems={'center'} justifyContent={'center'} gap="10px">
+                    <Spinner />
+                    <Text fontSize={'24px'} fontWeight={500} color={'#24282C'}>
+                      {t('Migrating')}
+                    </Text>
+                  </Flex>
+                  <Text mt="28px" mb="8px" fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
+                    {fileProgressText}
+                  </Text>
+                  <Text fontSize={'14px'} fontWeight={400} color={'#7B838B'}>
+                    {t('migration_prompt_information')}
                   </Text>
                 </Flex>
-              )}
-              {migrateStatus === MigrateStatusEnum.Fail && (
-                <Flex
-                  flexDirection={'column'}
-                  alignItems={'center'}
-                  justifyContent={'center'}
-                  pt="75px"
-                  pb="12px"
-                  px="24px"
-                >
-                  <MyIcon name="error" w={'42px'} h="42px"></MyIcon>
-                  <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
-                    {t('migration_failed')}
-                  </Text>
-                  <Divider mt="44px" mb="24px" />
-                  <Text
-                    mt="20px"
-                    fontSize={'14px'}
-                    fontWeight={400}
-                    color={'#7B838B'}
-                    dangerouslySetInnerHTML={{ __html: log ? log : 'have_error' }}
-                  ></Text>
-                </Flex>
-              )}
-            </ModalBody>
-          </ModalContent>
-        )}
-      </Modal>
-    </Box>
+              </ModalBody>
+            </ModalContent>
+          )}
+
+          {(migrateStatus === MigrateStatusEnum.Success ||
+            migrateStatus === MigrateStatusEnum.Fail) && (
+            <ModalContent maxW={migrateStatus === MigrateStatusEnum.Fail ? '60%' : '392px'}>
+              <ModalCloseButton />
+              <ModalBody>
+                {migrateStatus === MigrateStatusEnum.Success && (
+                  <Flex
+                    flexDirection={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    pt="75px"
+                    pb="42px"
+                    px="24px"
+                  >
+                    <MyIcon name="success" w={'42px'} h="42px"></MyIcon>
+                    <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
+                      {t('migration_successful')}
+                    </Text>
+                  </Flex>
+                )}
+                {migrateStatus === MigrateStatusEnum.Fail && (
+                  <Flex
+                    flexDirection={'column'}
+                    alignItems={'center'}
+                    justifyContent={'center'}
+                    pt="75px"
+                    pb="12px"
+                    px="24px"
+                  >
+                    <MyIcon name="error" w={'42px'} h="42px"></MyIcon>
+                    <Text mt="16px" fontSize={'20px'} fontWeight={500} color={'#24282C'}>
+                      {t('migration_failed')}
+                    </Text>
+                    <Divider mt="44px" mb="24px" />
+                    <Text
+                      mt="20px"
+                      fontSize={'14px'}
+                      fontWeight={400}
+                      color={'#7B838B'}
+                      dangerouslySetInnerHTML={{ __html: log ? log : 'have_error' }}
+                    ></Text>
+                  </Flex>
+                )}
+              </ModalBody>
+            </ModalContent>
+          )}
+        </Modal>
+      </Box>
+    </FormProvider>
   );
 }

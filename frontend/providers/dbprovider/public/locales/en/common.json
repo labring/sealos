@@ -346,5 +346,14 @@
   "clipboard_unsupported": "Browser does not support Clipper API",
   "clipboard_read_failed": "Reading clipboard failed!",
   "parse_url_failed": "Content is illegal, recognition failed!",
-  "multi_replica_redis_tip": "Note: The price for multi-replica Redis includes HA nodes"
+  "multi_replica_redis_tip": "Note: The price for multi-replica Redis includes HA nodes",
+  "ms_node": "master-slave node",
+  "switch_to_M": "Switch to master node",
+  "node_is_switching": "Successfully sent switch request, please wait...",
+  "search_or_create_database": "Search or create database",
+  "create_database": "Create new Database",
+  "paste_database_connection": "Paste database connection",
+  "paste_database_connection_desc": "Paste the database connection here, and the database configuration information such as the host name will be automatically recognized",
+  "cancel": "Cancel",
+  "identify": "Identifify Information"
 }

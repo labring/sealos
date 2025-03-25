@@ -69,6 +69,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  console.log(t(applyError));
+
   useEffect(() => {
     if (isGuided) {
       formHook.setValue('storage', 1);
@@ -139,7 +141,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       router.replace(`/db/detail?name=${formData.dbName}&dbType=${formData.dbType}`);
     } catch (error) {
       console.error(error);
-      setErrorMessage(JSON.stringify(error));
+      setErrorMessage(typeof error === 'string' ? error : JSON.stringify(error));
     }
     setIsLoading(false);
   };
@@ -233,7 +235,11 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={t(applyError)}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </>
   );

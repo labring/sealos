@@ -38,6 +38,7 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
+import { set } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -166,6 +167,7 @@ const Form = ({
     if (getValues('memory') < minMemory) {
       setValue('memory', minMemory);
     }
+    setValue('storage', Math.max(3, minStorage * 2));
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType')]);
 
@@ -418,8 +420,7 @@ const Form = ({
                     }
                   }}
                   max={CpuSlideMarkList.length - 1}
-                  min={0}
-                  minVal={minCPU / 1000}
+                  min={minCPU / 1000}
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
@@ -439,8 +440,7 @@ const Form = ({
                     }
                   }}
                   max={MemorySlideMarkList.length - 1}
-                  min={0}
-                  minVal={minMemory / 1024}
+                  min={minMemory / 1024}
                   step={1}
                 />
               </Flex>
@@ -699,15 +699,15 @@ const Form = ({
                       <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
                       <MyTooltip label={'1~100' + t('Day')}>
                         <NumberInput
-                          w={'100px'}
-                          max={SystemEnv.STORAGE_MAX_SIZE}
+                          w={'120px'}
+                          max={100}
                           min={1}
                           step={1}
                           position={'relative'}
                           value={getValues('autoBackup.saveTime')}
                           onChange={(e) => {
                             e !== ''
-                              ? setValue('autoBackup.saveTime', +e)
+                              ? setValue('autoBackup.saveTime', Math.min(+e, 100))
                               : setValue('autoBackup.saveTime', 1);
                           }}
                         >
@@ -749,7 +749,7 @@ const Form = ({
                             </NumberDecrementStepper>
                           </NumberInputStepper>
                           <Box
-                            zIndex={1}
+                            zIndex={100}
                             position={'absolute'}
                             right={10}
                             top={'50%'}

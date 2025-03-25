@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { useTranslation } from 'next-i18next';
 import yaml from 'js-yaml';
 import ini from 'ini';
-import { DBType } from '@/types/db';
+import { DBType, PodDetailType } from '@/types/db';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
   return dayjs(time).format(format);
@@ -495,4 +495,43 @@ export function parseDatabaseUrl(url: string) {
   } catch (error) {
     throw new Error('Invalid URL format');
   }
+}
+
+enum MasterRoleName {
+  master = 'master',
+  primary = 'primary',
+  leader = 'leader'
+}
+
+enum SlaveRoleName {
+  slave = 'slave',
+  secondary = 'secondary',
+  follower = 'follower'
+}
+
+type PodRoleName = `${MasterRoleName | SlaveRoleName}`;
+
+export function getPodRoleName(pod: PodDetailType): {
+  role: PodRoleName;
+  isMaster: boolean;
+  isCreating: boolean;
+} {
+  if (pod?.metadata?.labels !== undefined) {
+    const role = pod.metadata.labels['kubeblocks.io/role'] as PodRoleName;
+    if (role !== undefined) {
+      return {
+        role,
+        isMaster:
+          role === MasterRoleName.master ||
+          role === MasterRoleName.primary ||
+          role === MasterRoleName.leader,
+        isCreating: false
+      };
+    }
+  }
+  return {
+    role: 'slave',
+    isMaster: false,
+    isCreating: true
+  };
 }
