@@ -23,6 +23,7 @@ import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
+import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -872,3 +873,40 @@ export const json2BasicOps = (data: {
 
   return yaml.dump(template);
 };
+
+export function json2SwitchMsNode(data: SwitchMsData) {
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      labels: {
+        'app.kubernetes.io/instance': data.dbName,
+        'app.kubernetes.io/managed-by': 'kubeblocks',
+        'ops.kubeblocks.io/ops-type': 'Switchover'
+      },
+      name: `${data.dbName}-switchover-${nanoid()}`,
+      namespace: data.namespace,
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          name: data.dbName,
+          uid: data.uid
+        }
+      ]
+    },
+    spec: {
+      clusterRef: data.dbName,
+      switchover: [
+        {
+          componentName: data.componentName,
+          instanceName: data.podName
+        }
+      ],
+      ttlSecondsBeforeAbort: 0,
+      type: 'Switchover'
+    }
+  };
+
+  return yaml.dump(template);
+}
