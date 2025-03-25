@@ -11,6 +11,7 @@ export const getGlobalTokenSvc =
     providerId: string,
     name: string,
     providerType: ProviderType,
+    email?: string,
     password?: string,
     inviterId?: string,
     semData?: SemData,
@@ -22,6 +23,7 @@ export const getGlobalTokenSvc =
       providerId,
       avatar_url,
       name,
+      email,
       inviterId,
       password,
       semData,
@@ -43,6 +45,7 @@ export const getGlobalTokenByGithubSvc = (
   avatar_url: string,
   providerId: string,
   name: string,
+  email: string,
   inviterId?: string,
   semData?: SemData,
   bdVid?: string
@@ -52,6 +55,7 @@ export const getGlobalTokenByGithubSvc = (
     providerId,
     name,
     ProviderType.GITHUB,
+    email,
     undefined,
     inviterId,
     semData,
@@ -71,6 +75,7 @@ export const getGlobalTokenByWechatSvc = (
     name,
     ProviderType.WECHAT,
     undefined,
+    undefined,
     inviterId,
     semData,
     bdVid
@@ -80,13 +85,25 @@ export const getGlobalTokenByPhoneSvc = (
   inviterId?: string,
   semData?: SemData,
   bdVid?: string
-) => getGlobalTokenSvc('', phone, phone, ProviderType.PHONE, undefined, inviterId, semData, bdVid);
+) =>
+  getGlobalTokenSvc(
+    '',
+    phone,
+    phone,
+    ProviderType.PHONE,
+    undefined,
+    undefined,
+    inviterId,
+    semData,
+    bdVid
+  );
 export const getGlobalTokenByPasswordSvc = (name: string, password: string, inviterId?: string) =>
   getGlobalTokenSvc('', name, name, ProviderType.PASSWORD, password, inviterId);
 export const getGlobalTokenByGoogleSvc = (
   avatar_url: string,
   providerId: string,
   name: string,
+  email: string,
   inviterId?: string,
   semData?: SemData,
   bdVid?: string
@@ -96,6 +113,7 @@ export const getGlobalTokenByGoogleSvc = (
     providerId,
     name,
     ProviderType.GOOGLE,
+    email,
     undefined,
     inviterId,
     semData,
