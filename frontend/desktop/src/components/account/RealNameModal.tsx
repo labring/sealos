@@ -22,7 +22,7 @@ import {
   FormErrorMessage,
   FlexProps
 } from '@chakra-ui/react';
-import { CloseIcon, useMessage, WarningIcon } from '@sealos/ui';
+import { CloseIcon, RefreshIcon, useMessage, WarningIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from 'react';
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
@@ -35,7 +35,8 @@ import {
   enterpriseRealNameAuthPaymentRequest,
   enterpriseRealNameAuthVerifyRequest,
   faceAuthGenerateQRcodeUriRequest,
-  getFaceAuthStatusRequest
+  getFaceAuthStatusRequest,
+  refreshRealNameQRecodeUriRequest
 } from '@/api/auth';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
@@ -411,10 +412,34 @@ export function FaceIdRealNameAuthORcode(
     }
   );
 
+  const refreshQRMutation = useMutation(refreshRealNameQRecodeUriRequest, {
+    onSuccess: () => {
+      message({
+        title: t('common:qr_code_refreshed_successfully'),
+        status: 'success',
+        duration: 2000,
+        isClosable: true
+      });
+      queryClient.invalidateQueries(['faceIdAuth']);
+    },
+    onError: (error: any) => {
+      message({
+        title: error.message || t('common:failed_to_refresh_qr_code'),
+        status: 'error',
+        duration: 2000,
+        isClosable: true
+      });
+    }
+  });
+
   const handleRefetch = useCallback(() => {
     setRefetchCount((prev) => prev + 1);
     refetch();
   }, [refetch]);
+
+  const handleRefreshQR = useCallback(() => {
+    refreshQRMutation.mutate();
+  }, [refreshQRMutation]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -492,7 +517,7 @@ export function FaceIdRealNameAuthORcode(
   if (error) {
     return (
       <Box mt="32px">
-        <Text color="red.500">{t('common:failed_to_get_qr_code')}</Text>
+        <Text color="red.500">{(error as Error).message || t('common:failed_to_get_qr_code')}</Text>
         <Flex mt="28px">
           <Button onClick={() => handleRefetch()}>{t('common:retry_get_qr_code')}</Button>
         </Flex>
@@ -528,6 +553,25 @@ export function FaceIdRealNameAuthORcode(
             <Center>
               <QRCode value={data.data.url} size={200} />
             </Center>
+            <Button
+              mt="16px"
+              onClick={handleRefreshQR}
+              leftIcon={<RefreshIcon />}
+              isLoading={refreshQRMutation.isLoading}
+              colorScheme="blue"
+              size="sm"
+            >
+              {t('common:refresh_qr_code')}
+            </Button>
+            <Text
+              color="grayModern.500"
+              fontSize="12px"
+              fontStyle="normal"
+              lineHeight="16px"
+              textAlign="center"
+            >
+              {t('common:qr_code_refresh_note')}
+            </Text>
           </Flex>
         </>
       )}
