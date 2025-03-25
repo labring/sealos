@@ -112,7 +112,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, { code: 400, message: 'User real name info already verified' });
     }
 
-    const inviteInfo = await getInviterInfo(userId);
+    let inviteInfo: { inviterId?: string; amount?: bigint } | null = null;
+    try {
+      inviteInfo = await getInviterInfo(userId);
+    } catch (error) {
+      console.error('faceidRealNameAuth: Invite info not found');
+    }
 
     let additionalInfo: AdditionalInfo = userRealNameInfo.additionalInfo;
 
@@ -304,7 +309,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         });
 
-        if (inviteInfo.inviterId && inviteInfo.amount) {
+        if (inviteInfo?.inviterId && inviteInfo?.amount) {
           const inviterUser = await globalPrisma.user.findUniqueOrThrow({
             where: { id: inviteInfo.inviterId }
           });
