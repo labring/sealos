@@ -68,6 +68,8 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  console.log(t(applyError));
+
   useEffect(() => {
     if (isGuided) {
       formHook.setValue('storage', 1);
