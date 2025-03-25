@@ -53,6 +53,11 @@ export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data
   timeout: 30000 * 2
 });
 
+export const setImagesPurpose = (data: any) =>
+  POST<any>('/api/node/setImagesPurpose', data);
+
+export const getImagesPurpose = () => GET<any>('/api/node/getImagesPurpose');
+
 export const uploadImageFiles = (data: any) => {
   const formData = new FormData();
   console.log(data.image)
@@ -110,7 +115,8 @@ export const uploadImageHub = (data: {
   return POST<{ message: string }>('/api/imagehub/upload', formData, {
     headers: {
       // 不设置 Content-Type，让浏览器自动处理
-    }
+    },
+    timeout: 30000 * 4
   });
 };
 

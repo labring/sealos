@@ -1,4 +1,4 @@
-import { buildDockerImage, deleteImageHub, uploadImageFiles, uploadImageHub } from '@/api/app';
+import { buildDockerImage, deleteImageHub, uploadImageFiles, uploadImageHub, setImagesPurpose, getImagesPurpose } from '@/api/app';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { ImageHubItem } from '@/pages/api/imagehub/get';
@@ -51,13 +51,15 @@ const AppList = ({
   const [imageName, setImageName] = useState('');
   const [imageTag, setImageTag] = useState('');
   const [image, setImage] = useState<ImageHubItem>();
+  const [purpose, setPurpose] = useState('');
+  const [purposeMap, setPurposeMap] = useState<any>(null);
 
   const [files, setFiles] = useState<File[]>([]);
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
   const { isOpen: isConstructUploadOpen, onOpen: onConstructUploadOpen, onClose: onConstructUploadClose } = useDisclosure();
 
   const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState({ imageNs: '', imageName: '', imageTag: '' });
+  const [error, setError] = useState({ imageNs: '', imageName: '', imageTag: '', purpose: '' });
   const [inputValue, setInputValue] = useState('');
 
   const [constructImage, setConstructImage] = useState('');
@@ -81,6 +83,17 @@ const AppList = ({
   // }, [constructImage, constructFiles])
 
   useEffect(() => {
+    initPurposeMap()
+  }, [])
+
+  const initPurposeMap = async () => {
+    const resp = await getImagesPurpose()
+    if (resp && resp.data) {
+      setPurposeMap(resp.data)
+    }
+  }
+
+  useEffect(() => {
     if (constructFiles.length > 0) {
       uploadImageHandle(constructFiles[0])
     }
@@ -96,7 +109,7 @@ const AppList = ({
     }
   }, [constructImage, uploadFirstItems])
 
-  const uploadImageHandle = async(data: any) => {
+  const uploadImageHandle = async (data: any) => {
     const resp = await uploadImageFiles({
       image: data,
     })
@@ -113,6 +126,18 @@ const AppList = ({
       }, 500),
     []
   );
+
+  const purposeName = useCallback((item: any) => {
+    console.log('purposeMap', purposeMap, item)
+    if (purposeMap) {
+      const ns = item.image.split('/')[0]
+      const name = item.image.split('/')[1]
+      const key = `${name}-${item.tag}-${ns}`
+      const currentPurpose = purposeMap[key]
+      return currentPurpose || ''
+    }
+    return ''
+  }, [purposeMap])
 
   const columns = useMemo<
     {
@@ -145,6 +170,11 @@ const AppList = ({
         title: '大小',
         key: 'size',
         render: (item: any) => <Box>{item.size}</Box>
+      },
+      {
+        title: '用途',
+        key: 'purpose',
+        render: (item: any) => <Box>{purposeName(item)}</Box>
       },
       {
         title: '操作',
@@ -402,6 +432,21 @@ const AppList = ({
                 }}
               />
             </Flex>
+
+            <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
+              <Flex alignItems={'center'} w={'80px'}>
+                用途: <span style={{ color: 'red' }}>✳</span>
+              </Flex>
+              <Input
+                errorBorderColor="red.300"
+                isInvalid={error.purpose !== ''}
+                value={purpose}
+                onChange={(e) => {
+                  setPurpose(e.target.value);
+                  setError((prev) => ({ ...prev, purpose: '' }));
+                }}
+              />
+            </Flex>
             <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
           </ModalBody>
           <ModalFooter>
@@ -416,7 +461,8 @@ const AppList = ({
                 const newError = {
                   imageName: imageName ? '' : 'Image Name is required',
                   imageTag: imageTag ? '' : 'Image Tag is required',
-                  imageNs: imageNs ? '' : 'Namespace is required'
+                  imageNs: imageNs ? '' : 'Namespace is required',
+                  purpose: purpose ? '' : 'Purpose is required'
                 };
 
                 setError(newError);
@@ -431,12 +477,19 @@ const AppList = ({
 
                 setIsUploading(true);
                 try {
+
+                  await setImagesPurpose({
+                    key: `${imageName}-${imageTag}-${imageNs}`,
+                    value: purpose
+                  })
                   await uploadImageHub({
                     image_name: imageName,
                     tag: imageTag,
                     namespace: imageNs,
                     image_file: files[0]
                   });
+
+                  initPurposeMap()
                   refetchApps();
                   toast({
                     status: 'success',
@@ -474,7 +527,7 @@ const AppList = ({
                 errorBorderColor="red.300"
                 borderColor={'#02A7F0'}
                 isInvalid={constructError.constructImage !== ''}
-                _hover={{borderColor: '#02A7F0'}}
+                _hover={{ borderColor: '#02A7F0' }}
                 value={constructImage}
                 onChange={
                   (e) => {
@@ -506,7 +559,7 @@ const AppList = ({
                 }}
               />
             </Flex>
-            
+
             <Flex alignItems={'center'} gap={'12px'} mt={'12px'}>
               <Flex alignItems={'center'} w={'80px'}>
                 镜像TAG: <span style={{ color: 'red' }}>✳</span>
@@ -547,7 +600,7 @@ const AppList = ({
                 value={constructDockerfile}
                 backgroundColor={'#fff'}
                 borderColor={'#02A7F0'}
-                _hover={{borderColor: '#02A7F0'}}
+                _hover={{ borderColor: '#02A7F0' }}
                 onChange={(e) => {
                   setConstructDockerfile(e.target.value);
                   setError((prev) => ({ ...prev, constructDockerfile: '' }));
@@ -567,7 +620,7 @@ const AppList = ({
                 console.log('asdasdasd', constructImage, constructImageTag, constructImageNs, constructDockerfile)
                 const newError = {
                   constructImage: constructImage ? '' : '请选择',
-                  constructImageName: constructImageName? '' : '请输入',
+                  constructImageName: constructImageName ? '' : '请输入',
                   constructImageTag: constructImageTag ? '' : '请输入',
                   constructImageNs: constructImageNs ? '' : '请输入',
                   constructDockerfile: constructDockerfile ? '' : '请输入'
