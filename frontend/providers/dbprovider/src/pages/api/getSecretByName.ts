@@ -61,6 +61,14 @@ const dbTypeMap = {
     portKey: 'port',
     hostKey: 'host',
     connectKey: 'milvus'
+  },
+  [DBTypeEnum.pulsar]: {
+    ...base,
+    connectKey: 'pulsar'
+  },
+  [DBTypeEnum.clickhouse]: {
+    ...base,
+    connectKey: 'clickhouse'
   }
 };
 

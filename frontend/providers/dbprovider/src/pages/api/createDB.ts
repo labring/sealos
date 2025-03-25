@@ -52,16 +52,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         opsRequests.push(volumeExpansionYaml);
       }
 
-      console.log('DB Edit Operation:', {
-        dbName: dbForm.dbName,
-        changes: {
-          cpu: cpu !== dbForm.cpu,
-          memory: memory !== dbForm.memory,
-          replicas: replicas !== dbForm.replicas,
-          storage: dbForm.storage > storage
-        },
-        opsCount: opsRequests.length
-      });
+      // console.log('DB Edit Operation:', {
+      //   dbName: dbForm.dbName,
+      //   changes: {
+      //     cpu: cpu !== dbForm.cpu,
+      //     memory: memory !== dbForm.memory,
+      //     replicas: replicas !== dbForm.replicas,
+      //     storage: dbForm.storage > storage
+      //   },
+      //   opsCount: opsRequests.length
+      // });
 
       if (opsRequests.length > 0) {
         await applyYamlList(opsRequests, 'create');
@@ -100,6 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const cluster = json2CreateCluster(dbForm, backupInfo, {
       storageClassName: process.env.STORAGE_CLASSNAME
     });
+
     await applyYamlList([account, cluster], 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',

@@ -31,6 +31,18 @@ export const MySlider = ({
     return index > -1 ? index : 0;
   }, [activeVal, markList]);
 
+  if (min > 0) {
+    markList = markList.map((item, index) => {
+      if (index < min) {
+        return {
+          ...item,
+          label: ''
+        };
+      }
+      return item;
+    });
+  }
+
   return (
     <Slider max={max} min={min} step={step} size={'lg'} value={value} onChange={setVal}>
       {markList.map((item, i) => (
