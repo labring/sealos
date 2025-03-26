@@ -50,6 +50,8 @@ jobs:
           SEALOS_FILENAME: "report.md"
           SEALOS_REPLACE_TAG: "DEFAULT_REPLACE_LYCHEE"
       - name: Exit result
+        env:
+          LYCHEE_EXIT_CODE: ${{ env.lychee_exit_code }}
         run: |
-          echo "Output exit code is ${{ env.lychee_exit_code }}"
-          exit ${{ env.lychee_exit_code }}
+          echo "Output exit code is ${LYCHEE_EXIT_CODE}"
+          exit "${LYCHEE_EXIT_CODE}"
