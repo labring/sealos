@@ -425,6 +425,7 @@ const Form = ({
                       }
                     : undefined
                 }
+                nodeports={getValues('networks').filter((item) => item.openNodePort)?.length || 0}
               />
             </Box>
           )}
