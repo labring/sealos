@@ -41,14 +41,6 @@ const Logs = ({
   setPodDetail: (name: string) => void;
   closeFn: () => void;
 }) => {
-  console.log({
-    pod,
-    pods,
-    podAlias,
-    setPodDetail,
-    closeFn
-  });
-
   const { t } = useTranslation();
   const theme = useTheme();
   const controller = useRef(new AbortController());

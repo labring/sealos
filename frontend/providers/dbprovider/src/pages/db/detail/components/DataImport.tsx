@@ -6,7 +6,6 @@ import { MigrateTable } from './Migrate/Table';
 import DumpImport from './DumpImport';
 import useEnvStore from '@/store/env';
 import { useRouter } from 'next/router';
-import AutoComplete from './AutoComplete';
 
 enum MenuType {
   DumpImport = 'DumpImport',
