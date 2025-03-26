@@ -135,7 +135,7 @@ jobs:
           PROJECT_PATH: ${{ env.PROJECT_PATH }}
         run: |
           cd "${PROJECT_PATH}" && go install github.com/onsi/ginkgo/v2/ginkgo
-          cd "${PROJECT_PATH}/test/e2e" && ginkgo build .
+          cd test/e2e && ginkgo build .
       - name: Save E2e Test
         uses: actions/upload-artifact@v4
         with:
