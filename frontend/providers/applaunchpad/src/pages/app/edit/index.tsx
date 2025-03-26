@@ -340,8 +340,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
-            console.log(isSubmitting, 123123);
-
             if (isSubmitting) return;
             closeGuide();
             setIsSubmitting(true);
