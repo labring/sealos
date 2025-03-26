@@ -213,7 +213,8 @@
     "7": "TTS",
     "8": "STT",
     "9": "Audio",
-    "10": "Rerank"
+    "10": "Rerank",
+    "11": "PDF Parsing"
   },
   "modeOwner": {
     "openai": "OpenAI",
@@ -296,5 +297,13 @@
     "tpm": "Current TPM",
     "cost": "Charges",
     "requestData": "Call Data"
+  },
+  "drawer": {
+    "doc": "Docs",
+    "requestExample": "Request Example",
+    "voice": "required",
+    "voiceValues": "Available options:",
+    "responseFormatValues": "The format to audio out. Supported formats are:",
+    "responseExample": "Response Example"
   }
 }

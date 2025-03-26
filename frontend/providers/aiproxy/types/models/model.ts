@@ -9,8 +9,10 @@ export interface ModelConfig {
   owner: string
   image_batch_size: number
   type: number
-  input_price: number
-  output_price: number
+  price: {
+    input_price: number
+    output_price: number
+  }
   rpm: number
 }
 
@@ -39,4 +41,6 @@ export interface ModelConfigDetail {
   max_context_tokens?: number
   vision?: boolean
   tool_choice?: boolean
+  support_formats?: string[]
+  support_voices?: string[]
 }

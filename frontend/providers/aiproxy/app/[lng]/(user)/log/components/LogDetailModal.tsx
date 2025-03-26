@@ -54,11 +54,11 @@ export default function LogDetailModal({
   const isDetailLoading = !!rowData?.request_detail?.log_id && isLoading
 
   const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
     warningIconFill: 'white',
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
     successIconFill: 'white'
   })
 
@@ -556,7 +556,7 @@ export default function LogDetailModal({
                   /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>,
-              rowData?.price,
+              rowData?.price?.input_price || 0,
               <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
                 <Text
                   color="grayModern.800"
@@ -582,7 +582,7 @@ export default function LogDetailModal({
                   /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>,
-              rowData?.completion_price,
+              rowData?.price?.output_price || 0,
               {
                 labelWidth: gridConfig.labelWidth,
                 rowHeight: gridConfig.rowHeight,
@@ -591,9 +591,9 @@ export default function LogDetailModal({
             )}
             {renderDetailRow(
               t('logs.inputTokens'),
-              rowData?.prompt_tokens,
+              rowData?.usage?.input_tokens || 0,
               t('logs.outputTokens'),
-              rowData?.completion_tokens,
+              rowData?.usage?.output_tokens || 0,
               {
                 labelWidth: gridConfig.labelWidth,
                 rowHeight: gridConfig.rowHeight,
