@@ -34,6 +34,7 @@ export class KubeFileSystem {
     podName: string,
     containerName: string,
     command: string[],
+    freeOnceStdError: boolean | undefined = true,
     stdin: Readable | null = null,
     stdout: Writable | null = null
   ): Promise<string> {
@@ -73,19 +74,21 @@ export class KubeFileSystem {
           reject(new Error(`WebSocket error: ${errorMessage}`));
         });
 
-        stderr?.on('data', (error) => {
-          free();
-          reject(new Error(`Command execution error: ${error.toString()}`));
-        });
+        if (freeOnceStdError) {
+          stdout?.on('error', (error) => {
+            free();
+            reject(new Error(`Output stream error: ${error.message}`));
+          });
+
+          stderr?.on('data', (error) => {
+            free();
+            reject(new Error(`Command execution error: ${error.toString()}`));
+          });
+        }
 
         stdout?.on('end', () => {
           free();
           resolve(chunks.toString());
-        });
-
-        stdout?.on('error', (error) => {
-          free();
-          reject(new Error(`Output stream error: ${error.message}`));
         });
 
         if (stdin) {
@@ -93,16 +96,13 @@ export class KubeFileSystem {
             free();
           });
         }
-      }).catch((error) => {
-        // Ensure all Promise-related errors are caught
-        free();
-        throw error;
-      });
+      })
+        .catch((error) => {
+          throw error;
+        })
+        .finally(free);
     } catch (error: any) {
       free();
-      if (error?.type === 'error' && error?.target instanceof WebSocket) {
-        throw new Error(`WebSocket error: ${error.message || 'Unknown error'}`);
-      }
       throw new Error(`Command execution failed: ${error.message || 'Unknown error'}`);
     }
   }
@@ -328,6 +328,7 @@ export class KubeFileSystem {
       podName,
       containerName,
       ['dd', `if=${path}`, 'status=none'],
+      true,
       null,
       stdout
     );
@@ -379,6 +380,7 @@ export class KubeFileSystem {
       podName,
       containerName,
       ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      true,
       file
     );
     return result;
