@@ -31,7 +31,13 @@ REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：资源利用比例
 # 环境变量：镜像上传路径
-UPLOAD_FOLDER = '/opt/image';
+UPLOAD_FOLDER = '/opt/image'
+
+# 环境变量：配置文件路径
+MOUNT_PATH = os.getenv('MOUNT_PATH', '')
+# 环境变量：配置文件名称
+CONFIG_MAP_NAME = os.getenv('CONFIG_MAP_NAME', '')
+
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
 ENABLE_WORKLOAD_SCALING = bool((os.getenv('ENABLE_WORKLOAD_SCALING') or 'false') == 'true')
 ENABLE_NODE_SCALING = bool((os.getenv('ENABLE_NODE_SCALING') or 'false') == 'true')
@@ -58,83 +64,8 @@ def run_command(command):
         return e.stderr.decode().strip()
 
 def upload_deploy_helper(file_path, namespace, appname, images):
-    for image in images:
-        image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
-    with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
-        yaml_content = file.read()
 
-    new_yaml_contents = []
-    for single_yaml in yaml.safe_load_all(yaml_content):
-        if 'kind' in single_yaml and single_yaml['kind'] == 'Deployment':
-            if 'spec' in single_yaml and 'template' in single_yaml['spec'] and 'spec' in single_yaml['spec']['template']:
-                if 'containers' in single_yaml['spec']['template']['spec']:
-                    for container_index in range(len(single_yaml['spec']['template']['spec']['containers'])):
-                        container = single_yaml['spec']['template']['spec']['containers'][container_index]
-                        if 'image' in container:
-                            if not '/' in container['image']:
-                                container['image'] = 'library/' + container['image']
-                            if not ':' in container['image']:
-                                container['image'] = container['image'] + ':latest'
-        new_yaml_contents.append(single_yaml)
-    new_yaml_content = yaml.dump_all(new_yaml_contents)
-
-
-    print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
-
-    # 加载和推送镜像
-    for image in images:
-        name = image['name'].strip()
-        path = image['path']
-
-        # 登录镜像仓库
-        err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
-        if err:
-            return jsonify({'error': 'Failed to login, ' + err}), 500
-
-        # 加载镜像
-        err = run_command('docker load -i ' + path)
-        if err:
-            return jsonify({'error': 'Failed to load image, ' + err}), 500
-        # 替换域名并推送镜像
-        parts = name.split('/')
-        if len(parts) == 3:
-            new_name = 'sealos.hub:5000/' + '/'.join(parts[1:])
-        elif len(parts) == 1:
-            new_name = 'sealos.hub:5000/library/' + name
-        elif len(parts) == 2:
-            new_name = 'sealos.hub:5000/' + name
-        else:
-            return jsonify({'error': 'Invalid image name: ' + name}), 400
-        err = run_command('docker tag ' + name + ' ' + new_name)
-        if err:
-            return jsonify({'error': 'Failed to tag image, ' + err}), 500
-        err = run_command('docker push ' + new_name)
-        if err:
-            return jsonify({'error': 'Failed to push image, ' + err}), 500
-
-    # 替换yaml中的CLUSTER_DOMAIN
-    new_yaml_content = new_yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
-    with open('temp.yaml', 'w') as file:
-        file.write(new_yaml_content)
-
-    # 调用kubectl创建命名空间
-    create_namespace_command = 'kubectl create namespace ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf'
-    err = run_command(create_namespace_command)
-
-    if err:
-        if 'already exists' not in err:
-            return jsonify({'error': 'Failed to create namespace, ' + err}), 500
-
-    # 调用kubectl部署应用
-    apply_command = 'kubectl apply -n ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
-    err = run_command(apply_command)
-
-    if err:
-        return jsonify({'error': 'Failed to apply application, ' + err}), 500
-
-    # 返回成功响应
-    detail_url = 'http://' + CLUSTER_DOMAIN + ':32293/app/detail'
-    return jsonify({'message': 'Application deployed successfully', 'url': detail_url}), 200
+    return deployAppWithImage(file_path, '', '', '', namespace, appname, images)
 
 # API端点：导出应用程序
 @app.route('/api/exportApp', methods=['POST'])
@@ -318,6 +249,11 @@ def deploy_app_with_image():
         return jsonify({'error': 'Ports are required'}), 400
     namespace = request.args.get('namespace')
     appname = request.args.get('appname')  # 获取新的appname参数
+
+    return deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace, appname, ports)
+
+def deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace=None, appname=None, ports={}):
+    """部署应用程序"""
     
     with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
         metadata = json.load(file)
@@ -355,6 +291,50 @@ def deploy_app_with_image():
             if 'selector' in single_yaml['spec']:
                 if single_yaml['spec']['selector'].get('app') == old_appname:
                     single_yaml['spec']['selector']['app'] = appname
+
+        if single_yaml.get('kind') == 'Deployment' or single_yaml.get('kind') == 'StatefulSet':
+            # 确保 volumes 存在
+            if 'volumes' not in single_yaml['spec']['template']['spec']:
+                single_yaml['spec']['template']['spec']['volumes'] = []
+
+            # 检查是否已经添加 ConfigMap volume
+            config_map_volume_exists = False
+            for volume in single_yaml['spec']['template']['spec']['volumes']:
+                if volume.get('name') == CONFIG_MAP_NAME:
+                    config_map_volume_exists = True
+                    break
+
+            if not config_map_volume_exists:
+                # 添加 ConfigMap volume
+                single_yaml['spec']['template']['spec']['volumes'].append({
+                    'name': CONFIG_MAP_NAME,
+                    'configMap': {
+                        'name': CONFIG_MAP_NAME,
+                    },
+                })
+
+            # 确保 containers 存在
+            if 'containers' in single_yaml['spec']['template']['spec']:
+                for container in single_yaml['spec']['template']['spec']['containers']:
+                    # 确保 volumeMounts 存在
+                    if 'volumeMounts' not in container:
+                        container['volumeMounts'] = []
+
+                    # 检查是否已经添加 volumeMount
+                    volume_mount_exists = False
+                    for volume_mount in container['volumeMounts']:
+                        if volume_mount.get('name') == CONFIG_MAP_NAME:
+                            volume_mount_exists = True
+                            break
+                    
+                    if not volume_mount_exists:
+                        # 添加 volumeMount
+                        container['volumeMounts'].append({
+                            'name': CONFIG_MAP_NAME,
+                            'mountPath': MOUNT_PATH,
+                        })
+
+            
                     
         if single_yaml.get('kind') == 'Deployment':
             # 替换deployment selector中的matchLabels

@@ -13,6 +13,8 @@ services:
       - ENABLE_NODE_SCALING=false
       - NODE_DELETE_THRESHOLD=15
       - NODE_ADD_THRESHOLD=70
+      - MOUNT_PATH=/opt/mxgl/config.properties
+      - CONFIG_MAP_NAME=mx-applaunchpad-global-config
     volumes:
       - /usr/bin/deployapp:/root/app
       - /usr/bin/docker:/usr/bin/docker

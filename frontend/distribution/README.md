@@ -124,7 +124,7 @@ kubectl logs -f $POD_NAME
 sysctl fs.inotify.max_user_watches=524288
 sysctl -p
 
-docker run -it -p 32294:3000 --user root --rm -v /root/sealos/:/sealos --entrypoint=sh sealos-applaunchpad:dev
+docker run -it -p 32294:3000 --name applaunchpad-dev --user root --rm -v /root/sealos/:/sealos --entrypoint=sh sealos-applaunchpad:dev
 export PATH=/usr/local/lib/node_modules/corepack/shims:$PATH
 export NODE_ENV=development
 
@@ -132,5 +132,6 @@ export NODE_ENV=development
 在frontend 目录
 pnpm i
 pnpm -r --filter ./packages/client-sdk run build
-pnpm dev-app 就可以运行launchpad 了，跑在3000端口
+pnpm dev-app
+就可以运行launchpad 了，跑在3000端口
 
