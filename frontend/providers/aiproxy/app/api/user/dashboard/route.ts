@@ -50,6 +50,8 @@ async function fetchDashboardData(
       url.searchParams.append('token_name', params.token_name)
     }
 
+    url.searchParams.append('result_only', 'true')
+
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
