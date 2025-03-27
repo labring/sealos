@@ -16,7 +16,8 @@
     "The applied storage exceeds the quota": "申请的 '存储' 超出配额限制，请联系管理员",
     "The container exposed port cannot be empty": "容器暴露端口不能为空",
     "The maximum number of exposed ports is 65535": "暴露端口最大为 65535",
-    "The minimum exposed port is 1": "暴露端口最小为 1"
+    "The minimum exposed port is 1": "暴露端口最小为 1",
+    "The applied nodeports exceeds the quota": "申请的 '外网端口' 超出配额限制，请联系管理员"
   },
   "App Name": "应用名称",
   "Application Deployment": "应用部署",

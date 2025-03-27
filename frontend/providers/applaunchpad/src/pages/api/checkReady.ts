@@ -2,7 +2,7 @@ import { appDeployKey, ProtocolList } from '@/constants/app';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ProtocolType } from '@/types/app';
+import { ApplicationProtocolType } from '@/types/app';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const host = rule.host;
         const backendProtocol = item?.metadata?.annotations?.[
           'nginx.ingress.kubernetes.io/backend-protocol'
-        ] as ProtocolType;
+        ] as ApplicationProtocolType;
 
         const fetchUrl = `http://${host}`;
         const protocol =
