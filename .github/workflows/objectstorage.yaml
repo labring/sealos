@@ -146,12 +146,12 @@ jobs:
         # if push to master, then patch images to ghcr.io
         env:
           OWNER: ${{ github.repository_owner }}
-          REPO: ${{ steps.prepare.outputs.repo }}
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
+          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
         run: |
           sudo sealos images
-          bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
-          bash scripts/manifest-cluster-images.sh "$REPO:latest"
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
 
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
