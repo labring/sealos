@@ -24,6 +24,7 @@ import (
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -54,6 +55,9 @@ func main() {
 	var probeAddr string
 	var ingressAnnotationString string
 	var domains v1.DomainList
+	var podMutatingMinRequestCPU string
+	var podMutatingMinRequestMem string
+	var podMutatingRequestRatio float64
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -61,6 +65,9 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&ingressAnnotationString, "ingress-mutating-annotations", "", "Ingress annotations: 'key1=value1,key2=value2'")
 	flag.Var(&domains, "domains", "Domains to be used for check ingress cname")
+	flag.StringVar(&podMutatingMinRequestCPU, "pod-mutating-min-request-cpu", "100m", "Pod mutating min request cpu")
+	flag.StringVar(&podMutatingMinRequestMem, "pod-mutating-min-request-mem", "100Mi", "Pod mutating min request mem")
+	flag.Float64Var(&podMutatingRequestRatio, "pod-mutating-request-ratio", 10, "Pod mutating request ratio")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -90,6 +97,17 @@ func main() {
 				os.Exit(1)
 			}
 		}
+	}
+
+	minRequestCPU, err := resource.ParseQuantity(podMutatingMinRequestCPU)
+	if err != nil {
+		setupLog.Error(err, "invalid pod mutating min request cpu")
+		os.Exit(1)
+	}
+	minRequestMem, err := resource.ParseQuantity(podMutatingMinRequestMem)
+	if err != nil {
+		setupLog.Error(err, "invalid pod mutating min request mem")
+		os.Exit(1)
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -138,6 +156,20 @@ func main() {
 		Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create namespace webhook")
+		os.Exit(1)
+	}
+
+	err = builder.WebhookManagedBy(mgr).
+		For(&corev1.Pod{}).
+		WithDefaulter(&v1.PodMutator{
+			Client:        mgr.GetClient(),
+			MinRequestCPU: minRequestCPU,
+			MinRequestMem: minRequestMem,
+			RequestRatio:  podMutatingRequestRatio,
+		}).
+		Complete()
+	if err != nil {
+		setupLog.Error(err, "unable to create pod webhook")
 		os.Exit(1)
 	}
 

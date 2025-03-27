@@ -17,8 +17,6 @@ import (
 var plog = logf.Log.WithName("pod-mutate-webhook")
 
 const (
-	MinRequestCPU  = 100
-	MinRequestMem  = 100
 	ExemptionLabel = "webhook.sealos.io/exemption"
 )
 
@@ -29,10 +27,13 @@ const (
 
 type PodMutator struct {
 	client.Client
+	MinRequestCPU resource.Quantity
+	MinRequestMem resource.Quantity
+	RequestRatio  float64
 }
 
 func (m *PodMutator) Mutate(pod *corev1.Pod) error {
-	// for each container, if it has resource request, set it to max(100m, limit/10)
+	// for each container, if it has resource request, set it to max(minRequest, limit * DefaultRequestRatio)
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
 		if container.Resources.Requests == nil {
@@ -43,13 +44,29 @@ func (m *PodMutator) Mutate(pod *corev1.Pod) error {
 		}
 		cpuLimit := container.Resources.Limits[corev1.ResourceCPU]
 		memLimit := container.Resources.Limits[corev1.ResourceMemory]
+
+		// Handle CPU requests
 		if !cpuLimit.IsZero() {
-			cpuValue := float64(cpuLimit.MilliValue()) / 10
-			container.Resources.Requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(math.Max(MinRequestCPU, cpuValue)), resource.DecimalSI)
+			// CPU is in millicores (1 core = 1000m)
+			cpuValue := float64(cpuLimit.MilliValue())
+			minCPU := float64(m.MinRequestCPU.MilliValue())
+			requestedCPU := cpuValue / m.RequestRatio
+			container.Resources.Requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(
+				int64(math.Max(minCPU, requestedCPU)),
+				resource.DecimalSI,
+			)
 		}
+
+		// Handle Memory requests
 		if !memLimit.IsZero() {
-			memValue := float64(memLimit.Value()) / 10
-			container.Resources.Requests[corev1.ResourceMemory] = *resource.NewQuantity(int64(math.Max(MinRequestMem, memValue)), resource.DecimalSI)
+			// Memory is in bytes (1Mi = 1024*1024 bytes)
+			memValue := float64(memLimit.Value())
+			minMem := float64(m.MinRequestMem.Value())
+			requestedMem := memValue / m.RequestRatio
+			container.Resources.Requests[corev1.ResourceMemory] = *resource.NewQuantity(
+				int64(math.Max(minMem, requestedMem)),
+				resource.BinarySI,
+			)
 		}
 	}
 	return nil
