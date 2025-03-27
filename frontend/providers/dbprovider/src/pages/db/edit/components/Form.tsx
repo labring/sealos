@@ -18,9 +18,11 @@ import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
 import type { DBEditType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { distributeResources } from '@/utils/database';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
+  Button,
   Center,
   Checkbox,
   Flex,
@@ -33,8 +35,19 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
   Switch,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
@@ -42,6 +55,57 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+
+function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
+  const resources = distributeResources(data);
+  const { t } = useTranslation();
+
+  return (
+    <TableContainer>
+      <Table variant="unstyled" width={'full'}>
+        <Thead>
+          <Tr>
+            {[t('name'), t('cpu'), t('memory'), t('Replicas'), t('storage')].map((header, i) => {
+              return (
+                <Th
+                  fontSize={'12px'}
+                  py="13px"
+                  px={'24px'}
+                  key={i}
+                  bg={'grayModern.100'}
+                  color={'grayModern.600'}
+                  border={'none'}
+                  _first={{
+                    borderLeftRadius: '6px'
+                  }}
+                  _last={{
+                    borderRightRadius: '6px'
+                  }}
+                >
+                  {header}
+                </Th>
+              );
+            })}
+          </Tr>
+        </Thead>
+        <Tbody>
+          {Object.entries(resources).map(([keyName, value]) => {
+            return (
+              <Tr key={keyName}>
+                <Td>{keyName}</Td>
+                <Td>{value.cpuMemory.limits.cpu}</Td>
+                <Td>{value.cpuMemory.limits.memory}</Td>
+
+                <Td>{value.other?.replicas ?? data.replicas}</Td>
+                <Td>{value.storage}</Td>
+              </Tr>
+            );
+          })}
+        </Tbody>
+      </Table>
+    </TableContainer>
+  );
+}
 
 const Form = ({
   formHook,
@@ -383,6 +447,28 @@ const Form = ({
                   }))}
                   onchange={(val: any) => setValue('dbVersion', val)}
                 />
+
+                <Popover>
+                  <PopoverTrigger>
+                    <Button ml={5} variant="outline">
+                      {t('view_resources_distribution')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent width="fit-content">
+                    <PopoverBody width="fit-content">
+                      <ResourcesDistributeTable
+                        data={{
+                          dbType: getValues('dbType'),
+                          cpu: getValues('cpu'),
+                          memory: getValues('memory'),
+                          storage: getValues('storage'),
+                          replicas: getValues('replicas'),
+                          forDisplay: true
+                        }}
+                      />
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
               </Flex>
               <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
                 <Flex alignItems={'center'}>
