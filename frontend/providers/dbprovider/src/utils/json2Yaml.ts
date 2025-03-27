@@ -6,6 +6,7 @@ import {
   DBReconfigureMap,
   DBTypeEnum,
   MigrationRemark,
+  RedisHAConfig,
   crLabelKey
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
@@ -94,20 +95,18 @@ export const json2CreateCluster = (
         };
       case DBTypeEnum.redis:
         // Please ref RedisHAConfig in  /constants/db.ts
-        let rsRes = [100, 100, 0, 1];
-        if (data.replicas > 1) {
-          rsRes = [200, 200, 1, 3];
-        }
+        let rsRes = RedisHAConfig(data.replicas > 1);
+
         return {
           redis: {
             cpuMemory: getPercentResource(1),
             storage: Math.max(data.storage - 1, 1)
           },
           'redis-sentinel': {
-            cpuMemory: allocateCM(rsRes[0], rsRes[1]),
-            storage: rsRes[2],
+            cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
+            storage: rsRes.storage,
             other: {
-              replicas: rsRes[3]
+              replicas: rsRes.replicas
             }
           }
         };
@@ -545,68 +544,98 @@ export const json2MigrateCR = (data: MigrateForm) => {
     clickhouse: ''
   };
 
+  const stepResources = {
+    limits: {
+      cpu: '2000m',
+      memory: '4Gi'
+    },
+    requests: {
+      cpu: '500m',
+      memory: '512Mi'
+    }
+  };
+
   const template = {
     apiVersion: 'datamigration.apecloud.io/v1alpha1',
     kind: 'MigrationTask',
     metadata: {
       name: `${userNS}-${time}-${data.dbName}`,
-      labels: {
-        [CloudMigraionLabel]: data.dbName,
-        [MigrationRemark]: data?.remark || ''
-      }
+      namespace: userNS
     },
     spec: {
       cdc: {
         config: {
+          metrics: {},
           param: {
-            'extractor.server_id': 1565001796
-          }
+            'extractor.server_id': crypto.getRandomValues(new Uint32Array(1))[0]
+          },
+          persistentVolumeClaimName: '',
+          resource: {}
         }
       },
+      globalResources: {},
       initialization: {
-        steps:
-          data.dbType === 'postgresql'
-            ? ['initStruct', 'initData']
-            : ['preCheck', 'initStruct', 'initData']
-      },
-      sinkEndpoint: {
-        address: `${data.sinkHost}:${data.sinkPort}`,
-        password: data.sinkPassword,
-        userName: data.sinkUser,
-        ...(data.dbType === 'postgresql'
-          ? {
-              databaseName: data.sourceDatabase
-            }
-          : {})
-      },
-      sourceEndpoint: {
-        address: `${data.sourceHost}:${data.sourcePort}`,
-        password: `${data.sourcePassword}`,
-        userName: `${data.sourceUsername}`,
-        ...(data.dbType === 'postgresql'
-          ? {
-              databaseName: data.sourceDatabase
-            }
-          : {})
+        config: {
+          initData: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          },
+          initStruct: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          },
+          preCheck: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          }
+        },
+        steps: (() => {
+          switch (data.dbType) {
+            case 'postgresql':
+              return ['initStruct', 'initData'];
+            default:
+              return ['preCheck', 'initStruct', 'initData'];
+          }
+        })()
       },
       migrationObj: {
         whiteList: [
-          isMigrateAll
-            ? {
-                isAll: true,
-                schemaName: data.sourceDatabase
-              }
-            : {
-                isAll: false,
-                schemaName: data.sourceDatabase,
-                tableList: data.sourceDatabaseTable.map((name) => {
-                  return {
+          {
+            isAll: isMigrateAll,
+            schemaMappingName: '',
+            schemaName: data.dbType === DBTypeEnum.postgresql ? 'public' : data.sourceDatabase,
+            ...(isMigrateAll
+              ? {
+                  tableList: data.sourceDatabaseTable.map((name) => ({
                     isAll: true,
+                    tableMappingName: '',
                     tableName: name
-                  };
-                })
-              }
+                  }))
+                }
+              : {})
+          }
         ]
+      },
+      sinkEndpoint: {
+        address: `${data.sinkHost}:${data.sinkPort}`,
+        databaseName: data.dbType === DBTypeEnum.mongodb ? 'admin' : data.sourceDatabase,
+        password: data.sinkPassword,
+        secret: {
+          name: ''
+        },
+        userName: data.sinkUser
+      },
+      sourceEndpoint: {
+        address: `${data.sourceHost}:${data.sourcePort}`,
+        databaseName: data.dbType === DBTypeEnum.mongodb ? 'admin' : data.sourceDatabase,
+        password: data.sourcePassword,
+        secret: {
+          name: ''
+        },
+        userName: data.sourceUsername
       },
       taskType: data.continued ? 'initialization-and-cdc' : 'initialization',
       template: templateByDB[data.dbType]

@@ -1,4 +1,4 @@
-import { getDBSecret } from '@/api/db';
+import { getDatabases, getDBSecret } from '@/api/db';
 import {
   applyDumpCR,
   deleteMigrateJobByName,
@@ -8,7 +8,6 @@ import {
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
-import QuotaBox from '@/components/QuotaBox';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
 import {
@@ -47,17 +46,13 @@ enum MigrateStatusEnum {
   Running = 'Running'
 }
 
-const DatabaseNameSelect = ({
-  templateList
-}: {
-  templateList: { uid: string; name: string }[];
-}) => {
-  const { watch, setValue } = useFormContext<any>();
+const DatabaseNameSelect = ({ databaseList }: { databaseList: string[] }) => {
+  const { getValues, setValue } = useFormContext<any>();
   const [inputValue, setInputValue] = useState('');
 
   const handleDatabaseNameSelect = (databasename: string) => {
     setInputValue(databasename);
-    setValue('databasename', inputValue);
+    setValue('databasename', databasename);
     handler.onClose();
   };
   const handler = useDisclosure();
@@ -87,7 +82,7 @@ const DatabaseNameSelect = ({
             justify={'space-between'}
           >
             <Text fontSize={'12px'} width={400}>
-              {watch('databasename')}
+              {getValues('databasename')}
             </Text>
             <MyIcon name="chevronDown" boxSize={'16px'} color={'grayModern.500'} />
           </Flex>
@@ -118,23 +113,23 @@ const DatabaseNameSelect = ({
               }}
             />
             <VStack spacing="0" align="stretch" mt={'4px'}>
-              {templateList
-                .filter((v) => v.name.toLowerCase().includes(inputValue.toLowerCase()))
+              {databaseList
+                .filter((v) => v.toLowerCase().includes(inputValue.toLowerCase()))
                 .map((v) => (
                   <Box
-                    key={v.uid}
+                    key={v}
                     p="8px 12px"
                     borderRadius={'4px'}
                     fontSize="12px"
                     cursor="pointer"
                     _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-                    onClick={() => handleDatabaseNameSelect(v.name)}
+                    onClick={() => handleDatabaseNameSelect(v)}
                   >
-                    {v.name}
+                    {v}
                   </Box>
                 ))}
 
-              {inputValue && !templateList.find((v) => v.name === inputValue) && (
+              {inputValue && !databaseList.find((v) => v === inputValue) && (
                 <HStack
                   p="8px 12px"
                   spacing="8px"
@@ -165,9 +160,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const formHook = useForm<DumpForm>();
   const [migrateName, setMigrateName] = useState('');
   const [podName, setPodName] = useState('');
-  const timeElapsedRef = useRef(0);
   const [fileProgressText, setFileProgressText] = useState('');
-  const LogBox = useRef<HTMLDivElement>(null);
 
   const handleConfirm = async () => {
     formHook.handleSubmit(
@@ -308,17 +301,21 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       }
     }
   );
+  const { data } = useQuery(
+    ['getDBService', db?.dbName, db?.dbType],
+    () => (db ? getDatabases({ dbName: db.dbName, dbType: db.dbType }) : null),
+    {
+      retry: 3,
+      onSuccess(data) {
+        console.log(data, !!data, 'service');
+        // setIsChecked(!!data);
+      }
+    }
+  );
 
   return (
     <FormProvider {...formHook}>
       <Box h={'100%'} position={'relative'}>
-        <Flex align={'center'}>
-          <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-            {t('db_name')}
-          </Text>
-          <DatabaseNameSelect templateList={[]} />
-        </Flex>
-
         <Flex h="100%" justifyContent={'center'}>
           <Box flex={1} pt="32px" px="40px" overflowY={'auto'} maxW={'720px'}>
             <Text fontSize={'base'} fontWeight={'bold'} color={'grayModern.900'}>
@@ -330,7 +327,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
                 {t('db_name')}
               </Text>
-              <DatabaseNameSelect templateList={[]} />
+              <DatabaseNameSelect databaseList={data ?? []} />
               {/* <Input
                 width={'380px'}
                 maxW={'400px'}
