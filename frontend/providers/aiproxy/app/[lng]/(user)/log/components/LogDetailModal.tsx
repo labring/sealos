@@ -70,9 +70,9 @@ export default function LogDetailModal({
   }
 
   const renderDetailRow = (
-    leftLabel: string | React.ReactNode,
+    leftLabel: string | React.ReactNode | null,
     leftValue: string | number | React.ReactNode | undefined,
-    rightLabel?: string | React.ReactNode,
+    rightLabel?: string | React.ReactNode | null,
     rightValue?: string | number | React.ReactNode | undefined,
     options?: {
       labelWidth?: string
@@ -82,7 +82,8 @@ export default function LogDetailModal({
     }
   ) => {
     // 辅助函数：渲染标签
-    const renderLabel = (label: string | React.ReactNode) => {
+    const renderLabel = (label: string | React.ReactNode | null) => {
+      if (label === null) return null
       if (typeof label === 'string') {
         return (
           <Text
@@ -115,14 +116,22 @@ export default function LogDetailModal({
       }
       return value
     }
+
+    // 判断是否显示左侧或右侧列
+    const showLeftSection = leftLabel !== null && leftLabel !== undefined
+    const showRightSection = rightLabel !== null && rightLabel !== undefined
+
+    // 根据显示的列数设置模板
+    const gridTemplateColumns = showLeftSection && showRightSection ? '1fr 1fr' : '1fr'
+
     return (
       <Grid
-        templateColumns={rightLabel ? '1fr 1fr' : '1fr'}
+        templateColumns={gridTemplateColumns}
         gap="0 0"
-        borderLeft="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderTop="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderBottom={options?.isLast ? '1px solid var(--Gray-Modern-200, #E8EBF0)' : 'none'}
+        borderLeft="1px solid #E8EBF0"
+        borderRight="1px solid #E8EBF0"
+        borderTop="1px solid #E8EBF0"
+        borderBottom={options?.isLast ? '1px solid #E8EBF0' : 'none'}
         borderRadius={
           options?.isFirst && options?.isLast
             ? '8px'
@@ -133,43 +142,46 @@ export default function LogDetailModal({
             : '0'
         }
         overflow="hidden">
-        <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`} gap="0 0">
-          <Box
-            bg="grayModern.25"
-            px="18px"
-            py="15px"
-            borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
-            h={options?.rowHeight || '48px'}
-            display="flex"
-            alignItems="center">
-            {renderLabel(leftLabel)}
-          </Box>
-          <Box
-            bg="white"
-            p="12px"
-            maxW="100%"
-            h={options?.rowHeight || '48px'}
-            display="flex"
-            alignItems="center"
-            overflowX="auto"
-            sx={{
-              '&::-webkit-scrollbar': {
-                display: 'none'
-              },
-              msOverflowStyle: 'none',
-              scrollbarWidth: 'none'
-            }}>
-            {renderValue(leftValue)}
-          </Box>
-        </Grid>
-        {rightLabel && (
-          <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`}>
+        {showLeftSection && (
+          <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`} gap="0 0">
             <Box
               bg="grayModern.25"
               px="18px"
               py="15px"
               borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
-              borderLeft="1px solid var(--Gray-Modern-200, #E8EBF0)"
+              h={options?.rowHeight || '48px'}
+              display="flex"
+              alignItems="center">
+              {renderLabel(leftLabel)}
+            </Box>
+            <Box
+              bg="white"
+              p="12px"
+              maxW="100%"
+              h={options?.rowHeight || '48px'}
+              display="flex"
+              alignItems="center"
+              overflowX="auto"
+              sx={{
+                '&::-webkit-scrollbar': {
+                  display: 'none'
+                },
+                msOverflowStyle: 'none',
+                scrollbarWidth: 'none'
+              }}>
+              {renderValue(leftValue)}
+            </Box>
+          </Grid>
+        )}
+
+        {showRightSection && (
+          <Grid templateColumns={`${options?.labelWidth || '153px'} 1fr`}>
+            <Box
+              bg="grayModern.25"
+              px="18px"
+              py="15px"
+              borderRight="1px solid #E8EBF0"
+              borderLeft="1px solid #E8EBF0"
               h={options?.rowHeight || '48px'}
               display="flex"
               alignItems="center">
@@ -228,16 +240,16 @@ export default function LogDetailModal({
             ? '0 0 8px 8px'
             : '0'
         }
-        borderLeft="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderTop="1px solid var(--Gray-Modern-200, #E8EBF0)"
-        borderBottom={options?.isLast ? '1px solid var(--Gray-Modern-200, #E8EBF0)' : 'none'}
+        borderLeft="1px solid #E8EBF0"
+        borderRight="1px solid #E8EBF0"
+        borderTop="1px solid #E8EBF0"
+        borderBottom={options?.isLast ? '1px solid #E8EBF0' : 'none'}
         overflow="hidden">
         <Box
           bg="grayModern.25"
           px="18px"
           py="15px"
-          borderRight="1px solid var(--Gray-Modern-200, #E8EBF0)"
+          borderRight="1px solid #E8EBF0"
           display="flex"
           alignItems="center"
           h="100%"
@@ -400,9 +412,7 @@ export default function LogDetailModal({
               rowData?.request_id,
               t('logs.status'),
               <Text
-                color={
-                  rowData?.code === 200 ? 'var(--Green-600, #039855)' : 'var(--Red-600, #D92D20)'
-                }
+                color={rowData?.code === 200 ? '#039855' : '#D92D20'}
                 fontFamily="PingFang SC"
                 fontSize="14px"
                 fontWeight={500}
@@ -419,8 +429,8 @@ export default function LogDetailModal({
               }
             )}
             {renderDetailRow(
-              'Endpoint',
-              rowData?.endpoint,
+              rowData?.endpoint ? 'Endpoint' : undefined,
+              rowData?.endpoint ? rowData?.endpoint : undefined,
               t('logs.mode'),
               getTranslationWithFallback(
                 `modeType.${String(rowData?.mode)}`,
@@ -433,6 +443,7 @@ export default function LogDetailModal({
                 isFirst: false
               }
             )}
+
             {renderDetailRow(
               t('logs.requestTime'),
               new Date(rowData?.request_at || 0).toLocaleString(),
