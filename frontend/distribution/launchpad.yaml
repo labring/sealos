@@ -69,7 +69,7 @@ spec:
         - name: GLOBAL_CONFIGMAP_NAME
           value: mx-applaunchpad-global-config
         - name: GLOBAL_CONFIGMAP_PATH
-          value: /opt/mxgl/config.properties
+          value: /etc/mxgl.properties
         ports:
         - containerPort: 3000
 ---
