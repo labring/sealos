@@ -556,3 +556,29 @@ webhooks:
     - namespaces
   sideEffects: None
 {{ end }}
+{{ if .podWebhookEnabled }}
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: sealos-system
+      path: /mutate-core-v1-pod
+  failurePolicy: {{ .podWebhookFailurePolicy }}
+  name: mpod.sealos.io
+  namespaceSelector:
+    matchExpressions:
+      - key: user.sealos.io/owner
+        operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+{{ end }}
