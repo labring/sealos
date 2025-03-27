@@ -23,7 +23,7 @@ import {
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
-import { MyTooltip, Tabs, useMessage } from '@sealos/ui';
+import { Tabs, useMessage } from '@sealos/ui';
 import 'github-markdown-css/github-markdown-light.css';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -33,17 +33,7 @@ import PrepareBox from './Prepare';
 import { I18nCommonKey } from '@/types/i18next';
 import { parseDatabaseUrl, useClipboard, useCopyData } from '@/utils/tools';
 
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverHeader,
-  PopoverBody,
-  PopoverFooter,
-  PopoverArrow,
-  PopoverCloseButton,
-  PopoverAnchor
-} from '@chakra-ui/react';
+import { Popover, PopoverTrigger, PopoverContent, PopoverBody } from '@chakra-ui/react';
 
 const Form = ({
   formHook,
@@ -66,11 +56,8 @@ const Form = ({
     register,
     setValue,
     getValues,
-    watch,
     formState: { errors }
   } = formHook;
-
-  const [connection, setConnection] = useState('');
 
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
     () => [
@@ -187,11 +174,11 @@ const Form = ({
   function processURL(url: string) {
     try {
       const data = parseDatabaseUrl(url);
-      setConnection(url);
-      setValue('sourceHost', data.hostname + (data.pathname ? '/' + data.pathname : ''));
+      setValue('sourceHost', data.hostname);
       setValue('sourcePort', data.port);
       setValue('sourceUsername', data.username);
       setValue('sourcePassword', data.password);
+      setValue('dbName', data.pathname);
       onClose();
     } catch (error) {
       toast({

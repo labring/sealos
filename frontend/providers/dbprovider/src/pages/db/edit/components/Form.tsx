@@ -38,7 +38,6 @@ import {
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
-import { set } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
