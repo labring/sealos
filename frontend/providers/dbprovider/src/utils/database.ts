@@ -1,7 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import { KubeFileSystem } from './kubeFileSystem';
-import { DBType } from '@/types/db';
-import { DBTypeEnum } from '@/constants/db';
+import { DBComponentsName, DBEditType, DBType } from '@/types/db';
+import { DBComponentNameMap, DBTypeEnum, RedisHAConfig } from '@/constants/db';
+import { formatNumber, str2Num } from './tools';
 
 const base = {
   passwordKey: 'password',
@@ -131,4 +132,131 @@ export async function fetchDBSecret(
     host,
     port
   };
+}
+
+type resourcesDistributeMap = Partial<
+  Record<
+    DBComponentsName,
+    {
+      cpuMemory: {
+        limits: {
+          cpu: string;
+          memory: string;
+        };
+        requests: {
+          cpu: string;
+          memory: string;
+        };
+      };
+      storage: number;
+      other?: Record<string, any>;
+    }
+  >
+>;
+
+export function distributeResources(data: {
+  dbType: DBType;
+  cpu: number;
+  memory: number;
+  storage: number;
+  replicas: number;
+  forDisplay?: boolean;
+}): resourcesDistributeMap {
+  const [cpu, memory] = [str2Num(Math.floor(data.cpu)), str2Num(data.memory)];
+  const dbType = data.dbType;
+
+  function allocateCM(cpu: number, memory: number) {
+    if (data.forDisplay) {
+      return {
+        limits: {
+          cpu: `${cpu / 1000}Core`,
+          memory: memory / 1024 >= 1 ? `${memory / 1024}Gi` : `${memory}Mi`
+        },
+        requests: {
+          cpu: `${Math.floor((cpu / 1000) * 0.1)}m`,
+          memory:
+            memory / 1024 >= 1
+              ? `${Math.floor((memory / 1024) * 0.1)}Gi`
+              : `${Math.floor(memory * 0.1)}Mi`
+        }
+      };
+    }
+    return {
+      limits: {
+        cpu: `${formatNumber(cpu)}m`,
+        memory: `${formatNumber(memory)}Mi`
+      },
+      requests: {
+        cpu: `${Math.floor(cpu * 0.1)}m`,
+        memory: `${Math.floor(memory * 0.1)}Mi`
+      }
+    };
+  }
+
+  function getPercentResource(percent: number) {
+    return allocateCM(cpu * percent, memory * percent);
+  }
+
+  switch (dbType) {
+    case DBTypeEnum.postgresql:
+    case DBTypeEnum.mongodb:
+    case DBTypeEnum.mysql:
+      return {
+        [DBComponentNameMap[dbType][0]]: {
+          cpuMemory: getPercentResource(1),
+          storage: data.storage
+        }
+      };
+    case DBTypeEnum.redis:
+      // Please ref RedisHAConfig in  /constants/db.ts
+      let rsRes = RedisHAConfig(data.replicas > 1);
+      return {
+        redis: {
+          cpuMemory: getPercentResource(1),
+          storage: Math.max(data.storage - 1, 1)
+        },
+        'redis-sentinel': {
+          cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
+          storage: rsRes.storage,
+          other: {
+            replicas: rsRes.replicas
+          }
+        }
+      };
+    case DBTypeEnum.kafka:
+      const quarterResource = {
+        cpuMemory: getPercentResource(0.25),
+        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+      };
+      return {
+        'kafka-server': quarterResource,
+        'kafka-broker': quarterResource,
+        controller: quarterResource,
+        'kafka-exporter': quarterResource
+      };
+    case DBTypeEnum.milvus:
+      return {
+        milvus: {
+          cpuMemory: getPercentResource(0.4),
+          storage: Math.max(Math.round(data.storage / 3), 1)
+        },
+        etcd: {
+          cpuMemory: getPercentResource(0.3),
+          storage: Math.max(Math.round(data.storage / 3), 1)
+        },
+        minio: {
+          cpuMemory: getPercentResource(0.3),
+          storage: Math.max(Math.round(data.storage / 3), 1)
+        }
+      };
+    default:
+      const resource = getPercentResource(DBComponentNameMap[dbType].length);
+      return DBComponentNameMap[dbType].reduce((acc: resourcesDistributeMap, cur) => {
+        acc[cur] = {
+          cpuMemory: resource,
+          storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+        };
+        return acc;
+      }, {});
+  }
 }

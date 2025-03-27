@@ -355,5 +355,6 @@
   "paste_database_connection": "粘贴数据库连接",
   "paste_database_connection_desc": "粘贴数据库连接到此处，将自动识别主机名等数据库配置信息",
   "cancel": "取消",
-  "identify": "识别信息"
+  "identify": "识别信息",
+  "view_resources_distribution": "查看资源分配情况"
 }

@@ -25,6 +25,7 @@ import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
+import { distributeResources } from './database';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -43,112 +44,7 @@ export const json2CreateCluster = (
     storageClassName?: string;
   }
 ) => {
-  type resourcesDistributeMap = Partial<
-    Record<
-      DBComponentsName,
-      {
-        cpuMemory: {
-          limits: {
-            cpu: string;
-            memory: string;
-          };
-          requests: {
-            cpu: string;
-            memory: string;
-          };
-        };
-        storage: number;
-        other?: Record<string, any>;
-      }
-    >
-  >;
-
-  function distributeResources(dbType: DBType): resourcesDistributeMap {
-    const [cpu, memory] = [str2Num(Math.floor(data.cpu)), str2Num(data.memory)];
-
-    function allocateCM(cpu: number, memory: number) {
-      return {
-        limits: {
-          cpu: `${formatNumber(cpu)}m`,
-          memory: `${formatNumber(memory)}Mi`
-        },
-        requests: {
-          cpu: `${Math.floor(cpu * 0.1)}m`,
-          memory: `${Math.floor(memory * 0.1)}Mi`
-        }
-      };
-    }
-
-    function getPercentResource(percent: number) {
-      return allocateCM(cpu * percent, memory * percent);
-    }
-
-    switch (dbType) {
-      case DBTypeEnum.postgresql:
-      case DBTypeEnum.mongodb:
-      case DBTypeEnum.mysql:
-        return {
-          [DBComponentNameMap[dbType][0]]: {
-            cpuMemory: getPercentResource(1),
-            storage: data.storage
-          }
-        };
-      case DBTypeEnum.redis:
-        // Please ref RedisHAConfig in  /constants/db.ts
-        let rsRes = RedisHAConfig(data.replicas > 1);
-
-        return {
-          redis: {
-            cpuMemory: getPercentResource(1),
-            storage: Math.max(data.storage - 1, 1)
-          },
-          'redis-sentinel': {
-            cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
-            storage: rsRes.storage,
-            other: {
-              replicas: rsRes.replicas
-            }
-          }
-        };
-      case DBTypeEnum.kafka:
-        const quarterResource = {
-          cpuMemory: getPercentResource(0.25),
-          storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
-        };
-        return {
-          'kafka-server': quarterResource,
-          'kafka-broker': quarterResource,
-          controller: quarterResource,
-          'kafka-exporter': quarterResource
-        };
-      case DBTypeEnum.milvus:
-        return {
-          milvus: {
-            cpuMemory: getPercentResource(0.4),
-            storage: Math.max(Math.round(data.storage / 3), 1)
-          },
-          etcd: {
-            cpuMemory: getPercentResource(0.3),
-            storage: Math.max(Math.round(data.storage / 3), 1)
-          },
-          minio: {
-            cpuMemory: getPercentResource(0.3),
-            storage: Math.max(Math.round(data.storage / 3), 1)
-          }
-        };
-      default:
-        const resource = getPercentResource(DBComponentNameMap[dbType].length);
-        return DBComponentNameMap[dbType].reduce((acc: resourcesDistributeMap, cur) => {
-          acc[cur] = {
-            cpuMemory: getPercentResource(DBComponentNameMap[dbType].length),
-            storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
-          };
-          return acc;
-        }, {});
-    }
-  }
-
-  const resources = distributeResources(data.dbType);
+  const resources = distributeResources(data);
 
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],

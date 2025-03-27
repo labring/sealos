@@ -355,5 +355,6 @@
   "paste_database_connection": "Paste database connection",
   "paste_database_connection_desc": "Paste the database connection here, and the database configuration information such as the host name will be automatically recognized",
   "cancel": "Cancel",
-  "identify": "Identifify Information"
+  "identify": "Identifify Information",
+  "view_resources_distribution": "View resource distribution"
 }
