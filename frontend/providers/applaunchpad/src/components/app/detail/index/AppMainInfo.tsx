@@ -47,7 +47,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             }`,
             public: `${protocol?.label}${network.domain}${
               network?.nodePort ? `:${network.nodePort}` : ''
-            }`
+            }`,
+            showReadyStatus: false
           };
         }
 
@@ -61,7 +62,8 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                   ? network.customDomain
                   : `${network.publicDomain}.${network.domain}${DOMAIN_PORT}`
               }`
-            : ''
+            : '',
+          showReadyStatus: true
         };
       }),
     [app]
@@ -181,7 +183,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                     </th>
                     <th>
                       <Flex alignItems={'center'} gap={'2px'}>
-                        {network.public && (
+                        {network.public && network.showReadyStatus && (
                           <>
                             {statusMap[network.public]?.ready ? (
                               <Center

@@ -49,13 +49,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         try {
           const response = await fetch(fetchUrl);
-
-          if (response.status === 503) {
-            return { ready: false, url, error: 'Service Unavailable (503)' };
-          }
-
           const text = await response.text();
-          if (text.includes('upstream not health')) {
+
+          if (
+            response.status === 503 &&
+            (text.includes('upstream connect error') || text.includes('upstream not health'))
+          ) {
             return { ready: false, url, error: 'Upstream not healthy' };
           }
 
