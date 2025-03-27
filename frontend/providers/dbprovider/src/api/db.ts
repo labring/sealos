@@ -94,62 +94,26 @@ export const getMonitorData = (payload: {
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
-export const getOpsRequest = ({
-  name,
-  label,
-  dbType
-}: {
-  name: string;
-  label: string;
-  dbType: DBType;
-}) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
-    name,
-    label,
-    dbType
-  });
+export const getOpsRequest = (payload: { name: string; label: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, payload);
 
-export const getOperationLog = ({ name, dbType }: { name: string; dbType: DBType }) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, {
-    name,
-    dbType
-  });
+export const getOperationLog = (payload: { name: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, payload);
 
-export const getLogFiles = ({
-  podName,
-  dbType,
-  logType
-}: {
+export const getLogFiles = (payload: {
   podName: string;
   dbType: SupportReconfigureDBType;
   logType: LogTypeEnum;
-}) =>
-  POST<TFile[]>(`/api/logs/getFiles`, {
-    podName,
-    dbType,
-    logType
-  });
+}) => POST<TFile[]>(`/api/logs/getFiles`, payload);
 
-export const getLogContent = ({
-  logPath,
-  page,
-  pageSize,
-  dbType,
-  logType,
-  podName
-}: {
+export const getLogContent = (payload: {
   logPath: string;
   page: number;
   pageSize: number;
   dbType: SupportReconfigureDBType;
   logType: LogTypeEnum;
   podName: string;
-}) =>
-  POST<LogResult>(`/api/logs/get`, {
-    logPath,
-    page,
-    pageSize,
-    dbType,
-    logType,
-    podName
-  });
+}) => POST<LogResult>(`/api/logs/get`, payload);
+
+export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
+  POST<Array<string>>(`/api/db/getDatabases`, payload);

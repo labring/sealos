@@ -200,10 +200,11 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
           );
         } else if (!isAccessible && !isMaster) {
           const canClick = switchTarget !== item.podName && finishedRef.current;
+          // Complex logic...
           return (
             <Box display="flex" alignItems={'center'}>
               <Tag color="#F7F8FA">{language === 'zh' ? '从节点' : role}</Tag>
-              {dbType !== DBTypeEnum.redis && (
+              {dbType !== DBTypeEnum.redis && (canClick || switchTarget === item.podName) && (
                 <MyTooltip offset={[0, 10]} label={t('switch_to_M')}>
                   <Button
                     variant={'square'}

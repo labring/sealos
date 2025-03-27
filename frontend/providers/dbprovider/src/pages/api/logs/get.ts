@@ -9,7 +9,7 @@ import { LogTypeEnum } from '@/constants/log';
 import { DatabaseLogService } from '@/utils/logParsers/LogParser';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handsler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { namespace, k8sExec, k8sCore } = await getK8s({
       kubeconfig: await authSession(req)
@@ -52,8 +52,6 @@ export default async function handsler(req: NextApiRequest, res: NextApiResponse
       dbType: dbType as DBTypeEnum,
       logType
     });
-
-    console.log(result.metadata, 'result');
 
     jsonRes(res, { data: result });
   } catch (err: any) {
