@@ -98,6 +98,7 @@ const SideBar = (): JSX.Element => {
                   borderRadius="8px"
                   cursor="pointer"
                   role="group"
+                  backgroundColor={isActive ? '#9699B426' : 'transparent'}
                   _hover={{ backgroundColor: '#9699B426' }}>
                   <Image
                     src={isActive ? menu.activeIcon : menu.icon}

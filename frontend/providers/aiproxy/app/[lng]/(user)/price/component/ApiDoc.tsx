@@ -439,7 +439,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   alignItems="flex-start"
                   justifyContent="center"
                   alignSelf="stretch"
-                  rounded="md">
+                  rounded="md"
+                  overflow="hidden">
                   <Box
                     display="flex"
                     alignSelf="stretch"
@@ -576,6 +577,7 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                               fontStyle="normal"
                               fontWeight={500}
                               lineHeight="16px"
+                              textTransform="none"
                               letterSpacing="0.5px">
                               {t('drawer.voice')}
                             </Text>
@@ -680,9 +682,9 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                             alignItems="center"
                             borderRadius="4px"
                             gap="2px"
-                            background="adora.50">
+                            background="grayModern.100">
                             <Text
-                              color="adora.600"
+                              color="grayModern.500"
                               fontFamily="PingFang SC"
                               fontSize="12px"
                               fontStyle="normal"
@@ -762,7 +764,8 @@ const ApiDocDrawer: React.FC<ApiDocDrawerProps> = ({ isOpen, onClose, modelConfi
                   alignItems="flex-start"
                   justifyContent="center"
                   alignSelf="stretch"
-                  rounded="md">
+                  rounded="md"
+                  overflow="hidden">
                   <Box
                     display="flex"
                     alignSelf="stretch"

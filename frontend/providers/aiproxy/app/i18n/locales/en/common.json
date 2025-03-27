@@ -26,8 +26,8 @@
     "createdAt": "Creation time",
     "lastUsedAt": "Last use time",
     "status": "State",
-    "namePlaceholder": "please enter name",
-    "nameRequired": "please enter key name",
+    "namePlaceholder": "Please enter name",
+    "nameRequired": "Please enter key name",
     "nameMaxLength": "Key length is illegal",
     "nameOnlyLettersAndNumbers": "key name contains special characters",
     "createSuccess": "Created successfully",
@@ -55,8 +55,8 @@
     "prompt_tokens": "Input Tokens",
     "completion_tokens": "Output Tokens",
     "price": "Price",
-    "select_modal": "please select model",
-    "select_token_name": "please select name",
+    "select_modal": "Please select model",
+    "select_token_name": "Please select name",
     "model": "Model",
     "total_price": "Total Charged",
     "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
@@ -176,8 +176,8 @@
     "modelInput": "enter custom model name",
     "modelMappingInput": "input model",
     "modelMappingOutput": "output model",
-    "key": "please enter the channel key",
-    "base_url": "please enter agent"
+    "key": "Please enter the channel key",
+    "base_url": "Please enter agent"
   },
   "common": {
     "add": "Add"

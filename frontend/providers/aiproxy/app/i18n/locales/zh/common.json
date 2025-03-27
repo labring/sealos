@@ -303,7 +303,7 @@
     "requestExample": "请求示例",
     "voice": "必填",
     "voiceValues": "可用的选项有:",
-    "responseFormatValues": "音频输出支持的格式有：",
+    "responseFormatValues": "音频输出支持的格式有:",
     "responseExample": "响应示例"
   }
 }
