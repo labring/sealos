@@ -27,6 +27,8 @@ const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
 const defaultEdit: MigrateForm = {
   ...defaultDBEditValue,
+  cpu: 2000,
+  memory: 4048,
   labels: {},
   sinkHost: '',
   sinkPort: '',
@@ -57,13 +59,13 @@ const EditApp = ({
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const { message: toast } = useMessage();
-  const { Loading, setIsLoading } = useLoading();
-  const { checkQuotaAllow, balance } = useUserStore();
+  const { setIsLoading } = useLoading();
+  const { checkQuotaAllow } = useUserStore();
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t('are_you_sure_to_perform_database_migration')
   });
   const { loadDBDetail } = useDBStore();
-  const { screenWidth, lastRoute } = useGlobalStore();
+  const { screenWidth } = useGlobalStore();
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
