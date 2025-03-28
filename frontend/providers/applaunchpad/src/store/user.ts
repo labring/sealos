@@ -47,32 +47,38 @@ export const useUserStore = create<State>()(
         });
         return null;
       },
-      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa }, usedData) => {
+      checkQuotaAllow: ({ cpu, memory, gpu, storeList, replicas, hpa, networks }, usedData) => {
         const quote = get().userQuota;
 
         const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
+        const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
+
         const request = {
           cpu: (cpu / 1000) * requestReplicas,
           memory: (memory / 1024) * requestReplicas,
           gpu: (gpu?.type ? gpu.amount : 0) * requestReplicas,
-          storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas
+          storage: storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas,
+          nodeports: nodeportsAmount
         };
 
         if (usedData) {
-          const { cpu, memory, gpu, storeList, replicas, hpa } = usedData;
+          const { cpu, memory, gpu, storeList, replicas, hpa, networks } = usedData;
           const requestReplicas = Number(hpa.use ? hpa.maxReplicas : replicas);
+          const nodeportsAmount = networks.filter((item) => item.openNodePort).length;
 
           request.cpu -= (cpu / 1000) * requestReplicas;
           request.memory -= (memory / 1024) * requestReplicas;
           request.gpu -= (gpu?.type ? gpu.amount : 0) * requestReplicas;
           request.storage -= storeList.reduce((sum, item) => sum + item.value, 0) * requestReplicas;
+          request.nodeports -= nodeportsAmount;
         }
 
         const overLimitTip = {
           cpu: 'app.The applied CPU exceeds the quota',
           memory: 'app.The applied memory exceeds the quota',
           gpu: 'app.The applied GPU exceeds the quota',
-          storage: 'app.The applied storage exceeds the quota'
+          storage: 'app.The applied storage exceeds the quota',
+          nodeports: 'app.The applied nodeports exceeds the quota'
         };
 
         const exceedQuota = quote.find((item) => {

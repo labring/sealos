@@ -24,7 +24,8 @@ type ResourceType =
   | 'mongodb'
   | 'minio'
   | 'infra-memory'
-  | 'infra-disk';
+  | 'infra-disk'
+  | 'services.nodeports';
 
 type GpuNodeType = {
   'gpu.count': number;
@@ -55,7 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       cpu: countSourcePrice(priceResponse, 'cpu'),
       memory: countSourcePrice(priceResponse, 'memory'),
       storage: countSourcePrice(priceResponse, 'storage'),
-      gpu: gpuEnabled ? countGpuSource(priceResponse, gpuNodes) : undefined
+      gpu: gpuEnabled ? countGpuSource(priceResponse, gpuNodes) : undefined,
+      nodeports: countSourcePrice(priceResponse, 'services.nodeports')
     };
 
     jsonRes<userPriceType>(res, {

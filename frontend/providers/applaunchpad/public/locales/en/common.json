@@ -16,7 +16,8 @@
     "The applied storage exceeds the quota": "The applied storage exceeds the quota",
     "The container exposed port cannot be empty": "Container port is required",
     "The maximum number of exposed ports is 65535": "Maximum port number is 65535",
-    "The minimum exposed port is 1": "Minimum port number is 1"
+    "The minimum exposed port is 1": "Minimum port number is 1",
+    "The applied nodeports exceeds the quota": "Requested nodeports exceeds your quota. Please contact admin."
   },
   "App Name": "Name",
   "Application Deployment": "Application Deployment",
@@ -320,5 +321,6 @@
   "refresh": "refresh",
   "Ready": "Preparing",
   "Accessible": "Accessible",
-  "network_not_ready": "The internal gateway requires 2 to 5 minutes to prepare. Please be patient."
+  "network_not_ready": "The internal gateway requires 2 to 5 minutes to prepare. Please be patient.",
+  "pending_to_allocated": "To be allocated"
 }

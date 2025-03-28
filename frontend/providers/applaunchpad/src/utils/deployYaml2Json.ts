@@ -222,6 +222,31 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 };
 
 export const json2Service = (data: AppEditType) => {
+  console.log(data.networks, 'json2Service');
+
+  const openPublicPorts: any[] = [];
+  const closedPublicPorts: any[] = [];
+
+  data.networks.forEach((network, i) => {
+    const port = {
+      port: str2Num(network.port),
+      targetPort: str2Num(network.port),
+      ...(network.openNodePort && network.nodePort
+        ? {
+            nodePort: str2Num(network.nodePort)
+          }
+        : {}),
+      name: network.portName,
+      protocol: network.protocol
+    };
+
+    if (network.openNodePort) {
+      openPublicPorts.push(port);
+    } else {
+      closedPublicPorts.push(port);
+    }
+  });
+
   const template = {
     apiVersion: 'v1',
     kind: 'Service',
@@ -232,17 +257,37 @@ export const json2Service = (data: AppEditType) => {
       }
     },
     spec: {
-      ports: data.networks.map((item, i) => ({
-        port: str2Num(item.port),
-        targetPort: str2Num(item.port),
-        name: item.portName
-      })),
+      ports: closedPublicPorts,
       selector: {
         app: data.appName
       }
     }
   };
-  return yaml.dump(template);
+
+  const templateNodePort = {
+    apiVersion: 'v1',
+    kind: 'Service',
+    metadata: {
+      name: `${data.appName}-nodeport`,
+      labels: {
+        [appDeployKey]: data.appName
+      }
+    },
+    spec: {
+      type: 'NodePort',
+      ports: openPublicPorts,
+      selector: {
+        app: data.appName
+      }
+    }
+  };
+
+  const clusterIpYaml = closedPublicPorts.length > 0 ? yaml.dump(template) : '';
+  const nodePortYaml = openPublicPorts.length > 0 ? yaml.dump(templateNodePort) : '';
+
+  return clusterIpYaml && nodePortYaml
+    ? `${clusterIpYaml}\n---\n${nodePortYaml}`
+    : `${clusterIpYaml}${nodePortYaml}`;
 };
 
 export const json2Ingress = (data: AppEditType) => {
@@ -270,7 +315,7 @@ export const json2Ingress = (data: AppEditType) => {
   };
 
   const result = data.networks
-    .filter((item) => item.openPublicDomain)
+    .filter((item) => item.openPublicDomain && !item.openNodePort)
     .map((network, i) => {
       const host = network.customDomain
         ? network.customDomain
@@ -293,7 +338,7 @@ export const json2Ingress = (data: AppEditType) => {
           annotations: {
             'kubernetes.io/ingress.class': 'nginx',
             'nginx.ingress.kubernetes.io/proxy-body-size': '32m',
-            ...map[network.protocol]
+            ...map[network.appProtocol]
           }
         },
         spec: {

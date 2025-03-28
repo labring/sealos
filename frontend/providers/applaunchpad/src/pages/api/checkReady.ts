@@ -2,7 +2,7 @@ import { appDeployKey, ProtocolList } from '@/constants/app';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ProtocolType } from '@/types/app';
+import { ApplicationProtocolType } from '@/types/app';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -40,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const host = rule.host;
         const backendProtocol = item?.metadata?.annotations?.[
           'nginx.ingress.kubernetes.io/backend-protocol'
-        ] as ProtocolType;
+        ] as ApplicationProtocolType;
 
         const fetchUrl = `http://${host}`;
         const protocol =
@@ -49,13 +49,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         try {
           const response = await fetch(fetchUrl);
-
-          if (response.status === 503) {
-            return { ready: false, url, error: 'Service Unavailable (503)' };
-          }
-
           const text = await response.text();
-          if (text.includes('upstream not health')) {
+
+          if (
+            response.status === 503 &&
+            (text.includes('upstream connect error') || text.includes('upstream not health'))
+          ) {
             return { ready: false, url, error: 'Upstream not healthy' };
           }
 
