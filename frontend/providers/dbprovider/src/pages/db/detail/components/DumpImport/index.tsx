@@ -1,4 +1,4 @@
-import { getDatabases, getDBSecret, getTables } from '@/api/db';
+import { getDatabases, getTables } from '@/api/db';
 import {
   applyDumpCR,
   deleteMigrateJobByName,
@@ -15,7 +15,6 @@ import {
   Button,
   Divider,
   Flex,
-  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -54,7 +53,10 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
 
   const { getValues, setValue: setValue_ } = formHook;
 
-  const setValue: typeof setValue_ = (key, value) => {
+  const setValue: typeof setValue_ = function (
+    key: Parameters<typeof setValue>[0],
+    value: Parameters<typeof setValue>[1]
+  ) {
     setValue_(key, value);
     if (key === 'databaseName') {
       setValue_('tableName', '');
@@ -97,7 +99,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             });
           }
           formHook.setValue('fileName', result[0]);
-          setValue('tableExist', tables!.includes(getValues('tableName')));
+          setValue('databaseExist', databases!.includes(getValues('databaseName')));
           const res = await applyDumpCR({ ...data, fileName: result[0] });
           setMigrateName(res.name);
         } catch (error: any) {
@@ -206,7 +208,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             </Text>
             <FileSelect fileExtension="*" multiple={false} files={files} setFiles={setFiles} />
 
-            <Flex alignItems={'center'} mt="22px">
+            <Flex alignItems={'center'} mt={11}>
               <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
                 {t('db_name')}
               </Text>
@@ -218,18 +220,23 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 inputSureToCreate={t('create') + t('database')}
               />
             </Flex>
-            <Flex alignItems={'center'} mt="22px">
-              <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-                {db?.dbType === 'mongodb' ? t('collection_name') : t('table_name')}
-              </Text>
-              <AutoComplete
-                selectList={tables ?? []}
-                value={getValues('tableName')}
-                setValue={(v) => setValue('tableName', v)}
-                inputPlaceholder={t('search_or_create') + t('table')}
-                inputSureToCreate={t('create') + t('table')}
-              />
-            </Flex>
+            {db?.dbType === 'mongodb' && (
+              <Flex alignItems={'center'} mt="22px">
+                <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
+                  {t('collection_name')}
+                </Text>
+                <AutoComplete
+                  selectList={tables ?? []}
+                  value={getValues('tableName')}
+                  setValue={(v) => setValue('tableName', v)}
+                  inputPlaceholder={t('search') + t('collection')}
+                  inputSureToCreate={t('create') + t('collection')}
+                  supportNewValue={false}
+                  inputNotSupportToCreate={t('pls_create') + t('collection')}
+                />
+              </Flex>
+            )}
+
             <Flex justifyContent={'end'}>
               <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
                 {t('migrate_now')}

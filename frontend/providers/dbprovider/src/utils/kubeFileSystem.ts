@@ -444,11 +444,34 @@ export class KubeFileSystem {
 export class Command {
   private text: Array<string> = [];
 
-  public echo(text: string) {
-    console.log(text);
-    this.push(`echo "${text}"`);
+  public echo(newText: string) {
+    console.log(newText);
+    this.text.push(`echo "${newText}"`);
   }
 
+  /**
+   * 在当前文本的最后一行添加换行符
+   * 如果最后一行已经以换行符结尾，则不做任何操作
+   * @public
+   */
+  public newLine() {
+    if (!this.text[this.text.length - 1].endsWith('\n')) {
+      this.text[this.text.length - 1] += '\n';
+    }
+  }
+
+  // with new line
+  public add(newText: string | string[]) {
+    if (Array.isArray(newText)) {
+      newText.forEach((item) => {
+        this.add(item);
+      });
+    } else {
+      this.text.push(newText);
+    }
+  }
+
+  // without new line
   public push(newText: string | string[]) {
     if (Array.isArray(newText)) {
       newText.forEach((item) => {
@@ -456,21 +479,11 @@ export class Command {
       });
       return;
     }
-    this.text.push(newText);
-  }
-
-  public add(newText: string | string[]) {
-    if (Array.isArray(newText)) {
-      newText.forEach((item) => {
-        this.add(item);
-      });
+    if (this.text.at(-1) === undefined) {
+      this.text.push(newText);
       return;
     }
-    if (this.text[-1] === undefined) {
-      this.text.push(newText + '\n');
-      return;
-    }
-    this.text[-1] += newText + '\n';
+    this.text[this.text.length - 1] += ' ' + newText;
   }
 
   public get() {
