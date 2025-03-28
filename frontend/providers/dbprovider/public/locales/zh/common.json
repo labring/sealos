@@ -360,5 +360,8 @@
   "you_have_successfully_deployed_database": "您已成功部署创建一个数据库！",
   "table_name": "表名",
   "database": "数据库",
-  "table": "表"
+  "table": "表",
+  "collection": "集合",
+  "search": "搜索",
+  "pls_create": "无结果，请自行创建"
 }

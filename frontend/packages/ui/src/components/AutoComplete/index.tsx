@@ -17,14 +17,18 @@ function AutoComplete({
   selectList,
   value,
   setValue,
+  supportNewValue = true,
   inputPlaceholder = 'Search or create...',
-  inputSureToCreate = 'Create'
+  inputSureToCreate = 'Create',
+  inputNotSupportToCreate = 'Not support'
 }: {
   selectList: string[];
   value: string;
   setValue: (value: any) => void;
-  inputPlaceholder?: string;
-  inputSureToCreate?: string;
+  supportNewValue?: boolean;
+  inputPlaceholder?: string; //Input框无输入内容时，提示文字
+  inputSureToCreate?: string; //Input框输入新内容时，提示文字
+  inputNotSupportToCreate?: string; //但不支持创建新内容时，提示文字
 }) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,8 +41,10 @@ function AutoComplete({
   const handler = useDisclosure();
 
   const handleCreateDatabaseName = () => {
-    setValue(inputValue);
-    handler.onClose();
+    if (supportNewValue) {
+      setValue(inputValue);
+      handler.onClose();
+    }
   };
 
   const svgStyle: CSSProperties = {
@@ -155,7 +161,9 @@ function AutoComplete({
                     ></path>
                   </svg>
                   <Text fontSize="12px" lineHeight="16px" letterSpacing="0.004em" color="#111824">
-                    {`${inputSureToCreate} ${inputValue}`}
+                    {supportNewValue
+                      ? `${inputSureToCreate} ${inputValue}`
+                      : inputNotSupportToCreate}
                   </Text>
                 </HStack>
               )}

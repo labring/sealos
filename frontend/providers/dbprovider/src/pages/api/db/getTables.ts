@@ -46,9 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         [
           'psql',
           `--username=${username}`,
-          `--password`,
           `--dbname=${databaseName}`,
-
           `--command=SELECT tablename FROM pg_tables WHERE schemaname = 'public';`
         ]
       ],

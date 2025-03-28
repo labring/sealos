@@ -359,6 +359,8 @@
   "yaml_file": "YAML",
   "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
   "table_name": "Table Name",
-  "database": "数据库",
-  "table": "表"
+  "database": "database",
+  "table": "table",
+  "search": "Search",
+  "pls_create": "No results, please create your own"
 }

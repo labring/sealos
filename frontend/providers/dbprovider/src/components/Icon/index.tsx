@@ -60,9 +60,9 @@ export const IconMap = {
   docs: require('./icons/docs.svg').default,
   chevronDown: require('./icons/chevron-down.svg').default,
   overview: require('./icons/overview.svg').default,
-  switch: require('./icons/switch.svg').default,
   textRecognition: require('./icons/textRecognition.svg').default,
-  add: require('./icons/add.svg').default
+  add: require('./icons/add.svg').default,
+  configmap: require('./icons/configmap.svg').default
 };
 
 const MyIcon = ({

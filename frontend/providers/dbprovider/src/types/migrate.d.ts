@@ -131,5 +131,5 @@ export type DumpForm = {
   fileName: string;
   databaseName: string;
   tableName: string;
-  tableExist: boolean;
+  databaseExist: boolean;
 };
