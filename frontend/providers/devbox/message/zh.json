@@ -41,6 +41,7 @@
   "code_server": "CodeServer",
   "cold_shutdown_mode": "节省停机模式",
   "cold_shutdown_mode_desc": "所有计算资源 (CPU 和内存)、公网连接与端口暂停计费。",
+  "cold_shutdown_mode_notice": "由于计算资源与端口资源被回收，实例仅能从 DevBox 网页启动，启动后，端口资源重新分配，需要重新点击 IDE 图标 (或者重新一键配置 ssh 连接信息) ，下发 DevBox 实例的新连接信息。",
   "config_form": "配置表单",
   "confirm": "确认",
   "confirm_create_devbox": "确认创建项目？",
