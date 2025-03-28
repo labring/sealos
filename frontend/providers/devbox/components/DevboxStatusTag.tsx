@@ -63,7 +63,7 @@ const DevboxStatusTag = ({
             <Box ml={thinMode ? 0 : 2} flex={1}>
               {t(label)}
             </Box>
-            <MyIcon name="help" />
+            <MyIcon name="help" ml={'4px'} />
           </Flex>
         </PopoverTrigger>
         <PopoverContent>
