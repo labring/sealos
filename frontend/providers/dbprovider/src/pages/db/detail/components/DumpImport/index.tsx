@@ -10,6 +10,7 @@ import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
+import { assembleTranslate } from '@/utils/i18n';
 import {
   Box,
   Button,
@@ -40,7 +41,10 @@ enum MigrateStatusEnum {
 }
 
 export default function DumpImport({ db }: { db?: DBDetailType }) {
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language }
+  } = useTranslation();
   const [files, setFiles] = useState<File[]>([]);
   const { message: toast } = useMessage();
   const [migrateStatus, setMigrateStatus] = useState<MigrateStatusEnum>(MigrateStatusEnum.Prepare);
@@ -216,8 +220,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                 selectList={databases ?? []}
                 value={getValues('databaseName')}
                 setValue={(v) => setValue('databaseName', v)}
-                inputPlaceholder={t('search_or_create') + t('database')}
-                inputSureToCreate={t('create') + t('database')}
+                inputPlaceholder={assembleTranslate(['search_or_create', 'database'], language)}
+                inputSureToCreate={assembleTranslate(['create', 'database'], language)}
               />
             </Flex>
             {db?.dbType === 'mongodb' && (
@@ -229,10 +233,13 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                   selectList={tables ?? []}
                   value={getValues('tableName')}
                   setValue={(v) => setValue('tableName', v)}
-                  inputPlaceholder={t('search') + t('collection')}
-                  inputSureToCreate={t('create') + t('collection')}
+                  inputPlaceholder={assembleTranslate(['search', 'collection'], language)}
+                  inputSureToCreate={assembleTranslate(['create', 'collection'], language)}
                   supportNewValue={false}
-                  inputNotSupportToCreate={t('pls_create') + t('collection')}
+                  inputNotSupportToCreate={assembleTranslate(
+                    ['pls_create', 'collection'],
+                    language
+                  )}
                 />
               </Flex>
             )}
