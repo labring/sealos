@@ -8,7 +8,9 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ModalOverlay
+  ModalOverlay,
+  Radio,
+  RadioGroup
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
@@ -16,6 +18,7 @@ import { useCallback, useState } from 'react';
 
 import { shutdownDevbox } from '@/api/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2, ShutdownModeType } from '@/types/devbox';
+import MyIcon from '../Icon';
 
 const ReleaseModal = ({
   onSuccess,
@@ -61,42 +64,85 @@ const ReleaseModal = ({
             </Flex>
           </ModalHeader>
           <ModalCloseButton top={'10px'} right={'10px'} />
-          <ModalBody pb={4} gap={'10px'}>
-            {/* normal mode */}
-            <Box
-              onClick={() => setShutdownMode('Stopped')}
-              p={'10px'}
-              borderRadius={'4px'}
-              borderWidth={1}
-              borderColor={shutdownMode === 'Stopped' ? 'blue.500' : 'gray.300'}
-              boxShadow={
-                shutdownMode === 'Stopped' ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
-              }
+          <ModalBody pb={4}>
+            <RadioGroup
+              onChange={(value) => setShutdownMode(value as ShutdownModeType)}
+              value={shutdownMode}
             >
-              <Box>{t('normal_shutdown_mode')}</Box>
-              <Box>{t('normal_shutdown_mode_desc')}</Box>
-            </Box>
-            {/* cold mode */}
-            <Box
-              onClick={() => setShutdownMode('Shutdown')}
-              p={'10px'}
-              borderRadius={'4px'}
-              borderWidth={1}
-              borderColor={shutdownMode === 'Shutdown' ? 'blue.500' : 'gray.300'}
-              boxShadow={
-                shutdownMode === 'Shutdown' ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
-              }
-            >
-              <Box>{t('cold_shutdown_mode')}</Box>
-              <Box>{t('cold_shutdown_mode_desc')}</Box>
-            </Box>
+              {/* normal mode */}
+              <Box
+                onClick={() => setShutdownMode('Stopped')}
+                p={'12px'}
+                borderRadius={'7px'}
+                borderWidth={1}
+                borderColor={shutdownMode === 'Stopped' ? 'brightBlue.500' : 'gray.300'}
+                boxShadow={
+                  shutdownMode === 'Stopped' ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
+                }
+                mb={'16px'}
+              >
+                <Radio value="Stopped">
+                  <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                    {t('normal_shutdown_mode')}
+                  </Box>
+                  <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
+                    {t('normal_shutdown_mode_desc')}
+                  </Box>
+                </Radio>
+              </Box>
+              {/* cold mode */}
+              <Box
+                onClick={() => setShutdownMode('Shutdown')}
+                p={'12px'}
+                borderRadius={'7px'}
+                borderWidth={1}
+                borderColor={shutdownMode === 'Shutdown' ? 'brightBlue.500' : 'gray.300'}
+                boxShadow={
+                  shutdownMode === 'Shutdown'
+                    ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
+                    : 'none'
+                }
+              >
+                <Radio value="Shutdown">
+                  <Flex gap={'4px'} flexDirection={'column'}>
+                    <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                      {t('cold_shutdown_mode')}
+                    </Box>
+                    <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
+                      {t('cold_shutdown_mode_desc')}
+                    </Box>
+                    <Box
+                      gap={'4px'}
+                      borderRadius={'4px'}
+                      borderColor={'grayModern.200'}
+                      p={'12px'}
+                      bg={'yellow.50'}
+                    >
+                      <Box
+                        display={'flex'}
+                        alignItems={'center'}
+                        gap={'4px'}
+                        color={'grayModern.900'}
+                        fontWeight={500}
+                        fontSize={'12px'}
+                      >
+                        <MyIcon name="warning" color={'yellow.500'} w={'12px'} h={'12px'} />
+                        {t('notice')}
+                      </Box>
+                      <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
+                        {t('cold_shutdown_mode_notice')}
+                      </Box>
+                    </Box>
+                  </Flex>
+                </Radio>
+              </Box>
+            </RadioGroup>
           </ModalBody>
           <ModalFooter>
             <Button
               variant={'solid'}
               onClick={handleShutdown}
-              mr={'11px'}
-              width={'80px'}
+              width={'fit-content'}
               isLoading={loading}
             >
               {t('confirm_shutdown')}

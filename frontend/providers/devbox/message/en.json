@@ -41,6 +41,7 @@
   "code_server": "CodeServer",
   "cold_shutdown_mode": "Power-saving standby mode",
   "cold_shutdown_mode_desc": "All computing resources (CPU and memory), public network connections, and ports will suspend billing.",
+  "cold_shutdown_mode_notice": "Due to the reclamation of computing and port resources, the instance can only be launched from the DevBox webpage. After launching, port resources are reallocated, requiring users to click the IDE icon again (or reconfigure the SSH connection information with one click) to receive the new connection details for the DevBox instance.",
   "config_form": "Form",
   "confirm": "Confirm",
   "confirm_create_devbox": "Confirm creation of your DevBox?",
