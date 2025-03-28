@@ -117,3 +117,6 @@ export const getLogContent = (payload: {
 
 export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
   POST<Array<string>>(`/api/db/getDatabases`, payload);
+
+export const getTables = (payload: { dbName: string; dbType: DBType; databaseName: string }) =>
+  POST<Array<string>>(`/api/db/getTables`, payload);

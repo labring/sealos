@@ -13,9 +13,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const { dbName, dbType } = req.body as {
+    const { dbName, dbType, newPassword } = req.body as {
       dbName: string;
       dbType: DBTypeEnum;
+      newPassword: string;
     };
 
     const firstPodName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-0`;
@@ -30,9 +31,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const showDatabaseCommand: Map<DBTypeEnum, string[]> = new Map([
       [
         DBTypeEnum.mysql,
-        ['mysql', `-u${username}`, `-p${password}`, `-h${host}`, `-P${port}`, `-e SHOW DATABASES;`]
+        [
+          'mysql',
+          `-u${username}`,
+          `-p${password}`,
+          `-h${host}`,
+          `-P${port}`,
+          `-e "ALTER USER '${username}'@'${host}' IDENTIFIED BY '${newPassword}';"`
+        ]
       ],
-      [DBTypeEnum.postgresql, ['psql', '-U', 'postgres', '-c', 'SELECT datname FROM pg_database;']],
+      [
+        DBTypeEnum.postgresql,
+        ['psql', '-U', 'postgres', `-c "ALTER USER ${username} PASSWORD '${newPassword}';"`]
+      ],
       [
         DBTypeEnum.mongodb,
         [
@@ -41,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           `-u${username}`,
           `-p${password}`,
           '--eval',
-          "db.adminCommand('listDatabases').databases.forEach(function(db) {print(db.name);})"
+          `db.changeUserPassword('${username}', '${newPassword}');`
         ]
       ]
     ]);
@@ -60,23 +71,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       false
     );
 
-    let databaseList;
+    let response;
     switch (dbType) {
       case DBTypeEnum.mysql:
-        databaseList = result.split('\n').slice(1, -1);
+        response = result.split('\n').slice(1, -1);
         break;
       case DBTypeEnum.postgresql:
-        databaseList = result.replaceAll(' ', '').split('\n').slice(2, -3);
+        response = result.replaceAll(' ', '').split('\n').slice(2, -3);
         break;
       case DBTypeEnum.mongodb:
-        databaseList = result.split('\n').slice(0, -1);
+        response = result.split('\n').slice(0, -1);
         break;
       default:
-        databaseList = result;
+        response = result;
         break;
     }
 
-    jsonRes(res, { data: databaseList });
+    jsonRes(res, { data: response });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

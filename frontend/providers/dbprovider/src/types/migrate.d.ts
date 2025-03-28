@@ -126,13 +126,10 @@ export interface MigrateItemType {
 }
 
 export type DumpForm = {
-  databaseUser: string;
-  databasePassword: string;
-  databaseHost: string;
-  fileName: string;
-  databaseType: string;
-  databaseName: string;
-  collectionName: string;
-  tablesName: string;
   dbName: string;
+  dbType: Extract<DBType, 'apecloud-mysql' | 'postgresql' | 'mongodb'>;
+  fileName: string;
+  databaseName: string;
+  tableName: string;
+  tableExist: boolean;
 };

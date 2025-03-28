@@ -1,4 +1,4 @@
-import { getDatabases, getDBSecret } from '@/api/db';
+import { getDatabases, getDBSecret, getTables } from '@/api/db';
 import {
   applyDumpCR,
   deleteMigrateJobByName,
@@ -15,7 +15,6 @@ import {
   Button,
   Divider,
   Flex,
-  HStack,
   Input,
   Modal,
   ModalBody,
@@ -23,20 +22,15 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
-  Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
   Spinner,
   Text,
-  useDisclosure,
-  VStack
+  useDisclosure
 } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { AutoComplete, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useRef, useState } from 'react';
-import { FormProvider, useForm, useFormContext } from 'react-hook-form';
+import { useState } from 'react';
+import { FormProvider, useForm } from 'react-hook-form';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -45,111 +39,6 @@ enum MigrateStatusEnum {
   Fail = 'Fail',
   Running = 'Running'
 }
-
-const DatabaseNameSelect = ({ databaseList }: { databaseList: string[] }) => {
-  const { getValues, setValue } = useFormContext<any>();
-  const [inputValue, setInputValue] = useState('');
-
-  const handleDatabaseNameSelect = (databasename: string) => {
-    setInputValue(databasename);
-    setValue('databasename', databasename);
-    handler.onClose();
-  };
-  const handler = useDisclosure();
-  const { t } = useTranslation();
-
-  const handleCreateDatabaseName = () => {
-    setValue('databasename', inputValue);
-    handler.onClose();
-  };
-  return (
-    <>
-      <Popover
-        placement="bottom-start"
-        isOpen={handler.isOpen}
-        onOpen={handler.onOpen}
-        onClose={handler.onClose}
-      >
-        <PopoverTrigger>
-          <Flex
-            width={'350px'}
-            bgColor={'grayModern.50'}
-            border={'1px solid'}
-            borderColor={'grayModern.200'}
-            borderRadius={'6px'}
-            py={'8px'}
-            px={'12px'}
-            justify={'space-between'}
-          >
-            <Text fontSize={'12px'} width={400}>
-              {getValues('databasename')}
-            </Text>
-            <MyIcon name="chevronDown" boxSize={'16px'} color={'grayModern.500'} />
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent>
-          <PopoverBody
-            p="6px"
-            width="280px"
-            boxShadow="box-shadow: 0px 0px 1px 0px #13336B1A,box-shadow: 0px 4px 10px 0px #13336B1A"
-            border="none"
-            borderRadius="6px"
-          >
-            <Input
-              width="full"
-              height="32px"
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value);
-              }}
-              // border="1px solid #219BF4"
-              // boxShadow="0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)"
-              borderRadius="4px"
-              fontSize="12px"
-              placeholder={t('search_or_create_database')}
-              _focus={{
-                border: '1px solid #219BF4',
-                boxShadow: '0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)'
-              }}
-            />
-            <VStack spacing="0" align="stretch" mt={'4px'}>
-              {databaseList
-                .filter((v) => v.toLowerCase().includes(inputValue.toLowerCase()))
-                .map((v) => (
-                  <Box
-                    key={v}
-                    p="8px 12px"
-                    borderRadius={'4px'}
-                    fontSize="12px"
-                    cursor="pointer"
-                    _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-                    onClick={() => handleDatabaseNameSelect(v)}
-                  >
-                    {v}
-                  </Box>
-                ))}
-
-              {inputValue && !databaseList.find((v) => v === inputValue) && (
-                <HStack
-                  p="8px 12px"
-                  spacing="8px"
-                  cursor="pointer"
-                  _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-                  onClick={handleCreateDatabaseName}
-                >
-                  <MyIcon name="add" w={'16px'} h={'16px'} />
-                  <Text fontSize="12px" lineHeight="16px" letterSpacing="0.004em" color="#111824">
-                    {`${t('create_database')} ${inputValue}`}
-                  </Text>
-                </HStack>
-              )}
-            </VStack>
-          </PopoverBody>
-        </PopoverContent>
-      </Popover>
-    </>
-  );
-};
 
 export default function DumpImport({ db }: { db?: DBDetailType }) {
   const { t } = useTranslation();
@@ -161,6 +50,17 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
   const [migrateName, setMigrateName] = useState('');
   const [podName, setPodName] = useState('');
   const [fileProgressText, setFileProgressText] = useState('');
+  const [forceUpdate, setForceUpdate] = useState(false);
+
+  const { getValues, setValue: setValue_ } = formHook;
+
+  const setValue: typeof setValue_ = (key, value) => {
+    setValue_(key, value);
+    if (key === 'databaseName') {
+      setValue_('tableName', '');
+    }
+    setForceUpdate(!forceUpdate);
+  };
 
   const handleConfirm = async () => {
     formHook.handleSubmit(
@@ -176,6 +76,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           }
           const form = new FormData();
           files.forEach((file) => {
+            if (!file.name.includes('.')) throw new Error('file name error');
             form.append('file', file, encodeURIComponent(file.name));
           });
           const result = await uploadFile(form, (e) => {
@@ -196,6 +97,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             });
           }
           formHook.setValue('fileName', result[0]);
+          setValue('tableExist', tables!.includes(getValues('tableName')));
           const res = await applyDumpCR({ ...data, fileName: result[0] });
           setMigrateName(res.name);
         } catch (error: any) {
@@ -271,45 +173,26 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     }
   );
 
-  useQuery(
-    ['getDBSecret'],
-    () => {
-      if (db?.dbName && db?.dbType) {
-        return getDBSecret({ dbName: db?.dbName, dbType: db?.dbType });
-      } else {
-        return null;
-      }
-    },
-    {
-      enabled: !!db?.dbName,
-      onSuccess(res) {
-        if (!res) return;
-        formHook.reset((old) => ({
-          ...old,
-          databaseHost: res.host,
-          databasePassword: res.password,
-          databaseUser: res.username,
-          databaseType: db?.dbType || '',
-          dbName: db?.dbName || ''
-        }));
-      },
-      onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
-      }
-    }
-  );
-  const { data } = useQuery(
+  const { data: databases } = useQuery(
     ['getDBService', db?.dbName, db?.dbType],
     () => (db ? getDatabases({ dbName: db.dbName, dbType: db.dbType }) : null),
     {
-      retry: 3,
-      onSuccess(data) {
-        console.log(data, !!data, 'service');
-        // setIsChecked(!!data);
-      }
+      retry: 3
+    }
+  );
+
+  const { data: tables } = useQuery(
+    ['getDBService', db?.dbName, db?.dbType, getValues('databaseName')],
+    () =>
+      getValues('databaseName') !== '' && databases?.includes(getValues('databaseName')) && db
+        ? getTables({
+            dbName: db.dbName,
+            dbType: db.dbType,
+            databaseName: getValues('databaseName')
+          })
+        : null,
+    {
+      retry: 3
     }
   );
 
@@ -327,24 +210,26 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
                 {t('db_name')}
               </Text>
-              <DatabaseNameSelect databaseList={data ?? []} />
-              {/* <Input
-                width={'380px'}
-                maxW={'400px'}
-                isInvalid={!!formHook.formState?.errors?.databaseName}
-                {...formHook.register('databaseName', {
-                  required: t('database_name_empty')
-                })}
-              /> */}
+              <AutoComplete
+                selectList={databases ?? []}
+                value={getValues('databaseName')}
+                setValue={(v) => setValue('databaseName', v)}
+                inputPlaceholder={t('search_or_create') + t('database')}
+                inputSureToCreate={t('create') + t('database')}
+              />
             </Flex>
-            {db?.dbType === 'mongodb' && (
-              <Flex alignItems={'center'} mt="22px">
-                <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
-                  {t('collection_name')}
-                </Text>
-                <Input width={'380px'} maxW={'400px'} {...formHook.register('collectionName')} />
-              </Flex>
-            )}
+            <Flex alignItems={'center'} mt="22px">
+              <Text fontSize={'base'} fontWeight={'bold'} minW={'120px'} color={'grayModern.900'}>
+                {db?.dbType === 'mongodb' ? t('collection_name') : t('table_name')}
+              </Text>
+              <AutoComplete
+                selectList={tables ?? []}
+                value={getValues('tableName')}
+                setValue={(v) => setValue('tableName', v)}
+                inputPlaceholder={t('search_or_create') + t('table')}
+                inputSureToCreate={t('create') + t('table')}
+              />
+            </Flex>
             <Flex justifyContent={'end'}>
               <Button mt="40px" w={'100px'} h={'32px'} variant={'solid'} onClick={onOpen}>
                 {t('migrate_now')}
