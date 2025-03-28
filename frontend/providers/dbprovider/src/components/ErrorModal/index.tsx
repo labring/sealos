@@ -9,6 +9,7 @@ import {
   Box
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
+import { keyword } from '@/utils/i18n';
 
 const ErrorModal = ({
   title,
@@ -22,10 +23,6 @@ const ErrorModal = ({
   const regex = /^[a-z_]+$/;
   if (regex.test(title) || regex.test(content)) {
     const { t } = useTranslation();
-    type keyword = Exclude<
-      Parameters<typeof t>[0],
-      string | TemplateStringsArray | string[]
-    >[number];
     if (regex.test(title)) {
       title = t(title as keyword);
     }

@@ -361,6 +361,7 @@
   "table_name": "Table Name",
   "database": "database",
   "table": "table",
+  "collection": "Collection",
   "search": "Search",
   "pls_create": "No results, please create your own"
 }
