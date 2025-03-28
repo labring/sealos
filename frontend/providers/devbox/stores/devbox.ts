@@ -148,24 +148,18 @@ export const useDevboxStore = create<State>()(
       intervalLoadPods: async (devboxName, updateDetail) => {
         if (!devboxName) return Promise.reject('devbox name is empty');
 
-        const pods = await getDevboxPodsByDevboxName(devboxName);
+        const res = await getMyDevboxList();
+        const status = res.find((item) => item.name === devboxName)?.status;
 
-        // TODO: change Running to podStatusMap.running
-        // TODO: check status enum and backend status enum
-        const devboxStatus =
-          pods.length === 0
-            ? devboxStatusMap.Stopped
-            : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
-            ? devboxStatusMap.Running
-            : devboxStatusMap.Pending;
+        if (!status) return Promise.reject('devbox status is empty');
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {
-            state.devboxDetail.status = devboxStatus;
+            state.devboxDetail.status = status;
           }
           state.devboxList = state.devboxList.map((item) => ({
             ...item,
-            status: item.name === devboxName ? devboxStatus : item.status
+            status: item.name === devboxName ? status : item.status
           }));
         });
         return 'success';

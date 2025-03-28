@@ -26,6 +26,8 @@ export type DevboxReleaseStatusValueType = `${DevboxReleaseStatusEnum}`;
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`;
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
+export type ShutdownModeType = 'Stopped' | 'Shutdown';
+
 export type GpuType = {
   manufacturers: string;
   type: string;
