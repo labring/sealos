@@ -74,17 +74,21 @@ export class KubeFileSystem {
           reject(new Error(`WebSocket error: ${errorMessage}`));
         });
 
-        if (freeOnceStdError) {
-          stdout?.on('error', (error) => {
+        stdout?.on('error', (error) => {
+          if (freeOnceStdError) {
             free();
             reject(new Error(`Output stream error: ${error.message}`));
-          });
+          }
+          console.log(error.toString());
+        });
 
-          stderr?.on('data', (error) => {
+        stderr?.on('data', (error) => {
+          if (freeOnceStdError) {
             free();
             reject(new Error(`Command execution error: ${error.toString()}`));
-          });
-        }
+          }
+          console.log(error.toString());
+        });
 
         stdout?.on('end', () => {
           free();
@@ -422,5 +426,54 @@ export class KubeFileSystem {
     }
 
     return dt.toDate();
+  }
+}
+
+/**
+ * 命令类，用于构建和管理命令文本序列
+ *
+ * @class Command
+ * @description 提供一系列方法来操作命令文本数组,包括添加、追加和获取命令
+ * @example
+ * const cmd = new Command();
+ * cmd.echo("Hello");  // 添加 echo 命令
+ * cmd.push("ls");     // 推入新命令
+ * cmd.add("pwd");     // 追加到最后一条命令
+ * cmd.get();          // 获取所有命令数组
+ */
+export class Command {
+  private text: Array<string> = [];
+
+  public echo(text: string) {
+    console.log(text);
+    this.push(`echo "${text}"`);
+  }
+
+  public push(newText: string | string[]) {
+    if (Array.isArray(newText)) {
+      newText.forEach((item) => {
+        this.push(item);
+      });
+      return;
+    }
+    this.text.push(newText);
+  }
+
+  public add(newText: string | string[]) {
+    if (Array.isArray(newText)) {
+      newText.forEach((item) => {
+        this.add(item);
+      });
+      return;
+    }
+    if (this.text[-1] === undefined) {
+      this.text.push(newText + '\n');
+      return;
+    }
+    this.text[-1] += newText + '\n';
+  }
+
+  public get() {
+    return this.text;
   }
 }

@@ -65,27 +65,29 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
       <Table variant="unstyled" width={'full'}>
         <Thead>
           <Tr>
-            {[t('name'), t('cpu'), t('memory'), t('Replicas'), t('storage')].map((header, i) => {
-              return (
-                <Th
-                  fontSize={'12px'}
-                  py="13px"
-                  px={'24px'}
-                  key={i}
-                  bg={'grayModern.100'}
-                  color={'grayModern.600'}
-                  border={'none'}
-                  _first={{
-                    borderLeftRadius: '6px'
-                  }}
-                  _last={{
-                    borderRightRadius: '6px'
-                  }}
-                >
-                  {header}
-                </Th>
-              );
-            })}
+            {[t('name'), t('cpu'), t('memory'), t('Replicas'), t('storage_volumes')].map(
+              (header, i) => {
+                return (
+                  <Th
+                    fontSize={'12px'}
+                    py="13px"
+                    px={'24px'}
+                    key={i}
+                    bg={'grayModern.100'}
+                    color={'grayModern.600'}
+                    border={'none'}
+                    _first={{
+                      borderLeftRadius: '6px'
+                    }}
+                    _last={{
+                      borderRightRadius: '6px'
+                    }}
+                  >
+                    {header}
+                  </Th>
+                );
+              }
+            )}
           </Tr>
         </Thead>
         <Tbody>

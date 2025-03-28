@@ -13,9 +13,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const { dbName, dbType } = req.body as {
+    const { dbName, dbType, databaseName } = req.body as {
       dbName: string;
       dbType: DBTypeEnum;
+      databaseName: string;
     };
 
     const firstPodName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-0`;
@@ -27,12 +28,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       namespace
     );
 
-    const showDatabaseCommand: Map<DBTypeEnum, string[]> = new Map([
+    const showTableCommand: Map<DBTypeEnum, string[]> = new Map([
       [
         DBTypeEnum.mysql,
-        ['mysql', `-u${username}`, `-p${password}`, `-h${host}`, `-P${port}`, `-e SHOW DATABASES;`]
+        [
+          'mysql',
+          `-u${username}`,
+          `-p${password}`,
+          `-h${host}`,
+          `-P${port}`,
+          databaseName,
+          '-e SHOW TABLES;'
+        ]
       ],
-      [DBTypeEnum.postgresql, ['psql', '-U', 'postgres', '-c', 'SELECT datname FROM pg_database;']],
+      [
+        DBTypeEnum.postgresql,
+        [
+          'psql',
+          `--username=${username}`,
+          `--password`,
+          `--dbname=${databaseName}`,
+
+          `--command=SELECT tablename FROM pg_tables WHERE schemaname = 'public';`
+        ]
+      ],
       [
         DBTypeEnum.mongodb,
         [
@@ -40,15 +59,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           '--quiet',
           `-u${username}`,
           `-p${password}`,
+          databaseName,
           '--eval',
-          "db.adminCommand('listDatabases').databases.forEach(function(db) {print(db.name);})"
+          'db.getCollectionNames();'
         ]
       ]
     ]);
 
     const kubefs = new KubeFileSystem(k8sExec);
 
-    if (showDatabaseCommand.get(dbType) === undefined) {
+    if (showTableCommand.get(dbType) === undefined) {
       throw new Error('Database type now not supported');
     }
 
@@ -56,27 +76,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       namespace,
       firstPodName,
       DBBackupPolicyNameMap[dbType],
-      showDatabaseCommand.get(dbType)!,
+      showTableCommand.get(dbType)!,
       false
     );
 
-    let databaseList;
+    let tableList: string[] = [];
     switch (dbType) {
       case DBTypeEnum.mysql:
-        databaseList = result.split('\n').slice(1, -1);
+        tableList = result.split('\n').slice(1, -1);
         break;
       case DBTypeEnum.postgresql:
-        databaseList = result.replaceAll(' ', '').split('\n').slice(2, -3);
+        if (result.split('\n').length >= 3) {
+          tableList = result.replaceAll(' ', '').split('\n').slice(2, -3);
+        }
         break;
       case DBTypeEnum.mongodb:
-        databaseList = result.split('\n').slice(0, -1);
+        if (result.includes('[')) {
+          tableList = result.slice(3, -4).split('", "');
+        } else if (result.includes('Error: ')) {
+          throw new Error('failed!');
+        }
         break;
       default:
-        databaseList = result;
         break;
     }
 
-    jsonRes(res, { data: databaseList });
+    jsonRes(res, { data: tableList });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
