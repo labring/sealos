@@ -69,12 +69,69 @@ const DevboxStatusTag = ({
         <PopoverContent>
           <PopoverArrow />
           <PopoverBody>
-            <Box>{t('devbox_shutdown_notice1')}</Box>
-            <Box>
-              <Box>{t('notice')}</Box>
-              <Box>{t('devbox_shutdown_notice2')}</Box>
-              <Box>{t('devbox_shutdown_notice3')}</Box>
-            </Box>
+            <Flex flexDirection={'column'} gap={'8px'}>
+              <Flex>
+                <Box color="grayModern.900">{t('billing_resource')}: </Box>
+                <Box color={'grayModern.600'} fontWeight={400}>
+                  {t('CPU_with_Memory')}
+                </Box>
+              </Flex>
+              <Box
+                bg={'grayModern.100'}
+                p={'4px 6px'}
+                borderRadius={'4px'}
+                color={'brightBlue.600'}
+                fontWeight={400}
+                lineHeight={'16px'}
+              >
+                {t('devbox_shutdown_notice1')}
+              </Box>
+              <Box
+                gap={'4px'}
+                borderRadius={'4px'}
+                borderColor={'grayModern.200'}
+                p={'12px'}
+                bg={'yellow.50'}
+              >
+                <Box
+                  display={'flex'}
+                  alignItems={'center'}
+                  gap={'4px'}
+                  color={'grayModern.900'}
+                  fontWeight={500}
+                >
+                  <MyIcon name="warning" color={'yellow.500'} w={'12px'} h={'12px'} />
+                  {t('notice')}
+                </Box>
+                <Grid
+                  gridTemplateColumns={'10px 1fr'}
+                  gap={'4px'}
+                  fontWeight={400}
+                  lineHeight={'16px'}
+                >
+                  <Box color={'grayModern.500'}>1.</Box>
+                  <Box color={'grayModern.500'}>
+                    {t.rich('devbox_shutdown_notice2', {
+                      black: (chunks) => (
+                        <Box color={'grayModern.900'} display={'inline'}>
+                          {chunks}
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                  <Box color={'grayModern.500'}>2.</Box>
+                  <Box color={'grayModern.500'}>
+                    {t.rich('devbox_shutdown_notice3', {
+                      black: (chunks) => (
+                        <Box color={'grayModern.900'} display={'inline'}>
+                          {chunks}
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Grid>
+              </Box>
+            </Flex>
           </PopoverBody>
         </PopoverContent>
       </Popover>
