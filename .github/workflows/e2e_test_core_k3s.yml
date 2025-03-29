@@ -65,7 +65,6 @@ jobs:
         uses: labring/sealos-action@v0.0.7
         with:
           type: prune
-
       - name: Verify E2e test
         env:
           UNIT: ${{ matrix.unit }}
