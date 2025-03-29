@@ -33,13 +33,15 @@ jobs:
 
       - name: Detect package manager
         id: detect-package-manager
+        env:
+          BUILD_PATH: ${{ env.BUILD_PATH }}
         run: |
-          if [ -f "${{ env.BUILD_PATH }}/yarn.lock" ]; then
+          if [ -f "${BUILD_PATH}/yarn.lock" ]; then
             echo "manager=yarn" >> $GITHUB_OUTPUT
             echo "command=install" >> $GITHUB_OUTPUT
             echo "runner=yarn" >> $GITHUB_OUTPUT
             exit 0
-          elif [ -f "${{ env.BUILD_PATH }}/package.json" ]; then
+          elif [ -f "${BUILD_PATH}/package.json" ]; then
             echo "manager=npm" >> $GITHUB_OUTPUT
             echo "command=ci" >> $GITHUB_OUTPUT
             echo "runner=npx --no-install" >> $GITHUB_OUTPUT
@@ -55,10 +57,16 @@ jobs:
           cache: ${{ steps.detect-package-manager.outputs.manager }}
           cache-dependency-path: ${{ env.BUILD_PATH }}/yarn.lock
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        env:
+          PACKAGE_MANAGER: ${{ steps.detect-package-manager.outputs.manager }}
+          COMMAND: ${{ steps.detect-package-manager.outputs.command }}
+        run: "${PACKAGE_MANAGER} ${COMMAND}"
         working-directory: ${{ env.BUILD_PATH }}
       - name: Build with Docusaurus
-        run: ${{ steps.detect-package-manager.outputs.runner }} run build 
+        env:
+          RUNNER: ${{ steps.detect-package-manager.outputs.runner }}
+        run: |
+          "${RUNNER}" run build
         working-directory: ${{ env.BUILD_PATH }}
       # Push our generated site to Vercel
       - name: Deploy to Vercel

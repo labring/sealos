@@ -75,9 +75,9 @@ jobs:
           set -ex
           sudo su
           chmod a+x /tmp/e2e.test
-          gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
+          gzip /tmp/sealos/images/patch-"${SEALOS_TEST_ARCH}".tar
           /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
-          echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
+          echo "test_${SEALOS_TEST_ARCH}_result=success" >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
     runs-on: ubuntu-24.04
