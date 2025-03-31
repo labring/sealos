@@ -119,20 +119,57 @@ export const adaptPod = (pod: V1Pod): PodDetailType => {
         const stateObj = container[0].state;
         const lasteStateObj = container[0].lastState;
         if (stateObj) {
-          const stateKeys = Object.keys(stateObj);
-          const key = stateKeys?.[0] as `${PodStatusEnum}`;
-          if (key === PodStatusEnum.running) {
-            return podStatusMap[PodStatusEnum.running];
-          }
-          if (key && podStatusMap[key]) {
+          if (stateObj[PodStatusEnum.terminated]) {
             const lastStateReason =
-              lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
+              lasteStateObj && lasteStateObj[PodStatusEnum.terminated] ? lasteStateObj[PodStatusEnum.terminated]?.reason : '';
             return {
               lastStateReason,
-              ...podStatusMap[key],
-              ...stateObj[key]
+              ...podStatusMap[PodStatusEnum.terminated],
+              ...stateObj[PodStatusEnum.terminated]
+            };
+          } else if (stateObj[PodStatusEnum.waiting]) {
+            const lastStateReason =
+              lasteStateObj && lasteStateObj[PodStatusEnum.waiting] ? lasteStateObj[PodStatusEnum.waiting]?.reason : '';
+            return {
+              lastStateReason,
+              ...podStatusMap[PodStatusEnum.waiting],
+              ...stateObj[PodStatusEnum.waiting]
+            };
+          } else if (stateObj[PodStatusEnum.running]) {
+            const lastStateReason =
+              lasteStateObj && lasteStateObj[PodStatusEnum.terminated] ? lasteStateObj[PodStatusEnum.terminated]?.reason : '';
+            return {
+              lastStateReason,
+              ...podStatusMap[PodStatusEnum.running],
+              ...stateObj[PodStatusEnum.running],
+              reason: lastStateReason??''
             };
           }
+          // console.log(stateObj);
+          // const stateKeys = Object.keys(stateObj);
+          // console.log(stateKeys);
+          // for (let i = 0; i < stateKeys.length; i++) {
+          //   const key = stateKeys?.[i] as `${PodStatusEnum}`;
+          //   if (!stateObj[key]) {
+          //     continue;
+          //   }
+          //   if (key === PodStatusEnum.running) {
+          //     // console.log("running");
+          //     return podStatusMap[PodStatusEnum.running];
+          //   }
+          //   if (key && podStatusMap[key]) {
+          //     //console.log(key);
+          //     //console.log(podStatusMap[key]);
+          //     const lastStateReason =
+          //       lasteStateObj && lasteStateObj[key] ? lasteStateObj[key]?.reason : '';
+          //     return {
+          //       lastStateReason,
+          //       ...podStatusMap[key],
+          //       ...stateObj[key]
+          //     };
+          //   }
+          //   console.log("else");
+          // }
         }
       }
       return podStatusMap.waiting;
