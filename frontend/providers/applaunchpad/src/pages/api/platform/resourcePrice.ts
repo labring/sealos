@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getK8s, K8sApiDefault } from '@/services/backend/kubernetes';
+import { K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { authSession } from '@/services/backend/auth';
 import { CoreV1Api } from '@kubernetes/client-node';
 import type { userPriceType } from '@/types/user';
 

@@ -40,6 +40,11 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
+    meta: {
+      title: string;
+      description: string;
+      scripts: MetaScriptType[];
+    };
     currencySymbol: Coin;
     pvcStorageMax: number;
     eventAnalyze: {
@@ -65,6 +70,11 @@ export type AppConfigType = {
     //   memory: number[];
     // };
   };
+};
+
+export type MetaScriptType = {
+  src: string;
+  'data-website-id'?: string;
 };
 
 declare global {
