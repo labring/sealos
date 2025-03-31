@@ -8,7 +8,6 @@ import { getGpuNode } from './resourcePrice';
 
 // todo make response type to be more specific and clear.
 export type Response = {
-  META: AppConfigType['launchpad']['meta'];
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
   SHOW_EVENT_ANALYZE: boolean;
@@ -99,7 +98,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes<Response>(res, {
       data: {
-        META: global.AppConfig.launchpad.meta,
         SEALOS_DOMAIN: global.AppConfig.cloud.domain,
         DOMAIN_PORT: global.AppConfig.cloud.port?.toString() ?? '',
         SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,

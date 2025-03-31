@@ -10,7 +10,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
-import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
 import { useEffect, useState } from 'react';
@@ -21,7 +20,8 @@ import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import Script from 'next/script';
-import { useMetaStore } from '@/store/meta';
+import Head from 'next/head';
+import config from 'data/config.json';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -50,10 +50,6 @@ const App = ({ Component, pageProps }: AppProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
-
-  const { meta, initMetaConfig } = useMetaStore();
-
-  initMetaConfig();
 
   useEffect(() => {
     const response = createSealosApp();
@@ -182,13 +178,8 @@ const App = ({ Component, pageProps }: AppProps) => {
   return (
     <>
       <Head>
-        <title>{meta.title}</title>
-        <meta name="description" content={meta.description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-        {meta.scripts?.map((item, i) => {
-          return <Script key={i} {...item} />;
-        })}
+        <title key="page-title">{config.meta.title}</title>
+        <meta name="description" content={config.meta.description} />
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
@@ -197,6 +188,9 @@ const App = ({ Component, pageProps }: AppProps) => {
           <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
+      {config.meta.scripts?.map((item, i) => {
+        return <Script key={i} {...item} />;
+      })}
     </>
   );
 };
