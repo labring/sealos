@@ -32,84 +32,59 @@ const DevboxStatusTag = ({
   const label = status?.label;
   const t = useTranslations();
 
-  if (isShutdown) {
-    return (
-      <Popover trigger="hover" placement="bottom-start">
-        <PopoverTrigger>
-          <Flex
-            cursor={'pointer'}
-            className="guide-status-tag"
-            color={status.color}
-            backgroundColor={thinMode ? 'transparent' : status.backgroundColor}
-            border={showBorder ? '1px solid' : 'none'}
-            borderColor={status.color}
-            py={1}
-            px={thinMode ? 0 : 4}
-            borderRadius={'24px'}
-            fontSize={'xs'}
-            fontWeight={'bold'}
-            alignItems={'center'}
-            minW={'60px'}
-            whiteSpace={'nowrap'}
-            {...props}
-          >
-            <Box
-              w={'6px'}
-              h={'6px'}
-              borderRadius={'10px'}
-              backgroundColor={status.dotColor}
-              display={thinMode ? 'none' : 'block'}
-            ></Box>
-            <Box ml={thinMode ? 0 : 2} flex={1}>
-              {t(label)}
-            </Box>
-            <MyIcon name="help" ml={'4px'} />
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent>
-          <PopoverArrow />
-          <PopoverBody>
-            <Flex flexDirection={'column'} gap={'8px'}>
-              <Flex>
-                <Box color="grayModern.900">{t('billing_resource')}: </Box>
-                <Box color={'grayModern.600'} fontWeight={400}>
-                  {t('CPU_with_Memory')}
-                </Box>
-              </Flex>
-              <Box
-                bg={'grayModern.100'}
-                p={'4px 6px'}
-                borderRadius={'4px'}
-                color={'brightBlue.600'}
-                fontWeight={400}
-                lineHeight={'16px'}
-              >
-                {t('devbox_shutdown_notice1')}
-              </Box>
-              <Box
-                gap={'4px'}
-                borderRadius={'4px'}
-                borderColor={'grayModern.200'}
-                p={'12px'}
-                bg={'yellow.50'}
-              >
+  return (
+    <Flex alignItems={'center'} gap={'4px'}>
+      <Flex
+        className="guide-status-tag"
+        color={status.color}
+        backgroundColor={thinMode ? 'transparent' : status.backgroundColor}
+        border={showBorder ? '1px solid' : 'none'}
+        borderColor={status.color}
+        py={1}
+        px={thinMode ? 0 : 4}
+        borderRadius={'24px'}
+        fontSize={'xs'}
+        fontWeight={'bold'}
+        alignItems={'center'}
+        minW={'60px'}
+        whiteSpace={'nowrap'}
+        {...props}
+      >
+        <Box
+          w={'6px'}
+          h={'6px'}
+          borderRadius={'10px'}
+          backgroundColor={status.dotColor}
+          display={thinMode ? 'none' : 'block'}
+        ></Box>
+        <Box ml={thinMode ? 0 : 2} flex={1}>
+          {t(label)}
+        </Box>
+      </Flex>
+      {isShutdown && (
+        <Popover trigger="click" placement="bottom-start">
+          <PopoverTrigger>
+            <Flex alignItems={'center'} cursor={'pointer'} fontSize={'12px'} fontWeight={500}>
+              <Box color={'teal.400'}>{t('saving')}</Box>
+              <MyIcon name="help" ml={'4px'} color={'teal.300'} transform={'scale(0.8)'} />
+            </Flex>
+          </PopoverTrigger>
+          <PopoverContent w={'346px'}>
+            <PopoverArrow />
+            <PopoverBody>
+              <Flex flexDirection={'column'} gap={'8px'} p={'6px'}>
                 <Box
-                  display={'flex'}
-                  alignItems={'center'}
-                  gap={'4px'}
-                  color={'grayModern.900'}
-                  fontWeight={500}
-                >
-                  <MyIcon name="warning" color={'yellow.500'} w={'12px'} h={'12px'} />
-                  {t('notice')}
-                </Box>
-                <Grid
-                  gridTemplateColumns={'10px 1fr'}
-                  gap={'4px'}
+                  bg={'grayModern.100'}
+                  p={'4px 6px'}
+                  borderRadius={'4px'}
+                  color={'teal.500'}
                   fontWeight={400}
                   lineHeight={'16px'}
+                  textAlign={'center'}
                 >
-                  <Box color={'grayModern.500'}>1.</Box>
+                  {t('devbox_shutdown_notice1')}
+                </Box>
+                <Box borderRadius={'4px'} color={'teal.500'} fontWeight={400}>
                   <Box color={'grayModern.500'}>
                     {t.rich('devbox_shutdown_notice2', {
                       black: (chunks) => (
