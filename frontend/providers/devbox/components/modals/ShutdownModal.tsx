@@ -85,11 +85,35 @@ const ReleaseModal = ({
                   <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
                     {t('normal_shutdown_mode')}
                   </Box>
-                  <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                    {t('normal_shutdown_mode_desc')}
-                  </Box>
                 </Radio>
+                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
+                  <Flex alignItems={'center'} gap={'6px'} mb={'2px'}>
+                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                    <Box>
+                      {t.rich('normal_shutdown_mode_desc', {
+                        yellow: (chunks) => (
+                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
+                            {chunks}
+                          </Box>
+                        )
+                      })}
+                    </Box>
+                  </Flex>
+                  <Flex alignItems={'center'} gap={'6px'}>
+                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                    <Box>
+                      {t.rich('normal_shutdown_mode_desc_2', {
+                        yellow: (chunks) => (
+                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
+                            {chunks}
+                          </Box>
+                        )
+                      })}
+                    </Box>
+                  </Flex>
+                </Box>
               </Box>
+
               {/* cold mode */}
               <Box
                 onClick={() => setShutdownMode('Shutdown')}
@@ -104,42 +128,42 @@ const ReleaseModal = ({
                 }
               >
                 <Radio value="Shutdown">
-                  <Flex gap={'4px'} flexDirection={'column'}>
-                    <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
-                      {t('cold_shutdown_mode')}
-                    </Box>
-                    <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                      {t('cold_shutdown_mode_desc')}
-                    </Box>
-                    <Box
-                      gap={'4px'}
-                      borderRadius={'4px'}
-                      borderColor={'grayModern.200'}
-                      p={'12px'}
-                      bg={'yellow.50'}
-                    >
-                      <Box
-                        display={'flex'}
-                        alignItems={'center'}
-                        gap={'4px'}
-                        color={'grayModern.900'}
-                        fontWeight={500}
-                        fontSize={'12px'}
-                      >
-                        <MyIcon name="warning" color={'yellow.500'} w={'12px'} h={'12px'} />
-                        {t('notice')}
-                      </Box>
-                      <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'}>
-                        {t('cold_shutdown_mode_notice')}
-                      </Box>
+                  <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                    {t('cold_shutdown_mode')}
+                  </Box>
+                </Radio>
+                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
+                  <Flex alignItems={'center'} gap={'6px'} mb={'2px'}>
+                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                    <Box>
+                      {t.rich('cold_shutdown_mode_desc', {
+                        yellow: (chunks) => (
+                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
+                            {chunks}
+                          </Box>
+                        )
+                      })}
                     </Box>
                   </Flex>
-                </Radio>
+                  <Flex alignItems={'center'} gap={'6px'}>
+                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                    <Box>
+                      {t.rich('cold_shutdown_mode_desc_2', {
+                        yellow: (chunks) => (
+                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
+                            {chunks}
+                          </Box>
+                        )
+                      })}
+                    </Box>
+                  </Flex>
+                </Box>
               </Box>
             </RadioGroup>
           </ModalBody>
           <ModalFooter>
             <Button
+              mt={'10px'}
               variant={'solid'}
               onClick={handleShutdown}
               width={'fit-content'}
