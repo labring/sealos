@@ -106,7 +106,9 @@ jobs:
       - run: git fetch --prune --prune-tags
       - run: git tag -l 'v*'
       - name: Generator changelog
-        run: ./scripts/changelog.sh ${{ github.repository }}
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: ./scripts/changelog.sh "${REPOSITORY}"
       - uses: peter-evans/create-pull-request@v5
         with:
           title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'

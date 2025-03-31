@@ -40,7 +40,9 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Coverage
-        run: cd ${{ env.PROJECT_PATH }} && make coverage
+        env:
+          PROJECT_PATH: ${{ env.PROJECT_PATH }}
+        run: cd "$PROJECT_PATH" && make coverage
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
