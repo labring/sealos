@@ -95,6 +95,7 @@ const Version = () => {
   );
   const templateRepositoryList =
     listPrivateTemplateRepositoryQuery.data?.templateRepositoryList || [];
+
   const handleDeploy = useCallback(
     async (version: DevboxVersionListItemType) => {
       if (!devbox) return;
@@ -106,7 +107,8 @@ const Version = () => {
       const newNetworks = networks.map((network) => {
         return {
           port: network.port,
-          protocol: network.protocol,
+          appProtocol: network.protocol,
+          protocol: 'TCP',
           openPublicDomain: network.openPublicDomain,
           domain: env.ingressDomain
         };
@@ -124,7 +126,8 @@ const Version = () => {
             : [
                 {
                   port: 80,
-                  protocol: 'http',
+                  protocol: 'TCP',
+                  appProtocol: 'http',
                   openPublicDomain: false,
                   domain: env.ingressDomain
                 }
