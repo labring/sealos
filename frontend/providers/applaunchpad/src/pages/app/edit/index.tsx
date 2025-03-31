@@ -340,6 +340,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={() => {
             closeGuide();
             formHook.handleSubmit(async (data) => {
+              // console.log(data, 'formHook.handleSubmit');
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 

@@ -63,7 +63,7 @@ export interface AppListItemType {
 
 export type ApplicationProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
-export type TransportProtocolType = 'TCP' | 'UDP' | 'SCTP' | 'HTTP' | 'GRPC' | 'WS';
+export type TransportProtocolType = 'TCP' | 'UDP' | 'SCTP';
 
 export interface AppEditType {
   appName: string;

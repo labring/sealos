@@ -222,8 +222,6 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
 };
 
 export const json2Service = (data: AppEditType) => {
-  console.log(data.networks, 'json2Service');
-
   const openPublicPorts: any[] = [];
   const closedPublicPorts: any[] = [];
 
