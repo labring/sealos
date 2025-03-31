@@ -66,7 +66,7 @@ const DevboxStatusTag = ({
           <PopoverTrigger>
             <Flex alignItems={'center'} cursor={'pointer'} fontSize={'12px'} fontWeight={500}>
               <Box color={'teal.400'}>{t('saving')}</Box>
-              <MyIcon name="help" ml={'4px'} color={'teal.300'} transform={'scale(0.8)'} />
+              <MyIcon name="help" ml={'2px'} color={'teal.300'} transform={'scale(0.8)'} />
             </Flex>
           </PopoverTrigger>
           <PopoverContent w={'346px'}>
