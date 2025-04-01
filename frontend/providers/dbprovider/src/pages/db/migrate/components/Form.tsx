@@ -178,7 +178,7 @@ const Form = ({
       setValue('sourcePort', data.port);
       setValue('sourceUsername', data.username);
       setValue('sourcePassword', data.password);
-      setValue('dbName', data.pathname);
+      setValue('sourceDatabase', data.pathname);
       onClose();
     } catch (error) {
       toast({

@@ -423,7 +423,6 @@ spec:
 
 export const json2MigrateCR = (data: MigrateForm) => {
   const userNS = getUserNamespace();
-  const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
   const isMigrateAll = data.sourceDatabaseTable.includes('All');
 
   const templateByDB: Record<DBType, string> = {
@@ -455,7 +454,11 @@ export const json2MigrateCR = (data: MigrateForm) => {
     apiVersion: 'datamigration.apecloud.io/v1alpha1',
     kind: 'MigrationTask',
     metadata: {
-      name: `${userNS}-${time}-${data.dbName}`,
+      name: `${data.dbName}-migrate-${nanoid()}`,
+      labels: {
+        [CloudMigraionLabel]: data.dbName,
+        [MigrationRemark]: data?.remark || ''
+      },
       namespace: userNS
     },
     spec: {
@@ -503,7 +506,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
             isAll: isMigrateAll,
             schemaMappingName: '',
             schemaName: data.dbType === DBTypeEnum.postgresql ? 'public' : data.sourceDatabase,
-            ...(isMigrateAll
+            ...(isMigrateAll && data.dbType !== DBTypeEnum.postgresql
               ? {
                   tableList: data.sourceDatabaseTable.map((name) => ({
                     isAll: true,

@@ -9,7 +9,7 @@ import {
   Box
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { keyword } from '@/utils/i18n';
+import { keyword } from '@/utils/i18n-client';
 
 const ErrorModal = ({
   title,
