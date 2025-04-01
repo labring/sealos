@@ -66,7 +66,7 @@ const DevboxStatusTag = ({
           <PopoverTrigger>
             <Flex alignItems={'center'} cursor={'pointer'} fontSize={'12px'} fontWeight={500}>
               <Box color={'teal.400'}>{t('saving')}</Box>
-              <MyIcon name="help" ml={'2px'} color={'teal.300'} transform={'scale(0.8)'} />
+              <MyIcon name="help" ml={'2px'} color={'teal.400'} transform={'scale(0.8)'} />
             </Flex>
           </PopoverTrigger>
           <PopoverContent w={'346px'}>
@@ -77,14 +77,14 @@ const DevboxStatusTag = ({
                   bg={'grayModern.100'}
                   p={'4px 6px'}
                   borderRadius={'4px'}
-                  color={'teal.500'}
-                  fontWeight={400}
+                  color={'teal.400'}
+                  fontWeight={500}
                   lineHeight={'16px'}
                   textAlign={'center'}
                 >
                   {t('devbox_shutdown_notice1')}
                 </Box>
-                <Box borderRadius={'4px'} color={'teal.500'} fontWeight={400}>
+                <Box borderRadius={'4px'} fontWeight={400}>
                   <Box color={'grayModern.500'}>
                     {t.rich('devbox_shutdown_notice2', {
                       black: (chunks) => (
