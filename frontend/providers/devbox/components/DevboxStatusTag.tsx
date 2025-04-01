@@ -62,7 +62,7 @@ const DevboxStatusTag = ({
         </Box>
       </Flex>
       {isShutdown && (
-        <Popover trigger="click" placement="bottom-start">
+        <Popover trigger="hover" placement="bottom-start">
           <PopoverTrigger>
             <Flex alignItems={'center'} cursor={'pointer'} fontSize={'12px'} fontWeight={500}>
               <Box color={'teal.400'}>{t('saving')}</Box>
