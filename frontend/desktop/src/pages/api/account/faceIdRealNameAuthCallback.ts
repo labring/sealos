@@ -194,6 +194,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `);
     }
 
+    // Check if the real name info has been used
     const realnameInfo = await globalPrisma.userRealNameInfo.findFirst({
       where: {
         realName: userRealNameFaceAuthInfo.Text?.Name,
@@ -241,7 +242,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       `);
     }
 
-    if (realNameAuthReward) {
+    if (realNameAuthReward && realNameAuthReward > 0) {
       await globalPrisma.$transaction(async (globalPrisma) => {
         const currentAccount = await globalPrisma.account.findUniqueOrThrow({
           where: { userUid }

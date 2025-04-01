@@ -33,10 +33,14 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVW
 
 export default function AppList({
   showCarousel,
-  brandName
+  brandName,
+  seoData,
+  canonicalUrl
 }: {
   showCarousel: boolean;
   brandName: string;
+  seoData: { title: string; description: string; keywords: string };
+  canonicalUrl: string;
 }) {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -106,28 +110,25 @@ export default function AppList({
       px="42px"
     >
       <Head>
-        <title>
-          {i18n.language === 'en'
-            ? `Enterprise-level distributed application hosting platform - ${brandName}`
-            : `企业级分布式应用托管平台 - ${brandName}`}
-        </title>
-        <meta
-          name="keywords"
-          content={
-            i18n.language === 'en'
-              ? 'Distributed applications, Application hosting, Application deployment, Containers and middleware, PaaS'
-              : '分布式应用,应用托管,应用部署,容器与中间件,PaaS平台'
-          }
-        />
-        <meta
-          name="description"
-          content={
-            i18n.language === 'en'
-              ? `All-in-one platform for app development and deployment. Features app engine, API gateway. Deploy your app with one click.`
-              : `提供高性能可伸缩的容器应用管理能力，支持企业级 Kubernetes 容器化应用的全生命周期管理,一站式集成应用创建、开发、部署、上线等功能，提供了应用引擎、前后端开发框架、API网关、调度引擎等模块，一键部署Helm应用。`
-          }
-        />
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={seoData.keywords} />
+
+        {/* Open Graph  */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:image" content={`${canonicalUrl}/og.png`} />
+        <meta property="og:site_name" content={brandName} />
+
+        {/* Twitter Cards  */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        <meta name="twitter:image" content={`${canonicalUrl}/og.png`} />
       </Head>
+
       {!!data?.templates?.length ? (
         <>
           {showCarousel && <Banner />}
@@ -277,7 +278,8 @@ export default function AppList({
 export async function getServerSideProps(content: any) {
   const forcedLanguage = process.env.FORCED_LANGUAGE;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
-  const local =
+
+  const local: string =
     forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
@@ -292,11 +294,27 @@ export async function getServerSideProps(content: any) {
     data: SystemConfigType;
   };
 
+  const seoData: Record<string, { title: string; description: string; keywords: string }> = {
+    en: {
+      title: `Enterprise-level distributed application hosting platform - ${brandName}`,
+      description: `All-in-one platform for app development and deployment. Features app engine, API gateway. Deploy your app with one click.`,
+      keywords:
+        'Distributed applications, Application hosting, Application deployment, Containers and middleware, PaaS'
+    },
+    zh: {
+      title: `企业级分布式应用托管平台 - ${brandName}`,
+      description: `提供高性能可伸缩的容器应用管理能力，支持企业级 Kubernetes 容器化应用的全生命周期管理,一站式集成应用创建、开发、部署、上线等功能，提供了应用引擎、前后端开发框架、API网关、调度引擎等模块，一键部署Helm应用。`,
+      keywords: '分布式应用,应用托管,应用部署,容器与中间件,PaaS平台'
+    }
+  };
+
   return {
     props: {
       ...(await serviceSideProps(content)),
       showCarousel: data.showCarousel,
-      brandName
+      brandName,
+      seoData: seoData[local],
+      canonicalUrl: process.env.NEXT_PUBLIC_CANONICAL_URL || `https://template.cloud.sealos.io`
     }
   };
 }

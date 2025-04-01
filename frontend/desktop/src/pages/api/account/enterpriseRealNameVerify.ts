@@ -99,7 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
     }
 
-    if (realNameAuthReward) {
+    if (realNameAuthReward && realNameAuthReward > 0) {
       await globalPrisma.$transaction(async (globalPrisma) => {
         const currentAccount = await globalPrisma.account.findUniqueOrThrow({
           where: { userUid }
