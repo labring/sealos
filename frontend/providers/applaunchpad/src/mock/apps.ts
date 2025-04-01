@@ -268,11 +268,13 @@ export const MOCK_APP_DETAIL: AppDetailType = {
       networkName: '',
       portName: nanoid(),
       port: 80,
-      protocol: 'HTTP',
+      protocol: 'TCP',
       openPublicDomain: false,
       publicDomain: '',
       customDomain: '',
-      domain: ''
+      domain: '',
+      appProtocol: 'HTTP',
+      openNodePort: false
     }
   ],
   envs: [],
@@ -310,11 +312,13 @@ export const MockAppEditSyncedFields: AppEditSyncedFields = {
       networkName: 'network-atyjahgvtzqm',
       portName: 'vsjrpjzjptex',
       port: 80,
-      protocol: 'HTTP',
+      protocol: 'TCP',
       openPublicDomain: true,
       publicDomain: 'tkywzlpibxdl',
       customDomain: '',
-      domain: 'gzg.sealos.run'
+      domain: 'gzg.sealos.run',
+      appProtocol: 'HTTP',
+      openNodePort: false
     }
   ],
   cmdParam: 'sleep 10',
