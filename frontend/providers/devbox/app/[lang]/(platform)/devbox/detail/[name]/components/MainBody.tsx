@@ -151,7 +151,7 @@ const MainBody = () => {
                       {t('Accessible')}
                     </Center>
                   ) : (
-                    <Popover trigger={'click'}>
+                    <Popover trigger={'hover'}>
                       <PopoverTrigger>
                         <Flex
                           alignItems={'center'}
