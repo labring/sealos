@@ -10,7 +10,8 @@ import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { DBDetailType } from '@/types/db';
 import { DumpForm } from '@/types/migrate';
-import { assembleTranslate } from '@/utils/i18n';
+import { assembleTranslate } from '@/utils/i18n-client';
+
 import {
   Box,
   Button,
@@ -102,9 +103,13 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               status: 'error'
             });
           }
-          formHook.setValue('fileName', result[0]);
-          setValue('databaseExist', databases!.includes(getValues('databaseName')));
-          const res = await applyDumpCR({ ...data, fileName: result[0] });
+          const res = await applyDumpCR({
+            ...data,
+            dbName: db?.dbName!,
+            dbType: db?.dbType as 'postgresql' | 'mongodb' | 'apecloud-mysql',
+            databaseExist: databases!.includes(getValues('databaseName')),
+            fileName: result[0]
+          });
           setMigrateName(res.name);
         } catch (error: any) {
           toast({

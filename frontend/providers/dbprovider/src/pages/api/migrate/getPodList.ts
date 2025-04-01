@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     return jsonRes(res, {
-      data: response.body.items
+      data: response.body.items.map((i) => i.metadata)
     });
   } catch (err: any) {
     jsonRes(res, {

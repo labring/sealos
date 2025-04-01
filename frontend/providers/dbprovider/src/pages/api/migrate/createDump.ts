@@ -1,4 +1,4 @@
-import { DBTypeEnum } from '@/constants/db';
+import { CloudMigraionLabel, DBTypeEnum } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -41,12 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('Failed to generate yaml file. Please check the input parameters.');
     }
 
-    // await applyYamlList([yaml.dump(yamlObj)], 'create');
+    await applyYamlList([yaml.dump(yamlObj)], 'create');
 
     return jsonRes(res, {
       data: {
-        test: yamlObj
-        // name: yamlObj.metadata.name
+        test: yamlObj,
+        name: yamlObj.metadata.name
       }
     });
   } catch (err: any) {
@@ -64,17 +64,16 @@ export const json2DumpCR = async (
   const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
 
   const commands = new Command();
-  commands.add(['/bin/sh', '-c']);
+  commands.add('wget https://objectstorageapi.gzg.sealos.run/7nl57qi8-test/mc -O mc');
+  commands.add('chmod +x mc');
+  // commands.add('sudo mv mc /usr/local/bin/');
   // 配置 MinIO
-  commands.add(
-    `mc alias set migrationTask https://${process.env.MINIO_URL} ${process.env.MINIO_ACCESS_KEY} ${process.env.MINIO_SECRET_KEY}`
-  );
-  commands.add(`mc cp migrationTask/${process.env.MINIO_BUCKET_NAME}/${data.fileName} /root`);
+  commands.add(`./mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);
+  commands.add(`./mc cp migrationTask/$BUCKET/${data.fileName} /root`);
 
-  const secretMysql = `--host=${data.host} --port=${data.port} --username=${data.username} --password=${data.password}`;
-  const secretPg = `--username=${data.username}`;
-  const secretMg = `-u${data.username} -p${data.password}`;
-
+  const secretMysql = `--host=$HOST --port=$PORT --user=$USERNAME --password=$PASSWORD`;
+  const secretPg = `--username=$USERNAME`;
+  const secretMg = `-u$USERNAME -p$PASSWORD`;
   // 检查并创建数据库
   if (!data.databaseExist) {
     commands.echo(`Database ${data.databaseName} does not exist. Creating...`);
@@ -128,11 +127,11 @@ export const json2DumpCR = async (
       switch (data.dbType) {
         case DBTypeEnum.mysql:
           commands.push(
-            `-e "LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE ${data.databaseName} FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n';"`
+            `-e "LOAD DATA LOCAL INFILE '${filePath}' INTO TABLE ${data.databaseName} FIELDS TERMINATED BY ',' ENCLOSED BY '\\"' LINES TERMINATED BY '\\n';"`
           );
           break;
         case DBTypeEnum.postgresql:
-          commands.push(`-c "\COPY $TABLE_NAME FROM '${filePath}' CSV HEADER;"`);
+          commands.push(`-c "\\COPY $TABLE_NAME FROM '${filePath}' CSV HEADER;"`);
           break;
         case DBTypeEnum.mongodb:
           commands.push(`--type=csv --file=${filePath} --headerline`);
@@ -160,22 +159,55 @@ export const json2DumpCR = async (
       throw new Error(`Unsupported file extension: ${filenameExtension}`);
   }
 
-  console.log('Final import statement:', commands.get());
-
   return {
     apiVersion: 'batch/v1',
     kind: 'Job',
     metadata: {
       name: `${userNS}-${time}-${data.dbName}-file`,
-      namespace: userNS
+      namespace: userNS,
+      labels: {
+        [CloudMigraionLabel]: data.dbName
+      }
     },
     spec: {
       template: {
         spec: {
+          restartPolicy: 'Never',
           containers: [
             {
               name: 'import-data',
               image: process.env.MIGRATE_FILE_IMAGE,
+              env: [
+                {
+                  name: 'MINIO_AK',
+                  value: process.env.MINIO_ACCESS_KEY
+                },
+                {
+                  name: 'MINIO_SK',
+                  value: process.env.MINIO_SECRET_KEY
+                },
+                {
+                  name: 'MINIO_URL',
+                  value: `http://${process.env.MINIO_URL}`
+                },
+                {
+                  name: 'BUCKET',
+                  value: process.env.MINIO_BUCKET_NAME
+                },
+                { name: 'USERNAME', value: data.username },
+                {
+                  name: 'PASSWORD',
+                  value: data.password
+                },
+                {
+                  name: 'HOST',
+                  value: data.host
+                },
+                {
+                  name: 'PORT',
+                  value: data.port
+                }
+              ],
               command: commands.get()
             }
           ]

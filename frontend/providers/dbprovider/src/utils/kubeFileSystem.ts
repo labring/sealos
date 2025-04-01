@@ -487,6 +487,6 @@ export class Command {
   }
 
   public get() {
-    return this.text;
+    return ['/bin/sh', '-c', this.text.join(' && ')];
   }
 }

@@ -25,26 +25,6 @@ import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
-const defaultEdit: MigrateForm = {
-  ...defaultDBEditValue,
-  cpu: 2000,
-  memory: 4048,
-  labels: {},
-  sinkHost: '',
-  sinkPort: '',
-  sinkPassword: '',
-  sinkUser: '',
-  sourceHost: '',
-  sourcePort: '',
-  sourceUsername: '',
-  sourcePassword: '',
-  sourceDatabase: '',
-  sourceDatabaseTable: ['All'],
-  isChecked: false,
-  continued: false,
-  terminationPolicy: 'Delete'
-};
-
 const EditApp = ({
   dbName,
   tabType,
@@ -76,11 +56,34 @@ const EditApp = ({
   }, [screenWidth]);
 
   // form
+  const defaultEdit: MigrateForm = {
+    ...defaultDBEditValue,
+    dbName: dbName,
+    dbType: dbType,
+    cpu: 2000,
+    memory: 4048,
+    labels: {},
+    sinkHost: '',
+    sinkPort: '',
+    sinkPassword: '',
+    sinkUser: '',
+    sourceHost: '',
+    sourcePort: '',
+    sourceUsername: '',
+    sourcePassword: '',
+    sourceDatabase: '',
+    sourceDatabaseTable: ['All'],
+    isChecked: false,
+    continued: false,
+    terminationPolicy: 'Delete'
+  };
+
   const formHook = useForm<MigrateForm>({
     defaultValues: defaultEdit
   });
 
   const generateYamlList = (data: MigrateForm) => {
+    console.log(json2MigrateCR(data));
     return [
       {
         filename: 'migrate.yaml',
@@ -108,10 +111,10 @@ const EditApp = ({
 
   const submitSuccess = async (formData: MigrateForm) => {
     console.log(formData);
+
     setIsLoading(true);
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
-      console.log(json2MigrateCR(formData));
       // quote check
       const quoteCheckRes = checkQuotaAllow(formData);
       if (quoteCheckRes) {
@@ -131,8 +134,9 @@ const EditApp = ({
       router.push({
         pathname: '/db/detail',
         query: {
-          ...router.query,
-          listType: 'InternetMigration'
+          name: formData.dbName,
+          dbType: formData.dbType,
+          listType: 'dataImport'
         }
       });
     } catch (error) {

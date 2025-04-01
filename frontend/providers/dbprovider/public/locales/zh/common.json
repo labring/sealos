@@ -347,7 +347,7 @@
   "update_sealaf_app_tip": "该数据库是通过云开发部署的，变更该数据库请到云开发中进行。",
   "update_successful": "更新成功",
   "update_time": "更新时间",
-  "upload_dump_file": "点击上传 Dump 文件",
+  "upload_dump_file": "点击上传文件",
   "use_docs": "使用文档",
   "version": "版本",
   "view_resources_distribution": "查看资源分配情况",
