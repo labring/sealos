@@ -3,7 +3,7 @@ import {
   applyDumpCR,
   deleteMigrateJobByName,
   getLogByNameAndContainerName,
-  getMigratePodList
+  getMigrateJobList
 } from '@/api/migrate';
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
@@ -153,19 +153,19 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     }
   };
 
-  useQuery(['getFileMigratePodList'], () => getMigratePodList(migrateName, 'file'), {
+  useQuery(['getFileMigratePodList'], () => getMigrateJobList(migrateName), {
     enabled: !!migrateName,
     refetchInterval: 5000,
     onSuccess(data) {
       console.log(data, 'pod');
-      let podStatus = data?.[0]?.status?.phase;
-      if (data?.[0]?.metadata?.name && podStatus) {
-        if (podStatus === 'Succeeded') {
+      const podStatus = data?.conditions?.[0].type;
+      if (data?.ready !== undefined && podStatus) {
+        if (podStatus === 'Complete') {
           setMigrateStatus(MigrateStatusEnum.Success);
         } else if (podStatus === 'Failed') {
           setMigrateStatus(MigrateStatusEnum.Fail);
         }
-        setPodName(data[0].metadata.name);
+        // setPodName(data[0].metadata.name);
       }
     }
   });
