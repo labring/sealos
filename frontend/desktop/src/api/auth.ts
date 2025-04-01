@@ -166,6 +166,9 @@ export const _faceAuthGenerateQRcodeUriRequest = (request: AxiosInstance) => () 
     '/api/account/generateRealNameQRcodeUri'
   );
 
+export const _refreshRealNameQRecodeUriRequest = (request: AxiosInstance) => () =>
+  request.post<any, ApiResp<null>>('/api/account/refreshRealNameQRecodeUri');
+
 export const _getFaceAuthStatusRequest = (request: AxiosInstance) => (data: { bizToken: string }) =>
   request.post<any, ApiResp<{ status: string; realName: string }>>(
     '/api/account/getFaceAuthStatus',
@@ -242,6 +245,7 @@ export const enterpriseRealNameAuthInfoRequest = _enterpriseRealNameAuthInfoRequ
 export const enterpriseRealNameAuthCancelRequest = _enterpriseRealNameAuthCancelRequest(request);
 
 export const faceAuthGenerateQRcodeUriRequest = _faceAuthGenerateQRcodeUriRequest(request);
+export const refreshRealNameQRecodeUriRequest = _refreshRealNameQRecodeUriRequest(request);
 export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 
 export const getAmount = _getAmount(request);

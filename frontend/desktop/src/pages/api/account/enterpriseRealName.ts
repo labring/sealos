@@ -193,6 +193,7 @@ async function handlePost(
 
     const data = validationResult.data;
 
+    // check if the enterprise name has been verified
     const enterprise = await globalPrisma.enterpriseRealNameInfo.findFirst({
       where: {
         enterpriseName: data.keyName,
@@ -229,6 +230,10 @@ async function handlePost(
       })
     });
 
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
     const apiResponse: ApiResponse = await response.json();
 
     if (!apiResponse.success) {
@@ -243,10 +248,6 @@ async function handlePost(
         code: 400,
         message: `request failed, code: ${apiResponse.data?.respCode}, message: ${apiResponse.data?.respMsg}`
       });
-    }
-
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
     }
 
     await globalPrisma.enterpriseRealNameInfo.upsert({
