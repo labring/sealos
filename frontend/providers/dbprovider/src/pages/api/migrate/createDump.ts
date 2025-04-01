@@ -72,8 +72,8 @@ export const json2DumpCR = async (
   commands.add(`./mc cp migrationTask/$BUCKET/${data.fileName} /root`);
 
   const secretMysql = `--host=$HOST --port=$PORT --user=$USERNAME --password=$PASSWORD`;
-  const secretPg = `--username=$USERNAME`;
-  const secretMg = `-u$USERNAME -p$PASSWORD`;
+  const secretPg = `--host=$HOST --port=$PORT --user=$USERNAME -w`;
+  const secretMg = `--host $HOST --port $PORT -u $USERNAME -p $PASSWORD`;
   // 检查并创建数据库
   if (!data.databaseExist) {
     commands.echo(`Database ${data.databaseName} does not exist. Creating...`);
@@ -86,7 +86,7 @@ export const json2DumpCR = async (
         break;
       case DBTypeEnum.mongodb:
         commands.add(
-          `mongo ${secretMg} --eval "db.getSiblingDB('${data.databaseName}').createCollection('init_collection');"`
+          `mongosh ${secretMg} --eval "db.getSiblingDB('${data.databaseName}').createCollection('init_collection');"`
         );
         break;
     }
@@ -159,7 +159,7 @@ export const json2DumpCR = async (
       throw new Error(`Unsupported file extension: ${filenameExtension}`);
   }
 
-  return {
+  const Obj = {
     apiVersion: 'batch/v1',
     kind: 'Job',
     metadata: {
@@ -196,7 +196,7 @@ export const json2DumpCR = async (
                 },
                 { name: 'USERNAME', value: data.username },
                 {
-                  name: 'PASSWORD',
+                  name: data.dbType === DBTypeEnum.postgresql ? 'PGPASSWORD' : 'PASSWORD',
                   value: data.password
                 },
                 {
@@ -215,4 +215,6 @@ export const json2DumpCR = async (
       }
     }
   };
+
+  return Obj;
 };

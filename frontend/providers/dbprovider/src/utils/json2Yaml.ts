@@ -491,14 +491,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
             resource: stepResources
           }
         },
-        steps: (() => {
-          switch (data.dbType) {
-            case 'postgresql':
-              return ['initStruct', 'initData'];
-            default:
-              return ['preCheck', 'initStruct', 'initData'];
-          }
-        })()
+        steps: ['preCheck', 'initStruct', 'initData']
       },
       migrationObj: {
         whiteList: [
@@ -506,7 +499,7 @@ export const json2MigrateCR = (data: MigrateForm) => {
             isAll: isMigrateAll,
             schemaMappingName: '',
             schemaName: data.dbType === DBTypeEnum.postgresql ? 'public' : data.sourceDatabase,
-            ...(isMigrateAll && data.dbType !== DBTypeEnum.postgresql
+            ...(!isMigrateAll
               ? {
                   tableList: data.sourceDatabaseTable.map((name) => ({
                     isAll: true,
