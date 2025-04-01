@@ -82,7 +82,7 @@ const ReleaseModal = ({
                 mb={'16px'}
               >
                 <Radio value="Stopped">
-                  <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                  <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                     {t('normal_shutdown_mode')}
                   </Box>
                 </Radio>
@@ -128,7 +128,7 @@ const ReleaseModal = ({
                 }
               >
                 <Radio value="Shutdown">
-                  <Box fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                  <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                     {t('cold_shutdown_mode')}
                   </Box>
                 </Radio>
