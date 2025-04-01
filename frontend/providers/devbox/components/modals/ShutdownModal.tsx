@@ -87,8 +87,14 @@ const ReleaseModal = ({
                   </Box>
                 </Radio>
                 <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
-                  <Flex alignItems={'center'} gap={'6px'} mb={'2px'}>
-                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                  <Flex alignItems={'start'} gap={'6px'} mb={'2px'}>
+                    <MyIcon
+                      name="ellipseFull"
+                      color={'grayModern.300'}
+                      w={'6px'}
+                      h={'6px'}
+                      mt={'6px'}
+                    />
                     <Box>
                       {t.rich('normal_shutdown_mode_desc', {
                         yellow: (chunks) => (
@@ -99,8 +105,14 @@ const ReleaseModal = ({
                       })}
                     </Box>
                   </Flex>
-                  <Flex alignItems={'center'} gap={'6px'}>
-                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                  <Flex alignItems={'start'} gap={'6px'}>
+                    <MyIcon
+                      name="ellipseFull"
+                      color={'grayModern.300'}
+                      w={'6px'}
+                      h={'6px'}
+                      mt={'6px'}
+                    />
                     <Box>
                       {t.rich('normal_shutdown_mode_desc_2', {
                         yellow: (chunks) => (
@@ -133,8 +145,14 @@ const ReleaseModal = ({
                   </Box>
                 </Radio>
                 <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
-                  <Flex alignItems={'center'} gap={'6px'} mb={'2px'}>
-                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                  <Flex alignItems={'start'} gap={'6px'} mb={'2px'}>
+                    <MyIcon
+                      name="ellipseFull"
+                      color={'grayModern.300'}
+                      w={'6px'}
+                      h={'6px'}
+                      mt={'6px'}
+                    />
                     <Box>
                       {t.rich('cold_shutdown_mode_desc', {
                         yellow: (chunks) => (
@@ -145,8 +163,14 @@ const ReleaseModal = ({
                       })}
                     </Box>
                   </Flex>
-                  <Flex alignItems={'center'} gap={'6px'}>
-                    <MyIcon name="ellipseFull" color={'grayModern.300'} w={'6px'} h={'6px'} />
+                  <Flex alignItems={'start'} gap={'6px'}>
+                    <MyIcon
+                      name="ellipseFull"
+                      color={'grayModern.300'}
+                      w={'6px'}
+                      h={'6px'}
+                      mt={'6px'}
+                    />
                     <Box>
                       {t.rich('cold_shutdown_mode_desc_2', {
                         yellow: (chunks) => (
