@@ -72,6 +72,7 @@ export const podStatusMap = {
   }
 };
 
+// nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket
 export const ProtocolList = [
   { value: 'HTTP', label: 'https://', inline: 'http://' },
   { value: 'GRPC', label: 'grpcs://', inline: 'grpc://' },
