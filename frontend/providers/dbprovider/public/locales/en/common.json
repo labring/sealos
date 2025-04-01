@@ -350,7 +350,8 @@
   "upload_dump_file": "Upload File",
   "use_docs": "Documentation",
   "version": "Version",
-  "view_resources_distribution": "View resource distribution",
+  "resources_distribution": "Resources Distribution",
+  "view_resources_distribution": "View resource distribution details",
   "wipeout_backup_with_db": "Discard Backups",
   "wipeout_backup_with_db_tip": "Delete the databases and the backups",
   "within_1_day": "Within 1 day",
@@ -363,5 +364,6 @@
   "table": "table",
   "collection": "Collection",
   "search": "Search",
-  "pls_create": "No results, please create your own"
+  "pls_create": "No results, please create your own",
+  ""
 }

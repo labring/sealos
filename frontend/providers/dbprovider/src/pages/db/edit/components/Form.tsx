@@ -97,9 +97,8 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                 <Td>{keyName}</Td>
                 <Td>{value.cpuMemory.limits.cpu}</Td>
                 <Td>{value.cpuMemory.limits.memory}</Td>
-
                 <Td>{value.other?.replicas ?? data.replicas}</Td>
-                <Td>{value.storage}</Td>
+                <Td>{value.storage} Gi</Td>
               </Tr>
             );
           })}
@@ -437,7 +436,6 @@ const Form = ({
               </Flex>
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
-
                 <MySelect
                   isDisabled={isEdit}
                   width={'200px'}
@@ -449,28 +447,6 @@ const Form = ({
                   }))}
                   onchange={(val: any) => setValue('dbVersion', val)}
                 />
-
-                <Popover>
-                  <PopoverTrigger>
-                    <Button ml={5} variant="outline">
-                      {t('view_resources_distribution')}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent width="fit-content">
-                    <PopoverBody width="fit-content">
-                      <ResourcesDistributeTable
-                        data={{
-                          dbType: getValues('dbType'),
-                          cpu: getValues('cpu'),
-                          memory: getValues('memory'),
-                          storage: getValues('storage'),
-                          replicas: getValues('replicas'),
-                          forDisplay: true
-                        }}
-                      />
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
               </Flex>
               <FormControl mb={7} isInvalid={!!errors.dbName} w={'500px'}>
                 <Flex alignItems={'center'}>
@@ -494,6 +470,28 @@ const Form = ({
                   />
                 </Flex>
               </FormControl>
+              <Flex alignItems={'center'} mb={7}>
+                <Label w={100}>{t('resources_distribution')}</Label>
+                <Popover>
+                  <PopoverTrigger>
+                    <Button variant="outline">{t('view_resources_distribution')}</Button>
+                  </PopoverTrigger>
+                  <PopoverContent width="fit-content">
+                    <PopoverBody width="fit-content">
+                      <ResourcesDistributeTable
+                        data={{
+                          dbType: getValues('dbType'),
+                          cpu: getValues('cpu'),
+                          memory: getValues('memory'),
+                          storage: getValues('storage'),
+                          replicas: getValues('replicas'),
+                          forDisplay: true
+                        }}
+                      />
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+              </Flex>
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={100}>CPU</Label>
                 <MySlider
