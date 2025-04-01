@@ -113,15 +113,8 @@ export const useDevboxStore = create<State>()(
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const detail = await getDevboxByName(devboxName);
 
-        if (detail.status.value !== 'Running') {
-          set((state) => {
-            state.devboxDetail = detail;
-          });
-          return detail;
-        }
-        const pods = await getDevboxPodsByDevboxName(devboxName);
-
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
+        // SSH configuration should be obtained regardless of whether it is running on or not
+        const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
           devboxName: detail.name
         });
 
@@ -130,11 +123,19 @@ export const useDevboxStore = create<State>()(
           sshUser: userName,
           sshDomain: sealosDomain,
           sshPort: detail.sshPort,
-          sshPrivateKey
+          sshPrivateKey,
+          token
         };
 
-        // add sshConfig
         detail.sshConfig = sshConfig as DevboxDetailType['sshConfig'];
+
+        if (detail.status.value !== 'Running') {
+          set((state) => {
+            state.devboxDetail = detail;
+          });
+          return detail;
+        }
+        const pods = await getDevboxPodsByDevboxName(devboxName);
 
         // add upTime by Pod
         detail.upTime = pods[0].upTime;
