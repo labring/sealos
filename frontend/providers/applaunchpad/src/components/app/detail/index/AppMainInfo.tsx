@@ -45,7 +45,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
             inline: `${protocol?.inline}${app.appName}.${getUserNamespace()}.svc.cluster.local:${
               network.port
             }`,
-            public: `${protocol?.label}${network.domain}${
+            public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
               network?.nodePort ? `:${network.nodePort}` : ''
             }`,
             showReadyStatus: false
