@@ -113,7 +113,6 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     amount: 0,
     manufacturers: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
@@ -310,8 +309,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           networkName: network.networkName || `network-${nanoid()}`,
           portName: network.portName || nanoid(),
           port: network.port || 80,
-          protocol: network.protocol || 'HTTP',
+          protocol: network.protocol || 'TCP',
+          appProtocol: network.appProtocol || 'HTTP',
           openPublicDomain: network.openPublicDomain || false,
+          openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
           customDomain: network.customDomain || '',
           domain: network.domain || 'gzg.sealos.run'
@@ -337,10 +338,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
-            if (isSubmitting) return;
             closeGuide();
-            setIsSubmitting(true);
             formHook.handleSubmit(async (data) => {
+              // console.log(data, 'formHook.handleSubmit');
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 
@@ -394,10 +394,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
 
-              openConfirm(
-                () => submitSuccess(parseYamls),
-                () => setIsSubmitting(false)
-              )();
+              openConfirm(() => submitSuccess(parseYamls))();
             }, submitError)();
           }}
         />

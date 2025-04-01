@@ -36,8 +36,10 @@ export const defaultEditVal: AppEditType = {
       networkName: '',
       portName: nanoid(),
       port: 80,
-      protocol: 'HTTP',
+      protocol: 'TCP',
+      appProtocol: 'HTTP',
       openPublicDomain: false,
+      openNodePort: false,
       publicDomain: '',
       customDomain: '',
       domain: ''

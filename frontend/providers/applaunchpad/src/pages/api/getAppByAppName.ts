@@ -51,8 +51,23 @@ export async function GetAppByAppName({
   const response = await Promise.allSettled([
     k8sApp.readNamespacedDeployment(appName, namespace),
     k8sApp.readNamespacedStatefulSet(appName, namespace),
-    k8sCore.readNamespacedService(appName, namespace),
     k8sCore.readNamespacedConfigMap(appName, namespace),
+    await k8sCore
+      .listNamespacedService(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${appDeployKey}=${appName}`
+      )
+      .then((res) => ({
+        body: res.body.items.map((item) => ({
+          ...item,
+          apiVersion: res.body.apiVersion, // item does not contain apiversion and kind
+          kind: 'Service'
+        }))
+      })),
     k8sNetworkingApp
       .listNamespacedIngress(
         namespace,
