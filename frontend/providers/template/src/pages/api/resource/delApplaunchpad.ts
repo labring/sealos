@@ -19,7 +19,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     /* delete all sources */
     const delDependent = await Promise.allSettled([
-      k8sCore.deleteNamespacedService(instanceName, namespace), // delete service
+      k8sCore.deleteCollectionNamespacedService(
+        namespace,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        `${appDeployKey}=${instanceName}`
+      ),
       k8sCore.deleteNamespacedConfigMap(instanceName, namespace), // delete configMap
       k8sCore.deleteNamespacedSecret(instanceName, namespace), // delete secret
       k8sNetworkingApp.deleteCollectionNamespacedIngress(

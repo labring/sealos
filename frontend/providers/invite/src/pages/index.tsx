@@ -26,10 +26,12 @@ import { useCallback } from 'react';
 
 export default function Index({
   SEALOS_DOMAIN,
-  GIFT_RATIO
+  GIFT_RATIO,
+  INVITER_REWARD
 }: {
   SEALOS_DOMAIN: string;
   GIFT_RATIO: string;
+  INVITER_REWARD: string;
 }) {
   const theme = useTheme();
   const { copyData } = useCopyData();
@@ -82,7 +84,7 @@ export default function Index({
               <Trans
                 i18nKey="cashback_first_rule"
                 values={{
-                  amount: 5
+                  amount: INVITER_REWARD
                 }}
               />
             </Text>
@@ -202,12 +204,14 @@ export default function Index({
 export async function getServerSideProps(content: any) {
   const SEALOS_DOMAIN = process.env.SEALOS_DOMAIN || 'cloud.sealos.io';
   const GIFT_RATIO = process.env.GIFT_RATIO || '0.1';
+  const INVITER_REWARD = process.env.NEXT_PUBLIC_INVITER_REWARD || '5';
 
   return {
     props: {
       ...(await serviceSideProps(content)),
       SEALOS_DOMAIN,
-      GIFT_RATIO
+      GIFT_RATIO,
+      INVITER_REWARD
     }
   };
 }
