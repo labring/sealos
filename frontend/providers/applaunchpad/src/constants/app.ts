@@ -1,3 +1,4 @@
+// nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket
 import { ApplicationProtocolType, TAppSourceType, TransportProtocolType } from '@/types/app';
 
 export enum AppStatusEnum {
@@ -72,7 +73,6 @@ export const podStatusMap = {
   }
 };
 
-// nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket
 export const ProtocolList = [
   { value: 'HTTP', label: 'https://', inline: 'http://' },
   { value: 'GRPC', label: 'grpcs://', inline: 'grpc://' },
