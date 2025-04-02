@@ -255,6 +255,7 @@ const DevboxList = ({
                     <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
+                isDisabled: item.status.value !== 'Running',
                 onClick: () => handleGoToTerminal(item),
                 menuItemStyle: {
                   borderBottomLeftRadius: '0px',

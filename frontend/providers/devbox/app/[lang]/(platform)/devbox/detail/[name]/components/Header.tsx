@@ -182,6 +182,7 @@ const Header = ({
           h={'40px'}
           fontSize={'14px'}
           bg={'white'}
+          isDisabled={devboxDetail.status.value !== 'Running'}
           color={'grayModern.600'}
           _hover={{
             color: 'brightBlue.600'
