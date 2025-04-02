@@ -3,7 +3,11 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
+	"strings"
+
+	"github.com/google/go-containerregistry/pkg/name"
 
 	corev1 "k8s.io/api/core/v1"
 	resource "k8s.io/apimachinery/pkg/api/resource"
@@ -32,7 +36,19 @@ type PodMutator struct {
 	RequestRatio  float64
 }
 
-func (m *PodMutator) Mutate(pod *corev1.Pod) error {
+func (m *PodMutator) Default(_ context.Context, obj runtime.Object) error {
+	p, ok := obj.(*corev1.Pod)
+	if !ok {
+		return errors.New("obj convert to Pod error")
+	}
+	plog.Info("mutating create/update", "name", p.Name)
+	if _, ok := p.Labels[ExemptionLabel]; ok {
+		return nil
+	}
+	return m.mutate(p)
+}
+
+func (m *PodMutator) mutate(pod *corev1.Pod) error {
 	// for each container, if it has resource request, set it to max(minRequest, limit * DefaultRequestRatio)
 	for i := range pod.Spec.Containers {
 		container := &pod.Spec.Containers[i]
@@ -72,14 +88,102 @@ func (m *PodMutator) Mutate(pod *corev1.Pod) error {
 	return nil
 }
 
-func (m *PodMutator) Default(_ context.Context, obj runtime.Object) error {
+type PodValidator struct {
+	client.Client
+	TargetRegistry string
+}
+
+//+kubebuilder:webhook:path=/validate-core-v1-pod,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
+
+func (v *PodValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	p, ok := obj.(*corev1.Pod)
 	if !ok {
 		return errors.New("obj convert to Pod error")
 	}
-	plog.Info("mutating create/update", "name", p.Name)
-	if _, ok := p.Labels[ExemptionLabel]; ok {
+	plog.Info("validating create", "name", p.Name)
+	return v.validate(p)
+}
+
+func (v *PodValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	newPod, ok := newObj.(*corev1.Pod)
+	if !ok {
+		return errors.New("obj convert to Pod error")
+	}
+	plog.Info("validating update", "name", newPod.Name)
+	return v.validate(newPod)
+}
+
+func (v *PodValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	return nil
+}
+
+func (v *PodValidator) validate(pod *corev1.Pod) error {
+	// Check if the pod is exempt from validation
+	if _, ok := pod.Labels[ExemptionLabel]; ok {
 		return nil
 	}
-	return m.Mutate(p)
+	// Check if the pod is being deleted
+	if pod.DeletionTimestamp != nil {
+		return nil
+	}
+	for _, container := range pod.Spec.Containers {
+		if err := v.validateContainer(pod, &container); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (v *PodValidator) validateContainer(pod *corev1.Pod, container *corev1.Container) error {
+	plog.Info("validating", "name", pod.Name, "namespace", pod.Namespace, "container", container.Name, "image", container.Image)
+	image := container.Image
+	imageRegistry, err := getImageRegistry(image)
+	if err != nil {
+		plog.Error(err, "could not get image registry")
+		return err
+	}
+	// if image registry is not target registry, allow it
+	if imageRegistry != v.TargetRegistry {
+		return nil
+	}
+	imageRepo, err := getImageRepo(image)
+	if err != nil {
+		plog.Error(err, "could not get image repo")
+		return err
+	}
+	// if image repo is not ns- prefixed, allow it
+	if !strings.HasPrefix(imageRepo, "ns-") {
+		return nil
+	}
+	// if image repo is not equal to spec namespace, deny it
+	if imageRepo != pod.Namespace {
+		return errors.New("image repo is not equal to spec namespace")
+	}
+
+	return nil
+}
+
+// getImageRegistry returns the registry name of the image
+func getImageRegistry(image string) (string, error) {
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		plog.Error(err, "could not parse image reference")
+		return "", err
+	}
+	return ref.Context().RegistryStr(), nil
+}
+
+// getImageRepo returns the repository name of the image
+func getImageRepo(image string) (string, error) {
+	ref, err := name.ParseReference(image)
+	if err != nil {
+		plog.Error(err, "could not parse image reference")
+		return "", err
+	}
+	repo := ref.Context().RepositoryStr()
+	parts := strings.Split(repo, "/")
+	if len(parts) < 2 {
+		return "", fmt.Errorf("invalid repository name: %s", repo)
+	}
+	return parts[0], nil
 }

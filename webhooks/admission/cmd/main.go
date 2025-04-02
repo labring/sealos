@@ -28,7 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -58,6 +57,7 @@ func main() {
 	var podMutatingMinRequestCPU string
 	var podMutatingMinRequestMem string
 	var podMutatingRequestRatio float64
+	var podValidatingTargetRegistry string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -68,6 +68,7 @@ func main() {
 	flag.StringVar(&podMutatingMinRequestCPU, "pod-mutating-min-request-cpu", "100m", "Pod mutating min request cpu")
 	flag.StringVar(&podMutatingMinRequestMem, "pod-mutating-min-request-mem", "100Mi", "Pod mutating min request mem")
 	flag.Float64Var(&podMutatingRequestRatio, "pod-mutating-request-ratio", 10, "Pod mutating request ratio")
+	flag.StringVar(&podValidatingTargetRegistry, "pod-validating-target-registry", "", "Pod validating target registry")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -159,15 +160,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = builder.WebhookManagedBy(mgr).
+	podWebhook := builder.WebhookManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithDefaulter(&v1.PodMutator{
 			Client:        mgr.GetClient(),
 			MinRequestCPU: minRequestCPU,
 			MinRequestMem: minRequestMem,
 			RequestRatio:  podMutatingRequestRatio,
-		}).
-		Complete()
+		})
+	// if podValidatingTargetRegistry is not empty, add the pod validating webhook
+	if podValidatingTargetRegistry != "" {
+		podWebhook = podWebhook.WithValidator(&v1.PodValidator{
+			Client:         mgr.GetClient(),
+			TargetRegistry: podValidatingTargetRegistry,
+		})
+	}
+	err = podWebhook.Complete()
 	if err != nil {
 		setupLog.Error(err, "unable to create pod webhook")
 		os.Exit(1)

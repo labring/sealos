@@ -122,7 +122,7 @@ func TestPodMutator_Mutate(t *testing.T) {
 				}
 			}
 
-			err := tt.mutator.Mutate(tt.inputPod)
+			err := tt.mutator.mutate(tt.inputPod)
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
