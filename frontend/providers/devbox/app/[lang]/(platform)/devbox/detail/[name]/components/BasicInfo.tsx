@@ -174,6 +174,7 @@ const BasicInfo = () => {
           size={'sm'}
           leftIcon={<MyIcon name="settings" w={'16px'} />}
           bg={'white'}
+          isDisabled={devboxDetail?.status.value !== 'Running'}
           color={'grayModern.600'}
           border={'1px solid'}
           borderColor={'grayModern.200'}
@@ -193,6 +194,7 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Tooltip
               label={t('copy')}
+              isDisabled={devboxDetail?.status.value !== 'Running'}
               hasArrow
               bg={'#FFFFFF'}
               color={'grayModern.900'}
@@ -204,13 +206,19 @@ const BasicInfo = () => {
               borderRadius={'md'}
             >
               <Text
-                cursor="pointer"
                 fontSize={'12px'}
-                _hover={{ color: 'blue.500' }}
-                onClick={() => copyData(sshConnectCommand)}
+                {...(devboxDetail?.status.value === 'Running' && {
+                  cursor: 'pointer',
+                  _hover: { color: 'blue.500' },
+                  onClick: () => copyData(sshConnectCommand)
+                })}
                 w={'full'}
               >
-                {sshConnectCommand}
+                {devboxDetail?.status.value === 'Running' ? (
+                  sshConnectCommand
+                ) : (
+                  <span style={{ marginLeft: '8px' }}>-</span>
+                )}
               </Text>
             </Tooltip>
           </Flex>

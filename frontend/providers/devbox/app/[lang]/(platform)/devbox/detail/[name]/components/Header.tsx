@@ -210,23 +210,22 @@ const Header = ({
             {isBigButton ? t('pause') : <MyIcon name={'shutdown'} w={'16px'} />}
           </Button>
         )}
-        {devboxDetail.status.value === 'Stopped' ||
-          (devboxDetail.status.value === 'Shutdown' && (
-            <Button
-              h={'40px'}
-              fontSize={'14px'}
-              bg={'white'}
-              color={'grayModern.600'}
-              _hover={{
-                color: 'brightBlue.600'
-              }}
-              borderWidth={1}
-              leftIcon={isBigButton ? <MyIcon name={'start'} w={'16px'} /> : undefined}
-              onClick={() => handleStartDevbox(devboxDetail)}
-            >
-              {isBigButton ? t('start') : <MyIcon name={'start'} w={'16px'} />}
-            </Button>
-          ))}
+        {(devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown') && (
+          <Button
+            h={'40px'}
+            fontSize={'14px'}
+            bg={'white'}
+            color={'grayModern.600'}
+            _hover={{
+              color: 'brightBlue.600'
+            }}
+            borderWidth={1}
+            leftIcon={isBigButton ? <MyIcon name={'start'} w={'16px'} /> : undefined}
+            onClick={() => handleStartDevbox(devboxDetail)}
+          >
+            {isBigButton ? t('start') : <MyIcon name={'start'} w={'16px'} />}
+          </Button>
+        )}
         <Button
           h={'40px'}
           fontSize={'14px'}
