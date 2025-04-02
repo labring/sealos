@@ -226,7 +226,7 @@
   "identify": "识别信息",
   "identify_clipboard": "识别剪切板内容",
   "import_through_file": "文件导入",
-  "important_tips_for_migrating": "如果源数据库中的 源database 与目标数据库中的 目标database 存在重叠，应在目标数据库中新建一个数据库，以避免数据重复。",
+  "important_tips_for_migrating": "如果源数据库中的<b>源database</b>与目标数据库中的<b>目标database</b>存在重叠，应在目标数据库中新建一个数据库，以避免数据重复。",
   "innodb_buffer_pool": "InnoDB 缓冲池",
   "intranet_address": "内网地址",
   "items_per_db": "键值数",
@@ -244,7 +244,7 @@
   "migrate": {
     "Incremental migration prompt information": "如果需要数据库增量同步，可以开启\"持续迁移\"，默认是关闭。",
     "mongo": {
-      "check": "source account: 待迁移仓库的读权限、admin、local\nsink account: 待迁移仓库的读写权限以及admin和local的读权限"
+      "check": "<b>源account</b>: 待迁移仓库的读权限、admin、local\n<b>目标account</b>: 待迁移仓库的读写权限以及admin和local的读权限"
     },
     "mongodb": {
       "stepOne": "# 复制集群实例: 无需伸缩。需要提供用于迁移的主地址的地址",
@@ -255,7 +255,7 @@
       "stepTwo": "# 设置 'binlog_row_image' 配置为'full'"
     },
     "postgresql": {
-      "check": "source account：登录权限、源迁移对象的读权限、复制权限 \nsink account：登录权限、Sink的读/写权限",
+      "check": "<b>源account</b>：登录权限、源迁移对象的读权限、复制权限 \n<b>目标account</b>：登录权限、Sink的读/写权限",
       "stepOne": "# 设置 'wal_level' 配置为 'logical'",
       "stepTwo": "# 确保配置的\"max_replication_slots\"、\"max_wal_senders\"数量足够"
     }
