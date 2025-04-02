@@ -42,7 +42,10 @@ const MainBody = () => {
   const retryCount = useRef(0);
   const { data: networkStatus, refetch } = useQuery({
     queryKey: ['networkStatus', devboxDetail?.name],
-    queryFn: () => (devboxDetail?.name ? checkReady(devboxDetail?.name) : []),
+    queryFn: () =>
+      devboxDetail?.name && devboxDetail?.status.value === 'Running'
+        ? checkReady(devboxDetail?.name)
+        : [],
     retry: 5,
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
     onSuccess: (data) => {
