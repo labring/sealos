@@ -561,15 +561,35 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: webhook-service
+      name: admission-webhook-service
       namespace: sealos-system
-      path: /mutate-core-v1-pod
-  failurePolicy: {{ .podWebhookFailurePolicy }}
+      path: /mutate--v1-pod
+  failurePolicy: Ignore
   name: mpod.sealos.io
   namespaceSelector:
     matchExpressions:
       - key: user.sealos.io/owner
         operator: Exists
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: admission-webhook-service
+      namespace: sealos-system
+      path: /validate--v1-pod
+  failurePolicy: Ignore
+  name: vpod.sealos.io
   rules:
   - apiGroups:
     - ""

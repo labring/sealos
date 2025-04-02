@@ -22,10 +22,12 @@ var plog = logf.Log.WithName("pod-mutate-webhook")
 
 const (
 	ExemptionLabel = "webhook.sealos.io/exemption"
+	// ExemptionOwnerRefKind is the kind of the owner reference that exempts the pod from mutation
+	ExemptionOwnerRefKind = "Devbox"
 )
 
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:webhook:path=/mutate-core-v1-pod,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mpod.sealos.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate--v1-pod,mutating=true,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=mpod.sealos.io,admissionReviewVersions=v1
 
 //+kubebuilder:object:generate=false
 
@@ -43,7 +45,14 @@ func (m *PodMutator) Default(_ context.Context, obj runtime.Object) error {
 	}
 	plog.Info("mutating create/update", "name", p.Name)
 	if _, ok := p.Labels[ExemptionLabel]; ok {
+		plog.Info("skip mutating exempted pod", "namespace", p.Namespace, "name", p.Name)
 		return nil
+	}
+	for _, owner := range p.OwnerReferences {
+		if owner.Kind == ExemptionOwnerRefKind {
+			plog.Info("skip mutating devbox pod", "namespace", p.Namespace, "name", p.Name)
+			return nil
+		}
 	}
 	return m.mutate(p)
 }
@@ -93,7 +102,7 @@ type PodValidator struct {
 	TargetRegistry string
 }
 
-//+kubebuilder:webhook:path=/validate-core-v1-pod,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate--v1-pod,mutating=false,failurePolicy=ignore,sideEffects=None,groups=core,resources=pods,verbs=create;update,versions=v1,name=vpod.sealos.io,admissionReviewVersions=v1
 
 func (v *PodValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
 	p, ok := obj.(*corev1.Pod)

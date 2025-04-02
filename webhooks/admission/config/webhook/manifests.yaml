@@ -72,7 +72,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-core-v1-pod
+      path: /mutate--v1-pod
   failurePolicy: Ignore
   name: mpod.sealos.io
   namespaceSelector:
@@ -145,4 +145,24 @@ webhooks:
     - DELETE
     resources:
     - namespaces
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate--v1-pod
+  failurePolicy: Ignore
+  name: vpod.sealos.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
   sideEffects: None
