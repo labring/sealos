@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   uid               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  regionUid         String             
+  regionUid         String
   namespaceId       String
   deletedAt         DateTime?          @db.Timestamptz(3)
   createdAt         DateTime           @default(now()) @db.Timestamptz(3)
@@ -25,7 +25,7 @@ model User {
 
 model Organization {
   uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id                   String               @unique //nanoid 
+  id                   String               @unique //nanoid
   createdAt            DateTime             @default(now()) @db.Timestamptz(3)
   updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
   deletedAt            DateTime?            @db.Timestamptz(3)
@@ -115,6 +115,7 @@ enum TemplateRepositoryKind {
   FRAMEWORK
   OS
   LANGUAGE
+  SERVICE
   CUSTOM
 }
 
