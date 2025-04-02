@@ -35,7 +35,6 @@ export const IconMap = {
   success: require('./icons/success.svg').default,
   error: require('./icons/error.svg').default,
   currency: require('./icons/currency.svg').default,
-  infoCircle: require('./icons/infoCircle.svg').default,
   upperRight: require('./icons/upperRight.svg').default,
   arrowUp: require('./icons/arrowUp.svg').default,
   search: require('./icons/search.svg').default,
