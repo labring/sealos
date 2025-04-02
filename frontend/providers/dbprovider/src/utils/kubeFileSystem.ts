@@ -75,19 +75,21 @@ export class KubeFileSystem {
         });
 
         stdout?.on('error', (error) => {
+          console.error(error.toString());
           if (freeOnceStdError) {
             free();
             reject(new Error(`Output stream error: ${error.message}`));
           }
-          console.log(error.toString());
         });
 
         stderr?.on('data', (error) => {
+          console.error(error.toString());
           if (freeOnceStdError) {
             free();
             reject(new Error(`Command execution error: ${error.toString()}`));
+          } else {
+            chunks = Buffer.concat([chunks, error]);
           }
-          console.log(error.toString());
         });
 
         stdout?.on('end', () => {

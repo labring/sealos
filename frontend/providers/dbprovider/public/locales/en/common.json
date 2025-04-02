@@ -365,5 +365,15 @@
   "collection": "Collection",
   "search": "Search",
   "pls_create": "No results, please create your own",
-  ""
+  "edit_password": "Edit Password",
+  "new_password": "New Password",
+  "enter_new_password": "Please enter new password",
+  "password_required": "Password cannot be empty",
+  "confirm_password": "Confirm Password",
+  "confirm_new_password": "Confirm New Password",
+  "enter_confirm_password": "Re-enter new password for confirmation",
+  "confirm_password_required": "Confirm password cannot be empty",
+  "passwords_must_match": "Passwords do not match",
+  "password_min_length": "Password must be at least 8 characters",
+  "password_complexity": "Password must contain at least two of: numbers, letters, special characters"
 }

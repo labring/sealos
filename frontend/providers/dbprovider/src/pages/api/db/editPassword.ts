@@ -4,8 +4,15 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { fetchDBSecret } from '@/utils/database';
+import { dbTypeMap, fetchDBSecret } from '@/utils/database';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
+import { DBType } from '@/types/db';
+
+export type EditPasswordReq = {
+  dbName: string;
+  dbType: DBType;
+  newPassword: string;
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -13,22 +20,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
-    const { dbName, dbType, newPassword } = req.body as {
-      dbName: string;
-      dbType: DBTypeEnum;
-      newPassword: string;
-    };
+    const { dbName, dbType, newPassword } = req.body as EditPasswordReq;
+
+    if (!newPassword.match(/^(?!-)[A-Za-z\d~`!\@#%^&\*()\-\_=+\|:'",<.>\/? ]{8,32}$/)) {
+      throw new Error(
+        'Password must be 8-32 characters long and contain at least one letter, one number, and one special character'
+      );
+    }
 
     const firstPodName = `${dbName}-${DBBackupPolicyNameMap[dbType]}-0`;
 
-    const { username, password, host, port } = await fetchDBSecret(
+    const { username, password, host, port, ...rest } = await fetchDBSecret(
       k8sCore,
       dbName,
       dbType,
       namespace
     );
 
-    const showDatabaseCommand: Map<DBTypeEnum, string[]> = new Map([
+    let { body } = rest;
+
+    const showDatabaseCommand: Map<DBType, string[]> = new Map([
       [
         DBTypeEnum.mysql,
         [
@@ -37,22 +48,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           `-p${password}`,
           `-h${host}`,
           `-P${port}`,
-          `-e "ALTER USER '${username}'@'${host}' IDENTIFIED BY '${newPassword}';"`
+          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';`
         ]
       ],
       [
         DBTypeEnum.postgresql,
-        ['psql', '-U', 'postgres', `-c "ALTER USER ${username} PASSWORD '${newPassword}';"`]
+        ['psql', '-U', 'postgres', `-c ALTER USER ${username} PASSWORD '${newPassword}';`]
       ],
       [
         DBTypeEnum.mongodb,
         [
           'mongo',
-          '--quiet',
           `-u${username}`,
           `-p${password}`,
+          'admin',
           '--eval',
           `db.changeUserPassword('${username}', '${newPassword}');`
+        ]
+      ],
+      [
+        DBTypeEnum.redis,
+        [
+          'redis-cli',
+          '-h',
+          host,
+          '-p',
+          port,
+          '-a',
+          password,
+          'config',
+          'set',
+          'requirepass',
+          newPassword
         ]
       ]
     ]);
@@ -71,23 +98,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       false
     );
 
-    let response;
-    switch (dbType) {
-      case DBTypeEnum.mysql:
-        response = result.split('\n').slice(1, -1);
-        break;
-      case DBTypeEnum.postgresql:
-        response = result.replaceAll(' ', '').split('\n').slice(2, -3);
-        break;
-      case DBTypeEnum.mongodb:
-        response = result.split('\n').slice(0, -1);
-        break;
-      default:
-        response = result;
-        break;
+    console.log(result);
+
+    if (newPassword.includes('ERR') || result.includes('failed')) {
+      if (result.includes('ERR') || result.includes('failed')) {
+        throw new Error('Failed to change password');
+      }
+    } else {
+      if (result.includes('exception')) {
+        throw new Error('Failed to change password');
+      }
     }
 
-    jsonRes(res, { data: response });
+    const secretName = dbName + '-conn-credential';
+    body.data![dbTypeMap[dbType].passwordKey] = Buffer.from(newPassword).toString('base64');
+    const k8s_result = await k8sCore.replaceNamespacedSecret(secretName, namespace, body);
+    if (k8s_result.response.statusCode !== 200) {
+      throw new Error('Failed to patch secret!!!');
+    }
+    jsonRes(res, { data: 'Edit password success.' });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

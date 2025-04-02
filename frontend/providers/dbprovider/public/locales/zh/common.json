@@ -288,7 +288,7 @@
   "paste_database_connection": "粘贴数据库连接",
   "paste_database_connection_desc": "粘贴数据库连接到此处，将自动识别主机名等数据库配置信息",
   "pause_error": "数据库暂停失败",
-  "pause_hint": "暂停服务将停止计算 CPU 和内存等费用，但存储和外网端口仍将产生费用。是否现在暂停？",
+  "pause_hint": "暂停所有计算资源（CPU和内存）及端口计费，仅<b class='emp'>保留存储资源</b>。由于端口资源被回收，恢复后外网访问端口将重新分配，需<b class='emp'>更新连接信息</b>。是否现在暂停？",
   "pause_success": "数据库已暂停",
   "please_enter": "请输入",
   "prompt": "提示",
@@ -364,5 +364,16 @@
   "table": "表",
   "collection": "集合",
   "search": "搜索",
-  "pls_create": "无结果，请自行创建"
+  "pls_create": "无结果，请自行创建",
+  "edit_password": "修改密码",
+  "new_password": "新密码",
+  "enter_new_password": "请输入新密码 ",
+  "password_required": "密码不能为空",
+  "confirm_password": "确认密码",
+  "confirm_new_password": "确认新密码",
+  "enter_confirm_password": "再次输入新密码以确认",
+  "confirm_password_required": "确认密码不能为空",
+  "passwords_must_match": "两次输入的密码不一致",
+  "password_min_length": "密码长度至少为 8 个字符",
+  "password_complexity": "密码必须包含数字、字母、特殊字符中的两种"
 }

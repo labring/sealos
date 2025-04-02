@@ -18,6 +18,7 @@ import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { AxiosRequestConfig } from 'axios';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
+import { EditPasswordReq } from '@/pages/api/db/editPassword';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -120,3 +121,5 @@ export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
 
 export const getTables = (payload: { dbName: string; dbType: DBType; databaseName: string }) =>
   POST<Array<string>>(`/api/db/getTables`, payload);
+
+export const editPassword = (payload: EditPasswordReq) => POST('/api/db/editPassword', payload);
