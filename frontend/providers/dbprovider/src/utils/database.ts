@@ -11,7 +11,7 @@ const base = {
   hostKey: 'host'
 };
 
-const dbTypeMap = {
+export const dbTypeMap = {
   [DBTypeEnum.postgresql]: {
     ...base,
     connectKey: 'postgresql'
@@ -130,7 +130,8 @@ export async function fetchDBSecret(
     username,
     password,
     host,
-    port
+    port,
+    body: secret.body
   };
 }
 

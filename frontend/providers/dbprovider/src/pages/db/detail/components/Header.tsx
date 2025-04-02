@@ -1,4 +1,4 @@
-import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
@@ -69,10 +69,12 @@ const Header = ({
     try {
       setLoading(true);
       await pauseDBByName(db);
+      await delDBServiceByName(`${db.dbName}-export`);
       toast({
         title: t('pause_success'),
         status: 'success'
       });
+      location.reload();
     } catch (error: any) {
       toast({
         title: typeof error === 'string' ? error : error.message || t('pause_error'),

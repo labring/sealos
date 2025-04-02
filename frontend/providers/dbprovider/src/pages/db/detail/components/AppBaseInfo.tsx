@@ -1,6 +1,7 @@
 import {
   applyYamlList,
   delDBServiceByName,
+  editPassword,
   getDBSecret,
   getDBServiceByName,
   getDBStatefulSetByName
@@ -20,6 +21,10 @@ import {
   Divider,
   Flex,
   FlexProps,
+  FormErrorMessage,
+  FormHelperText,
+  FormLabel,
+  Input,
   Modal,
   ModalCloseButton,
   ModalContent,
@@ -34,11 +39,12 @@ import {
 } from '@chakra-ui/react';
 import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { pick } from 'lodash';
+import { pick, set } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-
+import { Controller, Form, SubmitHandler, useController, useForm } from 'react-hook-form';
+import FormControl from '@/components/FormControl';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -96,6 +102,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { message: toast } = useMessage();
+  const [scenario, setScenario] = useState<'externalNetwork' | 'editPassword'>('externalNetwork');
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
@@ -275,6 +282,141 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     }
   };
 
+  const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
+    try {
+      await editPassword({
+        dbType: db.dbType,
+        dbName: db.dbName,
+        newPassword: data.password
+      });
+      refetchAll();
+      setIsChecked(false);
+      toast({
+        title: t('successfully_closed_external_network_access'),
+        status: 'success'
+      });
+      reset();
+      onClose();
+    } catch (error) {
+      toast({
+        title: typeof error === 'string' ? error : t('service_deletion_failed'),
+        status: 'error'
+      });
+    }
+  };
+
+  type PasswordEdit = {
+    password: string;
+    confirmPassword: string;
+  };
+
+  const { register, handleSubmit, watch, formState, reset } = useForm<PasswordEdit>();
+
+  function ModalDetail(scenario_: typeof scenario) {
+    const password = watch('password');
+    const errors = formState.errors;
+    switch (scenario_) {
+      case 'externalNetwork':
+        return {
+          mTitle: t('enable_external_network_access'),
+          mContent: (
+            <Flex
+              alignItems={'center'}
+              justifyContent={'center'}
+              flexDirection={'column'}
+              pt="20px"
+              pb="45px"
+              px="40px"
+            >
+              <Text fontSize={'14px'} fontWeight={500} color={'grayModern.500'}>
+                {t('billing_standards')}
+              </Text>
+              <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
+                <Text mr={'8px'}>{SOURCE_PRICE.nodeports.toFixed(3)}</Text>
+                <CurrencySymbol
+                  type={SystemEnv.CurrencySymbol}
+                  shellCoin={{
+                    mr: '2px',
+                    w: '20px',
+                    h: '20px'
+                  }}
+                />
+                /{t('Hour')}
+              </Center>
+              <Button
+                minW={'100px'}
+                height={'32px'}
+                mt="32px"
+                variant={'solid'}
+                onClick={openNetWorkService}
+              >
+                {t('turn_on')}
+              </Button>
+            </Flex>
+          )
+        };
+      case 'editPassword':
+        return {
+          mTitle: t('edit_password'),
+          mContent: (
+            <form onSubmit={handleSubmit(handelEditPassword)}>
+              <Flex flexDirection={'column'} py="20px" px="40px">
+                <FormControl isInvalid={Boolean(errors.password)} mb={4}>
+                  <FormLabel>{t('new_password')}</FormLabel>
+                  <Input
+                    type="password"
+                    width={'100%'}
+                    placeholder={t('confirm_new_password')}
+                    {...register('password', {
+                      required: t('password_required'),
+                      minLength: {
+                        value: 8,
+                        message: t('password_min_length')
+                      },
+                      pattern: {
+                        value: /^(?!-)[A-Za-z\d~`!@#%^&\*()\-\_=+\|:'",<.>\/? ]{8,32}$/,
+                        message: t('password_complexity')
+                      }
+                    })}
+                  />
+                  <FormErrorMessage>{String(errors.password?.message)}</FormErrorMessage>
+                </FormControl>
+
+                <FormControl isInvalid={Boolean(errors.confirmPassword)} mb={4}>
+                  <FormLabel>{t('confirm_password')}</FormLabel>
+                  <Input
+                    type="password"
+                    width={'100%'}
+                    placeholder={t('confirm_new_password')}
+                    {...register('confirmPassword', {
+                      required: t('confirm_password_required'),
+                      validate: (value) => value === password || t('passwords_must_match')
+                    })}
+                  />
+                  <FormErrorMessage>{String(errors.confirmPassword?.message)}</FormErrorMessage>
+                </FormControl>
+
+                <Button
+                  type="submit"
+                  px={5}
+                  py={2}
+                  width="fit-content"
+                  mt={1}
+                  ml="auto"
+                  variant={'solid'}
+                >
+                  {t('confirm')}
+                </Button>
+              </Flex>
+            </form>
+          )
+        };
+    }
+  }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const { mTitle, mContent } = useMemo(() => ModalDetail(scenario), [scenario, formState]);
+
   return (
     <Flex position={'relative'} gap={'8px'}>
       <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
@@ -386,7 +528,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
 
-            {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
+            {['milvus', 'kafka'].includes(db.dbType) === false && (
               <Center
                 className="driver-detail-terminal-button"
                 gap={'6px'}
@@ -407,8 +549,37 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 {t('direct_connection')}
               </Center>
             )}
+            {[
+              DBTypeEnum.mysql,
+              DBTypeEnum.postgresql,
+              DBTypeEnum.mongodb,
+              DBTypeEnum.redis
+            ].includes(db.dbType as DBTypeEnum) && (
+              <Center
+                className="driver-detail-terminal-button"
+                gap={'6px'}
+                h="28px"
+                fontSize={'12px'}
+                bg="white"
+                border="1px solid #DFE2EA"
+                borderRadius={'md'}
+                px="8px"
+                cursor={'pointer'}
+                fontWeight={'bold'}
+                onClick={() => {
+                  setScenario('editPassword');
+                  onOpen();
+                }}
+                _hover={{
+                  color: 'brightBlue.600'
+                }}
+              >
+                <MyIcon name="edit" w={'16px'} h={'16px'} />
+                {t('edit_password')}
+              </Center>
+            )}
           </Flex>
-          {['milvus', 'kafka'].indexOf(db.dbType) === -1 && (
+          {['milvus', 'kafka'].includes(db.dbType) === false && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>
@@ -446,7 +617,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 ml="12px"
                 size="md"
                 isChecked={isChecked}
-                onChange={(e) => (isChecked ? closeNetWorkService() : onOpen())}
+                onChange={(e) => {
+                  if (isChecked) {
+                    closeNetWorkService();
+                  } else {
+                    setScenario('externalNetwork');
+                    onOpen();
+                  }
+                }}
               />
             </Flex>
             {isChecked ? (
@@ -483,41 +661,9 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           <Modal isOpen={isOpen} onClose={onClose} lockFocusAcrossFrames={false}>
             <ModalOverlay />
             <ModalContent minW={'430px'}>
-              <ModalHeader height={'48px'}>{t('enable_external_network_access')}</ModalHeader>
+              <ModalHeader height={'48px'}>{mTitle}</ModalHeader>
               <ModalCloseButton top={'10px'} right={'10px'} />
-              <Flex
-                alignItems={'center'}
-                justifyContent={'center'}
-                flexDirection={'column'}
-                pt="20px"
-                pb="45px"
-                px="40px"
-              >
-                <Text fontSize={'14px'} fontWeight={500} color={'grayModern.500'}>
-                  {t('billing_standards')}
-                </Text>
-                <Center mt="16px" color={'#24282C'} fontSize={'24px'} fontWeight={600}>
-                  <Text mr={'8px'}>{SOURCE_PRICE.nodeports.toFixed(3)}</Text>
-                  <CurrencySymbol
-                    type={SystemEnv.CurrencySymbol}
-                    shellCoin={{
-                      mr: '2px',
-                      w: '20px',
-                      h: '20px'
-                    }}
-                  />
-                  /{t('Hour')}
-                </Center>
-                <Button
-                  minW={'100px'}
-                  height={'32px'}
-                  mt="32px"
-                  variant={'solid'}
-                  onClick={openNetWorkService}
-                >
-                  {t('turn_on')}
-                </Button>
-              </Flex>
+              {mContent}
             </ModalContent>
           </Modal>
         </Box>

@@ -11,7 +11,6 @@ import {
   Box,
   Button,
   Flex,
-  Spinner,
   Table,
   TableContainer,
   Tbody,
@@ -55,6 +54,19 @@ function Tag({
     </Box>
   );
 }
+
+const onlyShowFirst = `.onlyShowFirst {
+    color: white;
+}
+.onlyShowFirst:nth-of-type(1) {
+  color: black;
+}
+
+.onlyShowFirst:not(:nth-of-type(1)):hover {
+  color: blue;
+}
+    
+`;
 
 const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
   const {
@@ -211,6 +223,8 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                     onClick={() => {
                       if (canClick) handelSwitchMs(item);
                     }}
+                    color="white"
+                    _hover={{ color: 'currentColor', bg: '#F3F3F4' }}
                     {...(!canClick && {
                       cursor: 'not-allowed',
                       _hover: { bg: 'transparent', color: 'red.600' }
@@ -219,14 +233,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
                     {switchTarget === item.podName ? (
                       <MyIcon className={styles.load} name="loading" w={'16px'} h={'16px'} />
                     ) : (
-                      <MyIcon
-                        name="change"
-                        w={'16px'}
-                        h={'16px'}
-                        {...(!canClick && {
-                          color: 'grayModern.500'
-                        })}
-                      />
+                      <MyIcon name="change" w={'16px'} h={'16px'} className="onlyShowFirst" />
                     )}
                   </Button>
                 </MyTooltip>
@@ -244,8 +251,17 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     refetchInterval: 3000
   });
 
+  useEffect(() => {
+    const tags = document.querySelectorAll('.onlyShowFirst');
+    if (tags.length > 0) {
+      (tags[0] as HTMLElement).style.fill = '#111824';
+      (tags[0] as HTMLElement).style.color = '#111824';
+    }
+  });
+
   return (
     <Box h={'100%'} position={'relative'}>
+      {/* <style>{onlyShowFirst}</style> */}
       <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'} fontSize={'base'}>
           <Thead position={'sticky'} top={'0'}>
