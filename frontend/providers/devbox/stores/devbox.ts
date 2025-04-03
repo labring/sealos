@@ -150,6 +150,7 @@ export const useDevboxStore = create<State>()(
         if (!devboxName) return Promise.reject('devbox name is empty');
 
         const res = await getMyDevboxList();
+        const sshPort = res.find((item) => item.name === devboxName)?.sshPort;
         const status = res.find((item) => item.name === devboxName)?.status;
 
         if (!status) return Promise.reject('devbox status is empty');
@@ -157,6 +158,9 @@ export const useDevboxStore = create<State>()(
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {
             state.devboxDetail.status = status;
+            if (state.devboxDetail.sshConfig && sshPort) {
+              state.devboxDetail.sshConfig.sshPort = sshPort;
+            }
           }
           state.devboxList = state.devboxList.map((item) => ({
             ...item,
