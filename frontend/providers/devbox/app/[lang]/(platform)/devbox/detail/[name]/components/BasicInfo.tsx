@@ -28,17 +28,12 @@ const BasicInfo = () => {
     const result = await getTemplateConfig(devboxDetail?.templateUid as string);
     const config = parseTemplateConfig(result.template.config);
 
-    const sshPrivateKey = Buffer.from(
-      devboxDetail?.sshConfig?.sshPrivateKey as string,
-      'base64'
-    ).toString('utf-8');
-
     if (!devboxDetail?.sshPort) return;
 
     setSshConfigData({
       devboxName: devboxDetail?.name,
       runtimeType: devboxDetail?.templateRepositoryName,
-      privateKey: sshPrivateKey,
+      privateKey: devboxDetail?.sshConfig?.sshPrivateKey as string,
       userName: devboxDetail?.sshConfig?.sshUser as string,
       token: devboxDetail?.sshConfig?.token as string,
       workingDir: config.workingDir,
