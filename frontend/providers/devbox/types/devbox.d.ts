@@ -26,6 +26,8 @@ export type DevboxReleaseStatusValueType = `${DevboxReleaseStatusEnum}`;
 export type RuntimeType = `${FrameworkTypeEnum}` | `${LanguageTypeEnum}` | `${OSTypeEnum}`;
 export type ProtocolType = 'HTTP' | 'GRPC' | 'WS';
 
+export type ShutdownModeType = 'Stopped' | 'Shutdown';
+
 export type GpuType = {
   manufacturers: string;
   type: string;
@@ -97,6 +99,7 @@ export interface DevboxDetailType extends DevboxEditType {
     sshDomain: string;
     sshPort: number;
     sshPrivateKey: string;
+    token: string;
   };
   sshPort?: number;
   lastTerminatedReason?: string;
@@ -117,6 +120,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
     sshDomain: string;
     sshPort: number;
     sshPrivateKey: string;
+    token: string;
   };
   sshPort?: number;
   lastTerminatedReason?: string;

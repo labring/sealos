@@ -41,6 +41,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       }
     }
   );
+
   useQuery(
     ['devbox-detail-pod'],
     () => {

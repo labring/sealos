@@ -1,14 +1,12 @@
-import { useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useState } from 'react';
-import { Box, Text, Flex, Image, Spinner, Tooltip, Button } from '@chakra-ui/react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Box, Text, Flex, Image, Tooltip, Button } from '@chakra-ui/react';
 
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';
 import { getTemplateConfig } from '@/api/template';
-import { getSSHConnectionInfo } from '@/api/devbox';
-import { downLoadBlob, parseTemplateConfig } from '@/utils/tools';
+import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 
 import MyIcon from '@/components/Icon';
 import GPUItem from '@/components/GPUItem';
@@ -17,35 +15,27 @@ import SshConnectModal from '@/components/modals/SshConnectModal';
 
 const BasicInfo = () => {
   const t = useTranslations();
-  const { message: toast } = useMessage();
+  const { copyData } = useCopyData();
 
   const { env } = useEnvStore();
+  const { sourcePrice } = usePriceStore();
   const { devboxDetail } = useDevboxStore();
-  const { sourcePrice, setSourcePrice } = usePriceStore();
 
-  const [loading, setLoading] = useState(false);
   const [onOpenSsHConnect, setOnOpenSsHConnect] = useState(false);
   const [sshConfigData, setSshConfigData] = useState<JetBrainsGuideData | null>(null);
 
   const handleOneClickConfig = useCallback(async () => {
-    const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-      devboxName: devboxDetail?.name as string
-    });
-
     const result = await getTemplateConfig(devboxDetail?.templateUid as string);
     const config = parseTemplateConfig(result.template.config);
-    console.log('config', config);
-
-    const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
 
     if (!devboxDetail?.sshPort) return;
 
     setSshConfigData({
       devboxName: devboxDetail?.name,
       runtimeType: devboxDetail?.templateRepositoryName,
-      privateKey: sshPrivateKey,
-      userName,
-      token,
+      privateKey: devboxDetail?.sshConfig?.sshPrivateKey as string,
+      userName: devboxDetail?.sshConfig?.sshUser as string,
+      token: devboxDetail?.sshConfig?.token as string,
       workingDir: config.workingDir,
       host: env.sealosDomain,
       port: devboxDetail?.sshPort.toString(),
@@ -59,20 +49,23 @@ const BasicInfo = () => {
     devboxDetail?.sshPort,
     devboxDetail?.templateRepositoryName,
     env.sealosDomain,
-    env.namespace
+    env.namespace,
+    devboxDetail?.sshConfig?.sshUser,
+    devboxDetail?.sshConfig?.sshPrivateKey,
+    devboxDetail?.sshConfig?.token
   ]);
 
-  const handleCopySSHCommand = useCallback(() => {
-    const sshCommand = `ssh -i yourPrivateKeyPath ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`;
-    navigator.clipboard.writeText(sshCommand).then(() => {
-      toast({
-        title: t('copy_success'),
-        status: 'success',
-        duration: 2000,
-        isClosable: true
-      });
-    });
-  }, [devboxDetail?.sshConfig?.sshUser, devboxDetail?.sshPort, env.sealosDomain, toast, t]);
+  const sshConnectCommand = useMemo(
+    () =>
+      `ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`,
+    [
+      devboxDetail?.name,
+      devboxDetail?.sshConfig?.sshUser,
+      devboxDetail?.sshPort,
+      env.sealosDomain,
+      env.namespace
+    ]
+  );
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
@@ -127,10 +120,7 @@ const BasicInfo = () => {
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
             <Text fontSize={'12px'} w={'full'} textOverflow={'ellipsis'}>
-              {
-                // getRuntimeDetailLabel(devboxDetail?., devboxDetail?.runtimeVersion)
-                `${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`
-              }
+              {`${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`}
             </Text>
           </Flex>
         </Flex>
@@ -189,6 +179,7 @@ const BasicInfo = () => {
           size={'sm'}
           leftIcon={<MyIcon name="settings" w={'16px'} />}
           bg={'white'}
+          isDisabled={devboxDetail?.status.value !== 'Running'}
           color={'grayModern.600'}
           border={'1px solid'}
           borderColor={'grayModern.200'}
@@ -208,6 +199,7 @@ const BasicInfo = () => {
           <Flex width={'60%'} color={'grayModern.600'}>
             <Tooltip
               label={t('copy')}
+              isDisabled={devboxDetail?.status.value !== 'Running'}
               hasArrow
               bg={'#FFFFFF'}
               color={'grayModern.900'}
@@ -219,13 +211,19 @@ const BasicInfo = () => {
               borderRadius={'md'}
             >
               <Text
-                cursor="pointer"
                 fontSize={'12px'}
-                _hover={{ color: 'blue.500' }}
-                onClick={handleCopySSHCommand}
+                {...(devboxDetail?.status.value === 'Running' && {
+                  cursor: 'pointer',
+                  _hover: { color: 'blue.500' },
+                  onClick: () => copyData(sshConnectCommand)
+                })}
                 w={'full'}
               >
-                {`ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`}
+                {devboxDetail?.status.value === 'Running' ? (
+                  sshConnectCommand
+                ) : (
+                  <span style={{ marginLeft: '8px' }}>-</span>
+                )}
               </Text>
             </Tooltip>
           </Flex>
@@ -235,43 +233,39 @@ const BasicInfo = () => {
             {t('private_key')}
           </Text>
           <Flex width={'60%'} color={'grayModern.600'}>
-            {loading ? (
-              <Spinner size="sm" color="#0077A9" />
-            ) : (
-              <Tooltip
-                label={t('export_privateKey')}
-                hasArrow
-                bg={'#FFFFFF'}
-                color={'grayModern.900'}
-                fontSize={'12px'}
-                fontWeight={400}
-                py={2}
-                borderRadius={'md'}
+            <Tooltip
+              label={t('export_privateKey')}
+              hasArrow
+              bg={'#FFFFFF'}
+              color={'grayModern.900'}
+              fontSize={'12px'}
+              fontWeight={400}
+              py={2}
+              borderRadius={'md'}
+            >
+              <Flex
+                p={1}
+                borderRadius={'6px'}
+                _hover={{
+                  bg: 'rgba(17, 24, 36, 0.05)'
+                }}
               >
-                <Flex
-                  p={1}
-                  borderRadius={'6px'}
-                  _hover={{
-                    bg: 'rgba(17, 24, 36, 0.05)'
-                  }}
-                >
-                  <MyIcon
-                    cursor={'pointer'}
-                    name="download"
-                    color={'grayModern.600'}
-                    w={'16px'}
-                    h={'16px'}
-                    onClick={() =>
-                      downLoadBlob(
-                        devboxDetail?.sshConfig?.sshPrivateKey as string,
-                        'application/octet-stream',
-                        `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
-                      )
-                    }
-                  />
-                </Flex>
-              </Tooltip>
-            )}
+                <MyIcon
+                  cursor={'pointer'}
+                  name="download"
+                  color={'grayModern.600'}
+                  w={'16px'}
+                  h={'16px'}
+                  onClick={() =>
+                    downLoadBlob(
+                      devboxDetail?.sshConfig?.sshPrivateKey as string,
+                      'application/octet-stream',
+                      `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+                    )
+                  }
+                />
+              </Flex>
+            </Tooltip>
           </Flex>
         </Flex>
       </Flex>

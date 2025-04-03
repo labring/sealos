@@ -6,7 +6,8 @@ import {
   DevboxEditTypeV2,
   DevboxListItemTypeV2,
   DevboxPatchPropsType,
-  DevboxVersionListItemType
+  DevboxVersionListItemType,
+  ShutdownModeType
 } from '@/types/devbox';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import {
@@ -53,7 +54,8 @@ export const restartDevbox = (data: { devboxName: string }) => POST('/api/restar
 
 export const startDevbox = (data: { devboxName: string }) => POST('/api/startDevbox', data);
 
-export const pauseDevbox = (data: { devboxName: string }) => POST('/api/pauseDevbox', data);
+export const shutdownDevbox = (data: { devboxName: string; shutdownMode: ShutdownModeType }) =>
+  POST('/api/shutdownDevbox', data);
 
 export const getDevboxVersionList = (devboxName: string, devboxUid: string) =>
   GET<KBDevboxReleaseType[]>('/api/getDevboxVersionList', { devboxName, devboxUid }).then(

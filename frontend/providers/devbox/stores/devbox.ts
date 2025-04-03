@@ -113,15 +113,8 @@ export const useDevboxStore = create<State>()(
       setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
         const detail = await getDevboxByName(devboxName);
 
-        if (detail.status.value !== 'Running') {
-          set((state) => {
-            state.devboxDetail = detail;
-          });
-          return detail;
-        }
-        const pods = await getDevboxPodsByDevboxName(devboxName);
-
-        const { base64PrivateKey, userName } = await getSSHConnectionInfo({
+        // SSH configuration should be obtained regardless of whether it is running on or not
+        const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
           devboxName: detail.name
         });
 
@@ -130,11 +123,19 @@ export const useDevboxStore = create<State>()(
           sshUser: userName,
           sshDomain: sealosDomain,
           sshPort: detail.sshPort,
-          sshPrivateKey
+          sshPrivateKey,
+          token
         };
 
-        // add sshConfig
         detail.sshConfig = sshConfig as DevboxDetailType['sshConfig'];
+
+        if (detail.status.value !== 'Running') {
+          set((state) => {
+            state.devboxDetail = detail;
+          });
+          return detail;
+        }
+        const pods = await getDevboxPodsByDevboxName(devboxName);
 
         // add upTime by Pod
         detail.upTime = pods[0].upTime;
@@ -148,24 +149,22 @@ export const useDevboxStore = create<State>()(
       intervalLoadPods: async (devboxName, updateDetail) => {
         if (!devboxName) return Promise.reject('devbox name is empty');
 
-        const pods = await getDevboxPodsByDevboxName(devboxName);
+        const res = await getMyDevboxList();
+        const sshPort = res.find((item) => item.name === devboxName)?.sshPort;
+        const status = res.find((item) => item.name === devboxName)?.status;
 
-        // TODO: change Running to podStatusMap.running
-        // TODO: check status enum and backend status enum
-        const devboxStatus =
-          pods.length === 0
-            ? devboxStatusMap.Stopped
-            : pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
-            ? devboxStatusMap.Running
-            : devboxStatusMap.Pending;
+        if (!status) return Promise.reject('devbox status is empty');
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && updateDetail) {
-            state.devboxDetail.status = devboxStatus;
+            state.devboxDetail.status = status;
+            if (state.devboxDetail.sshConfig && sshPort) {
+              state.devboxDetail.sshConfig.sshPort = sshPort;
+            }
           }
           state.devboxList = state.devboxList.map((item) => ({
             ...item,
-            status: item.name === devboxName ? devboxStatus : item.status
+            status: item.name === devboxName ? status : item.status
           }));
         });
         return 'success';

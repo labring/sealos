@@ -91,6 +91,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         const lang = await sealosApp.getLanguage();
         changeI18n({
           currentLanguage: lang.lng
+          // currentLanguage: 'zh'
         });
       } catch (error) {
         changeI18n({

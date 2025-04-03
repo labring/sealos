@@ -91,7 +91,7 @@ export type KBDevboxTypeV2 = {
         startedAt: string;
       };
     };
-    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown';
+    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown' | 'Shutdown';
     commitHistory: {
       image: string;
       pod: string;
