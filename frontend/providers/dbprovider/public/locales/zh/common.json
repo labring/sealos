@@ -375,5 +375,11 @@
   "confirm_password_required": "确认密码不能为空",
   "passwords_must_match": "两次输入的密码不一致",
   "password_min_length": "密码长度至少为 8 个字符",
-  "password_complexity": "密码必须包含数字、字母、特殊字符中的两种"
+  "password_complexity": "密码必须包含数字、字母、特殊字符中的两种",
+  "successfully_edit_password": "成功修改密码",
+  "comp_name": "组件名",
+  "has_comps": "有 {number} 个组件",
+  "each": "各{perc}",
+  "occupy": "占用{num}",
+  "ha_desc": "哨兵节点额外占用资源 "
 }

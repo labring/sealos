@@ -16,11 +16,17 @@ import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
-import type { DBEditType } from '@/types/db';
+import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { distributeResources } from '@/utils/database';
+import { tWithParams } from '@/utils/i18n-client';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Box,
   Button,
   Center,
@@ -60,51 +66,125 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
   const resources = distributeResources(data);
   const { t } = useTranslation();
 
+  const compNum = Object.keys(resources).length;
+
+  console.log(
+    DBTypeList.findLast((item) => item.id === data.dbType)!.label,
+    Object.keys(resources).length
+  );
+
+  const dbName = DBTypeList.findLast((item) => item.id === data.dbType)!.label;
+
+  const descriptionMap: Map<DBType, string> = new Map([
+    [DBTypeEnum.postgresql, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.mongodb, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.mysql, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.redis, `redis ${tWithParams('occupy', { num: '100%' })}, ${t('ha_desc')}`],
+    [DBTypeEnum.kafka, tWithParams('each', { perc: '25%' })],
+    [DBTypeEnum.milvus, tWithParams('each', { perc: '30%, 40%, 30%' })]
+  ]);
+
   return (
-    <TableContainer>
-      <Table variant="unstyled" width={'full'}>
-        <Thead>
-          <Tr>
-            {[t('name'), t('cpu'), t('memory'), t('Replicas'), t('storage_volumes')].map(
-              (header, i) => {
-                return (
-                  <Th
-                    fontSize={'12px'}
-                    py="13px"
-                    px={'24px'}
-                    key={i}
-                    bg={'grayModern.100'}
-                    color={'grayModern.600'}
-                    border={'none'}
-                    _first={{
-                      borderLeftRadius: '6px'
-                    }}
-                    _last={{
-                      borderRightRadius: '6px'
-                    }}
-                  >
-                    {header}
-                  </Th>
-                );
-              }
-            )}
-          </Tr>
-        </Thead>
-        <Tbody>
-          {Object.entries(resources).map(([keyName, value]) => {
-            return (
-              <Tr key={keyName}>
-                <Td>{keyName}</Td>
-                <Td>{value.cpuMemory.limits.cpu}</Td>
-                <Td>{value.cpuMemory.limits.memory}</Td>
-                <Td>{value.other?.replicas ?? data.replicas}</Td>
-                <Td>{value.storage} Gi</Td>
-              </Tr>
-            );
-          })}
-        </Tbody>
-      </Table>
-    </TableContainer>
+    <Accordion
+      variant="unstyled"
+      defaultIndex={[-1]}
+      allowMultiple
+      border="1px solid #BCE7FF"
+      borderRadius="6px"
+      overflow="hidden"
+      marginTop={5}
+      width={'100%'}
+    >
+      <AccordionItem borderStyle={'none'}>
+        <h2>
+          <AccordionButton
+            bgColor="#F9FDFE"
+            px={5}
+            py={3}
+            _hover={{ bg: '#F9FDFE' }}
+            _expanded={{ bg: '#F9FDFE', borderBottom: '1px solid #BCE7FF' }}
+            color="#485264"
+          >
+            <Box
+              as="span"
+              flex="1"
+              textAlign="left"
+              display="flex"
+              flexDirection="row"
+              color="#485264"
+              alignItems="center"
+            >
+              <MyIcon name="warningInfo" w={'16px'} h={'16px'} mr={2} />
+              <Text fontWeight="500">
+                {dbName}
+                {tWithParams('has_comps', { number: compNum })}:&emsp;
+              </Text>
+              <Text>
+                {Object.keys(resources)
+                  .sort()
+                  .map((item) => {
+                    return item.split('-').at(-1);
+                  })
+                  .join(', ')}
+              </Text>
+              <Text mx={2} color="#C4CBD7">
+                |
+              </Text>
+              <Text>{descriptionMap.get(data.dbType)}</Text>
+            </Box>
+            <AccordionIcon />
+          </AccordionButton>
+        </h2>
+        <AccordionPanel pb={4}>
+          <TableContainer>
+            <Table variant="unstyled" width={'full'}>
+              <Thead>
+                <Tr>
+                  {[t('comp_name'), t('cpu'), t('memory'), t('storage_volumes'), t('Replicas')].map(
+                    (header, i) => {
+                      return (
+                        <Th
+                          fontSize={'12px'}
+                          py="13px"
+                          px={'24px'}
+                          key={i}
+                          bg={'grayModern.100'}
+                          color={'grayModern.600'}
+                          border={'none'}
+                          _first={{
+                            borderLeftRadius: '6px'
+                          }}
+                          _last={{
+                            borderRightRadius: '6px'
+                          }}
+                        >
+                          {header}
+                        </Th>
+                      );
+                    }
+                  )}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {Object.entries(resources)
+                  .sort()
+                  .map(([keyName, value]) => {
+                    return (
+                      <Tr key={keyName}>
+                        <Td w="190px">{keyName}</Td>
+                        <Td>{value.cpuMemory.limits.cpu}</Td>
+                        <Td>{value.cpuMemory.limits.memory}</Td>
+                        <Td>{value.storage} G</Td>
+                        <Td>{value.other?.replicas ?? data.replicas}</Td>
+                      </Tr>
+                    );
+                  })}
+              </Tbody>
+            </Table>
+          </TableContainer>
+        </AccordionPanel>
+      </AccordionItem>
+    </Accordion>
   );
 }
 
@@ -470,28 +550,6 @@ const Form = ({
                   />
                 </Flex>
               </FormControl>
-              <Flex alignItems={'center'} mb={7}>
-                <Label w={100}>{t('resources_distribution')}</Label>
-                <Popover>
-                  <PopoverTrigger>
-                    <Button variant="outline">{t('view_resources_distribution')}</Button>
-                  </PopoverTrigger>
-                  <PopoverContent width="fit-content">
-                    <PopoverBody width="fit-content">
-                      <ResourcesDistributeTable
-                        data={{
-                          dbType: getValues('dbType'),
-                          cpu: getValues('cpu'),
-                          memory: getValues('memory'),
-                          storage: getValues('storage'),
-                          replicas: getValues('replicas'),
-                          forDisplay: true
-                        }}
-                      />
-                    </PopoverBody>
-                  </PopoverContent>
-                </Popover>
-              </Flex>
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={100}>CPU</Label>
                 <MySlider
@@ -565,7 +623,7 @@ const Form = ({
                 {getValues('replicas') === 1 && (
                   <Tip
                     ml={4}
-                    icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
+                    icon={<MyIcon name="warningInfo" width={'14px'} fill="#0884DD"></MyIcon>}
                     text={t('single_node_tip')}
                     size="sm"
                     borderRadius={'md'}
@@ -681,6 +739,16 @@ const Form = ({
                   )}
                 </Flex>
               </FormControl>
+              <ResourcesDistributeTable
+                data={{
+                  dbType: getValues('dbType'),
+                  cpu: getValues('cpu'),
+                  memory: getValues('memory'),
+                  storage: getValues('storage'),
+                  replicas: getValues('replicas'),
+                  forDisplay: true
+                }}
+              />
             </Box>
           </Box>
           {supportBackup && (

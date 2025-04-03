@@ -227,7 +227,7 @@
   "identify": "Identifify Information",
   "identify_clipboard": "Identify clipboard contents",
   "import_through_file": "File Import",
-  "important_tips_for_migrating": "Tip: If the source_database in the source database overlaps with the sink_database in the target database, a new database should be created in the target database to avoid data duplication.",
+  "important_tips_for_migrating": "Tip: If the <b>source_database</b> in the source database overlaps with the <b>sink_database</b> in the target database, a new database should be created in the target database to avoid data duplication.",
   "innodb_buffer_pool": "InnoDB Buffer Pool",
   "intranet_address": "Private Address",
   "items_per_db": "Keys per DB",
@@ -245,7 +245,7 @@
   "migrate": {
     "Incremental migration prompt information": "Enable \\\"Continuous Migration\\\" for incremental DB sync (disabled by default).",
     "mongo": {
-      "check": "Source Account: Read access to DB, admin, local\\nSink Account: Read/write access to DB, read access to admin, local"
+      "check": "<b>Source Account</b>: Read access to DB, admin, local\\n<b>Sink Account</b>: Read/write access to DB, read access to admin, local"
     },
     "mongodb": {
       "stepOne": "# Replication cluster instance: no scaling needed. Provide primary address for migration.",
@@ -256,7 +256,7 @@
       "stepTwo": "# Set 'binlog_row_image' parameter to 'full'"
     },
     "postgresql": {
-      "check": "Source Account: Login access, read access to source, replication privileges\\nSink Account: Login access, read/write access to sink",
+      "check": "<b>Source Account</b>: Login access, read access to source, replication privileges\\n<b>Sink Account</b>: Login access, read/write access to sink",
       "stepOne": "# Set 'wal_level' parameter to 'logical'",
       "stepTwo": "# Ensure sufficient capacity for \\\"max_replication_slots\\\" and \\\"max_wal_senders\\\" parameters"
     }
@@ -375,5 +375,11 @@
   "confirm_password_required": "Confirm password cannot be empty",
   "passwords_must_match": "Passwords do not match",
   "password_min_length": "Password must be at least 8 characters",
-  "password_complexity": "Password must contain at least two of: numbers, letters, special characters"
+  "password_complexity": "Password must contain at least two of: numbers, letters, special characters",
+  "successfully_edit_password": "Successfully edited password",
+  "comp_name": "Component Name",
+  "has_comps": "has {number} components",
+  "each": "{perc} each",
+  "occupy": "occupies {num}",
+  "ha_desc": "Sentinel nodes take up extra resources"
 }
