@@ -41,6 +41,13 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       }
     }
   );
+
+  useQuery(['interval-devbox-detail'], () => setDevboxDetail(devboxName, env.sealosDomain), {
+    enabled: devboxDetail?.status.value === 'Running',
+    retry: 2,
+    retryDelay: 2000
+  });
+
   useQuery(
     ['devbox-detail-pod'],
     () => {
