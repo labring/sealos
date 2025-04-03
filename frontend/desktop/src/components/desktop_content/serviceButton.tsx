@@ -1,6 +1,7 @@
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
-import { Box, Center, Divider, Flex, Icon, Text } from '@chakra-ui/react';
+import { configObj } from '@/stores/syncConfig';
+import { Box, Center, Flex, Icon, Text } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 
 const OnlineServiceIcon = () => {
@@ -119,7 +120,6 @@ const OnlineServiceButton = () => {
   const { isServiceButtonOpen, setServiceButtonOpen, taskComponentState, setTaskComponentState } =
     useDesktopConfigStore();
   const { t } = useTranslation();
-  const { layoutConfig } = useConfigStore();
 
   return (
     <Box zIndex={9999} position="absolute" right="0px" bottom="80px">
@@ -159,7 +159,7 @@ const OnlineServiceButton = () => {
                 if (!isServiceButtonOpen) {
                   setServiceButtonOpen(true);
                 } else {
-                  window.open(layoutConfig?.customerServiceURL ?? '', '_blank');
+                  window.open(configObj.layout.customerServiceURL ?? '', '_blank');
                 }
               }}
               cursor={'pointer'}

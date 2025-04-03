@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "scripts": {
     "predev": "NODE_ENV=development node ./data/transform.js",
-    "prebuild": "NODE_ENV=development node ./data/transform.js",
+    "prebuild": "NODE_ENV=production node ./data/transform.js",
     "dev": "pnpm run predev && next dev",
     "build": "pnpm run prebuild && next build",
     "start": "next start",

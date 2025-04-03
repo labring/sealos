@@ -1,7 +1,6 @@
 import request from '@/services/request';
 import {
   ApiResp,
-  LayoutConfigType,
   CloudConfigType,
   AuthClientConfigType,
   AppClientConfigType,
@@ -46,10 +45,6 @@ export const getCloudConfig = () => {
 
 export const getCommonConfig = () => {
   return request.get<CommonClientConfigType>('/api/platform/getCommonConfig');
-};
-
-export const getLayoutConfig = () => {
-  return request.get<LayoutConfigType>('/api/platform/getLayoutConfig');
 };
 
 export const getAuthConfig = () => {

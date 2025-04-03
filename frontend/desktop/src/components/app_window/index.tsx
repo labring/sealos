@@ -6,7 +6,7 @@ import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 import { useTranslation } from 'next-i18next';
-import { useConfigStore } from '@/stores/config';
+import { configObj } from '@/stores/syncConfig';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -23,7 +23,7 @@ export default function AppWindow(props: {
     findAppInfoById,
     maxZIndex
   } = useAppStore();
-  const logo = useConfigStore().layoutConfig?.logo;
+  const logo = configObj.layout.logo;
   const { t, i18n } = useTranslation();
   const wnapp = findAppInfoById(pid);
   const [position, setPosition] = useState({ x: 0, y: 0 });

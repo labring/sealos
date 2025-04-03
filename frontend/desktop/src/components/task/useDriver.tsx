@@ -4,6 +4,7 @@ import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
+import { configObj } from '@/stores/syncConfig';
 import { UserTask } from '@/types/task';
 import { Box, Button, Flex, FlexProps, Icon, Image, Text, useMediaQuery } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
@@ -13,7 +14,6 @@ import { useEffect, useState } from 'react';
 export default function useDriver() {
   const { t } = useTranslation();
   const [desktopGuide, setDesktopGuide] = useState(false);
-  const { layoutConfig } = useConfigStore();
   const [tasks, setTasks] = useState<UserTask[]>([]);
   const [isPC] = useMediaQuery('(min-width: 768px)', {
     ssr: true,
@@ -325,7 +325,7 @@ export default function useDriver() {
           <Box fontSize={'28px'} fontWeight={500}>
             {t('common:hello_welcome')}
             <Text display={'inline'} color={'#0884DD'} px="8px">
-              {layoutConfig?.meta.title}
+              {configObj.layout.meta.title}
             </Text>
             👏
           </Box>

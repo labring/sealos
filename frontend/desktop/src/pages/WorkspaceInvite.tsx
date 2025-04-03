@@ -2,6 +2,7 @@ import { getInviteCodeInfoRequest, reciveAction, verifyInviteCodeRequest } from 
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
+import { configObj } from '@/stores/syncConfig';
 import { ROLE_LIST } from '@/types/team';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Button, Flex, Image, Text, VStack } from '@chakra-ui/react';
@@ -15,10 +16,6 @@ import { useEffect } from 'react';
 
 const Callback: NextPage = () => {
   const router = useRouter();
-  const { layoutConfig } = useConfigStore();
-  const { token: curToken, session } = useSessionStore((s) => s);
-  const { lastWorkSpaceId } = useSessionStore();
-  const logo = useConfigStore().layoutConfig?.logo;
   const { setWorkspaceInviteCode } = useCallbackStore();
   const { t } = useTranslation();
   const verifyMutation = useMutation({
@@ -108,9 +105,9 @@ const Callback: NextPage = () => {
           color={'white'}
           gap={'8px'}
         >
-          <Image boxSize={'34px'} borderRadius="full" src={logo} alt="logo" />
+          <Image boxSize={'34px'} borderRadius="full" src={configObj.layout.logo} alt="logo" />
           <Text fontWeight={700} fontSize={'24px'}>
-            {layoutConfig?.title ?? 'Sealos'}
+            {configObj.layout.title ?? 'Sealos'}
           </Text>
         </Flex>
         {isValid ? (

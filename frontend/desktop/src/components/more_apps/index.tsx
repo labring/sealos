@@ -7,7 +7,7 @@ import Iconfont from '../iconfont';
 import styles from './index.module.scss';
 import clsx from 'clsx';
 import { useTranslation } from 'next-i18next';
-import { useConfigStore } from '@/stores/config';
+import { configObj } from '@/stores/syncConfig';
 
 export default function Index() {
   const { t, i18n } = useTranslation();
@@ -19,7 +19,7 @@ export default function Index() {
   const endIndex = startIndex + itemsPerPage;
   const paginatedApps = apps?.slice(startIndex, endIndex);
   const totalPages = Math.ceil((apps?.length || 0) / itemsPerPage);
-  const logo = useConfigStore().layoutConfig?.logo;
+  const logo = configObj.layout.logo;
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();

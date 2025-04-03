@@ -19,9 +19,7 @@ import dayjs from 'dayjs';
 import { jwtDecode } from 'jwt-decode';
 import { isString } from 'lodash';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
-import Script from 'next/script';
 import { createContext, useEffect, useMemo, useState } from 'react';
 import 'react-contexify/dist/ReactContexify.css';
 
@@ -40,7 +38,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const setAutoLaunch = useAppStore((state) => state.setAutoLaunch);
   const { autolaunchWorkspaceUid } = useAppStore();
   const { session } = useSessionStore();
-  const { layoutConfig, commonConfig } = useConfigStore();
+  const { commonConfig } = useConfigStore();
   const { workspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
 
@@ -238,15 +236,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   }, [commonConfig, firstUse]);
   return (
     <Box position={'relative'} overflow={'hidden'} w="100vw" h="100vh">
-      <Head>
-        <title>{layoutConfig?.meta.title}</title>
-        <meta name="description" content={layoutConfig?.meta.description} />
-        <link rel="shortcut icon" href={layoutConfig?.logo ?? '/favicon.ico'} />
-        <link rel="icon" href={layoutConfig?.logo ?? '/favicon.ico'} />
-      </Head>
-      {layoutConfig?.meta.scripts?.map((item, i) => {
-        return <Script key={i} {...item} />;
-      })}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
       </MoreAppsContext.Provider>

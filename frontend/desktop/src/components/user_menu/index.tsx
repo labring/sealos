@@ -1,11 +1,10 @@
 import Notification from '@/components/notification';
-import { useConfigStore } from '@/stores/config';
-import useSessionStore from '@/stores/session';
 import { Box, Center, Flex, FlexProps, useDisclosure } from '@chakra-ui/react';
 import { ReactElement, useCallback, useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import GithubComponent from '../account/github';
 import Iconfont from '../iconfont';
+import { configObj } from '@/stores/syncConfig';
 
 enum UserMenuKeys {
   LangSelect,
@@ -16,10 +15,7 @@ enum UserMenuKeys {
 
 export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   const [notificationAmount, setNotificationAmount] = useState(0);
-  const accountDisclosure = useDisclosure();
   const showDisclosure = useDisclosure();
-  const { layoutConfig } = useConfigStore();
-  const userInfo = useSessionStore((state) => state.session);
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const {
     userMenuStyleProps = {
@@ -55,7 +51,7 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
   return (
     <Flex {...userMenuStyleProps}>
       <LangSelectSimple {...baseItemStyle} />
-      {layoutConfig?.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
+      {configObj.layout.common.githubStarEnabled && <GithubComponent {...baseItemStyle} />}
       {buttonList.map((item) => (
         <Flex
           key={item.key}

@@ -1,15 +1,15 @@
 import useAppStore from '@/stores/app';
-import { useConfigStore } from '@/stores/config';
 import { TApp } from '@/types';
 import { Box, Center, Flex, Image, Input } from '@chakra-ui/react';
 import { SearchIcon } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import { useRef, useState } from 'react';
 import { blurBackgroundStyles } from './index';
+import { configObj } from '@/stores/syncConfig';
 
 export default function SearchBox() {
   const { t, i18n } = useTranslation();
-  const logo = useConfigStore().layoutConfig?.logo;
+  const logo = configObj.layout.logo;
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,4 +1,4 @@
-import { useConfigStore } from '@/stores/config';
+import { configObj } from '@/stores/syncConfig';
 import { setCookie } from '@/utils/cookieUtils';
 import { Flex, FlexProps } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
@@ -8,7 +8,6 @@ import { masterApp } from 'sealos-desktop-sdk/master';
 
 export default function LangSelectSimple(props: FlexProps) {
   const { t, i18n } = useTranslation();
-  const { layoutConfig } = useConfigStore();
 
   const switchLanguage = (targetLang: string) => {
     masterApp?.sendMessageToAll({
@@ -27,10 +26,10 @@ export default function LangSelectSimple(props: FlexProps) {
   };
 
   useEffect(() => {
-    if (layoutConfig?.forcedLanguage && i18n?.language !== layoutConfig.forcedLanguage) {
-      switchLanguage(layoutConfig.forcedLanguage);
+    if (configObj.layout.forcedLanguage && i18n?.language !== configObj.layout.forcedLanguage) {
+      switchLanguage(configObj.layout.forcedLanguage);
     }
-  }, [layoutConfig?.forcedLanguage, i18n]);
+  }, [configObj.layout.forcedLanguage, i18n]);
 
   return (
     <Flex
@@ -46,7 +45,7 @@ export default function LangSelectSimple(props: FlexProps) {
       fontWeight={500}
       {...props}
       onClick={
-        layoutConfig?.forcedLanguage
+        configObj.layout.forcedLanguage
           ? undefined
           : () => switchLanguage(i18n?.language === 'en' ? 'zh' : 'en')
       }

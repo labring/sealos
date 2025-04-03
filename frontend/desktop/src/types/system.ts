@@ -201,7 +201,6 @@ export type JwtConfigType = {
 };
 
 export type DesktopConfigType<T = AuthConfigType> = {
-  layout: LayoutConfigType;
   auth: T;
   teamManagement?: {
     maxTeamCount: number;
@@ -255,34 +254,6 @@ export const DefaultCloudConfig: CloudConfigType = {
   port: '443',
   regionUID: 'sealos-cloud',
   certSecretName: 'wildcard-cert'
-};
-
-export const DefaultLayoutConfig: LayoutConfigType = {
-  title: 'Sealos Cloud',
-  logo: '/logo.svg',
-  backgroundImage: '/images/bg-blue.svg',
-  protocol: {
-    serviceProtocol: {
-      zh: '',
-      en: ''
-    },
-    privateProtocol: {
-      zh: '',
-      en: ''
-    }
-  },
-  meta: {
-    title: 'Sealos Cloud',
-    description: 'Sealos Cloud',
-    keywords: 'Sealos Cloud',
-    scripts: []
-  },
-  common: {
-    githubStarEnabled: false,
-    workorderEnabled: false,
-    accountSettingEnabled: false,
-    aiAssistantEnabled: false
-  }
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
@@ -347,7 +318,6 @@ export const DefaultAppClientConfig: AppClientConfigType = {
     hostUrl: ''
   },
   desktop: {
-    layout: DefaultLayoutConfig,
     auth: DefaultAuthClientConfig
   }
 };

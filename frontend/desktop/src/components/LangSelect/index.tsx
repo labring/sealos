@@ -1,8 +1,6 @@
 import { setCookie } from '@/utils/cookieUtils';
 import {
   Button,
-  Flex,
-  FlexProps,
   Menu,
   MenuButton,
   MenuButtonProps,
@@ -14,8 +12,6 @@ import { useTranslation } from 'next-i18next';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { masterApp } from 'sealos-desktop-sdk/master';
 import { ExpanMoreIcon } from '../../../../packages/ui';
-import { ROLE_LIST } from '@/types/team';
-import { router } from 'next/client';
 
 export default function LangSelectList(props: MenuButtonProps) {
   const { t, i18n } = useTranslation();
