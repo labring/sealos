@@ -247,6 +247,7 @@
   "select_lest_than_3_tags": "Please select no more than 3 tags.",
   "select_tag_tips": "Select up to 3 relevant tags",
   "select_template_tips": "Select the template you wish to update",
+  "service": "Service",
   "set_template_to_public_tips": "Make this template available to all users. Once public, you cannot revert it to private.",
   "shutdown": "Shutdown",
   "skip": "Skip",
