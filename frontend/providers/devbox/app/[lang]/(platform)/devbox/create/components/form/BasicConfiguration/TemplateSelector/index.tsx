@@ -31,9 +31,7 @@ export default function TemplateSelector({ isEdit }: TemplateSelectorProps) {
   );
   const templateList = templateListQuery.data?.templateList || [];
   const t = useTranslations();
-  // const defaultTemplateUid = watch('templateUid')
   const menuList = templateList.map((v) => ({ label: v.name, value: v.uid }));
-  // const defaultTemplate = defaultTemplateUid ? templateList.find(t => t.uid === defaultTemplateUid) : templateList[0]
 
   const { field } = useController({
     control,
@@ -85,6 +83,7 @@ export default function TemplateSelector({ isEdit }: TemplateSelectorProps) {
       afterUpdateTemplate(curTemplate.uid);
     }
   }, [templateListQuery.isSuccess, templateList, templateListQuery.isFetched, isEdit]);
+
   return (
     <Flex alignItems={'center'} mb={7}>
       <Label w={100}>{t('version')}</Label>
@@ -98,14 +97,11 @@ export default function TemplateSelector({ isEdit }: TemplateSelectorProps) {
       ) : (
         <MySelect
           width={'200px'}
-          placeholder={`${t('runtime')} ${t('version')}`}
           isDisabled={!templateListQuery.isSuccess}
-          // ref={field.ref}
-          value={field.value}
+          value={menuList.find((v) => v.value === field.value)?.value}
           list={menuList}
           name={field.name}
           onchange={(val) => {
-            // if (isEdit) return
             const devboxName = getValues('name');
             if (!devboxName) {
               toast({

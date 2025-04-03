@@ -302,36 +302,6 @@ const BasicInfo = () => {
             ) : (
               <Text fontSize={'12px'}>{t('none')}</Text>
             )}
-            <Tooltip
-              label={t('read_event_detail')}
-              hasArrow
-              bg={'#FFFFFF'}
-              color={'grayModern.900'}
-              width={'120px'}
-              height={'30px'}
-              fontSize={'12px'}
-              fontWeight={400}
-              py={2}
-              borderRadius={'md'}
-            >
-              <Flex
-                ml={3}
-                p={1}
-                borderRadius={'6px'}
-                _hover={{
-                  bg: 'rgba(17, 24, 36, 0.05)'
-                }}
-              >
-                <MyIcon
-                  cursor={'pointer'}
-                  name="maximize"
-                  w={'16px'}
-                  h={'16px'}
-                  color={'grayModern.600'}
-                  mt={'1px'}
-                />
-              </Flex>
-            </Tooltip>
           </Flex>
         </Flex>
       </Flex>
