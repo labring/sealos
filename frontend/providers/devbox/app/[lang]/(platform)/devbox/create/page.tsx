@@ -121,7 +121,6 @@ const DevboxCreatePage = () => {
     [sourcePrice?.gpu]
   );
 
-  // 监听表单变化
   useEffect(() => {
     const subscription = formHook.watch((value) => {
       if (value) {
