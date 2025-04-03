@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Box, Text, Flex, Image, Tooltip, Button } from '@chakra-ui/react';
 
 import { useEnvStore } from '@/stores/env';
@@ -60,7 +60,17 @@ const BasicInfo = () => {
     devboxDetail?.sshConfig?.token
   ]);
 
-  const sshConnectCommand = `ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`;
+  const sshConnectCommand = useMemo(
+    () =>
+      `ssh -i ${env.sealosDomain}_${env.namespace}_${devboxDetail?.name} ${devboxDetail?.sshConfig?.sshUser}@${env.sealosDomain} -p ${devboxDetail?.sshPort}`,
+    [
+      devboxDetail?.name,
+      devboxDetail?.sshConfig?.sshUser,
+      devboxDetail?.sshPort,
+      env.sealosDomain,
+      env.namespace
+    ]
+  );
 
   return (
     <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
