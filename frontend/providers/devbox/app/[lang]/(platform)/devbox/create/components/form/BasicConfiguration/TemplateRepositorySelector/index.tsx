@@ -211,15 +211,6 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
           ))}
         </Flex>
       </Flex>
-      {/* Service */}
-      <Flex gap={'10px'} px={'14px'} width={'full'}>
-        {categorizedData['SERVICE'].length !== 0 && <Box width={'85px'}>{t('service')}</Box>}
-        <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-          {categorizedData['SERVICE']?.map((item) => (
-            <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
-          ))}
-        </Flex>
-      </Flex>
     </VStack>
   );
 }
