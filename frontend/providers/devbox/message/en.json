@@ -39,7 +39,7 @@
   "cancel": "Cancel",
   "choose_shutdown_mode": "Select shutdown mode",
   "code_server": "CodeServer",
-  "cold_shutdown_mode": "Cost-saving shutdown mode",
+  "cold_shutdown_mode": "Cost-saving Shutdown Mode",
   "cold_shutdown_mode_desc": "All computing resources (CPU and memory), public network connections, and ports will have <yellow>billing suspended</yellow>.",
   "cold_shutdown_mode_desc_2": "Due to the reclaiming of port resources, the instance <yellow>can only be started through the DevBox webpage</yellow>. After startup, port resources will be reallocated, requiring <yellow>reconfiguration to update connection information</yellow>.",
   "cold_shutdown_mode_notice": "Due to the reclaiming of computing and port resources, the instance can only be launched from the DevBox webpage. After launching, port resources are reallocated to the DevBox instance. This requires users to click the IDE icon again to receive the new connection details (or reconfigure the SSH connection information).",
