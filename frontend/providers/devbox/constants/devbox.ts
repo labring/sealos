@@ -238,6 +238,7 @@ export const defaultDevboxDetail: DevboxDetailType = {
     sshUser: '',
     sshDomain: '',
     sshPort: 0,
+    token: '',
     sshPrivateKey: ''
   }
 };
