@@ -248,6 +248,9 @@ const MainBody = () => {
                   className="guide-network-address"
                   cursor="pointer"
                   color={'grayModern.600'}
+                  {...(!statusMap[displayAddress]?.ready && {
+                    color: 'grayModern.400'
+                  })}
                   _hover={{ textDecoration: 'underline' }}
                   onClick={() => window.open(`https://${address}`, '_blank')}
                 >
