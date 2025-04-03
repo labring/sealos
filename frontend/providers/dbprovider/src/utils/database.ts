@@ -170,15 +170,15 @@ export function distributeResources(data: {
     if (data.forDisplay) {
       return {
         limits: {
-          cpu: `${cpu / 1000} Core`,
-          memory: memory / 1024 >= 1 ? `${memory / 1024} Gi` : `${memory} Mi`
+          cpu: `${cpu / 1000} C`,
+          memory: memory / 1024 >= 1 ? `${memory / 1024} G` : `${memory} M`
         },
         requests: {
-          cpu: `${Math.floor((cpu / 1000) * 0.1)} m`,
+          cpu: `${Math.floor((cpu / 1000) * 0.1)} M`,
           memory:
             memory / 1024 >= 1
-              ? `${Math.floor((memory / 1024) * 0.1)} Gi`
-              : `${Math.floor(memory * 0.1)} Mi`
+              ? `${Math.floor((memory / 1024) * 0.1)} G`
+              : `${Math.floor(memory * 0.1)} M`
         }
       };
     }
@@ -197,6 +197,8 @@ export function distributeResources(data: {
   function getPercentResource(percent: number) {
     return allocateCM(cpu * percent, memory * percent);
   }
+
+  //
 
   switch (dbType) {
     case DBTypeEnum.postgresql:
