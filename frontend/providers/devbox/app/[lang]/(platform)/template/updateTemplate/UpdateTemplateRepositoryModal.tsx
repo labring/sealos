@@ -27,7 +27,7 @@ import {
 import { AddIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
 import { z } from 'zod';
 import OverviewTemplateVersionModal from '../updateTemplateVersion/OverviewTemplateVersionModal';
@@ -61,6 +61,7 @@ interface CreateTemplateModalProps {
 const VersionSelect = ({ templateList }: { templateList: { uid: string; name: string }[] }) => {
   const { watch, setValue } = useFormContext<any>();
   const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleVersionSelect = (version: string) => {
     setInputValue(version);
@@ -100,7 +101,7 @@ const VersionSelect = ({ templateList }: { templateList: { uid: string; name: st
             <MyIcon name="chevronDown" boxSize={'16px'} color={'grayModern.500'} />
           </Flex>
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent onFocus={() => inputRef.current?.focus()}>
           <PopoverBody
             p="6px"
             width="280px"
@@ -109,6 +110,7 @@ const VersionSelect = ({ templateList }: { templateList: { uid: string; name: st
             borderRadius="6px"
           >
             <Input
+              ref={inputRef}
               width="full"
               height="32px"
               value={inputValue}
@@ -125,7 +127,7 @@ const VersionSelect = ({ templateList }: { templateList: { uid: string; name: st
                 boxShadow: '0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)'
               }}
             />
-            <VStack spacing="0" align="stretch" mt={'4px'}>
+            <VStack spacing="0" align="stretch" mt={'4px'} maxH={'200px'} overflow={'auto'}>
               {/* 已有版本列表 */}
               {templateList
                 .filter((v) => v.name.toLowerCase().includes(inputValue.toLowerCase()))

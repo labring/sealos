@@ -17,6 +17,8 @@ import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
 import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { AxiosRequestConfig } from 'axios';
+import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
+import { EditPasswordReq } from '@/pages/api/db/editPassword';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -72,6 +74,8 @@ export const pauseDBByName = (data: { dbName: string; dbType: DBType }) =>
 export const startDBByName = (data: { dbName: string; dbType: DBType }) =>
   POST('/api/startDBByName', data);
 
+export const switchPodMs = (data: SwitchMsData) => POST('/api/pod/switchPodMs', data);
+
 export const getDBServiceByName = (name: string) =>
   GET<V1Service>(`/api/getServiceByName?name=${name}`);
 
@@ -91,62 +95,31 @@ export const getMonitorData = (payload: {
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
-export const getOpsRequest = ({
-  name,
-  label,
-  dbType
-}: {
-  name: string;
-  label: string;
-  dbType: DBType;
-}) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, {
-    name,
-    label,
-    dbType
-  });
+export const getOpsRequest = (payload: { name: string; label: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, payload);
 
-export const getOperationLog = ({ name, dbType }: { name: string; dbType: DBType }) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, {
-    name,
-    dbType
-  });
+export const getOperationLog = (payload: { name: string; dbType: DBType }) =>
+  GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, payload);
 
-export const getLogFiles = ({
-  podName,
-  dbType,
-  logType
-}: {
+export const getLogFiles = (payload: {
   podName: string;
   dbType: SupportReconfigureDBType;
   logType: LogTypeEnum;
-}) =>
-  POST<TFile[]>(`/api/logs/getFiles`, {
-    podName,
-    dbType,
-    logType
-  });
+}) => POST<TFile[]>(`/api/logs/getFiles`, payload);
 
-export const getLogContent = ({
-  logPath,
-  page,
-  pageSize,
-  dbType,
-  logType,
-  podName
-}: {
+export const getLogContent = (payload: {
   logPath: string;
   page: number;
   pageSize: number;
   dbType: SupportReconfigureDBType;
   logType: LogTypeEnum;
   podName: string;
-}) =>
-  POST<LogResult>(`/api/logs/get`, {
-    logPath,
-    page,
-    pageSize,
-    dbType,
-    logType,
-    podName
-  });
+}) => POST<LogResult>(`/api/logs/get`, payload);
+
+export const getDatabases = (payload: { dbName: string; dbType: DBType }) =>
+  POST<Array<string>>(`/api/db/getDatabases`, payload);
+
+export const getTables = (payload: { dbName: string; dbType: DBType; databaseName: string }) =>
+  POST<Array<string>>(`/api/db/getTables`, payload);
+
+export const editPassword = (payload: EditPasswordReq) => POST('/api/db/editPassword', payload);

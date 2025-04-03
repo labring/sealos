@@ -1,11 +1,12 @@
-import { restartPodByName } from '@/api/db';
+import { restartPodByName, switchPodMs } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import PodStatus from '@/components/PodStatus';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useDBStore } from '@/store/db';
-import type { PodDetailType } from '@/types/db';
+import type { DBType, PodDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { getPodRoleName } from '@/utils/tools';
 import {
   Box,
   Button,
@@ -22,13 +23,56 @@ import { MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
-import React, { useCallback, useState } from 'react';
+import React, { PropsWithChildren, useCallback, useEffect, useRef, useState } from 'react';
+import styles from '../index.module.scss';
+import { DBTypeEnum } from '@/constants/db';
 
 const LogsModal = dynamic(() => import('./LogsModal'), { ssr: false });
 const DetailModel = dynamic(() => import('./PodDetailModal'), { ssr: false });
 
+function Tag({
+  children,
+  color,
+  fontSize = 'xs'
+}: PropsWithChildren<{ color?: string; fontSize?: string }>) {
+  return (
+    <Box
+      borderRadius="sm"
+      bg={color}
+      color="#219BF4"
+      px={2}
+      fontSize={fontSize}
+      fontWeight="bold"
+      textTransform="capitalize"
+      letterSpacing="wide"
+      mr={1}
+      width="fit-content"
+      height="fit-content"
+      lineHeight={'24px'}
+    >
+      {children}
+    </Box>
+  );
+}
+
+const onlyShowFirst = `.onlyShowFirst {
+    color: white;
+}
+.onlyShowFirst:nth-of-type(1) {
+  color: black;
+}
+
+.onlyShowFirst:not(:nth-of-type(1)):hover {
+  color: blue;
+}
+    
+`;
+
 const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language }
+  } = useTranslation();
   const { message: toast } = useMessage();
   const [logsPodIndex, setLogsPodIndex] = useState<number>();
   const [detailPodIndex, setDetailPodIndex] = useState<number>();
@@ -56,7 +100,45 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     },
     [t, toast]
   );
-  // console.log(dbPods);
+
+  const [switchTarget, setSwitchTarget] = useState<string>('');
+  const finishedRef = useRef<boolean>(true);
+
+  function handelSwitchMs(item: PodDetailType) {
+    setSwitchTarget(item.podName);
+    finishedRef.current = false;
+    const labels = item?.metadata?.labels;
+    if (
+      labels !== undefined &&
+      labels['app.kubernetes.io/component'] !== undefined &&
+      labels['app.kubernetes.io/instance'] !== undefined &&
+      labels['apps.kubeblocks.io/cluster-uid'] !== undefined
+    ) {
+      switchPodMs({
+        dbName: labels['app.kubernetes.io/instance'],
+        componentName: labels['app.kubernetes.io/component'] as DBType,
+        podName: item.podName,
+        namespace: item.metadata!.namespace!,
+        uid: labels['apps.kubeblocks.io/cluster-uid']
+      });
+      toast({
+        title: t('node_is_switching'),
+        status: 'success'
+      });
+    }
+  }
+
+  useEffect(() => {
+    for (const item of dbPods) {
+      if (item.podName === switchTarget) {
+        const { isMaster } = getPodRoleName(item);
+        if (isMaster) {
+          finishedRef.current = true;
+          break;
+        }
+      }
+    }
+  }, [dbPods, switchTarget]);
 
   const columns: {
     title: I18nCommonKey;
@@ -112,12 +194,74 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: string }) => {
     }
   ];
 
+  if (
+    [DBTypeEnum.postgresql, DBTypeEnum.mongodb, DBTypeEnum.mysql, DBTypeEnum.redis].includes(
+      dbType as DBTypeEnum
+    )
+  ) {
+    columns.splice(2, 0, {
+      title: 'ms_node',
+      key: 'ms_node',
+      render: (item: PodDetailType) => {
+        const { role, isMaster, isCreating: isAccessible } = getPodRoleName(item);
+        if (!isAccessible && isMaster) {
+          return (
+            <Box>
+              <Tag color="#F0FBFF">{language === 'zh' ? '主节点' : role}</Tag>
+            </Box>
+          );
+        } else if (!isAccessible && !isMaster) {
+          const canClick = switchTarget !== item.podName && finishedRef.current;
+          // Complex logic...
+          return (
+            <Box display="flex" alignItems={'center'}>
+              <Tag color="#F7F8FA">{language === 'zh' ? '从节点' : role}</Tag>
+              {dbType !== DBTypeEnum.redis && (canClick || switchTarget === item.podName) && (
+                <MyTooltip offset={[0, 10]} label={t('switch_to_M')}>
+                  <Button
+                    variant={'square'}
+                    onClick={() => {
+                      if (canClick) handelSwitchMs(item);
+                    }}
+                    color="white"
+                    _hover={{ color: 'currentColor', bg: '#F3F3F4' }}
+                    {...(!canClick && {
+                      cursor: 'not-allowed',
+                      _hover: { bg: 'transparent', color: 'red.600' }
+                    })}
+                  >
+                    {switchTarget === item.podName ? (
+                      <MyIcon className={styles.load} name="loading" w={'16px'} h={'16px'} />
+                    ) : (
+                      <MyIcon name="change" w={'16px'} h={'16px'} className="onlyShowFirst" />
+                    )}
+                  </Button>
+                </MyTooltip>
+              )}
+            </Box>
+          );
+        } else {
+          return <Box display="flex" alignItems={'center'}></Box>;
+        }
+      }
+    });
+  }
+
   const { isInitialLoading } = useQuery(['intervalLoadPods'], () => intervalLoadPods(dbName), {
     refetchInterval: 3000
   });
 
+  useEffect(() => {
+    const tags = document.querySelectorAll('.onlyShowFirst');
+    if (tags.length > 0) {
+      (tags[0] as HTMLElement).style.fill = '#111824';
+      (tags[0] as HTMLElement).style.color = '#111824';
+    }
+  });
+
   return (
     <Box h={'100%'} position={'relative'}>
+      {/* <style>{onlyShowFirst}</style> */}
       <TableContainer overflowY={'auto'}>
         <Table variant={'simple'} backgroundColor={'white'} fontSize={'base'}>
           <Thead position={'sticky'} top={'0'}>

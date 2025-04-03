@@ -1,8 +1,8 @@
-import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { DBComponentNameMap, DBStatusEnum, DBTypeList } from '@/constants/db';
+import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
@@ -81,10 +81,12 @@ const DBList = ({
       try {
         setLoading(true);
         await pauseDBByName({ dbName: db.name, dbType: db.dbType });
+        await delDBServiceByName(`${db.name}-export`);
         toast({
           title: t('pause_success'),
           status: 'success'
         });
+        location.reload();
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('pause_error'),

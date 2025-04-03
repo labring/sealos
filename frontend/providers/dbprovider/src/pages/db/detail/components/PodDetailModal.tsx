@@ -233,10 +233,12 @@ const Logs = ({
               overflow={'overlay'}
               borderRadius={'8px'}
             >
-              <RenderItem label="Restarts">{pod.restarts}</RenderItem>
-              <RenderItem label="Age">{pod.age}</RenderItem>
-              <RenderItem label="Pod Name">{pod.podName}</RenderItem>
-              <RenderItem label="Controlled By">{`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}</RenderItem>
+              <RenderItem label={t('restarts')}>{pod.restarts}</RenderItem>
+              <RenderItem label={t('age')}>{pod.age}</RenderItem>
+              <RenderItem label={t('Pod Name')}>{podAlias}</RenderItem>
+              <RenderItem
+                label={t('controlled_by')}
+              >{`${pod.metadata?.ownerReferences?.[0].kind}/${pod.metadata?.ownerReferences?.[0].name}`}</RenderItem>
               <Box>
                 <Box mb={'12px'} color={'grayModern.900'} fontSize={'base'}>
                   Labels
