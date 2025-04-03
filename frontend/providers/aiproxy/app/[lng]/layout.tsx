@@ -43,6 +43,9 @@ export default async function RootLayout({
   params: Promise<{ lng: string }>
 }>): Promise<React.JSX.Element> {
   const lng = (await params).lng
+
+  const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS || '[]')
+  
   return (
     <html lang={lng} dir={dir(lng)}>
       <body>
@@ -54,6 +57,9 @@ export default async function RootLayout({
             </QueryProvider>
           </ChakraProviders>
         </I18nProvider>
+        {scripts.map((script, i) => (
+          <script key={i} {...script} />
+        ))}
       </body>
     </html>
   )

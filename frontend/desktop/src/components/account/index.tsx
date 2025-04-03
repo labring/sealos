@@ -18,6 +18,7 @@ import { ArrowIcon } from '../icons';
 import useAppStore from '@/stores/app';
 import AccountCenter from './AccountCenter';
 import CustomTooltip from '../AppDock/CustomTooltip';
+import { configObj } from '@/stores/syncConfig';
 
 const baseItemStyle = {
   w: '52px',
@@ -31,7 +32,6 @@ const baseItemStyle = {
 };
 
 export default function Account() {
-  const { layoutConfig } = useConfigStore();
   const [showId, setShowId] = useState(true);
   const router = useRouter();
   const { copyData } = useCopyData();
@@ -118,12 +118,12 @@ export default function Account() {
           </Center>
         </Flex>
         <Flex mt={'16px'} justifyContent={'space-between'} position={'relative'}>
-          {layoutConfig?.common.docsUrl && (
+          {configObj.layout.common.docsUrl && (
             <CustomTooltip placement={'bottom'} label={t('common:doc')}>
               <Center
                 cursor={'pointer'}
                 {...baseItemStyle}
-                onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+                onClick={() => window.open(configObj.layout.common?.docsUrl)}
               >
                 <DocsIcon />
               </Center>
@@ -134,7 +134,7 @@ export default function Account() {
               <LangSelectSimple {...baseItemStyle} />
             </Center>
           </CustomTooltip>
-          {layoutConfig?.common.githubStarEnabled && (
+          {configObj.layout.common.githubStarEnabled && (
             <CustomTooltip placement="bottom" label={t('common:github')}>
               <Center>
                 <GithubComponent {...baseItemStyle} />
@@ -154,7 +154,7 @@ export default function Account() {
 
         <WorkspaceToggle />
 
-        {layoutConfig?.common.accountSettingEnabled && (
+        {configObj.layout.common.accountSettingEnabled && (
           <Flex
             borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
             color={'white'}
@@ -169,7 +169,7 @@ export default function Account() {
             <AccountCenter variant={'white-bg-icon'} p="4px" />
           </Flex>
         )}
-        {layoutConfig?.common.workorderEnabled && (
+        {configObj.layout.common.workorderEnabled && (
           <Flex
             borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
             color={'white'}

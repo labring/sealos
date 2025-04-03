@@ -27,7 +27,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import useWechat from './auth/useWechat';
 import { HiddenCaptchaComponent, TCaptchaInstance } from './Captcha';
-import { captcha } from 'tencentcloud-sdk-nodejs';
+import { configObj } from '@/stores/syncConfig';
 
 export default function SigninComponent() {
   const conf = useConfigStore();
@@ -43,13 +43,13 @@ export default function SigninComponent() {
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
     protocol_data = {
-      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.zh as string,
-      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.zh as string
+      service_protocol: configObj.layout?.protocol?.serviceProtocol.zh as string,
+      private_protocol: configObj.layout?.protocol?.privateProtocol.zh as string
     };
   else
     protocol_data = {
-      service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
-      private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
+      service_protocol: configObj.layout?.protocol?.serviceProtocol.en as string,
+      private_protocol: configObj.layout?.protocol?.privateProtocol.en as string
     };
   const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
   const { WechatComponent, login: wechatSubmit } = useWechat();
@@ -154,13 +154,13 @@ export default function SigninComponent() {
       overflow={'hidden'}
       w="100vw"
       h="100vh"
-      backgroundImage={`url(${conf.layoutConfig?.backgroundImage || ''})`}
+      backgroundImage={`url(${configObj.layout.backgroundImage || ''})`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
     >
       <Head>
-        <title>{conf.layoutConfig?.meta.title || ''}</title>
-        <meta name="description" content={conf.layoutConfig?.meta.description} />
+        <title>{configObj.layout.meta.title || ''}</title>
+        <meta name="description" content={configObj.layout.meta.description} />
       </Head>
 
       <Flex h="full" w="full" flexDir={'column'} justifyContent={'center'} alignItems={'center'}>
@@ -172,7 +172,7 @@ export default function SigninComponent() {
               fontWeight={700}
               textShadow={'0px 2px 6px rgba(0, 0, 0, 0.30)'}
             >
-              {conf.layoutConfig?.title}
+              {configObj.layout.title}
             </Text>
           </Box>
         )}
@@ -278,7 +278,7 @@ export default function SigninComponent() {
                   mb={'24px'}
                   textShadow={'0px 2px 6px rgba(0, 0, 0, 0.30)'}
                 >
-                  {conf.layoutConfig?.title}
+                  {configObj.layout.title}
                 </Text>
                 <AuthList zeroTab isAgreeCb={isAgreeCb} />
                 <Protocol />

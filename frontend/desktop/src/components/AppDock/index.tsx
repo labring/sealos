@@ -1,6 +1,5 @@
 import { MoreAppsContext } from '@/pages/index';
 import useAppStore, { AppInfo } from '@/stores/app';
-import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { APPTYPE, TApp } from '@/types';
 import { I18nCommonKey } from '@/types/i18next';
@@ -11,6 +10,7 @@ import { Menu, useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import CustomTooltip from './CustomTooltip';
 import styles from './index.module.css';
+import { configObj } from '@/stores/syncConfig';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
@@ -25,7 +25,7 @@ export default function AppDock() {
     findAppInfoById,
     updateOpenedAppInfo
   } = useAppStore();
-  const logo = useConfigStore().layoutConfig?.logo;
+  const logo = configObj.layout.logo;
   const moreAppsContent = useContext(MoreAppsContext);
   const { isNavbarVisible, toggleNavbarVisibility, getTransitionValue } = useDesktopConfigStore();
   const [isMouseOverDock, setIsMouseOverDock] = useState(false);

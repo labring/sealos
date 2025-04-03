@@ -25,6 +25,7 @@ import CustomTooltip from '../AppDock/CustomTooltip';
 import { blurBackgroundStyles } from '../desktop_content';
 import Monitor from '../desktop_content/monitor';
 import { ClockIcon, HelpIcon, InfiniteIcon } from '../icons';
+import { configObj } from '@/stores/syncConfig';
 
 export default function Cost() {
   const { t } = useTranslation();
@@ -34,9 +35,7 @@ export default function Cost() {
   const { session } = useSessionStore();
   const user = session?.user;
   const isLargerThanXl = useBreakpointValue({ base: true, xl: false });
-  const currencySymbol = useConfigStore(
-    (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
-  );
+  const currencySymbol = configObj.layout?.currencySymbol;
 
   const { data } = useQuery({
     queryKey: ['getAmount', { userId: user?.userCrUid }],

@@ -1,5 +1,4 @@
 import useAppStore from '@/stores/app';
-import { useConfigStore } from '@/stores/config';
 import { TApp } from '@/types';
 import { Box, Button, Flex, Grid, HStack, Image, Text, useBreakpointValue } from '@chakra-ui/react';
 import { throttle } from 'lodash';
@@ -8,11 +7,12 @@ import { MouseEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, ArrowRightIcon } from '../icons';
 import { blurBackgroundStyles } from './index';
 import { validateNumber } from '@/utils/tools';
+import { configObj } from '@/stores/syncConfig';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
   const { installedApps: renderApps, openApp } = useAppStore();
-  const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
+  const logo = configObj.layout.logo;
 
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);

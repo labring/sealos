@@ -1,11 +1,9 @@
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import request from '@/services/request';
 import useSessionStore from '@/stores/session';
-import { ApiResp, AppClientConfigType, AuthConfigType } from '@/types';
+import { ApiResp, AppClientConfigType } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
-import { useQuery } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { compareFirstLanguages } from '@/utils/tools';
 import { OauthProvider } from '@/types/user';

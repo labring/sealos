@@ -1,5 +1,6 @@
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
+import { configObj } from '@/stores/syncConfig';
 import { OauthProvider } from '@/types/user';
 import { Button, Center, Flex, FlexProps, Icon, Image, Text } from '@chakra-ui/react';
 import { GithubIcon, GoogleIcon, WechatIcon } from '@sealos/ui';
@@ -16,7 +17,7 @@ const AuthList = ({
 
   const router = useRouter();
 
-  const logo = useConfigStore().layoutConfig?.logo;
+  const logo = configObj.layout.logo;
 
   const { generateState, setProvider } = useSessionStore();
   const authList: { icon: typeof Icon; cb: MouseEventHandler; need: boolean; text: string }[] =

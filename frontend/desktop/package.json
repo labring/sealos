@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "dotenv -e .env.local next dev",
-    "build": "next build",
+    "predev": "NODE_ENV=development node ./data/transform.js",
+    "prebuild": "NODE_ENV=production node ./data/transform.js",
+    "dev": "pnpm run predev && dotenv -e .env.local next dev",
+    "build": "pnpm run prebuild && next build",
     "start": "next start",
     "lint": "next lint",
     "test:e2e": "jest --testPathPattern=/e2e/ --runInBand",

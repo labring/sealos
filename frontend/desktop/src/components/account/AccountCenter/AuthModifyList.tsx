@@ -21,7 +21,7 @@ export function AuthModifyList({
   GITHUBIsBinding: boolean;
   WECHATIsBinding: boolean;
 }) {
-  const { authConfig: conf, layoutConfig } = useConfigStore();
+  const { authConfig: conf } = useConfigStore();
   const { setProvider, generateState } = useSessionStore();
   const { t } = useTranslation();
   const authActionList: {

@@ -163,6 +163,8 @@ function App({ Component, pageProps }: AppProps) {
     setupInternalAppCallListener();
   }, [SystemEnv.desktopDomain, router]);
 
+  const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS || '[]');
+
   return (
     <>
       <Head>
@@ -191,6 +193,9 @@ function App({ Component, pageProps }: AppProps) {
           <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
+      {scripts.map((script, i) => (
+        <script key={i} {...script} />
+      ))}
     </>
   );
 }

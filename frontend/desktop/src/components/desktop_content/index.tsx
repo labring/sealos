@@ -26,8 +26,8 @@ import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
 import { getAmount, UserInfo } from '@/api/auth';
 import TaskModal from '../task/taskModal';
-import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
+import { configObj } from '@/stores/syncConfig';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -45,11 +45,10 @@ export default function Desktop(props: any) {
   const { i18n } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
-  const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
+  const backgroundImage = configObj.layout.backgroundImage;
   const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
-  const { layoutConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
@@ -184,7 +183,7 @@ export default function Desktop(props: any) {
       backgroundSize={'cover'}
       position={'relative'}
     >
-      {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
+      {isClient && configObj.layout.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
       <Flex
         gap={'8px'}
@@ -207,7 +206,7 @@ export default function Desktop(props: any) {
           }}
           gap={'8px'}
         >
-          {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
+          {configObj.layout.common.aiAssistantEnabled && <Assistant />}
           <Monitor />
           <Warn />
         </Flex>
@@ -216,7 +215,7 @@ export default function Desktop(props: any) {
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
           <Flex zIndex={2} flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
             <Box display={{ base: 'block', xl: 'none' }}>
-              {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
+              {configObj.layout.common.aiAssistantEnabled && <Assistant />}
             </Box>
             <SearchBox />
             <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />
