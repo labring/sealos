@@ -17,7 +17,7 @@ jobs:
       - name: Run GitHub File Sync
         uses: BetaHuhn/repo-file-sync-action@v1.21.0
         with:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
           CONFIG_PATH: .github/sync_docs.yml
           ORIGINAL_MESSAGE: true
           SKIP_PR: true
