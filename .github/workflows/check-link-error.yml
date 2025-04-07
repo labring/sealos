@@ -8,6 +8,8 @@ on:
 jobs:
   linkChecker:
     runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -19,7 +21,7 @@ jobs:
           curl -sLO "https://github.com/lycheeverse/lychee/releases/download/v${LYCHEEVERSION}/lychee-v${LYCHEEVERSION}-x86_64-unknown-linux-gnu.tar.gz"
           tar -xvzf "lychee-v${LYCHEEVERSION}-x86_64-unknown-linux-gnu.tar.gz"
           rm "lychee-v${LYCHEEVERSION}-x86_64-unknown-linux-gnu.tar.gz"
-          install -t "$HOME/.local/bin" -D lychee 
+          install -t "$HOME/.local/bin" -D lychee
           rm lychee
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Link Checker
@@ -45,7 +47,7 @@ jobs:
         with:
           version: v0.0.6
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "pr_comment"
           SEALOS_FILENAME: "report.md"
           SEALOS_REPLACE_TAG: "DEFAULT_REPLACE_LYCHEE"
