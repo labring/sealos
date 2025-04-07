@@ -17,12 +17,18 @@ export type SwitchMsData = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const data = req.body as SwitchMsData;
-    const { applyYamlList, namespace, k8sCore } = await getK8s({
+    const { applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
     const yaml = json2SwitchMsNode(data);
-    await applyYamlList([yaml], 'update');
-    jsonRes(res, { data: 'success switch roles' });
+    const result = await applyYamlList([yaml], 'create');
+    console.log(result);
+    jsonRes(res, {
+      data: {
+        metadata: result[0].metadata,
+        message: 'The switch request was sent successfully.'
+      }
+    });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
