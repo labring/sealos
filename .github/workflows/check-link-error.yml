@@ -2,7 +2,7 @@ name: Check-LinkError
 
 on:
   - push
-  - pull_request_target
+  - pull_request
   - workflow_dispatch
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
           cat report.md
       - name: Gh Rebot for Sealos
         uses: labring/gh-rebot@v0.0.6
-        if: ${{ (github.event_name == 'pull_request_target') }}
+        if: ${{ (github.event_name == 'pull_request') }}
         with:
           version: v0.0.6
         env:
