@@ -15,7 +15,7 @@ import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/a
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
-import { V1Service, V1StatefulSet } from '@kubernetes/client-node';
+import { V1ObjectMeta, V1Service, V1StatefulSet } from '@kubernetes/client-node';
 import { AxiosRequestConfig } from 'axios';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { EditPasswordReq } from '@/pages/api/db/editPassword';
@@ -74,7 +74,8 @@ export const pauseDBByName = (data: { dbName: string; dbType: DBType }) =>
 export const startDBByName = (data: { dbName: string; dbType: DBType }) =>
   POST('/api/startDBByName', data);
 
-export const switchPodMs = (data: SwitchMsData) => POST('/api/pod/switchPodMs', data);
+export const switchPodMs = (data: SwitchMsData) =>
+  POST<{ metadata: V1ObjectMeta; message: string }>('/api/pod/switchPodMs', data);
 
 export const getDBServiceByName = (name: string) =>
   GET<V1Service>(`/api/getServiceByName?name=${name}`);

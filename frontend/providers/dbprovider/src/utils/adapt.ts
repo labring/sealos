@@ -342,7 +342,7 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
 
 export const adaptOpsRequest = (
   item: KubeBlockOpsRequestType,
-  dbType: DBType
+  type: 'Reconfiguring' | 'Switchover'
 ): OpsRequestItemType => {
   const config = item.metadata.annotations?.[DBPreviousConfigKey];
 
@@ -362,7 +362,7 @@ export const adaptOpsRequest = (
     }
   }
 
-  return {
+  let result: OpsRequestItemType = {
     id: item.metadata.uid,
     name: item.metadata.name,
     namespace: item.metadata.namespace,
@@ -370,11 +370,22 @@ export const adaptOpsRequest = (
       item.status?.phase && DBReconfigStatusMap[item.status.phase]
         ? DBReconfigStatusMap[item.status.phase]
         : DBReconfigStatusMap.Creating,
-    startTime: item.metadata?.creationTimestamp,
-    configurations: item.spec.reconfigure.configurations[0].keys[0].parameters.map((param) => ({
-      parameterName: param.key,
-      newValue: param.value,
-      oldValue: previousConfigurations[param.key]
-    }))
+    startTime: item.metadata?.creationTimestamp
   };
+
+  if (type === 'Reconfiguring') {
+    result.configurations = item.spec.reconfigure!.configurations[0].keys[0].parameters.map(
+      (param) => ({
+        parameterName: param.key,
+        newValue: param.value,
+        oldValue: previousConfigurations[param.key]
+      })
+    );
+  }
+
+  if (type === 'Switchover') {
+    result.switchover = item.spec.switchover![0];
+  }
+
+  return result;
 };

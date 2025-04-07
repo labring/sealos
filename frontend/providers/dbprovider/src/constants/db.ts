@@ -20,6 +20,7 @@ export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
+export const DBSwitchRoleKey = 'ops.kubeblocks.io/ops-type=Switchover';
 
 export const DBNameLabel = 'app.kubernetes.io/instance';
 

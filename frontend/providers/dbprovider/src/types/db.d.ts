@@ -180,5 +180,9 @@ export interface OpsRequestItemType {
   status: ReconfigStatusMapType;
   startTime: Date;
   namespace: string;
-  configurations: { parameterName: string; newValue: string; oldValue?: string }[];
+  configurations?: { parameterName: string; newValue: string; oldValue?: string }[];
+  switchover?: {
+    componentName: string;
+    instanceName: string;
+  };
 }
