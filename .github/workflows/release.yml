@@ -37,7 +37,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_RELEASE_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -46,7 +46,7 @@ jobs:
           workdir: ./lifecycle
         env:
           USERNAME: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GH_RELEASE_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
   sync:
@@ -67,7 +67,7 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
@@ -82,7 +82,7 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
@@ -122,7 +122,7 @@ jobs:
           base: main
           signoff: true
           delete-branch: true
-          token: ${{ secrets.GH_RELEASE_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           reviewers: cuisongliu
           committer: sealos-release-robot <sealos-release-robot@sealos.io>
           author: sealos-release-robot <sealos-release-robot@sealos.io>

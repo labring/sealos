@@ -16,4 +16,4 @@ jobs:
           version: v2.0.0
         env:
           SEALOS_TYPE: "/comment"
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

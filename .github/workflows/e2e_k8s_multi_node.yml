@@ -2,7 +2,7 @@ name: E2E k8s Multi Node Test
 
 on:
   workflow_dispatch:
-  pull_request_target:
+  pull_request:
     types: [ labeled ]
 
 env:
@@ -96,4 +96,4 @@ jobs:
           repository: ${{ github.repository }}
           body: |
             🤖 says: E2E k8s multi node `ARM64` Test Result: ${{ env.ARM_TEST_RESULT }} , E2E k8s multi node `AMD64` Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          token: "${{ secrets.GH_PAT }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
