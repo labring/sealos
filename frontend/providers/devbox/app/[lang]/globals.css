@@ -28,13 +28,10 @@ button,
 input,
 select,
 textarea {
-  font:
-    12px/1.5tahoma,
-    arial,
-    \5b8b\4f53;
+  font: 12px/1.5tahoma, arial, \5b8b\4f53;
 }
 // h1, h2, h3, h4, h5, h6
-{
+ {
   font-size: 100%;
 }
 address,
@@ -158,4 +155,21 @@ div {
   padding: 14px;
   max-width: 600px;
   border: 1px solid #94b5ff;
+}
+
+.chakra-radio__control {
+  border-width: 1px !important;
+}
+
+.chakra-radio__control[data-checked] {
+  border-color: #219bf4 !important;
+  border-width: 1px !important;
+  background-color: white !important;
+  box-shadow: 0px 0px 0px 2.4px rgba(33, 155, 244, 0.15);
+}
+
+.chakra-radio__control[data-checked]::before {
+  background-color: #219bf4 !important;
+  width: 4px !important;
+  height: 4px !important;
 }
