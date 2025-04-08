@@ -1,15 +1,21 @@
 import { NextRequest } from 'next/server';
 
+import { devboxKey } from '@/constants/devbox';
+import { ShutdownModeType } from '@/types/devbox';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { devboxKey } from '@/constants/devbox';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { devboxName } = (await req.json()) as { devboxName: string };
+    const { devboxName, shutdownMode } = (await req.json()) as {
+      devboxName: string;
+      shutdownMode: ShutdownModeType;
+    };
+
+    console.log('shutdownMode', shutdownMode);
 
     const headerList = req.headers;
 
@@ -79,7 +85,7 @@ export async function POST(req: NextRequest) {
       namespace,
       'devboxes',
       devboxName,
-      { spec: { state: 'Stopped' } },
+      { spec: { state: shutdownMode } },
       undefined,
       undefined,
       undefined,
@@ -91,7 +97,7 @@ export async function POST(req: NextRequest) {
     );
 
     return jsonRes({
-      data: 'success pause devbox'
+      data: 'success shutdown devbox'
     });
   } catch (err: any) {
     return jsonRes({
