@@ -92,6 +92,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
 
   async function handelSwitchMs(item: PodDetailType) {
     setSwitchTarget(item.podName);
+    setSwitching(true);
     const labels = item?.metadata?.labels;
     if (
       labels !== undefined &&
@@ -110,6 +111,10 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
         title: t('node_is_switching'),
         status: 'success'
       });
+      setTimeout(() => {
+        // Re-request data to avoid exceptions caused by query data not being up to date
+        setSwitching(true);
+      }, 3000);
     }
   }
 
@@ -133,7 +138,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
       return operationList;
     },
     {
-      enabled: Boolean(dbName && dbType && switching),
+      enabled: switching,
       refetchInterval: 5000
     }
   );
@@ -220,16 +225,23 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
                       if (!switching) handelSwitchMs(item);
                     }}
                     color="white"
+                    className="btn-switch"
                     _hover={{ color: 'currentColor', bg: '#F3F3F4' }}
-                    {...(!switching && {
+                    {...(switching && {
                       cursor: 'not-allowed',
-                      _hover: { bg: 'transparent', color: 'red.600' }
+                      _hover: { color: 'red' }
                     })}
                   >
                     {switchTarget === item.podName ? (
                       <MyIcon className={styles.load} name="loading" w={'16px'} h={'16px'} />
                     ) : (
-                      <MyIcon name="change" w={'16px'} h={'16px'} className="onlyShowFirst" />
+                      <MyIcon
+                        name="change"
+                        w={'16px'}
+                        h={'16px'}
+                        className="onlyShowFirst"
+                        transition={'all 0.45s ease-in-out'}
+                      />
                     )}
                   </Button>
                 </MyTooltip>
@@ -248,11 +260,38 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
   });
 
   useEffect(() => {
-    const tags = document.querySelectorAll('.onlyShowFirst');
-    if (tags.length > 0 && !switching) {
-      (tags[0] as HTMLElement).style.fill = '#111824';
-      (tags[0] as HTMLElement).style.color = '#111824';
+    const svgs = document.querySelectorAll('.onlyShowFirst');
+    const btns = document.querySelectorAll('.btn-switch');
+    if (svgs.length > 0 && !switching) {
+      (svgs[0] as HTMLElement).style.color = '#111824';
     }
+    // 为每个按钮绑定 hover 事件
+    const handleMouseOver = () => {
+      if (!switching) {
+        // 取消第一个按钮的样式
+        if (svgs.length > 0) {
+          (svgs[0] as HTMLElement).style.color = '';
+        }
+      }
+    };
+
+    const handleMouseOut = () => {
+      if (!switching) {
+        if (svgs.length > 0) {
+          (svgs[0] as HTMLElement).style.color = '#111824';
+        }
+      }
+    };
+    btns.forEach((btn) => {
+      btn.addEventListener('mouseover', handleMouseOver);
+      btn.addEventListener('mouseout', handleMouseOut);
+    });
+    return () => {
+      btns.forEach((btn) => {
+        btn.removeEventListener('mouseover', handleMouseOver);
+        btn.removeEventListener('mouseout', handleMouseOut);
+      });
+    };
   }, [switching]);
 
   return (
