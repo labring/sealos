@@ -81,7 +81,6 @@ const DBList = ({
       try {
         setLoading(true);
         await pauseDBByName({ dbName: db.name, dbType: db.dbType });
-        await delDBServiceByName(`${db.name}-export`);
         toast({
           title: t('pause_success'),
           status: 'success'
