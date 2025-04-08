@@ -68,7 +68,8 @@ const Version = () => {
         !createTemplateModalHandler.isOpen &&
         !updateTemplateModalHandler.isOpen &&
         !selectTemplalteModalHandler.isOpen &&
-        devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending
+        (devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending ||
+          devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Failed)
           ? 3000
           : false,
       onSettled() {
