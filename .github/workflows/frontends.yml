@@ -53,6 +53,8 @@ jobs:
   image-build:
     uses: ./.github/workflows/frontend.yml
     needs: save-sealos
+    permissions:
+      packages: write
     secrets: inherit
     strategy:
       fail-fast: false
