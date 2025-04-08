@@ -72,7 +72,6 @@ const map = {
   official: require('./icons/official.svg').default,
   firstPage: require('./icons/firstPage.svg').default,
   prePage: require('./icons/prePage.svg').default,
-  jetbrains: require('./icons/jetbrains.svg').default,
 
   clion: require('./icons/jetbrains/clion.svg').default,
   goland: require('./icons/jetbrains/goland.svg').default,
@@ -91,7 +90,9 @@ const map = {
   infoRounded: require('./icons/infoRounded.svg').default,
   arrowUpRight: require('./icons/arrowUpRight.svg').default,
   ellipse: require('./icons/ellipse.svg').default,
-  ellipseFull: require('./icons/ellipseFull.svg').default
+  ellipseFull: require('./icons/ellipseFull.svg').default,
+  gateway: require('./icons/gateway.svg').default,
+  toolbox: require('./icons/toolbox.svg').default
 };
 
 const MyIcon = ({

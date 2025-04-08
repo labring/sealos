@@ -21,6 +21,8 @@ import { useEnvStore } from '@/stores/env';
 import { IDEType, useIDEStore } from '@/stores/ide';
 import { DevboxStatusMapType } from '@/types/devbox';
 import { getSSHConnectionInfo } from '@/api/devbox';
+
+import ToolboxModal from './modals/ToolboxModal';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
 
 interface Props {
@@ -69,15 +71,17 @@ const IDEButton = ({
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore();
 
   const [loading, setLoading] = useState(false);
-  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
+  const [onOpenToolboxModal, setOnOpenToolboxModal] = useState(false);
   const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false);
+  const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
+
   const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
 
   const handleGotoIDE = useCallback(
     async (currentIDE: IDEType = 'cursor') => {
       setLoading(true);
 
-      if (currentIDE !== 'jetbrains') {
+      if (currentIDE !== 'gateway' && currentIDE !== 'toolbox') {
         toast({
           title: t('opening_ide'),
           status: 'info'
@@ -102,8 +106,11 @@ const IDEButton = ({
           configHost: `${env.sealosDomain}_${env.namespace}_${devboxName}`
         });
 
-        if (currentIDE === 'jetbrains') {
+        if (currentIDE === 'gateway') {
           setOnOpenJetbrainsModal(true);
+          return;
+        } else if (currentIDE === 'toolbox') {
+          setOnOpenToolboxModal(true);
           return;
         }
 
@@ -198,7 +205,7 @@ const IDEButton = ({
           gap={'2px'}
         >
           {menuItems.map((item) => {
-            if (item.group === 'trae') {
+            if (item.group) {
               return (
                 <Flex key={item.value} gap={'4px'}>
                   {item.options?.map((option, index) => (
@@ -233,7 +240,11 @@ const IDEButton = ({
                         })}
                       >
                         <Flex alignItems="center" w={'100%'}>
-                          <MyIcon name="trae" w={'16px'} mr={'6px'} />
+                          <MyIcon
+                            name={getIconName(option.value as IDEType)}
+                            w={'16px'}
+                            mr={'6px'}
+                          />
                           <Text whiteSpace="nowrap" mr={'2px'} fontWeight={500}>
                             {option.menuLabel}
                           </Text>
@@ -307,6 +318,13 @@ const IDEButton = ({
           jetbrainsGuideData={jetbrainsGuideData}
         />
       )}
+      {!!onOpenToolboxModal && !!jetbrainsGuideData && (
+        <ToolboxModal
+          onSuccess={() => {}}
+          onClose={() => setOnOpenToolboxModal(false)}
+          jetbrainsGuideData={jetbrainsGuideData}
+        />
+      )}
     </Flex>
   );
 };
@@ -366,14 +384,23 @@ export const ideObj = {
     sortId: 4,
     group: 'trae'
   },
-  jetbrains: {
-    label: 'JetBrains',
-    icon: 'jetbrains',
-    menuLabel: 'JetBrains',
+  toolbox: {
+    label: 'Toolbox',
+    icon: 'toolbox',
+    menuLabel: 'Toolbox',
     prefix: '-',
-    value: 'jetbrains',
+    value: 'toolbox',
     sortId: 5,
-    group: ''
+    group: 'jetbrains'
+  },
+  gateway: {
+    label: 'Gateway',
+    icon: 'gateway',
+    menuLabel: 'Gateway',
+    prefix: '-',
+    value: 'gateway',
+    sortId: 5,
+    group: 'jetbrains'
   }
 } as const;
 
@@ -389,7 +416,8 @@ const getIconName = (
   | 'vscodeInsiders'
   | 'windsurf'
   | 'trae'
-  | 'jetbrains' => {
+  | 'gateway'
+  | 'toolbox' => {
   if (ide === 'traeCN') return 'trae';
   return ide;
 };
@@ -405,6 +433,16 @@ const menuItems = Object.values(ideObj)
         options: [
           { value: 'trae', menuLabel: 'Trae' },
           { value: 'traeCN', menuLabel: 'Trae CN' }
+        ]
+      });
+    } else if (item.group === 'jetbrains' && !acc.some((i) => i.group === 'jetbrains')) {
+      acc.push({
+        value: 'jetbrains-group',
+        menuLabel: 'JetBrains',
+        group: 'jetbrains',
+        options: [
+          { value: 'toolbox', menuLabel: 'Toolbox' },
+          { value: 'gateway', menuLabel: 'Gateway' }
         ]
       });
     } else if (item.group === '') {

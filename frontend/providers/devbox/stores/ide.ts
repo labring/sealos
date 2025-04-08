@@ -7,9 +7,10 @@ export type IDEType =
   | 'cursor'
   | 'vscodeInsiders'
   | 'windsurf'
-  | 'jetbrains'
   | 'trae'
-  | 'traeCN';
+  | 'traeCN'
+  | 'gateway'
+  | 'toolbox';
 
 type State = {
   devboxIDEList: { ide: IDEType; devboxName: string }[];
