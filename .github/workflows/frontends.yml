@@ -54,6 +54,7 @@ jobs:
     uses: ./.github/workflows/frontend.yml
     needs: save-sealos
     permissions:
+      contents: read
       packages: write
     secrets: inherit
     strategy:
