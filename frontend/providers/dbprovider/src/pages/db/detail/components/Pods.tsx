@@ -4,9 +4,9 @@ import PodStatus from '@/components/PodStatus';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
 import { useDBStore } from '@/store/db';
-import type { DBType, PodDetailType } from '@/types/db';
+import type { DBType, OpsRequestItemType, PodDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
-import { getPodRoleName } from '@/utils/tools';
+import { getPodRoleName, RequiredByKeys } from '@/utils/tools';
 import {
   Box,
   Button,
@@ -123,7 +123,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
   useQuery(
     ['getOperationList', dbName, dbType],
     async () => {
-      const operationList = await getOpsRequest({
+      const operationList = await getOpsRequest<'switchover'>({
         name: dbName,
         label: DBSwitchRoleKey,
         dbType: dbType
@@ -131,7 +131,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
       setSwitching(operationList.some((item) => item.status.value === 'Running'));
       if (operationList.some((item) => item.status.value === 'Running')) {
         setSwitchTarget(
-          operationList.find((item) => item.status.value === 'Running')?.switchover?.instanceName ??
+          operationList.find((item) => item.status.value === 'Running')!.switchover.instanceName ??
             ''
         );
       }

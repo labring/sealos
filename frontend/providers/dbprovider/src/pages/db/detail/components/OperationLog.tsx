@@ -2,6 +2,7 @@ import { getOperationLog } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBDetailType, OpsRequestItemType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { RequiredByKeys } from '@/utils/tools';
 import {
   Box,
   Divider,
@@ -33,7 +34,7 @@ export default function OperationLog({ db }: { db?: DBDetailType }) {
       operationList.sort(
         (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       );
-      return operationList;
+      return operationList as RequiredByKeys<OpsRequestItemType, 'configurations'>[];
     },
     {
       enabled: !!db?.dbName,
@@ -45,7 +46,10 @@ export default function OperationLog({ db }: { db?: DBDetailType }) {
     title: I18nCommonKey;
     dataIndex?: keyof OpsRequestItemType;
     key: string;
-    render?: (item: OpsRequestItemType, configIndex: number) => React.ReactNode | string;
+    render?: (
+      item: RequiredByKeys<OpsRequestItemType, 'configurations'>,
+      configIndex: number
+    ) => React.ReactNode | string;
   }[] = [
     {
       title: 'dbconfig.modify_time',

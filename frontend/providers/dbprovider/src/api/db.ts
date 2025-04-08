@@ -19,6 +19,7 @@ import { V1ObjectMeta, V1Service, V1StatefulSet } from '@kubernetes/client-node'
 import { AxiosRequestConfig } from 'axios';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { EditPasswordReq } from '@/pages/api/db/editPassword';
+import { RequiredByKeys } from '@/utils/tools';
 
 export const getMyDBList = () =>
   GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
@@ -96,8 +97,11 @@ export const getMonitorData = (payload: {
   end: number;
 }) => GET<{ result: MonitorChartDataResult }>(`/api/monitor/getMonitorData`, payload);
 
-export const getOpsRequest = (payload: { name: string; label: string; dbType: DBType }) =>
-  GET<OpsRequestItemType[]>(`/api/opsrequest/list`, payload);
+export const getOpsRequest = <T extends keyof OpsRequestItemType>(payload: {
+  name: string;
+  label: string;
+  dbType: DBType;
+}) => GET<RequiredByKeys<OpsRequestItemType, T>[]>(`/api/opsrequest/list`, payload);
 
 export const getOperationLog = (payload: { name: string; dbType: DBType }) =>
   GET<OpsRequestItemType[]>(`/api/opsrequest/operationlog`, payload);
