@@ -3,6 +3,7 @@ import MyIcon from '@/components/Icon';
 import { DBReconfigureKey } from '@/constants/db';
 import { DBDetailType, OpsRequestItemType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { RequiredByKeys } from '@/utils/tools';
 import {
   TableContainer,
   Table,
@@ -27,7 +28,7 @@ export default function History({ db }: { db?: DBDetailType }) {
     ['getOperationList', db?.dbName, db?.dbType],
     async () => {
       if (!db?.dbName || !db?.dbType) return [];
-      const operationList = await getOpsRequest({
+      const operationList = await getOpsRequest<'configurations'>({
         name: db.dbName,
         label: DBReconfigureKey,
         dbType: db.dbType
@@ -47,7 +48,10 @@ export default function History({ db }: { db?: DBDetailType }) {
     title: I18nCommonKey;
     dataIndex?: keyof OpsRequestItemType;
     key: string;
-    render?: (item: OpsRequestItemType, configIndex: number) => React.ReactNode | string;
+    render?: (
+      item: RequiredByKeys<OpsRequestItemType, 'configurations'>,
+      configIndex: number
+    ) => React.ReactNode | string;
   }[] = [
     {
       title: 'dbconfig.modify_time',
