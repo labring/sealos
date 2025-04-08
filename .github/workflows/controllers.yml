@@ -87,6 +87,9 @@ jobs:
 
   image-build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         module:
@@ -206,6 +209,9 @@ jobs:
       - image-build
       - save-sealos
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         module:

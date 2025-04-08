@@ -1,6 +1,6 @@
 name: "Github Rebot for Pull Request Labeler"
 on:
-  - pull_request
+  - pull_request_target
 
 jobs:
   triage:
@@ -10,3 +10,4 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/labeler@v4
+# no more lines here.
