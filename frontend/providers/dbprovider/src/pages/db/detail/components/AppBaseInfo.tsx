@@ -97,7 +97,7 @@ const CopyBox = ({
 const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
-  const { SystemEnv, initSystemEnv } = useEnvStore();
+  const { SystemEnv } = useEnvStore();
   const [showSecret, setShowSecret] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -134,7 +134,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       enabled: supportConnectDB,
       retry: 3,
       onSuccess(data) {
-        console.log(data, !!data, 'service');
         setIsChecked(!!data);
       },
       onError(error) {

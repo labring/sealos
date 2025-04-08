@@ -69,7 +69,6 @@ const Header = ({
     try {
       setLoading(true);
       await pauseDBByName(db);
-      await delDBServiceByName(`${db.dbName}-export`);
       toast({
         title: t('pause_success'),
         status: 'success'
