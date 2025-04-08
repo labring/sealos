@@ -32,6 +32,9 @@ jobs:
           - arch: arm64
             runs-on: ubuntu-24.04-arm
     runs-on: ${{ matrix.runs-on || 'ubuntu-24.04' }}
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,6 +102,9 @@ jobs:
     name: Push Docker Images
     needs: image-build
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     if: ${{ inputs.push_image }}
     steps:
       - name: Checkout
@@ -187,6 +193,9 @@ jobs:
       - image-release
     if: ${{ inputs.push_image }}
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
