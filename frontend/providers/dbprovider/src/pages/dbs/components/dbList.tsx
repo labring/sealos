@@ -85,7 +85,6 @@ const DBList = ({
           title: t('pause_success'),
           status: 'success'
         });
-        location.reload();
       } catch (error: any) {
         toast({
           title: typeof error === 'string' ? error : error.message || t('pause_error'),
@@ -94,7 +93,9 @@ const DBList = ({
         console.error(error);
       }
       setLoading(false);
-      refetchApps();
+      setTimeout(() => {
+        refetchApps();
+      }, 3000);
     },
     [refetchApps, setLoading, t, toast]
   );

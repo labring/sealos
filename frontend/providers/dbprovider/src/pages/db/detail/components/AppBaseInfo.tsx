@@ -548,32 +548,33 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 {t('direct_connection')}
               </Center>
             )}
-            {[DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
-              db.dbType as DBTypeEnum
-            ) && (
-              <Center
-                className="driver-detail-terminal-button"
-                gap={'6px'}
-                h="28px"
-                fontSize={'12px'}
-                bg="white"
-                border="1px solid #DFE2EA"
-                borderRadius={'md'}
-                px="8px"
-                cursor={'pointer'}
-                fontWeight={'bold'}
-                onClick={() => {
-                  setScenario('editPassword');
-                  onOpen();
-                }}
-                _hover={{
-                  color: 'brightBlue.600'
-                }}
-              >
-                <MyIcon name="edit" w={'16px'} h={'16px'} />
-                {t('edit_password')}
-              </Center>
-            )}
+            {false &&
+              [DBTypeEnum.mysql, DBTypeEnum.postgresql, DBTypeEnum.mongodb].includes(
+                db.dbType as DBTypeEnum
+              ) && (
+                <Center
+                  className="driver-detail-terminal-button"
+                  gap={'6px'}
+                  h="28px"
+                  fontSize={'12px'}
+                  bg="white"
+                  border="1px solid #DFE2EA"
+                  borderRadius={'md'}
+                  px="8px"
+                  cursor={'pointer'}
+                  fontWeight={'bold'}
+                  onClick={() => {
+                    setScenario('editPassword');
+                    onOpen();
+                  }}
+                  _hover={{
+                    color: 'brightBlue.600'
+                  }}
+                >
+                  <MyIcon name="edit" w={'16px'} h={'16px'} />
+                  {t('edit_password')}
+                </Center>
+              )}
           </Flex>
           {['milvus', 'kafka'].includes(db.dbType) === false && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
