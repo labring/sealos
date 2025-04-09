@@ -36,6 +36,8 @@ const (
 	DevboxStatePending DevboxState = "Pending"
 	// DevboxStateStopped means the Devbox is stopped
 	DevboxStateStopped DevboxState = "Stopped"
+	// DevboxStateShutdown means the devbox is shutdown
+	DevboxStateShutdown DevboxState = "Shutdown"
 )
 
 type NetworkType string
@@ -104,7 +106,7 @@ type Config struct {
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Running;Stopped
+	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
@@ -185,6 +187,10 @@ const (
 	DevboxPhaseStopped DevboxPhase = "Stopped"
 	//DevboxPhaseStopping means Devbox is stopping
 	DevboxPhaseStopping DevboxPhase = "Stopping"
+	//DevboxPhaseShutdown means Devbox is shutdown and service is deleted
+	DevboxPhaseShutdown DevboxPhase = "Shutdown"
+	//DevboxPhaseShutting means Devbox is shutting
+	DevboxPhaseShutting DevboxPhase = "Shutting"
 	//DevboxPhaseError means Devbox is error
 	DevboxPhaseError DevboxPhase = "Error"
 	//DevboxPhaseUnknown means Devbox is unknown
