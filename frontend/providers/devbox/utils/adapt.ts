@@ -166,7 +166,7 @@ export const adaptDevboxVersionListItem = (
     status:
       devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Failed,
+        : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'
   };
 };
@@ -182,7 +182,7 @@ export const adaptDevboxVersionListItemV2 = (
     status:
       devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Failed,
+        : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'
   };
 };
