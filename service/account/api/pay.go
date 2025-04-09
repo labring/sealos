@@ -68,6 +68,10 @@ func CreateCardPay(c *gin.Context) {
 				SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "card not found"})
 				return
 			}
+			if card.CardToken == "" {
+				SetErrorResp(c, http.StatusBadRequest, gin.H{"error": "card token not set, please rebind card"})
+				return
+			}
 			err = dao.DBClient.PaymentWithFunc(&types.Payment{
 				PaymentRaw: types.PaymentRaw{
 					UserUID:      req.UserUID,
@@ -91,11 +95,22 @@ func CreateCardPay(c *gin.Context) {
 			if err != nil {
 				SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
 			} else {
-				// TODO 发邮箱通知
-				if err := SendUserPayEmail(req.UserUID, utils.EnvPaySuccessEmailTmpl); err != nil {
-					logrus.Errorf("failed to send user %s email: %v", req.UserID, err)
-				}
 				SetSuccessResp(c)
+				// TODO 发邮箱通知
+				account, err := dao.DBClient.GetAccount(types.UserQueryOpts{UID: req.UserUID})
+				if err != nil {
+					logrus.Errorf("failed to get account: %v", err)
+				}
+				if account != nil {
+					if err = sendUserPayEmail(req.UserUID, &utils.EmailPayRender{
+						Type:           utils.EnvPaySuccessEmailTmpl,
+						Domain:         dao.DBClient.GetLocalRegion().Domain,
+						TopUpAmount:    req.Amount / 1_000_000,
+						AccountBalance: (account.Balance - account.DeductionBalance) / 1_000_000,
+					}); err != nil {
+						logrus.Errorf("failed to send user %s email: %v", req.UserID, err)
+					}
+				}
 			}
 			return
 		} else {
@@ -241,23 +256,43 @@ func newCardPaymentHandler(paymentID string, card types.CardInfo) error {
 		return err
 	}
 	if userUID != uuid.Nil {
-		if err := SendUserPayEmail(userUID, utils.EnvPaySuccessEmailTmpl); err != nil {
+		if err = sendCardPaymentPayEmail(userUID, paymentID, utils.EnvPaySuccessEmailTmpl); err != nil {
 			logrus.Errorf("Failed to send PAY_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
 		}
 	}
 	return nil
 }
 
+func sendCardPaymentPayEmail(userUID uuid.UUID, paymentID string, payType string) error {
+	var order types.PaymentOrder
+	if err := dao.DBClient.GetGlobalDB().Model(&types.PaymentOrder{}).Where(types.PaymentOrder{PaymentRaw: types.PaymentRaw{TradeNO: paymentID, UserUID: userUID}}).Find(&order).Error; err != nil {
+		return fmt.Errorf("failed to get payment order: %v", err)
+	}
+	account, err := dao.DBClient.GetAccount(types.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return fmt.Errorf("failed to get account: %v", err)
+	}
+	if err := sendUserPayEmail(userUID, &utils.EmailPayRender{
+		Type:           payType,
+		Domain:         dao.DBClient.GetLocalRegion().Domain,
+		TopUpAmount:    order.Amount / 1_000_000,
+		AccountBalance: (account.Balance - account.DeductionBalance) / 1_000_000,
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 func newCardPaymentFailureHandler(paymentRequestID string) error {
-	userUID, err := dao.DBClient.NewCardPaymentFailureHandler(paymentRequestID)
+	_, err := dao.DBClient.NewCardPaymentFailureHandler(paymentRequestID)
 	if err != nil {
 		return err
 	}
-	if userUID != uuid.Nil {
-		if err := SendUserPayEmail(userUID, utils.EnvPayFailedEmailTmpl); err != nil {
-			logrus.Errorf("Failed to send PAY_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
-		}
-	}
+	//if userUID != uuid.Nil {
+	//	if err := SendUserPayEmail(userUID, utils.EnvPayFailedEmailTmpl); err != nil {
+	//		logrus.Errorf("Failed to send PAY_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
+	//	}
+	//}
 	return nil
 }
 
@@ -267,23 +302,44 @@ func newCardSubscriptionPaymentHandler(paymentReqID string, card types.CardInfo)
 		return err
 	}
 	if userUID != uuid.Nil {
-		if err := SendUserPayEmail(userUID, utils.EnvSubSuccessEmailTmpl); err != nil {
+		if err = sendUserSubPayEmailWith(userUID); err != nil {
 			logrus.Errorf("Failed to send SUB_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
 		}
 	}
 	return nil
 }
 
+func sendUserSubPayEmailWith(userUID uuid.UUID) error {
+	lastSubTransaction, err := dao.DBClient.GetLastSubscriptionTransaction(userUID)
+	if err != nil {
+		return fmt.Errorf("failed to get last subscription transaction: %v", err)
+	}
+	if lastSubTransaction.PayStatus != types.SubscriptionPayStatusPaid && lastSubTransaction.PayStatus != types.SubscriptionPayStatusNoNeed {
+		return fmt.Errorf("last subscription transaction pay status is not paid: %v", lastSubTransaction.PayStatus)
+	}
+
+	if err := sendUserPayEmail(userUID, &utils.EmailSubRender{
+		Type:                 utils.EnvSubSuccessEmailTmpl,
+		Domain:               dao.DBClient.GetLocalRegion().Domain,
+		SubscriptionPlanName: lastSubTransaction.NewPlanName,
+		StartDate:            lastSubTransaction.StartAt,
+		EndDate:              lastSubTransaction.StartAt.AddDate(0, 1, 0),
+	}); err != nil {
+		return fmt.Errorf("failed to send SUB_SUCCESS_EMAIL_TMPL email to %s: %v", userUID, err)
+	}
+	return nil
+}
+
 func newCardSubscriptionPaymentFailureHandler(paymentRequestID string) error {
-	userUID, err := dao.DBClient.NewCardSubscriptionPaymentFailureHandler(paymentRequestID)
+	_, err := dao.DBClient.NewCardSubscriptionPaymentFailureHandler(paymentRequestID)
 	if err != nil {
 		return err
 	}
-	if userUID != uuid.Nil {
-		if err := SendUserPayEmail(userUID, utils.EnvSubFailedEmailTmpl); err != nil {
-			logrus.Errorf("Failed to send SUB_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
-		}
-	}
+	//if userUID != uuid.Nil {
+	//	if err := SendUserPayEmail(userUID, utils.EnvSubFailedEmailTmpl); err != nil {
+	//		logrus.Errorf("Failed to send SUB_FAILED_EMAIL_TMPL email to %s: %v", userUID, err)
+	//	}
+	//}
 	return nil
 }
 
@@ -323,9 +379,7 @@ func processPaymentResultWithHandler(c *gin.Context, notifyType string, notifyRe
 		return err
 	}
 	if resp.Result.ResultCode != SuccessStatus || resp.Result.ResultStatus != "S" {
-		sendError(c, http.StatusInternalServerError,
-			fmt.Sprintf("payment result is not SUCCESS: %#+v", resp.Result), nil)
-		return errors.New("payment not successful")
+		return fmt.Errorf("payment result is not SUCCESS: %#+v", resp.Result)
 	}
 
 	card := types.CardInfo{
@@ -336,8 +390,7 @@ func processPaymentResultWithHandler(c *gin.Context, notifyType string, notifyRe
 		NetworkTransactionID: resp.PaymentResultInfo.NetworkTransactionId,
 	}
 
-	if err := paySuccessHandler(paymentRequestID, card); err != nil {
-		sendError(c, http.StatusInternalServerError, "failed to handle payment", err)
+	if err = paySuccessHandler(paymentRequestID, card); err != nil {
 		return err
 	}
 	return nil

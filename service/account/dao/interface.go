@@ -246,8 +246,8 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 		return uuid.Nil, fmt.Errorf("failed to get payment order with trade no: %v", err)
 	}
 	if order.Status != types.PaymentOrderStatusPending {
-		fmt.Printf("payment order status is not pending: %v\n", order)
-		return uuid.Nil, nil
+		//fmt.Printf("payment order status is not pending: %v\n", order)
+		return uuid.Nil, ErrPaymentOrderAlreadyHandle
 		//return fmt.Errorf("payment order status is not pending: %v", order)
 	}
 	if card.ID == uuid.Nil {
@@ -260,11 +260,13 @@ func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.Ca
 		ID:         order.ID,
 		PaymentRaw: order.PaymentRaw,
 	}, func(tx *gorm.DB) error {
-		card.ID, err = cockroach.SetCardInfo(tx, &card)
-		if err != nil {
-			return fmt.Errorf("failed to set card info: %v", err)
+		if card.CardToken != "" {
+			card.ID, err = cockroach.SetCardInfo(tx, &card)
+			if err != nil {
+				return fmt.Errorf("failed to set card info: %v", err)
+			}
+			order.PaymentRaw.CardUID = &card.ID
 		}
-		order.PaymentRaw.CardUID = &card.ID
 		return nil
 	}, func(tx *gorm.DB) error {
 		return cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
@@ -287,6 +289,8 @@ func (g *Cockroach) NewCardPaymentFailureHandler(paymentRequestID string) (uuid.
 	return order.UserUID, g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusFailed, order.TradeNO)
 }
 
+var ErrPaymentOrderAlreadyHandle = fmt.Errorf("payment order already handle")
+
 func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) (uuid.UUID, error) {
 	if paymentRequestID == "" {
 		return uuid.Nil, fmt.Errorf("payment request id is empty")
@@ -299,17 +303,16 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 		}
 		userUID = order.UserUID
 		if order.Status != types.PaymentOrderStatusPending {
-			return fmt.Errorf("payment order status is not pending: %v", order)
+			return ErrPaymentOrderAlreadyHandle
 		}
-		if card.ID == uuid.Nil {
-			card.ID = uuid.New()
+		if card.CardToken != "" {
+			card.UserUID = order.UserUID
+			card.ID, err = cockroach.SetCardInfo(tx, &card)
+			if err != nil {
+				return fmt.Errorf("failed to set card info: %v", err)
+			}
+			order.PaymentRaw.CardUID = &card.ID
 		}
-		card.UserUID = order.UserUID
-		card.ID, err = cockroach.SetCardInfo(tx, &card)
-		if err != nil {
-			return fmt.Errorf("failed to set card info: %v", err)
-		}
-		order.PaymentRaw.CardUID = &card.ID
 		order.PaymentRaw.ChargeSource = types.ChargeSourceNewCard
 		// TODO List
 		// 1. set payment order status with tradeNo

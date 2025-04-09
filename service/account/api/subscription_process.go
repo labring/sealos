@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils"
-
 	"github.com/labring/sealos/service/account/helper"
 
 	services "github.com/labring/sealos/service/pkg/pay"
@@ -122,7 +120,7 @@ func (p *SubscriptionProcessor) acquireProcessingLock(lockID string) (bool, erro
 		SET lock_until = EXCLUDED.lock_until
 		WHERE subscription_processor_locks.lock_until < NOW()
 		RETURNING true as acquired
-	`, lockID, time.Now().Add(LockTimeout)).Scan(&result).Error
+	`, lockID, time.Now().UTC().Add(LockTimeout)).Scan(&result).Error
 
 	if err != nil {
 		return false, err
@@ -154,7 +152,7 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 			WHERE s.expire_at < ?AND s.status = ?
 			AND s.plan_name != ?
 			LIMIT ?
-		`, time.Now().Add(10*time.Minute), types.SubscriptionStatusNormal, types.FreeSubscriptionPlanName, BatchSize).Scan(&expiredSubscriptions).Error
+		`, time.Now().UTC().Add(10*time.Minute), types.SubscriptionStatusNormal, types.FreeSubscriptionPlanName, BatchSize).Scan(&expiredSubscriptions).Error
 	})
 
 	if err != nil {
@@ -196,12 +194,12 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		OldPlanID:      subPlan.ID,
 		OldPlanName:    subPlan.Name,
 		OldPlanStatus:  subscription.Status,
-		StartAt:        time.Now(),
+		StartAt:        time.Now().UTC(),
 		NewPlanID:      subPlan.ID,
 		NewPlanName:    subPlan.Name,
 		Amount:         subPlan.Amount,
 		Operator:       types.SubscriptionTransactionTypeRenewed,
-		CreatedAt:      time.Now(),
+		CreatedAt:      time.Now().UTC(),
 		Status:         types.SubscriptionTransactionStatusProcessing,
 	}
 
@@ -249,7 +247,7 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 			PayMethod: "CARD",
 		}, &subTransaction)
 		if err == nil {
-			if err = SendUserPayEmail(subscription.UserUID, utils.EnvSubSuccessEmailTmpl); err != nil {
+			if err = sendUserSubPayEmailWith(subscription.UserUID); err != nil {
 				logrus.Errorf("Failed to send subscription success email: %v", err)
 			}
 			return nil
@@ -300,6 +298,19 @@ func HasGithubOauthProvider(db *gorm.DB, userUID uuid.UUID) (bool, error) {
 	return provider.UID != uuid.Nil, nil
 }
 
+func GetGithubOauthProviderID(db *gorm.DB, userUID uuid.UUID) (string, error) {
+	var provider types.OauthProvider
+	err := db.
+		Where(`"userUid" = ? AND "providerType" = ?`, userUID, types.OauthProviderTypeGithub).
+		Limit(1).
+		Find(&provider).Error
+
+	if err != nil {
+		return "", err
+	}
+	return provider.ProviderID, nil
+}
+
 func InitSubscriptionProcessorTables(db *gorm.DB) error {
 	// 创建处理器锁表
 	err := db.Exec(`
@@ -314,13 +325,13 @@ func InitSubscriptionProcessorTables(db *gorm.DB) error {
 
 // sendRenewalFailureNotification 发送续费失败通知
 func (p *SubscriptionProcessor) sendRenewalFailureNotification(subscription *types.Subscription, transaction types.SubscriptionTransaction) error {
-	logrus.Infof("Sending renewal failure notification to user %s for subscription %s. Plan: %s, transaction ID: %s",
-		subscription.UserUID, subscription.ID, subscription.PlanName, transaction.ID)
-
-	// TODO: implement the actual notification logic
-	if err := SendUserPayEmail(subscription.UserUID, utils.EnvSubFailedEmailTmpl); err != nil {
-		logrus.Errorf("Failed to send subscription success email: %v", err)
-	}
+	//logrus.Infof("Sending renewal failure notification to user %s for subscription %s. Plan: %s, transaction ID: %s",
+	//	subscription.UserUID, subscription.ID, subscription.PlanName, transaction.ID)
+	//
+	//// TODO: implement the actual notification logic
+	//if err := SendUserPayEmail(subscription.UserUID, utils.EnvSubFailedEmailTmpl); err != nil {
+	//	logrus.Errorf("Failed to send subscription success email: %v", err)
+	//}
 
 	return nil
 }
@@ -454,7 +465,7 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 
 	var users []types.UserKYC
 	err := p.db.Transaction(func(tx *gorm.DB) error {
-		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
+		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().UTC().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
 	})
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to query completed KYC: %w", err)
@@ -472,22 +483,37 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 		err = p.db.Transaction(func(tx *gorm.DB) error {
 			// If the status is Pending, check whether KYC has been completed
 			if user.Status == types.UserKYCStatusPending {
-				isBind, dErr := HasGithubOauthProvider(tx, user.UserUID)
+				userInfo := &types.UserInfo{}
+				dErr := dao.DBClient.GetGlobalDB().Model(&types.UserInfo{}).Where(`"userUid" = ?`, user.UserUID).Find(userInfo).Error
 				if dErr != nil {
-					return fmt.Errorf("failed to check github oauth provider: %w", dErr)
+					return fmt.Errorf("failed to get user info: %w", dErr)
 				}
-				if !isBind {
-					// If the github account is not bound, set the status to Failed
+				status := types.UserKYCStatusCompleted
+				if userInfo.Config == nil {
+					status = types.UserKYCStatusFailed
+				} else {
+					if userInfo.Config.Github.CreatedAt == "" {
+						status = types.UserKYCStatusFailed
+					} else {
+						createAt, dErr := time.Parse(time.RFC3339, userInfo.Config.Github.CreatedAt)
+						if dErr != nil {
+							return fmt.Errorf("failed to parse github user created time: %w", dErr)
+						}
+						if createAt.AddDate(0, 0, 180).After(time.Now()) {
+							status = types.UserKYCStatusFailed
+						}
+					}
+				}
+
+				// 判断创建时间是否为180天以前
+				if status == types.UserKYCStatusFailed {
 					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusFailed).Error
-				}
-				// 设置为Completed状态
-				dErr = tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
-				if dErr != nil {
-					return fmt.Errorf("failed to update KYC status: %w", dErr)
+				} else {
+					return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("status", types.UserKYCStatusCompleted).Error
 				}
 			}
 			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one
-			dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now()).Update("status", types.CreditsStatusExpired).Error
+			dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
 			if dErr != nil && dErr != gorm.ErrRecordNotFound {
 				return fmt.Errorf("failed to check credits: %w", dErr)
 			}

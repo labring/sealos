@@ -624,3 +624,26 @@ func ParseAdminChargeBillingReq(c *gin.Context) (*AdminChargeBillingReq, error) 
 	}
 	return rechargeBilling, nil
 }
+
+type AdminFlushSubscriptionQuotaReq struct {
+	UserUID  uuid.UUID `json:"userUID" bson:"userUID"`
+	PlanName string    `json:"planName" bson:"planName"`
+	PlanID   uuid.UUID `json:"planID" bson:"planID"`
+}
+
+func ParseAdminFlushSubscriptionQuotaReq(c *gin.Context) (*AdminFlushSubscriptionQuotaReq, error) {
+	flushSubscriptionQuota := &AdminFlushSubscriptionQuotaReq{}
+	if err := c.ShouldBindJSON(flushSubscriptionQuota); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if flushSubscriptionQuota.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("userUID cannot be empty")
+	}
+	if flushSubscriptionQuota.PlanID == uuid.Nil {
+		return nil, fmt.Errorf("planID cannot be empty")
+	}
+	if flushSubscriptionQuota.PlanName == "" {
+		return nil, fmt.Errorf("planName cannot be empty")
+	}
+	return flushSubscriptionQuota, nil
+}

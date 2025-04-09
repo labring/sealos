@@ -465,25 +465,35 @@ func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[str
 			}
 			rl := make(corev1.ResourceList)
 			for k, v := range maxResources {
+				_v, err := ParseCustomQuantity(v)
+				if err != nil {
+					return nil, fmt.Errorf("parse %s failed: %v", k, err)
+				}
 				switch k {
 				case "cpu":
-					rl[corev1.ResourceLimitsCPU], _ = resource.ParseQuantity(v)
+					rl[corev1.ResourceLimitsCPU] = _v
 				case "memory":
-					rl[corev1.ResourceLimitsMemory], _ = resource.ParseQuantity(v)
+					rl[corev1.ResourceLimitsMemory] = _v
 				case "storage":
-					rl[corev1.ResourceRequestsStorage], _ = resource.ParseQuantity(v)
+					rl[corev1.ResourceRequestsStorage] = _v
 				case "nodeports":
-					rl[corev1.ResourceServicesNodePorts], _ = resource.ParseQuantity(v)
+					rl[corev1.ResourceServicesNodePorts] = _v
 				case ResourceObjectStorageSize.String():
-					rl[ResourceObjectStorageSize], _ = resource.ParseQuantity(v)
+					rl[ResourceObjectStorageSize] = _v
 				case ResourceObjectStorageBucket.String():
-					rl[ResourceObjectStorageBucket], _ = resource.ParseQuantity(v)
+					rl[ResourceObjectStorageBucket] = _v
 				}
 			}
 			subPlansLimit[plans[i].Name] = rl
 		}
 	}
 	return subPlansLimit, nil
+}
+
+func ParseCustomQuantity(s string) (resource.Quantity, error) {
+	s = strings.Replace(s, "GiB", "Gi", 1)
+	s = strings.Replace(s, "MiB", "Mi", 1)
+	return resource.ParseQuantity(s)
 }
 
 func DefaultLimitRangeLimits() []corev1.LimitRangeItem {

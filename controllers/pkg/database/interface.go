@@ -16,6 +16,9 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -159,4 +162,28 @@ var _ = AccountV2(&cockroach.Cockroach{})
 
 func NewAccountV2(globalURI, localURI string) (AccountV2, error) {
 	return cockroach.NewCockRoach(globalURI, localURI)
+}
+
+func InitRegionEnv(db *gorm.DB, localDomain string) error {
+	var regionENV []types.RegionConfig
+	if err := db.Model(&types.RegionConfig{}).Find(&regionENV).Error; err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("failed to get region env: %v", err)
+	}
+	// set global env
+	for _, envCfg := range regionENV {
+		if strings.ToUpper(envCfg.Region) == "GLOBAL" {
+			if err := os.Setenv(envCfg.Key, envCfg.Value); err != nil {
+				return fmt.Errorf("set global env error: %v", err)
+			}
+		}
+	}
+	// region env Cover
+	for _, envCfg := range regionENV {
+		if envCfg.Region == localDomain {
+			if err := os.Setenv(envCfg.Key, envCfg.Value); err != nil {
+				return fmt.Errorf("set region env error: %v", err)
+			}
+		}
+	}
+	return nil
 }

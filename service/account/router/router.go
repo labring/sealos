@@ -74,7 +74,7 @@ func RegisterPayRouter() {
 		POST(helper.UserUsage, api.UserUsage).
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
-	router.Group(helper.AdminGroup).
+	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling)
@@ -92,8 +92,10 @@ func RegisterPayRouter() {
 			POST(helper.SubscriptionLastTransaction, api.GetLastSubscriptionTransaction).
 			POST(helper.SubscriptionUpgradeAmount, api.GetSubscriptionUpgradeAmount).
 			POST(helper.SubscriptionFlushQuota, api.FlushSubscriptionQuota).
+			POST(helper.SubscriptionQuotaCheck, api.CheckSubscriptionQuota).
 			POST(helper.SubscriptionPay, api.CreateSubscriptionPay).
 			POST(helper.SubscriptionNotify, api.NewSubscriptionPayNotifyHandler)
+		adminGroup.POST(helper.AdminFlushSubQuota, api.AdminFlushSubscriptionQuota)
 
 		processor := api.NewSubscriptionProcessor(dao.DBClient.GetGlobalDB())
 		err := api.InitSubscriptionProcessorTables(dao.DBClient.GetGlobalDB())

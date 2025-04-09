@@ -595,8 +595,10 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 			})
 		}
 	}
-	if err := r.DBClient.SaveObjTraffic(objTraffic...); err != nil {
-		return fmt.Errorf("failed to save object storage traffic: %w", err)
+	if len(objTraffic) != 0 {
+		if err := r.DBClient.SaveObjTraffic(objTraffic...); err != nil {
+			return fmt.Errorf("failed to save object storage traffic: %w", err)
+		}
 	}
 	return nil
 }

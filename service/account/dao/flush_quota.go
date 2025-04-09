@@ -29,7 +29,7 @@ func (a *FlushQuotaTask) Execute() error {
 	}
 	err = DBClient.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
 		var tasks []types.AccountRegionUserTask
-		err := tx.Where("start_at < ? AND region_domain = ? AND status = ?", time.Now(), a.LocalDomain, types.AccountRegionUserTaskStatusPending).Find(&tasks).Error
+		err := tx.Where("start_at < ? AND region_domain = ? AND type = ? AND status = ?", time.Now().UTC(), a.LocalDomain, types.AccountRegionUserTaskTypeFlushQuota, types.AccountRegionUserTaskStatusPending).Find(&tasks).Error
 		if err != nil {
 			return err
 		}
