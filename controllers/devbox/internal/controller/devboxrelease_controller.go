@@ -114,7 +114,7 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	if err := r.Get(ctx, devboxInfo, devbox); err != nil {
 		return err
 	}
-	hostName, imageName, oldTag, err := r.GetImageInfo(devbox)
+	hostName, imageName, oldTag, err := r.GetImageInfo(devbox, devboxRelease)
 	if err != nil {
 		return err
 	}
@@ -132,15 +132,19 @@ func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv
 	return nil
 }
 
-func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
+func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox, devboxRelease *devboxv1alpha1.DevBoxRelease) (string, string, string, error) {
 	if len(devbox.Status.CommitHistory) == 0 {
 		return "", "", "", fmt.Errorf("commit history is empty")
 	}
-	commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
-	if commitHistory == nil {
-		return "", "", "", fmt.Errorf("no successful commit history found")
+	targetImage := devboxRelease.Status.OriginalImage
+	if targetImage == "" {
+		commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
+		if commitHistory == nil {
+			return "", "", "", fmt.Errorf("no successful commit history found")
+		}
+		targetImage = commitHistory.Image
 	}
-	res, err := reference.ParseReference(commitHistory.Image)
+	res, err := reference.ParseReference(targetImage)
 	if err != nil {
 		return "", "", "", err
 	}
