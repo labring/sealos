@@ -42,13 +42,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'nginx.ingress.kubernetes.io/backend-protocol'
         ] as ApplicationProtocolType;
 
-        const fetchUrl = `http://${host}`;
+        const fetchUrl = `https://${host}`;
         const protocol =
           ProtocolList.find((item) => item.value === backendProtocol)?.label || 'https://';
         const url = `${protocol}${host}${port ? `${port}` : ''}`;
 
         try {
           const response = await fetch(fetchUrl);
+
+          if (response.status === 404 && response.headers.get('content-length') === '0') {
+            return { ready: false, url, error: '404' };
+          }
+
           const text = await response.text();
 
           if (
