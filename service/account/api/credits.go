@@ -51,7 +51,7 @@ func GetCreditsInfo(c *gin.Context) {
 		return
 	}
 	var currentCredits types.Credits
-	err = dao.DBClient.GetGlobalDB().Model(&types.Credits{}).Where("expire_at > ? AND user_uid = ? AND from_id = ?", time.Now(), req.UserUID, currentPlan.ID).Find(&currentCredits).Error
+	err = dao.DBClient.GetGlobalDB().Model(&types.Credits{}).Where("expire_at > ? AND user_uid = ? AND from_id = ? AND status != ?", time.Now().UTC(), req.UserUID, currentPlan.ID, types.CreditsStatusExpired).Find(&currentCredits).Error
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get credits list: %v", err)})
 		return
@@ -65,7 +65,7 @@ func GetCreditsInfo(c *gin.Context) {
 			return
 		}
 		var freeCredits types.Credits
-		err = dao.DBClient.GetGlobalDB().Model(&types.Credits{}).Where("expire_at > ? AND user_uid = ? AND from_id = ?", time.Now(), req.UserUID, freePlan.ID).Find(&freeCredits).Error
+		err = dao.DBClient.GetGlobalDB().Model(&types.Credits{}).Where("expire_at > ? AND user_uid = ? AND from_id = ? AND status != ?", time.Now().UTC(), req.UserUID, freePlan.ID, types.CreditsStatusExpired).Find(&freeCredits).Error
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get credits list: %v", err)})
 			return

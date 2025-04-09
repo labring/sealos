@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database"
+
 	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"github.com/labring/sealos/controllers/pkg/resources"
@@ -76,7 +78,11 @@ func Init(ctx context.Context) error {
 	if _, err = DBClient.GetProperties(); err != nil {
 		return fmt.Errorf("get properties error: %v", err)
 	}
-
+	// init region env
+	err = database.InitRegionEnv(DBClient.GetGlobalDB(), DBClient.GetLocalRegion().Domain)
+	if err != nil {
+		return fmt.Errorf("init region env error: %v", err)
+	}
 	file := helper.ConfigPath
 	Cfg = &Config{} // Initialize Cfg regardless of file existence
 	if _, err := os.Stat(file); err == nil {

@@ -11,7 +11,7 @@ type PaymentRaw struct {
 	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
 	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text;not null"`
+	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text"`
 	Method          string    `gorm:"type:text;not null"`
 	Amount          int64     `gorm:"type:bigint;not null"`
 	Gift            int64     `gorm:"type:bigint"`

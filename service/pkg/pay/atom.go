@@ -50,19 +50,19 @@ func (s *AtomPaymentService) GenSign(httpMethod string, path string, reqTime str
 }
 
 func (s *AtomPaymentService) CreateNewPayment(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentNotifyURL+"/payment/v1alpha1/notify")
+	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE", s.PaymentNotifyURL+"/payment/v1alpha1/notify")
 }
 
 func (s *AtomPaymentService) CreatePaymentWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card), s.PaymentNotifyURL+"/payment/v1alpha1/notify")
+	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card), s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE", s.PaymentNotifyURL+"/payment/v1alpha1/notify")
 }
 
 func (s *AtomPaymentService) CreateNewSubscriptionPay(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
+	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION", s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
 }
 
 func (s *AtomPaymentService) CreateSubscriptionPayWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.CreateSubscriptionPay(card), s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
+	return s.createPaymentWithMethod(req, s.CreateSubscriptionPay(card), s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION", s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
 }
 
 func (s *AtomPaymentService) GetPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayQueryResponse, error) {
@@ -78,7 +78,7 @@ func (s *AtomPaymentService) GetPayment(paymentRequestID, paymentID string) (*re
 	return response, nil
 }
 
-func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method *model.PaymentMethod, notifyPath string) (*responsePay.AlipayPayResponse, error) {
+func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method *model.PaymentMethod, redirectPath, notifyPath string) (*responsePay.AlipayPayResponse, error) {
 	payRequest, request := pay.NewAlipayPayRequest()
 	request.PaymentRequestId = req.RequestID
 
@@ -101,7 +101,7 @@ func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method 
 	}
 
 	// TODO 设置其他必要信息
-	request.PaymentRedirectUrl = s.PaymentRedirectURL
+	request.PaymentRedirectUrl = redirectPath
 	request.PaymentNotifyUrl = notifyPath
 	request.PaymentFactor = &model.PaymentFactor{
 		IsAuthorization: true,

@@ -39,6 +39,7 @@ const (
 	AdminChargeBilling           = "/charge-billing"
 	AdminActiveBilling           = "/active-billing"
 	AdminGetUserRealNameInfo     = "/real-name-info"
+	AdminFlushSubQuota           = "/flush-sub-quota"
 )
 
 const (
@@ -50,6 +51,7 @@ const (
 	SubscriptionLastTransaction = "/subscription/last-transaction"
 	SubscriptionUpgradeAmount   = "/subscription/upgrade-amount"
 	SubscriptionFlushQuota      = "/subscription/flush-quota"
+	SubscriptionQuotaCheck      = "/subscription/quota-check"
 	SubscriptionNotify          = "/subscription/notify"
 	SubscriptionPay             = "/subscription/pay"
 	CardList                    = "/card/list"

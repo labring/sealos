@@ -111,3 +111,34 @@ func ParseSubscriptionOperatorReq(c *gin.Context) (*SubscriptionOperatorReq, err
 	}
 	return req, nil
 }
+
+type SubscriptionQuotaCheckReq struct {
+	// @Summary Authentication information
+	// @Description Authentication information
+	AuthBase `json:",inline" bson:",inline"`
+
+	// @Summary PlanID
+	// @Description PlanID
+	PlanID uuid.UUID `json:"planID" bson:"planID" example:"123e4567-e89b-12d3-a456-426614174000"`
+
+	// @Summary PlanName
+	// @Description PlanName
+	PlanName string `json:"planName" bson:"planName" example:"planName"`
+}
+
+func ParseSubscriptionQuotaCheckReq(c *gin.Context) (*SubscriptionQuotaCheckReq, error) {
+	req := &SubscriptionQuotaCheckReq{}
+	if err := c.ShouldBindJSON(req); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+type SubscriptionQuotaCheckResp struct {
+	//allWorkspaceReady
+	AllWorkspaceReady bool `json:"allWorkspaceReady" bson:"allWorkspaceReady" example:"true"`
+
+	ReadyWorkspace []string `json:"readyWorkspace" bson:"readyWorkspace" example:"workspace1,workspace2"`
+
+	UnReadyWorkspace []string `json:"unReadyWorkspace" bson:"unReadyWorkspace" example:"workspace3,workspace4"`
+}

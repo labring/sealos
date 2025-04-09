@@ -96,6 +96,7 @@ const (
 
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
+	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 )
 
 var SubscriptionEnabled = false
@@ -119,6 +120,7 @@ type AccountReconciler struct {
 	localDomain                 string
 	allRegionDomain             []string
 	jwtManager                  *utils.JWTManager
+	desktopJwtManager           *utils.JWTManager
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -246,6 +248,7 @@ func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == "true"
 	if SubscriptionEnabled {
 		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
@@ -277,6 +280,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		}
 		r.localDomain = r.AccountV2.GetLocalRegion().Domain
 		r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
+		r.desktopJwtManager = utils.NewJWTManager(os.Getenv(EnvDesktopJwtSecret), 10*time.Minute)
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange

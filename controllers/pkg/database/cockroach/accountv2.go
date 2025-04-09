@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"gorm.io/gorm/clause"
 
 	"gorm.io/gorm/logger"
@@ -730,25 +732,24 @@ func (c *Cockroach) GetUserOauthProvider(ops *types.UserQueryOpts) ([]types.Oaut
 
 func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, deductionAmount int64, orderIDs []string) error {
 	err := RetryTransaction(3, 2*time.Second, c.DB, func(tx *gorm.DB) error {
-		userUID, err := c.GetUserUID(ops)
-		if err != nil {
-			return fmt.Errorf("failed to get user uid: %v", err)
+		userUID, dErr := c.GetUserUID(ops)
+		if dErr != nil {
+			return fmt.Errorf("failed to get user uid: %v", dErr)
 		}
 		var credits []types.Credits
-		if err := tx.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditsStatusActive).Order("expire_at DESC").Find(&credits).Error; err != nil {
-			return fmt.Errorf("failed to get credits: %v", err)
+		if dErr = c.DB.Where("user_uid = ? AND expire_at > ? AND status = ?", userUID, time.Now().UTC(), types.CreditsStatusActive).Order("expire_at ASC").Find(&credits).Error; dErr != nil {
+			return fmt.Errorf("failed to get credits: %v", dErr)
 		}
 		now := time.Now().UTC()
 		accountTransactionID := uuid.New()
 		accountTransaction := types.AccountTransaction{
-			ID:               accountTransactionID,
-			RegionUID:        c.LocalRegion.UID,
-			Type:             "RESOURCE_BILLING",
-			UserUID:          userUID,
-			DeductionBalance: deductionAmount,
-			CreatedAt:        now,
-			UpdatedAt:        now,
-			BillingIDList:    orderIDs,
+			ID:            accountTransactionID,
+			RegionUID:     c.LocalRegion.UID,
+			Type:          "RESOURCE_BILLING",
+			UserUID:       userUID,
+			CreatedAt:     now,
+			UpdatedAt:     now,
+			BillingIDList: orderIDs,
 		}
 		var updateCredits []types.Credits
 		var updateCreditsIDs []string
@@ -783,24 +784,30 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 			}
 		}
 		if len(updateCredits) > 0 {
-			if err := tx.Save(&updateCredits).Error; err != nil {
-				return fmt.Errorf("failed to update credits: %v", err)
+			fmt.Println("updateCredits", updateCredits)
+			if dErr = tx.Save(&updateCredits).Error; dErr != nil {
+				return fmt.Errorf("failed to update credits: %v", dErr)
 			}
 			accountTransaction.DeductionCredit = creditUsedAmountAll
 			accountTransaction.CreditIDList = updateCreditsIDs
 		}
 		if deductionAmount > 0 {
-			if err := c.updateBalance(tx, ops, deductionAmount, true, true); err != nil {
-				return err
+			fmt.Println("deductionAmount", deductionAmount)
+			if dErr = c.updateBalance(tx, ops, deductionAmount, true, true); dErr != nil {
+				return fmt.Errorf("failed to update balance: %v", dErr)
 			}
 			accountTransaction.DeductionBalance = deductionAmount
+		} else {
+			accountTransaction.DeductionBalance = 0
 		}
-		if err := tx.Create(&accountTransaction).Error; err != nil {
-			return fmt.Errorf("failed to create account transaction: %v", err)
+		logrus.Infof("accountTransaction: %#+v", accountTransaction)
+		if dErr = tx.Create(&accountTransaction).Error; dErr != nil {
+			return fmt.Errorf("failed to create account transaction: %v", dErr)
 		}
+		logrus.Infof("creditTransactions: %v", creditTransactions)
 		if len(creditTransactions) > 0 {
-			if err := tx.Create(&creditTransactions).Error; err != nil {
-				return fmt.Errorf("failed to create credit transactions: %v", err)
+			if dErr = tx.Create(&creditTransactions).Error; dErr != nil {
+				return fmt.Errorf("failed to create credit transactions: %v", dErr)
 			}
 		}
 		return nil
@@ -815,6 +822,7 @@ func RetryTransaction(retryCount int, interval time.Duration, db *gorm.DB, f fun
 		if err == nil {
 			return nil
 		}
+		logrus.Errorf("failed to execute transaction: %v, retrying %d", err, i+1)
 		time.Sleep(interval)
 	}
 	return err
@@ -1262,7 +1270,7 @@ func (c *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscripti
 		return nil, fmt.Errorf("failed to get user uid: %v", err)
 	}
 	var subscription types.Subscription
-	if err := c.DB.Where(types.Subscription{UserUID: userUID}).First(&subscription).Error; err != nil {
+	if err := c.DB.Where(types.Subscription{UserUID: userUID}).Find(&subscription).Error; err != nil {
 		return nil, err
 	}
 	return &subscription, nil
@@ -1313,6 +1321,9 @@ func SetCardInfo(db *gorm.DB, info *types.CardInfo) (uuid.UUID, error) {
 	if info.ID == uuid.Nil {
 		info.ID = uuid.New()
 	}
+	if info.CardToken == "" {
+		return uuid.Nil, fmt.Errorf("empty card token")
+	}
 	if info.CreatedAt.IsZero() {
 		info.CreatedAt = time.Now()
 	}
@@ -1326,12 +1337,21 @@ func SetCardInfo(db *gorm.DB, info *types.CardInfo) (uuid.UUID, error) {
 		return info.ID, db.Save(info).Error
 	}
 	cardInfo := types.CardInfo{}
-	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID, CardNo: info.CardNo, CardBrand: info.CardBrand}).Find(&cardInfo).Error; err != nil {
+	if err := db.Model(&types.CardInfo{}).Where(types.CardInfo{UserUID: info.UserUID, CardNo: info.CardNo, CardBrand: info.CardBrand}).First(&cardInfo).Error; err != nil {
+		logrus.Errorf("failed to get card info: %v", err)
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return uuid.Nil, fmt.Errorf("failed to get card info: %v", err)
 		}
+		logrus.Infof("card info not found, create new card info")
 		return info.ID, db.Save(info).Error
 	}
+	if cardInfo.CardToken != info.CardToken && info.CardToken != "" {
+		err := db.Model(&types.CardInfo{}).Where(types.CardInfo{ID: cardInfo.ID}).Update("card_token", info.CardToken).Error
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to update card token: %v", err)
+		}
+	}
+	logrus.Infof("card info found, update card info")
 	return cardInfo.ID, nil
 }
 
@@ -1663,7 +1683,7 @@ func (c *Cockroach) InitTables() error {
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
-		types.AccountRegionUserTask{}, types.UserKYC{})
+		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.UserDebt{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}

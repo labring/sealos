@@ -15,7 +15,9 @@
 package types
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/lib/pq"
@@ -53,6 +55,7 @@ type BalanceWithCredits struct {
 	DeductionBalance int64     `json:"deductionBalance"`
 	Credits          int64     `json:"credits"`
 	DeductionCredits int64     `json:"deductionCredits"`
+	CreateRegionID   string    `json:"createRegionId"`
 }
 
 type Region struct {
@@ -314,12 +317,103 @@ func (EnterpriseRealNameInfo) TableName() string {
 }
 
 type UserInfo struct {
-	ID        uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
-	UserUID   uuid.UUID `gorm:"column:userUid;type:uuid;unique"`
-	FirstName string    `gorm:"column:firstname;type:text;default:''::STRING"`
-	LastName  string    `gorm:"column:lastname;type:text;default:''::STRING"`
+	ID        uuid.UUID       `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	UserUID   uuid.UUID       `gorm:"column:userUid;type:uuid;unique"`
+	FirstName string          `gorm:"column:firstname;type:text;default:''::STRING"`
+	LastName  string          `gorm:"column:lastname;type:text;default:''::STRING"`
+	Config    *UserInfoConfig `gorm:"column:config;type:jsonb"`
+	//Config datatypes.JSO `gorm:"column:config;type:jsonb" json:"config"`
 }
 
 func (UserInfo) TableName() string {
 	return "UserInfo"
+}
+
+func (j *UserInfoConfig) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	b, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("failed to unmarshal JSONB: %v", value)
+	}
+	return json.Unmarshal(b, j)
+}
+
+func (j *UserInfoConfig) Value() (driver.Value, error) {
+	if j == nil {
+		return nil, nil
+	}
+	b, err := json.Marshal(j)
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
+}
+
+type UserInfoConfig struct {
+	Github Github `json:"github"`
+}
+
+type Github struct {
+	CreatedAt string      `json:"created_at"`
+	Login     string      `json:"login"`
+	Name      interface{} `json:"name"`
+	ID        int         `json:"id"`
+	//AvatarURL               string      `json:"avatar_url"`
+	//Bio                     interface{} `json:"bio"`
+	//Blog                    string      `json:"blog"`
+	//Collaborators           int         `json:"collaborators"`
+	//Company                 interface{} `json:"company"`
+	//DiskUsage               int         `json:"disk_usage"`
+	//Email                   interface{} `json:"email"`
+	//EventsURL               string      `json:"events_url"`
+	//Followers               int         `json:"followers"`
+	//FollowersURL            string      `json:"followers_url"`
+	//Following               int         `json:"following"`
+	//FollowingURL            string      `json:"following_url"`
+	//GistsURL                string      `json:"gists_url"`
+	//GravatarID              string      `json:"gravatar_id"`
+	//Hireable                interface{} `json:"hireable"`
+	//HtmlURL                 string      `json:"html_url"`
+	//Location                interface{} `json:"location"`
+	//NodeID                  string      `json:"node_id"`
+	//NotificationEmail       interface{} `json:"notification_email"`
+	//OrganizationsURL        string      `json:"organizations_url"`
+	//OwnedPrivateRepos       int         `json:"owned_private_repos"`
+	//Plan                    Plan        `json:"plan"`
+	//PrivateGists            int         `json:"private_gists"`
+	//PublicGists             int         `json:"public_gists"`
+	//PublicRepos             int         `json:"public_repos"`
+	//ReceivedEventsURL       string      `json:"received_events_url"`
+	//ReposURL                string      `json:"repos_url"`
+	//SiteAdmin               bool        `json:"site_admin"`
+	//StarredURL              string      `json:"starred_url"`
+	//SubscriptionsURL        string      `json:"subscriptions_url"`
+	//TotalPrivateRepos       int         `json:"total_private_repos"`
+	//TwitterUsername         interface{} `json:"twitter_username"`
+	//TwoFactorAuthentication bool        `json:"two_factor_authentication"`
+	//Type                    string      `json:"type"`
+	//UpdatedAt               string      `json:"updated_at"`
+	//URL                     string      `json:"url"`
+	//UserViewType            string      `json:"user_view_type"`
+}
+
+//type Plan struct {
+//	Collaborators int    `json:"collaborators"`
+//	Name          string `json:"name"`
+//	PrivateRepos  int    `json:"private_repos"`
+//	Space         int    `json:"space"`
+//}
+
+type RegionConfig struct {
+	ID uuid.UUID `gorm:"column:id;type:uuid;default:gen_random_uuid();primary_key"`
+	// domain_region_key: domain_key
+	Key    string `gorm:"column:key;type:text"`
+	Value  string `gorm:"column:value;type:text"`
+	Region string `gorm:"column:region;type:text"`
+}
+
+func (RegionConfig) TableName() string {
+	return "RegionConfig"
 }

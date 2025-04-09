@@ -155,7 +155,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, userID)
 	}
 	if reconcileErr != nil {
-		if reconcileErr == ErrAccountNotExist {
+		if reconcileErr == ErrAccountNotExist || reconcileErr == ErrDebtNotExist {
 			return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 		}
 		r.Logger.Error(reconcileErr, "reconcile debt error")
@@ -209,6 +209,7 @@ func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) e
 		if err := r.syncDebt(ctx, userCr, userID, debt); err != nil {
 			return err
 		}
+		return ErrDebtNotExist
 		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
 	// backward compatibility
@@ -244,6 +245,8 @@ func getOwnNsList(clt client.Client, user string) ([]string, error) {
 }
 
 var ErrAccountNotExist = errors.New("account not exist")
+
+var ErrDebtNotExist = errors.New("debt not exist")
 
 const (
 	NormalPeriod = iota
@@ -289,10 +292,10 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	if err != nil {
 		return fmt.Errorf("failed to determine current status: %w", err)
 	}
+	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
 	if lastStatus == currentStatus && !update {
 		return nil
 	}
-	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
 	update = SetDebtStatus(debt, lastStatus, currentStatus)
 	nonDebtStates := []accountv1.DebtStatusType{accountv1.NormalPeriod, accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod}
 	debtStates := []accountv1.DebtStatusType{accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod}
@@ -313,6 +316,16 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 				return err
 			}
 		}
+		//TODO update debt status
+		//if lastStatus == accountv1.FinalDeletionPeriod {
+		//	err = r.AccountV2.GetGlobalDB().Save(&pkgtypes.UserDebt{
+		//		UserID: debt.Spec.UserID,
+		//		//Status: pkgtypes.DebtStatusNormal,
+		//	}).Error
+		//	if err != nil {
+		//		return fmt.Errorf("failed to save user debt: %w", err)
+		//	}
+		//}
 	case accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
 		if contains(nonDebtStates, currentStatus) {
 			if err := r.readNotice(ctx, userNamespaceList, debtStates...); err != nil {
@@ -328,9 +341,21 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 			if err != nil {
 				r.Logger.Error(err, fmt.Sprintf("send %s notice error", currentStatus))
 			}
-		}
-		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
-			return err
+			if err = r.SuspendUserResource(ctx, userNamespaceList); err != nil {
+				return err
+			}
+		} else {
+			// TODO DELETE
+			//err = r.AccountV2.GetGlobalDB().Save(&pkgtypes.UserDebt{
+			//	UserID: debt.Spec.UserID,
+			//	Status: pkgtypes.DebtStatusDeletionPeriod,
+			//}).Error
+			//if err != nil {
+			//	return fmt.Errorf("failed to save user debt: %w", err)
+			//}
+			if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
+				return err
+			}
 		}
 	//兼容老版本
 	default:
@@ -609,13 +634,13 @@ func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, no
 }
 
 func (r *DebtReconciler) sendDesktopNoticeAndSms(ctx context.Context, user string, oweAmount int64, noticeType accountv1.DebtStatusType, namespaces []string, smsEnable, isBasicUser bool) error {
+	if isBasicUser && noticeType != accountv1.DebtPeriod && noticeType != accountv1.DebtDeletionPeriod && noticeType != accountv1.FinalDeletionPeriod && noticeType != accountv1.CriticalBalancePeriod {
+		return nil
+	}
 	if err := r.sendDesktopNotice(ctx, noticeType, namespaces); err != nil {
 		return fmt.Errorf("send notice error: %w", err)
 	}
-	if !smsEnable {
-		return nil
-	}
-	if isBasicUser && noticeType != accountv1.DebtPeriod && noticeType != accountv1.DebtDeletionPeriod && noticeType != accountv1.FinalDeletionPeriod {
+	if !smsEnable || (isBasicUser && noticeType == accountv1.CriticalBalancePeriod) {
 		return nil
 	}
 	return r.sendSMSNotice(user, oweAmount, noticeType)
@@ -663,6 +688,10 @@ func (r *DebtReconciler) sendDesktopNotice(ctx context.Context, noticeType accou
 
 func (r *DebtReconciler) SuspendUserResource(ctx context.Context, namespaces []string) error {
 	return r.updateNamespaceStatus(ctx, accountv1.SuspendDebtNamespaceAnnoStatus, namespaces)
+}
+
+func (r *DebtReconciler) DeleteUserResource(ctx context.Context, namespace []string) error {
+	return r.updateNamespaceStatus(ctx, accountv1.FinalDeletionDebtNamespaceAnnoStatus, namespace)
 }
 
 func (r *DebtReconciler) ResumeUserResource(ctx context.Context, namespaces []string) error {

@@ -60,6 +60,7 @@ const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
 const (
 	NormalDebtNamespaceAnnoStatus           = "Normal"
 	SuspendDebtNamespaceAnnoStatus          = "Suspend"
+	FinalDeletionDebtNamespaceAnnoStatus    = "FinalDeletion"
 	ResumeDebtNamespaceAnnoStatus           = "Resume"
 	TerminateSuspendDebtNamespaceAnnoStatus = "TerminateSuspend"
 )

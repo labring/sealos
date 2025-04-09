@@ -34,8 +34,6 @@ type Credits struct {
 	Status     CreditsStatus   `json:"status" gorm:"column:status;type:text"`                                                            // 状态
 }
 
-const ()
-
 type (
 	CreditsStatus       string
 	CreditsRecordType   string

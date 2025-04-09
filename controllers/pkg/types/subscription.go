@@ -132,6 +132,7 @@ type AccountRegionUserTaskStatus string
 
 const (
 	AccountRegionUserTaskTypeFlushQuota AccountRegionUserTaskType = "flush-quota"
+	AccountRegionUserTaskTypeFlushDebt  AccountRegionUserTaskType = "flush-debt"
 
 	AccountRegionUserTaskStatusPending   AccountRegionUserTaskStatus = "pending"
 	AccountRegionUserTaskStatusCompleted AccountRegionUserTaskStatus = "completed"
@@ -157,6 +158,24 @@ const (
 	UserKYCStatusCompleted KYCStatus = "completed"
 	UserKYCStatusFailed    KYCStatus = "failed"
 )
+
+type UserDebt struct {
+	UserID string `gorm:"type:varchar(50);not null;primaryKey;column:user_id"` // 用户 ID
+	//UserUID uuid.UUID  `gorm:"type:uuid;not null;primaryKey;column:user_uid"` // 用户 UID
+	Status DebtStatus `gorm:"type:varchar(50);column:status"` // 债务状态
+}
+
+type DebtStatus string
+
+const (
+	//DebtStatusNormal         DebtStatus = "Normal"
+	DebtStatusDebtPeriod     DebtStatus = "DebtPeriod"
+	DebtStatusDeletionPeriod DebtStatus = "DeletionPeriod"
+)
+
+func (UserDebt) TableName() string {
+	return "UserDebt"
+}
 
 //
 //type KYCTransaction struct {

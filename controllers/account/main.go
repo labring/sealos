@@ -171,6 +171,10 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
+	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
+		setupLog.Error(err, "unable to init region env")
+		os.Exit(1)
+	}
 	skipExpiredUserTimeDuration := time.Hour * 24 * 2
 	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
 		skipExpiredUserTimeDuration, err = time.ParseDuration(os.Getenv("SKIP_EXPIRED_USER_TIME"))

@@ -781,7 +781,7 @@ func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 		UserUID: user.UserUID,
 	}
 	// if the user is not in the local region, get the user cr name from db
-	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID {
+	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID || auth.Owner == "" {
 		auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: user.UserID, UID: user.UserUID})
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
