@@ -199,7 +199,7 @@ const IDEButton = ({
           defaultValue={currentIDE}
           p={'6px'}
           px={'4px'}
-          w={'210px'}
+          w={'230px'}
           display={'flex'}
           flexDirection={'column'}
           gap={'2px'}
@@ -215,7 +215,7 @@ const IDEButton = ({
                         {...(index === 0 && {
                           pl: '8px',
                           pr: '4px',
-                          w: '80px'
+                          w: '100px'
                         })}
                         {...(index === 1 && {
                           pr: '8px',

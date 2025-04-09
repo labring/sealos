@@ -39,8 +39,9 @@ const ToolboxModal = ({
 
   const connectToolbox = useCallback(async () => {
     setOnConnecting(true);
+    console.log(`jetbrains://toolbox/ssh/environment?h=${jetbrainsGuideData.configHost}`);
 
-    window.open(`jetbrains://gateway/ssh/environment?h=${jetbrainsGuideData.configHost}`, '_blank');
+    window.open(`jetbrains://toolbox/ssh/environment?h=${jetbrainsGuideData.configHost}`, '_blank');
 
     setOnConnecting(false);
   }, [jetbrainsGuideData]);
