@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Region Switching</title>
+</head>
+
+<body>
+  <script>
+    (function () {
+      const DEFAULT_REGION = 'hzh.sealos.run'
+
+      function getUrlParam (name) {
+        const url = new URL(window.location.href)
+        return url.searchParams.get(name)
+      }
+
+      function setLocalStorage (name, value) {
+        localStorage.setItem(name, value)
+      }
+
+      function getLocalStorage (name) {
+        return localStorage.getItem(name)
+      }
+
+      function redirect () {
+        const url = new URL(window.location.href)
+        const regionId = getUrlParam('regionId')
+        const regionDomain = getUrlParam('regionDomain')
+
+        if (regionDomain) {
+          setLocalStorage('latest_region', regionDomain)
+        }
+        if (regionId) {
+          setLocalStorage('latest_region_id', regionId)
+        }
+
+        const targetRegion = regionDomain || getLocalStorage('latest_region') || DEFAULT_REGION
+
+        let targetUrl = `https://${targetRegion}${url.pathname}`
+
+        const newParams = new URLSearchParams(url.search)
+
+        const params = newParams.toString()
+        if (params) {
+          targetUrl += `?${params}`
+        }
+
+        window.location.href = targetUrl
+      }
+
+      redirect()
+    })();
+  </script>
+</body>
+
+</html>
