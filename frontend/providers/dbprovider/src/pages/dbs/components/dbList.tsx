@@ -1,8 +1,8 @@
-import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { DBComponentNameMap, DBStatusEnum, DBTypeList } from '@/constants/db';
+import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
@@ -66,10 +66,10 @@ const DBList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('restart_success'),
+          title: typeof error === 'string' ? error : error.message || t('restart_error'),
           status: 'error'
         });
-        console.error(error, '==');
+        console.error(error, '==restart error==');
       }
       setLoading(false);
     },
@@ -93,7 +93,9 @@ const DBList = ({
         console.error(error);
       }
       setLoading(false);
-      refetchApps();
+      setTimeout(() => {
+        refetchApps();
+      }, 3000);
     },
     [refetchApps, setLoading, t, toast]
   );

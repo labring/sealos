@@ -15,7 +15,6 @@ import {
   TableContainer,
   Tbody,
   Td,
-  Text,
   Th,
   Thead,
   Tooltip,
@@ -163,8 +162,23 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
         item.status.value !== BackupStatusEnum.InProgress ? (
           <Flex>
             <MyTooltip label={t('restore_backup')}>
-              <Button variant={'square'} onClick={() => setBackupInfo(item)}>
-                <MyIcon name={'restore'} {...operationIconStyles} />
+              <Button
+                variant={'square'}
+                onClick={() => {
+                  if (item.status.label === 'backup_completed') setBackupInfo(item);
+                }}
+                {...(item.status.label !== 'backup_completed' && {
+                  cursor: 'not-allowed',
+                  _hover: { bg: 'transparent', color: 'red.600' }
+                })}
+              >
+                <MyIcon
+                  name={'restore'}
+                  {...operationIconStyles}
+                  {...(item.status.label !== 'backup_completed' && {
+                    fill: 'grayModern.300'
+                  })}
+                />
               </Button>
             </MyTooltip>
             <MyTooltip label={t('delete_backup')}>
