@@ -52,7 +52,7 @@ const Header = ({
       setLoading(true);
       await restartDB(db);
       toast({
-        title: 'restart_success',
+        title: t('restart_success'),
         status: 'success'
       });
     } catch (error: any) {
