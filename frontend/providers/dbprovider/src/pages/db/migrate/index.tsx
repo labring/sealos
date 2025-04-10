@@ -83,7 +83,6 @@ const EditApp = ({
   });
 
   const generateYamlList = (data: MigrateForm) => {
-    console.log(json2MigrateCR(data));
     return [
       {
         filename: 'migrate.yaml',

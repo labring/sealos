@@ -96,16 +96,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       false
     );
 
-    console.log([
-      namespace,
-      firstPodName,
-      DBBackupPolicyNameMap[dbType],
-      showDatabaseCommand.get(dbType)!,
-      false
-    ]);
-
-    console.log(result);
-
     if (result.length < 10) {
       throw new Error('Response from server is too short');
     }
