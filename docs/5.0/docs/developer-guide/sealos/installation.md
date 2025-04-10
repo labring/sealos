@@ -109,7 +109,7 @@ resolve to `192.168.1.10`, eliminating the need to modify local hosts or set up 
 To use nip.io for Sealos, run the below on the first master node and enter prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.2/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.2 && bash /tmp/install.sh
 ```
 
 When prompted for the Sealos Cloud domain name, use a format like `[ip].nip.io`, where [ip] is your Master node's IP.
@@ -147,7 +147,7 @@ This maps your domain and subdomains to the first master's public IP.
 Then run below on the first master, entering prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.2/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.2 && bash /tmp/install.sh \
 --cloud-domain=<your_domain> \
 --cert-path=<your_crt> \
 --key-path=<your_key>
@@ -170,7 +170,7 @@ cloud.example.io A <Master Node Internal IP>
 Then run the below on the first master, entering prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.2/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.2 && bash /tmp/install.sh \
 --cloud-domain=<your_domain>
 ```
 
@@ -228,7 +228,7 @@ This resolves `cloud.example.io` and subdomains to the first master internal IP.
 Then run below on the first master, entering prompts:
 
 ```bash
-$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.1/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.1 && bash /tmp/install.sh \
+$ curl -sfL https://raw.githubusercontent.com/labring/sealos/v5.0.2/scripts/cloud/install.sh -o /tmp/install.sh && SEALOS_VERSION=v5.0.2 && bash /tmp/install.sh \
 --cloud-domain=<your_domain>
 ```
 
