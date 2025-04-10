@@ -39,13 +39,18 @@ export async function GET(request: NextRequest) {
 
         const rule = item.spec.rules[0];
         const host = rule.host;
-        const fetchUrl = `http://${host}`;
+        const fetchUrl = `https://${host}`;
         const url = `https://${host}`;
 
         try {
           const response = await fetch(fetchUrl, {
             cache: 'no-store'
           });
+
+          if (response.status === 404 && response.headers.get('content-length') === '0') {
+            return { ready: false, url, error: '404' };
+          }
+
           const text = await response.text();
 
           if (
@@ -57,6 +62,7 @@ export async function GET(request: NextRequest) {
 
           return { ready: true, url };
         } catch (error) {
+          console.log('error', error);
           return { ready: false, url, error: 'fetch error' };
         }
       })
@@ -67,7 +73,6 @@ export async function GET(request: NextRequest) {
       data: checkResults
     });
   } catch (error: any) {
-    console.error(error);
     return jsonRes({
       code: 500,
       error: error?.message
