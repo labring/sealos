@@ -447,7 +447,6 @@ export class Command {
   private text: Array<string> = [];
 
   public echo(newText: string) {
-    console.log(newText);
     this.text.push(`echo "${newText}"`);
   }
 
