@@ -363,7 +363,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 <FormControl isInvalid={Boolean(errors.password)} mb={4}>
                   <FormLabel>{t('new_password')}</FormLabel>
                   <Input
-                    type="password"
                     width={'100%'}
                     placeholder={t('confirm_new_password')}
                     {...register('password', {
@@ -384,7 +383,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                 <FormControl isInvalid={Boolean(errors.confirmPassword)} mb={4}>
                   <FormLabel>{t('confirm_password')}</FormLabel>
                   <Input
-                    type="password"
                     width={'100%'}
                     placeholder={t('confirm_new_password')}
                     {...register('confirmPassword', {

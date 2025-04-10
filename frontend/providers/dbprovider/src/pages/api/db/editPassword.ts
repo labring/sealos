@@ -7,6 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { dbTypeMap, fetchDBSecret } from '@/utils/database';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import { DBType } from '@/types/db';
+import { restartDB } from '@/api/db';
 
 export type EditPasswordReq = {
   dbName: string;
@@ -116,6 +117,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (k8s_result.response.statusCode !== 200) {
       throw new Error('Failed to patch secret!!!');
     }
+    setTimeout(() => {
+      restartDB({ dbName, dbType });
+    }, 1000);
     jsonRes(res, { data: 'Edit password success.' });
   } catch (err: any) {
     jsonRes(res, {
