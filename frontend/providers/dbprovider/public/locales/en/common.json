@@ -377,6 +377,7 @@
   "password_min_length": "Password must be at least 8 characters",
   "password_complexity": "Password must contain at least two of: numbers, letters, special characters",
   "successfully_edit_password": "Successfully edited password",
+  "edit_password_failed": "Failed to edit password",
   "comp_name": "Component Name",
   "has_comps": "has {number} components",
   "each": "{perc} each",

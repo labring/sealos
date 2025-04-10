@@ -22,9 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     const { dbName, dbType, newPassword } = req.body as EditPasswordReq;
 
-    if (!newPassword.match(/^(?!-)[A-Za-z\d~`!\@#%^&\*()\-\_=+\|:'",<.>\/? ]{8,32}$/)) {
+    if (!newPassword.match(/^(?!-)[A-Za-z\d~`!\@#%^&\*()\-\_=+\|:,<.>\/? ]{8,32}$/)) {
       throw new Error(
-        'Password must be 8-32 characters long and contain at least one letter, one number, and one special character'
+        'Password must be 8-32 characters long and cannot contain certain special characters!'
       );
     }
 
@@ -58,10 +58,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       [
         DBTypeEnum.mongodb,
         [
-          'mongo',
-          `-u${username}`,
-          `-p${password}`,
-          'admin',
+          'mongosh',
+          `mongodb://${username}:${password}@${host}:${port}/admin`,
           '--eval',
           `db.changeUserPassword('${username}', '${newPassword}');`
         ]
@@ -98,14 +96,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       false
     );
 
+    console.log([
+      namespace,
+      firstPodName,
+      DBBackupPolicyNameMap[dbType],
+      showDatabaseCommand.get(dbType)!,
+      false
+    ]);
+
     console.log(result);
+
+    if (result.length < 10) {
+      throw new Error('Response from server is too short');
+    }
 
     if (newPassword.includes('ERR') || result.includes('failed')) {
       if (result.includes('ERR') || result.includes('failed')) {
         throw new Error('Failed to change password');
       }
     } else {
-      if (result.includes('exception')) {
+      if (result.includes('exception') || result.includes('ServerError')) {
         throw new Error('Failed to change password');
       }
     }
