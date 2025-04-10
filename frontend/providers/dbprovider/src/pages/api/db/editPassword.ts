@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { dbTypeMap, fetchDBSecret } from '@/utils/database';
 import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import { DBType } from '@/types/db';
-import { restartDB } from '@/api/db';
+import { json2BasicOps } from '@/utils/json2Yaml';
 
 export type EditPasswordReq = {
   dbName: string;
@@ -17,7 +17,7 @@ export type EditPasswordReq = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { namespace, k8sExec, k8sCore } = await getK8s({
+    const { namespace, k8sExec, k8sCore, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -117,9 +117,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     if (k8s_result.response.statusCode !== 200) {
       throw new Error('Failed to patch secret!!!');
     }
-    setTimeout(() => {
-      restartDB({ dbName, dbType });
-    }, 1000);
+    const yaml = json2BasicOps({ dbName, dbType, type: 'Restart' });
+    await applyYamlList([yaml], 'update');
     jsonRes(res, { data: 'Edit password success.' });
   } catch (err: any) {
     jsonRes(res, {

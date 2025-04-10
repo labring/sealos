@@ -380,7 +380,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   <FormErrorMessage>{String(errors.password?.message)}</FormErrorMessage>
                 </FormControl>
 
-                <FormControl isInvalid={Boolean(errors.confirmPassword)} mb={4}>
+                <FormControl isInvalid={Boolean(errors.confirmPassword)}>
                   <FormLabel>{t('confirm_password')}</FormLabel>
                   <Input
                     width={'100%'}
@@ -393,17 +393,29 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                   <FormErrorMessage>{String(errors.confirmPassword?.message)}</FormErrorMessage>
                 </FormControl>
 
-                <Button
-                  type="submit"
-                  px={5}
-                  py={2}
-                  width="fit-content"
-                  mt={1}
-                  ml="auto"
-                  variant={'solid'}
-                >
-                  {t('confirm')}
-                </Button>
+                <Flex mt={4} alignItems={'center'}>
+                  <Text fontSize={'12px'} color={'grayModern.700'}>
+                    <MyIcon
+                      name="warningInfo"
+                      w={'16px'}
+                      h={'16px'}
+                      mx={'4px'}
+                      fill={'grayModern.700'}
+                    />
+                    修改密码将会导致数据库重启
+                  </Text>
+                  <Button
+                    type="submit"
+                    px={5}
+                    py={2}
+                    width="fit-content"
+                    mt={1}
+                    ml="auto"
+                    variant={'solid'}
+                  >
+                    {t('confirm')}
+                  </Button>
+                </Flex>
               </Flex>
             </form>
           )

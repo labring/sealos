@@ -66,10 +66,10 @@ const DBList = ({
         });
       } catch (error: any) {
         toast({
-          title: typeof error === 'string' ? error : error.message || t('restart_success'),
+          title: typeof error === 'string' ? error : error.message || t('restart_error'),
           status: 'error'
         });
-        console.error(error, '==');
+        console.error(error, '==restart error==');
       }
       setLoading(false);
     },
