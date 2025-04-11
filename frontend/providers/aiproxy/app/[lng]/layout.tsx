@@ -10,6 +10,7 @@ import InitializeApp from '@/components/InitializeApp'
 
 import './globals.css'
 import 'react-day-picker/dist/style.css'
+import Script from 'next/script'
 
 export async function generateStaticParams(): Promise<{ lng: string }[]> {
   return languages.map((lng) => ({ lng }))
@@ -43,6 +44,7 @@ export default async function RootLayout({
   params: Promise<{ lng: string }>
 }>): Promise<React.JSX.Element> {
   const lng = (await params).lng
+  const scripts: { [key: string]: string }[] = JSON.parse(process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? '[]')
   return (
     <html lang={lng} dir={dir(lng)}>
       <body>
@@ -54,6 +56,9 @@ export default async function RootLayout({
             </QueryProvider>
           </ChakraProviders>
         </I18nProvider>
+        {scripts.map((script, i) => (
+          <Script key={i} {...script} />
+        ))}
       </body>
     </html>
   )

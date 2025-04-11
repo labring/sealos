@@ -173,19 +173,6 @@ function App({ Component, pageProps }: AppProps) {
       </Head>
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
-          {/* <button
-            onClick={() => {
-              const lastLang = getLangStore();
-              let lang = lastLang === 'en' ? 'zh' : 'en';
-              if (lastLang !== lang) {
-                i18n.changeLanguage(lang);
-                setLangStore(lang);
-                setRefresh((state) => !state);
-              }
-            }}
-          >
-            changeLanguage
-          </button> */}
           <Component {...pageProps} />
           <ConfirmChild />
           <Loading loading={loading} />
