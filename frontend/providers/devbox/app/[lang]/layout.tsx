@@ -6,6 +6,7 @@ import QueryProvider from '@/components/providers/MyQueryProvider';
 import { enableMapSet } from 'immer';
 import './globals.css';
 import '@sealos/driver/src/driver.css';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,7 +36,6 @@ export default function RootLayout({
   params: { lang: string };
 }>) {
   const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
-  console.log(scripts);
   return (
     <html lang={lang}>
       <body className={inter.className}>
@@ -43,7 +43,7 @@ export default function RootLayout({
           <QueryProvider>{children}</QueryProvider>
         </IntlProvider>
         {scripts.map((script, i) => (
-          <script key={i} {...script} />
+          <Script key={i} {...script} />
         ))}
       </body>
     </html>

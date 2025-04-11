@@ -23,7 +23,8 @@ import Head from 'next/head';
 import App from 'next/app';
 const fs = require('fs');
 import * as yaml from 'js-yaml';
-import { AppConfigType } from '@/types';
+import type { AppConfigType } from '@/types';
+import Script from 'next/script';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -195,7 +196,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
         </ChakraProvider>
       </QueryClientProvider>
       {config.launchpad.meta.scripts.map((script, i) => (
-        <script key={i} {...script} />
+        <Script key={i} {...script} />
       ))}
     </>
   );
