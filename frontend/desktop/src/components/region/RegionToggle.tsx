@@ -12,10 +12,12 @@ import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import { DesktopExchangeIcon, ZoneIcon } from '../icons';
 import { I18nCloudProvidersKey } from '@/types/i18next';
+import { useConfigStore } from '@/stores/config';
 
 export default function RegionToggle() {
   const disclosure = useDisclosure();
   const { setWorkSpaceId, session } = useSessionStore();
+  const { cloudConfig } = useConfigStore();
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { data } = useQuery(['regionlist'], getRegionList, {
@@ -33,14 +35,21 @@ export default function RegionToggle() {
     }
   }, [token]);
   const curRegion = regionList.find((r) => r.uid === curRegionUid);
+  console.log(regionList, 'regionList', cloudConfig?.proxyDomain);
 
   const handleCick = async (region: Region) => {
     setWorkSpaceId(session?.user?.ns_uid || '');
-    const target = new URL(`https://${region.domain}/switchRegion`);
+    const target = new URL(
+      cloudConfig?.proxyDomain
+        ? `https://${cloudConfig?.proxyDomain}/switchRegion`
+        : `https://${region.domain}/switchRegion`
+    );
     const res = await request.get<any, ApiResp<{ token: string }>>('/api/auth/globalToken');
     const token = res?.data?.token;
     if (!token) return;
     target.searchParams.append('token', token);
+    target.searchParams.append('regionId', region.uid);
+    target.searchParams.append('regionDomain', region.domain);
     await router.replace(target);
   };
 
