@@ -141,9 +141,15 @@ const getApiDocContent = (
 --data '{
   "model": "${modelConfig.model}",
   "input": "The text to generate audio for",
-  "voice": "zhinan",
-  "response_format": "mp3",
-  "stream": true,
+${
+  modelConfig?.config?.support_voices?.length
+    ? `  "voice": "${modelConfig.config.support_voices[0]}",\n`
+    : ''
+}${
+          modelConfig?.config?.support_formats?.length
+            ? `  "response_format": "${modelConfig.config.support_formats[0]}",\n`
+            : ''
+        }  "stream": true,
   "speed": 1
 }' > audio.mp3`,
         responseExample: 'Binary audio data',
