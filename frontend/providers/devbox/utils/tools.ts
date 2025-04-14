@@ -8,6 +8,8 @@ import { useTranslations } from 'next-intl';
 import { YamlKindEnum } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
 import { customAlphabet } from 'nanoid';
+import { AccessTokenPayload } from '@/types/user';
+import { verify } from 'jsonwebtoken';
 
 dayjs.extend(duration);
 
@@ -368,3 +370,17 @@ export const parseTemplateConfig = (config: string) => {
     }[];
   };
 };
+
+export const verifyJWT = <T extends Object = AccessTokenPayload>(token?: string, secret?: string) =>
+  new Promise<T | null>((resolve) => {
+    if (!token) return resolve(null);
+    verify(token, secret || process.env.JWT_SECRET!, (err, payload) => {
+      if (err) {
+        resolve(null);
+      } else if (!payload) {
+        resolve(null);
+      } else {
+        resolve(payload as T);
+      }
+    });
+  });

@@ -86,7 +86,8 @@ const IDEButton = ({
 
       try {
         const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
-          devboxName
+          devboxName,
+          desktopToken: JSON.parse(sessionStorage.getItem('session') || '{}').token || ''
         });
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
 

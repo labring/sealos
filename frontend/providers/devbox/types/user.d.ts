@@ -50,3 +50,16 @@ export type UserTask = {
   isCompleted: boolean;
   completedAt: string;
 };
+
+export type AuthenticationTokenPayload = {
+  userUid: string;
+  userId: string;
+  regionUid?: string;
+};
+export type AccessTokenPayload = {
+  regionUid: string;
+  userCrUid: string;
+  userCrName: string;
+  workspaceUid: string;
+  workspaceId: string;
+} & AuthenticationTokenPayload;

@@ -1,10 +1,13 @@
 import { decode, JwtPayload, sign, verify } from 'jsonwebtoken';
 import { ERROR_ENUM } from '../error';
-import { IncomingHttpHeaders } from 'http';
 
 interface CustomJwtPayload extends JwtPayload {
   namespace: string;
   devboxName: string;
+  userCrUid: string;
+  userCrName: string;
+  workspaceUid: string;
+  workspaceId: string;
 }
 
 export const authSession = async (headers: Headers) => {
@@ -92,6 +95,11 @@ export const generateAccessToken = (
   payload: {
     namespace: string;
     devboxName: string;
+    userCrUid: string;
+    userCrName: string;
+    workspaceUid: string;
+    workspaceId: string;
+    regionUid: string;
   },
   secret: string
 ) => sign(payload, secret, { expiresIn: '365d' });

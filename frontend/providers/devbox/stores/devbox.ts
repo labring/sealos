@@ -10,7 +10,6 @@ import {
   getMyDevboxList,
   getSSHConnectionInfo
 } from '@/api/devbox';
-import { devboxStatusMap, PodStatusEnum } from '@/constants/devbox';
 import type {
   DevboxDetailType,
   DevboxDetailTypeV2,
@@ -115,7 +114,8 @@ export const useDevboxStore = create<State>()(
 
         // SSH configuration should be obtained regardless of whether it is running on or not
         const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({
-          devboxName: detail.name
+          devboxName: detail.name,
+          desktopToken: JSON.parse(sessionStorage.getItem('session') || '{}').token || ''
         });
 
         const sshPrivateKey = Buffer.from(base64PrivateKey, 'base64').toString('utf-8');
