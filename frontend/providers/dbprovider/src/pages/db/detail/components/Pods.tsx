@@ -92,7 +92,9 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
 
   async function handelSwitchMs(item: PodDetailType) {
     setSwitchTarget(item.podName);
-    setSwitching(true);
+    setTimeout(() => {
+      setSwitching(true);
+    }, 3000);
     const labels = item?.metadata?.labels;
     if (
       labels !== undefined &&
@@ -113,14 +115,14 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
       });
       setTimeout(() => {
         // Re-request data to avoid exceptions caused by query data not being up to date
-        setSwitching(true);
+        refetchSwitching();
       }, 3000);
     }
   }
 
   const [switching, setSwitching] = useState<boolean>(true);
-
-  useQuery(
+  const [animation, setAnimation] = useState<boolean>(false);
+  const { refetch: refetchSwitching } = useQuery(
     ['getOperationList', dbName, dbType],
     async () => {
       const operationList = await getOpsRequest<'switchover'>({
@@ -135,11 +137,12 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
             ''
         );
       }
+      setAnimation(!animation);
       return operationList;
     },
     {
       enabled: switching,
-      refetchInterval: 5000
+      refetchInterval: 1500
     }
   );
 
@@ -217,35 +220,40 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
           return (
             <Box display="flex" alignItems={'center'}>
               <Tag color="#F7F8FA">{language === 'zh' ? '从节点' : role}</Tag>
-              {dbType !== DBTypeEnum.redis && (
-                <MyTooltip offset={[0, 10]} label={t('switch_to_M')}>
-                  <Button
-                    variant={'square'}
-                    onClick={() => {
-                      if (!switching) handelSwitchMs(item);
-                    }}
-                    color="white"
-                    className="btn-switch"
-                    _hover={{ color: 'currentColor', bg: '#F3F3F4' }}
-                    {...(switching && {
-                      cursor: 'not-allowed',
-                      _hover: { color: 'red' }
-                    })}
-                  >
-                    {switchTarget === item.podName ? (
-                      <MyIcon className={styles.load} name="loading" w={'16px'} h={'16px'} />
-                    ) : (
-                      <MyIcon
-                        name="change"
-                        w={'16px'}
-                        h={'16px'}
-                        className="onlyShowFirst"
-                        transition={'all 0.45s ease-in-out'}
-                      />
-                    )}
-                  </Button>
-                </MyTooltip>
-              )}
+              {(() => {
+                if (dbType !== DBTypeEnum.redis) {
+                  if (switchTarget === item.podName) {
+                    return (
+                      <MyIcon className={styles.load} name="loading" w={'16px'} h={'16px'} mx={1} />
+                    );
+                  }
+                  return (
+                    <MyTooltip offset={[0, 10]} label={t('switch_to_M')}>
+                      <Button
+                        variant={'square'}
+                        onClick={() => {
+                          if (!switching) handelSwitchMs(item);
+                        }}
+                        color="white"
+                        className="btn-switch"
+                        _hover={{ color: 'currentColor', bg: '#F3F3F4' }}
+                        {...(switching && {
+                          cursor: 'not-allowed',
+                          _hover: { color: 'red' }
+                        })}
+                      >
+                        <MyIcon
+                          name="change"
+                          w={'16px'}
+                          h={'16px'}
+                          className="onlyShowFirst"
+                          transition={'all 0.45s ease-in-out'}
+                        />
+                      </Button>
+                    </MyTooltip>
+                  );
+                }
+              })()}
             </Box>
           );
         } else {
@@ -260,15 +268,18 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
   });
 
   useEffect(() => {
-    const svgs = document.querySelectorAll('.onlyShowFirst');
-    const btns = document.querySelectorAll('.btn-switch');
-    if (svgs.length > 0 && !switching) {
-      (svgs[0] as HTMLElement).style.color = '#111824';
-    }
-    // 为每个按钮绑定 hover 事件
+    const updateSvgStyles = () => {
+      const svgs = document.querySelectorAll('.onlyShowFirst');
+      const loading = document.querySelector('.loading');
+      if (svgs.length > 0 && loading === null) {
+        const firstSvg = svgs[0] as HTMLElement;
+        firstSvg.style.color = '#111824';
+      }
+    };
+
     const handleMouseOver = () => {
       if (!switching) {
-        // 取消第一个按钮的样式
+        const svgs = document.querySelectorAll('.onlyShowFirst');
         if (svgs.length > 0) {
           (svgs[0] as HTMLElement).style.color = '';
         }
@@ -277,22 +288,30 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
 
     const handleMouseOut = () => {
       if (!switching) {
+        const svgs = document.querySelectorAll('.onlyShowFirst');
         if (svgs.length > 0) {
           (svgs[0] as HTMLElement).style.color = '#111824';
         }
       }
     };
-    btns.forEach((btn) => {
-      btn.addEventListener('mouseover', handleMouseOver);
-      btn.addEventListener('mouseout', handleMouseOut);
-    });
-    return () => {
+
+    // 使用 requestAnimationFrame 确保 DOM 已加载
+    requestAnimationFrame(() => {
+      updateSvgStyles();
+      const btns = document.querySelectorAll('.btn-switch');
       btns.forEach((btn) => {
-        btn.removeEventListener('mouseover', handleMouseOver);
-        btn.removeEventListener('mouseout', handleMouseOut);
+        btn.addEventListener('mouseover', handleMouseOver);
+        btn.addEventListener('mouseout', handleMouseOut);
       });
-    };
-  }, [switching]);
+
+      return () => {
+        btns.forEach((btn) => {
+          btn.removeEventListener('mouseover', handleMouseOver);
+          btn.removeEventListener('mouseout', handleMouseOut);
+        });
+      };
+    });
+  }, [switching, switchTarget, animation]);
 
   return (
     <Box h={'100%'} position={'relative'}>

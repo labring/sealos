@@ -149,7 +149,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       setMigrateName('');
       setPodName('');
     } catch (error) {
-      console.log(error, 'close migrate error');
+      console.error(error, 'close migrate error');
     }
   };
 
@@ -157,7 +157,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     enabled: !!migrateName,
     refetchInterval: 5000,
     onSuccess(data) {
-      console.log(data, 'pod');
       const podStatus = data?.conditions?.[0].type;
       if (data?.ready !== undefined && podStatus) {
         if (podStatus === 'Complete') {

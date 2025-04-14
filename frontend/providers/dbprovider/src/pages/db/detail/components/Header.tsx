@@ -73,7 +73,6 @@ const Header = ({
         title: t('pause_success'),
         status: 'success'
       });
-      location.reload();
     } catch (error: any) {
       toast({
         title: typeof error === 'string' ? error : error.message || t('pause_error'),

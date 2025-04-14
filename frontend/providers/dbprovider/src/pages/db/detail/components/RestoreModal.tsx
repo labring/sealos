@@ -57,12 +57,6 @@ const RestoreModal = ({
         dbName: databaseName
       };
 
-      console.log({
-        dbForm: dbData,
-        isEdit: false,
-        backupInfo: backupInfo
-      });
-
       return createDB({
         dbForm: dbData,
         isEdit: false,

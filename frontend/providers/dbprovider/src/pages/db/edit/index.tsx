@@ -98,7 +98,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       try {
         setYamlList(generateYamlList(data));
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }, 200),
     []

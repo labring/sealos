@@ -241,7 +241,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const openNetWorkService = async () => {
     try {
-      console.log('openNetWorkService', dbStatefulSet, db);
       if (!dbStatefulSet || !db) {
         return toast({
           title: 'Missing Parameters',
@@ -402,7 +401,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
                       mx={'4px'}
                       fill={'grayModern.700'}
                     />
-                    修改密码将会导致数据库重启
+                    {t('edit_password_tip')}
                   </Text>
                   <Button
                     type="submit"
@@ -537,7 +536,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               <MyIcon name={showSecret ? 'read' : 'unread'} w={'16px'}></MyIcon>
             </Center>
 
-            {['milvus', 'kafka'].includes(db.dbType) === false && (
+            {!['milvus', 'kafka'].includes(db.dbType) && (
               <Center
                 className="driver-detail-terminal-button"
                 gap={'6px'}
@@ -586,7 +585,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
               </Center>
             )}
           </Flex>
-          {['milvus', 'kafka'].includes(db.dbType) === false && (
+          {!['milvus', 'kafka'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>

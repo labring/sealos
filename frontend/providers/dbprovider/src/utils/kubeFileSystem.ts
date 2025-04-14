@@ -431,18 +431,6 @@ export class KubeFileSystem {
   }
 }
 
-/**
- * 命令类，用于构建和管理命令文本序列
- *
- * @class Command
- * @description 提供一系列方法来操作命令文本数组,包括添加、追加和获取命令
- * @example
- * const cmd = new Command();
- * cmd.echo("Hello");  // 添加 echo 命令
- * cmd.push("ls");     // 推入新命令
- * cmd.add("pwd");     // 追加到最后一条命令
- * cmd.get();          // 获取所有命令数组
- */
 export class Command {
   private text: Array<string> = [];
 
@@ -450,11 +438,6 @@ export class Command {
     this.text.push(`echo "${newText}"`);
   }
 
-  /**
-   * 在当前文本的最后一行添加换行符
-   * 如果最后一行已经以换行符结尾，则不做任何操作
-   * @public
-   */
   public newLine() {
     if (!this.text[this.text.length - 1].endsWith('\n')) {
       this.text[this.text.length - 1] += '\n';
