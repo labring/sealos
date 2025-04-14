@@ -66,8 +66,7 @@ export const json2DumpCR = async (
   const commands = new Command();
   commands.add('wget https://objectstorageapi.gzg.sealos.run/7nl57qi8-test/mc -O mc');
   commands.add('chmod +x mc');
-  // commands.add('sudo mv mc /usr/local/bin/');
-  // 配置 MinIO
+  // Configure MinIO
   commands.add(`./mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);
   commands.add(`./mc cp migrationTask/$BUCKET/${data.fileName} /root`);
 

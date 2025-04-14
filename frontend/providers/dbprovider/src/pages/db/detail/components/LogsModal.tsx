@@ -130,7 +130,7 @@ const LogsModal = ({
             return state + ansi_up.current.ansi_to_html(text);
           });
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
 
         // scroll bottom
@@ -170,7 +170,7 @@ const LogsModal = ({
       });
       downLoadBold(allLogs, 'text/plain', 'log.txt');
     } catch (error) {
-      console.log('download log error:', error);
+      console.error('download log error:', error);
     }
   }, [dbName, dbType, podName, sinceTime, previous]);
 

@@ -97,7 +97,7 @@ const EditApp = ({
       try {
         setYamlList(generateYamlList(data));
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }, 200),
     []
@@ -109,8 +109,6 @@ const EditApp = ({
   });
 
   const submitSuccess = async (formData: MigrateForm) => {
-    console.log(formData);
-
     setIsLoading(true);
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);

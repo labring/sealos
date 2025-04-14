@@ -378,6 +378,7 @@
   "password_complexity": "密码必须包含数字、字母、特殊字符中的两种",
   "successfully_edit_password": "成功修改密码。数据库将重启，请等待",
   "edit_password_failed": "修改密码失败",
+  "edit_password_tip": "修改密码将会导致数据库重启",
   "comp_name": "组件名",
   "has_comps": "有 {number} 个组件",
   "each": "各{perc}",

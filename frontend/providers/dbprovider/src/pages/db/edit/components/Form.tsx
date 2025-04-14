@@ -67,12 +67,6 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
   const { t } = useTranslation();
 
   const compNum = Object.keys(resources).length;
-
-  console.log(
-    DBTypeList.findLast((item) => item.id === data.dbType)!.label,
-    Object.keys(resources).length
-  );
-
   const dbName = DBTypeList.findLast((item) => item.id === data.dbType)!.label;
 
   const descriptionMap: Map<DBType, string> = new Map([

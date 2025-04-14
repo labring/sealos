@@ -378,6 +378,7 @@
   "password_complexity": "Password must contain at least two of: numbers, letters, special characters",
   "successfully_edit_password": "Successfully edited password. The database will restart, please wait",
   "edit_password_failed": "Failed to edit password",
+  "edit_password_tip": "Editing the password will cause the database to restart",
   "comp_name": "Component Name",
   "has_comps": "has {number} components",
   "each": "{perc} each",
