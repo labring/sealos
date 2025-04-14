@@ -316,6 +316,7 @@
   "single_node_tip": "单节点数据库仅适用开发测试",
   "skip": "跳过",
   "slow_queries": "慢查询",
+  "source_database": "源数据库",
   "start_backup": "开始备份",
   "start_error": "数据库启动出现意外",
   "start_hour": "小时",

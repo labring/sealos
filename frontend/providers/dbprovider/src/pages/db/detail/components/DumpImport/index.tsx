@@ -62,7 +62,10 @@ const DatabaseNameSelect = ({
     handler.onClose();
   };
   const handler = useDisclosure();
-  const { t } = useTranslation();
+  const {
+    t,
+    i18n: { language }
+  } = useTranslation();
 
   const handleCreateDatabaseName = () => {
     setValue('databasename', inputValue);
@@ -108,11 +111,9 @@ const DatabaseNameSelect = ({
               onChange={(e) => {
                 setInputValue(e.target.value);
               }}
-              // border="1px solid #219BF4"
-              // boxShadow="0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)"
               borderRadius="4px"
               fontSize="12px"
-              placeholder={t('search_or_create_database')}
+              placeholder={assembleTranslate(['search_or_create', 'database'], language)}
               _focus={{
                 border: '1px solid #219BF4',
                 boxShadow: '0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)'
@@ -145,7 +146,7 @@ const DatabaseNameSelect = ({
                 >
                   <MyIcon name="add" w={'16px'} h={'16px'} />
                   <Text fontSize="12px" lineHeight="16px" letterSpacing="0.004em" color="#111824">
-                    {`${t('create_database')} ${inputValue}`}
+                    {`${assembleTranslate(['create', 'database'], language)} ${inputValue}`}
                   </Text>
                 </HStack>
               )}
