@@ -35,7 +35,6 @@ export default function RegionToggle() {
     }
   }, [token]);
   const curRegion = regionList.find((r) => r.uid === curRegionUid);
-  console.log(regionList, 'regionList', cloudConfig?.proxyDomain);
 
   const handleCick = async (region: Region) => {
     setWorkSpaceId(session?.user?.ns_uid || '');
