@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
 
 	"k8s.io/client-go/rest"
@@ -54,28 +56,41 @@ type BillingTaskRunner struct {
 	*BillingReconciler
 }
 
-func (r *BillingTaskRunner) Start(ctx context.Context) error {
-	if err := r.ExecuteBillingTask(); err != nil {
-		r.Logger.Error(err, "failed to execute billing task")
-	}
-	defer func() {
-		r.Logger.Info("stop billing reconcile", "time", time.Now().Format(time.RFC3339))
-	}()
-	now := time.Now()
-	nextHour := now.Truncate(time.Hour).Add(time.Hour).Add(5 * time.Minute)
-	r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
-	time.Sleep(nextHour.Sub(now))
+var DebtUserMap *maps.ConcurrentNullValueMap
 
-	ticker := time.NewTicker(time.Hour)
-	defer ticker.Stop()
+func (r *BillingTaskRunner) Start(ctx context.Context) error {
+	defer func() {
+		r.Logger.Info("stopping billing reconcile", "time", time.Now().Format(time.RFC3339))
+	}()
+
 	for {
 		select {
-		case <-ticker.C:
-			if err := r.ExecuteBillingTask(); err != nil {
-				r.Logger.Error(err, "failed to execute billing task")
-			}
 		case <-ctx.Done():
 			return nil
+		default:
+			now := time.Now()
+			minutesLeft := 60 - now.Minute()
+
+			// Execute if 30 or more minutes remain, else wait for next hour
+			if minutesLeft >= 30 {
+				if err := r.ExecuteBillingTask(); err != nil {
+					r.Logger.Error(err, "failed to execute billing task")
+				}
+			}
+
+			// Calculate sleep duration to next hour + 5 minutes
+			nextHour := now.Truncate(time.Hour).Add(time.Hour).Add(5 * time.Minute)
+			sleepDuration := nextHour.Sub(now)
+
+			r.Logger.Info("next billing reconcile time", "time", nextHour.Format(time.RFC3339))
+
+			// Sleep until next scheduled time or context cancellation
+			select {
+			case <-time.After(sleepDuration):
+				continue
+			case <-ctx.Done():
+				return nil
+			}
 		}
 	}
 }
@@ -102,6 +117,13 @@ type BillingReconciler struct {
 
 func (r *BillingReconciler) ExecuteBillingTask() error {
 	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
+	DebtUserMap = maps.NewConcurrentNullValueMap()
+	var users []string
+	if err := r.AccountV2.GetGlobalDB().Model(&types.Debt{}).Where("account_debt_status IN (?, ?, ?) ", types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod).
+		Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
+		return fmt.Errorf("failed to query unique users: %w", err)
+	}
+	DebtUserMap.Set(users...)
 	ownerListMap, err := r.getRecentUsedOwners()
 	if err != nil {
 		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
@@ -127,7 +149,7 @@ func (r *BillingReconciler) reconcileOwnerList(ownerListMap map[string][]string,
 	}
 
 	// remove the owner that does not need to be updated; final State The user deletes the service at any time and does not perform billing processing
-	for _, owner := range append(ownersRecentUpdates, r.DebtUserMap.GetAllKey()...) {
+	for _, owner := range append(ownersRecentUpdates, DebtUserMap.GetAllKey()...) {
 		delete(ownerListMap, owner)
 	}
 	r.Logger.Info("get owners recent updates", "already update owner count", len(ownersRecentUpdates), "remaining owner count", len(ownerListMap))
@@ -284,6 +306,19 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 	for _, ns := range namespaceList {
 		if owner, ok := nsToOwnerMap[ns]; ok {
 			if _, ok := usedOwnerList[owner]; !ok {
+				userUID, err := r.AccountV2.GetUserUID(&types.UserQueryOpts{Owner: owner, IgnoreEmpty: true})
+				if err != nil {
+					return nil, fmt.Errorf("get user uid failed: %w", err)
+				}
+				if userUID == uuid.Nil {
+					r.Logger.Error(fmt.Errorf("user uid is nil"), "get user uid failed", "owner", owner)
+					continue
+				}
+				_, inDebt := DebtUserMap.Get(userUID.String())
+				if inDebt {
+					r.Logger.Info("user is in debt", "user uid", userUID.String())
+					continue
+				}
 				usedOwnerList[owner] = []string{}
 			}
 			usedOwnerList[owner] = append(usedOwnerList[owner], ns)
@@ -304,7 +339,7 @@ func (r *BillingReconciler) Init() error {
 	}
 	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 10)
 	r.reconcileBillingFunc = r.reconcileBilling
-	if os.Getenv("CREDITS_ENABLED") == "true" {
+	if os.Getenv("CREDITS_ENABLED") == "true" || os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
 		r.reconcileBillingFunc = r.reconcileBillingWithCredits
 	}
 	return nil

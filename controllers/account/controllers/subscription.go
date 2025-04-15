@@ -147,33 +147,34 @@ func (sp *SubscriptionProcessor) shouldProcessTransaction(tx *types.Subscription
 		tx.Status != types.SubscriptionTransactionStatusFailed
 }
 
-func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
-	var regionTaskList []*types.AccountRegionUserTask
-	for _, domain := range sp.allRegionDomain {
-		if domain == sp.localDomain {
-			continue
-		}
-		regionTaskList = append(regionTaskList, &types.AccountRegionUserTask{
-			UserUID:      userUID,
-			RegionDomain: domain,
-			Type:         types.AccountRegionUserTaskTypeFlushQuota,
-			StartAt:      time.Now().UTC(),
-			Status:       types.AccountRegionUserTaskStatusPending,
-		})
-	}
-	err := sp.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
-		for _, task := range regionTaskList {
-			if err := tx.Create(task).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create account region user task: %w", err)
-	}
-	return nil
-}
+// If the account service network is too slow, can synchronize the database
+//func (sp *SubscriptionProcessor) flushOtherDomainQuota(_ context.Context, userUID uuid.UUID) error {
+//	var regionTaskList []*types.AccountRegionUserTask
+//	for _, domain := range sp.allRegionDomain {
+//		if domain == sp.localDomain {
+//			continue
+//		}
+//		regionTaskList = append(regionTaskList, &types.AccountRegionUserTask{
+//			UserUID:      userUID,
+//			RegionDomain: domain,
+//			Type:         types.AccountRegionUserTaskTypeFlushQuota,
+//			StartAt:      time.Now().UTC(),
+//			Status:       types.AccountRegionUserTaskStatusPending,
+//		})
+//	}
+//	err := sp.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+//		for _, task := range regionTaskList {
+//			if err := tx.Create(task).Error; err != nil {
+//				return err
+//			}
+//		}
+//		return nil
+//	})
+//	if err != nil {
+//		return fmt.Errorf("failed to create account region user task: %w", err)
+//	}
+//	return nil
+//}
 
 // updateQuota 更新用户的资源配额
 func (sp *SubscriptionProcessor) updateQuota(_ context.Context, userUID, planID uuid.UUID, planName string) error {

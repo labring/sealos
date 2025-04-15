@@ -66,7 +66,6 @@ func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
 }
 
 func TestCockroach_InitTables(t *testing.T) {
-	//jdbc:postgresql://192.168.10.35:32749/global
 	os.Setenv("LOCAL_REGION", "")
 	ck, err := NewCockRoach("", "")
 	if err != nil {

@@ -211,16 +211,27 @@ func main() {
 		setupManagerError(err, "Account")
 	}
 	debtUserMap := maps.NewConcurrentMap()
-	if err = (&controllers.DebtReconciler{
+	debtController := &controllers.DebtReconciler{
+		AccountReconciler:           accountReconciler,
 		Client:                      mgr.GetClient(),
 		Scheme:                      mgr.GetScheme(),
 		AccountV2:                   v2Account,
 		DebtUserMap:                 debtUserMap,
 		InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
 		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Debt")
 	}
+	debtController.Init()
+	//if err = (&controllers.DebtReconciler{
+	//	AccountReconciler:           accountReconciler,
+	//	Client:                      mgr.GetClient(),
+	//	Scheme:                      mgr.GetScheme(),
+	//	AccountV2:                   v2Account,
+	//	DebtUserMap:                 debtUserMap,
+	//	InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
+	//	SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
+	//}).SetupWithManager(mgr, rateOpts); err != nil {
+	//	setupManagerError(err, "Debt")
+	//}
 
 	if err = cache.SetupCache(mgr); err != nil {
 		setupLog.Error(err, "unable to cache controller")
@@ -254,6 +265,10 @@ func main() {
 	}
 	if err := mgr.Add(billingTaskRunner); err != nil {
 		setupLog.Error(err, "unable to add billing task runner")
+		os.Exit(1)
+	}
+	if err := mgr.Add(debtController); err != nil {
+		setupLog.Error(err, "unable to add debt controller")
 		os.Exit(1)
 	}
 

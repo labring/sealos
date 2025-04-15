@@ -6,6 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/labring/sealos/controllers/pkg/database"
 
 	"github.com/labring/sealos/controllers/pkg/utils"
@@ -52,7 +56,9 @@ var (
 	Cfg                  *Config
 	BillingTask          *helper.TaskQueue
 	FlushQuotaProcesser  *FlushQuotaTask
-	Debug                bool
+
+	SendDebtStatusEmailBody map[types.DebtStatusType]string
+	//Debug                bool
 )
 
 func Init(ctx context.Context) error {
@@ -70,7 +76,7 @@ func Init(ctx context.Context) error {
 	if mongoURI == "" {
 		return fmt.Errorf("empty mongo uri, please check env: %s", helper.EnvMongoURI)
 	}
-	Debug = os.Getenv("DEBUG") == "true"
+	//Debug = os.Getenv("DEBUG") == "true"
 	DBClient, err = NewAccountInterface(mongoURI, globalCockroach, localCockroach)
 	if err != nil {
 		return err
@@ -175,5 +181,64 @@ func Init(ctx context.Context) error {
 	if SMTPConfig.ServerHost == "" || SMTPConfig.FromEmail == "" || SMTPConfig.Passwd == "" || SMTPConfig.EmailTitle == "" {
 		return fmt.Errorf("empty smtp config: %v", SMTPConfig)
 	}
+	setDefaultDebtPeriodWaitSecond()
+	SetDebtConfig()
 	return nil
+}
+
+var (
+	TitleTemplateZHMap = map[types.DebtStatusType]string{
+		types.LowBalancePeriod:      "余额不足",
+		types.CriticalBalancePeriod: "余额即将耗尽",
+		types.DebtPeriod:            "余额耗尽",
+		types.DebtDeletionPeriod:    "即将资源释放",
+		types.FinalDeletionPeriod:   "彻底资源释放",
+	}
+	TitleTemplateENMap = map[types.DebtStatusType]string{
+		types.LowBalancePeriod:      "Low Balance",
+		types.CriticalBalancePeriod: "Critical Balance",
+		types.DebtPeriod:            "Debt",
+		types.DebtDeletionPeriod:    "Imminent Resource Release",
+		types.FinalDeletionPeriod:   "Radical resource release",
+	}
+	NoticeTemplateENMap map[types.DebtStatusType]string
+	NoticeTemplateZHMap map[types.DebtStatusType]string
+	EmailTemplateENMap  map[types.DebtStatusType]string
+	EmailTemplateZHMap  map[types.DebtStatusType]string
+)
+
+func setDefaultDebtPeriodWaitSecond() {
+	domain := os.Getenv("DOMAIN")
+	NoticeTemplateZHMap = map[types.DebtStatusType]string{
+		types.LowBalancePeriod:      "当前工作空间所属账户余额过低，请及时充值，以免影响您的正常使用。",
+		types.CriticalBalancePeriod: "当前工作空间所属账户余额即将耗尽，请及时充值，以免影响您的正常使用。",
+		types.DebtPeriod:            "当前工作空间所属账户余额已耗尽，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
+		types.DebtDeletionPeriod:    "系统即将释放当前空间的资源，请及时充值，以免影响您的正常使用。",
+		types.FinalDeletionPeriod:   "系统将随时彻底释放当前工作空间所属账户下的所有资源，请及时充值，以免影响您的正常使用。",
+	}
+	NoticeTemplateENMap = map[types.DebtStatusType]string{
+		types.LowBalancePeriod:      "Your account balance is too low, please recharge in time to avoid affecting your normal use.",
+		types.CriticalBalancePeriod: "Your account balance is about to run out, please recharge in time to avoid affecting your normal use.",
+		types.DebtPeriod:            "Your account balance has been exhausted, and services will be suspended for you. Please recharge in time to avoid affecting your normal use.",
+		types.DebtDeletionPeriod:    "The system will release the resources of the current space soon. Please recharge in time to avoid affecting your normal use.",
+		types.FinalDeletionPeriod:   "The system will completely release all resources under the current account at any time. Please recharge in time to avoid affecting your normal use.",
+	}
+	EmailTemplateZHMap, EmailTemplateENMap = make(map[types.DebtStatusType]string), make(map[types.DebtStatusType]string)
+	for _, i := range []types.DebtStatusType{types.LowBalancePeriod, types.CriticalBalancePeriod, types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod} {
+		EmailTemplateENMap[i] = TitleTemplateENMap[i] + "：" + NoticeTemplateENMap[i] + "(" + domain + ")"
+		EmailTemplateZHMap[i] = TitleTemplateZHMap[i] + "：" + NoticeTemplateZHMap[i] + "(" + domain + ")"
+	}
+}
+
+func SetDebtConfig() {
+	SendDebtStatusEmailBody = make(map[types.DebtStatusType]string)
+	for _, status := range []types.DebtStatusType{types.LowBalancePeriod, types.CriticalBalancePeriod, types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod} {
+		email := os.Getenv(string(status) + "EmailBody")
+		if email == "" {
+			email = EmailTemplateZHMap[status] + "\n" + EmailTemplateENMap[status]
+		} else {
+			logrus.Info("email body is not empty, use env: ", email, " for status: ", status)
+		}
+		SendDebtStatusEmailBody[status] = email
+	}
 }

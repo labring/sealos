@@ -56,3 +56,70 @@ func (cm *ConcurrentMap) Delete(key string) {
 	defer cm.mu.Unlock()
 	delete(cm.m, key)
 }
+
+func (cm *ConcurrentMap) DeleteAll() {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.m = make(map[string]interface{})
+}
+
+func (cm *ConcurrentMap) Len() int {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	return len(cm.m)
+}
+
+type ConcurrentNullValueMap struct {
+	mu sync.RWMutex
+	m  map[string]struct{}
+}
+
+func NewConcurrentNullValueMap() *ConcurrentNullValueMap {
+	return &ConcurrentNullValueMap{
+		m: make(map[string]struct{}),
+	}
+}
+
+func (cm *ConcurrentNullValueMap) Set(keys ...string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	for _, key := range keys {
+		cm.m[key] = struct{}{}
+	}
+}
+
+func (cm *ConcurrentNullValueMap) Get(key string) (struct{}, bool) {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	val, ok := cm.m[key]
+	return val, ok
+}
+
+func (cm *ConcurrentNullValueMap) GetAllKey() []string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+
+	keys := make([]string, 0, len(cm.m))
+	for k := range cm.m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (cm *ConcurrentNullValueMap) Delete(key string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	delete(cm.m, key)
+}
+
+func (cm *ConcurrentNullValueMap) DeleteAll() {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.m = make(map[string]struct{})
+}
+
+func (cm *ConcurrentNullValueMap) Len() int {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	return len(cm.m)
+}

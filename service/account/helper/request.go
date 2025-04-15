@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/google/uuid"
 
 	"github.com/labring/sealos/service/account/common"
@@ -646,4 +648,25 @@ func ParseAdminFlushSubscriptionQuotaReq(c *gin.Context) (*AdminFlushSubscriptio
 		return nil, fmt.Errorf("planName cannot be empty")
 	}
 	return flushSubscriptionQuota, nil
+}
+
+type AdminFlushDebtResourceStatusReq struct {
+	UserUID           uuid.UUID            `json:"userUID" bson:"userUID"`
+	LastDebtStatus    types.DebtStatusType `json:"lastDebtStatus" bson:"lastDebtStatus"`
+	CurrentDebtStatus types.DebtStatusType `json:"currentDebtStatus" bson:"currentDebtStatus"`
+	IsBasicUser       bool                 `json:"isBasicUser" bson:"isBasicUser"`
+}
+
+func ParseAdminFlushDebtResourceStatusReq(c *gin.Context) (*AdminFlushDebtResourceStatusReq, error) {
+	flushDebtResourceStatus := &AdminFlushDebtResourceStatusReq{}
+	if err := c.ShouldBindJSON(flushDebtResourceStatus); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if flushDebtResourceStatus.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("userUID cannot be empty")
+	}
+	if flushDebtResourceStatus.CurrentDebtStatus == "" {
+		return nil, fmt.Errorf("currentDebtStatus cannot be empty")
+	}
+	return flushDebtResourceStatus, nil
 }
