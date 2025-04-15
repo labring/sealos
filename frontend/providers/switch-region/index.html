@@ -12,7 +12,7 @@
       const DEFAULT_REGION = 'hzh.sealos.run'
 
       const REGION_MAP = {
-        'xxx': 'xxx'
+        xxx: 'xxx'
       }
 
       function getUrlParam (name) {
@@ -33,6 +33,17 @@
         return REGION_MAP[regionId] === regionDomain
       }
 
+      function buildTargetUrl (targetRegion, pathname, url) {
+        let targetUrl = `https://${targetRegion}${pathname}`
+
+        const params = url.search
+        if (params) {
+          targetUrl += params
+        }
+
+        return targetUrl
+      }
+
       function redirect () {
         const url = new URL(window.location.href)
         const regionId = getUrlParam('regionId')
@@ -45,16 +56,7 @@
           setLocalStorage('latest_region_id', regionId)
 
           const targetRegion = regionDomain
-
-          const pathname = url.pathname.includes('/switchRegion') ? '/switchRegion' : url.pathname
-          let targetUrl = `https://${targetRegion}${pathname}`
-
-          const newParams = new URLSearchParams(url.search)
-
-          const params = newParams.toString()
-          if (params) {
-            targetUrl += `?${params}`
-          }
+          const targetUrl = buildTargetUrl(targetRegion, url.pathname, url)
 
           window.location.href = targetUrl
         } else {
@@ -64,14 +66,7 @@
           const isSavedValid = savedRegionId && savedRegion && REGION_MAP[savedRegionId] === savedRegion
 
           const targetRegion = isSavedValid ? savedRegion : DEFAULT_REGION
-
-          let targetUrl
-          if (targetRegion === DEFAULT_REGION) {
-            targetUrl = `https://${DEFAULT_REGION}/`
-          } else {
-            const pathname = url.pathname.includes('/switchRegion') ? '/switchRegion' : url.pathname
-            targetUrl = `https://${targetRegion}${pathname}`
-          }
+          const targetUrl = buildTargetUrl(targetRegion, url.pathname, url)
 
           window.location.href = targetUrl
         }
