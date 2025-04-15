@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -17,7 +18,8 @@ import (
 
 // setupTestDB 创建测试数据库连接
 func setupTestDB(t *testing.T) *gorm.DB {
-	dsn := "postgresql://sealos:fb9jg8te4x78ocqrr2vgbs99qauh9flfd1u6g300kq7ywjay3ah7cndr60udd6wg@192.168.10.35:32749/global"
+	//TODO need to set up a real test database
+	dsn := os.Getenv("TEST_DB_URI")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
 
@@ -45,10 +47,14 @@ func checkAssert(ok bool, t *testing.T) {
 	}
 }
 
+const (
+	instanceID = "instance-1"
+)
+
 func TestLockAcquireAndRelease(t *testing.T) {
 	db := setupTestDB(t)
 	lockName := "test-lock"
-	holderID := "instance-1"
+	holderID := instanceID
 
 	lock := NewDistributedLock(db, lockName, holderID)
 
@@ -76,7 +82,7 @@ func TestLockMutualExclusion(t *testing.T) {
 	lockName := "mutex-lock"
 
 	// 第一个实例获取锁
-	lock1 := NewDistributedLock(db, lockName, "instance-1")
+	lock1 := NewDistributedLock(db, lockName, instanceID)
 	err := lock1.TryLock(context.Background(), 10*time.Second)
 	checkAssert(assert.NoError(t, err), t)
 
@@ -143,50 +149,10 @@ func TestConcurrentLockAcquisition(t *testing.T) {
 	checkAssert(assert.Equal(t, 1, successCount), t)
 }
 
-//func TestConcurrentLockAcquisition(t *testing.T) {
-//	db := setupTestDB(t)
-//	lockName := "concurrent-lock"
-//	numClients := 10
-//	var wg sync.WaitGroup
-//	successCount := 0
-//	var mu sync.Mutex
-//
-//	for i := 0; i < numClients; i++ {
-//		wg.Add(1)
-//		go func(instanceID int) {
-//			defer wg.Done()
-//			holderID := fmt.Sprintf("instance-%d", instanceID)
-//			lock := NewDistributedLock(db, lockName, holderID)
-//
-//			// 尝试获取锁
-//			err := lock.TryLock(context.Background(), 5*time.Second)
-//			if err == nil {
-//				mu.Lock()
-//				successCount++
-//				mu.Unlock()
-//
-//				// 持有锁一段时间
-//				time.Sleep(100 * time.Millisecond)
-//
-//				// 释放锁
-//				err = lock.Unlock()
-//				checkAssert(assert.NoError(t, err), t)
-//			} else {
-//				checkAssert(assert.True(t, errors.Is(err, ErrLockNotAcquired)), t)
-//			}
-//		}(i)
-//	}
-//
-//	wg.Wait()
-//
-//	// 只有一个客户端应该成功获取锁
-//	checkAssert(assert.Equal(t, 1, successCount), t)
-//}
-
 func TestLockRenewal(t *testing.T) {
 	db := setupTestDB(t)
 	lockName := "renewal-lock"
-	holderID := "instance-1"
+	holderID := instanceID
 
 	lock := NewDistributedLock(db, lockName, holderID)
 
@@ -217,7 +183,7 @@ func TestLockExpiration(t *testing.T) {
 	lockName := "expiring-lock"
 
 	// 第一个实例获取锁，TTL很短
-	lock1 := NewDistributedLock(db, lockName, "instance-1")
+	lock1 := NewDistributedLock(db, lockName, instanceID)
 	err := lock1.TryLock(context.Background(), 10*time.Second)
 	checkAssert(assert.NoError(t, err), t)
 
@@ -240,7 +206,7 @@ func TestLockExpiration(t *testing.T) {
 func TestDoubleUnlock(t *testing.T) {
 	db := setupTestDB(t)
 	lockName := "double-unlock-lock"
-	holderID := "instance-1"
+	holderID := instanceID
 
 	lock := NewDistributedLock(db, lockName, holderID)
 
@@ -260,7 +226,7 @@ func TestDoubleUnlock(t *testing.T) {
 func TestContextCancellation(t *testing.T) {
 	db := setupTestDB(t)
 	lockName := "ctx-cancel-lock"
-	holderID := "instance-1"
+	holderID := instanceID
 
 	// 先让另一个实例持有锁
 	otherLock := NewDistributedLock(db, lockName, "instance-2")
@@ -299,7 +265,7 @@ func TestContextCancellation(t *testing.T) {
 func TestLongRunningTaskWithLock(t *testing.T) {
 	db := setupTestDB(t)
 	lockName := "long-task-lock"
-	holderID := "instance-1"
+	holderID := instanceID
 
 	lock := NewDistributedLock(db, lockName, holderID)
 

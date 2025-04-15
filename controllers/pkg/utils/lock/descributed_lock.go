@@ -3,6 +3,7 @@ package dlock
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -18,7 +19,6 @@ type DistributedLock struct {
 	db        *gorm.DB
 	lockName  string
 	holderID  string
-	version   int
 	stopRenew chan struct{}
 	once      sync.Once
 }
@@ -38,13 +38,25 @@ func (dl *DistributedLock) TryLock(ctx context.Context, ttl time.Duration) error
 	expiresAt := time.Now().UTC().Add(ttl)
 
 	err := dl.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`
+		CREATE TABLE IF NOT EXISTS distributed_locks (
+			lock_name STRING PRIMARY KEY,
+			holder_id STRING NOT NULL,
+			expires_at TIMESTAMPTZ NOT NULL,
+			version INT NOT NULL DEFAULT 1
+		)
+	`).Error
+		if err != nil {
+			return fmt.Errorf("failed to create table: %w", err)
+		}
+
 		// try to get the current lock state first
 		var currentLock struct {
 			HolderID  string
 			ExpiresAt time.Time
 		}
 
-		err := tx.Raw(`
+		err = tx.Raw(`
             SELECT holder_id, expires_at 
             FROM distributed_locks 
             WHERE lock_name = ? FOR UPDATE

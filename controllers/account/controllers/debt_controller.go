@@ -25,6 +25,7 @@ import (
 	runtime2 "runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
@@ -92,17 +93,21 @@ const (
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
+	*AccountReconciler
 	AccountV2           database.AccountV2
 	InitUserAccountFunc func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
 	Scheme              *runtime.Scheme
 	DebtDetectionCycle  time.Duration
 	LocalRegionID       string
 	logr.Logger
-	accountSystemNamespace      string
-	SmsConfig                   *SmsConfig
-	VmsConfig                   *VmsConfig
-	smtpConfig                  *utils.SMTPConfig
-	DebtUserMap                 *maps.ConcurrentMap
+	accountSystemNamespace string
+	SmsConfig              *SmsConfig
+	VmsConfig              *VmsConfig
+	smtpConfig             *utils.SMTPConfig
+	DebtUserMap            *maps.ConcurrentMap
+	// TODO need init
+	userLocks                   *sync.Map
+	processID                   string
 	SkipExpiredUserTimeDuration time.Duration
 	SendDebtStatusEmailBody     map[accountv1.DebtStatusType]string
 }
@@ -296,7 +301,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	if lastStatus == currentStatus && !update {
 		return nil
 	}
-	update = SetDebtStatus(debt, lastStatus, currentStatus)
+	update = update || SetDebtStatus(debt, lastStatus, currentStatus)
 	nonDebtStates := []accountv1.DebtStatusType{accountv1.NormalPeriod, accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod}
 	debtStates := []accountv1.DebtStatusType{accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod}
 	// 判断上次状态到当前的状态
@@ -407,7 +412,6 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 	return true
 }
 
-// TODO 外加判断订阅状态
 func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
 	if oweamount > 0 {
 		if oweamount > 50*BaseUnit {
@@ -774,10 +778,10 @@ func (r *DebtReconciler) setupVmsConfig() error {
 }
 
 func (r *DebtReconciler) setupSMTPConfig() error {
-	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPPortEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
+	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
 		return fmt.Errorf("check env setting error: %w", err)
 	}
-	serverPort, err := strconv.Atoi(os.Getenv(SMTPPortEnv))
+	serverPort, err := strconv.Atoi(env.GetEnvWithDefault(SMTPPortEnv, "465"))
 	if err != nil {
 		return fmt.Errorf("invalid smtp port: %w", err)
 	}
@@ -793,11 +797,33 @@ func (r *DebtReconciler) setupSMTPConfig() error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
+	r.Init()
+	/*
+		{"DebtConfig":{
+		"ApproachingDeletionPeriod":345600,
+		"FinalDeletionPeriod":604800,
+		"ImminentDeletionPeriod":259200,"WarningPeriod":0},
+		"DebtDetectionCycle": "1m0s",
+		"accountSystemNamespace": "account-system",
+		"accountNamespace": "sealos-system"}
+	*/
+	r.Logger.Info("set config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle,
+		"accountSystemNamespace", r.accountSystemNamespace)
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{})), builder.OnlyMetadata).
+		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}).
+		WithOptions(rateOpts).
+		Complete(r)
+}
+
+func (r *DebtReconciler) Init() {
 	r.Logger = ctrl.Log.WithName("DebtController")
 	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
 	r.LocalRegionID = os.Getenv(cockroach.EnvLocalRegion)
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
+	r.userLocks = &sync.Map{}
+	r.processID = uuid.NewString()
 
 	setupList := []func() error{
 		r.setupSmsConfig,
@@ -819,23 +845,6 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		}
 		r.SendDebtStatusEmailBody[status] = email
 	}
-
-	/*
-		{"DebtConfig":{
-		"ApproachingDeletionPeriod":345600,
-		"FinalDeletionPeriod":604800,
-		"ImminentDeletionPeriod":259200,"WarningPeriod":0},
-		"DebtDetectionCycle": "1m0s",
-		"accountSystemNamespace": "account-system",
-		"accountNamespace": "sealos-system"}
-	*/
-	r.Logger.Info("set config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle,
-		"accountSystemNamespace", r.accountSystemNamespace)
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&userv1.User{}, builder.WithPredicates(predicate.And(UserOwnerPredicate{})), builder.OnlyMetadata).
-		Watches(&accountv1.Payment{}, &handler.EnqueueRequestForObject{}).
-		WithOptions(rateOpts).
-		Complete(r)
 }
 
 func setDefaultDebtPeriodWaitSecond() {

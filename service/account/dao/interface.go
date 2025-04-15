@@ -311,8 +311,8 @@ func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, c
 			if err != nil {
 				return fmt.Errorf("failed to set card info: %v", err)
 			}
-			order.PaymentRaw.CardUID = &card.ID
 		}
+		order.PaymentRaw.CardUID = &card.ID
 		order.PaymentRaw.ChargeSource = types.ChargeSourceNewCard
 		// TODO List
 		// 1. set payment order status with tradeNo
@@ -352,7 +352,7 @@ func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(paymentRequestID st
 		}
 		userUID = order.UserUID
 		if order.Status != types.PaymentOrderStatusPending {
-			return fmt.Errorf("payment order status is not pending: %v", order)
+			return nil
 		}
 		// 1. set payment order status with tradeNo
 		// 2. set transaction pay status to failed

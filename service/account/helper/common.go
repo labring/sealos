@@ -40,6 +40,7 @@ const (
 	AdminActiveBilling           = "/active-billing"
 	AdminGetUserRealNameInfo     = "/real-name-info"
 	AdminFlushSubQuota           = "/flush-sub-quota"
+	AdminFlushDebtResourceStatus = "/flush-debt-resource-status"
 )
 
 const (

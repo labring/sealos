@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"text/template"
 	"time"
@@ -159,144 +158,6 @@ func GetSubscriptionUpgradeAmount(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"amount": int64(value),
 	})
-}
-
-func AdminFlushSubscriptionQuota(c *gin.Context) {
-	err := authenticateAdminRequest(c)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
-		return
-	}
-	req, err := helper.ParseAdminFlushSubscriptionQuotaReq(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("failed to parse request: %v", err)})
-		return
-	}
-	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: req.UserUID})
-	if err != nil && err != gorm.ErrRecordNotFound {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
-		return
-	}
-	if owner == "" {
-		c.JSON(http.StatusOK, gin.H{"success": true})
-	}
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get in cluster config failed: %v", err)})
-		return
-	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("new client set failed: %v", err)})
-		return
-	}
-	nsList, err := getOwnNsList(clientset, owner)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
-		return
-	}
-
-	rs, ok := dao.SubPlanResourceQuota[req.PlanName]
-	if !ok {
-		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("plan name is not in plan resource quota: %v", req.PlanName)})
-		return
-	}
-	for _, ns := range nsList {
-		quota := getDefaultResourceQuota(ns, "quota-"+ns, rs)
-		_, err = clientset.CoreV1().ResourceQuotas(ns).Update(context.Background(), quota, metav1.UpdateOptions{})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
-			return
-		}
-	}
-	c.JSON(http.StatusOK, gin.H{"success": true})
-}
-
-// FlushSubscriptionQuota
-// @Summary flush user quota with subscription
-// @Description flush user quota with subscription
-// @Tags Subscription
-// @Accept json
-// @Produce json
-// @Success 200 {object} SubscriptionFlushQuotaResp
-// @Router /payment/v1alpha1/subscription/flush-quota [post]
-func FlushSubscriptionQuota(c *gin.Context) {
-	// 初始化日志前的时间点
-	startTime := time.Now().UTC()
-	lastTime := startTime
-
-	// 定义一个辅助函数来记录时间间隔并更新lastTime
-	logWithDuration := func(message string) {
-		now := time.Now().UTC()
-		duration := now.Sub(lastTime)
-		log.Printf("%s (took %v since last step, %v since start)", message, duration, now.Sub(startTime))
-		lastTime = now
-	}
-
-	logWithDuration("Starting FlushSubscriptionQuota")
-
-	req := &helper.AuthBase{}
-	if err := authenticateRequest(c, req); err != nil {
-		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error: %v", err)})
-		return
-	}
-	logWithDuration("Authentication completed")
-
-	if req.Owner == "" {
-		c.JSON(http.StatusOK, gin.H{"success": true})
-		logWithDuration("Request completed early due to empty owner")
-		return
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get in cluster config failed: %v", err)})
-		return
-	}
-	logWithDuration("In-cluster config retrieved")
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("new client set failed: %v", err)})
-		return
-	}
-	logWithDuration("Kubernetes client set created")
-
-	nsList, err := getOwnNsList(clientset, req.Owner)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
-		return
-	}
-	logWithDuration(fmt.Sprintf("Retrieved namespace list: %v", nsList))
-
-	userSub, err := dao.DBClient.GetSubscription(&types.UserQueryOpts{UID: req.UserUID})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get user subscription failed: %v", err)})
-		return
-	}
-	logWithDuration("User subscription retrieved")
-
-	for _, ns := range nsList {
-		logWithDuration(fmt.Sprintf("Starting quota flush for namespace: %s", ns))
-
-		quota := getDefaultResourceQuota(ns, "quota-"+ns, dao.SubPlanResourceQuota[userSub.PlanName])
-		err = Retry(2, time.Second, func() error {
-			_, err := clientset.CoreV1().ResourceQuotas(ns).Update(context.Background(), quota, metav1.UpdateOptions{})
-			if err != nil {
-				log.Printf("Failed to update resource quota for %s: %v", ns, err)
-				return fmt.Errorf("failed to update resource quota for %s: %w", ns, err)
-			}
-			return nil
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
-			return
-		}
-		logWithDuration(fmt.Sprintf("Quota updated for namespace: %s", ns))
-	}
-
-	logWithDuration("FlushSubscriptionQuota completed")
-	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 // CheckSubscriptionQuota
@@ -598,7 +459,7 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to query payment: ", err)})
 			return
 		}
-		if payQueryResp.Result.ResultCode != "SUCCESS" && payQueryResp.Result.ResultStatus != "S" {
+		if payQueryResp.Result.ResultCode != SuccessStatus && payQueryResp.Result.ResultStatus != "S" {
 			data, err := json.MarshalIndent(payQueryResp, "", "  ")
 			if err != nil {
 				SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to marshal pay query response: ", err)})
@@ -709,83 +570,82 @@ func PayForSubscription(c *gin.Context, req *helper.SubscriptionOperatorReq, sub
 	}
 	subTransaction.PayID = paymentID
 	var paySvcResp *responsePay.AlipayPayResponse
+	var createPayHandler func(tx *gorm.DB) error
 	if req.CardID != nil {
-		err := SubscriptionPayForBindCard(paymentReq, req, &subTransaction)
-		if err != nil {
-			SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to pay for subscription with bind card: ", err)})
-		} else {
-			if err = sendUserSubPayEmailWith(req.UserUID); err != nil {
-				logrus.Errorf("failed to send user %s SubscriptionWithOutPay email: %v", req.UserID, err)
+		createPayHandler = func(tx *gorm.DB) error {
+			card, hErr := dao.DBClient.GetCardInfo(*req.CardID, req.UserUID)
+			if hErr != nil {
+				return fmt.Errorf("failed to get card info: %w", hErr)
 			}
-			SetSuccessResp(c)
+			paySvcResp, hErr = dao.PaymentService.CreateSubscriptionPayWithCard(paymentReq, card)
+			if hErr != nil {
+				return fmt.Errorf("failed to create payment with card: %w", hErr)
+			}
+			if (paySvcResp.Result.ResultCode == "SUCCESS" && paySvcResp.Result.ResultStatus == "S") || (paySvcResp.Result.ResultCode == "PAYMENT_IN_PROCESS" && paySvcResp.Result.ResultStatus == "U") {
+				return nil
+			}
+			return fmt.Errorf("payment result is not SUCCESS: %#+v", paySvcResp.Result)
 		}
-		return
 	} else {
-		paySvcResp, err = dao.PaymentService.CreateNewSubscriptionPay(paymentReq)
-		if err != nil {
-			SetErrorResp(c, http.StatusInternalServerError, gin.H{"error": fmt.Sprint("failed to create payment: ", err)})
-			return
-		}
-		if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
-			SetErrorResp(c, http.StatusBadRequest, gin.H{"error": fmt.Sprintf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)})
-			return
-		}
-		err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
-			// TODO 检查没有订阅变更
-			count, err := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
+		createPayHandler = func(tx *gorm.DB) error {
+			var hErr error
+			paySvcResp, hErr = dao.PaymentService.CreateNewSubscriptionPay(paymentReq)
 			if err != nil {
-				return fmt.Errorf("failed to get active subscription transaction count: %w", err)
+				return fmt.Errorf("failed to create payment: %w", hErr)
 			}
-			if count > 0 {
-				return fmt.Errorf("there is active subscription transaction")
-			}
-			//lastSub, err := dao.GetLastSubscriptionTransaction(tx, req.UserUID)
-			//if err != nil && err != gorm.ErrRecordNotFound {
-			//	return fmt.Errorf("failed to get last subscription transaction: %w", err)
-			//}
-			//if lastSub != nil && (lastSub.Status == types.SubscriptionTransactionStatusProcessing || lastSub.Status == types.SubscriptionTransactionStatusPending) {
-			//
-			//	// TODO If the previous operation is the same as this one: xxx
-			//	if lastSub.PayStatus == types.SubscriptionPayStatusPending {
-			//
-			//		if lastSub.NewPlanName == subTransaction.NewPlanName {
-			//			// Returns the connection to the last payment, and reinitiates the payment if it times out or has already failed
-			//
-			//		}
-			//	}
-			//	return fmt.Errorf("there is active subscription transaction")
-			//}
-			subTransaction.PayStatus = types.SubscriptionPayStatusPending
-			err = cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
-			if err != nil {
-				return fmt.Errorf("failed to create subscription transaction: %w", err)
+			if paySvcResp.Result.ResultCode != "PAYMENT_IN_PROCESS" || paySvcResp.Result.ResultStatus != "U" {
+				return fmt.Errorf("payment result is not PAYMENT_IN_PROCESS: %#+v", paySvcResp.Result)
 			}
 			return nil
-		}, func(tx *gorm.DB) error {
-			err := cockroach.CreatePaymentOrder(
-				tx, &types.PaymentOrder{
-					ID: paymentID,
-					PaymentRaw: types.PaymentRaw{
-						UserUID:      req.UserUID,
-						Amount:       subTransaction.Amount,
-						Method:       req.PayMethod,
-						RegionUID:    dao.DBClient.GetLocalRegion().UID,
-						TradeNO:      paySvcResp.PaymentRequestId,
-						CodeURL:      paySvcResp.NormalUrl,
-						Type:         types.PaymentTypeSubscription,
-						ChargeSource: types.ChargeSourceNewCard,
-					},
-					Status: types.PaymentOrderStatusPending,
-				})
-			if err != nil {
-				return fmt.Errorf("failed to create payment order: %w", err)
-			}
-			return nil
-		})
-		if err != nil {
-			SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
-			return
 		}
+	}
+	err = dao.DBClient.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		// check that there are no subscription changes
+		count, dErr := cockroach.GetActiveSubscriptionTransactionCount(tx, req.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get active subscription transaction count: %w", dErr)
+		}
+		if count > 0 {
+			return fmt.Errorf("there is active subscription transaction")
+		}
+		subTransaction.PayStatus = types.SubscriptionPayStatusPending
+		dErr = cockroach.CreateSubscriptionTransaction(tx, &subTransaction)
+		if dErr != nil {
+			return fmt.Errorf("failed to create subscription transaction: %w", dErr)
+		}
+		return nil
+	}, func(tx *gorm.DB) error {
+		dErr := cockroach.CreatePaymentOrder(
+			tx, &types.PaymentOrder{
+				ID: paymentID,
+				PaymentRaw: types.PaymentRaw{
+					UserUID:   req.UserUID,
+					Amount:    subTransaction.Amount,
+					Method:    req.PayMethod,
+					RegionUID: dao.DBClient.GetLocalRegion().UID,
+					TradeNO:   paymentReq.RequestID,
+					//CodeURL:      paySvcResp.NormalUrl,
+					Type:         types.PaymentTypeSubscription,
+					ChargeSource: types.ChargeSourceNewCard,
+				},
+				Status: types.PaymentOrderStatusPending,
+			})
+		if dErr != nil {
+			return fmt.Errorf("failed to create payment order: %w", dErr)
+		}
+		return nil
+	}, createPayHandler, func(tx *gorm.DB) error {
+		if paySvcResp.NormalUrl != "" {
+			dErr := tx.Model(&types.PaymentOrder{}).Where("id = ?", paymentID).Update("code_url", paySvcResp.NormalUrl).Error
+			if dErr != nil {
+				logrus.Warnf("failed to update payment order code url: %v", dErr)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		SetErrorResp(c, http.StatusConflict, gin.H{"error": fmt.Sprint("failed to create payment order: ", err)})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"redirectUrl": paySvcResp.NormalUrl, "success": true})
 }

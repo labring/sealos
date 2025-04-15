@@ -26,6 +26,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
 	"github.com/labring/sealos/controllers/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
@@ -108,7 +112,7 @@ type AccountReconciler struct {
 	InitUserAccountFunc         func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
 	Scheme                      *runtime.Scheme
 	Logger                      logr.Logger
-	AccountSystemNamespace      string
+	accountSystemNamespace      string
 	DBClient                    database.Account
 	CVMDBClient                 database.CVM
 	MongoDBURI                  string
@@ -168,7 +172,103 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
+	if err := r.syncDebt(ctx, owner); err != nil {
+		return nil, fmt.Errorf("sync user debt failed: %v", err)
+	}
 	return
+}
+
+func (r *AccountReconciler) syncDebt(ctx context.Context, owner string) error {
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: owner})
+	if err != nil {
+		return fmt.Errorf("get userUID failed: %v", err)
+	}
+	var count int64
+	err = r.AccountV2.GetGlobalDB().Model(&pkgtypes.Debt{}).Where("user_uid = ?", userUID).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("check user debt existence failed: %v", err)
+	}
+	if count <= 0 {
+		createDebt, err := r.initializeDebt(ctx, owner, userUID)
+		if err != nil {
+			return fmt.Errorf("initialize user debt failed: %v", err)
+		}
+		if err = r.AccountV2.GetGlobalDB().Create(createDebt).Error; err != nil {
+			return fmt.Errorf("create user debt failed: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *AccountReconciler) initializeDebt(ctx context.Context, owner string, userUID uuid.UUID) (*pkgtypes.Debt, error) {
+	debtCr := &accountv1.Debt{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: r.accountSystemNamespace, Name: "debt-" + owner}, debtCr)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get user debt from CR: %v", err)
+		}
+		return &pkgtypes.Debt{
+			UserUID:           userUID,
+			AccountDebtStatus: pkgtypes.NormalPeriod,
+			CreatedAt:         time.Now().UTC(),
+			UpdatedAt:         time.Now().UTC(),
+		}, nil
+	}
+
+	return convertDebtCrToDebt(debtCr, userUID), nil
+}
+
+func convertDebtCrToDebt(debtCr *accountv1.Debt, userUID uuid.UUID) *pkgtypes.Debt {
+	debt := &pkgtypes.Debt{
+		UserUID:           userUID,
+		AccountDebtStatus: convertDebtStatus(debtCr.Status.AccountDebtStatus),
+		CreatedAt:         debtCr.CreationTimestamp.Time.UTC(),
+	}
+	if debtCr.Status.LastUpdateTimestamp > 0 {
+		debt.UpdatedAt = time.Unix(debtCr.Status.LastUpdateTimestamp, 0).UTC()
+	} else {
+		debt.UpdatedAt = debtCr.CreationTimestamp.Time.UTC()
+	}
+	statusRecords := make([]pkgtypes.DebtStatusRecord, len(debtCr.Status.DebtStatusRecords))
+	for i, record := range debtCr.Status.DebtStatusRecords {
+		statusRecords[i] = pkgtypes.DebtStatusRecord{
+			ID:            uuid.New(),
+			UserUID:       userUID,
+			LastStatus:    convertDebtStatus(record.LastStatus),
+			CurrentStatus: convertDebtStatus(record.CurrentStatus),
+			CreateAt:      record.UpdateTime.UTC(),
+		}
+	}
+	debt.StatusRecords = statusRecords
+	return debt
+}
+
+func convertDebtStatus(statusType accountv1.DebtStatusType) pkgtypes.DebtStatusType {
+	switch statusType {
+	case accountv1.NormalPeriod:
+		return pkgtypes.NormalPeriod
+	case accountv1.WarningPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.ApproachingDeletionPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.ImminentDeletionPeriod:
+		return pkgtypes.DebtDeletionPeriod
+	case accountv1.LowBalancePeriod:
+		return pkgtypes.LowBalancePeriod
+	case accountv1.CriticalBalancePeriod:
+		return pkgtypes.CriticalBalancePeriod
+	case accountv1.DebtPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.DebtDeletionPeriod:
+		return pkgtypes.DebtDeletionPeriod
+	case accountv1.FinalDeletionPeriod:
+		return pkgtypes.FinalDeletionPeriod
+	case "":
+		return pkgtypes.NormalPeriod
+	default:
+		logrus.Errorf("unknown debt status type: %v", statusType)
+		return ""
+	}
 }
 
 func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
@@ -247,8 +347,8 @@ func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
-	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
-	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == "true"
+	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
 	if SubscriptionEnabled {
 		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
 		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
@@ -425,5 +525,5 @@ func (r *AccountReconciler) BillingCVM() error {
 }
 
 func init() {
-	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == "true"
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
 }

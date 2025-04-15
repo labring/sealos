@@ -866,6 +866,7 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 func AddDeductionAccount(tx *gorm.DB, userUID uuid.UUID, amount int64) error {
 	return tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(map[string]interface{}{
 		`"deduction_balance"`: gorm.Expr("deduction_balance + ?", amount),
+		`"updated_at"`:        gorm.Expr("CURRENT_TIMESTAMP"),
 	}).Error
 }
 
@@ -883,6 +884,7 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	if isActive {
 		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
 	}
+	exprs["updated_at"] = gorm.Expr("CURRENT_TIMESTAMP")
 	result := db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs)
 	return HandleUpdateResult(result, types.Account{}.TableName())
 }
@@ -1491,6 +1493,7 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		DeductionBalance:        c.ZeroAccount.DeductionBalance,
 		CreateRegionID:          c.LocalRegion.UID.String(),
 		CreatedAt:               time.Now(),
+		UpdatedAt:               time.Now(),
 	}
 
 	if err := c.DB.FirstOrCreate(account).Error; err != nil {
@@ -1544,7 +1547,7 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 				Status:     types.CreditsStatusActive,
 			}
 			creditsCount := int64(0)
-			if err := tx.Model(&types.Credits{}).Where(&types.Credits{UserUID: ops.UID, FromID: credits.FromID, FromType: credits.FromType}).Count(&creditsCount).Error; err != nil {
+			if err := c.DB.Model(&types.Credits{}).Where(&types.Credits{UserUID: ops.UID, FromID: credits.FromID, FromType: credits.FromType}).Count(&creditsCount).Error; err != nil {
 				return fmt.Errorf("failed to create credits: %w", err)
 			}
 			if creditsCount == 0 {
@@ -1564,7 +1567,7 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 			NextCycleDate: now.AddDate(0, 1, 0),
 		}
 		subCount := int64(0)
-		if err := tx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: ops.UID}).Count(&subCount).Error; err != nil {
+		if err := c.DB.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: ops.UID}).Count(&subCount).Error; err != nil {
 			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 		if subCount == 0 {
@@ -1683,7 +1686,7 @@ func (c *Cockroach) InitTables() error {
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
-		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.UserDebt{})
+		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
@@ -1695,6 +1698,14 @@ func (c *Cockroach) InitTables() error {
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "activityType" TEXT;`, gorm.Expr(tableName)).Error
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %v", err)
+		}
+	}
+	if !c.DB.Migrator().HasColumn(&types.Account{}, `updated_at`) {
+		fmt.Println("add column updated_at")
+		tableName := types.Account{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column updated_at: %v", err)
 		}
 	}
 	if !c.DB.Migrator().HasColumn(&types.AccountTransaction{}, "credit_id_list") {

@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	"k8s.io/client-go/rest"
 
 	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -651,7 +653,7 @@ func deleteResource(dynamicClient dynamic.Interface, resource, namespace string)
 	err := dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}, v12.ListOptions{})
-	if err != nil {
+	if err != nil && !errors.IsNotFound(err) {
 		return fmt.Errorf("failed to delete %s: %v", resource, err)
 	}
 	return nil
