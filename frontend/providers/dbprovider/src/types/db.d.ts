@@ -1,20 +1,19 @@
-import { DBTypeEnum, DBStatusEnum, PodStatusEnum } from '@/constants/db';
 import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
+import { DBStatusEnum, DBTypeEnum } from '@/constants/db';
 import type {
-  V1Deployment,
   V1ConfigMap,
-  V1Service,
-  V1Ingress,
-  V1Secret,
+  V1ContainerStatus,
+  V1Deployment,
   V1HorizontalPodAutoscaler,
+  V1Ingress,
   V1Pod,
-  SinglePodMetrics,
-  V1StatefulSet,
-  V1ContainerStatus
+  V1Secret,
+  V1Service,
+  V1StatefulSet
 } from '@kubernetes/client-node';
-import { I18nCommonKey } from './i18next';
 import { AutoBackupFormType } from './backup';
 import { KubeBlockClusterTerminationPolicy } from './cluster';
+import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
 
@@ -54,7 +53,11 @@ export interface DBListItemType {
   createTime: string;
   cpu: number;
   memory: number;
-  storage: string;
+  storage: number;
+  replicas: number;
+  totalCpu: number;
+  totalMemory: number;
+  totalStorage: number;
   conditions: DBConditionItemType[];
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
@@ -116,6 +119,9 @@ export interface DBDetailType extends DBEditType {
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
   source: DBSource;
+  totalCpu: number;
+  totalMemory: number;
+  totalStorage: number;
 }
 
 export interface DBConditionItemType {

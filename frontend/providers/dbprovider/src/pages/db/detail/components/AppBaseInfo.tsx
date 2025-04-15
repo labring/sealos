@@ -6,6 +6,7 @@ import {
   getDBServiceByName,
   getDBStatefulSetByName
 } from '@/api/db';
+import FormControl from '@/components/FormControl';
 import MyIcon from '@/components/Icon';
 import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
 import useEnvStore from '@/store/env';
@@ -22,7 +23,6 @@ import {
   Flex,
   FlexProps,
   FormErrorMessage,
-  FormHelperText,
   FormLabel,
   Input,
   Modal,
@@ -39,12 +39,11 @@ import {
 } from '@chakra-ui/react';
 import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
-import { pick, set } from 'lodash';
+import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useMemo, useState } from 'react';
+import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { Controller, Form, SubmitHandler, useController, useForm } from 'react-hook-form';
-import FormControl from '@/components/FormControl';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -194,12 +193,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         name: 'config_info',
         iconName: 'settings',
         items: [
-          { label: 'limit_cpu', value: `${db.cpu / 1000} Core` },
+          { label: 'limit_cpu', value: `${db.totalCpu / 1000} Core` },
           {
             label: 'limit_memory',
-            value: printMemory(db.memory)
+            value: printMemory(db.totalMemory)
           },
-          { label: 'storage', value: `${db.storage}Gi` }
+          { label: 'storage', value: `${db.totalStorage}Gi` }
         ]
       }
     ],

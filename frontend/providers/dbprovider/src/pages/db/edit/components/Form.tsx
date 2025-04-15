@@ -28,7 +28,6 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
-  Button,
   Center,
   Checkbox,
   Flex,
@@ -41,10 +40,6 @@ import {
   NumberInput,
   NumberInputField,
   NumberInputStepper,
-  Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
   Switch,
   Table,
   TableContainer,
@@ -305,9 +300,9 @@ const Form = ({
     if (getValues('memory') < minMemory) {
       setValue('memory', minMemory);
     }
-    setValue('storage', Math.max(3, minStorage * 2));
+    setValue('storage', Math.max(3, minStorage, allocatedStorage));
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getValues('dbType')]);
+  }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
 

@@ -1,5 +1,6 @@
-import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
+import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
@@ -9,24 +10,18 @@ import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
+import { Box, Button, Center, Flex, Image, useDisclosure, useTheme } from '@chakra-ui/react';
+import { useMessage } from '@sealos/ui';
 import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Image,
-  MenuButton,
-  useDisclosure,
-  useTheme
-} from '@chakra-ui/react';
-import { MyTable, SealosMenu, useMessage } from '@sealos/ui';
-import { getCoreRowModel, getFilteredRowModel, useReactTable } from '@tanstack/react-table';
+  ColumnDef,
+  getCoreRowModel,
+  getFilteredRowModel,
+  useReactTable
+} from '@tanstack/react-table';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useState, useMemo } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import { CustomMenu } from '@/components/BaseTable/customMenu';
+import { useCallback, useMemo, useState } from 'react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -163,17 +158,17 @@ const DBList = ({
       {
         accessorKey: 'cpu',
         header: () => t('cpu'),
-        cell: ({ row }) => <>{row.original.cpu / 1000}C</>
+        cell: ({ row }) => <>{row.original.totalCpu / 1000}C</>
       },
       {
         accessorKey: 'memory',
         header: () => t('memory'),
-        cell: ({ row }) => <>{printMemory(row.original.memory)}</>
+        cell: ({ row }) => <>{printMemory(row.original.totalMemory)}</>
       },
       {
         accessorKey: 'storage',
         header: () => t('storage'),
-        cell: ({ row }) => <>{row.original.storage}Gi</>
+        cell: ({ row }) => <>{row.original.totalStorage}Gi</>
       },
       {
         id: 'actions',

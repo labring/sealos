@@ -3,11 +3,11 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { dbTypeMap, fetchDBSecret } from '@/utils/database';
-import { KubeFileSystem } from '@/utils/kubeFileSystem';
 import { DBType } from '@/types/db';
+import { dbTypeMap, fetchDBSecret } from '@/utils/database';
 import { json2BasicOps } from '@/utils/json2Yaml';
+import { KubeFileSystem } from '@/utils/kubeFileSystem';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export type EditPasswordReq = {
   dbName: string;
@@ -49,12 +49,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           `-p${password}`,
           `-h${host}`,
           `-P${port}`,
-          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';`
+          `-e ALTER USER '${username}'@'%' IDENTIFIED BY '${newPassword}';`
         ]
       ],
       [
         DBTypeEnum.postgresql,
-        ['psql', '-U', 'postgres', `-c ALTER USER ${username} PASSWORD '${newPassword}';`]
+        ['psql', '-U', 'postgres', `-c ALTER USER ${username} WITH PASSWORD '${newPassword}';`]
       ],
       [
         DBTypeEnum.mongodb,
@@ -109,6 +109,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       if (result.includes('exception') || result.includes('ServerError')) {
         throw new Error('Failed to change password');
       }
+    }
+
+    if (dbType === DBTypeEnum.postgresql) {
+      await kubefs.execCommand(
+        namespace,
+        firstPodName,
+        DBBackupPolicyNameMap[dbType],
+        ['psql', '-U', 'postgres', `-c ALTER USER standby WITH PASSWORD '${newPassword}';`],
+        false
+      );
     }
 
     const secretName = dbName + '-conn-credential';

@@ -1,14 +1,14 @@
 import {
-  DBEditType,
+  DBComponentsName,
   DBDetailType,
-  PodDetailType,
-  DBType,
-  ReconfigStatusMapType,
+  DBEditType,
   DBSourceType,
-  DBComponentsName
+  DBType,
+  PodDetailType,
+  ReconfigStatusMapType
 } from '@/types/db';
-import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 import { I18nCommonKey } from '@/types/i18next';
+import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -327,7 +327,10 @@ export const defaultDBDetail: DBDetailType = {
     hasSource: false,
     sourceName: '',
     sourceType: 'app_store'
-  }
+  },
+  totalCpu: 0,
+  totalMemory: 0,
+  totalStorage: 0
 };
 
 export const defaultPod: PodDetailType = {
