@@ -47,7 +47,6 @@ export async function GET(req: NextRequest) {
       },
       jwtSecret
     );
-    console.log('token', token);
 
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',

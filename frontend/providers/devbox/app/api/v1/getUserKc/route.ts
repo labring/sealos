@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
     );
 
     const desktopResponse = await fetch(
-      `http://${process.env.SEALOS_DOMAIN}/api/auth/getKubeconfig`,
+      `https://${process.env.SEALOS_DOMAIN}/api/auth/getKubeconfig`,
       {
         headers: {
           authorization: desktopToken
@@ -68,11 +68,9 @@ export async function GET(req: NextRequest) {
 
     const desktopData = await desktopResponse.json();
 
-    console.log('desktopData', desktopData);
-
     return jsonRes({
       data: {
-        kc: desktopData.kubeconfig
+        kc: desktopData.data.kubeconfig
       }
     });
   } catch (err: any) {
