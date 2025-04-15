@@ -19,9 +19,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"time"
-
-	"github.com/avast/retry-go"
 )
 
 type Client struct {
@@ -33,56 +30,15 @@ var (
 	ErrorManifestNotFound = errors.New("manifest not found")
 )
 
-func (t *Client) TagImage(hostName string, imageName string, oldTag string, newTag string) error {
-	return retry.Do(func() error {
-		manifest, err := t.pullManifest(t.Username, t.Password, hostName, imageName, oldTag)
-		if err != nil {
-			return err
-		}
-		return t.pushManifest(t.Username, t.Password, hostName, imageName, newTag, manifest)
-	}, retry.Delay(time.Second*5), retry.Attempts(3), retry.LastErrorOnly(true))
-}
+// TODO: refactor tag image, use go package to do this
 
-//func (t *Client) login(authPath string, username string, password string, imageName string) (string, error) {
-//	var (
-//		client = http.DefaultClient
-//		url    = authPath + imageName + ":pull,push"
-//	)
-//
-//	req, err := http.NewRequest("GET", url, nil)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	req.SetBasicAuth(username, password)
-//
-//	resp, err := client.Do(req)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	if resp.StatusCode != http.StatusOK {
-//		return "", errors.New(resp.Status)
-//	}
-//
-//	bodyText, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		return "", err
-//	}
-//	var data struct {
-//		Token       string `json:"token"`
-//		AccessToken string `json:"access_token"`
-//		ExpiresIn   int    `json:"expires_in"`
-//		IssuedAt    string `json:"issued_at"`
-//	}
-//	if err := json.Unmarshal(bodyText, &data); err != nil {
-//		return "", err
-//	}
-//	if data.Token == "" {
-//		return "", errors.New("empty token")
-//	}
-//	return data.Token, nil
-//}
+func (t *Client) TagImage(hostName string, imageName string, oldTag string, newTag string) error {
+	manifest, err := t.pullManifest(t.Username, t.Password, hostName, imageName, oldTag)
+	if err != nil {
+		return err
+	}
+	return t.pushManifest(t.Username, t.Password, hostName, imageName, newTag, manifest)
+}
 
 func (t *Client) pullManifest(username string, password string, hostName string, imageName string, tag string) ([]byte, error) {
 	var (
