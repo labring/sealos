@@ -31,15 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const showTableCommand: Map<DBTypeEnum, string[]> = new Map([
       [
         DBTypeEnum.mysql,
-        [
-          'mysql',
-          `-u${username}`,
-          `-p${password}`,
-          `-h${host}`,
-          `-P${port}`,
-          databaseName,
-          '-e SHOW TABLES;'
-        ]
+        ['mysql', `-u${username}`, `-p${password}`, databaseName, '-e SHOW TABLES;']
       ],
       [
         DBTypeEnum.postgresql,

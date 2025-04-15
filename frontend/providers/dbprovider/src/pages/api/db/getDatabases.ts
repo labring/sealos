@@ -28,10 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     );
 
     const showDatabaseCommand: Map<DBTypeEnum, string[]> = new Map([
-      [
-        DBTypeEnum.mysql,
-        ['mysql', `-u${username}`, `-p${password}`, `-h${host}`, `-P${port}`, `-e SHOW DATABASES;`]
-      ],
+      [DBTypeEnum.mysql, ['mysql', `-u${username}`, `-p${password}`, `-e SHOW DATABASES;`]],
       [DBTypeEnum.postgresql, ['psql', '-U', 'postgres', '-c', 'SELECT datname FROM pg_database;']],
       [
         DBTypeEnum.mongodb,

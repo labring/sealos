@@ -383,5 +383,6 @@
   "has_comps": "有 {number} 个组件",
   "each": "各{perc}",
   "occupy": "占用{num}",
-  "ha_desc": "哨兵节点额外占用资源"
+  "ha_desc": "哨兵节点额外占用资源",
+  "pod_completed": "Pod已经结束，无法查看日志"
 }

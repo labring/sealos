@@ -383,5 +383,6 @@
   "has_comps": "has {number} components",
   "each": "{perc} each",
   "occupy": "occupies {num}",
-  "ha_desc": "Sentinel nodes take up extra resources"
+  "ha_desc": "Sentinel nodes take up extra resources",
+  "pod_completed": "Pod has ended, cannot view logs"
 }
