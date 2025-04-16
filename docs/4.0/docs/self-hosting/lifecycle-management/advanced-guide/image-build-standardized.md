@@ -88,7 +88,7 @@ Descriptions of each parameter:
   - defaultVIP: Default VIP address.
   - disableApparmor: Whether to disable apparmor (containerd has this issue).
   - registryConfig: Configuration directory of the container image registry.
-  - registryData: Data directory for the container image registry (The configuration itself has no practical meaning. because the directory is mounted and it's actually stored in `/var/lib/sealos`).
+  - registryData: Data directory of the container image registry (The configuration itself has no practical meaning. because the directory is mounted and it's actually stored in `/var/lib/sealos`).
   - registryDomain: Default domain of the container image registry.
   - registryPassword: Default Password of the container image registry.
   - registryPort: Default port number of the container image registry.
