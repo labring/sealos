@@ -120,16 +120,17 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     } catch (err) {}
     try {
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
+
       await createDB({ dbForm: formData, isEdit });
       toast({
         title: t(applySuccess),
