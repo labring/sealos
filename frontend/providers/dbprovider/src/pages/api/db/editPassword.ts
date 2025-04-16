@@ -121,6 +121,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       );
     }
 
+    if (dbType === DBTypeEnum.mysql) {
+      await kubefs.execCommand(
+        namespace,
+        firstPodName,
+        DBBackupPolicyNameMap[dbType],
+        [
+          'mysql',
+          `-u${username}`,
+          `-p${password}`,
+          `-h${host}`,
+          `-P${port}`,
+          `-e ALTER USER 'root'@'localhost' IDENTIFIED BY 'xxxx';`
+        ],
+        false
+      );
+    }
+
     const secretName = dbName + '-conn-credential';
     body.data![dbTypeMap[dbType].passwordKey] = Buffer.from(newPassword).toString('base64');
     const k8s_result = await k8sCore.replaceNamespacedSecret(secretName, namespace, body);
