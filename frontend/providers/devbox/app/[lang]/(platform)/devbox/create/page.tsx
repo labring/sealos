@@ -254,8 +254,7 @@ const DevboxCreatePage = () => {
       }
       router.push(lastRoute);
     } catch (error) {
-      console.log('error', error);
-      if (error instanceof String && error.includes('402')) {
+      if (typeof error === 'string' && error.includes('402')) {
         setErrorMessage(t('outstanding_tips'));
       } else setErrorMessage(JSON.stringify(error));
     }
