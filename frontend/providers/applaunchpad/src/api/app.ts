@@ -14,7 +14,6 @@ import { ExportAppPayload } from '@/pages/api/exportApp';
 import { NodeInfo } from '@/pages/api/getNodes';
 import { UploadAppPayload } from '@/pages/api/uploadApp';
 import { ImageHubItem } from '@/pages/api/imagehub/get';
-import { ExportMultipleAppsPayload } from '@/pages/api/exportMultipleApps';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
 
@@ -203,8 +202,8 @@ export const exportApp = (data: ExportAppPayload) =>
     error?: string;
   }>(`/api/exportApp`, data);
 
-export const exportMultipleApps = (data: ExportMultipleAppsPayload) =>
-  POST(`/api/exportMultipleApps`, data);
+export const exportApps = (data: { appNames: string[]; namespace: string }) =>
+  POST(`/api/exportApps`, data);
 
 export const uploadApp = (data: UploadAppPayload) => {
   const formData = new FormData();

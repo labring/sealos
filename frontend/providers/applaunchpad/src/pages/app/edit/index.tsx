@@ -1,4 +1,4 @@
-import { exportApp, getAppByName, postDeployApp, putApp } from '@/api/app';
+import { exportApp, exportApps, getAppByName, postDeployApp, putApp } from '@/api/app';
 import { updateDesktopGuide } from '@/api/platform';
 import { noGpuSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
@@ -246,76 +246,13 @@ const EditApp = ({
     });
   }, [formHook.formState.errors, t, toast]);
 
-  // 导出多个应用
-  const exportMultipleApps = async (selectedApps: string[]) => {
-    try {
-      const appsExportData: Record<
-        string,
-        {
-          yaml: string;
-          images: { name: string }[];
-        }
-      > = {};
-
-      // 获取每个应用的详细信息
-      for (const appName of selectedApps) {
-        try {
-          // 获取应用详情
-          const appDetail = await getAppByName(namespace, appName);
-
-          if (appDetail) {
-            // 获取该应用的容器镜像
-            const appImages = appDetail.containers.map((container) => {
-              if (!container.imageName.includes('sealos.hub:5000')) {
-                return { name: `sealos.hub:5000/${container.imageName}` };
-              } else {
-                return { name: container.imageName };
-              }
-            });
-
-            // 获取该应用的YAML
-            if (appDetail.crYamlList && appDetail.crYamlList.length > 0) {
-              const appYamlString = appDetail.crYamlList
-                .map((item: any) => {
-                  return YAML.dump(item);
-                })
-                .join('---\n');
-
-              // 将应用信息存储到对象中，键为应用名称
-              appsExportData[appName] = {
-                yaml: appYamlString,
-                images: appImages
-              };
-            }
-          }
-        } catch (error) {
-          console.error(`获取应用 ${appName} 详情失败:`, error);
-        }
-      }
-
-      if (Object.keys(appsExportData).length === 0) {
-        toast({
-          status: 'error',
-          duration: null,
-          isClosable: true,
-          title: '没有应用可导出或获取应用信息失败'
-        });
-        return appsExportData;
-      }
-
-      console.log('应用导出数据:', appsExportData);
-
-      return appsExportData;
-
-      // todo call api
-    } catch (error) {
-      toast({
-        status: 'error',
-        title: '导出多个应用失败'
-      });
-      return {};
-    }
-  };
+  // test
+  // useEffect(() => {
+  //   exportApps({
+  //     namespace: currentNamespace,
+  //     appNames: ['hello-world2', 'hello-world']
+  //   });
+  // }, []);
 
   useQuery(
     ['initLaunchpadApp'],

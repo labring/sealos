@@ -102,10 +102,6 @@ const AppBaseInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
     ];
   }, [app]);
 
-  const modelInfo = useMemo(() => {
-   console.log("apppppp", app)
-  }, [app]);
-
   return (
     <Box px={6} py={7} position={'relative'}>
       <>
