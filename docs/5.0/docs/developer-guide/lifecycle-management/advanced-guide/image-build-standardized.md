@@ -113,7 +113,7 @@ Descriptions of each parameter:
       this configuration actually has no practical significance, it's actually stored under /var/lib/sealos).
     - registryDomain: The default domain of the image repository.
     - registryPassword: The password of the default image repository.
-    - registryPort: The password of the default image repository.
+    - registryPort: The port of the default image repository.
     - registryUsername: The account of the default image repository.
     - sandboxImage: Default sandbox_image for cri to start. (No need to write repo, just need to write image name, eg:
       pasue:3.7).
