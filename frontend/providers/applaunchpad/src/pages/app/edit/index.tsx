@@ -246,6 +246,7 @@ const EditApp = ({
     });
   }, [formHook.formState.errors, t, toast]);
 
+  // 导出多个应用
   const exportMultipleApps = async (selectedApps: string[]) => {
     try {
       const appsExportData: Record<
@@ -315,11 +316,6 @@ const EditApp = ({
       return {};
     }
   };
-
-  useEffect(() => {
-    // test
-    // exportMultipleApps(['hello-world2']);
-  }, []);
 
   useQuery(
     ['initLaunchpadApp'],
