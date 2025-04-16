@@ -114,7 +114,7 @@ Descriptions of each parameter:
     - registryDomain: Default domain of the container image registry.
     - registryPassword: Default Password of the container image registry.
     - registryPort: Default port number of the container image registry.
-    - registryUsername: Default username of the default container image registry.
+    - registryUsername: Default username of the container image registry.
     - sandboxImage: Default sandbox_image for cri to start. (No need to write repo, just need to write image name, eg:
       pasue:3.7).
 - `COPY`: The `COPY` directive copies new files or directories from `<src>` and adds them to the file system path
