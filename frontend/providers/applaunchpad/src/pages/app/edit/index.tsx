@@ -357,15 +357,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
               // quote check
-              const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-              if (quoteCheckRes) {
-                return toast({
-                  status: 'warning',
-                  title: t(quoteCheckRes),
-                  duration: 5000,
-                  isClosable: true
-                });
-              }
+              // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+              // if (quoteCheckRes) {
+              //   return toast({
+              //     status: 'warning',
+              //     title: t(quoteCheckRes),
+              //     duration: 5000,
+              //     isClosable: true
+              //   });
+              // }
+
               // check network port
               if (!checkNetworkPorts(data.networks)) {
                 return toast({
