@@ -2825,6 +2825,7 @@ spec:
                 enum:
                 - Running
                 - Stopped
+                - Shutdown
                 type: string
               templateID:
                 type: string

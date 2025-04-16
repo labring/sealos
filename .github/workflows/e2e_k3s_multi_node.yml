@@ -2,7 +2,7 @@ name: E2E k3s Multi Node Test
 
 on:
   workflow_dispatch:
-  pull_request_target:
+  pull_request:
     types: [ labeled ]
 
 env:
@@ -75,9 +75,9 @@ jobs:
           set -ex
           sudo su
           chmod a+x /tmp/e2e.test
-          gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
+          gzip /tmp/sealos/images/patch-"${SEALOS_TEST_ARCH}".tar
           /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_multi_node_test"
-          echo 'test_${{ matrix.arch }}_result=success' >> "$GITHUB_OUTPUT"
+          echo "test_${SEALOS_TEST_ARCH}_result=success" >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
     runs-on: ubuntu-24.04
@@ -96,4 +96,4 @@ jobs:
           repository: ${{ github.repository }}
           body: |
             🤖 says: E2E k3s multi node `ARM64` Test Result: ${{ env.ARM_TEST_RESULT }} , E2E k3s multi node `AMD64` Apply Test Result: ${{ env.AMD_TEST_RESULT }}<br/>See: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          token: "${{ secrets.GH_PAT }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"

@@ -90,7 +90,8 @@ const map = {
   help: require('./icons/help.svg').default,
   infoRounded: require('./icons/infoRounded.svg').default,
   arrowUpRight: require('./icons/arrowUpRight.svg').default,
-  ellipse: require('./icons/ellipse.svg').default
+  ellipse: require('./icons/ellipse.svg').default,
+  ellipseFull: require('./icons/ellipseFull.svg').default
 };
 
 const MyIcon = ({

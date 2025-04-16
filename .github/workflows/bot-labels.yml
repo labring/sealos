@@ -10,5 +10,4 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/labeler@v4
-        with:
-          repo-token: "${{ secrets.GH_PAT }}"
+# no more lines here.

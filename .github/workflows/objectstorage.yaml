@@ -77,8 +77,10 @@ jobs:
         uses: rlespinasse/git-commit-data-action@v1
       - name: Check if tag
         id: check_tag
+        env:
+          REF: ${{ github.ref }}
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+          if [[ "$REF" == refs/tags/* ]]; then
             echo "isTag=true" >> "$GITHUB_OUTPUT"
           else
             echo "isTag=false" >> "$GITHUB_OUTPUT"
@@ -108,39 +110,48 @@ jobs:
 
       - name: Sealos login to ghcr.io
         # if push to master, then login to ghcr.io
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+          sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
 
       - name: Build sealos cloud cluster image
         working-directory: deploy/objectstorage
+        env:
+          BUILD_FROM: ${{ inputs.build_from }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          PREPARE_REPO: ${{ steps.prepare.outputs.repo }}
+          PREPARE_TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
-          [ -z "${{ inputs.build_from }}" ] && BuildFromTag="latest" || BuildFromTag="${{ inputs.build_from }}"; echo "BuildFromTag=${BuildFromTag}" 
-          sed -i "s#labring#${{ github.repository_owner }}#g" init.sh
+          [ -z "$BUILD_FROM" ] && BuildFromTag="latest" || BuildFromTag="$BUILD_FROM"; 
+          echo "BuildFromTag=${BuildFromTag}" 
+
+          sed -i "s#labring#${REPOSITORY_OWNER}#g" init.sh
           sed -i "s#latest#${BuildFromTag}#g" init.sh
-          
+
           sudo bash init.sh amd64 
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-amd64 --platform linux/amd64 -f Kubefile
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-amd64 --platform linux/amd64 -f Kubefile
-          
+          sudo sealos build -t "${PREPARE_REPO}:${PREPARE_TAG_NAME}-amd64" --platform linux/amd64 -f Kubefile
+          sudo sealos build -t "${PREPARE_REPO}:latest-amd64" --platform linux/amd64 -f Kubefile
           
           # delete old registry cache
           sudo rm -rf registry
           sudo rm -rf tars
-          
+
           sudo bash init.sh arm64 
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}-arm64 --platform linux/arm64 -f Kubefile
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:latest-arm64 --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${PREPARE_REPO}:${PREPARE_TAG_NAME}-arm64" --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${PREPARE_REPO}:latest-arm64" --platform linux/arm64 -f Kubefile
 
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
         env:
           OWNER: ${{ github.repository_owner }}
-          REPO: ${{ steps.prepare.outputs.repo }}
-          TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
+          CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
+          LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
         run: |
           sudo sealos images
-          bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
-          bash scripts/manifest-cluster-images.sh "$REPO:latest"
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
 
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
@@ -148,7 +159,7 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"

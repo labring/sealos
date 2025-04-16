@@ -164,9 +164,9 @@ export const adaptDevboxVersionListItem = (
     createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     tag: devboxRelease.spec.newTag || 'v1.0.0',
     status:
-      devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
+      devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Failed,
+        : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'
   };
 };
@@ -182,7 +182,7 @@ export const adaptDevboxVersionListItemV2 = (
     status:
       devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Failed,
+        : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'
   };
 };

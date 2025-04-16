@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
         const rule = item.spec.rules[0];
         const host = rule.host;
-        const fetchUrl = `http://${host}`;
+        const fetchUrl = `https://${host}`;
         const url = `https://${host}`;
 
         try {
@@ -47,17 +47,22 @@ export async function GET(request: NextRequest) {
             cache: 'no-store'
           });
 
-          if (response.status === 503) {
-            return { ready: false, url, error: 'Service Unavailable (503)' };
+          if (response.status === 404 && response.headers.get('content-length') === '0') {
+            return { ready: false, url, error: '404' };
           }
 
           const text = await response.text();
-          if (text.includes('upstream not health')) {
-            return { ready: false, url, error: 'Upstream not healthy' };
+
+          if (
+            response.status === 503 &&
+            (text.includes('upstream connect error') || text.includes('upstream not health'))
+          ) {
+            return { ready: false, url, error: 'Service Unavailable (503)' };
           }
 
           return { ready: true, url };
         } catch (error) {
+          console.log('error', error);
           return { ready: false, url, error: 'fetch error' };
         }
       })
@@ -68,7 +73,6 @@ export async function GET(request: NextRequest) {
       data: checkResults
     });
   } catch (error: any) {
-    console.error(error);
     return jsonRes({
       code: 500,
       error: error?.message

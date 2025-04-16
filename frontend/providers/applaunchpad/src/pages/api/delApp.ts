@@ -88,7 +88,16 @@ export async function DeleteAppByName({ name, req }: DeleteAppParams & { req: Ne
 
   /* delete all sources */
   const delDependent = await Promise.allSettled([
-    k8sCore.deleteNamespacedService(name, namespace), // delete service
+    // delete service
+    k8sCore.deleteCollectionNamespacedService(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${appDeployKey}=${name}`
+    ),
     k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
     k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
     // delete Ingress

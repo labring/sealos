@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -114,12 +115,20 @@ func (r *DevBoxReleaseReconciler) CreateReleaseTag(ctx context.Context, devboxRe
 	if err := r.Get(ctx, devboxInfo, devbox); err != nil {
 		return err
 	}
-	hostName, imageName, oldTag, err := r.GetImageInfo(devbox)
+	// if original image is not set, set it to the last successful commit history
+	if devboxRelease.Status.OriginalImage == "" {
+		commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
+		if commitHistory == nil {
+			return fmt.Errorf("no successful commit history found")
+		}
+		devboxRelease.Status.OriginalImage = commitHistory.Image
+	}
+	// get image info from devbox last successful commit history image and devbox release original image
+	hostName, imageName, oldTag, err := r.GetImageInfo(devbox, devboxRelease)
 	if err != nil {
 		return err
 	}
 	logger.Info("Tagging image", "host", hostName, "image", imageName, "oldTag", oldTag, "newTag", devboxRelease.Spec.NewTag)
-	devboxRelease.Status.OriginalImage = imageName + ":" + oldTag
 	if err = r.Status().Update(ctx, devboxRelease); err != nil {
 		logger.Error(err, "Failed to update status", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag)
 		return err
@@ -132,25 +141,31 @@ func (r *DevBoxReleaseReconciler) DeleteReleaseTag(_ context.Context, _ *devboxv
 	return nil
 }
 
-func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox) (string, string, string, error) {
-	if len(devbox.Status.CommitHistory) == 0 {
-		return "", "", "", fmt.Errorf("commit history is empty")
-	}
-	commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
-	if commitHistory == nil {
-		return "", "", "", fmt.Errorf("no successful commit history found")
-	}
-	res, err := reference.ParseReference(commitHistory.Image)
+func (r *DevBoxReleaseReconciler) GetImageInfo(devbox *devboxv1alpha1.Devbox, devboxRelease *devboxv1alpha1.DevBoxRelease) (string, string, string, error) {
+	res, err := reference.ParseReference(devboxRelease.Status.OriginalImage)
 	if err != nil {
 		return "", "", "", err
 	}
-	repo := res.Context()
-	return repo.RegistryStr(), repo.RepositoryStr(), res.Identifier(), nil
+	registryStr := res.Context().RegistryStr()
+	// if registry is empty, use the last successful commit history image's registry
+	if registryStr == "" {
+		commitHistory := helper.GetLastPredicatedSuccessCommitHistory(devbox)
+		if commitHistory == nil {
+			return "", "", "", fmt.Errorf("no successful commit history found")
+		}
+		historyRepo, err := reference.ParseReference(commitHistory.Image)
+		if err != nil {
+			return "", "", "", err
+		}
+		registryStr = historyRepo.Context().RegistryStr()
+	}
+	return registryStr, res.Context().RepositoryStr(), res.Identifier(), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevBoxReleaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&devboxv1alpha1.DevBoxRelease{}).
 		Complete(r)
 }

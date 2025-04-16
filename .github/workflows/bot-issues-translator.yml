@@ -15,5 +15,5 @@ jobs:
       - uses: usthe/issues-translate-action@v2.7
         with:
           IS_MODIFY_TITLE: true
-          BOT_GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          BOT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CUSTOM_BOT_NOTE: Bot detected the issue body's language is not English, translate it automatically. 👯👭🏻🧑‍🤝‍🧑👫🧑🏿‍🤝‍🧑🏻👩🏾‍🤝‍👨🏿👬🏿

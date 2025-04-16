@@ -1,12 +1,14 @@
 name: 'Github Rebot for Cherry Pick when PR is merged'
 on:
-  pull_request_target:
+  pull_request:
     types:
       - closed
 
 jobs:
   comment:
     runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
     steps:
       - name: Comment cherry-pick command
         uses: actions/github-script@v5
@@ -50,4 +52,4 @@ jobs:
               issue_number: pr.number,
               body: cherryPickCmd
             });
-          github-token: ${{ secrets.GH_PAT }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
