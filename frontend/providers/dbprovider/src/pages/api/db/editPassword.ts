@@ -132,7 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           `-p${password}`,
           `-h${host}`,
           `-P${port}`,
-          `-e ALTER USER 'root'@'localhost' IDENTIFIED BY 'xxxx';`
+          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';`
         ],
         false
       );
