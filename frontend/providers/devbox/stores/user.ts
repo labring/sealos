@@ -2,14 +2,17 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-import { getUserQuota } from '@/api/platform';
+import { getUserDebt, getUserQuota } from '@/api/platform';
 import { DevboxEditType } from '@/types/devbox';
-import { UserQuotaItemType } from '@/types/user';
+import { UserDebtItemType, UserQuotaItemType } from '@/types/user';
 type TQuota = Pick<DevboxEditType, 'memory' | 'cpu' | 'gpu'> & { nodeports: number };
 type State = {
   balance: number;
   userQuota: UserQuotaItemType[];
+  userDebt: UserDebtItemType[];
+  isOutStandingPayment: boolean;
   loadUserQuota: () => Promise<null>;
+  loadUserDebt: () => Promise<null>;
   checkQuotaAllow: (request: TQuota, usedData?: TQuota) => string | undefined;
 };
 
@@ -18,10 +21,22 @@ export const useUserStore = create<State>()(
     immer((set, get) => ({
       balance: 5,
       userQuota: [],
+      userDebt: [],
+      isOutStandingPayment: false,
       loadUserQuota: async () => {
         const response = await getUserQuota();
         set((state) => {
           state.userQuota = response.quota;
+        });
+        return null;
+      },
+      loadUserDebt: async () => {
+        const response = await getUserDebt();
+        const isOutStandingPayment = response.debt.some((item) => item.limit === 0);
+
+        set((state) => {
+          state.isOutStandingPayment = isOutStandingPayment;
+          state.userDebt = response.debt;
         });
         return null;
       },

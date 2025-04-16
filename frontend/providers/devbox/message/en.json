@@ -273,6 +273,7 @@
   "start": "Start",
   "start_devbox": "Start",
   "start_error": "Start error",
+  "start_outstanding_tips": "Due to an outstanding balance on your account, you are unable to start or restart your Devbox. Please add funds to your account as soon as possible.",
   "start_runtime": "Runtime",
   "start_success": "Start succeeded",
   "start_time": "Started At",

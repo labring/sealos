@@ -6,8 +6,10 @@ import { SealosMenu, useMessage } from '@sealos/ui';
 import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react';
 
 import { useRouter } from '@/i18n';
+import { useUserStore } from '@/stores/user';
 import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
+import { DevboxStatusEnum } from '@/constants/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 
 import MyIcon from '@/components/Icon';
@@ -16,7 +18,6 @@ import PodLineChart from '@/components/PodLineChart';
 import { AdvancedTable } from '@/components/AdvancedTable';
 import DevboxStatusTag from '@/components/DevboxStatusTag';
 import ReleaseModal from '@/components/modals/ReleaseModal';
-import { DevboxStatusEnum } from '@/constants/devbox';
 import ShutdownModal from '@/components/modals/ShutdownModal';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
@@ -34,6 +35,7 @@ const DevboxList = ({
 
   // TODO: Unified Loading Behavior
   const { setLoading } = useGlobalStore();
+  const { isOutStandingPayment } = useUserStore();
 
   const [onOpenRelease, setOnOpenRelease] = useState(false);
   const [onOpenShutdown, setOnOpenShutdown] = useState(false);
@@ -51,6 +53,13 @@ const DevboxList = ({
     async (devbox: DevboxListItemTypeV2) => {
       try {
         setLoading(true);
+        if (isOutStandingPayment) {
+          toast({
+            title: t('start_outstanding_tips'),
+            status: 'error'
+          });
+          return;
+        }
         await restartDevbox({ devboxName: devbox.name });
         toast({
           title: t('restart_success'),
@@ -66,12 +75,19 @@ const DevboxList = ({
       refetchDevboxList();
       setLoading(false);
     },
-    [refetchDevboxList, setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast, isOutStandingPayment]
   );
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
       try {
         setLoading(true);
+        if (isOutStandingPayment) {
+          toast({
+            title: t('start_outstanding_tips'),
+            status: 'error'
+          });
+          return;
+        }
         await startDevbox({ devboxName: devbox.name });
         toast({
           title: t('start_success'),
@@ -87,7 +103,7 @@ const DevboxList = ({
       refetchDevboxList();
       setLoading(false);
     },
-    [refetchDevboxList, setLoading, t, toast]
+    [refetchDevboxList, setLoading, t, toast, isOutStandingPayment]
   );
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
