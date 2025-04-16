@@ -788,7 +788,7 @@ func sendUserPayEmail(userUID uuid.UUID, emailRender utils.EmailRenderBuilder) e
 		if err = tmp.Execute(&rendered, emailRender.Build()); err != nil {
 			return fmt.Errorf("failed to render email template: %w", err)
 		}
-		if err := dao.SMTPConfig.SendEmail(rendered.String(), emailProvider.ProviderID); err != nil {
+		if err := dao.SMTPConfig.SendEmailWithSubject(emailRender.GetSubject(), rendered.String(), emailProvider.ProviderID); err != nil {
 			return fmt.Errorf("failed to send email: %w", err)
 		}
 		return nil

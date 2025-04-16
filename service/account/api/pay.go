@@ -395,6 +395,7 @@ func sendUserSubPayEmailWith(userUID uuid.UUID) error {
 
 	if err := sendUserPayEmail(userUID, &utils.EmailSubRender{
 		Type:                 utils.EnvSubSuccessEmailTmpl,
+		Operator:             lastSubTransaction.Operator,
 		Domain:               dao.DBClient.GetLocalRegion().Domain,
 		SubscriptionPlanName: lastSubTransaction.NewPlanName,
 		StartDate:            lastSubTransaction.StartAt,

@@ -26,6 +26,16 @@ func (c *SMTPConfig) SendEmail(emailBody, to string) error {
 	return d.DialAndSend(m)
 }
 
+func (c *SMTPConfig) SendEmailWithSubject(subject, emailBody, to string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("To", to)
+	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", emailBody)
+	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.FromEmail, c.Passwd)
+	return d.DialAndSend(m)
+}
+
 const (
 	EnvSMTPHost     = "SMTP_HOST"
 	EnvSMTPPort     = "SMTP_PORT"
@@ -43,6 +53,7 @@ type EmailRenderBuilder interface {
 	Build() map[string]interface{}
 	GetType() string
 	SetUserInfo(userInfo *types.UserInfo)
+	GetSubject() string
 }
 
 type EmailPayRender struct {
@@ -65,6 +76,10 @@ func (e *EmailPayRender) Build() map[string]interface{} {
 
 func (e *EmailPayRender) GetType() string {
 	return e.Type
+}
+
+func (e *EmailPayRender) GetSubject() string {
+	return "Top-Up Successful"
 }
 
 func (e *EmailPayRender) SetUserInfo(userInfo *types.UserInfo) {
@@ -104,7 +119,8 @@ func (e *EmailSubRender) Build() map[string]interface{} {
 }
 
 type EmailSubRender struct {
-	Type string
+	Type     string
+	Operator types.SubscriptionOperator
 
 	userInfo types.UserInfo
 	Domain   string
@@ -122,8 +138,24 @@ func (e *EmailSubRender) SetUserInfo(userInfo *types.UserInfo) {
 	e.userInfo = *userInfo
 }
 
+func (e *EmailSubRender) GetSubject() string {
+	switch e.Operator {
+	case types.SubscriptionTransactionTypeUpgraded:
+		return "Your Subscription Has Been Successfully Updated"
+	case types.SubscriptionTransactionTypeDowngraded:
+		return "Your Subscription Has Been Successfully Downgraded"
+	case types.SubscriptionTransactionTypeCanceled:
+		return "Your Subscription Has Been Successfully Canceled"
+	case types.SubscriptionTransactionTypeRenewed:
+		return "Your Subscription Has Been Successfully Renewed"
+	default:
+		return "Your Subscription Has Been Successfully Activated"
+	}
+}
+
 type EmailDebtRender struct {
-	Type string
+	Type          string
+	CurrentStatus types.DebtStatusType
 
 	userInfo    types.UserInfo
 	Domain      string
@@ -143,6 +175,16 @@ func (e *EmailDebtRender) GetType() string {
 
 func (e *EmailDebtRender) SetUserInfo(userInfo *types.UserInfo) {
 	e.userInfo = *userInfo
+}
+
+func (e *EmailDebtRender) GetSubject() string {
+	if types.ContainDebtStatus(types.DebtStates, e.CurrentStatus) {
+		if e.CurrentStatus == types.FinalDeletionPeriod {
+			return "Important: Your Resources Had Expired"
+		}
+		return "Important: Your Account Has Entered Grace Period"
+	}
+	return "Low Account Balance Reminder"
 }
 
 func (e *EmailDebtRender) Build() map[string]interface{} {

@@ -845,6 +845,8 @@ func (r *DebtReconciler) Init() {
 		}
 		r.SendDebtStatusEmailBody[status] = email
 	}
+	Init()
+	r.Logger.Info("debt config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle)
 }
 
 func setDefaultDebtPeriodWaitSecond() {
@@ -897,6 +899,6 @@ func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 	return true
 }
 
-func init() {
+func Init() {
 	setDefaultDebtPeriodWaitSecond()
 }

@@ -96,7 +96,6 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 			continue
 		}
 		if acc.CreateRegionID != sp.AccountV2.GetLocalRegion().UID.String() {
-			sp.Logger.Info("Account not in local region, skip", "user_uid", transactions[i].UserUID)
 			continue
 		}
 		sp.AccountReconciler.Logger.Info("Processing transaction", "id", transactions[i].SubscriptionID, "operator", transactions[i].Operator, "status", transactions[i].Status, "plan", transactions[i].NewPlanName)

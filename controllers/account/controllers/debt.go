@@ -327,6 +327,7 @@ func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, cur
 	//}
 	if r.smtpConfig != nil && email != "" {
 		var emailBody string
+		var emailSubject = "Low Account Balance Reminder"
 		if SubscriptionEnabled {
 			var userInfo types.UserInfo
 			err = r.AccountV2.GetGlobalDB().Where(types.UserInfo{UserUID: userUID}).Find(&userInfo).Error
@@ -334,8 +335,9 @@ func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, cur
 				return fmt.Errorf("failed to get user info: %w", err)
 			}
 			emailRender := &utils.EmailDebtRender{
-				Type:   string(currentStatus),
-				Domain: r.AccountV2.GetLocalRegion().Domain,
+				Type:          string(currentStatus),
+				CurrentStatus: currentStatus,
+				Domain:        r.AccountV2.GetLocalRegion().Domain,
 			}
 			if types.ContainDebtStatus(types.DebtStates, currentStatus) {
 				if oweamount <= 0 {
@@ -355,10 +357,11 @@ func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, cur
 				return fmt.Errorf("failed to render email template: %w", err)
 			}
 			emailBody = rendered.String()
+			emailSubject = emailRender.GetSubject()
 		} else {
 			emailBody = emailTmpl
 		}
-		if err = r.smtpConfig.SendEmail(emailBody, email); err != nil {
+		if err = r.smtpConfig.SendEmailWithTitle(emailSubject, emailBody, email); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
@@ -452,11 +455,17 @@ func getUniqueUsers(db *gorm.DB, table interface{}, timeField string, startTime,
 
 // Parallel processing of user debt status, the same user simultaneously through the lock to implement a debt refresh processing.
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
-	var wg sync.WaitGroup
+	var (
+		wg        sync.WaitGroup
+		semaphore = make(chan struct{}, 100)
+	)
+
 	for _, user := range users {
 		wg.Add(1)
+		semaphore <- struct{}{}
 		go func(u uuid.UUID) {
 			defer wg.Done()
+			defer func() { <-semaphore }()
 			lock, _ := r.userLocks.LoadOrStore(u, &sync.Mutex{})
 			mutex := lock.(*sync.Mutex)
 			if !mutex.TryLock() {
@@ -480,7 +489,7 @@ func (r *DebtReconciler) processWithTimeRange(table interface{}, timeField strin
 	endTime := time.Now().Add(-2 * time.Minute)
 	users := getUniqueUsers(r.AccountV2.GetGlobalDB(), table, timeField, startTime, endTime)
 	r.processUsersInParallel(users)
-	r.Logger.Info("processed table updates", "table", fmt.Sprintf("%T", table), "count", len(users), "users", users, "start", startTime, "end", endTime)
+	r.Logger.Info("processed table updates", "table", fmt.Sprintf("%T", table), "count", len(users), "start", startTime, "end", endTime)
 
 	// 后续按时间区间轮询
 	lastEndTime := endTime
