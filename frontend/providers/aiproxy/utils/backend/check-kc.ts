@@ -56,7 +56,8 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
     }
 
     // 固定本集群地址
-    const clusterEndpoint = 'https://apiserver.cluster.local:6443'
+    const [inCluster, hosts] = CheckIsInCluster()
+    const clusterEndpoint = inCluster && hosts ? hosts : 'https://apiserver.cluster.local:6443'
 
     // 创建一个用于验证的新 KubeConfig
     const verificationKc = new k8s.KubeConfig()
@@ -108,4 +109,19 @@ export async function verifyK8sConfigString(configStr: string): Promise<boolean>
     console.error('解析 KubeConfig 字符串失败:', error)
     return false
   }
+}
+
+export function CheckIsInCluster(): [boolean, string] {
+  if (
+    process.env.KUBERNETES_SERVICE_HOST !== undefined &&
+    process.env.KUBERNETES_SERVICE_HOST !== '' &&
+    process.env.KUBERNETES_SERVICE_PORT !== undefined &&
+    process.env.KUBERNETES_SERVICE_PORT !== ''
+  ) {
+    return [
+      true,
+      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT
+    ]
+  }
+  return [false, '']
 }
