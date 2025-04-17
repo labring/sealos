@@ -29,7 +29,6 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
       `/api/token/${group}?auto_create_group=true&ignore_exist=true`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
-    console.log(url.toString())
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
       method: 'POST',
@@ -88,7 +87,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiResp<T
     }
 
     const group = getNamespaceFromKubeConfigString(body.kc)
-
     // 创建Token
     const newToken = await createToken(body.name, group)
 
