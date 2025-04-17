@@ -5,9 +5,20 @@ import { appLanuchPadClient } from '@/services/request';
 import fs from 'fs/promises';
 import _ from 'lodash';
 import path from 'path';
+import { checkSealosUserIsRealName } from '@/utils/isRealName';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
+    const token = req.headers.authorization;
+    if (!token) {
+      return jsonRes(res, { code: 403, data: { message: 'no authorization' } });
+    }
+
+    const isRealName = await checkSealosUserIsRealName(token);
+    if (!isRealName) {
+      return jsonRes(res, { code: 403, data: { message: 'user is not real name' } });
+    }
+
     const { bucket } = req.body as { bucket?: string };
 
     if (!bucket) return jsonRes(res, { code: 400, data: { error: 'bucketName is invaild' } });
