@@ -12,6 +12,7 @@ export interface ModelConfig {
   price: {
     input_price: number
     output_price: number
+    per_request_price: number
   }
   rpm: number
 }

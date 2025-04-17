@@ -541,65 +541,102 @@ export default function LogDetailModal({
                 isLast: false
               })}
 
-            {renderDetailRow(
-              <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
-                <Text
-                  color="grayModern.800"
-                  fontFamily="PingFang SC"
-                  fontSize="14px"
-                  fontWeight={500}
-                  lineHeight="20px"
-                  mr={'4px'}
-                  letterSpacing="0.5px"
-                  whiteSpace="nowrap">
-                  {t('key.inputPrice')}
-                </Text>
-                <CurrencySymbol type={currencySymbol} />
-                <Text
-                  color="grayModern.500"
-                  fontFamily="PingFang SC"
-                  fontSize="12px"
-                  fontWeight={500}
-                  lineHeight="16px"
-                  letterSpacing="0.5px"
-                  textTransform="lowercase"
-                  whiteSpace="nowrap">
-                  /{t('price.per1kTokens').toLowerCase()}
-                </Text>
-              </Flex>,
-              rowData?.price?.input_price || 0,
-              <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
-                <Text
-                  color="grayModern.800"
-                  fontFamily="PingFang SC"
-                  fontSize="14px"
-                  fontWeight={500}
-                  lineHeight="20px"
-                  mr="4px"
-                  letterSpacing="0.5px"
-                  whiteSpace="nowrap">
-                  {t('key.outputPrice')}
-                </Text>
-                <CurrencySymbol type={currencySymbol} />
-                <Text
-                  color="grayModern.500"
-                  fontFamily="PingFang SC"
-                  fontSize="12px"
-                  fontWeight={500}
-                  lineHeight="16px"
-                  letterSpacing="0.5px"
-                  textTransform="lowercase"
-                  whiteSpace="nowrap">
-                  /{t('price.per1kTokens').toLowerCase()}
-                </Text>
-              </Flex>,
-              rowData?.price?.output_price || 0,
-              {
-                labelWidth: gridConfig.labelWidth,
-                rowHeight: gridConfig.rowHeight,
-                isFirst: false
-              }
-            )}
+            {rowData?.price?.per_request_price
+              ? renderDetailRow(
+                  <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
+                    <Text
+                      color="grayModern.800"
+                      fontFamily="PingFang SC"
+                      fontSize="14px"
+                      fontWeight={500}
+                      lineHeight="20px"
+                      mr={'4px'}
+                      letterSpacing="0.5px"
+                      whiteSpace="nowrap">
+                      {t('price.fixedPrice')}
+                    </Text>
+                    <CurrencySymbol type={currencySymbol} />
+                    <Text
+                      color="grayModern.500"
+                      fontFamily="PingFang SC"
+                      fontSize="12px"
+                      fontWeight={500}
+                      lineHeight="16px"
+                      letterSpacing="0.5px"
+                      textTransform="lowercase"
+                      whiteSpace="nowrap">
+                      /{t('price.per1kTokens').toLowerCase()}
+                    </Text>
+                  </Flex>,
+                  rowData?.price?.per_request_price || 0,
+                  undefined,
+                  undefined,
+                  {
+                    labelWidth: gridConfig.labelWidth,
+                    rowHeight: gridConfig.rowHeight,
+                    isFirst: false
+                  }
+                )
+              : renderDetailRow(
+                  <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
+                    <Text
+                      color="grayModern.800"
+                      fontFamily="PingFang SC"
+                      fontSize="14px"
+                      fontWeight={500}
+                      lineHeight="20px"
+                      mr={'4px'}
+                      letterSpacing="0.5px"
+                      whiteSpace="nowrap">
+                      {t('key.inputPrice')}
+                    </Text>
+                    <CurrencySymbol type={currencySymbol} />
+                    <Text
+                      color="grayModern.500"
+                      fontFamily="PingFang SC"
+                      fontSize="12px"
+                      fontWeight={500}
+                      lineHeight="16px"
+                      letterSpacing="0.5px"
+                      textTransform="lowercase"
+                      whiteSpace="nowrap">
+                      /{t('price.per1kTokens').toLowerCase()}
+                    </Text>
+                  </Flex>,
+                  rowData?.price?.input_price || 0,
+                  <Flex alignItems="center" justifyContent="flex-start" flexWrap="wrap">
+                    <Text
+                      color="grayModern.800"
+                      fontFamily="PingFang SC"
+                      fontSize="14px"
+                      fontWeight={500}
+                      lineHeight="20px"
+                      mr="4px"
+                      letterSpacing="0.5px"
+                      whiteSpace="nowrap">
+                      {t('key.outputPrice')}
+                    </Text>
+                    <CurrencySymbol type={currencySymbol} />
+                    <Text
+                      color="grayModern.500"
+                      fontFamily="PingFang SC"
+                      fontSize="12px"
+                      fontWeight={500}
+                      lineHeight="16px"
+                      letterSpacing="0.5px"
+                      textTransform="lowercase"
+                      whiteSpace="nowrap">
+                      /{t('price.per1kTokens').toLowerCase()}
+                    </Text>
+                  </Flex>,
+                  rowData?.price?.output_price || 0,
+                  {
+                    labelWidth: gridConfig.labelWidth,
+                    rowHeight: gridConfig.rowHeight,
+                    isFirst: false
+                  }
+                )}
+
             {renderDetailRow(
               t('logs.inputTokens'),
               rowData?.usage?.input_tokens || 0,

@@ -106,6 +106,7 @@
   "enable": "启用",
   "copySuccess": "复制成功",
   "copyFailed": "复制失败",
+  "pricing": "价格",
   "noData": "你还没有 API Key",
   "price": {
     "all": "全部",
@@ -121,7 +122,9 @@
     "modelVision": "视觉",
     "modelVisionLabel": "该模型支持视觉能力",
     "modelToolChoice": "工具调用",
-    "response": "输出"
+    "response": "输出",
+    "fixedPrice": "固定价格",
+    "perRequest": "/次"
   },
   "createKey2": "新建 Key",
   "dashboard": {

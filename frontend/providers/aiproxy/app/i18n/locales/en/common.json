@@ -106,6 +106,7 @@
   "enable": "Enable",
   "copySuccess": "Copied",
   "copyFailed": "Copy failed",
+  "pricing": "Pricing",
   "noData": "You don’t have an API Key yet",
   "price": {
     "all": "All",
@@ -121,7 +122,9 @@
     "modelVision": "Vision",
     "modelVisionLabel": "This model supports vision capabilities",
     "modelToolChoice": "Tool Chocice",
-    "response": "Output"
+    "response": "Output",
+    "fixedPrice": "Fixed price",
+    "perRequest": "/request"
   },
   "createKey2": "Create Key",
   "dashboard": {

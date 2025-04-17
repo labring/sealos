@@ -55,21 +55,6 @@ export function PriceTable({
 
   const { currencySymbol } = useBackendStore()
 
-  const [sortConfig, setSortConfig] = useState({
-    column: '',
-    direction: false as SortDirection
-  })
-
-  // 处理排序
-  const handleSort = (column: string, direction: SortDirection) => {
-    // 如果点击相同的列并且方向相同，则取消排序
-    if (sortConfig.column === column && sortConfig.direction === direction) {
-      setSortConfig({ column: '', direction: false })
-      return
-    }
-    setSortConfig({ column, direction })
-  }
-
   const columnHelper = createColumnHelper<ModelConfig>()
   const columns = [
     columnHelper.accessor((row) => row.model, {
@@ -181,248 +166,131 @@ export function PriceTable({
         </Text>
       )
     }),
-    columnHelper.accessor((row) => row.price.input_price ?? 0, {
-      id: 'input_price',
-      header: () => {
-        return (
-          <Flex gap="8px">
-            <Flex alignItems="center">
-              <Text
-                color="grayModern.600"
-                fontFamily="PingFang SC"
-                fontSize="12px"
-                fontWeight={500}
-                lineHeight="16px"
-                mr={'4px'}
-                letterSpacing="0.5px">
-                {t('key.inputPrice')}
-              </Text>
-              <CurrencySymbol type={currencySymbol} fontSize={'12px'} h={'15px'} />
-              <Text
-                color="grayModern.500"
-                fontFamily="PingFang SC"
-                fontSize="12px"
-                fontWeight={500}
-                lineHeight="16px"
-                letterSpacing="0.5px"
-                textTransform="lowercase">
-                /{t('price.per1kTokens').toLowerCase()}
-              </Text>
-            </Flex>
-
-            <Flex direction="column" gap="6px">
-              <MyTooltip
-                placement="bottom-end"
-                width="auto"
-                height="auto"
-                label={
-                  <Text
-                    whiteSpace="nowrap"
-                    color="grayModern.900"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={400}
-                    lineHeight="16px"
-                    letterSpacing="0.5px">
-                    {t('price.sortUpTooltip')}
-                  </Text>
-                }>
-                <Box
-                  as="button"
-                  onClick={() => handleSort('input_price', 'asc')}
-                  cursor="pointer"
-                  _hover={{ opacity: 0.8 }}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="6"
-                    height="4"
-                    viewBox="0 0 6 4"
-                    fill="none">
-                    <path
-                      d="M5.15373 4C5.90617 4 6.28299 3.09027 5.75094 2.55822L3.59721 0.404486C3.26738 0.0746584 2.73262 0.0746584 2.40279 0.404486L0.249064 2.55822C-0.28299 3.09027 0.0938324 4 0.84627 4H5.15373Z"
-                      fill={
-                        sortConfig.column === 'input_price' && sortConfig.direction === 'asc'
-                          ? '#219BF4'
-                          : '#8A95A7'
-                      }
-                    />
-                  </svg>
-                </Box>
-              </MyTooltip>
-              <MyTooltip
-                placement="bottom-end"
-                width="auto"
-                height="auto"
-                label={
-                  <Text
-                    whiteSpace="nowrap"
-                    color="grayModern.900"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={400}
-                    lineHeight="16px"
-                    letterSpacing="0.5px">
-                    {t('price.sortDownTooltip')}
-                  </Text>
-                }>
-                <Box
-                  as="button"
-                  onClick={() => handleSort('input_price', 'desc')}
-                  cursor="pointer"
-                  _hover={{ opacity: 0.8 }}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="6"
-                    height="4"
-                    viewBox="0 0 6 4"
-                    fill="none">
-                    <path
-                      d="M5.15373 0C5.90617 0 6.28299 0.90973 5.75094 1.44178L3.59721 3.59551C3.26738 3.92534 2.73262 3.92534 2.40279 3.59551L0.249064 1.44178C-0.28299 0.90973 0.0938324 0 0.84627 0H5.15373Z"
-                      fill={
-                        sortConfig.column === 'input_price' && sortConfig.direction === 'desc'
-                          ? '#219BF4'
-                          : '#8A95A7'
-                      }
-                    />
-                  </svg>
-                </Box>
-              </MyTooltip>
-            </Flex>
-          </Flex>
-        )
-      },
-      cell: (info) => (
-        <Text
-          color="grayModern.600"
-          fontFamily="PingFang SC"
-          fontSize="12px"
-          fontWeight={500}
-          lineHeight="16px"
-          letterSpacing="0.5px">
-          {info.getValue()}
-        </Text>
-      )
-    }),
-    columnHelper.accessor((row) => row.price.output_price ?? 0, {
-      id: 'output_price',
-      header: () => (
-        <Flex gap="8px">
-          <Flex alignItems="center">
-            <Text
-              color="grayModern.600"
-              fontFamily="PingFang SC"
-              fontSize="12px"
-              fontWeight={500}
-              lineHeight="16px"
-              mr={'4px'}
-              letterSpacing="0.5px">
-              {t('key.outputPrice')}
-            </Text>
-            <CurrencySymbol type={currencySymbol} fontSize={'12px'} h={'15px'} />
-            <Text
-              color="grayModern.500"
-              fontFamily="PingFang SC"
-              fontSize="12px"
-              fontWeight={500}
-              lineHeight="16px"
-              letterSpacing="0.5px"
-              textTransform="lowercase">
-              /{t('price.per1kTokens').toLowerCase()}
-            </Text>
-          </Flex>
-          <Flex direction="column" gap="6px">
-            <MyTooltip
-              placement="bottom-end"
-              width="auto"
-              height="auto"
-              label={
+    columnHelper.accessor(
+      (row) => row.price.input_price ?? row.price.output_price ?? row.price.per_request_price ?? 0,
+      {
+        id: 'input_price',
+        header: () => (
+          <Text
+            color="grayModern.600"
+            fontFamily="PingFang SC"
+            fontSize="12px"
+            fontWeight={500}
+            lineHeight="16px"
+            mr={'4px'}
+            letterSpacing="0.5px">
+            {t('pricing')}
+          </Text>
+        ),
+        cell: (info) => {
+          if (info.row.original.price.per_request_price) {
+            return (
+              <Flex alignItems="center">
                 <Text
-                  whiteSpace="nowrap"
-                  color="grayModern.900"
+                  color="grayModern.600"
                   fontFamily="PingFang SC"
                   fontSize="12px"
-                  fontWeight={400}
+                  fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('price.sortUpTooltip')}
+                  letterSpacing="0.5px"
+                  mr="4px">
+                  {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
                 </Text>
-              }>
-              <Box
-                as="button"
-                onClick={() => handleSort('output_price', 'asc')}
-                cursor="pointer"
-                _hover={{ opacity: 0.8 }}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="6"
-                  height="4"
-                  viewBox="0 0 6 4"
-                  fill="none">
-                  <path
-                    d="M5.15373 4C5.90617 4 6.28299 3.09027 5.75094 2.55822L3.59721 0.404486C3.26738 0.0746584 2.73262 0.0746584 2.40279 0.404486L0.249064 2.55822C-0.28299 3.09027 0.0938324 4 0.84627 4H5.15373Z"
-                    fill={
-                      sortConfig.column === 'output_price' && sortConfig.direction === 'asc'
-                        ? '#219BF4'
-                        : '#8A95A7'
-                    }
-                  />
-                </svg>
-              </Box>
-            </MyTooltip>
-            <MyTooltip
-              placement="bottom-end"
-              width="auto"
-              height="auto"
-              label={
-                <Text
-                  whiteSpace="nowrap"
-                  color="grayModern.900"
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
                   fontFamily="PingFang SC"
                   fontSize="12px"
-                  fontWeight={400}
+                  fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('price.sortDownTooltip')}
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase">
+                  /{t('price.per1kTokens').toLowerCase()}
                 </Text>
-              }>
-              <Box
-                as="button"
-                onClick={() => handleSort('output_price', 'desc')}
-                cursor="pointer"
-                _hover={{ opacity: 0.8 }}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="6"
-                  height="4"
-                  viewBox="0 0 6 4"
-                  fill="none">
-                  <path
-                    d="M5.15373 0C5.90617 0 6.28299 0.90973 5.75094 1.44178L3.59721 3.59551C3.26738 3.92534 2.73262 3.92534 2.40279 3.59551L0.249064 1.44178C-0.28299 0.90973 0.0938324 0 0.84627 0H5.15373Z"
-                    fill={
-                      sortConfig.column === 'output_price' && sortConfig.direction === 'desc'
-                        ? '#219BF4'
-                        : '#8A95A7'
-                    }
+              </Flex>
+            )
+          }
+          return (
+            <Flex direction="column" gap="8px">
+              {info.row.original.price.input_price && (
+                <Flex alignItems="center">
+                  <Text
+                    color="grayModern.600"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
+                    mr="4px">
+                    {t('key.inputPrice')}: {info.row.original.price.input_price}
+                  </Text>
+                  <CurrencySymbol
+                    type={currencySymbol}
+                    color="grayModern.600"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
                   />
-                </svg>
-              </Box>
-            </MyTooltip>
-          </Flex>
-        </Flex>
-      ),
-      cell: (info) => (
-        <Text
-          color="grayModern.600"
-          fontFamily="PingFang SC"
-          fontSize="12px"
-          fontWeight={500}
-          lineHeight="16px"
-          letterSpacing="0.5px">
-          {info.getValue()}
-        </Text>
-      )
-    }),
-
+                  <Text
+                    color="grayModern.500"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
+                    textTransform="lowercase">
+                    /{t('price.per1kTokens').toLowerCase()}
+                  </Text>
+                </Flex>
+              )}
+              {info.row.original.price.output_price && (
+                <Flex alignItems="center">
+                  <Text
+                    color="grayModern.600"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
+                    mr="4px">
+                    {t('key.outputPrice')}: {info.row.original.price.output_price}
+                  </Text>
+                  <CurrencySymbol
+                    type={currencySymbol}
+                    color="grayModern.600"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
+                  />
+                  <Text
+                    color="grayModern.500"
+                    fontFamily="PingFang SC"
+                    fontSize="12px"
+                    fontWeight={500}
+                    lineHeight="16px"
+                    letterSpacing="0.5px"
+                    textTransform="lowercase">
+                    /{t('price.per1kTokens').toLowerCase()}
+                  </Text>
+                </Flex>
+              )}
+            </Flex>
+          )
+        }
+      }
+    ),
     columnHelper.display({
       header: () => (
         <Text
@@ -497,25 +365,8 @@ export function PriceTable({
   ]
 
   const tableData = useMemo(() => {
-    if (!sortConfig.direction || !sortConfig.column) {
-      return modelConfigs
-    }
-
-    return [...modelConfigs].sort((a, b) => {
-      let aValue = a[sortConfig.column as keyof ModelConfig]
-      let bValue = b[sortConfig.column as keyof ModelConfig]
-
-      // 确保数值比较
-      if (typeof aValue === 'string') aValue = parseFloat(aValue as string) || 0
-      if (typeof bValue === 'string') bValue = parseFloat(bValue as string) || 0
-
-      if (sortConfig.direction === 'asc') {
-        return (aValue as number) - (bValue as number)
-      } else {
-        return (bValue as number) - (aValue as number)
-      }
-    })
-  }, [modelConfigs, sortConfig])
+    return modelConfigs
+  }, [modelConfigs])
 
   const table = useReactTable({
     data: tableData,
