@@ -375,7 +375,7 @@
   "confirm_password_required": "Confirm password cannot be empty",
   "passwords_must_match": "Passwords do not match",
   "password_min_length": "Password must be at least 8 characters",
-  "password_complexity": "Password must contain at least two of: numbers, letters, special characters",
+  "password_complexity": "Password must include at least two of the following: letters, numbers, and special characters.",
   "successfully_edit_password": "Successfully edited password. The database will restart, please wait",
   "edit_password_failed": "Failed to edit password",
   "edit_password_tip": "Editing the password will cause the database to restart",
