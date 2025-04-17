@@ -49,12 +49,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           `-p${password}`,
           `-h${host}`,
           `-P${port}`,
-          `-e ALTER USER '${username}'@'%' IDENTIFIED BY '${newPassword}';`
+          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';ALTER USER '${username}'@'%' IDENTIFIED BY '${newPassword}';`
         ]
       ],
       [
         DBTypeEnum.postgresql,
-        ['psql', '-U', 'postgres', `-c ALTER USER ${username} WITH PASSWORD '${newPassword}';`]
+        [
+          'psql',
+          `postgresql://${username}:${password}@${host}:${port}`,
+          `-c ALTER USER standby WITH PASSWORD '${newPassword}';ALTER USER ${username} WITH PASSWORD '${newPassword}';`
+        ]
       ],
       [
         DBTypeEnum.mongodb,
@@ -109,33 +113,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       if (result.includes('exception') || result.includes('ServerError')) {
         throw new Error('Failed to change password');
       }
-    }
-
-    if (dbType === DBTypeEnum.postgresql) {
-      await kubefs.execCommand(
-        namespace,
-        firstPodName,
-        DBBackupPolicyNameMap[dbType],
-        ['psql', '-U', 'postgres', `-c ALTER USER standby WITH PASSWORD '${newPassword}';`],
-        false
-      );
-    }
-
-    if (dbType === DBTypeEnum.mysql) {
-      await kubefs.execCommand(
-        namespace,
-        firstPodName,
-        DBBackupPolicyNameMap[dbType],
-        [
-          'mysql',
-          `-u${username}`,
-          `-p${password}`,
-          `-h${host}`,
-          `-P${port}`,
-          `-e ALTER USER '${username}'@'localhost' IDENTIFIED BY '${newPassword}';`
-        ],
-        false
-      );
     }
 
     const secretName = dbName + '-conn-credential';

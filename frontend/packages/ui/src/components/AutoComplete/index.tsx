@@ -26,9 +26,9 @@ function AutoComplete({
   value: string;
   setValue: (value: any) => void;
   supportNewValue?: boolean;
-  inputPlaceholder?: string; //Input框无输入内容时，提示文字
-  inputSureToCreate?: string; //Input框输入新内容时，提示文字
-  inputNotSupportToCreate?: string; //但不支持创建新内容时，提示文字
+  inputPlaceholder?: string; // When there is no input in the Input box, prompt text
+  inputSureToCreate?: string; // When the Input box has content and it is a new resource that does not exist, prompt text
+  inputNotSupportToCreate?: string; // When the Input box has input content, but does not support creating new content, prompt text
 }) {
   const [inputValue, setInputValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
