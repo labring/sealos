@@ -97,6 +97,7 @@ const Form = ({
     control,
     name: 'networks'
   });
+
   const { fields: envs, replace: replaceEnvs } = useFieldArray({
     control,
     name: 'envs'
@@ -970,8 +971,12 @@ const Form = ({
                                 ? network.customDomain
                                 : network.openNodePort
                                 ? network?.nodePort
-                                  ? `${network.domain}:${network.nodePort}`
-                                  : `${network.domain}:${t('pending_to_allocated')}`
+                                  ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                      network.nodePort
+                                    }`
+                                  : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                      'pending_to_allocated'
+                                    )}`
                                 : `${network.publicDomain}.${network.domain}`}
                             </Box>
 

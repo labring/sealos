@@ -46,7 +46,7 @@ function Terminal({ url, site }: { url: string; site: string }) {
           );
           iframeRef.current?.contentWindow?.postMessage(
             {
-              command: `echo -e "\\e[A\\e[K 👉  Switched to namespace \\e[1;4;32m${nsid}\\e[0m" && history -c`
+              command: `echo -e "This is a temporary terminal for debugging and testing. The session will automatically end 30 minutes after you leave.\\n\\nYou are now working in: namespace ${nsid}" && history -c`
             },
             url
           );
