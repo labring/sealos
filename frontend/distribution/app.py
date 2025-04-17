@@ -54,6 +54,8 @@ else:
 
 default_cluster_name = 'default'
 
+export_app_queue = []
+
 # 辅助函数：执行shell命令
 def run_command(command):
     try:
@@ -83,8 +85,40 @@ def export_app():
     namespace = request.args.get('namespace')
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
+    
+    return export_app_helper(yaml_content, images, appname, namespace)
 
-    print('exportApp, appname:', request.args.get('appname'), 'namespace:', request.args.get('namespace'), flush=True)
+def export_app_listener():
+    """监听导出应用程序的请求"""
+    while True:
+        if export_app_queue:
+            app = export_app_queue.pop(0)
+            yaml_content = app['yaml']
+            images = app['images']
+            appname = app['appname']
+            namespace = app['namespace']
+            export_app_helper(yaml_content, images, appname, namespace)
+        time.sleep(1)
+
+# API端点：批量导出应用程序
+@app.route('/api/exportApps', methods=['POST'])
+def export_apps():
+    # 获取请求参数 应用编排yaml，应用镜像列表，应用名称，命名空间
+    apps = request.json.get('apps')
+    if not apps:
+        return jsonify({'error': 'Apps are required'}), 400
+    
+    # new subprocess to run export_app_helper no block
+
+    for app in apps:
+        export_app_queue.append(app)
+    
+    return jsonify({'message': 'Exporting apps, please check the logs'}), 200
+    
+def export_app_helper(yaml_content, images, appname, namespace):
+    """导出应用程序"""
+
+    print('exportApp, appname:', appname, 'namespace:', namespace, flush=True)
 
     workdir = os.path.join(SAVE_PATH, namespace, appname)
     
@@ -1075,6 +1109,11 @@ if __name__ == '__main__':
     # 创建线程执行定时任务
     thread = threading.Thread(target=cron_job)
     thread.start()
+
+    thread = threading.Thread(target=export_app_listener)
+    thread.start()
+
+
 
     app.run(debug=True, host='0.0.0.0', port=5002)
         
