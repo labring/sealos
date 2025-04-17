@@ -6,10 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
+	"strconv"
 	"sync"
 	"text/template"
 	"time"
+
+	utils2 "github.com/labring/sealos/controllers/account/controllers/utils"
+
+	client2 "github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
+	"github.com/alibabacloud-go/tea/tea"
 
 	dlock "github.com/labring/sealos/controllers/pkg/utils/lock"
 
@@ -45,6 +52,7 @@ func (r *DebtReconciler) start() {
 	db := r.AccountV2.GetGlobalDB()
 	var wg sync.WaitGroup
 
+	// 1.1 account update processing
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -132,6 +140,13 @@ func (r *DebtReconciler) start() {
 				r.Logger.Info("processed credits refresh", "count", len(users), "users", users, "start", start, "end", end)
 			}
 		})
+	}()
+
+	// 3 retry failed users
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		r.retryFailedUsers()
 	}()
 
 	wg.Wait()
@@ -304,27 +319,27 @@ func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, cur
 		}
 	}
 	fmt.Printf("user: %s, phone: %s, email: %s\n", userUID, phone, email)
-	//if phone != "" {
-	//	if r.SmsConfig != nil && r.SmsConfig.SmsCode[noticeType] != "" {
-	//		oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-	//		err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-	//			PhoneNumbers: tea.String(phone),
-	//			SignName:     tea.String(r.SmsConfig.SmsSignName),
-	//			TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
-	//			// ｜ownAmount/1_000_000｜
-	//			TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
-	//		})
-	//		if err != nil {
-	//			return fmt.Errorf("failed to send sms notice: %w", err)
-	//		}
-	//	}
-	//	if r.VmsConfig != nil && noticeType == WarningNotice && r.VmsConfig.TemplateCode[noticeType] != "" {
-	//		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
-	//		if err != nil {
-	//			return fmt.Errorf("failed to send vms notice: %w", err)
-	//		}
-	//	}
-	//}
+	if phone != "" {
+		if r.SmsConfig != nil && r.SmsConfig.SmsCode[string(currentStatus)] != "" {
+			oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweamount)/1_000_000))), 10)
+			err = utils2.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+				PhoneNumbers: tea.String(phone),
+				SignName:     tea.String(r.SmsConfig.SmsSignName),
+				TemplateCode: tea.String(r.SmsConfig.SmsCode[string(currentStatus)]),
+				// ｜ownAmount/1_000_000｜
+				TemplateParam: tea.String("{\"user_id\":\"" + userUID.String() + "\",\"oweamount\":\"" + oweamount + "\"}"),
+			})
+			if err != nil {
+				return fmt.Errorf("failed to send sms notice: %w", err)
+			}
+		}
+		if r.VmsConfig != nil && types.ContainDebtStatus(types.DebtStates, currentStatus) && r.VmsConfig.TemplateCode[string(currentStatus)] != "" {
+			err = utils2.SendVms(phone, r.VmsConfig.TemplateCode[string(currentStatus)], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+			if err != nil {
+				return fmt.Errorf("failed to send vms notice: %w", err)
+			}
+		}
+	}
 	if r.smtpConfig != nil && email != "" {
 		var emailBody string
 		var emailSubject = "Low Account Balance Reminder"
@@ -453,6 +468,24 @@ func getUniqueUsers(db *gorm.DB, table interface{}, timeField string, startTime,
 	return users
 }
 
+func (r *DebtReconciler) retryFailedUsers() {
+	ticker := time.NewTicker(1 * time.Minute)
+	for range ticker.C {
+		var failedUsers []uuid.UUID
+		r.failedUserLocks.Range(func(key, value interface{}) bool {
+			userUID, ok := key.(uuid.UUID)
+			if ok {
+				failedUsers = append(failedUsers, userUID)
+			}
+			return true
+		})
+		if len(failedUsers) > 0 {
+			r.Logger.Info("retrying failed users", "count", len(failedUsers), "users", failedUsers)
+			r.processUsersInParallel(failedUsers)
+		}
+	}
+}
+
 // Parallel processing of user debt status, the same user simultaneously through the lock to implement a debt refresh processing.
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 	var (
@@ -476,6 +509,9 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 			defer mutex.Unlock()
 			if err := r.refreshDebtStatus(u); err != nil {
 				r.Logger.Error(err, fmt.Sprintf("failed to refresh debt status for user %s", u))
+				r.failedUserLocks.LoadOrStore(u, &sync.Mutex{})
+			} else {
+				r.failedUserLocks.Delete(u)
 			}
 		}(user)
 	}
