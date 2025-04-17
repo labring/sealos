@@ -28,13 +28,13 @@ func Test_splitSmsCodeMap(t *testing.T) {
 	if len(codeMap) != 3 {
 		t.Fatal("invalid codeMap")
 	}
-	if codeMap[0] != "SMS_123456" {
+	if codeMap["0"] != "SMS_123456" {
 		t.Fatal("invalid codeMap")
 	}
-	if codeMap[1] != "SMS_654321" {
+	if codeMap["1"] != "SMS_654321" {
 		t.Fatal("invalid codeMap")
 	}
-	if codeMap[2] != "SMS_987654" {
+	if codeMap["2"] != "SMS_987654" {
 		t.Fatal("invalid codeMap")
 	}
 }

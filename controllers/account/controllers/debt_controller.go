@@ -107,20 +107,21 @@ type DebtReconciler struct {
 	DebtUserMap            *maps.ConcurrentMap
 	// TODO need init
 	userLocks                   *sync.Map
+	failedUserLocks             *sync.Map
 	processID                   string
 	SkipExpiredUserTimeDuration time.Duration
 	SendDebtStatusEmailBody     map[accountv1.DebtStatusType]string
 }
 
 type VmsConfig struct {
-	TemplateCode map[int]string
+	TemplateCode map[string]string
 	NumberPoll   string
 }
 
 type SmsConfig struct {
 	Client      *client2.Client
 	SmsSignName string
-	SmsCode     map[int]string
+	SmsCode     map[string]string
 }
 
 var DebtConfig = accountv1.DefaultDebtConfig
@@ -540,8 +541,8 @@ var (
 )
 
 var (
-	//forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
-	UTCPlus8 = time.FixedZone("UTC+8", 8*3600)
+	forbidTimes = []string{"00:00-10:00", "20:00-24:00"}
+	UTCPlus8    = time.FixedZone("UTC+8", 8*3600)
 )
 
 func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType accountv1.DebtStatusType) error {
@@ -721,18 +722,14 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status strin
 }
 
 // convert "1:code1,2:code2" to map[int]string
-func splitSmsCodeMap(codeStr string) (map[int]string, error) {
-	codeMap := make(map[int]string)
+func splitSmsCodeMap(codeStr string) (map[string]string, error) {
+	codeMap := make(map[string]string)
 	for _, code := range strings.Split(codeStr, ",") {
 		split := strings.SplitN(code, ":", 2)
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
 		}
-		codeInt, err := strconv.Atoi(split[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
-		}
-		codeMap[codeInt] = split[1]
+		codeMap[split[0]] = split[1]
 	}
 	return codeMap, nil
 }
@@ -823,6 +820,7 @@ func (r *DebtReconciler) Init() {
 	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
 	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
 	r.userLocks = &sync.Map{}
+	r.failedUserLocks = &sync.Map{}
 	r.processID = uuid.NewString()
 
 	setupList := []func() error{
