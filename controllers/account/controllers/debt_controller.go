@@ -415,9 +415,9 @@ func newStatusConversion(debt *accountv1.Debt) bool {
 
 func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
 	if oweamount > 0 {
-		if oweamount > 50*BaseUnit {
+		if oweamount > 10*BaseUnit {
 			return accountv1.NormalPeriod
-		} else if oweamount > 1*BaseUnit {
+		} else if oweamount > 5*BaseUnit {
 			return accountv1.LowBalancePeriod
 		}
 		return accountv1.CriticalBalancePeriod
@@ -743,7 +743,12 @@ func (r *DebtReconciler) setupSmsConfig() error {
 	if err != nil {
 		return fmt.Errorf("split sms code map error: %w", err)
 	}
-
+	for key := range smsCodeMap {
+		if _, ok := pkgtypes.StatusMap[pkgtypes.DebtStatusType(key)]; !ok {
+			return fmt.Errorf("invalid sms code map key: %s", key)
+		}
+	}
+	r.Logger.Info("set sms code map", "smsCodeMap", smsCodeMap, "smsSignName", os.Getenv(SMSSignNameEnv))
 	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
 	if err != nil {
 		return fmt.Errorf("create sms client error: %w", err)
@@ -767,6 +772,12 @@ func (r *DebtReconciler) setupVmsConfig() error {
 	if err != nil {
 		return fmt.Errorf("split vms code map error: %w", err)
 	}
+	for key := range vmsCodeMap {
+		if _, ok := pkgtypes.StatusMap[pkgtypes.DebtStatusType(key)]; !ok {
+			return fmt.Errorf("invalid sms code map key: %s", key)
+		}
+	}
+	r.Logger.Info("set vms code map", "vmsCodeMap", vmsCodeMap)
 	r.VmsConfig = &VmsConfig{
 		TemplateCode: vmsCodeMap,
 		NumberPoll:   os.Getenv(VmsNumberPollEnv),
@@ -833,6 +844,7 @@ func (r *DebtReconciler) Init() {
 			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
 		}
 	}
+	setDefaultDebtPeriodWaitSecond()
 	r.SendDebtStatusEmailBody = make(map[accountv1.DebtStatusType]string)
 	for _, status := range []accountv1.DebtStatusType{accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod, accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod} {
 		email := os.Getenv(string(status) + "EmailBody")
@@ -843,7 +855,6 @@ func (r *DebtReconciler) Init() {
 		}
 		r.SendDebtStatusEmailBody[status] = email
 	}
-	Init()
 	r.Logger.Info("debt config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle)
 }
 
@@ -895,8 +906,4 @@ func (OnlyCreatePredicate) Update(_ event.UpdateEvent) bool {
 
 func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 	return true
-}
-
-func Init() {
-	setDefaultDebtPeriodWaitSecond()
 }

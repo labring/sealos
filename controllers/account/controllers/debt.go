@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -400,7 +401,11 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 			return fmt.Errorf("failed to generate token: %w", err)
 		}
 
-		url := fmt.Sprintf("https://account-api.%s/admin/v1alpha1/flush-debt-resource-status", domain)
+		prefix := "https://"
+		if strings.Contains(domain, "nip.io") {
+			prefix = "http://"
+		}
+		url := fmt.Sprintf(prefix+"account-api.%s/admin/v1alpha1/flush-debt-resource-status", domain)
 
 		quotaReqBody, err := json.Marshal(quotaReq)
 		if err != nil {

@@ -164,16 +164,24 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
 	if getUsername(userNamespace) == owner {
+		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: owner, IgnoreEmpty: true})
+		if err != nil {
+			return nil, err
+		}
+		if user == nil {
+			return nil, gorm.ErrRecordNotFound
+		}
+
 		account, err = r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
 		if err != nil {
 			return nil, err
 		}
+		if err := r.syncDebt(ctx, owner); err != nil {
+			return nil, fmt.Errorf("sync user debt failed: %v", err)
+		}
 	}
 	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
 		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-	}
-	if err := r.syncDebt(ctx, owner); err != nil {
-		return nil, fmt.Errorf("sync user debt failed: %v", err)
 	}
 	return
 }
@@ -348,6 +356,16 @@ func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
 	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
+	regions, err := r.AccountV2.GetRegions()
+	if err != nil {
+		return fmt.Errorf("get regions failed: %v", err)
+	}
+	r.allRegionDomain = make([]string, len(regions))
+	for i, region := range regions {
+		r.allRegionDomain[i] = region.Domain
+	}
+	r.localDomain = r.AccountV2.GetLocalRegion().Domain
+	r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
 	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
 	if SubscriptionEnabled {
 		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
@@ -370,16 +388,6 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {
 			return fmt.Errorf("add subscription processor failed: %v", err)
 		}
-		regions, err := r.AccountV2.GetRegions()
-		if err != nil {
-			return fmt.Errorf("get regions failed: %v", err)
-		}
-		r.allRegionDomain = make([]string, len(regions))
-		for i, region := range regions {
-			r.allRegionDomain[i] = region.Domain
-		}
-		r.localDomain = r.AccountV2.GetLocalRegion().Domain
-		r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
 		r.desktopJwtManager = utils.NewJWTManager(os.Getenv(EnvDesktopJwtSecret), 10*time.Minute)
 	} else {
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
