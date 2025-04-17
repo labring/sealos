@@ -1,4 +1,4 @@
-import { postDeployApp, putApp } from '@/api/app';
+import { exportApp, exportApps, getAppByName, postDeployApp, putApp } from '@/api/app';
 import { updateDesktopGuide } from '@/api/platform';
 import { noGpuSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
@@ -34,6 +34,7 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { getCurrentNamespace, getUserNamespace } from '@/utils/user';
+import YAML from 'js-yaml';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
@@ -185,7 +186,9 @@ const EditApp = ({
           await postDeployApp(currentNamespace, yamls);
         }
 
-        router.replace(`/app/detail?namespace=${currentNamespace}&&name=${formHook.getValues('appName')}`);
+        router.replace(
+          `/app/detail?namespace=${currentNamespace}&&name=${formHook.getValues('appName')}`
+        );
         if (!isGuided) {
           updateDesktopGuide({
             activityType: 'beginner-guide',
@@ -242,6 +245,14 @@ const EditApp = ({
       isClosable: true
     });
   }, [formHook.formState.errors, t, toast]);
+
+  // test
+  // useEffect(() => {
+  //   exportApps({
+  //     namespace: currentNamespace,
+  //     appNames: ['hello-world2', 'hello-world']
+  //   });
+  // }, []);
 
   useQuery(
     ['initLaunchpadApp'],
