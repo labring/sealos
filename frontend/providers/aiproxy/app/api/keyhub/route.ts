@@ -29,6 +29,7 @@ async function createToken(name: string, group: string): Promise<TokenInfo | und
       `/api/token/${group}?auto_create_group=true&ignore_exist=true`,
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
+    console.log(url.toString())
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
       method: 'POST',
