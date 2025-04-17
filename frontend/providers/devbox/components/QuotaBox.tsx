@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useMemo } from 'react'
-import { useTranslations } from 'next-intl'
-import { useQuery } from '@tanstack/react-query'
-import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react'
+import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
+import { Box, Flex, Progress, css, useTheme } from '@chakra-ui/react';
 
-import { useUserStore } from '@/stores/user'
-import MyTooltip from '@/components/MyTooltip'
+import { useUserStore } from '@/stores/user';
+import MyTooltip from '@/components/MyTooltip';
 
 const sourceMap = {
   cpu: {
@@ -20,31 +20,35 @@ const sourceMap = {
   nodeports: {
     color: '#FFA500',
     unit: ''
+  },
+  gpu: {
+    color: '#89CD11',
+    unit: 'Card'
   }
-}
+};
 
 const QuotaBox = ({ showBorder = true }: { showBorder?: boolean }) => {
-  const theme = useTheme()
-  const t = useTranslations()
-  const { userQuota, loadUserQuota } = useUserStore()
+  const theme = useTheme();
+  const t = useTranslations();
+  const { userQuota, loadUserQuota } = useUserStore();
 
-  useQuery(['getUserQuota'], loadUserQuota)
+  useQuery(['getUserQuota'], loadUserQuota);
   const quotaList = useMemo(() => {
-    if (!userQuota) return []
+    if (!userQuota) return [];
 
     return userQuota
       .filter((item) => item.limit > 0)
       .map((item) => {
-        const { limit, used, type } = item
-        const unit = sourceMap[type]?.unit
-        const color = sourceMap[type]?.color
+        const { limit, used, type } = item;
+        const unit = sourceMap[type]?.unit;
+        const color = sourceMap[type]?.color;
         const tip = `${t('total')}: ${limit} ${unit}
 ${t('used')}: ${used.toFixed(2)} ${unit}
-${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
+${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`;
 
-        return { ...item, tip, color }
-      })
-  }, [userQuota, t])
+        return { ...item, tip, color };
+      });
+  }, [userQuota, t]);
 
   return userQuota.length === 0 ? null : (
     <Box borderRadius={'md'} border={showBorder && theme.borders.base} bg={'#FFF'}>
@@ -53,7 +57,8 @@ ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
         px={'20px'}
         borderBottom={showBorder && theme.borders.base}
         color={'grayModern.900'}
-        fontWeight={500}>
+        fontWeight={500}
+      >
         {t('resource_quota')}
       </Box>
       <Flex flexDirection={'column'} gap={'14px'} py={'16px'} px={'20px'}>
@@ -80,7 +85,7 @@ ${t('remaining')}: ${(limit - used).toFixed(2)} ${unit}`
         ))}
       </Flex>
     </Box>
-  )
-}
+  );
+};
 
-export default QuotaBox
+export default QuotaBox;

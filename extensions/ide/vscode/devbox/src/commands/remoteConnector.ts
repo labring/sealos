@@ -256,13 +256,16 @@ export class RemoteSSHConnector extends Disposable {
       vscode.env.uriScheme === 'vscode' ||
       vscode.env.uriScheme === 'vscode-insiders' ||
       vscode.env.uriScheme === 'cursor'
+
+    // windsurf and trae has remote-ssh inside already
     if (!isOfficialVscode) {
       return true
     }
 
-    const msVscodeRemoteExt = vscode.extensions.getExtension(
-      'ms-vscode-remote.remote-ssh'
-    )
+    const remoteSSHId = 'ms-vscode-remote.remote-ssh'
+
+    const msVscodeRemoteExt = vscode.extensions.getExtension(remoteSSHId)
+
     if (msVscodeRemoteExt) {
       return true
     }
@@ -281,16 +284,13 @@ export class RemoteSSHConnector extends Disposable {
       return false
     }
 
-    await vscode.commands.executeCommand(
-      'extension.open',
-      'ms-vscode-remote.remote-ssh'
-    )
+    await vscode.commands.executeCommand('extension.open', remoteSSHId)
     await vscode.commands.executeCommand(
       'workbench.extensions.installExtension',
-      'ms-vscode-remote.remote-ssh'
+      remoteSSHId
     )
 
-    Logger.info('"ms-vscode-remote.remote-ssh" extension is installed')
+    Logger.info(`"${remoteSSHId}" extension is installed`)
 
     return true
   }

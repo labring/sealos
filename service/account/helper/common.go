@@ -37,6 +37,7 @@ const (
 	AdminGetAccountWithWorkspace = "/account-with-workspace"
 	AdminChargeBilling           = "/charge-billing"
 	AdminActiveBilling           = "/active-billing"
+	AdminGetUserRealNameInfo     = "/real-name-info"
 )
 
 // env

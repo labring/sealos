@@ -1,4 +1,4 @@
-import { InfoOutlineIcon } from '@chakra-ui/icons'
+import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Box,
   BoxProps,
@@ -13,18 +13,18 @@ import {
   ModalHeader,
   ModalOverlay,
   useTheme
-} from '@chakra-ui/react'
-import { Tip } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import { useRef } from 'react'
+} from '@chakra-ui/react';
+import { Tip } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 
-import { postAuthCname } from '@/api/platform'
-import { useRequest } from '@/hooks/useRequest'
+import { postAuthCname } from '@/api/platform';
+import { useRequest } from '@/hooks/useRequest';
 
 export type CustomAccessModalParams = {
-  publicDomain: string
-  customDomain: string
-}
+  publicDomain: string;
+  customDomain: string;
+};
 
 const CustomAccessModal = ({
   publicDomain,
@@ -32,30 +32,30 @@ const CustomAccessModal = ({
   onClose,
   onSuccess
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
-  const ref = useRef<HTMLInputElement>(null)
-  const theme = useTheme()
-  const t = useTranslations()
+  const ref = useRef<HTMLInputElement>(null);
+  const theme = useTheme();
+  const t = useTranslations();
 
   const titleStyles: BoxProps = {
     fontWeight: 'bold',
     mb: 2
-  }
+  };
 
   const { mutate: authCNAME, isLoading } = useRequest({
     mutationFn: async () => {
-      const val = ref.current?.value || ''
+      const val = ref.current?.value || '';
       if (!val) {
-        return onSuccess('')
+        return onSuccess('');
       }
       await postAuthCname({
         publicDomain: publicDomain,
         customDomain: val
-      })
-      return val
+      });
+      return val;
     },
     onSuccess,
     errorToast: 'Custom Domain Error'
-  })
+  });
 
   return (
     <>
@@ -73,7 +73,8 @@ const CustomAccessModal = ({
               px={4}
               borderRadius={'md'}
               border={theme.borders.base}
-              userSelect={'all'}>
+              userSelect={'all'}
+            >
               {publicDomain}
             </Flex>
             <Box {...titleStyles} mt={7}>
@@ -96,14 +97,14 @@ const CustomAccessModal = ({
             />
           </ModalBody>
           <ModalFooter>
-            <Button width={'80px'} isLoading={isLoading} onClick={()=>authCNAME()}>
+            <Button width={'80px'} isLoading={isLoading} onClick={() => authCNAME()}>
               {t('confirm')}
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
     </>
-  )
-}
+  );
+};
 
-export default CustomAccessModal
+export default CustomAccessModal;

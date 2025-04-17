@@ -68,7 +68,7 @@ make push-images DOCKER_USERNAME=<your_account> IMAGE_TAG=<tag>
 
 Refer to other apps to add some configuration.
 
-1. .github/workflows/frontend.yml
+1. .github/workflows/frontends.yml
 2. deploy/cloud/init.sh
 3. deploy/cloud/scripts/init.sh
 4. frontend/providers/app/deploy/manifests/appcr.yaml.tmpl

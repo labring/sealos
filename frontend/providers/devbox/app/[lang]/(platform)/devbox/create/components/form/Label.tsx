@@ -1,20 +1,21 @@
-import { Box, BoxProps } from "@chakra-ui/react"
+import { Box, BoxProps } from '@chakra-ui/react';
 
 const Label = ({
   children,
   w = 'auto',
   ...props
 }: {
-  children: string
-  w?: number | 'auto'
+  children: string;
+  w?: number | 'auto';
 } & BoxProps) => (
   <Box
     flex={`0 0 ${w === 'auto' ? 'auto' : `${w}px`}`}
     color={'grayModern.900'}
     fontWeight={'bold'}
     userSelect={'none'}
-    {...props}>
+    {...props}
+  >
     {children}
   </Box>
-)
-export default Label
+);
+export default Label;

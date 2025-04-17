@@ -162,6 +162,7 @@ const smsBindGen = (smsType: SmsType) =>
                   <SettingInputRightElement>
                     {
                       <Link
+                        display={getCodeMutation.isLoading ? 'none' : 'unset'}
                         onClick={getCode}
                         color={'brightBlue.600'}
                         marginY={'auto'}

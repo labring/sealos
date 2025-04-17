@@ -15,3 +15,8 @@
 package common
 
 type Type int
+
+const (
+	Consumption Type = iota
+	SubConsumption
+)

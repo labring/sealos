@@ -6,6 +6,24 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-03-13
+
+### Added
+
+- Support Trae-CN.
+
+## [1.3.4] - 2025-02-18
+
+### Fixed
+
+- Windsurf can not open.
+
+## [1.3.1] - 2025-01-21
+
+### Added
+
+- Support Windsurf and Trae.
+
 ## [1.3.0] - 2024-12-24
 
 ### Fixed

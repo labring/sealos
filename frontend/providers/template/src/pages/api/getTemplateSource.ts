@@ -93,7 +93,18 @@ export async function GetTemplateByName({
   if (cdnUrl) {
     templateYaml.spec.readme = replaceRawWithCDN(templateYaml.spec.readme, cdnUrl);
     templateYaml.spec.icon = replaceRawWithCDN(templateYaml.spec.icon, cdnUrl);
+    if (templateYaml?.spec?.i18n) {
+      Object.keys(templateYaml?.spec?.i18n || {}).forEach((lang) => {
+        const i18nLang = templateYaml?.spec?.i18n?.[lang];
+        ['readme', 'icon'].forEach((field) => {
+          if (i18nLang?.[field]) {
+            i18nLang[field] = replaceRawWithCDN(i18nLang[field], cdnUrl);
+          }
+        });
+      });
+    }
   }
+
   templateYaml = parseTemplateVariable(templateYaml, TemplateEnvs);
   const dataSource = getTemplateDataSource(templateYaml);
 

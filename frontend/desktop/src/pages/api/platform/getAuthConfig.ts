@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 // genResAuthConfig Return AuthConfigType with only necessary fields for response to client, to avoid exposing sensitive data
 function genResAuthClientConfig(conf: AuthConfigType) {
+  const captcha = conf.captcha;
   const authClientConfig: AuthClientConfigType = {
     callbackURL: conf.callbackURL || '',
     invite: {
@@ -32,10 +33,10 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         enabled: !!conf.idp.sms?.enabled,
         ali: {
           enabled: !!conf.idp.sms?.ali?.enabled
-        },
-        email: {
-          enabled: !!conf.idp.sms?.email?.enabled
         }
+      },
+      email: {
+        enabled: !!conf.idp.email?.enabled
       },
       github: {
         enabled: !!conf.idp.github?.enabled,
@@ -60,6 +61,14 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         tokenURL: conf.idp.oauth2?.tokenURL || '',
         userInfoURL: conf.idp.oauth2?.userInfoURL || '',
         proxyAddress: conf.idp.oauth2?.proxyAddress || ''
+      }
+    },
+    captcha: {
+      enabled: !!captcha?.enabled,
+      ali: {
+        enabled: !!captcha?.ali?.enabled,
+        sceneId: captcha?.ali?.sceneId || '',
+        prefix: captcha?.ali?.prefix || ''
       }
     },
     hasBaiduToken: !!conf.baiduToken,

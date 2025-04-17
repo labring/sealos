@@ -24,7 +24,7 @@ import NeedToMerge from '../account/AccountCenter/mergeUser/NeedToMergeModal';
 import { useRealNameAuthNotification } from '../account/RealNameModal';
 import useSessionStore from '@/stores/session';
 import { useQuery } from '@tanstack/react-query';
-import { UserInfo } from '@/api/auth';
+import { getAmount, UserInfo } from '@/api/auth';
 import TaskModal from '../task/taskModal';
 import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
@@ -65,6 +65,13 @@ export default function Desktop(props: any) {
     select(d) {
       return d.data?.info;
     }
+  });
+
+  const { data: account } = useQuery({
+    queryKey: ['getAmount', { userId: session?.user?.userCrUid }],
+    queryFn: getAmount,
+    enabled: !!session?.user,
+    staleTime: 60 * 1000
   });
 
   /**
@@ -126,8 +133,8 @@ export default function Desktop(props: any) {
   }, [openDesktopApp]);
 
   useEffect(() => {
-    if (infoData.isSuccess && commonConfig?.realNameAuthEnabled) {
-      if (!infoData?.data?.realName && infoData?.data?.enterpriseVerificationStatus !== 'Success') {
+    if (infoData.isSuccess && commonConfig?.realNameAuthEnabled && account?.data?.balance) {
+      if (!infoData?.data?.realName && !infoData?.data?.enterpriseRealName) {
         realNameAuthNotificationIdRef.current = realNameAuthNotification({
           duration: null,
           isClosable: true
@@ -147,7 +154,7 @@ export default function Desktop(props: any) {
       const { data: notification } = await getGlobalNotification();
       if (!notification) return;
       const newID = notification?.uid;
-      const title = notification?.i18n[i18n.language].title;
+      const title = notification?.i18n[i18n?.language]?.title;
 
       if (notification.licenseFrontend) {
         message({

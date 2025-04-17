@@ -26,7 +26,7 @@
 
 </div>
 
-https://github.com/user-attachments/assets/a7b7ed5c-0e31-4158-8a76-3b161ed70a70
+https://github.com/user-attachments/assets/2fc03676-3310-4f81-8f1c-dd1ab225dde0
 
 <p align="center">
   <a href="https://sealos.run/docs/Intro">文档</a> |
@@ -85,7 +85,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 - 💬 加入我们的 [Discord服务器](https://discord.gg/qzBmGGZGk7)，与 Sealos 开发者和终端用户进行交流。这是了解 Sealos 和 Kubernetes 以及提问和分享经验的理想之地。
 
-- 🐦 在 [Twitter](https://twitter.com/Sailos_io) 上关注我们。
+- 🐦 在 [Twitter](https://twitter.com/Sealos_io) 上关注我们。
 
 - 🐞 请将任何 Sealos 的 Bug、问题和需求提交到 [GitHub Issue](https://github.com/labring/sealos/issues/new/choose)。
 

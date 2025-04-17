@@ -31,11 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
               networkName: `network-${appName}`,
               portName: 'static-host',
               port: 80,
-              protocol: 'HTTP',
+              protocol: 'TCP',
               openPublicDomain: true,
               publicDomain: appName,
               customDomain: '',
-              domain: domain
+              domain: domain,
+              appProtocol: 'HTTP',
+              openNodePort: false
             }
           ],
           envs: [],

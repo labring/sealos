@@ -34,7 +34,9 @@ spec:
               protocol: TCP
           env:
             - name: MONITOR_URL
-              value: https://object-storage-monitor.{{ .cloudDomain }}/q
+              value: http://object-storage-monitor.objectstorage-system.svc.cluster.local:9090/q
+            - name: APP_LAUNCHPAD_URL
+              value: http://applaunchpad-frontend.applaunchpad-frontend.svc.cluster.local:3000/api/v1alpha
           resources:
             limits:
               cpu: 2000m

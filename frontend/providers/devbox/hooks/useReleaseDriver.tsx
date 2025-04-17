@@ -1,12 +1,12 @@
-import { useGuideStore } from '@/stores/guide'
-import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
-import { driver } from '@sealos/driver'
-import { useTranslations } from 'next-intl'
-import { useCallback, useState } from 'react'
-import { DriverStarIcon } from './useDriver'
+import { useGuideStore } from '@/stores/guide';
+import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
+import { driver } from '@sealos/driver';
+import { useTranslations } from 'next-intl';
+import { useCallback, useState } from 'react';
+import { DriverStarIcon } from './useDriver';
 
 export default function useReleaseDriver() {
-  const t = useTranslations()
+  const t = useTranslations();
 
   const {
     isGuideEnabled,
@@ -14,7 +14,7 @@ export default function useReleaseDriver() {
     detailCompleted,
     setReleaseCompleted,
     setGuideEnabled
-  } = useGuideStore()
+  } = useGuideStore();
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -25,7 +25,8 @@ export default function useReleaseDriver() {
         bottom={'-30px'}
         color={'white'}
         alignItems={'center'}
-        {...props}>
+        {...props}
+      >
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
           {t('guide.click_shadow_skip')}
         </Text>
@@ -34,7 +35,8 @@ export default function useReleaseDriver() {
           width="20"
           height="20"
           viewBox="0 0 20 20"
-          fill="white">
+          fill="white"
+        >
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -42,8 +44,8 @@ export default function useReleaseDriver() {
           />
         </Icon>
       </Flex>
-    )
-  }
+    );
+  };
 
   const startReleaseGuide = async () => {
     try {
@@ -77,17 +79,17 @@ export default function useReleaseDriver() {
             }
           ],
           onDestroyed: () => {
-            setReleaseCompleted(true)
-            setGuideEnabled(false)
+            setReleaseCompleted(true);
+            setGuideEnabled(false);
           }
-        })
+        });
 
         requestAnimationFrame(() => {
-          driverObj.drive()
-        })
+          driverObj.drive();
+        });
       }
     } catch (error) {}
-  }
+  };
 
-  return { startReleaseGuide }
+  return { startReleaseGuide };
 }

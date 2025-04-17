@@ -21,10 +21,9 @@ func TokenAuth(c *gin.Context) {
 }
 
 func parseToken(token string) error {
-	_, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	_, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("JWTSecret")), nil
 	})
-
 	if err != nil {
 		return err
 	}

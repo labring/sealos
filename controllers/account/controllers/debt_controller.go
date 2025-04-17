@@ -246,6 +246,18 @@ func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) e
 	return nil
 }
 
+func getOwnNsList(clt client.Client, user string) ([]string, error) {
+	nsList := &corev1.NamespaceList{}
+	if err := clt.List(context.Background(), nsList, client.MatchingLabels{userv1.UserLabelOwnerKey: user}); err != nil {
+		return nil, fmt.Errorf("list namespace failed: %w", err)
+	}
+	nsListStr := make([]string, len(nsList.Items))
+	for i := range nsList.Items {
+		nsListStr[i] = nsList.Items[i].Name
+	}
+	return nsListStr, nil
+}
+
 var ErrAccountNotExist = errors.New("account not exist")
 
 /*

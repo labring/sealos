@@ -7,7 +7,7 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { CHANGE_BIND_STATUS } from '@/types/response/changeBind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { PROVIDER_STATUS } from '@/types/response/utils';
-async function addOauthProvider({
+export async function addOauthProvider({
   providerType,
   providerId,
   userUid

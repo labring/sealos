@@ -405,54 +405,91 @@ export default function EditApp({
   );
 }
 
+async function fetchReadmeContent(url: string): Promise<string> {
+  let retryCount = 0;
+  const maxRetries = 3;
+
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'text/markdown,text/plain,*/*',
+          'Content-Type': 'text/markdown; charset=UTF-8',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+          'User-Agent': 'Mozilla/5.0'
+        },
+        credentials: 'omit'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.text();
+    } catch (err) {
+      retryCount++;
+
+      if (retryCount === maxRetries) {
+        return '';
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryCount * 1000));
+    }
+  }
+  return '';
+}
+
 export async function getServerSideProps(content: any) {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
   const local =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
+  const appName = content?.query?.templateName || '';
+  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
 
   content?.res.setHeader(
     'Set-Cookie',
     `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
   );
 
-  const appName = content?.query?.templateName || '';
-
-  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-
-  let metaData = {
-    title: `${appName}部署和安装教程 - Sealos`,
-    keywords: '',
-    description: ''
-  };
-  let readmeContent = '';
-  let readUrl = '';
-
   try {
-    const templateSource: { data: TemplateSourceType } = await (
+    const { data: templateSource } = await (
       await fetch(`${baseurl}/api/getTemplateSource?templateName=${appName}`)
     ).json();
-    const templateDetail = templateSource?.data.templateYaml;
 
-    metaData = {
-      title: templateDetail?.spec?.title,
-      keywords: templateDetail?.spec?.description,
-      description: templateDetail?.spec?.description
+    const templateDetail = templateSource?.templateYaml;
+    const metaData = {
+      title: templateDetail?.spec?.title || '',
+      keywords: templateDetail?.spec?.description || '',
+      description: templateDetail?.spec?.description || ''
     };
 
-    const readme = templateDetail?.spec?.i18n?.[local]?.readme ?? templateDetail?.spec?.readme;
-    readUrl = readme;
-    readmeContent = await (await fetch(readme)).text();
-  } catch (error) {}
+    const readUrl =
+      templateDetail?.spec?.i18n?.[local]?.readme || templateDetail?.spec?.readme || '';
+    const readmeContent = readUrl ? await fetchReadmeContent(readUrl) : '';
 
-  return {
-    props: {
-      appName,
-      metaData,
-      brandName,
-      readmeContent,
-      readUrl,
-      ...(await serviceSideProps(content))
-    }
-  };
+    return {
+      props: {
+        appName,
+        metaData,
+        brandName,
+        readmeContent,
+        readUrl,
+        ...(await serviceSideProps(content))
+      }
+    };
+  } catch (error) {
+    console.log('Error in getServerSideProps:', error);
+
+    return {
+      props: {
+        appName,
+        metaData: { title: appName, keywords: '', description: '' },
+        brandName,
+        readmeContent: '',
+        readUrl: '',
+        ...(await serviceSideProps(content))
+      }
+    };
+  }
 }

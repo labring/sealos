@@ -1,15 +1,17 @@
-import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
-import { immer } from 'zustand/middleware/immer'
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+
+export type IDEType = 'vscode' | 'cursor' | 'vscodeInsiders' | 'windsurf' | 'jetbrains';
 
 type State = {
-  screenWidth: number
-  setScreenWidth: (e: number) => void
-  loading: boolean
-  setLoading: (val: boolean) => void
-  lastRoute: string
-  setLastRoute: (val: string) => void
-}
+  screenWidth: number;
+  setScreenWidth: (e: number) => void;
+  loading: boolean;
+  setLoading: (val: boolean) => void;
+  lastRoute: string;
+  setLastRoute: (val: string) => void;
+};
 
 export const useGlobalStore = create<State>()(
   devtools(
@@ -17,21 +19,21 @@ export const useGlobalStore = create<State>()(
       screenWidth: 1440,
       setScreenWidth(e: number) {
         set((state) => {
-          state.screenWidth = e
-        })
+          state.screenWidth = e;
+        });
       },
       loading: false,
       setLoading(val: boolean) {
         set((state) => {
-          state.loading = val
-        })
+          state.loading = val;
+        });
       },
       lastRoute: '/',
       setLastRoute(val) {
         set((state) => {
-          state.lastRoute = val
-        })
+          state.lastRoute = val;
+        });
       }
     }))
   )
-)
+);

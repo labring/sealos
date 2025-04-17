@@ -6,16 +6,16 @@ on:
     branches: [ "**" ]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "cmd/**"
-      - "pkg/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/pkg/**"
+      - "lifecycle/test/**"
   pull_request:
     branches: [ "*" ]
     paths:
       - ".github/workflows/e2e_test_core_k3s.yml"
-      - "cmd/**"
-      - "pkg/**"
-      - "test/**"
+      - "lifecycle/cmd/**"
+      - "lifecycle/pkg/**"
+      - "lifecycle/test/**"
 
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
           [
             E2E_sealos_k3s_basic_test,
           ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Download image-cri-shim
         uses: actions/download-artifact@v4
@@ -65,8 +65,9 @@ jobs:
         uses: labring/sealos-action@v0.0.7
         with:
           type: prune
-
       - name: Verify E2e test
+        env:
+          UNIT: ${{ matrix.unit }}
         run: |
           sudo apt-get remove docker docker-engine docker.io containerd runc
           sudo apt-get purge docker-ce docker-ce-cli containerd.io # docker-compose-plugin
@@ -74,4 +75,4 @@ jobs:
           sudo rm -rf /var/run/docker.sock
           sudo rm -rf /run/containerd/containerd.sock
           sudo chmod a+x /tmp/e2e.test
-          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="${{ matrix.unit }}"
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="$UNIT"

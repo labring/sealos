@@ -25,8 +25,6 @@ import (
 
 	"github.com/labring/sealos/controllers/job/init/internal/util/common"
 
-	gonanoid "github.com/matoous/go-nanoid/v2"
-
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
 
@@ -88,10 +86,7 @@ func PresetAdminUser() error {
 	}); err != nil {
 		return fmt.Errorf("failed to create region: %v", err)
 	}
-	userNanoID, err := gonanoid.New(10)
-	if err != nil {
-		return fmt.Errorf("failed to generate nano id: %v", err)
-	}
+	userNanoID := "admin"
 	genUserCrUID, genWorkspaceUID := uuid.New(), uuid.New()
 	if err = v2Account.CreateUser(&types.OauthProvider{
 		UserUID:      common.AdminUID(),

@@ -169,7 +169,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           await putApp({
             patch,
             appName,
-            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulSet.yaml')?.value
+            stateFulSetYaml: yamlList.find((item) => item.filename === 'statefulset.yaml')?.value
           });
         } else {
           await postDeployApp(parsedNewYamlList);
@@ -309,8 +309,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           networkName: network.networkName || `network-${nanoid()}`,
           portName: network.portName || nanoid(),
           port: network.port || 80,
-          protocol: network.protocol || 'HTTP',
+          protocol: network.protocol || 'TCP',
+          appProtocol: network.appProtocol || 'HTTP',
           openPublicDomain: network.openPublicDomain || false,
+          openNodePort: network.openNodePort || false,
           publicDomain: network.publicDomain || nanoid(),
           customDomain: network.customDomain || '',
           domain: network.domain || 'gzg.sealos.run'
@@ -328,6 +330,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         h={'100%'}
         minWidth={'1024px'}
         backgroundColor={'grayModern.100'}
+        overflowY={'auto'}
       >
         <Header
           appName={formHook.getValues('appName')}
@@ -337,6 +340,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           applyCb={() => {
             closeGuide();
             formHook.handleSubmit(async (data) => {
+              // console.log(data, 'formHook.handleSubmit');
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 

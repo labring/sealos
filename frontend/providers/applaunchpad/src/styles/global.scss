@@ -1,24 +1,38 @@
 .table-cross {
-  border-radius: 6px;
   overflow: hidden;
   table-layout: fixed;
   width: 100%;
 
   th {
-    border: 1px solid transparent;
     text-align: left;
     padding: 8px 16px;
     user-select: all;
     font-weight: 500;
     color: #485264;
+    line-height: 16px;
+    &:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-child {
+      border-radius: 0 4px 4px 0;
+    }
   }
 
   thead tr {
-    background: #f4f4f7;
+    background: #f7f8fa;
   }
 
-  tbody tr:nth-child(odd) {
-    background: #fafafc;
+  tbody tr:nth-child(even) {
+    background: #fbfbfc;
+  }
+
+  tbody tr {
+    &:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    &:last-child {
+      border-radius: 0 4px 4px 0;
+    }
   }
 }
 
@@ -32,4 +46,34 @@
   padding: 14px;
   max-width: 600px;
   border: 1px solid #94b5ff;
+}
+
+// date picker
+div.rdp {
+  --rdp-cell-size: 30px;
+  --rdp-accent-color: black;
+  --rdp-background-color: #f4f6f8;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid rgba(0, 0, 0, 0.75);
+  margin: 12px 16px 8px 16px;
+}
+
+button.rdp-button_reset.rdp-button.rdp-day {
+  border-radius: 6px;
+}
+
+button.rdp-day_today {
+  background-color: #dbf3ff;
+  color: #0884dd;
+}
+
+button.rdp-button.rdp-day.rdp-day_range_middle {
+  border-radius: 0px;
+  background-color: #f4f4f7;
+  color: #111824;
+}
+
+button.rdp-button.rdp-day.rdp-day_range_end {
+  background-color: #111824;
+  color: white;
 }

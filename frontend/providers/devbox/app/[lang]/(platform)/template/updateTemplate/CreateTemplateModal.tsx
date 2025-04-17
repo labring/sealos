@@ -30,7 +30,7 @@ import TemplateRepositoryIsPublicField from './components/TemplateRepositoryIsPu
 import TemplateRepositoryNameField from './components/TemplateRepositoryNameField';
 import TemplateRepositoryTagField from './components/TemplateRepositoryTagField';
 const tagSchema = z.object({
-  value: z.string(),
+  value: z.string()
 });
 
 // 定义表单数据类型和验证规则
@@ -47,14 +47,17 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
   // onSubmit
   devboxReleaseName
 }) => {
-  const t = useTranslations()
+  const t = useTranslations();
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')).pipe(templateNameSchema),
     version: z.string().min(1, t('input_template_version_placeholder')).pipe(versionSchema),
     isPublic: z.boolean().default(false),
     agreeTerms: z.boolean().refine((val) => val === true, t('privacy_and_security_agreement_tips')),
-    tags: z.array(tagSchema).min(1, t('select_at_least_1_tag')).max(3, t('select_lest_than_3_tags')),
-    description: z.string(),
+    tags: z
+      .array(tagSchema)
+      .min(1, t('select_at_least_1_tag'))
+      .max(3, t('select_lest_than_3_tags')),
+    description: z.string()
   });
 
   type FormData = z.infer<typeof formSchema>;
@@ -66,7 +69,7 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
       isPublic: false,
       agreeTerms: false,
       tags: [],
-      description: '',
+      description: ''
     },
     mode: 'onSubmit'
   });
@@ -74,44 +77,44 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
-  } = methods
-  const { openTemplateModal, config } = useTemplateStore()
-  const queryClient = useQueryClient()
+    reset
+  } = methods;
+  const { openTemplateModal, config } = useTemplateStore();
+  const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: createTemplateReposistory
     // return await createTemplate(data)
-  })
-  const { message: toast } = useMessage()
-  const lastRoute = usePathname()
+  });
+  const { message: toast } = useMessage();
+  const lastRoute = usePathname();
   const onSubmitHandler: SubmitHandler<FormData> = async (_data) => {
     try {
-      const result = formSchema.safeParse(_data)
+      const result = formSchema.safeParse(_data);
       if (!result.success) {
         // const title = result.error.errors[0]
-        const error = result.error.errors[0]
-        if(error.path[0] === 'name' && error.code === 'invalid_string') {
+        const error = result.error.errors[0];
+        if (error.path[0] === 'name' && error.code === 'invalid_string') {
           toast({
             title: t('invalide_template_name'),
-            status: 'error',
+            status: 'error'
           });
           return;
         }
-        if(error.path[0] === 'version' && error.code === 'invalid_string') {
+        if (error.path[0] === 'version' && error.code === 'invalid_string') {
           toast({
             title: t('invalide_template_version'),
-            status: 'error',
+            status: 'error'
           });
           return;
         }
-        const title = error.message
+        const title = error.message;
         toast({
           title,
-          status: 'error',
+          status: 'error'
         });
         return;
       }
-      const data = result.data
+      const data = result.data;
       await mutation.mutateAsync({
         templateRepositoryName: data.name,
         version: data.version,
@@ -120,40 +123,34 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
         tagUidList: data.tags.map((tag) => tag.value),
         devboxReleaseName
       });
-      queryClient.invalidateQueries(['template-repository-list'])
-      queryClient.invalidateQueries(['template-repository-detail'])
+      queryClient.invalidateQueries(['template-repository-list']);
+      queryClient.invalidateQueries(['template-repository-detail']);
       reset();
       onClose();
       openTemplateModal({
         templateState: TemplateState.privateTemplate,
         lastRoute
-      })
+      });
       toast({
         title: t('create_template_success'),
-        status: 'success',
+        status: 'success'
       });
     } catch (error) {
-      
-      if(error == '409:templateRepository name already exists') {
+      if (error == '409:templateRepository name already exists') {
         return toast({
           title: t('template_repository_name_already_exists'),
-          status: 'error',
+          status: 'error'
         });
       }
       toast({
         title: error as string,
-        status: 'error',
+        status: 'error'
       });
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="md"
-      onCloseComplete={() => reset()}
-    >
+    <Modal isOpen={isOpen} onClose={onClose} size="md" onCloseComplete={() => reset()}>
       <ModalOverlay />
       <ModalContent maxW="562px" margin={'auto'}>
         <FormProvider {...methods}>
@@ -170,14 +167,16 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
                 {/* 版本号 */}
 
                 <Flex align={'center'}>
-                  <MyFormLabel width="108px" m='0' fontSize="14px" isRequired>{t('version')}</MyFormLabel>
+                  <MyFormLabel width="108px" m="0" fontSize="14px" isRequired>
+                    {t('version')}
+                  </MyFormLabel>
                   <Controller
                     name="version"
                     control={control}
-                    render={({ field,}) => (
+                    render={({ field }) => (
                       <Input
                         {...field}
-                        placeholder={t("input_template_version_placeholder")}
+                        placeholder={t('input_template_version_placeholder')}
                         bg="grayModern.50"
                         borderColor="grayModern.200"
                         size="sm"
@@ -187,7 +186,6 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
                   />
                 </Flex>
 
-
                 {/* 公开 */}
                 {/* <Flex > */}
                 <TemplateRepositoryIsPublicField />
@@ -195,13 +193,11 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
                 {/* 标签 */}
                 <TemplateRepositoryTagField />
 
-
                 {/* 简介 */}
                 <TemplateRepositoryDescriptionField />
               </VStack>
-
             </ModalBody>
-            <ModalFooter px={'52px'} pb={'32px'} >
+            <ModalFooter px={'52px'} pb={'32px'}>
               {/* 按钮组 */}
               <ButtonGroup spacing={'10px'}>
                 <Button
@@ -233,4 +229,4 @@ const CreateTemplateModal: FC<CreateTemplateModalProps> = ({
   );
 };
 
-export default CreateTemplateModal
+export default CreateTemplateModal;

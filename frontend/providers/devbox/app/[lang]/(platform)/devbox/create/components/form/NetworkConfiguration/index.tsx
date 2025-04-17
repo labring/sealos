@@ -1,8 +1,8 @@
-import MyIcon from '@/components/Icon'
-import { ProtocolList } from '@/constants/devbox'
-import { useEnvStore } from '@/stores/env'
-import { DevboxEditTypeV2 } from '@/types/devbox'
-import { nanoid } from '@/utils/tools'
+import MyIcon from '@/components/Icon';
+import { ProtocolList } from '@/constants/devbox';
+import { useEnvStore } from '@/stores/env';
+import { DevboxEditTypeV2 } from '@/types/devbox';
+import { nanoid } from '@/utils/tools';
 import {
   Box,
   BoxProps,
@@ -13,38 +13,39 @@ import {
   Input,
   Switch,
   useTheme
-} from '@chakra-ui/react'
-import { MySelect, useMessage } from '@sealos/ui'
-import { useTranslations } from 'next-intl'
-import dynamic from 'next/dynamic'
-import { useState } from 'react'
-import { useFieldArray, useFormContext } from 'react-hook-form'
-import ConfigurationHeader from '../ConfigurationHeader'
+} from '@chakra-ui/react';
+import { MySelect, useMessage } from '@sealos/ui';
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+import { useState } from 'react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import ConfigurationHeader from '../ConfigurationHeader';
 // const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12)
 
 export type CustomAccessModalParams = {
-  publicDomain: string
-  customDomain: string
-}
+  publicDomain: string;
+  customDomain: string;
+};
 
-const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccessModal'))
+const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccessModal'));
 const AppendNetworksButton = (props: ButtonProps) => {
-  const t = useTranslations()
+  const t = useTranslations();
   return (
     <Button
       w={'100px'}
       variant={'outline'}
       leftIcon={<MyIcon name="plus" w={'18px'} fill={'#485264'} />}
-      {...props}>
+      {...props}
+    >
       {t('Add Port')}
     </Button>
-  )
-}
+  );
+};
 export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { isEdit: boolean }) {
-  const { register, getValues, control } = useFormContext<DevboxEditTypeV2>()
-  const theme = useTheme()
-  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>()
-  const { env } = useEnvStore()
+  const { register, getValues, control } = useFormContext<DevboxEditTypeV2>();
+  const theme = useTheme();
+  const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
+  const { env } = useEnvStore();
   const {
     fields: networks,
     update: updateNetworks,
@@ -53,9 +54,9 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
   } = useFieldArray({
     control,
     name: 'networks'
-  })
-  const t = useTranslations()
-  const { message: toast } = useMessage()
+  });
+  const t = useTranslations();
+  const { message: toast } = useMessage();
   const appendNetworks = () => {
     _appendNetworks({
       networkName: '',
@@ -65,8 +66,8 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
       openPublicDomain: false,
       publicDomain: '',
       customDomain: ''
-    })
-  }
+    });
+  };
   // const networks = watch('networks')
   return (
     <>
@@ -83,7 +84,8 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
               alignItems={'flex-start'}
               key={network.id}
               _notLast={{ pb: 6, borderBottom: theme.borders.base }}
-              _notFirst={{ pt: 6 }}>
+              _notFirst={{ pt: 6 }}
+            >
               <Box>
                 <Box mb={'10px'} h={'20px'} fontSize={'base'} color={'grayModern.900'}>
                   {t('Container Port')}
@@ -108,12 +110,12 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                         const ports = getValues('networks').map((network, index) => ({
                           port: network.port,
                           index
-                        }))
+                        }));
                         // 排除当前正在编辑的端口
                         const isDuplicate = ports.some(
                           (item) => item.port === value && item.index !== i
-                        )
-                        return !isDuplicate || t('The port number cannot be repeated')
+                        );
+                        return !isDuplicate || t('The port number cannot be repeated');
                       }
                     }
                   })}
@@ -135,13 +137,13 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                     id={`openPublicDomain-${i}`}
                     isChecked={!!network.openPublicDomain}
                     onChange={(e) => {
-                      const devboxName = getValues('name')
+                      const devboxName = getValues('name');
                       if (!devboxName) {
                         toast({
                           title: t('Please enter the devbox name first'),
                           status: 'warning'
-                        })
-                        return
+                        });
+                        return;
                       }
                       updateNetworks(i, {
                         ...getValues('networks')[i],
@@ -149,7 +151,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                         protocol: network.protocol || 'HTTP',
                         openPublicDomain: e.target.checked,
                         publicDomain: network.publicDomain || `${nanoid()}.${env.ingressDomain}`
-                      })
+                      });
                     }}
                   />
                 </Flex>
@@ -171,7 +173,7 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                           updateNetworks(i, {
                             ...getValues('networks')[i],
                             protocol: val
-                          })
+                          });
                         }}
                       />
                       <Flex
@@ -184,7 +186,8 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                         border={theme.borders.base}
                         borderLeft={0}
                         borderTopRightRadius={'md'}
-                        borderBottomRightRadius={'md'}>
+                        borderBottomRightRadius={'md'}
+                      >
                         <Box flex={1} userSelect={'all'} className="textEllipsis">
                           {network.customDomain ? network.customDomain : network.publicDomain!}
                         </Box>
@@ -198,7 +201,8 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
                               publicDomain: network.publicDomain!,
                               customDomain: network.customDomain!
                             })
-                          }>
+                          }
+                        >
                           {t('Custom Domain')}
                         </Box>
                       </Flex>
@@ -235,16 +239,16 @@ export default function NetworkConfiguration({ isEdit, ...props }: BoxProps & { 
           onSuccess={(e) => {
             const i = networks.findIndex(
               (item) => item.publicDomain === customAccessModalData.publicDomain
-            )
-            if (i === -1) return
+            );
+            if (i === -1) return;
             updateNetworks(i, {
               ...networks[i],
               customDomain: e
-            })
-            setCustomAccessModalData(undefined)
+            });
+            setCustomAccessModalData(undefined);
           }}
         />
       )}
     </>
-  )
+  );
 }

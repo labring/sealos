@@ -8,11 +8,12 @@ import Head from 'next/head';
 import { useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
 import Script from 'next/script';
+import useScriptStore from '@/stores/script';
 
 export default function SigninPage() {
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, authConfig } = useConfigStore();
   const { t } = useTranslation();
-
+  const { setCaptchaIsLoad } = useScriptStore();
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
     if (!!url) {
@@ -29,9 +30,18 @@ export default function SigninPage() {
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
+      {authConfig?.captcha.enabled && (
+        <Script
+          src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"
+          onLoad={() => {
+            setCaptchaIsLoad();
+          }}
+        />
+      )}
       {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
       })}
+
       <SigninComponent />
     </Box>
   );

@@ -46,11 +46,11 @@ jobs:
 
   container-sealos:
     needs: [ call_ci_workflow ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
       - # Add support for more platforms with QEMU (optional)
@@ -58,16 +58,16 @@ jobs:
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download sealos
         uses: actions/download-artifact@v4
@@ -83,26 +83,28 @@ jobs:
 
       - name: build (and publish) main sealos image
         env:
-          # fork friendly ^^
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GIT_COMMIT_SHORT_SHA: ${{ env.GIT_COMMIT_SHORT_SHA }}
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
         working-directory: docker/sealos
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
-          --label "org.opencontainers.image.description=sealos  container image" \
+          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
+          --label "org.opencontainers.image.description=sealos container image" \
           --label "org.opencontainers.image.licenses=MIT" \
           --push \
-          -t ${DOCKER_REPO}:${{ env.GIT_COMMIT_SHORT_SHA }} \
+          -t "${DOCKER_REPO}:${GIT_COMMIT_SHORT_SHA}" \
           -f Dockerfile.main \
           .
+
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
-          --label "org.opencontainers.image.description=sealos  container image" \
+          --label "org.opencontainers.image.source=https://github.com/${REPOSITORY_OWNER}/sealos" \
+          --label "org.opencontainers.image.description=sealos container image" \
           --label "org.opencontainers.image.licenses=MIT" \
           --push \
-          -t ${DOCKER_REPO}:latest \
+          -t "${DOCKER_REPO}:latest" \
           -f Dockerfile.main \
           .
 
@@ -110,12 +112,12 @@ jobs:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - container-sealos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
       - name: Renew issue and Sync Images
@@ -124,7 +126,7 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
@@ -141,12 +143,12 @@ jobs:
     needs:
       - call_ci_workflow
       - save-sealos
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
@@ -172,29 +174,33 @@ jobs:
           path: /tmp/sealos/images/
 
       - name: Manifest Cluster Images
+        env:
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+          sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
           sudo sealos load -i /tmp/sealos/images/patch-arm64.tar
           sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh
-        env:
-          OWNER: ${{ github.repository_owner }}
+          bash scripts/manifest-cluster-images.sh
+
       - name: Manifest Cluster Images for latest
-        run: |
-          sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-amd64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-amd64
-          sudo sealos tag ghcr.io/${{ github.repository_owner }}/sealos-patch:"$GIT_COMMIT_SHORT_SHA"-arm64  ghcr.io/${{ github.repository_owner }}/sealos-patch:latest-arm64
-          sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh ghcr.io/${{ github.repository_owner }}/sealos-patch:latest
         env:
-          OWNER: ${{ github.repository_owner }}
+          REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GIT_COMMIT_SHORT_SHA: ${{ env.GIT_COMMIT_SHORT_SHA }}
+        run: |
+          sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-amd64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-amd64"
+          sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-arm64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-arm64"
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest"
+
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GH_PAT }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"

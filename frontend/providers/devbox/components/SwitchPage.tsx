@@ -166,9 +166,7 @@ export default function SwitchPage({
     }
   };
   return (
-    <Flex ml={'auto'}
-      mr={'0'} h="32px" align={'center'} 
-      fontSize="14px" {...props}>
+    <Flex ml={'auto'} mr={'0'} h="32px" align={'center'} fontSize="14px" {...props}>
       <Text fontSize="14px" color={'grayModern.500'}>
         {t('total_page_items')}:
       </Text>
@@ -189,7 +187,7 @@ export default function SwitchPage({
           }}
           color={currentPage === 1 ? 'grayModern.400' : 'grayModern.900'}
         >
-          <MyIcon name='firstPage' boxSize={'12px'} fill={'currentcolor'} />
+          <MyIcon name="firstPage" boxSize={'12px'} fill={'currentcolor'} />
         </Button>
         <Button
           {...switchStyle}
@@ -204,7 +202,7 @@ export default function SwitchPage({
           }}
           color={currentPage === 1 ? 'grayModern.400' : 'grayModern.900'}
         >
-          <MyIcon name='prePage' boxSize={'12px'} fill={'currentcolor'} />
+          <MyIcon name="prePage" boxSize={'12px'} fill={'currentcolor'} />
           {/* <RightArrowIcon boxSize={'6px'} transform={'rotate(180deg)'} fill={'currentcolor'} /> */}
         </Button>
         <Text color={'grayModern.500'}>{currentPage}</Text>
@@ -224,7 +222,12 @@ export default function SwitchPage({
             setCurrentPage(currentPage + 1);
           }}
         >
-          <MyIcon name='prePage' boxSize={'12px'} fill={'currentcolor'} transform={'rotate(180deg)'} />
+          <MyIcon
+            name="prePage"
+            boxSize={'12px'}
+            fill={'currentcolor'}
+            transform={'rotate(180deg)'}
+          />
         </Button>
         <Button
           {...switchStyle}
@@ -241,7 +244,12 @@ export default function SwitchPage({
             setCurrentPage(totalPage);
           }}
         >
-          <MyIcon name='firstPage' boxSize={'12px'} fill={'currentcolor'} transform={'rotate(180deg)'} />
+          <MyIcon
+            name="firstPage"
+            boxSize={'12px'}
+            fill={'currentcolor'}
+            transform={'rotate(180deg)'}
+          />
         </Button>
       </Flex>
       <Text fontSize="12px" fontWeight="500" color={'grayModern.900'}>

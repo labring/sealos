@@ -1,7 +1,7 @@
 import { NextApiResponse } from 'next';
 import { addOrUpdateCode, SmsType } from '../db/verifyCode';
 import { jsonRes } from '../response';
-import { emailSmsReq, smsReq } from '../sms';
+import { captchaReq, emailSmsReq, smsReq } from '../sms';
 
 export const sendSmsCodeResp =
   (smsType: SmsType, id: string, code: string) =>

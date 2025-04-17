@@ -23,13 +23,16 @@ export const modifiedRemoteSSHConfig = async (sshHostLabel: string) => {
   // add new ssh host label
   newSSHHostPlatforms[sshHostLabel] = 'linux'
 
-  await vscode.workspace
-    .getConfiguration('remote.SSH')
-    .update(
-      'remotePlatform',
-      newSSHHostPlatforms,
-      vscode.ConfigurationTarget.Global
-    )
+  const appName = vscode.env.appName
+  if (appName !== 'Windsurf' && appName !== 'Trae' && appName !== 'Trae-CN') {
+    await vscode.workspace
+      .getConfiguration('remote.SSH')
+      .update(
+        'remotePlatform',
+        newSSHHostPlatforms,
+        vscode.ConfigurationTarget.Global
+      )
+  }
 
   // await vscode.workspace
   //   .getConfiguration('remote.SSH')

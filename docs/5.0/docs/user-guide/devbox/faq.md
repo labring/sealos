@@ -114,33 +114,4 @@ Alternatively, you could change your application's port.
 
 ## 9. How to Change the Default User to Root in Devbox
 
-If you want to connect to Devbox as the root user when opening a local editor, please follow these steps. First, ensure
-your Devbox can connect properly using the default configuration. Open the file `~/.ssh/sealos/devbox_config` on your
-local machine. If you are uncertain about the file's location, please refer to Question 2.
-
-Locate the configuration that you wish to modify to use the root user, for example:
-
-```config
-Host usw.sailos.io_ns-rqtny6y6_devbox1234
-  HostName usw.sailos.io
-  User devbox
-  Port 40911
-  IdentityFile ~/.ssh/sealos/usw.sailos.io_ns-rqtny6y6_devbox1234
-  IdentitiesOnly yes
-  StrictHostKeyChecking no
-```
-
-Change the `User` value to root, as follows:
-
-```config
-Host usw.sailos.io_ns-rqtny6y6_devbox1234
-  HostName usw.sailos.io
-  User root
-  Port 40911
-  IdentityFile ~/.ssh/sealos/usw.sailos.io_ns-rqtny6y6_devbox1234
-  IdentitiesOnly yes
-  StrictHostKeyChecking no
-```
-
-After saving the changes, exit the local editor connected to Devbox and then reopen the editor. You should now be
-connected to Devbox as the root user.
+Run 'sudo su' in the terminal to switch to the root user.

@@ -5,11 +5,11 @@ export type CloudConfigType = {
   port: string;
   regionUID: string;
   certSecretName: string;
+  proxyDomain: string;
 };
 
 export type CommonConfigType = {
   enterpriseRealNameAuthEnabled: boolean;
-  enterpriseSupportingMaterials: string;
   realNameAuthEnabled: boolean;
   realNameReward: number;
   guideEnabled: boolean;
@@ -20,6 +20,7 @@ export type CommonConfigType = {
   objectstorageUrl: string;
   applaunchpadUrl: string;
   dbproviderUrl: string;
+  trackingEnabled: boolean;
 };
 export type CommonClientConfigType = DeepRequired<
   Omit<
@@ -64,7 +65,6 @@ export type LayoutConfigType = {
   customerServiceURL?: string;
   forcedLanguage?: string;
   currencySymbol?: 'shellCoin' | 'cny' | 'usd';
-
   protocol?: ProtocolConfigType;
   common: {
     githubStarEnabled: boolean;
@@ -133,18 +133,42 @@ export type AuthConfigType = {
         accessKeyID: string;
         accessKeySecret?: string;
       };
-      email?: {
-        enabled: boolean;
-        host: string;
-        port: number;
-        user: string;
-        password: string;
-      };
+    };
+    email?: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      language?: string;
+    };
+  };
+  captcha?: {
+    enabled: boolean;
+    ali?: {
+      enabled: boolean;
+      sceneId: string;
+      prefix: string;
+      endpoint: string;
+      accessKeyID: string;
+      accessKeySecret?: string;
     };
   };
 };
 
-export type AuthClientConfigType = DeepRequired<
+export type AuthClientConfigType = {
+  idp: {
+    sms: {
+      enabled: boolean;
+      ali: {
+        enabled: boolean;
+      };
+    };
+    email: {
+      enabled: boolean;
+    };
+  };
+} & DeepRequired<
   OmitPathArr<
     AuthConfigType,
     [
@@ -156,28 +180,20 @@ export type AuthClientConfigType = DeepRequired<
       'idp.github.clientSecret',
       'idp.wechat.clientSecret',
       'idp.google.clientSecret',
-      'idp.sms.ali',
-      'idp.sms.email',
+      'idp.sms',
+      'idp.email',
       'idp.oauth2.clientSecret',
       'jwt',
       'billingUrl',
       'workorderUrl',
-      'cloudVitrualMachineUrl'
+      'cloudVitrualMachineUrl',
+      //captcha
+      'captcha.ali.accessKeyID',
+      'captcha.ali.accessKeySecret',
+      'captcha.ali.endpoint'
     ]
   >
-> & {
-  idp: {
-    sms: {
-      enabled: boolean;
-      ali: {
-        enabled: boolean;
-      };
-      email: {
-        enabled: boolean;
-      };
-    };
-  };
-};
+>;
 
 export type JwtConfigType = {
   internal?: string;
@@ -192,6 +208,11 @@ export type DesktopConfigType<T = AuthConfigType> = {
     maxTeamCount: number;
     maxTeamMemberCount: number;
   };
+};
+
+export type TrackingConfigType = {
+  websiteId?: string;
+  hostUrl?: string;
 };
 
 export type RealNameOSSConfigType = {
@@ -209,18 +230,20 @@ export type AppConfigType = {
   common: CommonConfigType;
   database: DatabaseConfigType;
   desktop: DesktopConfigType;
+  tracking: TrackingConfigType;
   realNameOSS: RealNameOSSConfigType;
 };
 
 export type AppClientConfigType = {
   cloud: CloudConfigType;
   common: CommonClientConfigType;
+  tracking: Required<TrackingConfigType>;
   desktop: DesktopConfigType<AuthClientConfigType>;
 };
 
 export const DefaultCommonClientConfig: CommonClientConfigType = {
   enterpriseRealNameAuthEnabled: false,
-  enterpriseSupportingMaterials: '',
+  trackingEnabled: false,
   realNameAuthEnabled: false,
   realNameReward: 0,
   guideEnabled: false,
@@ -232,7 +255,8 @@ export const DefaultCloudConfig: CloudConfigType = {
   domain: 'cloud.sealos.io',
   port: '443',
   regionUID: 'sealos-cloud',
-  certSecretName: 'wildcard-cert'
+  certSecretName: 'wildcard-cert',
+  proxyDomain: 'cloud.sealos.io'
 };
 
 export const DefaultLayoutConfig: LayoutConfigType = {
@@ -292,10 +316,10 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       enabled: false,
       ali: {
         enabled: false
-      },
-      email: {
-        enabled: false
       }
+    },
+    email: {
+      enabled: false
     },
     oauth2: {
       enabled: false,
@@ -307,12 +331,23 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
       proxyAddress: ''
     }
   },
-  billingToken: ''
+  billingToken: '',
+  captcha: {
+    enabled: false,
+    ali: {
+      enabled: false,
+      sceneId: '',
+      prefix: ''
+    }
+  }
 };
-
 export const DefaultAppClientConfig: AppClientConfigType = {
   cloud: DefaultCloudConfig,
   common: DefaultCommonClientConfig,
+  tracking: {
+    websiteId: '',
+    hostUrl: ''
+  },
   desktop: {
     layout: DefaultLayoutConfig,
     auth: DefaultAuthClientConfig

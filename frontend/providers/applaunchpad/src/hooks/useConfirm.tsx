@@ -31,7 +31,12 @@ export const useConfirm = ({ title = 'Warning', content }: { title?: string; con
     ),
     ConfirmChild: useCallback(
       () => (
-        <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
+        <AlertDialog
+          isOpen={isOpen}
+          leastDestructiveRef={cancelRef}
+          onClose={onClose}
+          closeOnOverlayClick={false}
+        >
           <AlertDialogOverlay>
             <AlertDialogContent>
               <AlertDialogHeader fontSize="lg" fontWeight="bold">

@@ -1245,17 +1245,6 @@ const docTemplate = `{
                     "GetUserRealNameInfo"
                 ],
                 "summary": "Get user real name information",
-                "parameters": [
-                    {
-                        "description": "Get real name info request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/helper.GetRealNameInfoReq"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Successfully retrieved user real name info",
@@ -1279,6 +1268,62 @@ const docTemplate = `{
                         "description": "Failed to get user real name info or info not found/verified",
                         "schema": {
                             "$ref": "#/definitions/helper.ErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/account/v1alpha1/recharge/discount": {
+            "post": {
+                "description": "Get recharge discount",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RechargeDiscount"
+                ],
+                "summary": "Get recharge discount",
+                "parameters": [
+                    {
+                        "description": "Get recharge discount request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successfully get recharge discount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "failed to parse get recharge discount request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get recharge discount",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -1426,6 +1471,120 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/admin/v1alpha1/account": {
+            "get": {
+                "description": "Get user account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get user account",
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved user account",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get user account",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/charge": {
+            "post": {
+                "description": "Charge billing",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Charge billing",
+                "responses": {
+                    "200": {
+                        "description": "successfully charged billing",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to charge billing",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1alpha1/real-name-info": {
+            "get": {
+                "description": "Get user real name info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Account"
+                ],
+                "summary": "Get user real name info",
+                "responses": {
+                    "200": {
+                        "description": "successfully retrieved user real name info",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "authenticate error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get user real name info",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1505,6 +1664,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1545,6 +1708,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1565,6 +1732,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1608,6 +1779,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1747,6 +1922,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1788,6 +1967,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1834,6 +2017,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1857,26 +2044,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/common.PropertyQuery"
                     }
-                }
-            }
-        },
-        "helper.GetRealNameInfoReq": {
-            "type": "object",
-            "properties": {
-                "kubeConfig": {
-                    "type": "string"
-                },
-                "owner": {
-                    "type": "string",
-                    "example": "admin"
-                },
-                "token": {
-                    "type": "string",
-                    "example": "token"
-                },
-                "userID": {
-                    "type": "string",
-                    "example": "admin"
                 }
             }
         },
@@ -1950,6 +2117,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -1982,6 +2153,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2037,6 +2212,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2071,6 +2250,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2108,6 +2291,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2136,6 +2323,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2185,6 +2376,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         },
@@ -2224,6 +2419,10 @@ const docTemplate = `{
                 "userID": {
                     "type": "string",
                     "example": "admin"
+                },
+                "userUID": {
+                    "type": "string",
+                    "example": "user-123"
                 }
             }
         }

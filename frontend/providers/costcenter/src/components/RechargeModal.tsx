@@ -213,7 +213,7 @@ const BonusBox = (props: {
           fontSize="12px"
         >
           <Text mr="4px">{t('Bonus')}</Text>
-          <CurrencySymbol boxSize={'10px'} mr={'2px'} />
+          <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
           <Text> {props.bouns}</Text>
         </Flex>
       ) : (

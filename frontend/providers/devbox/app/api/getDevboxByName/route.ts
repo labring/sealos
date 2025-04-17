@@ -1,33 +1,32 @@
-import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox'
-import { authSession } from '@/services/backend/auth'
-import { getK8s } from '@/services/backend/kubernetes'
-import { jsonRes } from '@/services/backend/response'
-import { devboxDB } from '@/services/db/init'
-import { ProtocolType } from '@/types/devbox'
-import { PortInfos } from '@/types/ingress'
-import { KBDevboxTypeV2 } from '@/types/k8s'
-import { NextRequest } from 'next/server'
+import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
+import { devboxDB } from '@/services/db/init';
+import { ProtocolType } from '@/types/devbox';
+import { PortInfos } from '@/types/ingress';
+import { KBDevboxTypeV2 } from '@/types/k8s';
+import { NextRequest } from 'next/server';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = req.headers
-    const { ROOT_RUNTIME_NAMESPACE } = process.env
+    const headerList = req.headers;
 
-    const { searchParams } = req.nextUrl
-    const devboxName = searchParams.get('devboxName') as string
+    const { searchParams } = req.nextUrl;
+    const devboxName = searchParams.get('devboxName') as string;
 
     if (!devboxName) {
       return jsonRes({
         code: 400,
         error: 'devboxName is required'
-      })
+      });
     }
 
     const { k8sCustomObjects, namespace, k8sCore, k8sNetworkingApp } = await getK8s({
       kubeconfig: await authSession(headerList)
-    })
+    });
 
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
@@ -35,10 +34,10 @@ export async function GET(req: NextRequest) {
       namespace,
       'devboxes',
       devboxName
-    )) as { body: KBDevboxTypeV2 }
+    )) as { body: KBDevboxTypeV2 };
     const template = await devboxDB.template.findUnique({
       where: {
-        uid: devboxBody.spec.templateID,
+        uid: devboxBody.spec.templateID
       },
       select: {
         templateRepository: {
@@ -46,39 +45,34 @@ export async function GET(req: NextRequest) {
             uid: true,
             iconId: true,
             name: true,
-            kind: true,
+            kind: true
           }
         },
         uid: true,
         image: true,
-        name: true,
+        name: true
       }
-    })
+    });
     if (!template) {
       return jsonRes({
         code: 500,
         error: 'template not found'
-      })
+      });
     }
-    const label = `${devboxKey}=${devboxName}`
+    const label = `${devboxKey}=${devboxName}`;
     // get ingresses and service
     const [ingressesResponse, serviceResponse] = await Promise.all([
-      k8sNetworkingApp.listNamespacedIngress(
-        namespace,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        label
-      ).catch(() => null),
+      k8sNetworkingApp
+        .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null),
       k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
-    ])
-    const ingresses = ingressesResponse?.body.items || []
-    const service = serviceResponse?.body
+    ]);
+    const ingresses = ingressesResponse?.body.items || [];
+    const service = serviceResponse?.body;
 
     const ingressList = ingresses.map((item) => {
-      const defaultDomain = item.metadata?.labels?.[publicDomainKey]
-      const tlsHost = item.spec?.tls?.[0]?.hosts?.[0]
+      const defaultDomain = item.metadata?.labels?.[publicDomainKey];
+      const tlsHost = item.spec?.tls?.[0]?.hosts?.[0];
       return {
         networkName: item.metadata?.name,
         port: item.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number,
@@ -86,11 +80,12 @@ export async function GET(req: NextRequest) {
         openPublicDomain: !!defaultDomain,
         publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
         customDomain: defaultDomain === tlsHost ? '' : tlsHost
-      }
-    })
+      };
+    });
 
-    const portInfos: PortInfos = service?.spec?.ports?.map((svcport) => {
-      const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port)
+    const portInfos: PortInfos =
+      service?.spec?.ports?.map((svcport) => {
+        const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port);
         return {
           portName: svcport.name!,
           port: svcport.port,
@@ -99,18 +94,14 @@ export async function GET(req: NextRequest) {
           openPublicDomain: !!ingressInfo?.openPublicDomain,
           publicDomain: ingressInfo?.publicDomain,
           customDomain: ingressInfo?.customDomain
-        }
-    }) || []
-    const resp = [
-      devboxBody,
-      portInfos,
-      template
-    ] as const
-    return jsonRes({ data: resp })
+        };
+      }) || [];
+    const resp = [devboxBody, portInfos, template] as const;
+    return jsonRes({ data: resp });
   } catch (err: any) {
     return jsonRes({
       code: 500,
       error: err
-    })
+    });
   }
 }

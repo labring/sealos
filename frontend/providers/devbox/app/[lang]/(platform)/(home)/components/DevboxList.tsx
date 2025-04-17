@@ -1,21 +1,23 @@
-import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react';
-import { SealosMenu, useMessage } from '@sealos/ui';
-import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { SealosMenu, useMessage } from '@sealos/ui';
+import { Box, Button, Flex, Image, MenuButton, Text } from '@chakra-ui/react';
 
-import { pauseDevbox, restartDevbox, startDevbox } from '@/api/devbox';
 import { useRouter } from '@/i18n';
 import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
+import { restartDevbox, startDevbox } from '@/api/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag';
 import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
-import ReleaseModal from '@/components/modals/releaseModal';
 import PodLineChart from '@/components/PodLineChart';
 import { AdvancedTable } from '@/components/AdvancedTable';
+import DevboxStatusTag from '@/components/DevboxStatusTag';
+import ReleaseModal from '@/components/modals/ReleaseModal';
+import { DevboxStatusEnum } from '@/constants/devbox';
+import ShutdownModal from '@/components/modals/ShutdownModal';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
@@ -29,14 +31,12 @@ const DevboxList = ({
   const router = useRouter();
   const t = useTranslations();
   const { message: toast } = useMessage();
-  const duplicatedDevboxList = Array(20)
-    .fill(0)
-    .flatMap(() => [...devboxList]);
 
   // TODO: Unified Loading Behavior
   const { setLoading } = useGlobalStore();
 
   const [onOpenRelease, setOnOpenRelease] = useState(false);
+  const [onOpenShutdown, setOnOpenShutdown] = useState(false);
   const [delDevbox, setDelDevbox] = useState<DevboxListItemTypeV2 | null>(null);
   const [currentDevboxListItem, setCurrentDevboxListItem] = useState<DevboxListItemTypeV2 | null>(
     null
@@ -46,27 +46,7 @@ const DevboxList = ({
     setCurrentDevboxListItem(devbox);
     setOnOpenRelease(true);
   };
-  const handlePauseDevbox = useCallback(
-    async (devbox: DevboxListItemTypeV2) => {
-      try {
-        setLoading(true);
-        await pauseDevbox({ devboxName: devbox.name });
-        toast({
-          title: t('pause_success'),
-          status: 'success'
-        });
-      } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('pause_error'),
-          status: 'error'
-        });
-        console.error(error);
-      }
-      refetchDevboxList();
-      setLoading(false);
-    },
-    [refetchDevboxList, setLoading, t, toast]
-  );
+
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2) => {
       try {
@@ -158,7 +138,13 @@ const DevboxList = ({
     {
       title: t('status'),
       key: 'status',
-      render: (item) => <DevboxStatusTag status={item.status} h={'27px'} />
+      render: (item) => (
+        <DevboxStatusTag
+          status={item.status}
+          h={'27px'}
+          isShutdown={item.status.value === DevboxStatusEnum.Shutdown}
+        />
+      )
     },
     {
       title: t('create_time'),
@@ -224,6 +210,7 @@ const DevboxList = ({
             sshPort={item.sshPort}
             status={item.status}
             mr={'8px'}
+            runtimeType={item.template.templateRepository.iconId as string}
           />
           <Button
             mr={'8px'}
@@ -268,6 +255,7 @@ const DevboxList = ({
                     <Box ml={2}>{t('terminal')}</Box>
                   </>
                 ),
+                isDisabled: item.status.value !== 'Running',
                 onClick: () => handleGoToTerminal(item),
                 menuItemStyle: {
                   borderBottomLeftRadius: '0px',
@@ -284,7 +272,7 @@ const DevboxList = ({
                 ),
                 onClick: () => router.push(`/devbox/create?name=${item.name}`)
               },
-              ...(item.status.value === 'Stopped'
+              ...(item.status.value === 'Stopped' || item.status.value === 'Shutdown'
                 ? [
                     {
                       child: (
@@ -298,7 +286,7 @@ const DevboxList = ({
                   ]
                 : []),
               // maybe Error or other status,all can restart
-              ...(item.status.value !== 'Stopped'
+              ...(item.status.value !== 'Stopped' && item.status.value !== 'Shutdown'
                 ? [
                     {
                       child: (
@@ -320,7 +308,10 @@ const DevboxList = ({
                           <Box ml={2}>{t('shutdown')}</Box>
                         </>
                       ),
-                      onClick: () => handlePauseDevbox(item)
+                      onClick: () => {
+                        setOnOpenShutdown(true);
+                        setCurrentDevboxListItem(item);
+                      }
                     }
                   ]
                 : []),
@@ -347,7 +338,7 @@ const DevboxList = ({
   ];
   return (
     <>
-      <AdvancedTable columns={columns} data={duplicatedDevboxList} itemClass="devboxListItem" />
+      <AdvancedTable columns={columns} data={devboxList} itemClass="devboxListItem" />
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}
@@ -364,6 +355,18 @@ const DevboxList = ({
           onClose={() => {
             setOnOpenRelease(false);
             setCurrentDevboxListItem(null);
+          }}
+          devbox={currentDevboxListItem}
+        />
+      )}
+      {onOpenShutdown && currentDevboxListItem && (
+        <ShutdownModal
+          onSuccess={() => {
+            refetchDevboxList();
+            setOnOpenShutdown(false);
+          }}
+          onClose={() => {
+            setOnOpenShutdown(false);
           }}
           devbox={currentDevboxListItem}
         />

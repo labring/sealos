@@ -39,11 +39,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       console.log(error);
     }
 
-    // get backup and delete
-    const backups = await getBackupListByDBName({ dbName: name, req });
-    await Promise.all(
-      backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
-    );
+    // Backup strategy has been migrated, no need to delete manually
+    // const backups = await getBackupListByDBName({ dbName: name, req });
+    // await Promise.all(
+    //   backups.map((item) => delBackupByName({ backupName: item.metadata.name, req }))
+    // );
 
     // del service
     await k8sCore.deleteNamespacedService(`${name}-export`, namespace).catch((err) => {

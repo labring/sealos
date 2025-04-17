@@ -378,6 +378,10 @@ export const setUserWorkspaceLock = async (namespace: string) => {
       WorkspaceDebtStatus.TerminateSuspend
     );
   } catch (e) {
+    if (e instanceof k8s.HttpError && e.body instanceof k8s.V1Status && e.body.code === 404) {
+      console.log('namespace not found');
+      return true;
+    }
     console.log(e);
     throw e;
   }

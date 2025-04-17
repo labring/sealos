@@ -5,10 +5,12 @@ import { useTranslationServerSide } from '@/app/i18n/server'
 import { fallbackLng, languages } from '@/app/i18n/settings'
 import ChakraProviders from '@/providers/chakra/providers'
 import { I18nProvider } from '@/providers/i18n/i18nContext'
-import QueryProvider from '@/providers/chakra/QueryProvider'
+import QueryProvider from '@/providers/tanstack-query/QueryProvider'
+import InitializeApp from '@/components/InitializeApp'
 
 import './globals.css'
 import 'react-day-picker/dist/style.css'
+import Script from 'next/script'
 
 export async function generateStaticParams(): Promise<{ lng: string }[]> {
   return languages.map((lng) => ({ lng }))
@@ -42,14 +44,21 @@ export default async function RootLayout({
   params: Promise<{ lng: string }>
 }>): Promise<React.JSX.Element> {
   const lng = (await params).lng
+  const scripts: { [key: string]: string }[] = JSON.parse(process.env.NEXT_PUBLIC_CUSTOM_SCRIPTS ?? '[]')
   return (
     <html lang={lng} dir={dir(lng)}>
       <body>
         <I18nProvider lng={lng}>
           <ChakraProviders>
-            <QueryProvider>{children}</QueryProvider>
+            <QueryProvider>
+              <InitializeApp />
+              {children}
+            </QueryProvider>
           </ChakraProviders>
         </I18nProvider>
+        {scripts.map((script, i) => (
+          <Script key={i} {...script} />
+        ))}
       </body>
     </html>
   )

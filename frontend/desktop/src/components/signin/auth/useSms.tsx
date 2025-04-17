@@ -13,25 +13,30 @@ import {
 import { useTranslation } from 'next-i18next';
 import NextLink from 'next/link';
 import { useRouter } from 'next/router';
-import { MouseEventHandler, useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { MouseEvent, MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
+import { get, useForm } from 'react-hook-form';
 import { getRegionToken } from '@/api/auth';
 import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
+import { useConfigStore } from '@/stores/config';
+import useSmsStateStore from '@/stores/captcha';
 
 export default function useSms({
-  showError
+  showError,
+  invokeCaptcha
 }: {
   showError: (errorMessage: I18nCommonKey, duration?: number) => void;
+  invokeCaptcha: () => void;
 }) {
   const { t } = useTranslation();
-  const _remainTime = useRef(0);
   const router = useRouter();
+  const { authConfig } = useConfigStore();
   const [isLoading, setIsLoading] = useState(false);
   const setToken = useSessionStore((s) => s.setToken);
-  const { register, handleSubmit, trigger, getValues } = useForm<{
+  const { register, handleSubmit, trigger, getValues, watch } = useForm<{
     phoneNumber: string;
     verifyCode: string;
+    inviterId?: string;
   }>();
 
   const login = async () => {
@@ -52,7 +57,7 @@ export default function useSms({
             {
               id: data.phoneNumber,
               code: data.verifyCode,
-              inviterId: getInviterId(),
+              inviterId: data?.inviterId || getInviterId(),
               semData: getUserSemData(),
               bdVid: getBaiduId()
             }
@@ -79,13 +84,16 @@ export default function useSms({
 
   const SmsModal = ({
     onAfterGetCode,
-    getCfToken
+    getCfToken,
+    invokeCaptcha
   }: {
-    getCfToken?: () => string | undefined;
+    // for cloudflare
+    getCfToken?: () => Promise<string | undefined>;
     onAfterGetCode?: () => void;
+    // for ali captcha
+    invokeCaptcha?: () => void;
   }) => {
-    const [remainTime, setRemainTime] = useState(_remainTime.current);
-
+    const { remainTime, setRemainTime, setPhoneNumber } = useSmsStateStore();
     useEffect(() => {
       if (remainTime <= 0) return;
       const interval = setInterval(() => {
@@ -93,35 +101,45 @@ export default function useSms({
       }, 1000);
       return () => clearInterval(interval);
     }, [remainTime]);
-
-    const getCode: MouseEventHandler = async (e) => {
+    const [invokeTime, setInvokeTime] = useState(new Date().getTime() - 1000);
+    const getCode: MouseEventHandler = async (e: MouseEvent) => {
       e.preventDefault();
-
       if (!(await trigger('phoneNumber'))) {
         showError(t('common:invalid_phone_number') || 'Invalid phone number');
         return;
       }
-      setRemainTime(60);
-      _remainTime.current = 60;
+      // throttle
+      if (new Date().getTime() - invokeTime <= 1000) {
+        return;
+      } else {
+        setInvokeTime(new Date().getTime());
+      }
 
-      try {
-        const cfToken = getCfToken?.();
-        const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-          id: getValues('phoneNumber'),
-          cfToken
-        });
-        if (res.code !== 200 || res.message !== 'successfully') {
-          throw new Error('Get code failed');
+      const phoneNumber = getValues('phoneNumber');
+      if (authConfig?.captcha.enabled && authConfig.captcha.ali.enabled) {
+        setPhoneNumber(phoneNumber);
+        invokeCaptcha?.();
+      } else {
+        // for cf ornot
+        const cfToken = await getCfToken?.();
+        if (authConfig?.captcha.enabled && authConfig.captcha.ali.enabled) {
+          if (!cfToken) return;
         }
-      } catch (err) {
-        showError(t('common:get_code_failed') || 'Get code failed');
-        setRemainTime(0);
-        _remainTime.current = 0;
-      } finally {
-        onAfterGetCode?.();
+        setRemainTime(60);
+        try {
+          const res = await request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
+            id: phoneNumber,
+            cfToken
+          });
+          if (res.code !== 200 || res.message !== 'successfully') {
+            throw new Error('Get code failed');
+          }
+        } catch (err) {
+          showError(t('common:get_code_failed') || 'Get code failed');
+          setRemainTime(0);
+        }
       }
     };
-
     return (
       <>
         <InputGroup
@@ -217,6 +235,36 @@ export default function useSms({
             )}
           </InputRightAddon>
         </InputGroup>
+        {!!authConfig?.invite.enabled && (
+          <InputGroup
+            variant={'unstyled'}
+            bg="rgba(255, 255, 255, 0.65)"
+            width="266px"
+            minH="42px"
+            mb="14px"
+            borderRadius="4px"
+            p="10px"
+            border="1px solid #E5E5E5"
+          >
+            <InputLeftAddon>
+              <Image src="/icons/inviter.svg" alt="inviter" />
+            </InputLeftAddon>
+            <Input
+              type="text"
+              placeholder={t('common:inviter_id_tips') || ''}
+              pl={'12px'}
+              variant={'unstyled'}
+              id="inviterId"
+              fontSize="14px"
+              fontWeight="400"
+              _autofill={{
+                backgroundColor: 'transparent !important',
+                backgroundImage: 'none !important'
+              }}
+              {...register('inviterId')}
+            />
+          </InputGroup>
+        )}
       </>
     );
   };

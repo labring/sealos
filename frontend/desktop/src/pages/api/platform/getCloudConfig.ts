@@ -16,7 +16,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 function genResCloudConfig(conf: CloudConfigType): CloudConfigType {
   return {
     domain: conf.domain,
-    port: conf.port
+    port: conf.port,
+    proxyDomain: conf.proxyDomain
   } as CloudConfigType;
 }
 

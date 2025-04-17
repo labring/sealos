@@ -337,7 +337,7 @@ export function getYamlTemplate(str: string): {
   appYaml: string;
   templateYaml: TemplateType;
 } {
-  const yamlStrList = str.split(/^\s*---\n/m);
+  const yamlStrList = str.split(/^---\n/m);
   let templateYaml: TemplateType | undefined;
   const appYamlList: string[] = [];
 

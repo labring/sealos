@@ -29,7 +29,7 @@ image_repository=${image_repository:-"labring"}
 kubernetes_version=${kubernetes_version:-"1.28.11"}
 cilium_version=${cilium_version:-"1.15.8"}
 cert_manager_version=${cert_manager_version:-"1.14.6"}
-helm_version=${helm_version:-"3.14.1"}
+helm_version=${helm_version:-"3.16.2"}
 openebs_version=${openebs_version:-"3.10.0"}
 higress_version=${higress_version:-"2.0.1"}
 kubeblocks_version=${kubeblocks_version:-"0.8.2"}
@@ -423,9 +423,10 @@ spec:
         type: NodePort
       kind: DaemonSet
       tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        - effect: "NoExecute"
+          operator: "Exists"
+        - effect: "NoSchedule"
+          operator: "Exists"
       resources:
         requests:
           cpu: 256m
@@ -435,12 +436,18 @@ spec:
     controller:
       autoscaling:
         enabled: true
-      nodeSelector:
-        node-role.kubernetes.io/control-plane: ''
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+                - key: node-role.kubernetes.io/control-plane
+                  operator: Exists
       tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
+        - effect: "NoExecute"
+          operator: "Exists"
+        - effect: "NoSchedule"
+          operator: "Exists"
       resources:
         requests:
           cpu: 256m

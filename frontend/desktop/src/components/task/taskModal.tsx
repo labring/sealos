@@ -19,6 +19,9 @@ import {
 import { useTranslation } from 'next-i18next';
 import React, { useRef } from 'react';
 import RealNameModal from '../account/RealNameModal';
+import { useQuery } from '@tanstack/react-query';
+import useSessionStore from '@/stores/session';
+import { getAmount } from '@/api/auth';
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -31,6 +34,7 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
   const { t, i18n } = useTranslation();
   const { isOpen: isQRCodeOpen, onOpen: onQRCodeOpen, onClose: onQRCodeClose } = useDisclosure();
   const realNameModalRef = useRef<{ onOpen: () => void }>(null);
+  const { session } = useSessionStore();
 
   const boxStyles = {
     border: '1px solid rgba(60, 101, 172, 0.08)',
@@ -40,6 +44,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
     width: '100%',
     cursor: 'pointer'
   };
+
+  const { data: account } = useQuery({
+    queryKey: ['getAmount', { userId: session?.user?.userCrUid }],
+    queryFn: getAmount,
+    enabled: !!session?.user,
+    staleTime: 60 * 1000
+  });
 
   return (
     <>
@@ -83,7 +94,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                       if (task.taskType === 'CONTACT') {
                         onQRCodeOpen();
                       } else if (task.taskType === 'REAL_NAME_AUTH') {
-                        realNameModalRef.current?.onOpen();
+                        if (account?.data?.balance) {
+                          realNameModalRef.current?.onOpen();
+                        }
                       } else {
                         onTaskClick(task);
                       }
@@ -150,7 +163,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, tasks, onTaskCli
                     if (firstIncompleteTask.taskType === 'CONTACT') {
                       onQRCodeOpen();
                     } else if (firstIncompleteTask.taskType === 'REAL_NAME_AUTH') {
-                      realNameModalRef.current?.onOpen();
+                      if (account?.data?.balance) {
+                        realNameModalRef.current?.onOpen();
+                      }
                     } else {
                       onTaskClick(firstIncompleteTask);
                     }

@@ -67,10 +67,12 @@ type Interface interface {
 	GetRechargeDiscount(req helper.AuthReq) (helper.RechargeDiscountResp, error)
 	ProcessPendingTaskRewards() error
 	GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.UserRealNameInfo, error)
+	GetEnterpriseRealNameInfo(req *helper.GetRealNameInfoReq) (*types.EnterpriseRealNameInfo, error)
 	ReconcileUnsettledLLMBilling(startTime, endTime time.Time) error
 	ReconcileActiveBilling(startTime, endTime time.Time) error
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
 	ActiveBilling(req resources.ActiveBilling) error
+	GetCockroach() *cockroach.Cockroach
 }
 
 type Account struct {
@@ -89,6 +91,10 @@ type MongoDB struct {
 
 type Cockroach struct {
 	ck *cockroach.Cockroach
+}
+
+func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
+	return g.ck
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -1574,10 +1580,21 @@ func (m *Account) GetUserRealNameInfo(req *helper.GetRealNameInfoReq) (*types.Us
 	userRealNameInfo, err := m.ck.GetUserRealNameInfoByUserID(req.UserID)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user real name info: %v", err)
+		return nil, err
 	}
 
 	return userRealNameInfo, nil
+}
+
+func (m *Account) GetEnterpriseRealNameInfo(req *helper.GetRealNameInfoReq) (*types.EnterpriseRealNameInfo, error) {
+	// get enterprise info
+	enterpriseRealNameInfo, err := m.ck.GetEnterpriseRealNameInfoByUserID(req.UserID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return enterpriseRealNameInfo, nil
 }
 
 func (m *Account) ReconcileActiveBilling(startTime, endTime time.Time) error {

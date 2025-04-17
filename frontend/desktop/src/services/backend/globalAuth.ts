@@ -12,7 +12,10 @@ import {
   User,
   UserStatus
 } from 'prisma/global/generated/client';
-import { enableSignUp } from '../enable';
+import { enableSignUp, enableTracking } from '../enable';
+import { trackSignUp } from './tracking';
+import { emit } from 'process';
+import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
 
 type TransactionClient = Omit<
   PrismaClient,
@@ -254,7 +257,6 @@ export async function signUpByPassword({
 
       return { user };
     });
-
     return result;
   } catch (error) {
     console.error('globalAuth: Error during sign up:', error);
@@ -290,6 +292,7 @@ export const getGlobalToken = async ({
   provider,
   providerId,
   name,
+  email,
   avatar_url,
   password,
   inviterId,
@@ -299,6 +302,7 @@ export const getGlobalToken = async ({
   provider: ProviderType;
   providerId: string;
   name: string;
+  email?: string;
   avatar_url: string;
   password?: string;
   inviterId?: string;
@@ -329,13 +333,21 @@ export const getGlobalToken = async ({
         password,
         semData
       });
-      result && (user = result.user);
-      if (inviterId && result) {
-        inviteHandler({
-          inviterId: inviterId,
-          inviteeId: result?.user.name,
-          signResult: result
-        });
+      if (!!result) {
+        user = result.user;
+        if (inviterId && result) {
+          inviteHandler({
+            inviterId: inviterId,
+            inviteeId: result?.user.name,
+            signResult: result
+          });
+        }
+        if (enableTracking()) {
+          await trackSignUp({
+            userId: result.user.id,
+            userUid: result.user.uid
+          });
+        }
       }
     } else {
       const result = await signInByPassword({
@@ -356,22 +368,30 @@ export const getGlobalToken = async ({
         avatar_url,
         semData
       });
-      result && (user = result.user);
-      if (inviterId && result) {
-        inviteHandler({
-          inviterId: inviterId,
-          inviteeId: result?.user.name,
-          signResult: result
-        });
-      }
-      if (bdVid && result) {
-        uploadConvertData({ newType: [3], bdVid })
-          .then((res) => {
-            console.log(res);
-          })
-          .catch((err) => {
-            console.log(err);
+      if (result) {
+        user = result.user;
+        if (inviterId) {
+          inviteHandler({
+            inviterId: inviterId,
+            inviteeId: result?.user.name,
+            signResult: result
           });
+        }
+        if (bdVid) {
+          await uploadConvertData({ newType: [3], bdVid })
+            .then((res) => {
+              console.log(res);
+            })
+            .catch((err) => {
+              console.log(err);
+            });
+        }
+        if (enableTracking()) {
+          await trackSignUp({
+            userId: result.user.id,
+            userUid: result.user.uid
+          });
+        }
       }
     } else {
       const result = await signIn({
@@ -382,6 +402,27 @@ export const getGlobalToken = async ({
     }
   }
   if (!user) throw new Error('Failed to edit db');
+
+  if (email) {
+    try {
+      const emailProvider = await globalPrisma.oauthProvider.findFirst({
+        where: {
+          providerType: ProviderType.EMAIL,
+          userUid: user.uid
+        }
+      });
+      if (!emailProvider) {
+        await addOauthProvider({
+          providerType: ProviderType.EMAIL,
+          providerId: email,
+          userUid: user.uid
+        });
+      }
+    } catch (error) {
+      console.error('globalAuth: Error during sign in bind email:', error);
+    }
+  }
+
   // user is deleted or banned
   if (user.status !== UserStatus.NORMAL_USER) return null;
   const token = generateAuthenticationToken({

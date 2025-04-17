@@ -92,6 +92,11 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 			return devboxv1alpha1.DevboxPhaseStopped
 		}
 		return devboxv1alpha1.DevboxPhaseStopping
+	case devboxv1alpha1.DevboxStateShutdown:
+		if len(podList.Items) == 0 {
+			return devboxv1alpha1.DevboxPhaseShutdown
+		}
+		return devboxv1alpha1.DevboxPhaseShutting
 	}
 	return devboxv1alpha1.DevboxPhaseUnknown
 }
@@ -248,6 +253,22 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 
 	for _, commit := range devbox.Status.CommitHistory {
 		if commit.Status == devboxv1alpha1.CommitStatusSuccess {
+			return commit
+		}
+	}
+	return nil
+}
+
+func GetLastPredicatedSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
+	if len(devbox.Status.CommitHistory) == 0 {
+		return nil
+	}
+	// Sort commit history by time in descending order
+	sort.Slice(devbox.Status.CommitHistory, func(i, j int) bool {
+		return devbox.Status.CommitHistory[i].Time.After(devbox.Status.CommitHistory[j].Time.Time)
+	})
+	for _, commit := range devbox.Status.CommitHistory {
+		if commit.PredicatedStatus == devboxv1alpha1.CommitStatusSuccess {
 			return commit
 		}
 	}

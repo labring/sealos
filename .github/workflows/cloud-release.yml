@@ -36,7 +36,7 @@ jobs:
 
   release-frontends:
     if: ${{ github.event.inputs.build_offline_tar_only == false }}
-    uses: ./.github/workflows/frontend.yml
+    uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
       push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
@@ -75,7 +75,7 @@ jobs:
       OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
@@ -114,7 +114,7 @@ jobs:
       OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:

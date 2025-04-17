@@ -40,6 +40,14 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
+    meta: {
+      title: string;
+      description: string;
+      scripts: {
+        src: string;
+        [key: string]: string;
+      }[];
+    };
     currencySymbol: Coin;
     pvcStorageMax: number;
     eventAnalyze: {
@@ -51,6 +59,9 @@ export type AppConfigType = {
         url: string;
       };
       billing: {
+        url: string;
+      };
+      log: {
         url: string;
       };
     };

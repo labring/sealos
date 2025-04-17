@@ -21,15 +21,17 @@ import {
 } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { useTranslation } from 'next-i18next';
+import { useTranslation, Trans } from 'next-i18next';
 import { useCallback } from 'react';
 
 export default function Index({
   SEALOS_DOMAIN,
-  GIFT_RATIO
+  GIFT_RATIO,
+  INVITER_REWARD
 }: {
   SEALOS_DOMAIN: string;
   GIFT_RATIO: string;
+  INVITER_REWARD: string;
 }) {
   const theme = useTheme();
   const { copyData } = useCopyData();
@@ -79,10 +81,22 @@ export default function Index({
           <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
             <Box mb="4px">{t('Cashback Ratio')}</Box>
             <Text fontSize={'12px'}>
-              {t('Every time a friend recharges', { amount: `${parseFloat(GIFT_RATIO) * 100}%` })}
+              <Trans
+                i18nKey="cashback_first_rule"
+                values={{
+                  amount: INVITER_REWARD
+                }}
+              />
+            </Text>
+            <Text fontSize={'12px'}>
+              <Trans
+                i18nKey="every_time_a_friend_recharges"
+                values={{
+                  amount: `${parseFloat(GIFT_RATIO) * 100}%`
+                }}
+              />
             </Text>
           </Flex>
-          <Box {...titleStyles}>{parseFloat(GIFT_RATIO) * 100}%</Box>
         </Box>
         <Box {...statisticsStyles}>
           <Flex alignItems={'center'} justifyContent={'center'}>
@@ -190,12 +204,14 @@ export default function Index({
 export async function getServerSideProps(content: any) {
   const SEALOS_DOMAIN = process.env.SEALOS_DOMAIN || 'cloud.sealos.io';
   const GIFT_RATIO = process.env.GIFT_RATIO || '0.1';
+  const INVITER_REWARD = process.env.NEXT_PUBLIC_INVITER_REWARD || '5';
 
   return {
     props: {
       ...(await serviceSideProps(content)),
       SEALOS_DOMAIN,
-      GIFT_RATIO
+      GIFT_RATIO,
+      INVITER_REWARD
     }
   };
 }

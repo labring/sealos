@@ -59,6 +59,33 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+type CVMTaskRunner struct {
+	DBClient database.Interface
+	Logger   logr.Logger
+	*AccountReconciler
+}
+
+func (r *CVMTaskRunner) Start(ctx context.Context) error {
+	ticker := time.NewTicker(env.GetDurationEnvWithDefault("BILLING_CVM_INTERVAL", 10*time.Minute))
+	defer func() {
+		ticker.Stop()
+		r.Logger.Info("stop billing cvm")
+	}()
+	for {
+		select {
+		case <-ticker.C:
+			r.Logger.Info("start billing cvm", "time", time.Now().Format(time.RFC3339))
+			err := r.BillingCVM()
+			if err != nil {
+				r.Logger.Error(err, "fail to billing cvm")
+			}
+			r.Logger.Info("end billing cvm", "time", time.Now().Format(time.RFC3339))
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
 const (
 	ACCOUNTNAMESPACEENV     = "ACCOUNT_NAMESPACE"
 	DEFAULTACCOUNTNAMESPACE = "sealos-system"

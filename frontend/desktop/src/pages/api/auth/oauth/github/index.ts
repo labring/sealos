@@ -20,12 +20,20 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         clientID,
         clientSecret,
         code
-      )(res, async ({ id, name, avatar_url }) => {
+      )(res, async ({ id, name, avatar_url, email }) => {
         const persistUrl = await persistImage(
           avatar_url,
           'avatar/' + ProviderType.GITHUB + '/' + id
         );
-        await getGlobalTokenByGithubSvc(persistUrl || '', id, name, inviterId, semData, bdVid)(res);
+        await getGlobalTokenByGithubSvc(
+          persistUrl || '',
+          id,
+          name,
+          email,
+          inviterId,
+          semData,
+          bdVid
+        )(res);
       });
     });
   });

@@ -10,11 +10,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const { name } = req.body;
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'failed to get info' });
+
     const namespace = payload.workspaceId;
     const _kc = await getUserKubeconfigNotPatch(payload.userCrName);
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
-    const realKc = switchKubeconfigNamespace(_kc, namespace);
-    const kc = K8sApi(realKc);
+
+    const kc = K8sApi(switchKubeconfigNamespace(_kc, namespace));
     const meta: CRDMeta = {
       group: 'notification.sealos.io',
       version: 'v1',
@@ -22,40 +23,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       plural: 'notifications'
     };
 
-    // crd patch
     const patch = [
       {
         op: 'add',
         path: '/metadata/labels',
-        value: {
-          isRead: 'true'
-        }
+        value: { isRead: 'true' }
       }
     ];
     // const patch = [{ op: 'remove', path: '/metadata/labels/isRead' }]; // dev
+    const results = [];
 
-    let result = [];
     for (const n of name) {
       try {
-        let temp = await UpdateCRD(kc, meta, n, patch);
-        result.push(temp?.body);
+        const temp = await UpdateCRD(kc, meta, n, patch);
+        results.push(temp?.body);
       } catch (err: any) {
         if (err?.body?.code === 403) {
-          const temp = {
-            name: n,
-            reason: err?.body?.reason,
-            message: err?.body?.message,
-            code: 403
-          };
-
-          jsonRes(res, { data: temp });
-        } else {
-          throw err;
+          return jsonRes(res, {
+            data: {
+              name: n,
+              reason: err?.body?.reason,
+              message: err?.body?.message,
+              code: 403
+            }
+          });
         }
+        return jsonRes(res, {
+          code: 500,
+          data: {
+            name: n,
+            message: err?.message || 'Unknown error'
+          }
+        });
       }
     }
-    jsonRes(res, { data: result });
+
+    return jsonRes(res, { data: results });
   } catch (err) {
-    jsonRes(res, { code: 500, data: err });
+    return jsonRes(res, { code: 500, data: err });
   }
 }

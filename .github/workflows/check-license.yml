@@ -22,20 +22,23 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
+  PROJECT_PATH: "./lifecycle"
 
 jobs:
   check-license:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Check License
-        run: make verify-license
+        env:
+          PROJECT_PATH: ${{ env.PROJECT_PATH }}
+        run: cd "${PROJECT_PATH}" && make verify-license

@@ -43,7 +43,7 @@ export const AdvancedTable = ({ columns, data, itemClass = '' }: Props) => {
         <Grid
           templateColumns={`repeat(${columns.length},1fr)`}
           overflowX={'auto'}
-          minH={'fit-content'}
+          minH={'70px'}
           key={index1}
           bg={'white'}
           _hover={{

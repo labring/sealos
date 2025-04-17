@@ -70,6 +70,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     type: object
   helper.ApplyInvoiceReq:
     properties:
@@ -104,6 +107,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     required:
     - detail
     - paymentIDList
@@ -120,6 +126,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     type: object
   helper.ConsumptionRecordReq:
@@ -158,6 +167,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     type: object
   helper.CostApp:
@@ -294,6 +306,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     type: object
   helper.GetInvoiceReq:
     properties:
@@ -330,6 +345,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     type: object
   helper.GetPaymentReq:
@@ -375,6 +393,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     type: object
   helper.GetPropertiesResp:
     properties:
@@ -390,20 +411,6 @@ definitions:
         items:
           $ref: '#/definitions/common.PropertyQuery'
         type: array
-    type: object
-  helper.GetRealNameInfoReq:
-    properties:
-      kubeConfig:
-        type: string
-      owner:
-        example: admin
-        type: string
-      token:
-        example: token
-        type: string
-      userID:
-        example: admin
-        type: string
     type: object
   helper.GetRealNameInfoResp:
     properties:
@@ -466,6 +473,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     type: object
   helper.NamespaceBillingHistoryReq:
     properties:
@@ -491,6 +501,9 @@ definitions:
         type: integer
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     type: object
   helper.NamespaceBillingHistoryRespData:
@@ -536,6 +549,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     required:
     - invoiceIDList
     - status
@@ -563,6 +579,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     required:
     - paymentIDList
@@ -599,6 +618,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     required:
     - toUser
     type: object
@@ -621,6 +643,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     required:
     - code
@@ -658,6 +683,9 @@ definitions:
       userID:
         example: admin
         type: string
+      userUID:
+        example: user-123
+        type: string
     type: object
   helper.UserUsageReq:
     properties:
@@ -689,6 +717,9 @@ definitions:
         type: string
       userID:
         example: admin
+        type: string
+      userUID:
+        example: user-123
         type: string
     type: object
 host: localhost:2333
@@ -1525,13 +1556,6 @@ paths:
       consumes:
       - application/json
       description: Retrieve the real name information for a user
-      parameters:
-      - description: Get real name info request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/helper.GetRealNameInfoReq'
       produces:
       - application/json
       responses:
@@ -1554,6 +1578,44 @@ paths:
       summary: Get user real name information
       tags:
       - GetUserRealNameInfo
+  /account/v1alpha1/recharge/discount:
+    post:
+      consumes:
+      - application/json
+      description: Get recharge discount
+      parameters:
+      - description: Get recharge discount request
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully get recharge discount
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: failed to parse get recharge discount request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get recharge discount
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get recharge discount
+      tags:
+      - RechargeDiscount
   /account/v1alpha1/regions:
     post:
       consumes:
@@ -1651,4 +1713,82 @@ paths:
       summary: Get user usage
       tags:
       - UserUsage
+  /admin/v1alpha1/account:
+    get:
+      consumes:
+      - application/json
+      description: Get user account
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user account
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user account
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user account
+      tags:
+      - Account
+  /admin/v1alpha1/charge:
+    post:
+      consumes:
+      - application/json
+      description: Charge billing
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully charged billing
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to charge billing
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Charge billing
+      tags:
+      - Account
+  /admin/v1alpha1/real-name-info:
+    get:
+      consumes:
+      - application/json
+      description: Get user real name info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: successfully retrieved user real name info
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: authenticate error
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: failed to get user real name info
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user real name info
+      tags:
+      - Account
 swagger: "2.0"

@@ -1,18 +1,18 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface GuideState {
-  createCompleted: boolean
-  detailCompleted: boolean
-  listCompleted: boolean
-  isGuideEnabled: boolean
-  releaseCompleted: boolean
-  setCreateCompleted: (completed: boolean) => void
-  setDetailCompleted: (completed: boolean) => void
-  setListCompleted: (completed: boolean) => void
-  setGuideEnabled: (enabled: boolean) => void
-  setReleaseCompleted: (completed: boolean) => void
-  resetGuideState: (completed: boolean) => void
+  createCompleted: boolean;
+  detailCompleted: boolean;
+  listCompleted: boolean;
+  isGuideEnabled: boolean;
+  releaseCompleted: boolean;
+  setCreateCompleted: (completed: boolean) => void;
+  setDetailCompleted: (completed: boolean) => void;
+  setListCompleted: (completed: boolean) => void;
+  setGuideEnabled: (enabled: boolean) => void;
+  setReleaseCompleted: (completed: boolean) => void;
+  resetGuideState: (completed: boolean) => void;
 }
 
 export const useGuideStore = create<GuideState>()(
@@ -36,4 +36,4 @@ export const useGuideStore = create<GuideState>()(
       storage: createJSONStorage(() => localStorage)
     }
   )
-)
+);

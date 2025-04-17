@@ -1,4 +1,4 @@
-import { Tooltip, TooltipProps } from '@chakra-ui/react'
+import { Tooltip, TooltipProps } from '@chakra-ui/react';
 
 const MyTooltip = ({ children, ...props }: TooltipProps) => {
   return (
@@ -13,10 +13,11 @@ const MyTooltip = ({ children, ...props }: TooltipProps) => {
       py={2}
       borderRadius={'8px'}
       whiteSpace={'pre-wrap'}
-      {...props}>
+      {...props}
+    >
       {children}
     </Tooltip>
-  )
-}
+  );
+};
 
-export default MyTooltip
+export default MyTooltip;

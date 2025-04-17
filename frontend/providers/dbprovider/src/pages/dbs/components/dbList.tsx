@@ -170,7 +170,8 @@ const DBList = ({
       },
       {
         accessorKey: 'storage',
-        header: () => t('storage')
+        header: () => t('storage'),
+        cell: ({ row }) => <>{row.original.storage}Gi</>
       },
       {
         id: 'actions',

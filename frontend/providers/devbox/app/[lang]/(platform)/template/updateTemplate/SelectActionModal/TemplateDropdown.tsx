@@ -1,13 +1,34 @@
-import MyIcon from "@/components/Icon";
-import { ChevronDownIcon } from "@chakra-ui/icons";
-import { Box, Button, ButtonProps, HStack, Img, Popover, PopoverBody, PopoverContent, PopoverTrigger, Text, useDisclosure, VStack } from "@chakra-ui/react";
+import MyIcon from '@/components/Icon';
+import { ChevronDownIcon } from '@chakra-ui/icons';
+import {
+  Box,
+  Button,
+  ButtonProps,
+  HStack,
+  Img,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Text,
+  useDisclosure,
+  VStack
+} from '@chakra-ui/react';
 
-const TemplateButton = ({ isActive = false, icon, title, description, onClick, isInMenu = false, ...props }: ButtonProps & {
+const TemplateButton = ({
+  isActive = false,
+  icon,
+  title,
+  description,
+  onClick,
+  isInMenu = false,
+  ...props
+}: ButtonProps & {
   icon: React.ReactNode;
   title: string;
   isActive?: boolean;
-  isInMenu?: boolean
-  description: string
+  isInMenu?: boolean;
+  description: string;
 }) => {
   return (
     <Button
@@ -16,21 +37,15 @@ const TemplateButton = ({ isActive = false, icon, title, description, onClick, i
       h="74px"
       bg="#F7F8FA"
       border="1px solid"
-      borderColor={isActive ? "#219BF4" : "#E8EBF0"}
+      borderColor={isActive ? '#219BF4' : '#E8EBF0'}
       borderRadius="8px"
       position="relative"
       cursor="pointer"
-      boxShadow={isActive ? "0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)" : "none"}
+      boxShadow={isActive ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'}
       onClick={onClick}
       {...props}
     >
-      <HStack
-        spacing="12px"
-        position="absolute"
-        left="16px"
-        top="50%"
-        transform="translateY(-50%)"
-      >
+      <HStack spacing="12px" position="absolute" left="16px" top="50%" transform="translateY(-50%)">
         <Box w="32px" h="32px">
           {icon}
         </Box>
@@ -40,7 +55,7 @@ const TemplateButton = ({ isActive = false, icon, title, description, onClick, i
             fontWeight="500"
             lineHeight="24px"
             letterSpacing="0.15px"
-            color={isActive ? "#0884DD" : "#111824"}
+            color={isActive ? '#0884DD' : '#111824'}
             overflow={'hidden'}
             textOverflow={'ellipsis'}
             whiteSpace={'nowrap'}
@@ -53,7 +68,7 @@ const TemplateButton = ({ isActive = false, icon, title, description, onClick, i
             fontSize="12px"
             lineHeight="16px"
             letterSpacing="0.004em"
-            color={isActive ? "#0884DD" : "#667085"}
+            color={isActive ? '#0884DD' : '#667085'}
             overflow={'hidden'}
             width={'auto'}
             textOverflow={'ellipsis'}
@@ -73,12 +88,11 @@ const TemplateButton = ({ isActive = false, icon, title, description, onClick, i
           w="20px"
           h="20px"
           color="#667085"
-          
         />
       )}
       {isActive && (
         <MyIcon
-          name='checkTemplate'
+          name="checkTemplate"
           position="absolute"
           right="16px"
           top="50%"
@@ -91,34 +105,38 @@ const TemplateButton = ({ isActive = false, icon, title, description, onClick, i
   );
 };
 type TRepositoryItem = {
-  iconId: string | null,
-  name: string,
-  description: string | null,
-  uid: string
-}
+  iconId: string | null;
+  name: string;
+  description: string | null;
+  uid: string;
+};
 export default function TemplateDropdown({
   templateRepositoryList,
   selectedTemplateRepoUid,
   setSelectedTemplateRepoUid
 }: {
-  templateRepositoryList: TRepositoryItem[],
-  selectedTemplateRepoUid: string | null,
-  setSelectedTemplateRepoUid: (uid: string) => void
+  templateRepositoryList: TRepositoryItem[];
+  selectedTemplateRepoUid: string | null;
+  setSelectedTemplateRepoUid: (uid: string) => void;
 }) {
-  const selectedTemplateRepository = templateRepositoryList.find(t => t.uid === selectedTemplateRepoUid);
-  const {
-    isOpen, onOpen, onClose } = useDisclosure()
+  const selectedTemplateRepository = templateRepositoryList.find(
+    (t) => t.uid === selectedTemplateRepoUid
+  );
+  const { isOpen, onOpen, onClose } = useDisclosure();
   return (
-    <Popover placement="bottom-start" isOpen={isOpen} onClose={() => isOpen && onClose()} onOpen={() => !isOpen && onOpen()}>
+    <Popover
+      placement="bottom-start"
+      isOpen={isOpen}
+      onClose={() => isOpen && onClose()}
+      onOpen={() => !isOpen && onOpen()}
+    >
       <PopoverTrigger>
         <Box width={'400px'}>
           <TemplateButton
             userSelect={'none'}
             isActive={false}
             width={'400px'}
-            icon={<Img
-              src={`/images/${selectedTemplateRepository?.iconId || ''}.svg`}
-            />}
+            icon={<Img src={`/images/${selectedTemplateRepository?.iconId || ''}.svg`} />}
             title={selectedTemplateRepository?.name || ''}
             description={selectedTemplateRepository?.description || ''}
           />
@@ -133,9 +151,7 @@ export default function TemplateDropdown({
                 key={uid}
                 width={'full'}
                 isActive={selectedTemplateRepoUid === uid}
-                icon={<Img
-                  src={`/images/${iconId}.svg`}
-                />}
+                icon={<Img src={`/images/${iconId}.svg`} />}
                 isInMenu
                 title={name}
                 description={description || ''}
@@ -145,7 +161,6 @@ export default function TemplateDropdown({
           </VStack>
         </PopoverBody>
       </PopoverContent>
-
     </Popover>
   );
-};
+}

@@ -1,88 +1,90 @@
-import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template'
-import useDriver from '@/hooks/useDriver'
-import { TemplateRepositoryKind } from '@/prisma/generated/client'
-import { useDevboxStore } from '@/stores/devbox'
-import { DevboxEditTypeV2 } from '@/types/devbox'
-import { TemplateRepository } from '@/types/template'
-import { Box, Flex, VStack } from '@chakra-ui/react'
-import { useQuery } from '@tanstack/react-query'
-import { useTranslations } from 'next-intl'
-import { useEffect, useMemo } from 'react'
-import { useFormContext } from 'react-hook-form'
-import Label from '../../Label'
-import TemplateRepositoryListNav from '../TemplateRepositoryListNav'
-import TemplateRepositoryItem from './TemplateReposistoryItem'
+import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template';
+import useDriver from '@/hooks/useDriver';
+import { TemplateRepositoryKind } from '@/prisma/generated/client';
+import { useDevboxStore } from '@/stores/devbox';
+import { DevboxEditTypeV2 } from '@/types/devbox';
+import { TemplateRepository } from '@/types/template';
+import { Box, Flex, VStack } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo } from 'react';
+import { useFormContext } from 'react-hook-form';
+import Label from '../../Label';
+import TemplateRepositoryListNav from '../TemplateRepositoryListNav';
+import TemplateRepositoryItem from './TemplateReposistoryItem';
+import { useSearchParams } from 'next/navigation';
 
 interface TemplateRepositorySelectorProps {
-  isEdit: boolean
+  isEdit: boolean;
 }
 
 export default function TemplateRepositorySelector({ isEdit }: TemplateRepositorySelectorProps) {
-  const { startedTemplate, setStartedTemplate } = useDevboxStore()
-  const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>()
-  const t = useTranslations()
-  const { handleUserGuide } = useDriver()
-
+  const { startedTemplate, setStartedTemplate } = useDevboxStore();
+  const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>();
+  const t = useTranslations();
+  const { handleUserGuide } = useDriver();
+  const searchParams = useSearchParams();
   const templateRepositoryQuery = useQuery(
     ['list-official-template-repository'],
     listOfficialTemplateRepository,
     {
       onSuccess(res) {
-        console.log('res', res)
-        handleUserGuide()
+        console.log('res', res);
+        handleUserGuide();
       },
       staleTime: Infinity,
       cacheTime: 1000 * 60 * 30
     }
-  )
-  const curTemplateRepositoryUid = watch('templateRepositoryUid')
+  );
+  const curTemplateRepositoryUid = watch('templateRepositoryUid');
   const curTemplateRepositoryDetail = useQuery(
     ['get-template-repository', curTemplateRepositoryUid],
     () => {
-      return getTemplateRepository(curTemplateRepositoryUid)
+      return getTemplateRepository(curTemplateRepositoryUid);
     },
     {
       enabled: !!isEdit && !!curTemplateRepositoryUid
     }
-  )
+  );
 
   const templateData = useMemo(
     () => templateRepositoryQuery.data?.templateRepositoryList || [],
     [templateRepositoryQuery.data]
-  )
+  );
 
   const categorizedData = useMemo(() => {
     return templateData.reduce(
       (acc, item) => {
-        acc[item.kind] = [...(acc[item.kind] || []), item]
-        return acc
+        acc[item.kind] = [...(acc[item.kind] || []), item];
+        return acc;
       },
       {
         LANGUAGE: [],
         FRAMEWORK: [],
         OS: [],
+        SERVICE: [],
         CUSTOM: []
       } as Record<TemplateRepositoryKind, TemplateRepository[]>
-    )
-  }, [templateData])
+    );
+  }, [templateData]);
   useEffect(() => {
     if (!startedTemplate || isEdit) {
-      return
+      return;
     }
-    const templateUid = startedTemplate.uid
+    const templateUid = startedTemplate.uid;
     if (
       templateData.findIndex((item) => {
-        return item.uid === templateUid
+        return item.uid === templateUid;
       }) > -1
     ) {
-      setStartedTemplate(undefined)
+      setStartedTemplate(undefined);
     }
-    setValue('templateRepositoryUid', templateUid)
-  }, [startedTemplate, isEdit])
+    setValue('templateRepositoryUid', templateUid);
+  }, [startedTemplate, isEdit]);
 
   useEffect(() => {
     if (startedTemplate || isEdit) {
-      return
+      return;
     }
     if (
       !(
@@ -91,14 +93,24 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
         templateRepositoryQuery.isFetched
       )
     )
-      return
-    const curTemplateRepositoryUid = getValues('templateRepositoryUid')
+      return;
+    const curTemplateRepositoryUid = getValues('templateRepositoryUid');
     const curTemplateRepository = templateData.find((item) => {
-      return item.uid === curTemplateRepositoryUid
-    })
+      return item.uid === curTemplateRepositoryUid;
+    });
     if (!curTemplateRepository) {
-      const defaultTemplateRepositoryUid = templateData[0].uid
-      setValue('templateRepositoryUid', defaultTemplateRepositoryUid)
+      const runtime = searchParams.get('runtime');
+      if (!runtime) {
+        setValue('templateRepositoryUid', templateData[0].uid);
+        return;
+      } else {
+        const runtimeTemplate = templateData.find((item) => item.iconId === runtime);
+        if (runtimeTemplate) {
+          setValue('templateRepositoryUid', runtimeTemplate.uid);
+        } else {
+          setValue('templateRepositoryUid', templateData[0].uid);
+        }
+      }
     }
   }, [
     templateRepositoryQuery.isSuccess,
@@ -106,7 +118,7 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
     templateData,
     templateRepositoryQuery.isFetched,
     isEdit
-  ])
+  ]);
 
   useEffect(() => {
     if (
@@ -116,18 +128,18 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
       !curTemplateRepositoryDetail.isSuccess ||
       !curTemplateRepositoryDetail.data
     ) {
-      return
+      return;
     }
-    const templateRepository = curTemplateRepositoryDetail.data.templateRepository
+    const templateRepository = curTemplateRepositoryDetail.data.templateRepository;
     // setStartedTemplate(templateRepository)
-    setValue('templateRepositoryUid', templateRepository.uid)
+    setValue('templateRepositoryUid', templateRepository.uid);
 
     if (
       templateData.findIndex((item) => {
-        return item.uid === templateRepository.uid
+        return item.uid === templateRepository.uid;
       }) === -1
     ) {
-      setStartedTemplate(templateRepository)
+      setStartedTemplate(templateRepository);
     }
   }, [
     curTemplateRepositoryDetail.isSuccess,
@@ -136,11 +148,11 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
     isEdit,
     templateData,
     templateRepositoryQuery.isSuccess
-  ])
+  ]);
   return (
     <VStack alignItems={'center'} mb={7} gap={'24px'}>
       <Flex className="guide-runtimes" gap={'24px'} flexDir={'column'} w={'full'}>
-        <Flex w="full" justify={'space-between'} >
+        <Flex w="full" justify={'space-between'}>
           <Label w={100} alignSelf={'flex-start'}>
             {t('runtime_environment')}
           </Label>
@@ -162,18 +174,27 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
             </Flex>
           </Flex>
         )}
-        <Flex gap={'10px'} px={'14px'} width={'full'}>
-          {/* Language */}
-          {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
-          <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
-            {categorizedData['LANGUAGE']?.map((item) => (
-              <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
-            ))}
-          </Flex>
+      </Flex>
+      {/* Service */}
+      <Flex gap={'10px'} px={'14px'} width={'full'}>
+        {categorizedData['SERVICE'].length !== 0 && <Box width={'85px'}>{t('service')}</Box>}
+        <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
+          {categorizedData['SERVICE']?.map((item) => (
+            <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
+          ))}
         </Flex>
       </Flex>
+      {/* Language */}
       <Flex gap={'10px'} px={'14px'} width={'full'}>
-        {/* Framework */}
+        {categorizedData['LANGUAGE'].length !== 0 && <Box width={'85px'}>{t('language')}</Box>}
+        <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
+          {categorizedData['LANGUAGE']?.map((item) => (
+            <TemplateRepositoryItem key={item.uid} item={item} isEdit={isEdit} />
+          ))}
+        </Flex>
+      </Flex>
+      {/* Framework */}
+      <Flex gap={'10px'} px={'14px'} width={'full'}>
         {categorizedData['FRAMEWORK'].length !== 0 && <Box width={'85px'}>{t('framework')}</Box>}
         <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
           {categorizedData['FRAMEWORK']?.map((item) => (
@@ -181,8 +202,8 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
           ))}
         </Flex>
       </Flex>
+      {/* OS */}
       <Flex gap={'10px'} px={'14px'} width={'full'}>
-        {/* OS */}
         {categorizedData['OS'].length !== 0 && <Box width={'85px'}>{t('os')}</Box>}
         <Flex flexWrap={'wrap'} gap={'12px'} flex={1}>
           {categorizedData['OS']?.map((item) => (
@@ -191,5 +212,5 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
         </Flex>
       </Flex>
     </VStack>
-  )
+  );
 }

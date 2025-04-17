@@ -645,6 +645,28 @@ func TestAccount_GetUserRealNameInfo(t *testing.T) {
 	t.Logf("userRealNameInfo = %+v", userRealNameInfo)
 }
 
+func TestAccount_GetEnterpriseRealNameInfo(t *testing.T) {
+	db, err := newAccountForTest("", os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	if err != nil {
+		t.Fatalf("NewAccountInterface() error = %v", err)
+		return
+	}
+
+	enterpriseRealNameInfo, err := db.GetEnterpriseRealNameInfo(&helper.GetRealNameInfoReq{
+		AuthBase: helper.AuthBase{
+			Auth: &helper.Auth{
+				UserID: "E1xAJ0fy4k",
+			},
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("GetUserRealNameInfo() error = %v", err)
+		return
+	}
+	t.Logf("enterpriseRealNameInfo = %+v", enterpriseRealNameInfo)
+}
+
 func init() {
 	// set env
 	os.Setenv("MONGO_URI", "")

@@ -120,16 +120,16 @@ async function getUserRealNameInfo(
     credential: {
       secretId: config.secretId,
       secretKey: config.secretKey
-    },
-    region: '',
-    profile: {
-      signMethod: 'HmacSHA256',
-      httpProfile: {
-        endpoint: 'faceid.tencentcloudapi.com',
-        reqMethod: 'POST',
-        reqTimeout: 30 // Request timeout, default 60s
-      }
     }
+    // region: '',
+    // profile: {
+    //   signMethod: 'HmacSHA256',
+    //   httpProfile: {
+    //     endpoint: 'faceid.tencentcloudapi.com',
+    //     reqMethod: 'POST',
+    //     reqTimeout: 30 // Request timeout, default 60s
+    //   }
+    // }
   });
 
   const params = {

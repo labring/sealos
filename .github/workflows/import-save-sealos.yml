@@ -14,7 +14,7 @@ on:
 
 jobs:
   save-sealos:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Install sealos
         uses: labring/sealos-action@v0.0.7

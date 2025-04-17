@@ -39,6 +39,11 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
+    meta: {
+      title: 'Sealos Desktop App Demo',
+      description: 'Sealos Desktop App Demo',
+      scripts: []
+    },
     currencySymbol: Coin.shellCoin,
     pvcStorageMax: 20,
     eventAnalyze: {
@@ -51,6 +56,9 @@ export const defaultAppConfig: AppConfigType = {
       },
       billing: {
         url: 'http://account-service.account-system.svc:2333'
+      },
+      log: {
+        url: 'http://localhost:8080'
       }
     },
     appResourceFormSliderConfig: {
@@ -80,8 +88,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const filename =
         process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
       const res: any = yaml.load(readFileSync(filename, 'utf-8'));
-      console.log(res);
-      global.AppConfig = res;
+      const config = {
+        ...defaultAppConfig,
+        ...res
+      };
+      global.AppConfig = config;
       const gpuNodes = await getGpuNode();
       console.log(gpuNodes, 'gpuNodes');
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;

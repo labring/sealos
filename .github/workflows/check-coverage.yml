@@ -22,16 +22,17 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
+  PROJECT_PATH: "./lifecycle"
 
 jobs:
   coverage:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
+        uses: magnetikonline/action-golang-cache@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -39,7 +40,9 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Coverage
-        run: make coverage
+        env:
+          PROJECT_PATH: ${{ env.PROJECT_PATH }}
+        run: cd "$PROJECT_PATH" && make coverage
 
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3

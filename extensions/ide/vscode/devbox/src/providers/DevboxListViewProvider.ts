@@ -237,30 +237,33 @@ class ProjectTreeDataProvider
     }
 
     try {
+      const appName = vscode.env.appName
+
       // 1. remove global state
       GlobalStateManager.remove(deletedHost)
 
-      // 2. remove remote-ssh config
-      const existingSSHHostPlatforms = vscode.workspace
-        .getConfiguration('remote.SSH')
-        .get<{ [host: string]: string }>('remotePlatform', {})
-      const newSSHHostPlatforms = Object.keys(existingSSHHostPlatforms).reduce(
-        (acc: { [host: string]: string }, host: string) => {
+      // 2. remove remote-ssh config if app is not windsurf or Trae
+      if (appName !== 'Windsurf' && appName !== 'Trae') {
+        const existingSSHHostPlatforms = vscode.workspace
+          .getConfiguration('remote.SSH')
+          .get<{ [host: string]: string }>('remotePlatform', {})
+        const newSSHHostPlatforms = Object.keys(
+          existingSSHHostPlatforms
+        ).reduce((acc: { [host: string]: string }, host: string) => {
           if (host.startsWith(deletedHost)) {
             return acc
           }
           acc[host] = existingSSHHostPlatforms[host]
           return acc
-        },
-        {}
-      )
-      await vscode.workspace
-        .getConfiguration('remote.SSH')
-        .update(
-          'remotePlatform',
-          newSSHHostPlatforms,
-          vscode.ConfigurationTarget.Global
-        )
+        }, {})
+        await vscode.workspace
+          .getConfiguration('remote.SSH')
+          .update(
+            'remotePlatform',
+            newSSHHostPlatforms,
+            vscode.ConfigurationTarget.Global
+          )
+      }
 
       // 3. remove ssh config
       const content = await fs.promises.readFile(

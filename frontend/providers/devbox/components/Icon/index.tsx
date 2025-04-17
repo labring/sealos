@@ -1,5 +1,5 @@
-import type { IconProps } from '@chakra-ui/react'
-import { Icon } from '@chakra-ui/react'
+import type { IconProps } from '@chakra-ui/react';
+import { Icon } from '@chakra-ui/react';
 
 const map = {
   codeServer: require('./icons/codeServer.svg').default,
@@ -49,6 +49,7 @@ const map = {
   upload: require('./icons/upload.svg').default,
   target: require('./icons/target.svg').default,
   arrowDown: require('./icons/arrowDown.svg').default,
+  arrowRight: require('./icons/arrowRight.svg').default,
   docs: require('./icons/docs.svg').default,
   vscode: require('./icons/vscode.svg').default,
   monitor: require('./icons/monitor.svg').default,
@@ -65,13 +66,33 @@ const map = {
   shutdown: require('./icons/shutdown.svg').default,
   windsurf: require('./icons/windsurf.svg').default,
   rocket: require('./icons/rocket.svg').default,
+  nvidia: require('./icons/nvidia.svg').default,
   user: require('./icons/user.svg').default,
   templateTitle: require('./icons/templateTitle.svg').default,
   official: require('./icons/official.svg').default,
   firstPage: require('./icons/firstPage.svg').default,
   prePage: require('./icons/prePage.svg').default,
-  gift: require('./icons/gift.svg').default
-}
+  jetbrains: require('./icons/jetbrains.svg').default,
+
+  clion: require('./icons/jetbrains/clion.svg').default,
+  goland: require('./icons/jetbrains/goland.svg').default,
+  intellij: require('./icons/jetbrains/intellij.svg').default,
+  pycharm: require('./icons/jetbrains/pycharm.svg').default,
+  phpstorm: require('./icons/jetbrains/phpstorm.svg').default,
+  rider: require('./icons/jetbrains/rider.svg').default,
+  rubymine: require('./icons/jetbrains/rubymine.svg').default,
+  rustover: require('./icons/jetbrains/rustover.svg').default,
+  webstorm: require('./icons/jetbrains/webstorm.svg').default,
+  gift: require('./icons/gift.svg').default,
+  fileConfig: require('./icons/fileConfig.svg').default,
+  trae: require('./icons/trae.svg').default,
+  loadingCircle: require('./icons/loadingCircle.svg').default,
+  help: require('./icons/help.svg').default,
+  infoRounded: require('./icons/infoRounded.svg').default,
+  arrowUpRight: require('./icons/arrowUpRight.svg').default,
+  ellipse: require('./icons/ellipse.svg').default,
+  ellipseFull: require('./icons/ellipseFull.svg').default
+};
 
 const MyIcon = ({
   name,
@@ -81,7 +102,7 @@ const MyIcon = ({
 }: { name: keyof typeof map } & IconProps) => {
   return map[name] ? (
     <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
-  ) : null
-}
+  ) : null;
+};
 
-export default MyIcon
+export default MyIcon;

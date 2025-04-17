@@ -1,6 +1,7 @@
 export type AuthenticationTokenPayload = {
   userUid: string;
   userId: string;
+  regionUid?: string;
 };
 export type AccessTokenPayload = {
   regionUid: string;

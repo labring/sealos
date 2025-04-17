@@ -1,13 +1,13 @@
-import { useGuideStore } from '@/stores/guide'
-import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react'
-import { DriveStep, driver } from '@sealos/driver'
-import { useTranslations } from 'next-intl'
-import { DriverStarIcon } from './useDriver'
-import { checkUserTask } from '@/api/platform'
+import { useGuideStore } from '@/stores/guide';
+import { Flex, FlexProps, Icon, Text } from '@chakra-ui/react';
+import { DriveStep, driver } from '@sealos/driver';
+import { useTranslations } from 'next-intl';
+import { DriverStarIcon } from './useDriver';
+import { checkUserTask } from '@/api/platform';
 
 export default function useDetailDriver() {
-  const t = useTranslations()
-  const { detailCompleted, setDetailCompleted, isGuideEnabled } = useGuideStore()
+  const t = useTranslations();
+  const { detailCompleted, setDetailCompleted, isGuideEnabled } = useGuideStore();
 
   const PopoverBodyInfo = (props: FlexProps) => {
     return (
@@ -18,7 +18,8 @@ export default function useDetailDriver() {
         bottom={'-30px'}
         color={'white'}
         alignItems={'center'}
-        {...props}>
+        {...props}
+      >
         <Text color={'#FFF'} fontSize={'12px'} fontWeight={500}>
           {t('guide.click_shadow_skip')}
         </Text>
@@ -27,7 +28,8 @@ export default function useDetailDriver() {
           width="20"
           height="20"
           viewBox="0 0 20 20"
-          fill="white">
+          fill="white"
+        >
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -35,8 +37,8 @@ export default function useDetailDriver() {
           />
         </Icon>
       </Flex>
-    )
-  }
+    );
+  };
 
   const baseSteps: DriveStep[] = [
     {
@@ -90,7 +92,7 @@ export default function useDetailDriver() {
         )
       }
     }
-  ]
+  ];
 
   const handleUserGuide = async () => {
     try {
@@ -106,25 +108,25 @@ export default function useDetailDriver() {
           overlaySkipButton: t('skip') || 'skip',
           steps: baseSteps,
           onDestroyed: () => {
-            console.log('onDestroyed Detail')
-            setDetailCompleted(true)
+            console.log('onDestroyed Detail');
+            setDetailCompleted(true);
             checkUserTask().then((err) => {
-              console.log(err)
-            })
+              console.log(err);
+            });
           },
           interceptSkipButtonClick: () => {
-            driverObj.destroy()
+            driverObj.destroy();
           }
-        })
+        });
 
         requestAnimationFrame(() => {
-          driverObj.drive()
-        })
+          driverObj.drive();
+        });
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
-  return { handleUserGuide }
+  return { handleUserGuide };
 }

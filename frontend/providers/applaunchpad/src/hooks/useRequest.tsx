@@ -2,7 +2,7 @@ import { useToast } from '@/hooks/useToast';
 import { useMutation } from '@tanstack/react-query';
 import type { UseMutationOptions } from '@tanstack/react-query';
 import { getErrText } from '@/utils/tools';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'next-i18next';
 
 interface Props extends UseMutationOptions<any, any, any, any> {
   successToast?: string | null;
