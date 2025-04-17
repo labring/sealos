@@ -45,22 +45,23 @@ export const addBackupNodes = (data: any) => POST<any>('/api/node/addBackupNodes
 
 export const deleteBackupNodes = (data: any) => DELETE<any>('/api/node/deleteBackupNodes', data);
 
-export const addNodes = (data: any) => POST<any>('/api/node/addNode', data, {
-  timeout: 30000 * 4
-});
+export const addNodes = (data: any) =>
+  POST<any>('/api/node/addNode', data, {
+    timeout: 30000 * 4
+  });
 export const getComputePowerList = () => GET<any>('/api/node/computePower');
-export const deleteNodes = (data: any) => POST<any>('/api/node/deleteNode', data, {
-  timeout: 30000 * 2
-});
+export const deleteNodes = (data: any) =>
+  POST<any>('/api/node/deleteNode', data, {
+    timeout: 30000 * 2
+  });
 
-export const setImagesPurpose = (data: any) =>
-  POST<any>('/api/node/setImagesPurpose', data);
+export const setImagesPurpose = (data: any) => POST<any>('/api/node/setImagesPurpose', data);
 
 export const getImagesPurpose = () => GET<any>('/api/node/getImagesPurpose');
 
 export const uploadImageFiles = (data: any) => {
   const formData = new FormData();
-  console.log(data.image)
+  console.log(data.image);
   formData.append('file', data.image);
   return POST<any>('/api/imagehub/uploadImageFile', formData, {
     timeout: 30000,
@@ -69,16 +70,13 @@ export const uploadImageFiles = (data: any) => {
       // 'Content-Type': 'multipart/form-data'
     }
   });
-}
+};
 
-export const buildDockerImage = (data: any) =>
-  POST<any>('/api/imagehub/buildDockerImage', data);
+export const buildDockerImage = (data: any) => POST<any>('/api/imagehub/buildDockerImage', data);
 
-export const deleteResult = (data: any) =>
-  POST<any>('/api/node/deleteResult', data);
+export const deleteResult = (data: any) => POST<any>('/api/node/deleteResult', data);
 
-export const startCalcById = (data: any) =>
-  GET<any>(`/api/node/startCalcById?stress_id=${data}`);
+export const startCalcById = (data: any) => GET<any>(`/api/node/startCalcById?stress_id=${data}`);
 
 export const getImages = () => GET<{ repositories: string[] }>('/api/getImages');
 
@@ -141,7 +139,7 @@ export const getMyApps = (namespace: string) =>
     .then((res) => res.map(adaptAppListItem))
     .then(sortAppListByTime);
 
-export const addStressTesting = (params: string) => GET(`/api/node/stressTesting?${params}`)
+export const addStressTesting = (params: string) => GET(`/api/node/stressTesting?${params}`);
 
 export const delAppByName = (namespace: string, name: string) =>
   DELETE(`/api/delApp?namespace=${namespace}`, { name });
@@ -204,6 +202,9 @@ export const exportApp = (data: ExportAppPayload) =>
     error?: string;
   }>(`/api/exportApp`, data);
 
+export const exportApps = (data: { appNames: string[]; namespace: string }) =>
+  POST(`/api/exportApps`, data);
+
 export const uploadApp = (data: UploadAppPayload) => {
   const formData = new FormData();
   formData.append('appname', data.appname);
@@ -217,11 +218,9 @@ export const uploadApp = (data: UploadAppPayload) => {
   });
 };
 
-export const createConfigMap = (name: string) =>
-  POST(`/api/createConfigMap?name=${name}`);
+export const createConfigMap = (name: string) => POST(`/api/createConfigMap?name=${name}`);
 
 export const updateConfigMap = (name: string, data: any) =>
   POST(`/api/updateConfigMap?name=${name}`, { data });
 
-export const syncConfigMap = (name: string) =>
-  POST(`/api/syncConfigMap?name=${name}`);
+export const syncConfigMap = (name: string) => POST(`/api/syncConfigMap?name=${name}`);
