@@ -17,8 +17,3 @@ export type AppConfigType = {
   adminNameSpace: string[]
   currencySymbol: 'shellCoin' | 'cny' | 'usd'
 }
-
-declare global {
-  // eslint-disable-next-line no-var
-  var AppConfig: AppConfigType | undefined
-}

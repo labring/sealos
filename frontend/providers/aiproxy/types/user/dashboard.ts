@@ -15,6 +15,9 @@ export interface DashboardData {
   used_amount: number
   rpm: number
   tpm: number
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
 }
 
 export type DashboardResponse = ApiResp<DashboardData>

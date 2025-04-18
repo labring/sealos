@@ -41,7 +41,7 @@
     "inputPrice": "输入单价",
     "outputPrice": "输出单价",
     "createName": "名称",
-    "modelType": "模型类型",
+    "modelType": "类型",
     "requestCount": "请求次数",
     "usedAmount": "消耗金额",
     "userNotRealName": "Ai 服务需要实名认证。"
@@ -106,6 +106,7 @@
   "enable": "启用",
   "copySuccess": "复制成功",
   "copyFailed": "复制失败",
+  "pricing": "价格",
   "noData": "你还没有 API Key",
   "price": {
     "all": "全部",
@@ -121,7 +122,9 @@
     "modelVision": "视觉",
     "modelVisionLabel": "该模型支持视觉能力",
     "modelToolChoice": "工具调用",
-    "response": "输出"
+    "response": "输出",
+    "fixedPrice": "固定价格",
+    "perRequest": "/次"
   },
   "createKey2": "新建 Key",
   "dashboard": {
@@ -131,7 +134,9 @@
     "export": "导出",
     "exportAll": "全部导出",
     "importSuccess": "导入成功",
-    "importError": "导入失败"
+    "importError": "导入失败",
+    "doc": "文档",
+    "invite": "邀请"
   },
   "channelStatus": {
     "autoDisabled": "系统禁用"
@@ -211,7 +216,8 @@
     "7": "语音合成",
     "8": "语音转录",
     "9": "音频翻译",
-    "10": "重排序"
+    "10": "重排序",
+    "11": "pdf解析"
   },
   "modeOwner": {
     "openai": "OpenAI",
@@ -294,5 +300,13 @@
     "tpm": "当前 TPM",
     "cost": "花费",
     "requestData": "调用数据"
+  },
+  "drawer": {
+    "doc": "文档中心",
+    "requestExample": "请求示例",
+    "voice": "必填",
+    "voiceValues": "可用的选项有:",
+    "responseFormatValues": "音频输出支持的格式有:",
+    "responseExample": "响应示例"
   }
 }

@@ -50,6 +50,8 @@ async function fetchDashboardData(
       url.searchParams.append('token_name', params.token_name)
     }
 
+    url.searchParams.append('result_only', 'true')
+
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
@@ -78,7 +80,10 @@ async function fetchDashboardData(
       exception_count: result.data?.exception_count || 0,
       used_amount: result.data?.used_amount || 0,
       rpm: result.data?.rpm || 0,
-      tpm: result.data?.tpm || 0
+      tpm: result.data?.tpm || 0,
+      input_tokens: result.data?.input_tokens || 0,
+      output_tokens: result.data?.output_tokens || 0,
+      total_tokens: result.data?.total_tokens || 0
     }
   } catch (error) {
     console.error('Error fetching dashboard data:', error)

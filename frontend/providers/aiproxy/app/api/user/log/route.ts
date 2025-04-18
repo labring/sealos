@@ -78,6 +78,8 @@ async function fetchLogs(
       url.searchParams.append('end_timestamp', params.end_timestamp)
     }
 
+    url.searchParams.append('result_only', 'true')
+
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
