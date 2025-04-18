@@ -154,20 +154,20 @@ export default function EditApp({
   }, [formHook, formOnchangeDebounce]);
 
   const submitSuccess = async () => {
-    const quoteCheckRes = checkQuotaAllow({
-      cpu: usage.cpu.max,
-      memory: usage.memory.max,
-      storage: usage.storage.max
-    });
+    // const quoteCheckRes = checkQuotaAllow({
+    //   cpu: usage.cpu.max,
+    //   memory: usage.memory.max,
+    //   storage: usage.storage.max
+    // });
+    // if (quoteCheckRes) {
+    //   return toast({
+    //     status: 'warning',
+    //     title: t(quoteCheckRes),
+    //     duration: 5000,
+    //     isClosable: true
+    //   });
+    // }
 
-    if (quoteCheckRes) {
-      return toast({
-        status: 'warning',
-        title: t(quoteCheckRes),
-        duration: 5000,
-        isClosable: true
-      });
-    }
     setIsLoading(true);
 
     try {
