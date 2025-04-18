@@ -9,8 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-
 	"gorm.io/gorm"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
@@ -34,11 +32,13 @@ import (
 )
 
 type Interface interface {
+	GetGlobalDB() *gorm.DB
 	GetBillingHistoryNamespaceList(req *helper.NamespaceBillingHistoryReq) ([][]string, error)
 	GetAccountWithWorkspace(workspace string) (*types.Account, error)
 	GetProperties() ([]common.PropertyQuery, error)
 	GetCosts(req helper.ConsumptionRecordReq) (common.TimeCostsMap, error)
 	GetAppCosts(req *helper.AppCostsReq) (*common.AppCosts, error)
+	GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResourceCostsResponse, error)
 	ChargeBilling(req *helper.AdminChargeBillingReq) error
 	GetAppCostTimeRange(req helper.GetCostAppListReq) (helper.TimeRange, error)
 	GetCostOverview(req helper.GetCostAppListReq) (helper.CostOverviewResp, error)
@@ -57,6 +57,8 @@ type Interface interface {
 	SetStatusInvoice(req *helper.SetInvoiceStatusReq) error
 	GetWorkspaceName(namespaces []string) ([][]string, error)
 	SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error
+	CreatePaymentOrder(order *types.PaymentOrder) error
+	SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, orderID string) error
 	Transfer(req *helper.TransferAmountReq) error
 	GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfersResp, error)
 	GetUserID(ops types.UserQueryOpts) (string, error)
@@ -73,6 +75,23 @@ type Interface interface {
 	ArchiveHourlyBilling(hourStart, hourEnd time.Time) error
 	ActiveBilling(req resources.ActiveBilling) error
 	GetCockroach() *cockroach.Cockroach
+	SetCardInfo(info *types.CardInfo) (uuid.UUID, error)
+	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
+	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
+	NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) (uuid.UUID, error)
+	NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) (uuid.UUID, error)
+	NewCardSubscriptionPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error)
+	NewCardPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error)
+	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
+	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error)
+	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
+	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
+	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
+	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
+	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 }
 
 type Account struct {
@@ -90,11 +109,20 @@ type MongoDB struct {
 }
 
 type Cockroach struct {
-	ck *cockroach.Cockroach
+	ck                   *cockroach.Cockroach
+	subscriptionPlanList []types.SubscriptionPlan
 }
 
 func (g *Cockroach) GetCockroach() *cockroach.Cockroach {
 	return g.ck
+}
+
+func (g *Cockroach) GetGlobalDB() *gorm.DB {
+	return g.ck.GetGlobalDB()
+}
+
+func (g *Cockroach) GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error {
+	return g.ck.GlobalTransactionHandler(funcs...)
 }
 
 func (g *Cockroach) GetAccount(ops types.UserQueryOpts) (*types.Account, error) {
@@ -155,8 +183,206 @@ func (g *Cockroach) GetPayment(ops *types.UserQueryOpts, req *helper.GetPaymentR
 	}, req.Invoiced)
 }
 
+func (g *Cockroach) CreatePayment(req *types.Payment) error {
+	return g.ck.Payment(req)
+}
+
 func (g *Cockroach) SetPaymentInvoice(req *helper.SetPaymentInvoiceReq) error {
 	return g.ck.SetPaymentInvoice(&types.UserQueryOpts{Owner: req.Auth.Owner}, req.PaymentIDList)
+}
+
+func (g *Cockroach) CreatePaymentOrder(order *types.PaymentOrder) error {
+	return g.ck.CreatePaymentOrder(order)
+}
+
+func (g *Cockroach) SetPaymentOrderStatusWithTradeNo(status types.PaymentOrderStatus, orderID string) error {
+	return g.ck.SetPaymentOrderStatusWithTradeNo(status, orderID)
+}
+
+func (g *Cockroach) PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error {
+	return g.ck.PaymentWithFunc(payment, preDo, postDo)
+}
+
+func (g *Cockroach) SetCardInfo(info *types.CardInfo) (uuid.UUID, error) {
+	return g.ck.SetCardInfo(info)
+}
+
+func (g *Cockroach) GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error) {
+	return g.ck.GetCardInfo(cardID, userUID)
+}
+
+func (g *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	return g.ck.GetAllCardInfo(ops)
+}
+
+func (g *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error) {
+	return g.ck.GetSubscription(ops)
+}
+
+func (g *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) {
+	var err error
+	if len(g.subscriptionPlanList) == 0 {
+		g.subscriptionPlanList, err = g.ck.GetSubscriptionPlanList()
+	}
+	return g.subscriptionPlanList, err
+}
+
+func (g *Cockroach) GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error) {
+	return GetLastSubscriptionTransaction(g.ck.GetGlobalDB(), userUID)
+}
+
+func GetLastSubscriptionTransaction(db *gorm.DB, userUID uuid.UUID) (*types.SubscriptionTransaction, error) {
+	transaction := &types.SubscriptionTransaction{}
+	err := db.Where("user_uid = ?", userUID).Order("created_at desc").First(transaction).Error
+	if err != nil {
+		return nil, err
+	}
+	return transaction, nil
+}
+
+func (g *Cockroach) NewCardPaymentHandler(paymentRequestID string, card types.CardInfo) (uuid.UUID, error) {
+	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to get payment order with trade no: %v", err)
+	}
+	if order.Status != types.PaymentOrderStatusPending {
+		//fmt.Printf("payment order status is not pending: %v\n", order)
+		return uuid.Nil, ErrPaymentOrderAlreadyHandle
+		//return fmt.Errorf("payment order status is not pending: %v", order)
+	}
+	if card.ID == uuid.Nil {
+		card.ID = uuid.New()
+	}
+	card.UserUID = order.UserUID
+	order.PaymentRaw.ChargeSource = types.ChargeSourceNewCard
+	// TODO
+	err = g.ck.PaymentWithFunc(&types.Payment{
+		ID:         order.ID,
+		PaymentRaw: order.PaymentRaw,
+	}, func(tx *gorm.DB) error {
+		if card.CardToken != "" {
+			card.ID, err = cockroach.SetCardInfo(tx, &card)
+			if err != nil {
+				return fmt.Errorf("failed to set card info: %v", err)
+			}
+			order.PaymentRaw.CardUID = &card.ID
+		}
+		return nil
+	}, func(tx *gorm.DB) error {
+		return cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
+	})
+	return order.UserUID, err
+}
+
+func (g *Cockroach) NewCardPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error) {
+	order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to get payment order with trade no: %v", err)
+	}
+	if order.Status == types.PaymentOrderStatusFailed {
+		return uuid.Nil, nil
+	}
+	if order.Status != types.PaymentOrderStatusPending {
+		fmt.Printf("payment order status is not pending: %v\n", order)
+		return uuid.Nil, nil
+	}
+	return order.UserUID, g.ck.SetPaymentOrderStatusWithTradeNo(types.PaymentOrderStatusFailed, order.TradeNO)
+}
+
+var ErrPaymentOrderAlreadyHandle = fmt.Errorf("payment order already handle")
+
+func (g *Cockroach) NewCardSubscriptionPaymentHandler(paymentRequestID string, card types.CardInfo) (uuid.UUID, error) {
+	if paymentRequestID == "" {
+		return uuid.Nil, fmt.Errorf("payment request id is empty")
+	}
+	var userUID uuid.UUID
+	err := g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+		if err != nil {
+			return fmt.Errorf("failed to get payment order with trade no: %v", err)
+		}
+		userUID = order.UserUID
+		if order.Status != types.PaymentOrderStatusPending {
+			return ErrPaymentOrderAlreadyHandle
+		}
+		if card.CardToken != "" {
+			card.UserUID = order.UserUID
+			card.ID, err = cockroach.SetCardInfo(tx, &card)
+			if err != nil {
+				return fmt.Errorf("failed to set card info: %v", err)
+			}
+		}
+		order.PaymentRaw.CardUID = &card.ID
+		order.PaymentRaw.ChargeSource = types.ChargeSourceNewCard
+		// TODO List
+		// 1. set payment order status with tradeNo
+		// 2. save success payment
+		// 3. set transaction pay status to paid
+		// 4. save card info
+		err = cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusSuccess, order.TradeNO)
+		if err != nil {
+			return fmt.Errorf("failed to set payment order status: %v", err)
+		}
+		if err = tx.Model(&types.Payment{}).Create(&types.Payment{
+			ID:         order.ID,
+			PaymentRaw: order.PaymentRaw,
+		}).Error; err != nil {
+			return fmt.Errorf("failed to save payment: %v", err)
+		}
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusPaid).Error; err != nil {
+			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
+		}
+		if err = tx.Model(&types.Subscription{}).Where(&types.Subscription{UserUID: order.UserUID}).Update("card_id", card.ID).Error; err != nil {
+			return fmt.Errorf("failed to update subscription card id: %v", err)
+		}
+		return nil
+	})
+	return userUID, err
+}
+
+func (g *Cockroach) NewCardSubscriptionPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error) {
+	if paymentRequestID == "" {
+		return uuid.Nil, fmt.Errorf("payment request id is empty")
+	}
+	var userUID uuid.UUID
+	err := g.ck.GlobalTransactionHandler(func(tx *gorm.DB) error {
+		order, err := g.ck.GetPaymentOrderWithTradeNo(paymentRequestID)
+		if err != nil {
+			return fmt.Errorf("failed to get payment order with trade no: %v", err)
+		}
+		userUID = order.UserUID
+		if order.Status != types.PaymentOrderStatusPending {
+			return nil
+		}
+		// 1. set payment order status with tradeNo
+		// 2. set transaction pay status to failed
+		err = cockroach.SetPaymentOrderStatusWithTradeNo(tx, types.PaymentOrderStatusFailed, order.TradeNO)
+		if err != nil {
+			return fmt.Errorf("failed to set payment order status: %v", err)
+		}
+		if err = tx.Model(&types.SubscriptionTransaction{}).Where(&types.SubscriptionTransaction{PayID: order.ID}).Update("pay_status", types.SubscriptionPayStatusFailed).Update("status", types.SubscriptionTransactionStatusFailed).
+			Error; err != nil {
+			return fmt.Errorf("failed to update subscription transaction pay status: %v", err)
+		}
+		return nil
+	})
+	return userUID, err
+}
+
+func (g *Cockroach) GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error) {
+	return g.ck.GetCardList(ops)
+}
+
+func (g *Cockroach) DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error {
+	return g.ck.DeleteCardInfo(id, userUID)
+}
+
+func (g *Cockroach) SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error {
+	return g.ck.SetDefaultCard(cardID, userUID)
+}
+
+func (g *Cockroach) GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error) {
+	return g.ck.GetBalanceWithCredits(ops)
 }
 
 func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
@@ -172,6 +398,10 @@ func (g *Cockroach) GetTransfer(ops *types.GetTransfersReq) (*types.GetTransfers
 
 func (g *Cockroach) GetRegions() ([]types.Region, error) {
 	return g.ck.GetRegions()
+}
+
+func (g *Cockroach) GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error) {
+	return g.ck.GetSubscriptionPlan(planName)
 }
 
 func (g *Cockroach) GetLocalRegion() types.Region {
@@ -322,6 +552,120 @@ func (m *MongoDB) SaveBillings(billing ...*resources.Billing) error {
 	return err
 }
 
+// GetAppResourceCosts 获取指定时间范围内应用资源的使用情况和花费
+func (m *MongoDB) GetAppResourceCosts(req *helper.AppCostsReq) (*helper.AppResourceCostsResponse, error) {
+	appType := strings.ToUpper(req.AppType)
+	result := &helper.AppResourceCostsResponse{
+		AppType: appType,
+	}
+	result.ResourcesByType = map[string]*helper.ResourceUsage{
+		appType: {
+			Used:       make(map[uint8]int64),
+			UsedAmount: make(map[uint8]int64),
+			Count:      0,
+		},
+	}
+	if appType == resources.AppStore {
+		delete(result.ResourcesByType, appType)
+	}
+	matchConditions := bson.D{
+		{Key: "owner", Value: req.Owner},
+		{Key: "time", Value: bson.M{
+			"$gte": req.StartTime,
+			"$lte": req.EndTime,
+		}},
+	}
+	if req.Namespace != "" {
+		matchConditions = append(matchConditions, bson.E{Key: "namespace", Value: req.Namespace})
+	}
+
+	if strings.ToUpper(req.AppType) == resources.AppStore {
+		if req.AppName != "" {
+			matchConditions = append(matchConditions, bson.E{Key: "app_name", Value: req.AppName})
+		}
+		matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[resources.AppStore]})
+
+		cursor, err := m.getBillingCollection().Find(context.Background(), matchConditions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to find billing collection: %v", err)
+		}
+		defer cursor.Close(context.Background())
+
+		for cursor.Next(context.Background()) {
+			var billing resources.Billing
+			if err := cursor.Decode(&billing); err != nil {
+				return nil, fmt.Errorf("failed to decode billing: %v", err)
+			}
+			appTypeMap := make(map[string]struct{})
+			for _, appCost := range billing.AppCosts {
+				appTypeStr := resources.AppTypeReverse[appCost.Type]
+				if appTypeStr == "" {
+					appTypeStr = "UNKNOWN"
+				}
+				if _, exists := result.ResourcesByType[appTypeStr]; !exists {
+					result.ResourcesByType[appTypeStr] = &helper.ResourceUsage{
+						Used:       make(map[uint8]int64),
+						UsedAmount: make(map[uint8]int64),
+						Count:      0,
+					}
+				}
+				for k, v := range appCost.Used {
+					result.ResourcesByType[appTypeStr].Used[k] += v
+					result.ResourcesByType[appTypeStr].UsedAmount[k] += appCost.UsedAmount[k]
+				}
+				appTypeMap[appTypeStr] = struct{}{}
+			}
+			for _type := range appTypeMap {
+				result.ResourcesByType[_type].Count++
+			}
+		}
+		if err := cursor.Err(); err != nil {
+			return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+		}
+	} else {
+		if req.AppType != "" {
+			matchConditions = append(matchConditions, bson.E{Key: "app_type", Value: resources.AppType[appType]})
+		}
+
+		pipeline := mongo.Pipeline{
+			{{Key: "$match", Value: matchConditions}},
+			{{Key: "$unwind", Value: "$app_costs"}},
+		}
+
+		if req.AppName != "" {
+			pipeline = append(pipeline, bson.D{{Key: "$match", Value: bson.D{{Key: "app_costs.name", Value: req.AppName}}}})
+		}
+
+		cursor, err := m.getBillingCollection().Aggregate(context.Background(), pipeline)
+		if err != nil {
+			return nil, fmt.Errorf("failed to aggregate billing collection: %v", err)
+		}
+		defer cursor.Close(context.Background())
+
+		for cursor.Next(context.Background()) {
+			var resultDoc struct {
+				AppCosts resources.AppCost `bson:"app_costs"`
+			}
+			if err := cursor.Decode(&resultDoc); err != nil {
+				return nil, fmt.Errorf("failed to decode result doc: %v", err)
+			}
+			for resourceKey, usedValue := range resultDoc.AppCosts.Used {
+				result.ResourcesByType[appType].Used[resourceKey] += usedValue
+				result.ResourcesByType[appType].UsedAmount[resourceKey] += resultDoc.AppCosts.UsedAmount[resourceKey]
+			}
+			result.ResourcesByType[appType].Count++
+		}
+		if err := cursor.Err(); err != nil {
+			return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+		}
+	}
+	for _, resourceUsage := range result.ResourcesByType {
+		for k, v := range resourceUsage.Used {
+			resourceUsage.Used[k] = v / int64(resourceUsage.Count)
+		}
+	}
+	return result, nil
+}
 func (m *MongoDB) GetAppCosts(req *helper.AppCostsReq) (results *common.AppCosts, rErr error) {
 	if req.Page <= 0 {
 		req.Page = 1
@@ -720,7 +1064,7 @@ func (m *MongoDB) GetCostAppList(req helper.GetCostAppListReq) (resp helper.Cost
 	if strings.ToUpper(req.AppType) != resources.AppStore {
 		match := bson.M{
 			"owner":    req.Owner,
-			"type":     accountv1.Consumption,
+			"type":     resources.Consumption,
 			"app_type": bson.M{"$ne": resources.AppType[resources.AppStore]},
 		}
 		if req.Namespace != "" {
@@ -1458,7 +1802,7 @@ func (m *Account) ApplyInvoice(req *helper.ApplyInvoiceReq) (invoice types.Invoi
 	if len(req.PaymentIDList) == 0 {
 		return
 	}
-	payments, err = m.ck.GetUnInvoicedPaymentListWithIds(req.PaymentIDList)
+	payments, err = m.ck.GetUnInvoicedPaymentListWithIDs(req.PaymentIDList)
 	if err != nil {
 		err = fmt.Errorf("failed to get payment list: %v", err)
 		return
@@ -1754,7 +2098,7 @@ func (m *Account) ReconcileUnsettledLLMBilling(startTime, endTime time.Time) err
 			// 2. update billing status
 			filter := bson.M{
 				"user_uid": userUID,
-				"type":     accountv1.SubConsumption,
+				"type":     resources.SubConsumption,
 				"status":   resources.Unsettled,
 				"app_type": resources.AppType[resources.LLMToken],
 				"time": bson.M{
@@ -1864,12 +2208,12 @@ func (m *Account) ArchiveHourlyBilling(hourStart, hourEnd time.Time) error {
 			"namespace": result.ID.Namespace,
 			"owner":     result.ID.Owner,
 			"time":      hourStart,
-			"type":      accountv1.Consumption,
+			"type":      resources.Consumption,
 		}
 
 		billing := bson.M{
 			"order_id":  gonanoid.Must(12),
-			"type":      accountv1.Consumption,
+			"type":      resources.Consumption,
 			"namespace": result.ID.Namespace,
 			"app_type":  resources.AppType[result.ID.AppType],
 			"app_name":  result.ID.AppName,

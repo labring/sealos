@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/google/uuid"
 
 	"github.com/labring/sealos/service/account/common"
@@ -104,6 +106,19 @@ type UserTimeRangeReq struct {
 	// @Description Authentication information
 	// @JSONSchema required
 	AuthBase `json:",inline" bson:",inline"`
+}
+
+// ResourceUsage 定义资源使用情况的结构体
+type ResourceUsage struct {
+	Used       map[uint8]int64 `json:"used"`        // 资源使用量，key为资源类型
+	UsedAmount map[uint8]int64 `json:"used_amount"` // 资源使用花费，key为资源类型
+	Count      int             `json:"count"`       // 记录数量
+}
+
+// AppResourceCostsResponse 定义返回结果的结构体
+type AppResourceCostsResponse struct {
+	ResourcesByType map[string]*ResourceUsage `json:"resources_by_type,omitempty"`
+	AppType         string                    `json:"app_type"`
 }
 
 type AppCostsReq struct {
@@ -610,4 +625,48 @@ func ParseAdminChargeBillingReq(c *gin.Context) (*AdminChargeBillingReq, error) 
 		return nil, fmt.Errorf("bind json error: %v", err)
 	}
 	return rechargeBilling, nil
+}
+
+type AdminFlushSubscriptionQuotaReq struct {
+	UserUID  uuid.UUID `json:"userUID" bson:"userUID"`
+	PlanName string    `json:"planName" bson:"planName"`
+	PlanID   uuid.UUID `json:"planID" bson:"planID"`
+}
+
+func ParseAdminFlushSubscriptionQuotaReq(c *gin.Context) (*AdminFlushSubscriptionQuotaReq, error) {
+	flushSubscriptionQuota := &AdminFlushSubscriptionQuotaReq{}
+	if err := c.ShouldBindJSON(flushSubscriptionQuota); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if flushSubscriptionQuota.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("userUID cannot be empty")
+	}
+	if flushSubscriptionQuota.PlanID == uuid.Nil {
+		return nil, fmt.Errorf("planID cannot be empty")
+	}
+	if flushSubscriptionQuota.PlanName == "" {
+		return nil, fmt.Errorf("planName cannot be empty")
+	}
+	return flushSubscriptionQuota, nil
+}
+
+type AdminFlushDebtResourceStatusReq struct {
+	UserUID           uuid.UUID            `json:"userUID" bson:"userUID"`
+	LastDebtStatus    types.DebtStatusType `json:"lastDebtStatus" bson:"lastDebtStatus"`
+	CurrentDebtStatus types.DebtStatusType `json:"currentDebtStatus" bson:"currentDebtStatus"`
+	IsBasicUser       bool                 `json:"isBasicUser" bson:"isBasicUser"`
+}
+
+func ParseAdminFlushDebtResourceStatusReq(c *gin.Context) (*AdminFlushDebtResourceStatusReq, error) {
+	flushDebtResourceStatus := &AdminFlushDebtResourceStatusReq{}
+	if err := c.ShouldBindJSON(flushDebtResourceStatus); err != nil {
+		return nil, fmt.Errorf("bind json error: %v", err)
+	}
+	if flushDebtResourceStatus.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("userUID cannot be empty")
+	}
+	if flushDebtResourceStatus.CurrentDebtStatus == "" {
+		return nil, fmt.Errorf("currentDebtStatus cannot be empty")
+	}
+	return flushDebtResourceStatus, nil
 }

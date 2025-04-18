@@ -1,6 +1,8 @@
 module github.com/labring/sealos/service
 
-go 1.22
+go 1.22.5
+
+toolchain go1.23.1
 
 replace (
 	github.com/labring/sealos/service => ../service
@@ -11,6 +13,8 @@ replace (
 )
 
 require (
+	github.com/alipay/global-open-sdk-go v1.2.11
+	github.com/google/uuid v1.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.4
 	k8s.io/apimachinery v0.28.4
@@ -33,7 +37,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

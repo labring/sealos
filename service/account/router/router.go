@@ -49,6 +49,7 @@ func RegisterPayRouter() {
 		POST(helper.GetProperties, api.GetProperties).
 		POST(helper.GetUserCosts, api.GetCosts).
 		POST(helper.GetAPPCosts, api.GetAPPCosts).
+		POST(helper.GetAppTypeCosts, api.GetAppTypeCosts).
 		POST(helper.GetAccount, api.GetAccount).
 		POST(helper.GetPayment, api.GetPayment).
 		POST(helper.GetRechargeAmount, api.GetRechargeAmount).
@@ -73,10 +74,39 @@ func RegisterPayRouter() {
 		POST(helper.UserUsage, api.UserUsage).
 		POST(helper.GetRechargeDiscount, api.GetRechargeDiscount).
 		POST(helper.GetUserRealNameInfo, api.GetUserRealNameInfo)
-	router.Group(helper.AdminGroup).
+	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
-		POST(helper.AdminChargeBilling, api.AdminChargeBilling)
+		POST(helper.AdminChargeBilling, api.AdminChargeBilling).
+		POST(helper.AdminFlushDebtResourceStatus, api.AdminFlushDebtResourceStatus)
+	paymentGroup := router.Group(helper.PaymentGroup).
+		POST(helper.CreatePay, api.CreateCardPay).
+		POST(helper.Notify, api.NewPayNotifyHandler).
+		POST(helper.CardList, api.ListCard).
+		POST(helper.CardDelete, api.DeleteCard).
+		POST(helper.CardSetDefault, api.SetDefaultCard).
+		POST(helper.CreditsInfo, api.GetCreditsInfo)
+
+	if os.Getenv(helper.EnvSubscriptionEnabled) == "true" {
+		paymentGroup.POST(helper.SubscriptionUserInfo, api.GetSubscriptionUserInfo).
+			POST(helper.SubscriptionPlanList, api.GetSubscriptionPlanList).
+			POST(helper.SubscriptionLastTransaction, api.GetLastSubscriptionTransaction).
+			POST(helper.SubscriptionUpgradeAmount, api.GetSubscriptionUpgradeAmount).
+			POST(helper.SubscriptionFlushQuota, api.FlushSubscriptionQuota).
+			POST(helper.SubscriptionQuotaCheck, api.CheckSubscriptionQuota).
+			POST(helper.SubscriptionPay, api.CreateSubscriptionPay).
+			POST(helper.SubscriptionNotify, api.NewSubscriptionPayNotifyHandler)
+		adminGroup.POST(helper.AdminFlushSubQuota, api.AdminFlushSubscriptionQuota)
+
+		processor := api.NewSubscriptionProcessor(dao.DBClient.GetGlobalDB())
+		err := api.InitSubscriptionProcessorTables(dao.DBClient.GetGlobalDB())
+		if err != nil {
+			log.Fatalf("Error initializing subscription processor tables: %v", err)
+		}
+		go processor.StartProcessing(ctx)
+		go processor.StartKYCProcessing(ctx)
+		go processor.StartFlushQuotaProcessing(ctx)
+	}
 	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
 	docs.SwaggerInfo.Host = env.GetEnvWithDefault("SWAGGER_HOST", "localhost:2333")
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
