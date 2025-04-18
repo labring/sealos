@@ -21,9 +21,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       });
     }
 
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    const { k8sCore, applyYamlList, k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(req)
     });
+
+    try {
+      // Check if the service exists
+      const service = await k8sCore.readNamespacedService(`${dbName}-export`, namespace);
+      if (service.response.statusCode === 200) {
+        await k8sCore.deleteNamespacedService(`${dbName}-export`, namespace);
+      }
+    } catch (err: any) {}
 
     const yaml = json2BasicOps({
       dbName,

@@ -35,7 +35,6 @@ export const IconMap = {
   success: require('./icons/success.svg').default,
   error: require('./icons/error.svg').default,
   currency: require('./icons/currency.svg').default,
-  infoCircle: require('./icons/infoCircle.svg').default,
   upperRight: require('./icons/upperRight.svg').default,
   arrowUp: require('./icons/arrowUp.svg').default,
   search: require('./icons/search.svg').default,
@@ -59,7 +58,10 @@ export const IconMap = {
   arrowDown: require('./icons/arrowDown.svg').default,
   docs: require('./icons/docs.svg').default,
   chevronDown: require('./icons/chevron-down.svg').default,
-  overview: require('./icons/overview.svg').default
+  overview: require('./icons/overview.svg').default,
+  textRecognition: require('./icons/textRecognition.svg').default,
+  add: require('./icons/add.svg').default,
+  configmap: require('./icons/configmap.svg').default
 };
 
 const MyIcon = ({

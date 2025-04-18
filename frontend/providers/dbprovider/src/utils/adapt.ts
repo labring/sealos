@@ -9,7 +9,11 @@ import {
   dbStatusMap
 } from '@/constants/db';
 import type { AutoBackupFormType, AutoBackupType, BackupCRItemType } from '@/types/backup';
-import type { KbPgClusterType, KubeBlockOpsRequestType } from '@/types/cluster';
+import type {
+  KbPgClusterType,
+  KubeBlockClusterSpec,
+  KubeBlockOpsRequestType
+} from '@/types/cluster';
 import type {
   DBDetailType,
   DBEditType,
@@ -61,31 +65,53 @@ export const getDBSource = (
   };
 };
 
-export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
   let cpu = 0;
   let memory = 0;
+  let totalCpu = 0;
+  let totalMemory = 0;
   let storage = 0;
-  db.spec?.componentSpecs.forEach((comp) => {
-    cpu += cpuFormatToM(comp?.resources?.limits?.cpu || '0');
-    memory += memoryFormatToMi(comp?.resources?.limits?.memory || '0');
-    storage += storageFormatToNum(
+  let totalStorage = 0;
+
+  obj.forEach((comp) => {
+    const parseCpu = cpuFormatToM(comp?.resources?.limits?.cpu || '0');
+    const parseMemory = memoryFormatToMi(comp?.resources?.limits?.memory || '0');
+    const parseStorage = storageFormatToNum(
       comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
     );
+    cpu += parseCpu;
+    memory += parseMemory;
+    totalCpu += parseCpu * comp.replicas;
+    totalMemory += parseMemory * comp.replicas;
+
+    storage += parseStorage;
+    totalStorage += parseStorage * comp.replicas;
   });
 
+  return {
+    cpu,
+    memory,
+    totalCpu,
+    totalMemory,
+    storage,
+    totalStorage
+  };
+}
+
+export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
+  const dbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
     name: db.metadata?.name || 'db name',
-    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
+    dbType: dbType,
     status:
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
-    cpu,
-    memory,
-    storage: storage.toString() || '-',
+    ...calcTotalResource(db.spec.componentSpecs),
+    replicas: db.spec?.componentSpecs.find((comp) => comp.name === dbType)?.replicas || 1,
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -94,17 +120,6 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 };
 
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
-  let cpu = 0;
-  let memory = 0;
-  let storage = 0;
-  db.spec?.componentSpecs.forEach((comp) => {
-    cpu += cpuFormatToM(comp?.resources?.limits?.cpu || '0');
-    memory += memoryFormatToMi(comp?.resources?.limits?.memory || '0');
-    storage += storageFormatToNum(
-      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
-    );
-  });
-
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
@@ -116,9 +131,7 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
     dbName: db.metadata?.name || 'db name',
     replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,
-    cpu,
-    memory,
-    storage,
+    ...calcTotalResource(db.spec.componentSpecs),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -342,7 +355,7 @@ export const adaptMigrateList = (item: InternetMigrationCR): MigrateItemType => 
 
 export const adaptOpsRequest = (
   item: KubeBlockOpsRequestType,
-  dbType: DBType
+  type: 'Reconfiguring' | 'Switchover'
 ): OpsRequestItemType => {
   const config = item.metadata.annotations?.[DBPreviousConfigKey];
 
@@ -362,7 +375,7 @@ export const adaptOpsRequest = (
     }
   }
 
-  return {
+  let result: OpsRequestItemType = {
     id: item.metadata.uid,
     name: item.metadata.name,
     namespace: item.metadata.namespace,
@@ -370,11 +383,22 @@ export const adaptOpsRequest = (
       item.status?.phase && DBReconfigStatusMap[item.status.phase]
         ? DBReconfigStatusMap[item.status.phase]
         : DBReconfigStatusMap.Creating,
-    startTime: item.metadata?.creationTimestamp,
-    configurations: item.spec.reconfigure.configurations[0].keys[0].parameters.map((param) => ({
-      parameterName: param.key,
-      newValue: param.value,
-      oldValue: previousConfigurations[param.key]
-    }))
+    startTime: item.metadata?.creationTimestamp
   };
+
+  if (type === 'Reconfiguring') {
+    result.configurations = item.spec.reconfigure!.configurations[0].keys[0].parameters.map(
+      (param) => ({
+        parameterName: param.key,
+        newValue: param.value,
+        oldValue: previousConfigurations[param.key]
+      })
+    );
+  }
+
+  if (type === 'Switchover') {
+    result.switchover = item.spec.switchover![0];
+  }
+
+  return result;
 };

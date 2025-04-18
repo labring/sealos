@@ -34,6 +34,7 @@ export class KubeFileSystem {
     podName: string,
     containerName: string,
     command: string[],
+    freeOnceStdError: boolean | undefined = true,
     stdin: Readable | null = null,
     stdout: Writable | null = null
   ): Promise<string> {
@@ -73,9 +74,22 @@ export class KubeFileSystem {
           reject(new Error(`WebSocket error: ${errorMessage}`));
         });
 
+        stdout?.on('error', (error) => {
+          console.error(error.toString());
+          if (freeOnceStdError) {
+            free();
+            reject(new Error(`Output stream error: ${error.message}`));
+          }
+        });
+
         stderr?.on('data', (error) => {
-          free();
-          reject(new Error(`Command execution error: ${error.toString()}`));
+          console.error(error.toString());
+          if (freeOnceStdError) {
+            free();
+            reject(new Error(`Command execution error: ${error.toString()}`));
+          } else {
+            chunks = Buffer.concat([chunks, error]);
+          }
         });
 
         stdout?.on('end', () => {
@@ -83,26 +97,18 @@ export class KubeFileSystem {
           resolve(chunks.toString());
         });
 
-        stdout?.on('error', (error) => {
-          free();
-          reject(new Error(`Output stream error: ${error.message}`));
-        });
-
         if (stdin) {
           stdin.on('end', () => {
             free();
           });
         }
-      }).catch((error) => {
-        // Ensure all Promise-related errors are caught
-        free();
-        throw error;
-      });
+      })
+        .catch((error) => {
+          throw error;
+        })
+        .finally(free);
     } catch (error: any) {
       free();
-      if (error?.type === 'error' && error?.target instanceof WebSocket) {
-        throw new Error(`WebSocket error: ${error.message || 'Unknown error'}`);
-      }
       throw new Error(`Command execution failed: ${error.message || 'Unknown error'}`);
     }
   }
@@ -328,6 +334,7 @@ export class KubeFileSystem {
       podName,
       containerName,
       ['dd', `if=${path}`, 'status=none'],
+      true,
       null,
       stdout
     );
@@ -379,6 +386,7 @@ export class KubeFileSystem {
       podName,
       containerName,
       ['sh', '-c', `dd of=${path} status=none bs=32767`],
+      true,
       file
     );
     return result;
@@ -420,5 +428,49 @@ export class KubeFileSystem {
     }
 
     return dt.toDate();
+  }
+}
+
+export class Command {
+  private text: Array<string> = [];
+
+  public echo(newText: string) {
+    this.text.push(`echo "${newText}"`);
+  }
+
+  public newLine() {
+    if (!this.text[this.text.length - 1].endsWith('\n')) {
+      this.text[this.text.length - 1] += '\n';
+    }
+  }
+
+  // with new line
+  public add(newText: string | string[]) {
+    if (Array.isArray(newText)) {
+      newText.forEach((item) => {
+        this.add(item);
+      });
+    } else {
+      this.text.push(newText);
+    }
+  }
+
+  // without new line
+  public push(newText: string | string[]) {
+    if (Array.isArray(newText)) {
+      newText.forEach((item) => {
+        this.push(item);
+      });
+      return;
+    }
+    if (this.text.at(-1) === undefined) {
+      this.text.push(newText);
+      return;
+    }
+    this.text[this.text.length - 1] += ' ' + newText;
+  }
+
+  public get() {
+    return ['/bin/sh', '-c', this.text.join(' && ')];
   }
 }

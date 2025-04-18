@@ -44,6 +44,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       [DBTypeEnum.milvus]: {
         key: 'milvus'
+      },
+      [DBTypeEnum.pulsar]: {
+        key: 'pulsar'
+      },
+      [DBTypeEnum.clickhouse]: {
+        key: 'clickhouse'
       }
     };
 

@@ -40,6 +40,8 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
     isSuccess
   } = useQuery(['getMigrateList', dbName], () => getMigrateList(dbName));
 
+  console.log('migrateList', migrateList);
+
   const { data: MigratePods = [] } = useQuery(
     ['getMigratePodList', migrateName],
     () => getMigratePodList(migrateName),
@@ -112,8 +114,34 @@ export const MigrateTable = ({ dbName }: { dbName: string }) => {
       render: (item: MigrateItemType) => {
         return (
           <Flex alignItems={'center'} gap={'4px'}>
-            <MyTooltip offset={[0, 10]} label={t('Logs')}>
-              <Button variant={'square'} onClick={() => openLogModal(item.name)}>
+            <MyTooltip
+              offset={[0, 10]}
+              label={
+                !MigratePods.some((pod) => pod.metadata?.name === item.name)
+                  ? t('pod_completed')
+                  : t('Logs')
+              }
+            >
+              <Button
+                variant={'square'}
+                onClick={() => openLogModal(item.name)}
+                {...(function () {
+                  if (!MigratePods.some((pod) => pod.metadata?.name === item.name)) {
+                    return {
+                      disabled: true,
+                      color: 'grayModern.500',
+                      _hover: {
+                        bg: 'transparent',
+                        color: 'red.500'
+                      },
+                      cursor: 'not-allowed'
+                    };
+                  }
+                  return {
+                    onClick: () => openLogModal(item.name)
+                  };
+                })()}
+              >
                 <MyIcon name={'log'} w="18px" h="18px" fill={'#485264'} />
               </Button>
             </MyTooltip>

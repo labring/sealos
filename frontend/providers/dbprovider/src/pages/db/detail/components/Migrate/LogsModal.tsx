@@ -127,7 +127,7 @@ const LogsModal = ({
             return state + ansi_up.current.ansi_to_html(text);
           });
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
 
         // scroll bottom
