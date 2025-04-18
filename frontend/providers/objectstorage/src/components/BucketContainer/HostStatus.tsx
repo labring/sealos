@@ -21,6 +21,7 @@ import { closeHost, getHostStatus, openHost } from '@/api/bucket';
 import { useMemo } from 'react';
 import { isArray } from 'lodash';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useToast } from '@/hooks/useToast';
 
 enum HostStatusType {
   Running,
@@ -32,6 +33,7 @@ export function HostStatus() {
   const { currentBucket } = useOssStore();
   const { t } = useTranslation(['common', 'bucket']);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const { data, isSuccess } = useQuery(
     [QueryKey.HostStatus, currentBucket?.name],
     () =>
@@ -62,6 +64,13 @@ export function HostStatus() {
     {
       onSuccess() {
         queryClient.invalidateQueries([QueryKey.HostStatus]);
+      },
+      onError(error: any) {
+        toast({
+          title: t('openHostFailed'),
+          description: error.message ? t(error.message as any) : t('openHostFailed'),
+          status: 'error'
+        });
       }
     }
   );
