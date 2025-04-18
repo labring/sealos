@@ -175,6 +175,7 @@ func Init(ctx context.Context) error {
 		ServerHost: os.Getenv(utils.EnvSMTPHost),
 		ServerPort: env.GetIntEnvWithDefault(utils.EnvSMTPPort, 465),
 		FromEmail:  os.Getenv(utils.EnvSMTPFrom),
+		Username:   env.GetEnvWithDefault(utils.EnvSMTPUser, os.Getenv(utils.EnvSMTPFrom)),
 		Passwd:     os.Getenv(utils.EnvSMTPPassword),
 		EmailTitle: os.Getenv(utils.EnvSMTPTitle),
 	}

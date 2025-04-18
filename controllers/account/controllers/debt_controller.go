@@ -86,6 +86,7 @@ const (
 	SMTPHostEnv           = "SMTP_HOST"
 	SMTPPortEnv           = "SMTP_PORT"
 	SMTPFromEnv           = "SMTP_FROM"
+	SMTPUserEnv           = "SMTP_USER"
 	SMTPPasswordEnv       = "SMTP_PASSWORD"
 	SMTPTitleEnv          = "SMTP_TITLE"
 )
@@ -796,6 +797,7 @@ func (r *DebtReconciler) setupSMTPConfig() error {
 	r.smtpConfig = &utils.SMTPConfig{
 		ServerHost: os.Getenv(SMTPHostEnv),
 		ServerPort: serverPort,
+		Username:   env.GetEnvWithDefault(SMTPUserEnv, os.Getenv(SMTPFromEnv)),
 		FromEmail:  os.Getenv(SMTPFromEnv),
 		Passwd:     os.Getenv(SMTPPasswordEnv),
 		EmailTitle: os.Getenv(SMTPTitleEnv),

@@ -11,6 +11,7 @@ import (
 type SMTPConfig struct {
 	ServerHost string
 	ServerPort int
+	Username   string
 	FromEmail  string
 	Passwd     string
 	EmailTitle string
@@ -22,7 +23,7 @@ func (c *SMTPConfig) SendEmail(emailBody, to string) error {
 	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
 	m.SetHeader("Subject", c.EmailTitle)
 	m.SetBody("text/html", emailBody)
-	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.FromEmail, c.Passwd)
+	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.Username, c.Passwd)
 	return d.DialAndSend(m)
 }
 
@@ -32,7 +33,7 @@ func (c *SMTPConfig) SendEmailWithSubject(subject, emailBody, to string) error {
 	m.SetAddressHeader("From", c.FromEmail, c.EmailTitle)
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", emailBody)
-	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.FromEmail, c.Passwd)
+	d := gomail.NewDialer(c.ServerHost, c.ServerPort, c.Username, c.Passwd)
 	return d.DialAndSend(m)
 }
 
@@ -40,6 +41,7 @@ const (
 	EnvSMTPHost     = "SMTP_HOST"
 	EnvSMTPPort     = "SMTP_PORT"
 	EnvSMTPFrom     = "SMTP_FROM"
+	EnvSMTPUser     = "SMTP_USER"
 	EnvSMTPPassword = "SMTP_PASSWORD"
 	EnvSMTPTitle    = "SMTP_TITLE"
 

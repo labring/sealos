@@ -153,7 +153,11 @@ func (r *DebtReconciler) start() {
 	wg.Wait()
 }
 
-func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID) error {
+func (r *DebtReconciler) RefreshDebtStatus(userUID uuid.UUID) error {
+	return r.refreshDebtStatus(userUID, false)
+}
+
+func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) error {
 	account, err := r.AccountV2.GetAccountWithCredits(userUID)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to get account %s: %v", userUID, err)
@@ -208,8 +212,10 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID) error {
 		}
 		if types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
 			//TODO send sms
-			if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
-				return fmt.Errorf("failed to send user debt message: %w", err)
+			if !skipSendMsg {
+				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+					return NewErrSendMsg(err, userUID)
+				}
 			}
 		}
 	case types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
@@ -220,8 +226,10 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID) error {
 		}
 		if currentStatus != types.FinalDeletionPeriod {
 			// TODO send sms
-			if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
-				return fmt.Errorf("failed to send user debt message: %w", err)
+			if !skipSendMsg {
+				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+					return fmt.Errorf("failed to send user debt message: %w", err)
+				}
 			}
 		}
 	}
@@ -286,6 +294,22 @@ func (r *DebtReconciler) ResumeBalance(userUID uuid.UUID) error {
 		return fmt.Errorf("failed to update account balance: %w", err)
 	}
 	return nil
+}
+
+type ErrSendMsg struct {
+	UserUID uuid.UUID `json:"userUID" bson:"userUID"`
+	Err     error     `json:"err" bson:"err"`
+}
+
+func NewErrSendMsg(err error, userUID uuid.UUID) error {
+	return ErrSendMsg{
+		UserUID: userUID,
+		Err:     err,
+	}
+}
+
+func (e ErrSendMsg) Error() string {
+	return fmt.Sprintf("failed to send message to user %s: %v", e.UserUID, e.Err)
 }
 
 func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, currentStatus types.DebtStatusType, isBasicUser bool) error {
@@ -512,9 +536,23 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 				return
 			}
 			defer mutex.Unlock()
-			if err := r.refreshDebtStatus(u); err != nil {
+			if err := r.RefreshDebtStatus(u); err != nil {
 				r.Logger.Error(err, fmt.Sprintf("failed to refresh debt status for user %s", u))
-				r.failedUserLocks.LoadOrStore(u, &sync.Mutex{})
+				sendMsgNumber := 1
+				if value, ok := r.failedUserLocks.LoadOrStore(u, sendMsgNumber); ok {
+					if sendMsgNumber, ok = value.(int); ok {
+						if sendMsgNumber >= 3 {
+							if err = r.refreshDebtStatus(u, true); err != nil {
+								r.Logger.Error(err, fmt.Sprintf("failed to refresh debt status for user %s", u))
+							} else {
+								r.failedUserLocks.Delete(u)
+							}
+							return
+						}
+						sendMsgNumber++
+						r.failedUserLocks.Store(u, sendMsgNumber)
+					}
+				}
 			} else {
 				r.failedUserLocks.Delete(u)
 			}
