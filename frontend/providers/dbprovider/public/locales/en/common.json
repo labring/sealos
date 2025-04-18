@@ -227,7 +227,7 @@
   "identify": "Identifify Information",
   "identify_clipboard": "Identify clipboard contents",
   "import_through_file": "File Import",
-  "important_tips_for_migrating": "Tip: If the <b>source_database</b> in the source database overlaps with the <b>sink_database</b> in the target database, a new database should be created in the target database to avoid data duplication.",
+  "important_tips_for_migrating": "A <b>database</b> is a system for storing and managing data, typically consisting of multiple <b>databases (instances)</b>. Each database is an independent collection of objects such as tables, views, and stored procedures. <br />If the source and target databases share similarities (e.g., names or structures), it’s recommended to <b>create a new database in the target system</b> for the imported data, rather than importing it into an existing one. This helps prevent duplication and conflicts.",
   "innodb_buffer_pool": "InnoDB Buffer Pool",
   "intranet_address": "Private Address",
   "items_per_db": "Keys per DB",

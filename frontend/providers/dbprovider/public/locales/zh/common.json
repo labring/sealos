@@ -226,7 +226,7 @@
   "identify": "识别信息",
   "identify_clipboard": "识别剪切板内容",
   "import_through_file": "文件导入",
-  "important_tips_for_migrating": "如果源数据库中的<b>源database</b>与目标数据库中的<b>目标database</b>存在重叠，应在目标数据库中新建一个数据库，以避免数据重复。",
+  "important_tips_for_migrating": "<b>数据库</b>是一个用于存储和管理数据的系统，它包含了多个<b>database（数据库实例）</b>，每个database是一个独立的数据集合，包含表、视图、存储过程等对象。如果<b>源数据库</b>（即原始的数据库）和<b>目标数据库</b>（即要将数据导入的数据库）中有相同的部分（比如数据库名称、数据结构等），为了避免数据重复或冲突，应该<b>在目标数据库中创建一个新的database</b>来存放数据，而不是直接将数据导入到已有的目标数据库中。",
   "innodb_buffer_pool": "InnoDB 缓冲池",
   "intranet_address": "内网地址",
   "items_per_db": "键值数",
