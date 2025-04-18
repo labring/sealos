@@ -238,14 +238,13 @@ const DevboxList = ({
             _hover={{
               color: 'brightBlue.600'
             }}
-            minW={'unset'}
-            // leftIcon={<MyIcon name={'detail'} w={'16px'} />}
+            minW={'fit-content'}
+            leftIcon={<MyIcon name={'detail'} w={'16px'} />}
             onClick={() => {
               router.push(`/devbox/detail/${item.name}`);
             }}
           >
-            {/* {t('detail')} */}
-            <MyIcon name={'detail'} w={'16px'} />
+            {t('detail')}
           </Button>
           <SealosMenu
             width={100}
