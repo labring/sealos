@@ -12,6 +12,8 @@ import re
 import requests
 from node import add_node_to_cluster, delete_node_from_cluster
 from stress_test import *
+from scheduling import *
+import threading
 
 
 app = Flask(__name__)
@@ -29,7 +31,13 @@ REGISTRY_PASS = os.getenv('REGISTRY_PASS')
 SAVE_PATH = os.getenv('SAVE_PATH')
 # 环境变量：资源利用比例
 # 环境变量：镜像上传路径
-UPLOAD_FOLDER = '/opt/image';
+UPLOAD_FOLDER = '/opt/image'
+
+# 环境变量：配置文件路径
+MOUNT_PATH = os.getenv('MOUNT_PATH', '')
+# 环境变量：配置文件名称
+CONFIG_MAP_NAME = os.getenv('CONFIG_MAP_NAME', '')
+
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
 ENABLE_WORKLOAD_SCALING = bool((os.getenv('ENABLE_WORKLOAD_SCALING') or 'false') == 'true')
 ENABLE_NODE_SCALING = bool((os.getenv('ENABLE_NODE_SCALING') or 'false') == 'true')
@@ -56,83 +64,8 @@ def run_command(command):
         return e.stderr.decode().strip()
 
 def upload_deploy_helper(file_path, namespace, appname, images):
-    for image in images:
-        image['path'] = os.path.join(file_path, image['path'].split('/')[-1])
-    with open(os.path.join(file_path, 'app.yaml'), 'r') as file:
-        yaml_content = file.read()
 
-    new_yaml_contents = []
-    for single_yaml in yaml.safe_load_all(yaml_content):
-        if 'kind' in single_yaml and single_yaml['kind'] == 'Deployment':
-            if 'spec' in single_yaml and 'template' in single_yaml['spec'] and 'spec' in single_yaml['spec']['template']:
-                if 'containers' in single_yaml['spec']['template']['spec']:
-                    for container_index in range(len(single_yaml['spec']['template']['spec']['containers'])):
-                        container = single_yaml['spec']['template']['spec']['containers'][container_index]
-                        if 'image' in container:
-                            if not '/' in container['image']:
-                                container['image'] = 'library/' + container['image']
-                            if not ':' in container['image']:
-                                container['image'] = container['image'] + ':latest'
-        new_yaml_contents.append(single_yaml)
-    new_yaml_content = yaml.dump_all(new_yaml_contents)
-
-
-    print('deployAppWithImage, appname:', appname, 'namespace:', namespace, flush=True)
-
-    # 加载和推送镜像
-    for image in images:
-        name = image['name'].strip()
-        path = image['path']
-
-        # 登录镜像仓库
-        err = run_command('docker login -u admin -p passw0rd sealos.hub:5000')
-        if err:
-            return jsonify({'error': 'Failed to login, ' + err}), 500
-
-        # 加载镜像
-        err = run_command('docker load -i ' + path)
-        if err:
-            return jsonify({'error': 'Failed to load image, ' + err}), 500
-        # 替换域名并推送镜像
-        parts = name.split('/')
-        if len(parts) == 3:
-            new_name = 'sealos.hub:5000/' + '/'.join(parts[1:])
-        elif len(parts) == 1:
-            new_name = 'sealos.hub:5000/library/' + name
-        elif len(parts) == 2:
-            new_name = 'sealos.hub:5000/' + name
-        else:
-            return jsonify({'error': 'Invalid image name: ' + name}), 400
-        err = run_command('docker tag ' + name + ' ' + new_name)
-        if err:
-            return jsonify({'error': 'Failed to tag image, ' + err}), 500
-        err = run_command('docker push ' + new_name)
-        if err:
-            return jsonify({'error': 'Failed to push image, ' + err}), 500
-
-    # 替换yaml中的CLUSTER_DOMAIN
-    new_yaml_content = new_yaml_content.replace('CLUSTER_DOMAIN', CLUSTER_DOMAIN)
-    with open('temp.yaml', 'w') as file:
-        file.write(new_yaml_content)
-
-    # 调用kubectl创建命名空间
-    create_namespace_command = 'kubectl create namespace ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf'
-    err = run_command(create_namespace_command)
-
-    if err:
-        if 'already exists' not in err:
-            return jsonify({'error': 'Failed to create namespace, ' + err}), 500
-
-    # 调用kubectl部署应用
-    apply_command = 'kubectl apply -n ' + namespace + ' --kubeconfig=/etc/kubernetes/admin.conf -f temp.yaml'
-    err = run_command(apply_command)
-
-    if err:
-        return jsonify({'error': 'Failed to apply application, ' + err}), 500
-
-    # 返回成功响应
-    detail_url = 'http://' + CLUSTER_DOMAIN + ':32293/app/detail'
-    return jsonify({'message': 'Application deployed successfully', 'url': detail_url}), 200
+    return deployAppWithImage(file_path, '', '', '', namespace, appname, images)
 
 # API端点：导出应用程序
 @app.route('/api/exportApp', methods=['POST'])
@@ -316,6 +249,11 @@ def deploy_app_with_image():
         return jsonify({'error': 'Ports are required'}), 400
     namespace = request.args.get('namespace')
     appname = request.args.get('appname')  # 获取新的appname参数
+
+    return deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace, appname, ports)
+
+def deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace=None, appname=None, ports={}):
+    """部署应用程序"""
     
     with open(os.path.join(file_path, 'metadata.json'), 'r') as file:
         metadata = json.load(file)
@@ -353,6 +291,50 @@ def deploy_app_with_image():
             if 'selector' in single_yaml['spec']:
                 if single_yaml['spec']['selector'].get('app') == old_appname:
                     single_yaml['spec']['selector']['app'] = appname
+
+        if single_yaml.get('kind') == 'Deployment' or single_yaml.get('kind') == 'StatefulSet':
+            # 确保 volumes 存在
+            if 'volumes' not in single_yaml['spec']['template']['spec']:
+                single_yaml['spec']['template']['spec']['volumes'] = []
+
+            # 检查是否已经添加 ConfigMap volume
+            config_map_volume_exists = False
+            for volume in single_yaml['spec']['template']['spec']['volumes']:
+                if volume.get('name') == CONFIG_MAP_NAME:
+                    config_map_volume_exists = True
+                    break
+
+            if not config_map_volume_exists:
+                # 添加 ConfigMap volume
+                single_yaml['spec']['template']['spec']['volumes'].append({
+                    'name': CONFIG_MAP_NAME,
+                    'configMap': {
+                        'name': CONFIG_MAP_NAME,
+                    },
+                })
+
+            # 确保 containers 存在
+            if 'containers' in single_yaml['spec']['template']['spec']:
+                for container in single_yaml['spec']['template']['spec']['containers']:
+                    # 确保 volumeMounts 存在
+                    if 'volumeMounts' not in container:
+                        container['volumeMounts'] = []
+
+                    # 检查是否已经添加 volumeMount
+                    volume_mount_exists = False
+                    for volume_mount in container['volumeMounts']:
+                        if volume_mount.get('name') == CONFIG_MAP_NAME:
+                            volume_mount_exists = True
+                            break
+                    
+                    if not volume_mount_exists:
+                        # 添加 volumeMount
+                        container['volumeMounts'].append({
+                            'name': CONFIG_MAP_NAME,
+                            'mountPath': MOUNT_PATH,
+                        })
+
+            
                     
         if single_yaml.get('kind') == 'Deployment':
             # 替换deployment selector中的matchLabels
@@ -708,7 +690,7 @@ def init_configmap():
     cmd = f"kubectl create configmap {CONFIGMAP_NAME} -n {NAMESPACE} --from-literal=backup_nodes='[]' --kubeconfig=/etc/kubernetes/admin.conf"
     try:
         subprocess.run(cmd, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         # print(f"Error creating configmap: {e}")
         pass
 
@@ -953,9 +935,10 @@ def stress_testing_api():
         port = request.args.get('port')
         core_api = request.args.get('core_api')
         test_data = request.args.get('test_data')
-        qps = request.args.get('qps')
-        max_latency = request.args.get('max_latency')
-        stress_test(stress_id, stress_type, namespace, app_list, port, core_api, test_data, qps, max_latency)
+        qps = int(request.args.get('qps'))
+        max_latency = float(request.args.get('max_latency'))
+        url = 'http://{}:{}{}'.format(CLUSTER_DOMAIN, port, core_api)
+        stress_test(stress_id, stress_type, namespace, app_list, port, url, test_data, qps, max_latency)
         return jsonify({'message': 'Stress testing started successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -991,19 +974,108 @@ def mock_run_test_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/ping', methods=['GET'])
+def api_ping():
+    return ping()
+
+@app.route('/api/register_backend', methods=['POST'])
+def api_register_backend():
+    ip = request.json["ip"]
+    register_backend(ip)
+    return "success"
+
+@app.route('/api/delete_backend', methods=['POST'])
+def api_delete_backend():
+    ip = request.json["ip"]
+    delete_backend(ip)
+    return "success"
+
+@app.route('/api/get_backends', methods=['GET'])
+def api_get_backends():
+    return jsonify(get_backends()) 
+
+@app.route('/api/test_latency', methods=['GET'])
+def api_test_latency():
+    return jsonify(test_latency()) 
+
+@app.route('/api/register_app', methods=['POST'])
+def api_register_app():
+    app_name = request.json["app_name"]
+    namespace = request.json["namespace"]
+    app2 = request.json["app2"]
+    namespace2 = request.json["namespace2"]
+    url_key = request.json["url_key"]
+    current_backend = request.json["current_backend"]
+    ports = request.json["ports"]
+    register_app(app_name, namespace, app2, namespace2, url_key, current_backend, ports)
+    return "success"
+
+@app.route('/api/delete_app', methods=['POST'])
+def api_delete_app():
+    app_name = request.json["app_name"]
+    return delete_app(app_name)
+
+@app.route('/api/get_app_list', methods=['GET'])
+def api_get_app_list():
+    return jsonify(get_app_list())
+
+@app.route('/api/change_deploy_env', methods=['POST'])
+def api_change_deploy_env():
+    app2 = request.json["app2"]
+    namespace2 = request.json["namespace2"]
+    url_key = request.json["url_key"]
+    new_backend = request.json["new_backend"]
+    return change_deploy_env(app2, namespace2, url_key, new_backend)
+
+@app.route('/api/check_all_apps', methods=['GET'])
+def api_check_all_apps():
+    try:
+        check_all_apps()
+        return jsonify({'message': 'All apps are running successfully'}), 200
+    except Exception as e:
+        print(e)
+        return jsonify({'error': str(e)}), 500
+    
+def cron_job():
+    while True:
+        time.sleep(60)
+        
+        if ENABLE_WORKLOAD_SCALING:
+            try:
+                scale_high_priority_workloads()
+            except Exception as e:
+                print("Error in scale_high_priority_workloads: {}".format(str(e)))
+
+        if ENABLE_NODE_SCALING:
+            try:
+                scale_nodes()
+            except Exception as e:
+                print("Error in scale_nodes: {}".format(str(e)))
+        
+        try:
+            check_all_apps()
+        except Exception as e:
+            print("Error in check_all_apps: {}".format(str(e)))
+
 if __name__ == '__main__':
     init_db()
     init_configmap()
+    init_scheduling()
     # 创建定时任务调度器
-    if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
-        scheduler = BackgroundScheduler()
-        if ENABLE_WORKLOAD_SCALING:
-            scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
-        if ENABLE_NODE_SCALING:
-            scheduler.add_job(scale_nodes, 'interval', minutes=1)
-        scheduler.start()
-    try:
-        app.run(debug=True, host='0.0.0.0', port=5002)
-    finally:
-        scheduler.shutdown()
+    # scheduler = BackgroundScheduler()
+    # if ENABLE_WORKLOAD_SCALING or ENABLE_NODE_SCALING:
+    #     if ENABLE_WORKLOAD_SCALING:
+    #         scheduler.add_job(scale_high_priority_workloads, 'interval', minutes=1)
+    #     if ENABLE_NODE_SCALING:
+    #         scheduler.add_job(scale_nodes, 'interval', minutes=1)
+    # scheduler.add_job(check_all_apps, 'interval', minutes=1)
+    # scheduler.start()
+    
+    # 创建线程执行定时任务
+    thread = threading.Thread(target=cron_job)
+    thread.start()
+
+    app.run(debug=True, host='0.0.0.0', port=5002)
+        
 

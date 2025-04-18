@@ -42,6 +42,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     };
 
+    
+    const name = process.env.GLOBAL_CONFIGMAP_NAME || 'global-configmap';
+
+    const cm_namespace = "default";
+
+    const configMap = await k8sCore.readNamespacedConfigMap(name, cm_namespace);
+
+    
+    const new_configMap = {
+        apiVersion: 'v1',
+        kind: 'ConfigMap',
+        metadata: {
+        name: name,
+        namespace: ns
+        },
+        data: {
+        ...configMap.body.data
+        }
+    };
+    
+    await k8sCore.createNamespacedConfigMap(ns, new_configMap);
+
     const resourceQuotaResult = await k8sCore.createNamespacedResourceQuota(ns, resourceQuota);
 
     jsonRes(res, {

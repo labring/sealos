@@ -209,28 +209,28 @@ const AppList = ({
         dataIndex: 'priority',
         key: 'priority'
       },
-      // {
-      //   title: t('CPU'),
-      //   key: 'cpu',
-      //   render: (item: AppListItemType) => (
-      //     <Box h={'35px'} w={['120px', '130px', '140px']}>
-      //       <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
-      //         <PodLineChart type="blue" data={item.usedCpu} />
-      //       </Box>
-      //     </Box>
-      //   )
-      // },
-      // {
-      //   title: t('Memory'),
-      //   key: 'storage',
-      //   render: (item: AppListItemType) => (
-      //     <Box h={'35px'} w={['120px', '130px', '140px']}>
-      //       <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
-      //         <PodLineChart type="purple" data={item.usedMemory} />
-      //       </Box>
-      //     </Box>
-      //   )
-      // },
+      {
+        title: t('CPU'),
+        key: 'cpu',
+        render: (item: AppListItemType) => (
+          <Box h={'35px'} w={['120px', '130px', '140px']}>
+            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+              <PodLineChart type="blue" data={item.usedCpu} />
+            </Box>
+          </Box>
+        )
+      },
+      {
+        title: t('Memory'),
+        key: 'storage',
+        render: (item: AppListItemType) => (
+          <Box h={'35px'} w={['120px', '130px', '140px']}>
+            <Box h={'35px'} w={['120px', '130px', '140px']} position={'absolute'}>
+              <PodLineChart type="purple" data={item.usedMemory} />
+            </Box>
+          </Box>
+        )
+      },
       ...(userSourcePrice?.gpu
         ? [
             {

@@ -52,7 +52,7 @@ const App = ({ Component, pageProps }: AppProps) => {
     title: 'jump_prompt',
     content: 'jump_message'
   });
-  const [loginStatus, setLoginStatus] = useState(false);
+  const [loginStatus, setLoginStatus] = useState(true);
 
   const myStyles = {
     cursor: 'pointer',

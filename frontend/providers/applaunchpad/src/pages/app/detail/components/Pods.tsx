@@ -110,6 +110,15 @@ const Pods = ({
       )
     },
     {
+      title: '所在节点',
+      key: 'nodeName',
+      render: (item: PodDetailType) => (
+        <Box fontSize={'12px'} color={'grayModern.900'} fontWeight={500}>
+          {item.nodeName}
+        </Box>
+      )
+    },
+    {
       title: 'Restarts Num',
       key: 'restarts',
       render: (item: PodDetailType) => (
@@ -127,24 +136,24 @@ const Pods = ({
         </Box>
       )
     },
-    // {
-    //   title: 'Cpu',
-    //   key: 'cpu',
-    //   render: (item: PodDetailType) => (
-    //     <Box h={'45px'} w={'120px'}>
-    //       <PodLineChart type="green" data={item.usedCpu} />
-    //     </Box>
-    //   )
-    // },
-    // {
-    //   title: 'Memory',
-    //   key: 'memory',
-    //   render: (item: PodDetailType) => (
-    //     <Box h={'45px'} w={'120px'}>
-    //       <PodLineChart type="deepBlue" data={item.usedMemory} />
-    //     </Box>
-    //   )
-    // },
+    {
+      title: 'Cpu',
+      key: 'cpu',
+      render: (item: PodDetailType) => (
+        <Box h={'45px'} w={'120px'}>
+          <PodLineChart type="green" data={item.usedCpu} />
+        </Box>
+      )
+    },
+    {
+      title: 'Memory',
+      key: 'memory',
+      render: (item: PodDetailType) => (
+        <Box h={'45px'} w={'120px'}>
+          <PodLineChart type="deepBlue" data={item.usedMemory} />
+        </Box>
+      )
+    },
     {
       title: 'Operation',
       key: 'control',

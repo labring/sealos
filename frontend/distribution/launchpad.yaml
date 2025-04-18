@@ -66,6 +66,10 @@ spec:
           value: KUBECONFIGTEMPLATE
         - name: GUIDE_ENABLED
           value: "true"
+        - name: GLOBAL_CONFIGMAP_NAME
+          value: mx-applaunchpad-global-config
+        - name: GLOBAL_CONFIGMAP_PATH
+          value: /etc/mxgl.properties
         ports:
         - containerPort: 3000
 ---

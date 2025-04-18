@@ -741,30 +741,36 @@ const Form = ({
                 </Flex>
               </FormControl>
 
-              <FormControl mb={7} isInvalid={!!errors.modelName} w={'500px'}>
+              <FormControl mb={7} 
+              // isInvalid={!!errors.modelName} 
+              w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label>{'模型名称'}</Label>
                   <Input
+                    disabled={true}
                     width={'350px'}
                     type={'text'}
                     placeholder={'模型名称'}
-                    {...register('modelName', {
-                      required: '模型名称不能为空'
-                    })}
+                    // {...register('modelName', {
+                    //   required: '模型名称不能为空'
+                    // })}
                   />
                 </Flex>
               </FormControl>
 
-              <FormControl mb={7} isInvalid={!!errors.modelVersion} w={'500px'}>
+              <FormControl mb={7} 
+              // isInvalid={!!errors.modelVersion} 
+              w={'500px'}>
                 <Flex alignItems={'center'}>
                   <Label>{'模型版本'}</Label>
                   <Input
+                    disabled={true}
                     width={'350px'}
                     type={'text'}
                     placeholder={'模型版本'}
-                    {...register('modelVersion', {
-                      required: '模型版本不能为空'
-                    })}
+                    // {...register('modelVersion', {
+                    //   required: '模型版本不能为空'
+                    // })}
                   />
                 </Flex>
               </FormControl>

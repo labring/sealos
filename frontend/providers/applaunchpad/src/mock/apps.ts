@@ -7,6 +7,7 @@ export const MOCK_APPS: AppListItemType[] = [
   {
     id: 'string',
     name: 'string',
+    modelVersion: '',
     modelName: '',
     priority: '1',
     status: appStatusMap.running,
@@ -346,6 +347,7 @@ export const MOCK_PODS: PodDetailType[] = [
 
 export const MOCK_APP_DETAIL: AppDetailType = {
   crYamlList: [],
+  modelVersion: '',
   id: '4bd50c41-149e-4da5-89d5-0308b9dd75c6',
   priority: '1',
   modelName: '',
