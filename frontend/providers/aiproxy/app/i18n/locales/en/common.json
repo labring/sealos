@@ -306,7 +306,7 @@
     "requestExample": "Request Example",
     "voice": "required",
     "voiceValues": "Available options:",
-    "responseFormatValues": "The format to audio out. Supported formats are:",
+    "responseFormatValues": "The audio output supports for the following formats:",
     "responseExample": "Response Example"
   }
 }
