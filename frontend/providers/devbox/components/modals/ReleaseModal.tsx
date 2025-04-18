@@ -46,7 +46,8 @@ const ReleaseModal = ({
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'release_confirm_info',
     showCheckbox: true,
-    checkboxLabel: 'pause_devbox_info'
+    checkboxLabel: 'pause_devbox_info',
+    defaultChecked: devbox.status.value === 'Running'
   });
 
   const handleSubmit = () => {
@@ -68,6 +69,7 @@ const ReleaseModal = ({
     async (enableRestartMachine: boolean) => {
       try {
         setLoading(true);
+
         // 1.pause devbox
         if (devbox.status.value === 'Running') {
           await shutdownDevbox({

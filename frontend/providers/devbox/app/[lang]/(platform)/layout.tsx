@@ -22,6 +22,7 @@ import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 import { useQueryClient } from '@tanstack/react-query';
 import TemplateModal from './template/TemplateModal';
+import { useUserStore } from '@/stores/user';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { setEnv, env } = useEnvStore();
   const searchParams = useSearchParams();
   const { setSourcePrice } = usePriceStore();
+  const { loadUserDebt } = useUserStore();
   const [refresh, setRefresh] = useState(false);
   const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -74,6 +76,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   useEffect(() => {
     if (!init) return;
     setSourcePrice();
+    loadUserDebt();
     // setRuntime()
     setEnv();
     const changeI18n = async (data: any) => {

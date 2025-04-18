@@ -29,7 +29,6 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
     listOfficialTemplateRepository,
     {
       onSuccess(res) {
-        console.log('res', res);
         handleUserGuide();
       },
       staleTime: Infinity,

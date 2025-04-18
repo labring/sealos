@@ -15,12 +15,14 @@ import { useCallback, useRef, useState } from 'react';
 
 const ConfirmCheckbox = ({
   checkboxLabel,
-  onCheckedChange
+  onCheckedChange,
+  defaultChecked
 }: {
   checkboxLabel: string;
   onCheckedChange: (checked: boolean) => void;
+  defaultChecked: boolean;
 }) => {
-  const [isChecked, setIsChecked] = useState(true);
+  const [isChecked, setIsChecked] = useState(defaultChecked);
   const t = useTranslations();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,6 +44,7 @@ export const useConfirm = ({
   confirmText = 'confirm',
   cancelText = 'cancel',
   showCheckbox = false,
+  defaultChecked = true,
   checkboxLabel = ''
 }: {
   title?: string;
@@ -50,13 +53,14 @@ export const useConfirm = ({
   cancelText?: string;
   showCheckbox?: boolean;
   checkboxLabel?: string;
+  defaultChecked?: boolean;
 }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const t = useTranslations();
   const cancelRef = useRef(null);
   const confirmCb = useRef<any>();
   const cancelCb = useRef<any>();
-  const isCheckedRef = useRef(true);
+  const isCheckedRef = useRef(defaultChecked);
 
   return {
     openConfirm: useCallback(
@@ -65,10 +69,10 @@ export const useConfirm = ({
           onOpen();
           confirmCb.current = confirm;
           cancelCb.current = cancel;
-          isCheckedRef.current = true;
+          isCheckedRef.current = defaultChecked;
         };
       },
-      [onOpen]
+      [onOpen, defaultChecked]
     ),
     ConfirmChild: useCallback(
       () => (
@@ -85,6 +89,7 @@ export const useConfirm = ({
                   {showCheckbox && (
                     <ConfirmCheckbox
                       checkboxLabel={checkboxLabel}
+                      defaultChecked={defaultChecked}
                       onCheckedChange={(checked) => {
                         isCheckedRef.current = checked;
                       }}
@@ -123,7 +128,18 @@ export const useConfirm = ({
           </AlertDialogOverlay>
         </AlertDialog>
       ),
-      [cancelText, checkboxLabel, confirmText, content, isOpen, onClose, showCheckbox, t, title]
+      [
+        cancelText,
+        checkboxLabel,
+        confirmText,
+        content,
+        isOpen,
+        onClose,
+        showCheckbox,
+        t,
+        title,
+        defaultChecked
+      ]
     )
   };
 };

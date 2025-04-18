@@ -237,6 +237,28 @@ export async function getUserQuota(
   ];
 }
 
+export async function getUserIsOutStandingPayment(
+  kc: k8s.KubeConfig,
+  namespace: string
+): Promise<boolean> {
+  const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
+
+  try {
+    const { body } = await k8sApi.listNamespacedResourceQuota(namespace);
+
+    const debtQuota = body.items.find((item) => item.metadata?.name === 'debt-limit0');
+
+    if (!debtQuota || !debtQuota.status) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error fetching resource quotas:', error);
+    return true;
+  }
+}
+
 export async function getUserBalance(kc: k8s.KubeConfig) {
   const user = kc.getCurrentUser();
   if (!user) return 5;
@@ -324,6 +346,7 @@ export async function getK8s({
     applyYamlList,
     delYamlList,
     getUserQuota: () => getUserQuota(kc, namespace),
+    getUserIsOutStandingPayment: () => getUserIsOutStandingPayment(kc, namespace),
     getUserBalance: () => getUserBalance(kc)
   });
 }
