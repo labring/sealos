@@ -11,12 +11,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const token = req.headers.authorization;
     if (!token) {
-      return jsonRes(res, { code: 403, data: { message: 'no authorization' } });
+      return jsonRes(res, { code: 403, error: 'no authorization' });
     }
 
     const isRealName = await checkSealosUserIsRealName(token);
     if (!isRealName) {
-      return jsonRes(res, { code: 403, data: { message: 'user is not real name' } });
+      return jsonRes(res, { code: 403, error: 'userNotRealName' });
     }
 
     const { bucket } = req.body as { bucket?: string };

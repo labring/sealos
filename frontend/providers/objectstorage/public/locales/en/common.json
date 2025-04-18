@@ -26,5 +26,7 @@
   "reset": "Reset",
   "cancel": "Cancel",
   "Unable to Access": "Unable to Access",
-  "reset_error": "Reset Error"
+  "reset_error": "Reset Error",
+  "userNotRealName": "Object storage service requires real-name authentication",
+  "openHostFailed": "Failed to enable site hosting"
 }
