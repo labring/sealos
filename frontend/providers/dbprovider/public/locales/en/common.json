@@ -170,7 +170,7 @@
   "delete_hint": "Warning: This will permanently delete all data in the database. Confirm to proceed.",
   "delete_sealaf_app_tip": "The database is deployed via cloud development. \nSimply deleting the database does not clear out all components of your app, which may still incur charges. \nTo completely uninstall the app and clean all related components, uninstall the entire app in cloud development.",
   "delete_successful": "Deleted successfully",
-  "delete_template_app_tip": "The database is deployed via the app store. \nSimply deleting the database does not clear out all components of your app, which may still incur charges. \nTo completely uninstall the database and clean all related components, uninstall the entire app in the App Store.",
+  "delete_template_app_tip": "This app is managed by the app store. You are now going to the app store to delete all app components.",
   "delete_warning": "Delete Warning",
   "deploy": "Deploy",
   "deploy_database": "Deploy DataBase",

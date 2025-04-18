@@ -13,7 +13,7 @@
   "Application Name": "应用名称",
   "Application Type": "应用类型",
   "Applications": "应用列表",
-  "Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.": "如果确认要删除这个应用吗？如果执行此操作，将删除该项目的所有数据。",
+  "delete_app_tip.": "如果确认要删除这个应用吗？如果执行此操作，将删除该项目的所有数据。",
   "Auto scaling": "弹性伸缩",
   "Basic Information": "基本信息",
   "Button Effect": "按钮效果",

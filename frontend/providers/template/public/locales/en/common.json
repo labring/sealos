@@ -13,7 +13,7 @@
   "Application Name": "App Name",
   "Application Type": "Type",
   "Applications": "Applications",
-  "Are you sure you want to delete this application? If you proceed, all data for this project will be deleted.": "Are you sure you want to delete this app? All project data will be permanently removed.",
+  "delete_app_tip.": "Are you sure you want to delete this app? All project data will be permanently removed.",
   "Auto scaling": "Scaling",
   "Basic Information": "Basic",
   "Button Effect": "Button Appearance",
