@@ -108,13 +108,13 @@ Descriptions of each parameter:
     - criData: Data directory of cri.
     - defaultVIP: Default VIP address.
     - disableApparmor: Whether to disable apparmor (containerd has this issue).
-    - registryConfig: Configuration directory of the container image repository.
-    - registryData: Data directory of the container image repository (because it's the directory that has been mounted,
-      this configuration actually has no practical significance, it's actually stored under /var/lib/sealos).
-    - registryDomain: The default domain of the image repository.
-    - registryPassword: The password of the default image repository.
-    - registryPort: The password of the default image repository.
-    - registryUsername: The account of the default image repository.
+    - registryConfig: Configuration directory of the container image registry.
+    - registryData: Data directory of the container image registry (The configuration itself has no practical meaning.
+      because the directory is mounted and it's actually stored in `/var/lib/sealos`).
+    - registryDomain: Default domain of the container image registry.
+    - registryPassword: Default Password of the container image registry.
+    - registryPort: Default port number of the container image registry.
+    - registryUsername: Default username of the container image registry.
     - sandboxImage: Default sandbox_image for cri to start. (No need to write repo, just need to write image name, eg:
       pasue:3.7).
 - `COPY`: The `COPY` directive copies new files or directories from `<src>` and adds them to the file system path
