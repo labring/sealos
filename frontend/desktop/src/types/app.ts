@@ -96,4 +96,11 @@ export type TOSState = {
   setToHighestLayerById: (pid: number) => void;
   updateOpenedAppInfo: (app: TApp) => void;
   deleteLeastUsedAppByIndex: () => void;
+  openDesktopApp: (options: {
+    appKey: string;
+    query?: Record<string, string>;
+    messageData?: Record<string, any>;
+    pathname: string;
+    appSize?: WindowSize;
+  }) => void;
 };

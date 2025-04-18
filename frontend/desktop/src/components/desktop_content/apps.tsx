@@ -78,7 +78,6 @@ export default function Apps() {
       flexDirection={'column'}
       flex={1}
       height={'0'}
-      {...blurBackgroundStyles}
       py={'32px'}
       px={{ base: '24px', xl: '36px' }}
       position={'relative'}

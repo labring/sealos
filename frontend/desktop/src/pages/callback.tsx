@@ -11,6 +11,7 @@ import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
 import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
+
 export default function Callback() {
   const router = useRouter();
   const setProvider = useSessionStore((s) => s.setProvider);
