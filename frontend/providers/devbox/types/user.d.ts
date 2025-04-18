@@ -33,11 +33,6 @@ export type UserQuotaItemType = {
   used: number;
   limit: number;
 };
-export type UserDebtItemType = {
-  type: 'cpu' | 'memory' | 'storage';
-  used: number;
-  limit: number;
-};
 export type GpuType = {
   manufacturers: string;
   type: string;

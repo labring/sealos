@@ -58,6 +58,7 @@ const DevboxList = ({
             title: t('start_outstanding_tips'),
             status: 'error'
           });
+          setLoading(false);
           return;
         }
         await restartDevbox({ devboxName: devbox.name });
@@ -86,6 +87,7 @@ const DevboxList = ({
             title: t('start_outstanding_tips'),
             status: 'error'
           });
+          setLoading(false);
           return;
         }
         await startDevbox({ devboxName: devbox.name });

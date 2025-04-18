@@ -1,7 +1,7 @@
 import * as yaml from 'js-yaml';
 import * as k8s from '@kubernetes/client-node';
 
-import { UserDebtItemType, UserQuotaItemType } from '@/types/user';
+import { UserQuotaItemType } from '@/types/user';
 import { cpuFormatToM, memoryFormatToMi } from '@/utils/tools';
 
 // Load default kc
@@ -237,33 +237,26 @@ export async function getUserQuota(
   ];
 }
 
-export async function getUserDebt(
+export async function getUserIsOutStandingPayment(
   kc: k8s.KubeConfig,
   namespace: string
-): Promise<UserDebtItemType[]> {
+): Promise<boolean> {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 
-  const {
-    body: { status: debt }
-  } = await k8sApi.readNamespacedResourceQuota('debt-limit0', namespace);
+  try {
+    const { body } = await k8sApi.listNamespacedResourceQuota(namespace);
 
-  return [
-    {
-      type: 'cpu',
-      limit: cpuFormatToM(debt?.hard?.['limits.cpu'] || '') / 1000,
-      used: cpuFormatToM(debt?.used?.['limits.cpu'] || '') / 1000
-    },
-    {
-      type: 'memory',
-      limit: memoryFormatToMi(debt?.hard?.['limits.memory'] || '') / 1024,
-      used: memoryFormatToMi(debt?.used?.['limits.memory'] || '') / 1024
-    },
-    {
-      type: 'storage',
-      limit: Number(debt?.hard?.['requests.storage'] || 0),
-      used: Number(debt?.used?.['requests.storage'] || 0)
+    const debtQuota = body.items.find((item) => item.metadata?.name === 'debt-limit0');
+
+    if (!debtQuota || !debtQuota.status) {
+      return false;
     }
-  ];
+
+    return true;
+  } catch (error) {
+    console.error('Error fetching resource quotas:', error);
+    return true;
+  }
 }
 
 export async function getUserBalance(kc: k8s.KubeConfig) {
@@ -353,7 +346,7 @@ export async function getK8s({
     applyYamlList,
     delYamlList,
     getUserQuota: () => getUserQuota(kc, namespace),
-    getUserDebt: () => getUserDebt(kc, namespace),
+    getUserIsOutStandingPayment: () => getUserIsOutStandingPayment(kc, namespace),
     getUserBalance: () => getUserBalance(kc)
   });
 }

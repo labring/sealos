@@ -10,19 +10,19 @@ export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers;
 
-    const { getUserDebt } = await getK8s({
+    const { getUserIsOutStandingPayment } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
 
-    const debt = await getUserDebt();
+    const isOutStandingPayment = await getUserIsOutStandingPayment();
 
     return jsonRes({
       data: {
-        debt
+        isOutStandingPayment
       }
     });
   } catch (error) {
     console.log(error);
-    return jsonRes({ code: 500, message: 'get price error' });
+    return jsonRes({ code: 500, message: 'get debt error' });
   }
 }

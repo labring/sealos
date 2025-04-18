@@ -1,5 +1,5 @@
 import { GET, POST } from '@/services/request';
-import type { UserDebtItemType, UserQuotaItemType, UserTask } from '@/types/user';
+import type { UserQuotaItemType, UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
 import { getDesktopSessionFromSessionStorage } from '@/utils/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
@@ -9,9 +9,9 @@ export const getUserQuota = () =>
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
 
-export const getUserDebt = () =>
+export const getUserIsOutStandingPayment = () =>
   GET<{
-    debt: UserDebtItemType[];
+    isOutStandingPayment: boolean;
   }>('/api/platform/getDebt');
 
 export const getRuntime = () => GET('/api/platform/getRuntime');
