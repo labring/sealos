@@ -65,12 +65,4 @@ const Menu = () => {
     </Box>
 }
 
-const EditModal = ({isOpen,onClose,currentData}:{isOpen:boolean,onClose?:()=>void,currentData?:MenuItem})=>{
-    return <Modal children={undefined} isOpen={isOpen} onClose={function (): void {
-        throw new Error("Function not implemented.");
-    } }>
-        
-    </Modal>
-}
-
 export default Menu;
