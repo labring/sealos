@@ -56,18 +56,9 @@ func AdminFlushDebtResourceStatus(c *gin.Context) {
 	}
 	if owner == "" {
 		c.JSON(http.StatusOK, gin.H{"success": true})
-	}
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get in cluster config failed: %v", err)})
 		return
 	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("new client set failed: %v", err)})
-		return
-	}
-	namespaces, err := getOwnNsList(clientset, owner)
+	namespaces, err := getOwnNsList(dao.K8sClientSet, owner)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
 		return
@@ -76,12 +67,7 @@ func AdminFlushDebtResourceStatus(c *gin.Context) {
 	emptyScheme := runtime.NewScheme()
 	utilruntime.Must(v1.AddToScheme(emptyScheme))
 	utilruntime.Must(corev1.AddToScheme(emptyScheme))
-	clt, err := client.New(config, client.Options{Scheme: emptyScheme})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("new client set failed: %v", err)})
-		return
-	}
-	if err = flushUserDebtResourceStatus(req, clt, namespaces); err != nil {
+	if err = flushUserDebtResourceStatus(req, dao.K8sClient, namespaces); err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
 		return
 	}
@@ -293,6 +279,7 @@ func AdminFlushSubscriptionQuota(c *gin.Context) {
 	}
 	if owner == "" {
 		c.JSON(http.StatusOK, gin.H{"success": true})
+		return
 	}
 	config, err := rest.InClusterConfig()
 	if err != nil {

@@ -320,7 +320,7 @@ func (r *DebtReconciler) SendUserDebtMsg(userUID uuid.UUID, oweamount int64, cur
 	if !ok {
 		return nil
 	}
-	if isBasicUser && currentStatus == types.CriticalBalancePeriod {
+	if isBasicUser && currentStatus == types.LowBalancePeriod {
 		return nil
 	}
 	_user, err := r.AccountV2.GetUser(&types.UserQueryOpts{UID: userUID})
@@ -460,6 +460,8 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 					lastErr = nil
 					break
 				}
+				// 打印resp 内容
+
 				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 			}
 
@@ -531,8 +533,8 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 			lock, _ := r.userLocks.LoadOrStore(u, &sync.Mutex{})
 			mutex := lock.(*sync.Mutex)
 			if !mutex.TryLock() {
-				r.Logger.Info("user debt processing skipped due to existing lock",
-					"userUID", u)
+				//r.Logger.V(1).Info("user debt processing skipped due to existing lock",
+				//	"userUID", u)
 				return
 			}
 			defer mutex.Unlock()

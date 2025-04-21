@@ -6,6 +6,13 @@ import (
 	"os"
 	"time"
 
+	v1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	"github.com/sirupsen/logrus"
@@ -56,6 +63,8 @@ var (
 	Cfg                  *Config
 	BillingTask          *helper.TaskQueue
 	FlushQuotaProcesser  *FlushQuotaTask
+	K8sClient            client.Client
+	K8sClientSet         *kubernetes.Clientset
 
 	SendDebtStatusEmailBody map[types.DebtStatusType]string
 	//Debug                bool
@@ -184,6 +193,23 @@ func Init(ctx context.Context) error {
 	}
 	setDefaultDebtPeriodWaitSecond()
 	SetDebtConfig()
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return fmt.Errorf("get in cluster config error: %v", err)
+	}
+	clientSet, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return fmt.Errorf("create kubernetes clientset error: %v", err)
+	}
+	emptyScheme := runtime.NewScheme()
+	utilruntime.Must(v1.AddToScheme(emptyScheme))
+	utilruntime.Must(corev1.AddToScheme(emptyScheme))
+	clt, err := client.New(config, client.Options{Scheme: emptyScheme})
+	if err != nil {
+		return fmt.Errorf("create client error: %v", err)
+	}
+	K8sClient = clt
+	K8sClientSet = clientSet
 	return nil
 }
 

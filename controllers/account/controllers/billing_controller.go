@@ -316,7 +316,7 @@ func (r *BillingReconciler) getRecentUsedOwners() (map[string][]string, error) {
 				}
 				_, inDebt := DebtUserMap.Get(userUID.String())
 				if inDebt {
-					r.Logger.Info("user is in debt", "user uid", userUID.String())
+					//r.Logger.Info("user is in debt", "user uid", userUID.String())
 					continue
 				}
 				usedOwnerList[owner] = []string{}

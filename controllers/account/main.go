@@ -267,9 +267,11 @@ func main() {
 		setupLog.Error(err, "unable to add billing task runner")
 		os.Exit(1)
 	}
-	if err := mgr.Add(debtController); err != nil {
-		setupLog.Error(err, "unable to add debt controller")
-		os.Exit(1)
+	if os.Getenv("SUPPORT_DEBT") == "true" {
+		if err := mgr.Add(debtController); err != nil {
+			setupLog.Error(err, "unable to add debt controller")
+			os.Exit(1)
+		}
 	}
 
 	if err = (&controllers.PodReconciler{
