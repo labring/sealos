@@ -113,11 +113,11 @@ export async function verifyK8sConfigAsync(kc: k8s.KubeConfig): Promise<boolean>
       return true
     } catch (error: any) {
       if (error.code === 403) {
-        console.error(`用户没有命名空间 ${namespace} 的访问权限`)
+        console.error('用户没有命名空间 ' + namespace + ' 的访问权限')
         return false
       }
 
-      console.error(`验证命名空间 ${namespace} 权限时出错:`, error)
+      console.error('验证命名空间 ' + namespace + ' 权限时出错:', error)
       return false
     }
   } catch (error) {

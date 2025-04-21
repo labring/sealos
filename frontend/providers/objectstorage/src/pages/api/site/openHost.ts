@@ -9,12 +9,13 @@ import { checkSealosUserIsRealName } from '@/utils/isRealName';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const token = req.headers.authorization;
-    if (!token) {
+    const appToken = req.headers['app-token'];
+
+    if (!appToken) {
       return jsonRes(res, { code: 403, error: 'no authorization' });
     }
 
-    const isRealName = await checkSealosUserIsRealName(token);
+    const isRealName = await checkSealosUserIsRealName(appToken as string);
     if (!isRealName) {
       return jsonRes(res, { code: 403, error: 'userNotRealName' });
     }
