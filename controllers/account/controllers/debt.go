@@ -212,7 +212,7 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 		}
 		if types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
 			//TODO send sms
-			if !skipSendMsg {
+			if !skipSendMsg && account.Balance > 0 {
 				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
 					return NewErrSendMsg(err, userUID)
 				}
@@ -226,7 +226,7 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 		}
 		if currentStatus != types.FinalDeletionPeriod {
 			// TODO send sms
-			if !skipSendMsg {
+			if !skipSendMsg && account.Balance > 0 {
 				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
 					return fmt.Errorf("failed to send user debt message: %w", err)
 				}
