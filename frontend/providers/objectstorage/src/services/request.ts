@@ -6,7 +6,7 @@ import axios, {
 } from 'axios';
 import type { ApiResp } from './kubernet';
 import { isApiResp } from './kubernet';
-import { getUserKubeConfig } from '@/utils/user';
+import { getAppToken, getUserKubeConfig } from '@/utils/user';
 export const appLanuchPadClient = axios.create({
   baseURL: process.env.APP_LAUNCHPAD_URL,
   timeout: 60000
@@ -29,6 +29,7 @@ request.interceptors.request.use(
     const kc = getUserKubeConfig();
     //获取token，并将其添加至请求头中
     _headers['Authorization'] = encodeURIComponent(kc);
+    _headers['app-token'] = getAppToken();
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
