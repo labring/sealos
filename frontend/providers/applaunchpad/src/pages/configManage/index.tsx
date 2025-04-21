@@ -29,7 +29,7 @@ const ConfigManage = () => {
     const handleSync = async ()=>{
         setSyncLoading(true)
         try {
-            await updateConfigMap(configInfo)
+            await syncConfigMap()
             Toast({
                 status:'success',
                 title:"同步成功"
