@@ -93,7 +93,7 @@ CMD ["kubectl apply -f manifests/custom-resources.yaml"]
   - registryData: 容器镜像仓库的数据目录（因为是目录进行了挂载，其实这个配置没有实际意义，它实际还是存储在/var/lib/sealos下面）
   - registryDomain: 默认镜像仓库的域名
   - registryPassword: 默认镜像仓库的密码
-  - registryPort:  默认镜像仓库的密码
+  - registryPort:  默认镜像仓库的端口
   - registryUsername: 默认镜像仓库的账户
   - sandboxImage: 默认cri启动的sandbox_image。（无需写repo只需要写镜像名称，eg: pasue:3.7）
 - `COPY`：`COPY`指令从`<src>`复制新的文件或目录，并将它们添加到容器的文件系统路径`<dest>`上。(**注意，需要把registry目录进行拷贝，否则集群没有容器镜像**)
