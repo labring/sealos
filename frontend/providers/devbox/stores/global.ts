@@ -2,7 +2,15 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-export type IDEType = 'vscode' | 'cursor' | 'vscodeInsiders' | 'windsurf' | 'jetbrains';
+export type IDEType =
+  | 'vscode'
+  | 'cursor'
+  | 'vscodeInsiders'
+  | 'windsurf'
+  | 'trae'
+  | 'traeCN'
+  | 'gateway'
+  | 'toolbox';
 
 type State = {
   screenWidth: number;
