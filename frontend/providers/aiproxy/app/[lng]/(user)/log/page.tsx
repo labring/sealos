@@ -113,7 +113,7 @@ export default function Logs(): React.JSX.Element {
         ),
         id: 'model'
       }),
-      columnHelper.accessor('prompt_tokens', {
+      columnHelper.accessor('usage.input_tokens', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -127,7 +127,7 @@ export default function Logs(): React.JSX.Element {
         ),
         id: 'prompt_tokens'
       }),
-      columnHelper.accessor('completion_tokens', {
+      columnHelper.accessor('usage.output_tokens', {
         header: () => (
           <Text
             color="grayModern.600"
@@ -308,7 +308,7 @@ export default function Logs(): React.JSX.Element {
               />
             </svg>
             <Text
-              color="grayModern.600"
+              color="grayModern.900"
               fontFamily="PingFang SC"
               fontStyle="normal"
               fontSize="11px"

@@ -16,12 +16,18 @@ export interface LogItem {
   model: string
   mode: number
   used_amount: number
-  price: number
-  completion_price: number
+  price: {
+    input_price: number
+    output_price: number
+    per_request_price: number
+  }
   token_id: number
   token_name: string
-  prompt_tokens: number
-  completion_tokens: number
+  usage: {
+    input_tokens: number
+    output_tokens: number
+    total_tokens: number
+  }
   channel: number
   endpoint: string
   created_at: number

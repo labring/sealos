@@ -87,7 +87,11 @@ export async function POST(req: NextRequest) {
       throw Error(ERROR_ENUM.unAuthorization);
     }
     const targetImage = `${imageHub}/${organization.id}/${query.templateRepositoryName}:${query.version}`;
-    const originalImage = `${imageHub}/${devboxReleaseImage}`;
+
+    const originalImage = devboxReleaseImage.startsWith(imageHub)
+      ? devboxReleaseImage
+      : `${imageHub}/${devboxReleaseImage}`;
+
     const retagbody = {
       original: originalImage,
       target: targetImage

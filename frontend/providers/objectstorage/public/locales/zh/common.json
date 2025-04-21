@@ -25,5 +25,7 @@
   "confirm": "确认",
   "cancel": "取消",
   "Unable to Access": "无法访问",
-  "reset_error": "重置错误"
+  "reset_error": "重置错误",
+  "userNotRealName": "对象存储服务需要实名",
+  "openHostFailed": "开启站点托管失败"
 }

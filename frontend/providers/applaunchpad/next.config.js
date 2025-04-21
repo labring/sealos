@@ -15,6 +15,11 @@ const nextConfig = {
       }
     ]);
     config.plugins = [...config.plugins];
+    if (!isServer) {
+      config.resolve.fallback = {
+        fs: false,
+      };
+    }
     return config;
   },
   transpilePackages: ['@sealos/driver', '@sealos/ui'],

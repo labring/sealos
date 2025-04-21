@@ -137,11 +137,11 @@ const ModelKeyTable = ({ t, onOpen }: { t: TFunction; onOpen: () => void }) => {
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null)
 
   const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
     warningIconFill: 'white',
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
     successIconFill: 'white'
   })
   const queryClient = useQueryClient()
@@ -878,12 +878,12 @@ function CreateKeyModal({
   const [error, setError] = useState('')
   const queryClient = useQueryClient()
   const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
     warningIconFill: 'white',
 
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
     successIconFill: 'white'
   })
 
