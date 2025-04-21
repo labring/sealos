@@ -134,7 +134,11 @@ export type KubeBlockOpsRequestType = {
   };
   spec: {
     clusterRef: string;
-    reconfigure: {
+    switchover?: {
+      componentName: string;
+      instanceName: string;
+    }[];
+    reconfigure?: {
       componentName: string;
       configurations: {
         keys: {

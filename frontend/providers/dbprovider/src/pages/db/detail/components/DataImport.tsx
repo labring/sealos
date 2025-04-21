@@ -26,7 +26,7 @@ export default function DataImport({ db }: { db?: DBDetailType }) {
         <Flex>
           {[
             { id: MenuType.InternetMigration, label: t('online_import') },
-            ...(!!SystemEnv.minio_url
+            ...(Boolean(SystemEnv.minio_url)
               ? [{ id: MenuType.DumpImport, label: t('import_through_file') }]
               : [])
           ].map((item) => (

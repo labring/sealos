@@ -45,11 +45,11 @@ export async function getMigrateList({ migrateName, req }: Props & { req: NextAp
     version,
     namespace,
     plural,
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `${CloudMigraionLabel}=${migrateName}`
+    undefined, //pretty
+    undefined, //allowWatchBookmarks
+    undefined, //_continue
+    undefined, //fieldSelector
+    `${CloudMigraionLabel}=${migrateName}` //labelSelector
   )) as { body: { items: any[] } };
 
   return body?.items || [];

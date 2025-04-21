@@ -1,7 +1,7 @@
 import { DELETE, GET, POST } from '@/services/request';
 import { DumpForm, InternetMigrationCR } from '@/types/migrate';
 import { adaptMigrateList } from '@/utils/adapt';
-import { V1Pod } from '@kubernetes/client-node';
+import { V1JobStatus, V1Pod } from '@kubernetes/client-node';
 
 export const getMigrateList = (migrateName: string) =>
   GET<InternetMigrationCR[]>('/api/migrate/list', { migrateName }).then((res) =>
@@ -26,6 +26,9 @@ export const getMigratePodList = (
       return startTimeA - startTimeB;
     });
   });
+
+export const getMigrateJobList = (migrateName: string): Promise<V1JobStatus> =>
+  GET('/api/migrate/getJobByName', { migrateName });
 
 export const getLogByNameAndContainerName = (data: {
   containerName: string;

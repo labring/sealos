@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       backupInfo?: BackupItemType;
     };
 
-    const { k8sCustomObjects, namespace, applyYamlList, delYamlList } = await getK8s({
+    const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req)
     });
 
@@ -51,17 +51,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
       }
-
-      console.log('DB Edit Operation:', {
-        dbName: dbForm.dbName,
-        changes: {
-          cpu: cpu !== dbForm.cpu,
-          memory: memory !== dbForm.memory,
-          replicas: replicas !== dbForm.replicas,
-          storage: dbForm.storage > storage
-        },
-        opsCount: opsRequests.length
-      });
 
       if (opsRequests.length > 0) {
         await applyYamlList(opsRequests, 'create');
@@ -100,6 +89,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const cluster = json2CreateCluster(dbForm, backupInfo, {
       storageClassName: process.env.STORAGE_CLASSNAME
     });
+
     await applyYamlList([account, cluster], 'create');
     const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
       'apps.kubeblocks.io',
@@ -117,19 +107,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     await applyYamlList([updateAccountYaml], 'replace');
 
-    if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
-      const autoBackup = convertBackupFormToSpec({
-        autoBackup: dbForm?.autoBackup,
-        dbType: dbForm.dbType
-      });
+    try {
+      if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+        const autoBackup = convertBackupFormToSpec({
+          autoBackup: dbForm?.autoBackup,
+          dbType: dbForm.dbType
+        });
 
-      await updateBackupPolicyApi({
-        dbName: dbForm.dbName,
-        dbType: dbForm.dbType,
-        autoBackup,
-        k8sCustomObjects,
-        namespace
-      });
+        await updateBackupPolicyApi({
+          dbName: dbForm.dbName,
+          dbType: dbForm.dbType,
+          autoBackup,
+          k8sCustomObjects,
+          namespace
+        });
+      }
+    } catch (err: any) {
+      // local env will fail to update backup policy
+      if (process.env.NODE_ENV === 'production') {
+        throw err;
+      } else {
+        console.log(err);
+      }
     }
 
     jsonRes(res, {

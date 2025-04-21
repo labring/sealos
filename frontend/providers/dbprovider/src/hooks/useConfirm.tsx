@@ -47,7 +47,9 @@ export const useConfirm = ({
                 {t(title)}
               </AlertDialogHeader>
 
-              <AlertDialogBody>{t(content)}</AlertDialogBody>
+              <AlertDialogBody>
+                <div dangerouslySetInnerHTML={{ __html: t(content) }}></div>
+              </AlertDialogBody>
 
               <AlertDialogFooter>
                 <Button

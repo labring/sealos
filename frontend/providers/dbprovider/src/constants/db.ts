@@ -1,13 +1,14 @@
 import {
-  DBEditType,
+  DBComponentsName,
   DBDetailType,
-  PodDetailType,
+  DBEditType,
+  DBSourceType,
   DBType,
-  ReconfigStatusMapType,
-  DBSourceType
+  PodDetailType,
+  ReconfigStatusMapType
 } from '@/types/db';
-import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 import { I18nCommonKey } from '@/types/i18next';
+import { CpuSlideMarkList, MemorySlideMarkList } from './editApp';
 
 export const crLabelKey = 'sealos-db-provider-cr';
 export const CloudMigraionLabel = 'sealos-db-provider-cr-migrate';
@@ -19,6 +20,7 @@ export const DBPreviousConfigKey = 'cloud.sealos.io/previous-config';
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
 export const sealafDeployKey = 'sealaf-app';
 export const DBReconfigureKey = 'ops.kubeblocks.io/ops-type=Reconfiguring';
+export const DBSwitchRoleKey = 'ops.kubeblocks.io/ops-type=Switchover';
 
 export const DBNameLabel = 'app.kubernetes.io/instance';
 
@@ -31,7 +33,9 @@ export enum DBTypeEnum {
   qdrant = 'qdrant',
   nebula = 'nebula',
   weaviate = 'weaviate',
-  milvus = 'milvus'
+  milvus = 'milvus',
+  pulsar = 'pulsar',
+  clickhouse = 'clickhouse'
 }
 
 export enum DBStatusEnum {
@@ -224,20 +228,24 @@ export const DBTypeList = [
   { id: DBTypeEnum.kafka, label: 'Kafka' },
   { id: DBTypeEnum.milvus, label: 'Milvus' }
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
+  // { id: DBTypeEnum.pulsar, label: 'pulsar' },
+  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
 
-export const DBComponentNameMap = {
-  [DBTypeEnum.postgresql]: 'postgresql',
-  [DBTypeEnum.mongodb]: 'mongodb',
-  [DBTypeEnum.mysql]: 'mysql',
-  [DBTypeEnum.redis]: 'redis',
-  [DBTypeEnum.kafka]: 'kafka',
-  [DBTypeEnum.qdrant]: 'qdrant',
-  [DBTypeEnum.nebula]: 'nebula',
-  [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
+  [DBTypeEnum.postgresql]: ['postgresql'],
+  [DBTypeEnum.mongodb]: ['mongodb'],
+  [DBTypeEnum.mysql]: ['mysql'],
+  [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
+  [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
+  [DBTypeEnum.qdrant]: ['qdrant'],
+  [DBTypeEnum.nebula]: ['nebula-console', 'nebula-graphd', 'nebula-metad', 'nebula-storaged'],
+  [DBTypeEnum.weaviate]: ['weaviate'],
+  [DBTypeEnum.milvus]: ['milvus', 'etcd', 'minio'],
+  [DBTypeEnum.pulsar]: ['bookies', 'pulsar-proxy', 'zookeeper'],
+  [DBTypeEnum.clickhouse]: ['ch-keeper', 'clickhouse', 'zookeeper']
 };
 
 export const DBBackupPolicyNameMap = {
@@ -249,7 +257,9 @@ export const DBBackupPolicyNameMap = {
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
   [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+  [DBTypeEnum.milvus]: 'milvus',
+  [DBTypeEnum.pulsar]: 'pulsar',
+  [DBTypeEnum.clickhouse]: 'clickhouse'
 };
 
 export const DBBackupMethodNameMap = {
@@ -262,7 +272,9 @@ export const DBBackupMethodNameMap = {
   [DBTypeEnum.qdrant]: 'qdrant',
   [DBTypeEnum.nebula]: 'nebula',
   [DBTypeEnum.weaviate]: 'weaviate',
-  [DBTypeEnum.milvus]: 'milvus'
+  [DBTypeEnum.milvus]: 'milvus',
+  [DBTypeEnum.pulsar]: 'pulsar',
+  [DBTypeEnum.clickhouse]: 'clickhouse'
 };
 
 export const defaultDBEditValue: DBEditType = {
@@ -286,33 +298,6 @@ export const defaultDBEditValue: DBEditType = {
   terminationPolicy: 'Delete'
 };
 
-export const defaultDBDetail: DBDetailType = {
-  ...defaultDBEditValue,
-  id: '',
-  createTime: '2022/1/22',
-  status: dbStatusMap.Creating,
-  conditions: [],
-  isDiskSpaceOverflow: false,
-  labels: {},
-  source: {
-    hasSource: false,
-    sourceName: '',
-    sourceType: 'app_store'
-  }
-};
-
-export const defaultPod: PodDetailType = {
-  podName: '',
-  status: [],
-  nodeName: '',
-  ip: '',
-  restarts: 0,
-  age: '1s',
-  cpu: 1,
-  memory: 1,
-  hostIp: ''
-};
-
 export const RedisHAConfig = (ha = true) => {
   if (ha) {
     return {
@@ -328,6 +313,36 @@ export const RedisHAConfig = (ha = true) => {
     storage: 0,
     replicas: 1
   };
+};
+
+export const defaultDBDetail: DBDetailType = {
+  ...defaultDBEditValue,
+  id: '',
+  createTime: '2022/1/22',
+  status: dbStatusMap.Creating,
+  conditions: [],
+  isDiskSpaceOverflow: false,
+  labels: {},
+  source: {
+    hasSource: false,
+    sourceName: '',
+    sourceType: 'app_store'
+  },
+  totalCpu: 0,
+  totalMemory: 0,
+  totalStorage: 0
+};
+
+export const defaultPod: PodDetailType = {
+  podName: '',
+  status: [],
+  nodeName: '',
+  ip: '',
+  restarts: 0,
+  age: '1s',
+  cpu: 1,
+  memory: 1,
+  hostIp: ''
 };
 
 export const DBTypeSecretMap = {
@@ -357,6 +372,12 @@ export const DBTypeSecretMap = {
   },
   milvus: {
     connectKey: 'milvus'
+  },
+  pulsar: {
+    connectKey: 'pulsar'
+  },
+  clickhouse: {
+    connectKey: 'clickhouse'
   }
 };
 
@@ -426,6 +447,20 @@ export const DBReconfigureMap: {
     reconfigureKey: ''
   },
   milvus: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  pulsar: {
+    type: 'ini',
+    configMapName: '',
+    configMapKey: '',
+    reconfigureName: '',
+    reconfigureKey: ''
+  },
+  clickhouse: {
     type: 'ini',
     configMapName: '',
     configMapKey: '',

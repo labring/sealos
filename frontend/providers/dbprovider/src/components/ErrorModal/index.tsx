@@ -8,6 +8,8 @@ import {
   ModalCloseButton,
   Box
 } from '@chakra-ui/react';
+import { useTranslation } from 'next-i18next';
+import { keyword } from '@/utils/i18n-client';
 
 const ErrorModal = ({
   title,
@@ -18,6 +20,17 @@ const ErrorModal = ({
   content: string;
   onClose: () => void;
 }) => {
+  const regex = /^[a-z_]+$/;
+  if (regex.test(title) || regex.test(content)) {
+    const { t } = useTranslation();
+    if (regex.test(title)) {
+      title = t(title as keyword);
+    }
+    if (regex.test(content)) {
+      content = t(content as keyword);
+    }
+  }
+
   return (
     <Modal isOpen={true} onClose={onClose} lockFocusAcrossFrames={false}>
       <ModalOverlay />
