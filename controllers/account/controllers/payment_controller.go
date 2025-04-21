@@ -234,6 +234,8 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		}
 		if isFirstRecharge {
 			paymentRaw.ActivityType = pkgtypes.ActivityTypeFirstRecharge
+		} else if gift > 0 {
+			paymentRaw.ActivityType = userDiscount.DefaultActiveType
 		}
 
 		if err = r.Account.AccountV2.Payment(&pkgtypes.Payment{

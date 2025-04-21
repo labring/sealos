@@ -24,8 +24,9 @@ import (
 )
 
 type UserRechargeDiscount struct {
-	DefaultSteps       map[int64]float64 `json:"defaultSteps,omitempty" bson:"defaultSteps,omitempty"`
-	FirstRechargeSteps map[int64]float64 `json:"firstRechargeDiscount,omitempty" bson:"firstRechargeDiscount,omitempty"`
+	DefaultActiveType  ActivityType    `json:"defaultActiveType,omitempty" bson:"defaultActiveType,omitempty"`
+	DefaultSteps       map[int64]int64 `json:"defaultSteps" bson:"defaultSteps"`
+	FirstRechargeSteps map[int64]int64 `json:"firstRechargeDiscount" bson:"firstRechargeDiscount"`
 }
 
 // TODO the following structures will be deleted

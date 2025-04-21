@@ -26,9 +26,10 @@ type ConfigType string
 const AccountConfigType ConfigType = "account"
 
 type AccountConfig struct {
-	TaskProcessRegion          string            `json:"taskProcessRegion"`
-	FirstRechargeDiscountSteps map[int64]float64 `json:"firstRechargeDiscountSteps"`
-	DefaultDiscountSteps       map[int64]float64 `json:"defaultDiscountSteps"`
+	TaskProcessRegion          string          `json:"taskProcessRegion"`
+	FirstRechargeDiscountSteps map[int64]int64 `json:"firstRechargeDiscountSteps"`
+	DefaultDiscountSteps       map[int64]int64 `json:"defaultDiscountSteps"`
+	DefaultActiveType          ActivityType    `json:"defaultActiveType,omitempty"`
 }
 
 func (c Configs) TableName() string {

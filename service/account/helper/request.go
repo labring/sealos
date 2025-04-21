@@ -295,8 +295,8 @@ func (a *AuthBase) SetAuth(auth *Auth) {
 }
 
 type RechargeDiscountResp struct {
-	DefaultSteps       map[int64]float64 `json:"defaultSteps,omitempty" bson:"defaultSteps,omitempty"`
-	FirstRechargeSteps map[int64]float64 `json:"firstRechargeDiscount,omitempty" bson:"firstRechargeDiscount,omitempty"`
+	DefaultSteps       map[int64]int64 `json:"defaultSteps" bson:"defaultSteps"`
+	FirstRechargeSteps map[int64]int64 `json:"firstRechargeDiscount" bson:"firstRechargeDiscount"`
 }
 
 type NamespaceBillingHistoryResp struct {
