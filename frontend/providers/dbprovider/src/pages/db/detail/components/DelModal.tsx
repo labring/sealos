@@ -140,7 +140,7 @@ const DelModal = ({
             {t('Cancel')}
           </Button>
 
-          {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
+          {/* {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
             <Button
               ml={3}
               variant={'outline'}
@@ -151,7 +151,7 @@ const DelModal = ({
             >
               {t('delete_anyway')}
             </Button>
-          )}
+          )} */}
 
           <Button
             ml={3}
