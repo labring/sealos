@@ -22,6 +22,13 @@
   "avatar": "头像",
   "balance": "余额",
   "bank_name": "开户银行",
+  "banner": {
+    "button": "查看详情",
+    "date": "，活动日期 4月22日-4月28日",
+    "description": "最高立返",
+    "title": "首充折扣, 限时返场！",
+    "unit": "元"
+  },
   "bind": "绑定",
   "bind_success": "绑定成功",
   "bonus": "赠",
