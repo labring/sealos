@@ -1,0 +1,103 @@
+name: Default Sealos cloud release workflow entry
+
+on:
+  release:
+    types: [ published ]  
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for manual release'
+        required: false
+        default: ''
+      build_offline_tar_only:
+        description: 'Build offline tar only'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  fetch-sealos:
+    permissions: {}
+    uses: ./.github/workflows/fetch-sealos.yml
+    with:
+      artifact_name: "sealos"
+  release-backends:
+    needs: [fetch-sealos]
+    if: ${{ inputs.build_offline_tar_only == false }}
+    strategy:
+      matrix:
+        backend:
+          - { name: user, path: user, workdir: "controllers", comp: "controller" }
+          - { name: terminal, path: terminal, workdir: "controllers", comp: "controller" }
+          - { name: account, path: account, workdir: "controllers", comp: "controller" }
+          - { name: app, path: app, workdir: "controllers", comp: "controller" }
+          - { name: db-adminer, path: db/adminer, workdir: "controllers", comp: "controller" }
+          - { name: license, path: license, workdir: "controllers", comp: "controller" }
+          - { name: job-init, path: job/init, workdir: "controllers", comp: "controller" }
+          - { name: job-heartbeat, path: job/heartbeat, workdir: "controllers", comp: "controller" }
+          - { name: resources, path: resources, workdir: "controllers", comp: "controller" }
+          - { name: node, path: node, workdir: "controllers", comp: "controller" }
+          - { name: devbox, path: devbox, workdir: "controllers", comp: "controller" }
+          - { name: objectstorage, path: objectstorage, workdir: "controllers", comp: "controller" }
+          - { name: admission, path: admission, workdir: "webhooks", comp: "webhook" }
+          - { name: account, path: account, workdir: "service", comp: "service" }
+          - { name: database, path: database, workdir: "service", comp: "service" }
+          - { name: devbox, path: devbox, workdir: "service", comp: "service" }
+          - { name: exceptionmonitor, path: exceptionmonitor, workdir: "service", comp: "service" }
+          - { name: launchpad, path: launchpad, workdir: "service", comp: "service" }
+          - { name: minio, path: minio, workdir: "service", comp: "service" }
+          - { name: pay, path: pay, workdir: "service", comp: "service" }
+          - { name: vlogs, path: vlogs, workdir: "service", comp: "service" }
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "${{ matrix.backend.name }}"
+      module_path: "${{ matrix.backend.path }}"
+      push: true
+      workdir: "${{ matrix.backend.workdir }}"
+      comp: "${{ matrix.backend.comp }}"
+      custom: true
+      custom_tag: ${{ inputs.tag || github.event.release.tag_name }}
+  release-frontends:
+    needs: [fetch-sealos]
+    if: ${{ inputs.build_offline_tar_only == false }}
+    strategy:
+      matrix:
+        frontend:
+          - { name: license, path: providers/license }
+          - { name: cronjob, path: providers/cronjob }
+          - { name: template, path: providers/template }
+          - { name: adminer, path: providers/adminer }
+          - { name: applaunchpad, path: providers/applaunchpad }
+          - { name: terminal, path: providers/terminal }
+          - { name: dbprovider, path: providers/dbprovider }
+          - { name: costcenter, path: providers/costcenter }
+          - { name: objectstorage, path: providers/objectstorage }
+          - { name: kubepanel, path: providers/kubepanel }
+          - { name: workorder, path: providers/workorder }
+          - { name: devbox, path: providers/devbox }
+          - { name: desktop, path: desktop }
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/frontend.yml
+    with:
+      module_name: "${{ matrix.frontend.name }}"
+      module_path: "${{ matrix.frontend.path }}"
+      push: true
+      custom: true
+      custom_tag: ${{ inputs.tag || github.event.release.tag_name }}
+  release-cloud:
+    needs: [fetch-sealos, release-backends, release-frontends]
+    if: ${{ inputs.build_offline_tar_only == false }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/sealos-cloud-entry.yml
+    with:
+      push_image: true
+      push_image_tag: ${{ inputs.tag || github.event.release.tag_name }}
+      build_from: ${{ inputs.tag || github.event.release.tag_name }}
+  # TODO: add job for release offline tar

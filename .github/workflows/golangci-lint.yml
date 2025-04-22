@@ -1,0 +1,34 @@
+name: Run Golang CI linter
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: false
+        type: string
+        default: "1.22"
+      module_path:
+        required: true
+        type: string
+      workdir:
+        required: true
+        type: string
+
+jobs:
+  golangci-lint:
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v5
+        with:
+          go-version: ${{ inputs.version }}
+      - name: Run Linter
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.5
+          working-directory: ${{ inputs.workdir }}/${{ inputs.module_path }}
+          args: "--out-${NO_FUTURE}format colored-line-number"
