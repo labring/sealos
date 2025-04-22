@@ -1,9 +1,9 @@
 import type { SecretResponse } from '@/pages/api/getSecretByName';
 import { DELETE, GET, POST } from '@/services/request';
-import { KbPgClusterType } from '@/types/cluster';
 import type {
   BackupItemType,
   DBEditType,
+  DBListItemType,
   DBType,
   OpsRequestItemType,
   PodDetailType,
@@ -11,7 +11,7 @@ import type {
 } from '@/types/db';
 import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
-import { adaptDBDetail, adaptDBListItem, adaptEvents, adaptPod } from '@/utils/adapt';
+import { adaptEvents } from '@/utils/adapt';
 import { json2BasicOps } from '@/utils/json2Yaml';
 import { TFile } from '@/utils/kubeFileSystem';
 import { LogResult } from '@/utils/logParsers/LogParser';
@@ -21,10 +21,10 @@ import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { EditPasswordReq } from '@/pages/api/db/editPassword';
 import { RequiredByKeys } from '@/utils/tools';
 
-export const getMyDBList = () => GET<KbPgClusterType[]>('/api/getDBList');
+export const getMyDBList = () => GET<DBListItemType[]>('/api/getDBList');
 
 export const getDBByName = (name: string, config?: AxiosRequestConfig) =>
-  GET(`/api/getDBByName?name=${name}`, {}, config).then(adaptDBDetail);
+  GET(`/api/getDBByName?name=${name}`, {}, config);
 
 export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
   GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
