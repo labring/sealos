@@ -5,17 +5,15 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { KBDevboxTypeV2 } from '@/types/k8s';
-import { parseTemplateConfig, verifyJWT } from '@/utils/tools';
-import { AccessTokenPayload } from '@/types/user';
+import { parseTemplateConfig } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const headerList = req.headers;
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
-    const desktopToken = searchParams.get('desktopToken') as string;
-    const headerList = req.headers;
 
     const { k8sCore, namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
@@ -31,19 +29,10 @@ export async function GET(req: NextRequest) {
       'base64'
     ).toString('utf-8');
 
-    const desktopPayload = await verifyJWT<AccessTokenPayload>(desktopToken);
-
-    if (!desktopPayload) throw new Error('Desktop token is invalid');
-
     const token = generateAccessToken(
       {
         namespace,
-        devboxName,
-        userCrUid: desktopPayload.userCrUid,
-        userCrName: desktopPayload.userCrName,
-        workspaceUid: desktopPayload.workspaceUid,
-        workspaceId: desktopPayload.workspaceId,
-        regionUid: desktopPayload.regionUid
+        devboxName
       },
       jwtSecret
     );

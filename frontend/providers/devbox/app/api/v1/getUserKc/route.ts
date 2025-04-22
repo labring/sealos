@@ -2,16 +2,14 @@ import { NextRequest } from 'next/server';
 
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import {
-  generateAccessToken,
-  getPayloadWithoutVerification,
-  verifyToken
-} from '@/services/backend/auth';
+import { getPayloadWithoutVerification, verifyToken } from '@/services/backend/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const desktopToken = req.nextUrl.searchParams.get('desktopToken')!;
+
     const { payload, token } = getPayloadWithoutVerification(req.headers);
     if (!payload || !token) {
       return jsonRes({
@@ -19,8 +17,7 @@ export async function GET(req: NextRequest) {
         error: 'Unauthorized'
       });
     }
-    const { devboxName, namespace, userCrUid, userCrName, workspaceUid, workspaceId, regionUid } =
-      payload;
+    const { devboxName, namespace } = payload;
 
     const { k8sCore } = await getK8s({
       kubeconfig:
@@ -41,21 +38,6 @@ export async function GET(req: NextRequest) {
         error: 'Unauthorized'
       });
     }
-
-    const desktopSecret = process.env.DESKTOP_SECRET!;
-
-    const desktopToken = generateAccessToken(
-      {
-        namespace,
-        devboxName,
-        userCrUid,
-        userCrName,
-        workspaceUid,
-        workspaceId,
-        regionUid
-      },
-      desktopSecret
-    );
 
     const desktopResponse = await fetch(
       `https://${process.env.SEALOS_DOMAIN}/api/v1alpha/auth/getKubeconfig`,

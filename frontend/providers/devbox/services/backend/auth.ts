@@ -95,11 +95,6 @@ export const generateAccessToken = (
   payload: {
     namespace: string;
     devboxName: string;
-    userCrUid: string;
-    userCrName: string;
-    workspaceUid: string;
-    workspaceId: string;
-    regionUid: string;
   },
   secret: string
 ) => sign(payload, secret, { expiresIn: '365d' });

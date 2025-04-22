@@ -78,7 +78,7 @@ export const editDevboxVersion = (data: { name: string; releaseDes: string }) =>
 export const delDevboxVersionByName = (versionName: string) =>
   DELETE('/api/delDevboxVersionByName', { versionName });
 
-export const getSSHConnectionInfo = (data: { devboxName: string; desktopToken: string }) =>
+export const getSSHConnectionInfo = (data: { devboxName: string }) =>
   GET<{
     base64PublicKey: string;
     base64PrivateKey: string;

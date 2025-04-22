@@ -370,17 +370,3 @@ export const parseTemplateConfig = (config: string) => {
     }[];
   };
 };
-
-export const verifyJWT = <T extends Object = AccessTokenPayload>(token?: string, secret?: string) =>
-  new Promise<T | null>((resolve) => {
-    if (!token) return resolve(null);
-    verify(token, secret || process.env.JWT_SECRET!, (err, payload) => {
-      if (err) {
-        resolve(null);
-      } else if (!payload) {
-        resolve(null);
-      } else {
-        resolve(payload as T);
-      }
-    });
-  });
