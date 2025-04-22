@@ -17,8 +17,11 @@ function genResCloudConfig(conf: CloudConfigType): CloudConfigType {
   return {
     domain: conf.domain,
     port: conf.port,
-    proxyDomain: conf.proxyDomain
-  } as CloudConfigType;
+    proxyDomain: conf.proxyDomain,
+    regionUID: conf.regionUID,
+    certSecretName: conf.certSecretName,
+    allowedOrigins: conf.allowedOrigins
+  };
 }
 
 export async function getCloudConfig(): Promise<CloudConfigType> {

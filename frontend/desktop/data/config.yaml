@@ -3,6 +3,9 @@ cloud:
   port: ""
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
+  proxyDomain: "127.0.0.1.nip.io"
+  allowedOrigins:
+    - "https://127.0.0.1.nip.io"
 common:
   enterpriseSupportingMaterials: ""
   enterpriseRealNameAuthEnabled: false
