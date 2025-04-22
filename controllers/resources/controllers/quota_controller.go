@@ -150,12 +150,16 @@ func AdjustQuota(quota *corev1.ResourceQuota) bool {
 			baseLimit:  resource.MustParse("300Gi"),
 			upperLimit: resource.MustParse("800Gi"),
 		},
+		corev1.ResourceServicesNodePorts: {
+			baseLimit:  resource.MustParse("50"),
+			upperLimit: resource.MustParse("200"),
+		},
 	}
 
 	for resourceName, quantity := range quota.Spec.Hard {
 		if resourceName == corev1.ResourceLimitsCPU || resourceName == corev1.ResourceRequestsCPU ||
 			resourceName == corev1.ResourceLimitsMemory || resourceName == corev1.ResourceRequestsMemory ||
-			resourceName == corev1.ResourceRequestsStorage {
+			resourceName == corev1.ResourceRequestsStorage || resourceName == corev1.ResourceServicesNodePorts {
 			limit, exists := limits[resourceName]
 			if !exists {
 				continue
