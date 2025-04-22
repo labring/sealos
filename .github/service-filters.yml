@@ -1,0 +1,23 @@
+account:
+- 'services/account/**'
+
+database:
+- 'services/database/**'
+
+devbox:
+- 'services/devbox/**'
+
+exceptionmonitor:
+- 'services/exceptionmonitor/**'
+
+launchpad:
+- 'services/launchpad/**'
+
+minio:
+- 'services/minio/**'
+
+pay:
+- 'services/pay/**'
+
+vlogs:
+- 'services/vlogs/**'

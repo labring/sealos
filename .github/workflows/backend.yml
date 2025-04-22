@@ -1,0 +1,112 @@
+
+name: Default backend workflow
+
+on:
+  workflow_call:
+    inputs:
+      artifact_name:
+        type: string
+        default: "sealos"
+      comp:
+        type: string
+        default: "backend" 
+      module_name:
+        required: true
+        type: string
+      module_path:
+        required: true
+        type: string
+      workdir:
+        type: string
+        default: "controllers"
+      push:
+        type: boolean
+        default: false
+      custom:
+        required: false
+        type: boolean
+        default: false
+      custom_tag:
+        required: false
+        type: string
+        default: "latest"
+jobs:
+  run-linter:
+    uses: ./.github/workflows/golangci-lint.yml
+    with:
+      module_path: ${{ inputs.module_path }}
+      workdir: ${{ inputs.workdir }}
+      version: "1.22"
+  prepare-image-info:
+    uses: ./.github/workflows/prepare-image-info.yml
+    with:
+      module_name: ${{ inputs.module_name }}
+      comp: ${{ inputs.comp }}
+      custom: ${{ inputs.custom }}
+      custom_tag: ${{ inputs.custom_tag }}
+  build-image:
+    needs: [run-linter, prepare-image-info]
+    uses: ./.github/workflows/build-backend-image.yml
+    with:
+      module_name: ${{ inputs.module_name }}
+      module_path: ${{ inputs.module_path }}
+      workdir: ${{ inputs.workdir }}
+      comp: ${{ inputs.comp }}
+      needs_push: ${{ inputs.push }}
+      repo: ${{ needs.prepare-image-info.outputs.cur_docker_repo }}
+      tag: ${{ needs.prepare-image-info.outputs.tag_name }}
+  build-cluster-image:
+    if: ${{ inputs.push }}
+    needs: [build-image, prepare-image-info]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download sealos
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+      - name: Mutate image tag in deploy files
+        working-directory: ${{ inputs.workdir }}/${{ inputs.module_path }}/deploy
+        env:
+          OLD_DOCKER_IMAGE_NAME: "${{ needs.prepare-image-info.outputs.orig_docker_repo }}:latest"
+          NEW_DOCKER_IMAGE_NAME: "${{ needs.prepare-image-info.outputs.cur_docker_repo }}:${{ needs.prepare-image-info.outputs.tag_name }}"
+        run: |
+          sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" --debug ghcr.io
+      - name: Build image for ${{ needs.prepare-image-info.outputs.cur_cluster_repo }}
+        working-directory: ${{ inputs.workdir }}/${{ inputs.module_path }}/deploy
+        env:
+          OLD_DOCKER_IMAGE: "${{ needs.prepare-image-info.outputs.orig_docker_repo }}:latest"
+          NEW_DOCKER_IMAGE: "${{ needs.prepare-image-info.outputs.cur_docker_repo }}:${{ needs.prepare-image-info.outputs.tag_name }}"
+          CLUSTER_IMAGE: "${{ needs.prepare-image-info.outputs.cur_cluster_repo }}:${{ needs.prepare-image-info.outputs.tag_name }}"
+          LATEST_CLUSTER_IMAGE: "${{ needs.prepare-image-info.outputs.cur_cluster_repo }}:latest"
+        run: |
+          sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          # delete old registry cache
+          sudo rm -rf registry
+          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
+        env:
+          OWNER: ${{ github.repository_owner }}
+          CLUSTER_IMAGE: "${{ needs.prepare-image-info.outputs.cur_cluster_repo }}:${{ needs.prepare-image-info.outputs.tag_name }}"
+          LATEST_CLUSTER_IMAGE: "${{ needs.prepare-image-info.outputs.cur_cluster_repo }}:latest"
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
