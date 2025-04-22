@@ -21,8 +21,7 @@ import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { EditPasswordReq } from '@/pages/api/db/editPassword';
 import { RequiredByKeys } from '@/utils/tools';
 
-export const getMyDBList = () =>
-  GET<KbPgClusterType[]>('/api/getDBList').then((data) => data.map(adaptDBListItem));
+export const getMyDBList = () => GET<KbPgClusterType[]>('/api/getDBList');
 
 export const getDBByName = (name: string, config?: AxiosRequestConfig) =>
   GET(`/api/getDBByName?name=${name}`, {}, config).then(adaptDBDetail);
