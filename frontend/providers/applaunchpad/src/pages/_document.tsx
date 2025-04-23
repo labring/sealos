@@ -11,6 +11,8 @@ export default function Document() {
         <meta name="apple-mobile-web-app-title" content="Sealos" />
         <meta name="description" content="sealos cloud" />
         <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <body>
         <Main />

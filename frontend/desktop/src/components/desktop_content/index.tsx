@@ -49,7 +49,7 @@ export default function Desktop(props: any) {
   const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
-  const { layoutConfig } = useConfigStore();
+  const { layoutConfig, cloudConfig } = useConfigStore();
   const { session } = useSessionStore();
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
@@ -123,9 +123,9 @@ export default function Desktop(props: any) {
   const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
-    const cleanup = createMasterAPP();
+    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins);
     return cleanup;
-  }, []);
+  }, [cloudConfig?.allowedOrigins]);
 
   useEffect(() => {
     const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
