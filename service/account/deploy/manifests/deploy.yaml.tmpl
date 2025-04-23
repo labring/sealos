@@ -66,6 +66,13 @@ spec:
               memory: 256Mi
           ports:
             - containerPort: 2333
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 2333
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 6
           imagePullPolicy: Always
           volumeMounts:
           - mountPath: /config/config.json
