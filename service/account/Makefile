@@ -48,9 +48,9 @@ build: ## Build service-hub binary.
 
 .PHONY: docker-build
 docker-build: build
-	mv bin/manager bin/service-database-${TARGETARCH}
-	docker build -t $(IMG) .
+	mv bin/manager bin/service-account-${TARGETARCH}
+	docker build -t $(IMG) . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
-docker-push:
+docker-push: docker-build
 	docker push $(IMG)

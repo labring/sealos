@@ -21,9 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -257,34 +255,14 @@ func parseConfigList(s string, list interface{}, configName string) error {
 
 const BaseUnit = 1_000_000
 
-func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
-	var r float64
-	for _, step := range sortSteps(discount.DefaultSteps) {
-		ratio := discount.DefaultSteps[step]
-		if amount >= step*BaseUnit {
-			r = ratio
-		} else {
-			break
-		}
-	}
-	return int64(math.Ceil(float64(amount) * r / 100))
-}
-
-func sortSteps(steps map[int64]float64) (keys []int64) {
-	for k := range steps {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return
-}
-
 func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {
-	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] != 0 {
-		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit] / 100))
+	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] > 0 {
+		return true, discount.FirstRechargeSteps[amount/BaseUnit] * BaseUnit
 	}
-	return false, getAmountWithDiscount(amount, discount)
+	if discount.DefaultSteps != nil {
+		return false, discount.DefaultSteps[amount/BaseUnit] * BaseUnit
+	}
+	return false, 0
 }
 
 func (r *AccountReconciler) BillingCVM() error {
