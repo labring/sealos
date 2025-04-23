@@ -18,6 +18,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useQuery } from '@tanstack/react-query';
 import ShutdownModal from '@/components/modals/ShutdownModal';
 import { DevboxStatusEnum } from '@/constants/devbox';
+import { useUserStore } from '@/stores/user';
 
 const Header = ({
   refetchDevboxDetail,
@@ -32,6 +33,7 @@ const Header = ({
   const t = useTranslations();
   const { message: toast } = useMessage();
 
+  const { isOutStandingPayment } = useUserStore();
   const { screenWidth, setLoading } = useGlobalStore();
   const { devboxDetail, setDevboxList } = useDevboxStore();
   const isBigButton = useMemo(() => screenWidth > 1000, [screenWidth]);
@@ -49,6 +51,14 @@ const Header = ({
     async (devbox: DevboxDetailTypeV2) => {
       try {
         setLoading(true);
+        if (isOutStandingPayment) {
+          toast({
+            title: t('start_outstanding_tips'),
+            status: 'error'
+          });
+          setLoading(false);
+          return;
+        }
         await restartDevbox({ devboxName: devbox.name });
         toast({
           title: t('restart_success'),
@@ -64,12 +74,20 @@ const Header = ({
       refetchDevboxDetail();
       setLoading(false);
     },
-    [setLoading, t, toast, refetchDevboxDetail]
+    [setLoading, t, toast, refetchDevboxDetail, isOutStandingPayment]
   );
   const handleStartDevbox = useCallback(
     async (devbox: DevboxDetailTypeV2) => {
       try {
         setLoading(true);
+        if (isOutStandingPayment) {
+          toast({
+            title: t('start_outstanding_tips'),
+            status: 'error'
+          });
+          setLoading(false);
+          return;
+        }
         await startDevbox({ devboxName: devbox.name });
         toast({
           title: t('start_success'),
@@ -85,7 +103,7 @@ const Header = ({
       refetchDevboxDetail();
       setLoading(false);
     },
-    [setLoading, t, toast, refetchDevboxDetail]
+    [setLoading, t, toast, refetchDevboxDetail, isOutStandingPayment]
   );
   const handleGoToTerminal = useCallback(
     async (devbox: DevboxDetailTypeV2) => {

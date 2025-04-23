@@ -33,7 +33,7 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
     status:
       devbox.status.phase && devboxStatusMap[devbox.status.phase]
         ? devboxStatusMap[devbox.status.phase]
-        : devboxStatusMap.Error,
+        : devboxStatusMap.Pending,
     sshPort: devbox.status.network.nodePort,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
@@ -74,7 +74,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
     status:
       devbox.status?.phase && devboxStatusMap[devbox.status.phase]
         ? devboxStatusMap[devbox.status.phase]
-        : devboxStatusMap.Error,
+        : devboxStatusMap.Pending,
     sshPort: devbox.status?.network.nodePort || 65535,
     createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
@@ -110,7 +110,7 @@ export const adaptDevboxDetailV2 = ([
   const status =
     devbox.status?.phase && devboxStatusMap[devbox.status.phase]
       ? devboxStatusMap[devbox.status.phase]
-      : devboxStatusMap.Error;
+      : devboxStatusMap.Pending;
   return {
     id: devbox.metadata?.uid || ``,
     name: devbox.metadata.name || 'devbox',

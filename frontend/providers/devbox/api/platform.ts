@@ -1,13 +1,18 @@
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask } from '@/types/user';
 import type { Env } from '@/types/static';
-import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user';
+import { getDesktopSessionFromSessionStorage } from '@/utils/user';
 export const getAppEnv = () => GET<Env>('/api/getEnv');
 
 export const getUserQuota = () =>
   GET<{
     quota: UserQuotaItemType[];
   }>('/api/platform/getQuota');
+
+export const getUserIsOutStandingPayment = () =>
+  GET<{
+    isOutStandingPayment: boolean;
+  }>('/api/platform/getDebt');
 
 export const getRuntime = () => GET('/api/platform/getRuntime');
 
