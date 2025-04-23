@@ -8,7 +8,6 @@ cloud:
     - "https://dbprovider.127.0.0.1.nip.io"
     - "https://costcenter.127.0.0.1.nip.io"
     - "https://cronjob.127.0.0.1.nip.io"
-    - "https://dbprovider.127.0.0.1.nip.io"
     - "https://objectstorage.127.0.0.1.nip.io"
     - "https://template.127.0.0.1.nip.io"
     - "https://terminal.127.0.0.1.nip.io"
