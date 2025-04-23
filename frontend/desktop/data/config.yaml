@@ -3,7 +3,6 @@ cloud:
   port: ""
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
-  proxyDomain: "127.0.0.1.nip.io"
   allowedOrigins:
     - "https://applaunchpad.127.0.0.1.nip.io"
     - "https://dbprovider.127.0.0.1.nip.io"

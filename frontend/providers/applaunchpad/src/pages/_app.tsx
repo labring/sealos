@@ -184,10 +184,8 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
     <>
       {config?.launchpad?.meta?.title && (
         <Head>
-          <title>{config.launchpad.meta.title}</title>
-          <meta name="description" content={config.launchpad.meta.description} />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <link rel="icon" href="/favicon.ico" />
+          <title>{config?.launchpad?.meta?.title}</title>
+          <meta name="description" content={config?.launchpad?.meta?.description} />
         </Head>
       )}
       <QueryClientProvider client={queryClient}>
