@@ -5,7 +5,14 @@ cloud:
   certSecretName: "wildcard-cert"
   proxyDomain: "127.0.0.1.nip.io"
   allowedOrigins:
-    - "https://127.0.0.1.nip.io"
+    - "https://applaunchpad.127.0.0.1.nip.io"
+    - "https://dbprovider.127.0.0.1.nip.io"
+    - "https://costcenter.127.0.0.1.nip.io"
+    - "https://cronjob.127.0.0.1.nip.io"
+    - "https://dbprovider.127.0.0.1.nip.io"
+    - "https://objectstorage.127.0.0.1.nip.io"
+    - "https://template.127.0.0.1.nip.io"
+    - "https://terminal.127.0.0.1.nip.io"
 common:
   enterpriseSupportingMaterials: ""
   enterpriseRealNameAuthEnabled: false
