@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -1836,6 +1837,44 @@ func (c *Cockroach) Close() error {
 
 func (c *Cockroach) GetGlobalDB() *gorm.DB {
 	return c.DB
+}
+
+// RetryableTransaction wraps a GORM transaction and retries on CockroachDB retryable errors (SQLSTATE 40001)
+func RetryableTransaction(db *gorm.DB, maxRetries int, fn func(tx *gorm.DB) error) error {
+	var err error
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		err = db.Transaction(fn)
+		if err == nil {
+			return nil // success
+		}
+
+		if isCockroachRetryableError(err) {
+			time.Sleep(backoffDuration(attempt))
+			continue // retry
+		} else {
+			return err // not retryable, exit
+		}
+	}
+
+	return err // retried max times, still failed
+}
+
+func isCockroachRetryableError(err error) bool {
+	// Check for SQLSTATE 40001 or known Cockroach error strings
+	return strings.Contains(err.Error(), "SQLSTATE 40001") ||
+		strings.Contains(err.Error(), "restart transaction")
+}
+
+func backoffDuration(retry int) time.Duration {
+	base := 50 * time.Millisecond
+	max := 1 * time.Second
+
+	wait := base * time.Duration(1<<retry) // exponential backoff
+	if wait > max {
+		wait = max
+	}
+	return wait
 }
 
 func (c *Cockroach) GetGiftCodeWithCode(code string) (*types.GiftCode, error) {

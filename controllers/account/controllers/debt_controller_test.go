@@ -16,14 +16,27 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
+	"k8s.io/client-go/tools/clientcmd"
+
+	"gorm.io/gorm"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/types"
@@ -237,4 +250,192 @@ func sendFlushDebtResourceStatusRequest(allRegionDomain []string, jwtManager *ut
 		}
 	}
 	return nil
+}
+
+type regionConfig struct {
+	Region    string `json:"region"`
+	KCPath    string `json:"kc_path"`
+	GlobalDB  string `json:"global_db"`
+	LocalDB   string `json:"local_db"`
+	RegionUID string `json:"region_uid"`
+}
+
+var regions = []regionConfig{}
+
+// 1. pause account controller
+// 2. convert all region debt
+// 3. upgrade and restore the account controller
+func TestConvertDebt(t *testing.T) {
+	for i := range regions {
+		//先获取全部的debt crd
+		fmt.Printf("Start converting debts for region %s at %s\n", regions[i].Region, time.Now().Format(time.RFC3339))
+		config, err := clientcmd.BuildConfigFromFlags("", regions[i].KCPath)
+		if err != nil {
+			t.Fatalf("failed to get in cluster config: %v", err)
+		}
+
+		emptyScheme := runtime.NewScheme()
+		utilruntime.Must(accountv1.AddToScheme(emptyScheme))
+		clt, err := client.New(config, client.Options{Scheme: emptyScheme})
+		if err != nil {
+			t.Fatalf("failed to create client: %v", err)
+		}
+		os.Setenv("LOCAL_REGION", regions[i].RegionUID)
+		account, err := database.NewAccountV2(regions[i].GlobalDB, regions[i].LocalDB)
+		if err != nil {
+			t.Fatalf("failed to new account: %v", err)
+		}
+		defer func() {
+			if err := account.Close(); err != nil {
+				t.Errorf("failed close connection: %v", err)
+			}
+		}()
+		if !account.GetGlobalDB().Migrator().HasTable(&types.Debt{}) {
+			err = account.GetGlobalDB().Migrator().AutoMigrate(&types.Debt{})
+			if err != nil {
+				t.Fatalf("failed to migrate debt table: %v", err)
+			}
+		}
+		if !account.GetGlobalDB().Migrator().HasTable(&types.DebtStatusRecord{}) {
+			err = account.GetGlobalDB().Migrator().AutoMigrate(&types.DebtStatusRecord{})
+			if err != nil {
+				t.Fatalf("failed to migrate debt status record table: %v", err)
+			}
+		}
+
+		err = convertAllDebtCr(account, clt)
+		if err != nil {
+			t.Fatalf("failed to convert all debt cr: %v", err)
+		}
+		fmt.Printf("Finished converting debts for region %s at %s\n", regions[i].Region, time.Now().Format(time.RFC3339))
+	}
+}
+
+func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
+	// 1. 获取已存在的 user_uid
+	// 2. 预加载所有 userID -> userUID
+	// 3. 拉取 CRs 并过滤掉已存在的 userUID // 添加 userUID 以避免重复（主线程去重）
+	// 4. worker pool 执行写入
+	// 5. 转换并推入任务队列
+	const (
+		workerCount = 10
+		batchSize   = 100
+		maxRetries  = 3
+	)
+	existing := make(map[uuid.UUID]struct{})
+	var existingUIDs []uuid.UUID
+	if err := account.GetGlobalDB().Model(&types.Debt{}).Pluck("user_uid", &existingUIDs).Error; err != nil {
+		return fmt.Errorf("failed to preload existing debts: %v", err)
+	}
+	for _, uid := range existingUIDs {
+		existing[uid] = struct{}{}
+	}
+
+	userIDToUIDMap, err := GetUserIDToUIDMap(account.GetGlobalDB())
+	if err != nil {
+		return fmt.Errorf("failed to preload user UID map: %v", err)
+	}
+
+	var allDebts []accountv1.Debt
+	listOpts := &client.ListOptions{Limit: 1000}
+	for {
+		debtCRList := &accountv1.DebtList{}
+		if err := clt.List(context.Background(), debtCRList, listOpts); err != nil {
+			return fmt.Errorf("failed to list debts: %v", err)
+		}
+
+		for _, debt := range debtCRList.Items {
+			if debt.Spec.UserID == "" {
+				continue
+			}
+			userUID, ok := userIDToUIDMap[debt.Spec.UserID]
+			if !ok || userUID == uuid.Nil {
+				continue
+			}
+			if _, exists := existing[userUID]; exists {
+				continue
+			}
+			existing[userUID] = struct{}{}
+			allDebts = append(allDebts, debt)
+		}
+
+		if cont := debtCRList.GetContinue(); cont == "" {
+			break
+		} else {
+			listOpts.Continue = cont
+		}
+	}
+
+	fmt.Printf("Total debts to insert: %d\n", len(allDebts))
+
+	var wg sync.WaitGroup
+	tasks := make(chan *types.Debt, len(allDebts))
+	var firstErr error
+	var errMu sync.Mutex
+
+	for i := 0; i < workerCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			var batch []*types.Debt
+
+			for debt := range tasks {
+				batch = append(batch, debt)
+				if len(batch) >= batchSize {
+					if err := insertDebts(account, batch); err != nil {
+						fmt.Printf("failed to insert debts: %v", err)
+						errMu.Lock()
+						if firstErr == nil {
+							firstErr = err
+						}
+						errMu.Unlock()
+					}
+					batch = batch[:0]
+				}
+			}
+
+			if len(batch) > 0 {
+				if err := insertDebts(account, batch); err != nil {
+					fmt.Printf("failed to insert debts: %v", err)
+					errMu.Lock()
+					if firstErr == nil {
+						firstErr = err
+					}
+					errMu.Unlock()
+				}
+			}
+		}()
+	}
+
+	for _, debt := range allDebts {
+		userUID := userIDToUIDMap[debt.Spec.UserID]
+		tasks <- convertDebtCrToDebt(&debt, userUID)
+	}
+	close(tasks)
+
+	wg.Wait()
+	return firstErr
+}
+
+func GetUserIDToUIDMap(db *gorm.DB) (map[string]uuid.UUID, error) {
+	type user struct {
+		ID      string    `gorm:"column:id"`
+		UserUID uuid.UUID `gorm:"column:uid"`
+	}
+	var users []user
+	if err := db.Model(&types.User{}).Select("id, uid").Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("failed to preload users: %v", err)
+	}
+
+	result := make(map[string]uuid.UUID, len(users))
+	for _, u := range users {
+		result[u.ID] = u.UserUID
+	}
+	return result, nil
+}
+
+func insertDebts(account database.AccountV2, debts []*types.Debt) error {
+	return cockroach.RetryableTransaction(account.GetGlobalDB().Session(&gorm.Session{PrepareStmt: true}), 3, func(tx *gorm.DB) error {
+		return tx.Create(&debts).Error
+	})
 }
