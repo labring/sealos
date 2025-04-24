@@ -21,7 +21,7 @@ import (
 )
 
 // ShutdownType defines the type of shutdown to perform
-// +kubebuilder:validation:Enum=Stop;Terminate
+// +kubebuilder:validation:Enum=Stopped
 type ShutdownType string
 
 const (

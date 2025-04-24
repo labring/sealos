@@ -62,8 +62,7 @@ spec:
                 default: Stop
                 description: ShutdownType defines the type of shutdown to perform
                 enum:
-                - Stop
-                - Terminate
+                - Stopped
                 type: string
             required:
             - devBoxName
