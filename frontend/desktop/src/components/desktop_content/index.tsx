@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import Cost from '../account/cost';
 import { ChakraIndicator } from './ChakraIndicator';
-import Apps from './apps';
+// import Apps from './apps';
 import Assistant from './assistant';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
@@ -34,6 +34,7 @@ const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
 const Account = dynamic(() => import('../account'), { ssr: false });
 const TriggerAccountModule = dynamic(() => import('../account/trigger'), { ssr: false });
+const Apps = dynamic(() => import('./apps'), { ssr: false });
 
 export const blurBackgroundStyles = {
   bg: 'rgba(22, 30, 40, 0.35)',
@@ -209,6 +210,7 @@ export default function Desktop(props: any) {
         height={'calc(100% - 87px)'}
         pt={isBannerVisible ? '10px' : '24px'}
         px={'24px'}
+        maxW={'874px'}
         pb={'84px'}
         mx={'auto'}
         position={'relative'}
