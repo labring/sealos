@@ -26,6 +26,7 @@ class MasterSDK {
 
   /**
    * Check if origin is in the allowed list
+   * Support wildcard '*' to allow all origins
    */
   private isOriginAllowed(origin: string): boolean {
     if (origin === window.location.origin) {
@@ -33,6 +34,9 @@ class MasterSDK {
     }
 
     if (this.allowedOrigins.length > 0) {
+      if (this.allowedOrigins.includes('*')) {
+        return true;
+      }
       return this.allowedOrigins.includes(origin);
     }
 

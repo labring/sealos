@@ -73,6 +73,7 @@ export type LayoutConfigType = {
     accountSettingEnabled: boolean;
     docsUrl?: string;
     aiAssistantEnabled: boolean;
+    bannerEnabled: boolean;
   };
 };
 
@@ -285,7 +286,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     githubStarEnabled: false,
     workorderEnabled: false,
     accountSettingEnabled: false,
-    aiAssistantEnabled: false
+    aiAssistantEnabled: false,
+    bannerEnabled: false
   }
 };
 

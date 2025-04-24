@@ -23,6 +23,12 @@
   "avatar": "Avatar",
   "balance": "Balance",
   "bank_name": "Bank",
+  "banner": {
+    "button": "check the details",
+    "date": ", Valid April 22 - April 28.",
+    "description": "Up to a bonus of ",
+    "title": "First charge discount, limited time only."
+  },
   "bind": "Link",
   "bind_success": "Binding successful",
   "bonus": "Bonus",
