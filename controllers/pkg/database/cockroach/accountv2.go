@@ -785,7 +785,6 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 			}
 		}
 		if len(updateCredits) > 0 {
-			fmt.Println("updateCredits", updateCredits)
 			if dErr = tx.Save(&updateCredits).Error; dErr != nil {
 				return fmt.Errorf("failed to update credits: %v", dErr)
 			}
@@ -793,7 +792,6 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 			accountTransaction.CreditIDList = updateCreditsIDs
 		}
 		if deductionAmount > 0 {
-			fmt.Println("deductionAmount", deductionAmount)
 			if dErr = c.updateBalance(tx, ops, deductionAmount, true, true); dErr != nil {
 				return fmt.Errorf("failed to update balance: %v", dErr)
 			}

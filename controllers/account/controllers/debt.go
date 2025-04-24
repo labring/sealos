@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -60,7 +61,7 @@ func (r *DebtReconciler) start() {
 		r.processWithTimeRange(&types.Account{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
 			users := getUniqueUsers(db, &types.Account{}, "updated_at", start, end)
 			if len(users) > 0 {
-				r.Logger.Info("processed account updates", "count", len(users), "users", users, "start", start, "end", end)
+				r.Logger.Info("processed account updates", "count", len(users), "start", start, "end", end)
 				r.processUsersInParallel(users)
 			}
 		})
@@ -460,9 +461,13 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 					lastErr = nil
 					break
 				}
-				// 打印resp 内容
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+				} else {
+					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+				}
 
-				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 			}
 
 			// 进行重试
@@ -473,7 +478,7 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 			}
 		}
 		if lastErr != nil {
-			return lastErr
+			return fmt.Errorf("failed to send %s request after %d attempts: %w", url, maxRetries, lastErr)
 		}
 	}
 	return nil
@@ -521,7 +526,7 @@ func (r *DebtReconciler) retryFailedUsers() {
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 	var (
 		wg        sync.WaitGroup
-		semaphore = make(chan struct{}, 100)
+		semaphore = make(chan struct{}, 50)
 	)
 
 	for _, user := range users {
