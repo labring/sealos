@@ -208,6 +208,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     await globalPrisma.$transaction(async (globalPrisma) => {
+      try {
+        await globalPrisma.$queryRawUnsafe(
+          'SELECT * FROM "UserRealNameInfo" WHERE "userUid" = $1 FOR UPDATE NOWAIT',
+          userUid
+        );
+      } catch (lockError) {
+        return;
+      }
+
       await globalPrisma.userRealNameInfo.update({
         where: { userUid: userUid },
         data: {
