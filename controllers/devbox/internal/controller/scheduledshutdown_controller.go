@@ -81,16 +81,16 @@ func (r *ScheduledShutdownReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return r.updateStatus(ctx, &scheduledShutdown, devboxv1alpha1.ShutdownStateCompleted)
 	}
 
-	waitDuration := shutdownTime.Sub(now)
-	logger.Info("Shutdown time not yet reached, scheduling requeue", "DevBoxName", scheduledShutdown.Spec.DevBoxName, "ShutdownTime", shutdownTime, "WaitDuration", waitDuration)
-
+	requeueAfter := calculateRequeueTime(now, shutdownTime)
+	totalWaitDuration := shutdownTime.Sub(now)
+	logger.Info("Shutdown time not yet reached, scheduling requeue", "DevBoxName", scheduledShutdown.Spec.DevBoxName, "ShutdownTime", shutdownTime, "TotalWaitDuration", totalWaitDuration, "RequeueAfter", requeueAfter, "NextCheck", now.Add(requeueAfter))
 	if scheduledShutdown.Status.State != devboxv1alpha1.ShutdownStatePending {
 		if _, err := r.updateStatus(ctx, &scheduledShutdown, devboxv1alpha1.ShutdownStatePending); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: waitDuration}, nil
+	return ctrl.Result{RequeueAfter: requeueAfter}, nil
 }
 
 func (r *ScheduledShutdownReconciler) performShutdown(ctx context.Context, devbox *devboxv1alpha1.Devbox, shutdownType devboxv1alpha1.ShutdownType) error {
@@ -114,6 +114,28 @@ func (r *ScheduledShutdownReconciler) updateStatus(ctx context.Context, schedule
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
+}
+
+// calculateRequeueTime 计算下一次重新队列的时间间隔，使用递减策略
+func calculateRequeueTime(now time.Time, shutdownTime time.Time) time.Duration {
+	totalWaitDuration := shutdownTime.Sub(now)
+	var requeueAfter time.Duration
+	switch {
+	case totalWaitDuration > 24*time.Hour:
+		requeueAfter = 24 * time.Hour
+	case totalWaitDuration > 6*time.Hour:
+		requeueAfter = 6 * time.Hour
+	case totalWaitDuration > 1*time.Hour:
+		requeueAfter = 1 * time.Hour
+	case totalWaitDuration > 10*time.Minute:
+		requeueAfter = 10 * time.Minute
+	default:
+		requeueAfter = totalWaitDuration
+	}
+	if now.Add(requeueAfter).After(shutdownTime) {
+		requeueAfter = totalWaitDuration
+	}
+	return requeueAfter
 }
 
 // SetupWithManager sets up the controller with the Manager.
