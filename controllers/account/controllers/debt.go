@@ -467,7 +467,6 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 				} else {
 					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
 				}
-
 			}
 
 			// 进行重试
