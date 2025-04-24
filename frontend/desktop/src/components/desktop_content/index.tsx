@@ -5,7 +5,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Center, Flex, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -28,6 +28,7 @@ import { getAmount, UserInfo } from '@/api/auth';
 import TaskModal from '../task/taskModal';
 import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
+import SaleBanner from '../banner';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -123,7 +124,7 @@ export default function Desktop(props: any) {
   const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins);
+    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
 
@@ -175,6 +176,16 @@ export default function Desktop(props: any) {
     globalNotification();
   }, []);
 
+  const [isBannerVisible, setIsBannerVisible] = useState(false);
+  useEffect(() => {
+    const lastClosedTimestamp = localStorage.getItem('bannerLastClosed');
+    const today = new Date().toLocaleDateString();
+
+    if (lastClosedTimestamp !== today) {
+      setIsBannerVisible(true);
+    }
+  }, []);
+
   return (
     <Box
       id="desktop"
@@ -186,11 +197,14 @@ export default function Desktop(props: any) {
     >
       {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
+      {layoutConfig?.common?.bannerEnabled && (
+        <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+      )}
       <Flex
         gap={'8px'}
         width={'100%'}
         height={'calc(100% - 87px)'}
-        pt={'24px'}
+        pt={isBannerVisible ? '10px' : '24px'}
         px={'24px'}
         mx={'auto'}
         maxW={'1300px'}

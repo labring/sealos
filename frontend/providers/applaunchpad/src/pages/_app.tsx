@@ -195,7 +195,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
           <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
-      {config.launchpad.meta.scripts.map((script, i) => (
+      {config?.launchpad?.meta?.scripts?.map((script, i) => (
         <Script key={i} {...script} />
       ))}
     </>
