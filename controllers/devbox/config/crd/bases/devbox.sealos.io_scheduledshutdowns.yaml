@@ -59,7 +59,7 @@ spec:
                 format: date-time
                 type: string
               shutdownType:
-                default: Stop
+                default: Stopped
                 description: ShutdownType defines the type of shutdown to perform
                 enum:
                 - Stopped

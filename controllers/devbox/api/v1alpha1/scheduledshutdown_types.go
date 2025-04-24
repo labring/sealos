@@ -52,7 +52,7 @@ type ScheduledShutdownSpec struct {
 	ShutdownTime metav1.Time `json:"shutdownTime"`
 
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=Stop
+	// +kubebuilder:default=Stopped
 	ShutdownType ShutdownType `json:"shutdownType"`
 }
 
