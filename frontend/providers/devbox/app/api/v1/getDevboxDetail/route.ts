@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
       status:
         body.status?.phase && devboxStatusMap[body.status.phase]
           ? devboxStatusMap[body.status.phase]
-          : devboxStatusMap.Error
+          : devboxStatusMap.Pending
     };
 
     return jsonRes({

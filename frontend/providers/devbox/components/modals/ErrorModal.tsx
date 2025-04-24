@@ -35,7 +35,7 @@ const ErrorModal = ({
         </ModalHeader>
         <ModalCloseButton top={'10px'} right={'10px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
-          {t(content)}
+          {content}
         </ModalBody>
       </ModalContent>
     </Modal>

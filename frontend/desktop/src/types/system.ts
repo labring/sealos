@@ -6,6 +6,7 @@ export type CloudConfigType = {
   regionUID: string;
   certSecretName: string;
   proxyDomain: string;
+  allowedOrigins: string[];
 };
 
 export type CommonConfigType = {
@@ -256,7 +257,8 @@ export const DefaultCloudConfig: CloudConfigType = {
   port: '443',
   regionUID: 'sealos-cloud',
   certSecretName: 'wildcard-cert',
-  proxyDomain: 'cloud.sealos.io'
+  proxyDomain: 'cloud.sealos.io',
+  allowedOrigins: ['cloud.sealos.io']
 };
 
 export const DefaultLayoutConfig: LayoutConfigType = {

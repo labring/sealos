@@ -7,7 +7,8 @@ import {
   DBTypeEnum,
   MigrationRemark,
   RedisHAConfig,
-  crLabelKey
+  crLabelKey,
+  defaultDBEditValue
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
 import type {
@@ -38,12 +39,13 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
  * @returns Generated YAML configuration.
  */
 export const json2CreateCluster = (
-  data: DBEditType,
+  rawData: Partial<DBEditType> = {},
   backupInfo?: BackupItemType,
   options?: {
     storageClassName?: string;
   }
 ) => {
+  const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
 
   const metadata = {
@@ -155,7 +157,9 @@ export const json2CreateCluster = (
  * @param ownerId Optional owner ID for cluster association.
  * @returns Generated account info.
  */
-export const json2Account = (data: DBEditType, ownerId?: string) => {
+export const json2Account = (rawData: Partial<DBEditType> = {}, ownerId?: string) => {
+  const data: DBEditType = { ...defaultDBEditValue, ...rawData };
+
   const commonLabels = {
     [crLabelKey]: data.dbName,
     'app.kubernetes.io/instance': data.dbName,

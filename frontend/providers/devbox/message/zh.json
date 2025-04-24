@@ -275,6 +275,7 @@
   "start": "开机",
   "start_devbox": "开始",
   "start_error": "开机失败",
+  "start_outstanding_tips": "您已欠费，无法开机或重启",
   "start_runtime": "启动环境",
   "start_success": "开机成功",
   "start_time": "启动时长",
