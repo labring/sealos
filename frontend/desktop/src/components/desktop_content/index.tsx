@@ -197,7 +197,9 @@ export default function Desktop(props: any) {
     >
       {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
-      <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+      {process.env.NEXT_PUBLIC_BANNER_ENABLED === 'true' && (
+        <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
+      )}
       <Flex
         gap={'8px'}
         width={'100%'}
