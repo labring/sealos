@@ -19,4 +19,5 @@ resources:
 - devbox_v1alpha1_runtimeclass.yaml
 - devbox_v1alpha1_devboxrelease.yaml
 - devbox_v1alpha1_operationrequest.yaml
+- devbox_v1alpha1_scheduledshutdown.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

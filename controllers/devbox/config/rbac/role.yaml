@@ -126,3 +126,29 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - scheduledshutdowns
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - scheduledshutdowns/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - scheduledshutdowns/status
+  verbs:
+  - get
+  - patch
+  - update
