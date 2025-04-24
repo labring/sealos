@@ -124,7 +124,7 @@ export default function Desktop(props: any) {
   const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
-    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins);
+    const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
     return cleanup;
   }, [cloudConfig?.allowedOrigins]);
 
