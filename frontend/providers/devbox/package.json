@@ -50,6 +50,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "zod": "^3.23.8",
+    "zod-openapi": "^4.2.4",
     "zustand": "^4.5.4"
   },
   "devDependencies": {
