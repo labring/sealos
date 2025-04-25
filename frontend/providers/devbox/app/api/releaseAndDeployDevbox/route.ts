@@ -1,0 +1,232 @@
+import { NextRequest } from 'next/server';
+import { nanoid } from '@/utils/tools';
+import { authSession } from '@/services/backend/auth';
+import { getK8s } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
+import { KBDevboxReleaseType } from '@/types/k8s';
+import {
+  DevboxReleaseStatusEnum,
+  devboxKey,
+  ingressProtocolKey,
+  publicDomainKey
+} from '@/constants/devbox';
+import { json2DevboxRelease } from '@/utils/json2Yaml';
+import {
+  ReleaseAndDeployDevboxRequestSchema,
+  ReleaseAndDeployDevboxResponseSchema
+} from './schema';
+import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const validatedBody = ReleaseAndDeployDevboxRequestSchema.parse(body);
+    const { devboxName, tag, releaseDes, devboxUid, cpu = 200, memory = 128 } = validatedBody;
+    const headerList = req.headers;
+
+    const { applyYamlList, namespace, k8sCustomObjects, k8sCore, k8sNetworkingApp } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    });
+
+    // 1. Check if the same version already exists
+    const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxreleases'
+    )) as { body: { items: KBDevboxReleaseType[] } };
+
+    if (
+      releaseBody.items.some((item: any) => {
+        return (
+          item.spec &&
+          item.spec.devboxName === devboxName &&
+          item.metadata.ownerReferences[0].uid === devboxUid &&
+          item.spec.newTag === tag
+        );
+      })
+    ) {
+      return jsonRes({
+        code: 409,
+        error: 'devbox release already exists'
+      });
+    }
+
+    const devbox = json2DevboxRelease({ devboxName, tag, releaseDes, devboxUid });
+    await applyYamlList([devbox], 'create');
+
+    // 2. wait for release success
+    let isReleaseSuccess = false;
+    let retryCount = 0;
+    const maxRetries = 30; // max wait 30 times
+    const retryInterval = 30000; // wait 30 seconds
+
+    while (!isReleaseSuccess && retryCount < maxRetries) {
+      const { body: currentReleaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
+        'devbox.sealos.io',
+        'v1alpha1',
+        namespace,
+        'devboxreleases'
+      )) as { body: { items: KBDevboxReleaseType[] } };
+
+      const currentRelease = currentReleaseBody.items.find(
+        (item: any) =>
+          item.spec &&
+          item.spec.devboxName === devboxName &&
+          item.metadata.ownerReferences[0].uid === devboxUid &&
+          item.spec.newTag === tag
+      );
+
+      if (currentRelease?.status?.phase === DevboxReleaseStatusEnum.Success) {
+        isReleaseSuccess = true;
+        break;
+      }
+
+      if (currentRelease?.status?.phase === DevboxReleaseStatusEnum.Failed) {
+        return jsonRes({
+          code: 500,
+          error: 'devbox release failed'
+        });
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, retryInterval));
+      retryCount++;
+    }
+
+    if (!isReleaseSuccess) {
+      return jsonRes({
+        code: 500,
+        error: 'devbox release timeout'
+      });
+    }
+
+    // 3. get devbox info
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: any };
+
+    // 4. get network info
+    const label = `${devboxKey}=${devboxName}`;
+    const [ingressesResponse, serviceResponse] = await Promise.all([
+      k8sNetworkingApp
+        .listNamespacedIngress(namespace, undefined, undefined, undefined, undefined, label)
+        .catch(() => null),
+      k8sCore.readNamespacedService(devboxName, namespace, undefined).catch(() => null)
+    ]);
+    const ingresses = ingressesResponse?.body.items || [];
+    const service = serviceResponse?.body;
+
+    const ingressList = ingresses.map((item) => {
+      const defaultDomain = item.metadata?.labels?.[publicDomainKey];
+      const tlsHost = item.spec?.tls?.[0]?.hosts?.[0];
+      return {
+        networkName: item.metadata?.name,
+        port: item.spec?.rules?.[0]?.http?.paths?.[0]?.backend?.service?.port?.number,
+        protocol: item.metadata?.annotations?.[ingressProtocolKey],
+        openPublicDomain: !!defaultDomain,
+        publicDomain: defaultDomain === tlsHost ? tlsHost : defaultDomain,
+        customDomain: defaultDomain === tlsHost ? '' : tlsHost
+      };
+    });
+
+    const portInfos =
+      service?.spec?.ports?.map((svcport) => {
+        const ingressInfo = ingressList.find((ingress) => ingress.port === svcport.port);
+        return {
+          portName: svcport.name!,
+          port: svcport.port,
+          protocol: ingressInfo?.protocol || 'TCP',
+          networkName: ingressInfo?.networkName || `network-${devboxName}-${nanoid()}`,
+          openPublicDomain: !!ingressInfo?.openPublicDomain,
+          publicDomain: ingressInfo?.publicDomain || `${devboxName}-${nanoid()}`,
+          customDomain: ingressInfo?.customDomain || '',
+          domain: process.env.INGRESS_DOMAIN || '',
+          appProtocol: 'HTTP',
+          openNodePort: false
+        };
+      }) || [];
+
+    // 5. deploy app
+    const appName = `${devboxName}-${nanoid()}`;
+    const formData = {
+      appForm: {
+        appName,
+        imageName: devboxBody.spec.image,
+        runCMD: '',
+        cmdParam: '',
+        replicas: 1,
+        cpu,
+        memory,
+        networks:
+          portInfos.length > 0
+            ? portInfos
+            : [
+                {
+                  networkName: `network-${appName}`,
+                  portName: 'static-host',
+                  port: 80,
+                  protocol: 'TCP',
+                  openPublicDomain: true,
+                  publicDomain: appName,
+                  customDomain: '',
+                  domain: process.env.INGRESS_DOMAIN || '',
+                  appProtocol: 'HTTP',
+                  openNodePort: false
+                }
+              ],
+        envs: [],
+        hpa: {
+          use: false,
+          target: 'cpu',
+          value: 50,
+          minReplicas: 1,
+          maxReplicas: 5
+        },
+        configMapList: [],
+        secret: {
+          use: false,
+          username: '',
+          password: '',
+          serverAddress: 'docker.io'
+        },
+        storeList: [],
+        gpu: {}
+      }
+    };
+
+    await fetch(`https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: headerList.get('Authorization') || ''
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const response = {
+      data: {
+        message: 'success create and deploy devbox release',
+        appName
+      }
+    };
+
+    return jsonRes(ReleaseAndDeployDevboxResponseSchema.parse(response));
+  } catch (err: any) {
+    if (err instanceof z.ZodError) {
+      return jsonRes({
+        code: 400,
+        error: err.errors
+      });
+    }
+    return jsonRes({
+      code: 500,
+      error: err
+    });
+  }
+}
