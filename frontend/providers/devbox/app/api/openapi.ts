@@ -20,6 +20,24 @@ import {
   HeaderSchema as DelDevboxHeaderSchema,
   ErrorResponseSchema as DelDevboxErrorResponseSchema
 } from './delDevbox/schema';
+import {
+  RequestSchema as StartDevboxRequestSchema,
+  SuccessResponseSchema as StartDevboxSuccessResponseSchema,
+  HeaderSchema as StartDevboxHeaderSchema,
+  ErrorResponseSchema as StartDevboxErrorResponseSchema
+} from './startDevbox/schema';
+import {
+  RequestSchema as ShutdownDevboxRequestSchema,
+  SuccessResponseSchema as ShutdownDevboxSuccessResponseSchema,
+  HeaderSchema as ShutdownDevboxHeaderSchema,
+  ErrorResponseSchema as ShutdownDevboxErrorResponseSchema
+} from './shutdownDevbox/schema';
+import {
+  RequestSchema as RestartDevboxRequestSchema,
+  SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
+  HeaderSchema as RestartDevboxHeaderSchema,
+  ErrorResponseSchema as RestartDevboxErrorResponseSchema
+} from './restartDevbox/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -134,6 +152,132 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: DelDevboxErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/startDevbox': {
+      post: {
+        summary: 'Start a devbox',
+        description: 'Start a devbox and its associated resources (service, ingress, etc.)',
+        requestParams: {
+          header: StartDevboxHeaderSchema
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: StartDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox started successfully',
+            content: {
+              'application/json': {
+                schema: StartDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: StartDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: StartDevboxErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/shutdownDevbox': {
+      post: {
+        summary: 'Shutdown a devbox',
+        description: 'Shutdown a devbox and its associated resources (service, ingress, etc.)',
+        requestParams: {
+          header: ShutdownDevboxHeaderSchema
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: ShutdownDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox shutdown successfully',
+            content: {
+              'application/json': {
+                schema: ShutdownDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: ShutdownDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ShutdownDevboxErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/restartDevbox': {
+      post: {
+        summary: 'Restart a devbox',
+        description: 'Restart a devbox and its associated resources (service, ingress, etc.)',
+        requestParams: {
+          header: RestartDevboxHeaderSchema
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: RestartDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox restarted successfully',
+            content: {
+              'application/json': {
+                schema: RestartDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: RestartDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: RestartDevboxErrorResponseSchema
               }
             }
           }
