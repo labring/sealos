@@ -44,6 +44,12 @@ import {
   HeaderSchema as GetSSHConnectionInfoHeaderSchema,
   ErrorResponseSchema as GetSSHConnectionInfoErrorResponseSchema
 } from './getSSHConnectionInfo/schema';
+import {
+  RequestSchema as CreateDevboxPortRequestSchema,
+  SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
+  HeaderSchema as CreateDevboxPortHeaderSchema,
+  ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
+} from './createDevboxPort/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -329,6 +335,49 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: GetSSHConnectionInfoErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/createDevboxPort': {
+      post: {
+        summary: 'Check port availability and get port information',
+        description:
+          'Check if a port is available for a devbox and get port information including internal and external addresses',
+        requestParams: {
+          header: CreateDevboxPortHeaderSchema
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: CreateDevboxPortRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Successfully checked port availability and retrieved port information',
+            content: {
+              'application/json': {
+                schema: CreateDevboxPortSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: CreateDevboxPortErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: CreateDevboxPortErrorResponseSchema
               }
             }
           }

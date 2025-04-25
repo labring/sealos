@@ -10,7 +10,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers;
-    const { ROOT_RUNTIME_NAMESPACE } = process.env;
 
     const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
