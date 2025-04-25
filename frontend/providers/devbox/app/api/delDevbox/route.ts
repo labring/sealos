@@ -4,13 +4,32 @@ import { devboxKey } from '@/constants/devbox';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const devboxName = searchParams.get('devboxName') as string;
+    const devboxName = searchParams.get('devboxName');
+
+    if (!devboxName) {
+      return jsonRes({
+        code: 400,
+        message: 'Devbox name is required'
+      });
+    }
+
+    const validationResult = RequestSchema.safeParse({ devboxName });
+
+    if (!validationResult.success) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request parameters',
+        error: validationResult.error.errors
+      });
+    }
+
     const headerList = req.headers;
 
     const { k8sCustomObjects, k8sCore, namespace } = await getK8s({
@@ -81,6 +100,7 @@ export async function DELETE(req: NextRequest) {
   } catch (err: any) {
     return jsonRes({
       code: 500,
+      message: err?.message || 'Internal server error',
       error: err
     });
   }

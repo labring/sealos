@@ -14,6 +14,12 @@ import {
   RequestSchema as ListTemplatesRequestSchema,
   SuccessResponseSchema as ListTemplatesSuccessResponseSchema
 } from './templateRepository/template/list/schema';
+import {
+  RequestSchema as DelDevboxRequestSchema,
+  SuccessResponseSchema as DelDevboxSuccessResponseSchema,
+  HeaderSchema as DelDevboxHeaderSchema,
+  ErrorResponseSchema as DelDevboxErrorResponseSchema
+} from './delDevbox/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -92,6 +98,42 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: ErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/delDevbox': {
+      delete: {
+        summary: 'Delete a devbox',
+        description: 'Delete a devbox and its associated resources (service, ingress, etc.)',
+        requestParams: {
+          header: DelDevboxHeaderSchema,
+          query: DelDevboxRequestSchema
+        },
+        responses: {
+          '200': {
+            description: 'Devbox deleted successfully',
+            content: {
+              'application/json': {
+                schema: DelDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request parameters',
+            content: {
+              'application/json': {
+                schema: DelDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: DelDevboxErrorResponseSchema
               }
             }
           }
