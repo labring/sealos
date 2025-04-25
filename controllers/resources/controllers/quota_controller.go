@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 
 	"github.com/go-logr/logr"
@@ -24,10 +26,11 @@ import (
 // NamespaceQuotaReconciler reconciles namespace events and adjusts quotas
 type NamespaceQuotaReconciler struct {
 	client.Client
-	Logger         logr.Logger
-	Scheme         *runtime.Scheme
-	Recorder       record.EventRecorder
-	namespaceLocks map[string]*sync.Mutex
+	Logger              logr.Logger
+	Scheme              *runtime.Scheme
+	limitExpansionCycle time.Duration
+	Recorder            record.EventRecorder
+	namespaceLocks      map[string]*sync.Mutex
 }
 
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
@@ -79,7 +82,7 @@ func (r *NamespaceQuotaReconciler) handleQuotaExceeded(ctx context.Context, evt 
 	if quota.Labels != nil {
 		if lastUpdate, exists := quota.Labels["last-quota-update"]; exists {
 			lastUpdateTime, err := time.Parse("2006-01-02-15-04-05", lastUpdate)
-			if err == nil && time.Since(lastUpdateTime) < 1*time.Hour {
+			if err == nil && time.Since(lastUpdateTime) < r.limitExpansionCycle {
 				r.Logger.Info("Quota was recently updated, skipping update", "namespace", ns)
 				return nil
 			}
@@ -241,6 +244,7 @@ func formatQuantity(quantity resource.Quantity, resourceName corev1.ResourceName
 func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("namespace-quota-controller")
 	r.namespaceLocks = make(map[string]*sync.Mutex)
+	r.limitExpansionCycle = env.GetDurationEnvWithDefault("LIMIT_QUOTA_EXPANSION_CYCLE", 24*time.Hour)
 
 	checkEventPredicate := func(obj client.Object) bool {
 		eventObj, ok := obj.(*corev1.Event)
