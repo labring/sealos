@@ -38,6 +38,12 @@ import {
   HeaderSchema as RestartDevboxHeaderSchema,
   ErrorResponseSchema as RestartDevboxErrorResponseSchema
 } from './restartDevbox/schema';
+import {
+  RequestSchema as GetSSHConnectionInfoRequestSchema,
+  SuccessResponseSchema as GetSSHConnectionInfoSuccessResponseSchema,
+  HeaderSchema as GetSSHConnectionInfoHeaderSchema,
+  ErrorResponseSchema as GetSSHConnectionInfoErrorResponseSchema
+} from './getSSHConnectionInfo/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -278,6 +284,51 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: RestartDevboxErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/getSSHConnectionInfo': {
+      get: {
+        summary: 'Get SSH connection information',
+        description:
+          'Get SSH connection information for a devbox, including keys, token, and configuration',
+        requestParams: {
+          header: GetSSHConnectionInfoHeaderSchema,
+          query: GetSSHConnectionInfoRequestSchema
+        },
+        responses: {
+          '200': {
+            description: 'Successfully retrieved SSH connection information',
+            content: {
+              'application/json': {
+                schema: GetSSHConnectionInfoSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request parameters',
+            content: {
+              'application/json': {
+                schema: GetSSHConnectionInfoErrorResponseSchema
+              }
+            }
+          },
+          '404': {
+            description: 'SSH keys not found',
+            content: {
+              'application/json': {
+                schema: GetSSHConnectionInfoErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: GetSSHConnectionInfoErrorResponseSchema
               }
             }
           }
