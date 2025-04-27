@@ -329,16 +329,16 @@ export default function Account() {
                         Kubeconfig
                       </Text>
                     </Flex>
-                    <IconButton
-                      size="16px"
-                      variant="ghost"
-                      icon={<Copy size="16px" color="#737373" />}
-                      aria-label="Copy Kubeconfig"
-                      onClick={(e) => {
+                    <Box
+                      p="2px"
+                      cursor="pointer"
+                      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
                         e.stopPropagation();
                         kubeconfig && copyData(kubeconfig);
                       }}
-                    />
+                    >
+                      <Copy size={16} color="#737373" />
+                    </Box>
                   </Flex>
                 </MenuItem>
               </Box>

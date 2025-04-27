@@ -210,7 +210,7 @@ export default function Desktop(props: any) {
         height={'calc(100% - 87px)'}
         pt={isBannerVisible ? '10px' : '24px'}
         px={'24px'}
-        maxW={'874px'}
+        maxW={'1074px'}
         pb={'84px'}
         mx={'auto'}
         position={'relative'}

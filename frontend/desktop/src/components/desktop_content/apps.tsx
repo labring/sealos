@@ -7,18 +7,17 @@ import {
   Grid,
   Image,
   Text,
-  useBreakpointValue,
-  keyframes,
   Modal,
   ModalOverlay,
   ModalContent,
-  ModalHeader,
   ModalCloseButton,
-  ModalBody
+  ModalBody,
+  Center
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
+import styles from './index.module.scss';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
@@ -26,61 +25,108 @@ export default function Apps() {
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
   const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
 
-  // 用于处理拖拽的状态
   const [draggedApp, setDraggedApp] = useState<TApp | null>(null);
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [moreAppsFolder, setMoreAppsFolder] = useState<TApp[]>([]);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
   const [folderPosition, setFolderPosition] = useState({ top: 0, left: 0 });
 
-  // 引用
+  const [isDraggingOutside, setIsDraggingOutside] = useState(false);
+
   const desktopRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLDivElement>(null);
   const folderIconRef = useRef<HTMLDivElement>(null);
-
-  // 动画
-  const pulseAnimation = keyframes`
-    0% { transform: scale(1); }
-    50% { transform: scale(1.05); }
-    100% { transform: scale(1); }
-  `;
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   // grid value
   const gridMX = 0;
   const gridMT = 32;
-  const gridSpacing = 36;
+  const gridSpacing = 48;
   const appWidth = 120;
   const appHeight = 108;
   const pageButton = 12;
 
-  // 应用显示类型处理
-  const getAppDisplayType = (app: TApp): displayType => {
-    // 优先使用本地存储的配置，没有则使用应用默认配置
-    return appDisplayConfigs[app.key] || app.displayType;
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const calculateAppsPerPage = () => {
+    console.log(modalContentRef, 'modalContentRef');
+
+    if (!modalContentRef.current) return 10;
+
+    const modalWidth = modalContentRef.current.clientWidth;
+    const modalHeight = modalContentRef.current.clientHeight;
+
+    const availableHeight = modalHeight - 120 * 2 - 64;
+    const isXl = modalWidth >= 1280;
+    const columnsPerRow = isXl ? 5 : Math.floor((modalWidth - 80 * 2) / appWidth);
+
+    const rowsPerPage = Math.floor(availableHeight / appHeight);
+
+    return Math.max(columnsPerRow * rowsPerPage, 1);
   };
 
-  // 筛选出要显示的应用
+  const [appsPerPage, setAppsPerPage] = useState(10);
+
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
+
+    const handleResize = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        console.log('handleResize');
+        if (isFolderOpen && modalContentRef.current) {
+          console.log('calculateAppsPerPage');
+          setAppsPerPage(calculateAppsPerPage());
+        }
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(debounceTimer);
+    };
+  }, [isFolderOpen]);
+
+  const totalPages = Math.ceil(moreAppsFolder.length / appsPerPage);
+
+  const getCurrentPageApps = () => {
+    const start = currentPage * appsPerPage;
+    const end = start + appsPerPage;
+    return moreAppsFolder.slice(start, end);
+  };
+
+  const handlePageChange = (pageIndex: number) => {
+    setCurrentPage(pageIndex);
+  };
+
+  const getAppDisplayType = useCallback(
+    (app: TApp): displayType => {
+      return appDisplayConfigs[app.key] || app.displayType;
+    },
+    [appDisplayConfigs]
+  );
+
   const renderApps = useMemo(() => {
     return installedApps.filter((app) => getAppDisplayType(app) === 'normal');
-  }, [installedApps, appDisplayConfigs]);
+  }, [installedApps, getAppDisplayType]);
 
-  // 筛选出要放入文件夹的应用
   const moreApps = useMemo(() => {
     return installedApps.filter((app) => getAppDisplayType(app) === 'more');
-  }, [installedApps, appDisplayConfigs]);
+  }, [installedApps, getAppDisplayType]);
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
+    closeFolder();
     if (item?.name) {
       openApp(item);
     }
   };
 
-  // 处理文件夹点击
   const handleFolderClick = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 
-    // 计算文件夹位置
     if (e.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
       setFolderPosition({
@@ -91,19 +137,27 @@ export default function Apps() {
 
     setIsFolderOpen(true);
     setMoreAppsFolder(moreApps);
+
+    // 文件夹打开时手动触发一次计算
+    setTimeout(() => {
+      if (modalContentRef.current) {
+        setAppsPerPage(calculateAppsPerPage());
+      }
+    }, 0);
   };
 
-  // 关闭文件夹
   const closeFolder = () => {
     setIsFolderOpen(false);
+    setCurrentPage(0);
   };
 
-  // 处理拖拽开始
   const handleDragStart = (
     e: React.DragEvent<HTMLDivElement>,
     app: TApp,
     source: 'desktop' | 'folder'
   ) => {
+    console.log('handleDragStart');
+
     e.dataTransfer.setData('application/json', JSON.stringify({ app, source }));
     setDraggedApp(app);
 
@@ -112,109 +166,69 @@ export default function Apps() {
     }
   };
 
-  // 处理拖拽结束
   const handleDragEnd = () => {
     setDraggedApp(null);
     setDraggedFromFolder(false);
+    setIsDraggingOutside(false);
 
-    // 重置文件夹样式
     if (folderIconRef.current) {
-      folderIconRef.current.style.animation = '';
+      folderIconRef.current.classList.remove(styles.folderPulse);
     }
   };
 
-  // 处理拖拽过程中
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
     if (draggedFromFolder) {
-      // 获取鼠标相对于视口的位置
       const mouseX = e.clientX;
       const mouseY = e.clientY;
 
-      // 获取Modal内容的边界
-      const modalContent = document.querySelector('.chakra-modal__content');
-      if (modalContent) {
-        const rect = modalContent.getBoundingClientRect();
+      if (modalContentRef.current) {
+        const rect = modalContentRef.current.getBoundingClientRect();
+        const isOutside =
+          mouseX < rect.left - 5 ||
+          mouseX > rect.right + 5 ||
+          mouseY < rect.top - 5 ||
+          mouseY > rect.bottom + 5;
 
-        // 检查鼠标是否已经离开Modal区域
-        if (
-          mouseX < rect.left - 20 ||
-          mouseX > rect.right + 20 ||
-          mouseY < rect.top - 20 ||
-          mouseY > rect.bottom + 20
-        ) {
-          // 鼠标已离开Modal区域，关闭文件夹
-          setTimeout(() => {
-            closeFolder();
-          }, 200);
+        if (isOutside) {
+          closeFolder();
         }
+        setIsDraggingOutside(isOutside);
       }
     }
   };
 
-  // 处理拖拽经过文件夹
   const handleDragOverFolder = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    try {
-      // 获取被拖拽的数据
-      const dataText = e.dataTransfer.getData('application/json');
-      if (dataText) {
-        const data = JSON.parse(dataText);
-        // 只有从桌面拖拽的应用才应该高亮文件夹
-        if (data.source === 'desktop') {
-          // 添加动画样式
-          if (folderIconRef.current) {
-            folderIconRef.current.style.animation = `${pulseAnimation} 1s infinite`;
-            folderIconRef.current.style.boxShadow = '0 0 0 3px rgba(24, 144, 255, 0.5)';
-            folderIconRef.current.style.borderColor = 'rgba(24, 144, 255, 0.8)';
-          }
-        }
-      }
-    } catch (error) {
-      // 处理错误：无法从dataTransfer获取数据（可能是首次拖动）
-      // 为保险起见，还是应用动画效果
-      if (folderIconRef.current) {
-        folderIconRef.current.style.animation = `${pulseAnimation} 1s infinite`;
-        folderIconRef.current.style.boxShadow = '0 0 0 3px rgba(24, 144, 255, 0.5)';
-        folderIconRef.current.style.borderColor = 'rgba(24, 144, 255, 0.8)';
-      }
+    if (folderIconRef.current) {
+      folderIconRef.current.classList.add(styles.folderPulse);
     }
   };
 
-  // 处理拖拽离开文件夹
   const handleDragLeaveFolder = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    // 重置动画效果
     if (folderIconRef.current) {
-      folderIconRef.current.style.animation = '';
-      folderIconRef.current.style.boxShadow = '0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)';
-      folderIconRef.current.style.borderColor = 'rgba(0, 0, 0, 0.05)';
+      folderIconRef.current.classList.remove(styles.folderPulse);
     }
   };
 
-  // 处理拖拽放置到文件夹
   const handleDropOnFolder = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
 
-    // 重置文件夹样式
     if (folderIconRef.current) {
-      folderIconRef.current.style.animation = '';
-      folderIconRef.current.style.boxShadow = '0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)';
-      folderIconRef.current.style.borderColor = 'rgba(0, 0, 0, 0.05)';
+      folderIconRef.current.classList.remove(styles.folderPulse);
     }
 
     try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
+        e.dataTransfer.getData('application/json')
+      );
 
       if (data && data.app) {
-        // 如果拖拽的是桌面应用，将其移动到文件夹中
         if (data.source === 'desktop') {
-          // 更新应用状态，将其displayType改为more
           updateAppDisplayType(data.app.key, 'more');
-          console.log('将应用移动到文件夹:', data.app.name);
 
-          // 更新文件夹内容显示
           setMoreAppsFolder((prev) => {
             const newApps = [...prev];
             if (!newApps.some((app) => app.key === data.app.key)) {
@@ -225,33 +239,29 @@ export default function Apps() {
           });
         }
       }
-    } catch (error) {
-      console.error('拖拽数据解析错误:', error);
-    }
+    } catch (error) {}
   };
 
-  // 处理从文件夹拖拽到桌面
   const handleDropOnDesktop = (e: React.DragEvent<HTMLDivElement>) => {
+    console.log('handleDropOnDesktop');
+
     e.preventDefault();
 
     try {
-      const data = JSON.parse(e.dataTransfer.getData('application/json'));
+      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
+        e.dataTransfer.getData('application/json')
+      );
 
       if (data && data.app) {
-        // 如果拖拽的是文件夹应用，将其移动到桌面
-        if (data.source === 'folder') {
-          // 更新应用状态，将其displayType改为normal
+        if (data.source === 'folder' && !isFolderOpen) {
           updateAppDisplayType(data.app.key, 'normal');
           console.log('将应用移动到桌面:', data.app.name);
         }
       }
-    } catch (error) {
-      console.error('拖拽数据解析错误:', error);
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
-    // 点击外部关闭文件夹
     const handleOutsideClick = (e: MouseEvent) => {
       if (folderRef.current && !folderRef.current.contains(e.target as Node) && isFolderOpen) {
         closeFolder();
@@ -275,13 +285,14 @@ export default function Apps() {
       ref={desktopRef}
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDropOnDesktop}
+      px={'100px'}
     >
       <Flex width={'full'} height={'full'} id="apps-container" overflow={'auto'}>
         <Grid
           overflow={'hidden'}
           flex={1}
-          mt={`${gridMT}px`}
-          mx={`${gridMX}px`}
+          pt={`${gridMT}px`}
+          px={`${gridMX}px`}
           gap={`${gridSpacing}px`}
           templateColumns={`repeat(auto-fill, minmax(${appWidth}px, 1fr))`}
           templateRows={`repeat(auto-fit, ${appHeight}px)`}
@@ -289,6 +300,7 @@ export default function Apps() {
         >
           {renderApps.map((item: TApp, index) => (
             <Flex
+              draggable
               flexDirection={'column'}
               alignItems={'center'}
               key={index}
@@ -296,7 +308,6 @@ export default function Apps() {
               cursor={'pointer'}
               onClick={(e) => handleDoubleClick(e, item)}
               className={item.key}
-              draggable
               onDragStart={(e) => handleDragStart(e, item, 'desktop')}
               onDragEnd={handleDragEnd}
             >
@@ -306,6 +317,7 @@ export default function Apps() {
                 borderRadius={'24px'}
                 border={'1px solid rgba(0, 0, 0, 0.05)'}
                 boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+                overflow={'hidden'}
                 transition="transform 0.2s ease"
                 _hover={{ transform: 'scale(1.05)' }}
               >
@@ -331,145 +343,119 @@ export default function Apps() {
               </Text>
             </Flex>
           ))}
-
-          {/* 文件夹图标 - 无论是否有应用都显示 */}
-          <Flex
-            flexDirection={'column'}
-            alignItems={'center'}
-            w="100%"
-            h="108px"
-            userSelect="none"
-            cursor={'pointer'}
-            className="more-apps-folder"
-            onClick={handleFolderClick}
-            onDragOver={handleDragOverFolder}
-            onDragLeave={handleDragLeaveFolder}
-            onDrop={handleDropOnFolder}
-          >
-            <Box
-              ref={folderIconRef}
-              w="78px"
-              h="78px"
-              borderRadius={'24px'}
-              border={'1px solid rgba(0, 0, 0, 0.05)'}
-              boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
-              backgroundColor={'rgba(255, 255, 255, 0.98)'}
-              position="relative"
-              transition="all 0.3s ease"
-              _hover={{ transform: 'scale(1.05)' }}
-              overflow="hidden"
+          <Center>
+            <Flex
+              flexDirection={'column'}
+              alignItems={'center'}
+              w="106px"
+              h="108px"
+              userSelect="none"
+              cursor={'pointer'}
+              className="more-apps-folder"
+              onClick={handleFolderClick}
             >
-              {/* 文件夹预览 - 显示最多4个应用图标 */}
-              <Grid
-                templateColumns="repeat(2, 1fr)"
-                templateRows="repeat(2, 1fr)"
-                width="100%"
-                height="100%"
-                p="4px"
-                gap="4px"
+              <Box
+                w="100%"
+                h="100%"
+                ref={folderIconRef}
+                borderRadius={'24px'}
+                backgroundColor={'#EDEDED'}
+                position="relative"
+                transition="all 0.3s ease"
+                _hover={{ transform: 'scale(1.05)' }}
+                onDragOver={handleDragOverFolder}
+                onDragLeave={handleDragLeaveFolder}
+                onDrop={handleDropOnFolder}
               >
-                {moreApps.slice(0, 4).map((app, idx) => (
-                  <Box
-                    key={idx}
-                    width="100%"
-                    height="100%"
-                    overflow="hidden"
-                    borderRadius="14px"
-                    border={'1px solid rgba(0, 0, 0, 0.05)'}
-                    bg="white"
-                  >
-                    <Image
-                      width="100%"
-                      height="100%"
-                      src={app?.icon}
-                      fallbackSrc={logo}
-                      objectFit="cover"
-                      alt="app icon"
-                    />
-                  </Box>
-                ))}
-                {/* 当没有应用时显示默认空文件夹样式 */}
-                {moreApps.length === 0 && (
-                  <>
-                    <Box
-                      width="100%"
-                      height="100%"
-                      overflow="hidden"
-                      borderRadius="14px"
-                      border={'1px solid rgba(0, 0, 0, 0.05)'}
-                      bg="white"
-                    />
-                    <Box
-                      width="100%"
-                      height="100%"
-                      overflow="hidden"
-                      borderRadius="14px"
-                      border={'1px solid rgba(0, 0, 0, 0.05)'}
-                      bg="white"
-                    />
-                    <Box
-                      width="100%"
-                      height="100%"
-                      overflow="hidden"
-                      borderRadius="14px"
-                      border={'1px solid rgba(0, 0, 0, 0.05)'}
-                      bg="white"
-                    />
-                    <Box
-                      width="100%"
-                      height="100%"
-                      overflow="hidden"
-                      borderRadius="14px"
-                      border={'1px solid rgba(0, 0, 0, 0.05)'}
-                      bg="white"
-                    />
-                  </>
-                )}
-              </Grid>
-            </Box>
-            <Text
-              mt="12px"
-              color={'#18181B'}
-              fontSize={'14px'}
-              fontWeight={500}
-              textAlign={'center'}
-            >
-              {t('common:more_apps')}
-            </Text>
-          </Flex>
+                <Grid
+                  templateColumns="repeat(2, 1fr)"
+                  templateRows="repeat(2, 1fr)"
+                  width="100%"
+                  height="100%"
+                  p="16px"
+                  gap="10px"
+                >
+                  {moreApps.length > 0
+                    ? moreApps.slice(0, 4).map((app, idx) => (
+                        <Box
+                          key={idx}
+                          width="100%"
+                          height="100%"
+                          overflow="hidden"
+                          borderRadius="8px"
+                          border={'1px solid rgba(0, 0, 0, 0.05)'}
+                          bg="white"
+                          draggable={false}
+                          // onDragStart={(e) => handleDragStart(e, app, 'folder')}
+                        >
+                          <Image
+                            width="100%"
+                            height="100%"
+                            src={app?.icon}
+                            fallbackSrc={logo}
+                            objectFit="contain"
+                            p="2px"
+                            alt="app icon"
+                          />
+                        </Box>
+                      ))
+                    : Array(4)
+                        .fill(null)
+                        .map((_, idx) => (
+                          <Box
+                            key={idx}
+                            width="100%"
+                            height="100%"
+                            overflow="hidden"
+                            borderRadius="10px"
+                            border={'1px dashed rgba(0, 0, 0, 0.10)'}
+                            bg="white"
+                          />
+                        ))}
+                </Grid>
+              </Box>
+            </Flex>
+          </Center>
         </Grid>
       </Flex>
-
-      {/* 使用Modal替代原来的弹出层 */}
       <Modal isOpen={isFolderOpen} onClose={closeFolder} size="xl" isCentered>
         <ModalOverlay bg="rgba(0, 0, 0, 0.3)" backdropFilter="blur(2px)" />
         <ModalContent
-          width="656px"
-          height="460px"
+          ref={modalContentRef}
+          maxH={'90vh'}
+          maxW={'90vw'}
+          height={'720px'}
           borderRadius="16px"
           boxShadow="0 4px 20px rgba(0, 0, 0, 0.15)"
           border="1px solid rgba(0, 0, 0, 0.05)"
           p="0"
         >
-          <ModalHeader
-            px="24px"
-            py="16px"
-            borderBottom="1px solid rgba(0, 0, 0, 0.05)"
-            fontSize="16px"
-            fontWeight="medium"
-            color="#18181B"
-          >
-            {t('common:more_apps')}
-          </ModalHeader>
           <ModalCloseButton
             top="16px"
             right="24px"
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <ModalBody p="24px" height="calc(100% - 56px)" overflowY="auto">
-            <Grid templateColumns="repeat(5, 1fr)" gap="24px" justifyContent="center">
-              {moreAppsFolder.map((app, index) => (
+          <ModalBody
+            py={'120px'}
+            px={{
+              base: '80px',
+              xl: '150px'
+            }}
+            overflow="hidden"
+            className="folder-modal-body"
+          >
+            <Grid
+              templateColumns={{
+                base: `repeat(auto-fill, ${appWidth}px)`,
+                xl: `repeat(5, 1fr)`
+              }}
+              templateRows={`repeat(auto-fit, ${appHeight}px)`}
+              columnGap={'30px'}
+              rowGap={'64px'}
+              justifyContent="center"
+            >
+              {getCurrentPageApps().map((app, index) => (
                 <Flex
                   key={index}
                   flexDirection="column"
@@ -515,7 +501,6 @@ export default function Apps() {
               ))}
             </Grid>
 
-            {/* 底部分页指示器 */}
             <Flex
               justifyContent="center"
               alignItems="center"
@@ -525,13 +510,16 @@ export default function Apps() {
               right="0"
               gap="8px"
             >
-              {[0, 1, 2, 3].map((index) => (
+              {Array.from({ length: totalPages }).map((_, index) => (
                 <Box
                   key={index}
                   w="6px"
                   h="6px"
                   borderRadius="50%"
-                  bg={index === 0 ? 'gray.400' : 'gray.200'}
+                  bg={index === currentPage ? 'gray.400' : 'gray.200'}
+                  cursor="pointer"
+                  onClick={() => handlePageChange(index)}
+                  _hover={{ bg: index === currentPage ? 'gray.400' : 'gray.300' }}
                 />
               ))}
             </Flex>
