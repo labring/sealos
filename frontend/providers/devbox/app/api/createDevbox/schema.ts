@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { nanoid } from '@/utils/tools';
+import { customAlphabet } from 'nanoid';
+export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const GpuSchema = z
   .object({

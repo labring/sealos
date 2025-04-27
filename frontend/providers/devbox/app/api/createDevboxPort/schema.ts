@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ProtocolType } from '@/types/devbox';
 
 export const HeaderSchema = z.object({
   Authorization: z.string().describe('Use kubeconfig to login')
