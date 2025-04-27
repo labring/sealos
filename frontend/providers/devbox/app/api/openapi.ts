@@ -2,71 +2,60 @@ import { z } from 'zod';
 import { createDocument, extendZodWithOpenApi } from 'zod-openapi';
 import {
   RequestSchema as CreateDevboxRequestSchema,
-  SuccessResponseSchema as CreateDevboxSuccessResponseSchema,
-  HeaderSchema as CreateDevboxHeaderSchema
+  SuccessResponseSchema as CreateDevboxSuccessResponseSchema
 } from './createDevbox/schema';
 import {
   RequestSchema as ListOfficialRequestSchema,
   SuccessResponseSchema as ListOfficialSuccessResponseSchema
 } from './templateRepository/listOfficial/schema';
 import {
-  HeaderSchema as ListTemplatesHeaderSchema,
   RequestSchema as ListTemplatesRequestSchema,
   SuccessResponseSchema as ListTemplatesSuccessResponseSchema
 } from './templateRepository/template/list/schema';
 import {
   RequestSchema as DelDevboxRequestSchema,
   SuccessResponseSchema as DelDevboxSuccessResponseSchema,
-  HeaderSchema as DelDevboxHeaderSchema,
   ErrorResponseSchema as DelDevboxErrorResponseSchema
 } from './delDevbox/schema';
 import {
   RequestSchema as StartDevboxRequestSchema,
   SuccessResponseSchema as StartDevboxSuccessResponseSchema,
-  HeaderSchema as StartDevboxHeaderSchema,
   ErrorResponseSchema as StartDevboxErrorResponseSchema
 } from './startDevbox/schema';
 import {
   RequestSchema as ShutdownDevboxRequestSchema,
   SuccessResponseSchema as ShutdownDevboxSuccessResponseSchema,
-  HeaderSchema as ShutdownDevboxHeaderSchema,
   ErrorResponseSchema as ShutdownDevboxErrorResponseSchema
 } from './shutdownDevbox/schema';
 import {
   RequestSchema as RestartDevboxRequestSchema,
   SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
-  HeaderSchema as RestartDevboxHeaderSchema,
   ErrorResponseSchema as RestartDevboxErrorResponseSchema
 } from './restartDevbox/schema';
 import {
   RequestSchema as GetSSHConnectionInfoRequestSchema,
   SuccessResponseSchema as GetSSHConnectionInfoSuccessResponseSchema,
-  HeaderSchema as GetSSHConnectionInfoHeaderSchema,
   ErrorResponseSchema as GetSSHConnectionInfoErrorResponseSchema
 } from './getSSHConnectionInfo/schema';
 import {
   RequestSchema as CreateDevboxPortRequestSchema,
   SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
-  HeaderSchema as CreateDevboxPortHeaderSchema,
   ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
 } from './createDevboxPort/schema';
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
-  HeaderSchema as ReleaseDevboxHeaderSchema,
   ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
 } from './releaseDevbox/schema';
 import {
   RequestSchema as GetDevboxVersionListRequestSchema,
   SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
-  HeaderSchema as GetDevboxVersionListHeaderSchema,
   ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
 } from './getDevboxVersionList/schema';
 import {
   DeployDevboxRequestSchema,
   DeployDevboxSuccessResponseSchema,
-  DeployDevboxErrorResponseSchema,
-  DeployDevboxHeaderSchema
+  DeployDevboxErrorResponseSchema
 } from './deployDevbox/schema';
 
 // extend zod with openapi
@@ -88,8 +77,30 @@ export const openApiDocument = createDocument({
   },
   servers: [
     {
-      url: `http://devbox.${process.env.SEALOS_DOMAIN}`,
+      url: `http://devbox.192.168.10.35.nip.io`,
       description: 'Sealos Devbox Service'
+    }
+  ],
+  components: {
+    securitySchemes: {
+      kubeconfigAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'Authorization',
+        description: 'Kubeconfig for authentication'
+      },
+      jwtAuth: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'Authorization-Bearer',
+        description: 'JWT token for authentication'
+      }
+    }
+  },
+  security: [
+    {
+      kubeconfigAuth: [],
+      jwtAuth: []
     }
   ],
   paths: {
@@ -98,9 +109,6 @@ export const openApiDocument = createDocument({
         summary: 'Create a new devbox',
         description:
           'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
-        requestParams: {
-          header: CreateDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -156,9 +164,6 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Deploy a devbox',
         description: 'Deploy a devbox with specific tag and resource configuration',
-        requestParams: {
-          header: DeployDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -199,9 +204,6 @@ export const openApiDocument = createDocument({
         summary: 'Create a new devbox release',
         description:
           'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.',
-        requestParams: {
-          header: ReleaseDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -250,7 +252,6 @@ export const openApiDocument = createDocument({
         summary: 'Delete a devbox',
         description: 'Delete a devbox and its associated resources (service, ingress, etc.)',
         requestParams: {
-          header: DelDevboxHeaderSchema,
           query: DelDevboxRequestSchema
         },
         responses: {
@@ -285,9 +286,6 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Start a devbox',
         description: 'Start a devbox and its associated resources (service, ingress, etc.)',
-        requestParams: {
-          header: StartDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -327,9 +325,6 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Shutdown a devbox',
         description: 'Shutdown a devbox and its associated resources (service, ingress, etc.)',
-        requestParams: {
-          header: ShutdownDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -369,9 +364,6 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Restart a devbox',
         description: 'Restart a devbox and its associated resources (service, ingress, etc.)',
-        requestParams: {
-          header: RestartDevboxHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -413,7 +405,6 @@ export const openApiDocument = createDocument({
         description:
           'Get SSH connection information for a devbox, including keys, token, and configuration',
         requestParams: {
-          header: GetSSHConnectionInfoHeaderSchema,
           query: GetSSHConnectionInfoRequestSchema
         },
         responses: {
@@ -457,9 +448,6 @@ export const openApiDocument = createDocument({
         summary: 'Check port availability and get port information',
         description:
           'Check if a port is available for a devbox and get port information including internal and external addresses',
-        requestParams: {
-          header: CreateDevboxPortHeaderSchema
-        },
         requestBody: {
           content: {
             'application/json': {
@@ -525,7 +513,6 @@ export const openApiDocument = createDocument({
         description:
           'Get all available runtime version list of the specified runtime, need JWT authentication',
         requestParams: {
-          header: ListTemplatesHeaderSchema,
           query: ListTemplatesRequestSchema
         },
         responses: {
@@ -569,7 +556,6 @@ export const openApiDocument = createDocument({
         summary: 'Get devbox version list',
         description: 'Get all versions of a specific devbox',
         requestParams: {
-          header: GetDevboxVersionListHeaderSchema,
           query: GetDevboxVersionListRequestSchema
         },
         responses: {

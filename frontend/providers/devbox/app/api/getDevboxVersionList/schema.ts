@@ -5,10 +5,6 @@ export const RequestSchema = z.object({
   devboxUid: z.string().min(1).describe('Devbox UID')
 });
 
-export const HeaderSchema = z.object({
-  Authorization: z.string().describe('Use kubeconfig to login')
-});
-
 export const SuccessResponseSchema = z.object({
   data: z
     .array(

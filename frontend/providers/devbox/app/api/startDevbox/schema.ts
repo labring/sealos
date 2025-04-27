@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-export const HeaderSchema = z.object({
-  Authorization: z.string().describe('Use kubeconfig to login')
-});
-
 export const RequestSchema = z.object({
   devboxName: z.string().min(1).describe('Devbox name to start')
 });
