@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const ReleaseFormSchema = z.object({
   devboxName: z.string().min(1).describe('Devbox name'),
   tag: z.string().min(1).describe('Release tag'),
-  releaseDes: z.string().default('').describe('Release description'),
+  releaseDes: z.string().optional().default('').describe('Release description'),
   devboxUid: z.string().min(1).describe('Devbox UID')
 });
 

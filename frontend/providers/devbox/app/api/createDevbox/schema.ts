@@ -12,13 +12,28 @@ const GpuSchema = z
 
 const NetworkSchema = (devboxName: string) =>
   z.object({
-    networkName: z.string().default(`${devboxName}-${nanoid()}`).describe('Network name'),
-    portName: z.string().default('http').describe('Port name'),
-    port: z.number().default(80).describe('Port number'),
+    networkName: z
+      .string()
+      .optional()
+      .default(`${devboxName}-${nanoid()}`)
+      .describe('Network name'),
+    portName: z.string().optional().default(`${nanoid()}`).describe('Port name'),
+    port: z
+      .number()
+      .min(1)
+      .max(65535)
+      .default(3000)
+      .describe(
+        'Port number, this port can be found in the /templateRepository/template/list response data JSON templateList config (you need to call this interface before creating a Devbox)'
+      ),
     protocol: z.enum(['HTTP', 'GRPC', 'WS']).optional().default('HTTP').describe('Protocol'),
     openPublicDomain: z.boolean().default(false).describe('Open public domain'),
-    publicDomain: z.string().default('').optional().describe('Public domain'),
-    customDomain: z.string().default('').optional().describe('Custom domain')
+    publicDomain: z
+      .string()
+      .default(`${nanoid()}.${process.env.INGRESS_DOMAIN}`)
+      .optional()
+      .describe('Public domain, no need to fill in'),
+    customDomain: z.string().default('').optional().describe('Custom domain, no need to fill in')
   });
 
 export const DevboxFormSchema = z
@@ -28,9 +43,21 @@ export const DevboxFormSchema = z
     templateRepositoryUid: z.string().min(1).describe('Template Repository UID'),
     templateConfig: z.string().default('{}').describe('Template configuration in JSON format'),
     image: z.string().default('').describe('Container image'),
-    cpu: z.number().min(0).default(1).describe('CPU cores'),
-    memory: z.number().min(0).default(1024).describe('Memory in MB'),
-    gpu: GpuSchema,
+    cpu: z
+      .number()
+      .min(0)
+      .default(2000)
+      .describe(
+        'CPU cores, it is recommended to use options like 1000, 2000, 4000, 8000, 16000, representing 1Core, 2Core, 4Core, 8Core, 16Core'
+      ),
+    memory: z
+      .number()
+      .min(0)
+      .default(4096)
+      .describe(
+        'Memory in MB, it is recommended to use options like 2048, 4096, 8192, 16384, 32768, representing 2G, 4G, 8G, 16G, 32G'
+      ),
+    gpu: GpuSchema.optional().describe('GPU configuration, usually empty'),
     networks: z.array(z.any()).default([]).describe('Network configurations')
   })
   .transform((data) => {

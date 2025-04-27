@@ -5,7 +5,7 @@ export const RequestSchema = z.object({
 });
 
 export const SuccessResponseSchema = z.object({
-  data: z.string().default('success restart devbox')
+  data: z.string().default('success restart devbox').describe('Restart devbox success message')
 });
 
 export const ErrorResponseSchema = z.object({
