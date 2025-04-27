@@ -22,12 +22,12 @@ import (
 	"os"
 	"time"
 
-	utilcontroller "github.com/labring/operator-sdk/controller"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -37,9 +37,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	configpkg "github.com/labring/sealos/controllers/pkg/config"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
+	configpkg "github.com/labring/sealos/controllers/user/controllers/helper/config"
+	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -61,7 +62,7 @@ func main() {
 		enableLeaderElection       bool
 		probeAddr                  string
 		configFilePath             string
-		rateLimiterOptions         utilcontroller.RateLimiterOptions
+		rateLimiterOptions         ratelimiter.RateLimiterOptions
 		syncPeriod                 time.Duration
 		minRequeueDuration         time.Duration
 		maxRequeueDuration         time.Duration
@@ -104,6 +105,9 @@ func main() {
 		Cache: cache.Options{
 			SyncPeriod: &syncPeriod,
 		},
+		Controller: config.Controller{
+			UsePriorityQueue: ptr.To(true),
+		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -122,7 +126,7 @@ func main() {
 	}
 
 	// Load the configuration file
-	config := &controllers.Config{}
+	config := &configpkg.Config{}
 	if err := configpkg.LoadConfig(configFilePath, config); err != nil {
 		setupLog.Error(err, "unable to load configuration file")
 		os.Exit(1)
@@ -189,7 +193,7 @@ func main() {
 	}
 }
 
-func setConfigToEnv(cfg controllers.Config) error {
+func setConfigToEnv(cfg configpkg.Config) error {
 	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.Global.CloudDomain); err != nil {
 		return err
 	}
