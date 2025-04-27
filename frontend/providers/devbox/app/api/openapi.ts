@@ -56,6 +56,12 @@ import {
   HeaderSchema as ReleaseDevboxHeaderSchema,
   ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
 } from './releaseDevbox/schema';
+import {
+  RequestSchema as GetDevboxVersionListRequestSchema,
+  SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
+  HeaderSchema as GetDevboxVersionListHeaderSchema,
+  ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
+} from './getDevboxVersionList/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -144,7 +150,7 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Create a new devbox release',
         description:
-          'Create a new release for an existing devbox with a specific tag and description',
+          'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.',
         requestParams: {
           header: ReleaseDevboxHeaderSchema
         },
@@ -504,6 +510,42 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: ErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/getDevboxVersionList': {
+      get: {
+        summary: 'Get devbox version list',
+        description: 'Get all versions of a specific devbox',
+        requestParams: {
+          header: GetDevboxVersionListHeaderSchema,
+          query: GetDevboxVersionListRequestSchema
+        },
+        responses: {
+          '200': {
+            description: 'Successfully retrieved devbox version list',
+            content: {
+              'application/json': {
+                schema: GetDevboxVersionListSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request parameters',
+            content: {
+              'application/json': {
+                schema: GetDevboxVersionListErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: GetDevboxVersionListErrorResponseSchema
               }
             }
           }
