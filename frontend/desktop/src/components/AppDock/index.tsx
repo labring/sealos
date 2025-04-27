@@ -9,7 +9,6 @@ import { useTranslation } from 'next-i18next';
 import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
-import CustomTooltip from './CustomTooltip';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
