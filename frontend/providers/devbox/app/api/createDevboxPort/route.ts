@@ -5,7 +5,7 @@ import { PatchUtils } from '@kubernetes/client-node';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { devboxKey, ingressProtocolKey, publicDomainKey, YamlKindEnum } from '@/constants/devbox';
+import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { RequestSchema } from './schema';
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
 
