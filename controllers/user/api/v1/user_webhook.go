@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"errors"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -25,7 +28,7 @@ import (
 )
 
 // log is for logging in this package.
-var userlog = logf.Log.WithName("user-resource")
+var userlog = logf.Log.WithName("user-webhook")
 
 func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -37,14 +40,18 @@ func (r *User) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-user-sealos-io-v1-user,mutating=true,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=muser.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &User{}
+var _ webhook.CustomDefaulter = &User{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *User) Default() {
+func (r *User) Default(ctx context.Context, obj runtime.Object) error {
 	userlog.Info("default", "name", r.Name)
-	r.ObjectMeta = initAnnotationAndLabels(r.ObjectMeta)
-	if r.Spec.CSRExpirationSeconds == 0 {
-		r.Spec.CSRExpirationSeconds = 7200
+	user, ok := obj.(*User)
+	if !ok {
+		return errors.New("obj convert User is error")
+	}
+	user.ObjectMeta = initAnnotationAndLabels(user.ObjectMeta)
+	if user.Spec.CSRExpirationSeconds == 0 {
+		user.Spec.CSRExpirationSeconds = 7200
 	}
 	if r.Annotations[UserAnnotationDisplayKey] == "" {
 		r.Annotations[UserAnnotationDisplayKey] = r.Name
@@ -52,33 +59,46 @@ func (r *User) Default() {
 	if r.Annotations[UserAnnotationOwnerKey] == "" {
 		r.Annotations[UserAnnotationOwnerKey] = r.Name
 	}
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-user-sealos-io-v1-user,mutating=false,failurePolicy=fail,sideEffects=None,groups=user.sealos.io,resources=users,verbs=create;update,versions=v1,name=vuser.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &User{}
+var _ webhook.CustomValidator = &User{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateCreate() (admission.Warnings, error) {
+func (r *User) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	userlog.Info("validate create", "name", r.Name)
-	if err := r.validateCSRExpirationSeconds(); err != nil {
+	user, ok := obj.(*User)
+	if !ok {
+		return admission.Warnings{}, errors.New("obj convert User is error")
+	}
+	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateUpdate(_ runtime.Object) (admission.Warnings, error) {
+func (r *User) ValidateUpdate(ctx context.Context, old runtime.Object, new runtime.Object) (admission.Warnings, error) {
 	userlog.Info("validate update", "name", r.Name)
-	if err := r.validateCSRExpirationSeconds(); err != nil {
+	user, ok := new.(*User)
+	if !ok {
+		return admission.Warnings{}, errors.New("obj convert User is error")
+	}
+	if err := user.validateCSRExpirationSeconds(); err != nil {
 		return admission.Warnings{}, err
 	}
-	return admission.Warnings{}, validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateDelete() (admission.Warnings, error) {
+func (r *User) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	userlog.Info("validate delete", "name", r.Name)
-	return admission.Warnings{}, nil
+	user, ok := obj.(*User)
+	if !ok {
+		return admission.Warnings{}, errors.New("obj convert User is error")
+	}
+	return admission.Warnings{}, validateAnnotationKeyNotEmpty(user.ObjectMeta, UserAnnotationDisplayKey)
 }
