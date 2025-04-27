@@ -5,44 +5,54 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KBDevboxReleaseType } from '@/types/k8s';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const releaseForm = (await req.json()) as {
-      devboxName: string;
-      tag: string;
-      releaseDes: string;
-      devboxUid: string;
-    };
+    const body = await req.json();
+    const validationResult = RequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request body',
+        error: validationResult.error.errors
+      });
+    }
+
+    const { devboxForm } = validationResult.data;
     const headerList = req.headers;
 
     const { applyYamlList, namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
+
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
       namespace,
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
+
     if (
       releaseBody.items.some((item: any) => {
         return (
           item.spec &&
-          item.spec.devboxName === releaseForm.devboxName &&
-          item.metadata.ownerReferences[0].uid === releaseForm.devboxUid &&
-          item.spec.newTag === releaseForm.tag
+          item.spec.devboxName === devboxForm.devboxName &&
+          item.metadata.ownerReferences[0].uid === devboxForm.devboxUid &&
+          item.spec.newTag === devboxForm.tag
         );
       })
     ) {
       return jsonRes({
         code: 409,
-        error: 'devbox release already exists'
+        message: 'Devbox release already exists'
       });
     }
-    const devbox = json2DevboxRelease(releaseForm);
+
+    const devbox = json2DevboxRelease(devboxForm);
     await applyYamlList([devbox], 'create');
 
     return jsonRes({
@@ -51,6 +61,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return jsonRes({
       code: 500,
+      message: err?.message || 'Internal server error',
       error: err
     });
   }

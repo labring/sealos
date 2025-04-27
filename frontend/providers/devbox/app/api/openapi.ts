@@ -50,6 +50,12 @@ import {
   HeaderSchema as CreateDevboxPortHeaderSchema,
   ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
 } from './createDevboxPort/schema';
+import {
+  RequestSchema as ReleaseDevboxRequestSchema,
+  SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
+  HeaderSchema as ReleaseDevboxHeaderSchema,
+  ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
+} from './releaseDevbox/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -128,6 +134,57 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: ErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/releaseDevbox': {
+      post: {
+        summary: 'Create a new devbox release',
+        description:
+          'Create a new release for an existing devbox with a specific tag and description',
+        requestParams: {
+          header: ReleaseDevboxHeaderSchema
+        },
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: ReleaseDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox release created successfully',
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxErrorResponseSchema
+              }
+            }
+          },
+          '409': {
+            description: 'Devbox release already exists',
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxErrorResponseSchema
               }
             }
           }
