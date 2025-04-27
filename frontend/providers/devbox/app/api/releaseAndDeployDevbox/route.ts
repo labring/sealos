@@ -6,15 +6,13 @@ import { jsonRes } from '@/services/backend/response';
 import { KBDevboxReleaseType } from '@/types/k8s';
 import {
   DevboxReleaseStatusEnum,
+  devboxIdKey,
   devboxKey,
   ingressProtocolKey,
   publicDomainKey
 } from '@/constants/devbox';
 import { json2DevboxRelease } from '@/utils/json2Yaml';
-import {
-  ReleaseAndDeployDevboxRequestSchema,
-  ReleaseAndDeployDevboxResponseSchema
-} from './schema';
+import { ReleaseAndDeployDevboxRequestSchema } from './schema';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -102,16 +100,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. get devbox info
-    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha1',
-      namespace,
-      'devboxes',
-      devboxName
-    )) as { body: any };
-
-    // 4. get network info
+    // 3. get network info
     const label = `${devboxKey}=${devboxName}`;
     const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sNetworkingApp
@@ -152,15 +141,19 @@ export async function POST(req: NextRequest) {
         };
       }) || [];
 
-    // 5. deploy app
-    const appName = `${devboxName}-${nanoid()}`;
+    // 4. deploy app
+    const appName = `${devboxName}-release-${nanoid()}`;
+    const image = `${process.env.REGISTRY_ADDR}/${process.env.NAMESPACE}/${devboxName}:${tag}`;
     const formData = {
       appForm: {
         appName,
-        imageName: devboxBody.spec.image,
-        runCMD: '',
-        cmdParam: '',
+        imageName: image,
+        runCMD: '/bin/bash -c', // FIXME: Currently using static data here (switching to dynamic requires many changes), will use dynamic method later
+        cmdParam: '/home/devbox/project/entrypoint.sh',
         replicas: 1,
+        labels: {
+          [devboxIdKey]: devboxName
+        },
         cpu,
         memory,
         networks:
@@ -169,11 +162,11 @@ export async function POST(req: NextRequest) {
             : [
                 {
                   networkName: `network-${appName}`,
-                  portName: 'static-host',
+                  portName: 'host',
                   port: 80,
                   protocol: 'TCP',
+                  publicDomain: '',
                   openPublicDomain: true,
-                  publicDomain: appName,
                   customDomain: '',
                   domain: process.env.INGRESS_DOMAIN || '',
                   appProtocol: 'HTTP',
@@ -200,23 +193,33 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    await fetch(`https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: headerList.get('Authorization') || ''
-      },
-      body: JSON.stringify(formData)
-    });
+    const fetchResponse = await fetch(
+      `https://applaunchpad.${process.env.SEALOS_DOMAIN}/api/v1alpha/createApp`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: headerList.get('Authorization') || ''
+        },
+        body: JSON.stringify(formData)
+      }
+    );
+
+    const responseData = await fetchResponse.json();
+
+    const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
+    const publicDomains =
+      ingressResource?.spec?.rules?.map((rule: any) => rule.host) || ([] as string[]);
 
     const response = {
       data: {
         message: 'success create and deploy devbox release',
-        appName
+        appName,
+        publicDomains
       }
     };
 
-    return jsonRes(ReleaseAndDeployDevboxResponseSchema.parse(response));
+    return jsonRes(response);
   } catch (err: any) {
     if (err instanceof z.ZodError) {
       return jsonRes({
