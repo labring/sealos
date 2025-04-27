@@ -81,7 +81,7 @@ export const openApiDocument = createDocument({
   },
   servers: [
     {
-      url: `http://devbox.${process.env.SEALOS_DOMAIN}`,
+      url: `http://localhost:3000`,
       description: 'Sealos Devbox Service'
     }
   ],
