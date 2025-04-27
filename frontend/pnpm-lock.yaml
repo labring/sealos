@@ -1511,6 +1511,9 @@ importers:
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.10.2(prisma@5.10.2)
+      '@scalar/nextjs-api-reference':
+        specifier: ^0.7.12
+        version: 0.7.12(next@14.2.5)(react@18.2.0)
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
@@ -9477,6 +9480,44 @@ packages:
   /@rushstack/eslint-patch@1.6.0:
     resolution: {integrity: sha512-2/U3GXA6YiPYQDLGwtGlnNgKYBSwCFIHf8Y9LUY5VATHdtbLlU0Y1R3QoBnT0aB4qv/BEiVVsj7LJXoQCgJ2vA==}
 
+  /@scalar/core@0.2.11:
+    resolution: {integrity: sha512-crakGk7IOWEvlexKdxr+uLW+SzvE/9OLZMYGHn0GNop3jSsHqZRB7a4epZ6MzmOP6L2665M4q8g1IuTKBudYVw==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@scalar/types': 0.1.11
+    dev: false
+
+  /@scalar/nextjs-api-reference@0.7.12(next@14.2.5)(react@18.2.0):
+    resolution: {integrity: sha512-o9pQIoWhQh6M4njcgtmQDgzvLX7Ns4ht4dQFQ46AJ8PqvRFRIvGoX6z166e/2ZWIkqJlIlEBv7WgmePfAX1wfQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      next: ^15.0.0
+      react: ^19.0.0
+    dependencies:
+      '@scalar/core': 0.2.11
+      '@scalar/types': 0.1.11
+      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
+      react: 18.2.0
+    dev: false
+
+  /@scalar/openapi-types@0.2.1:
+    resolution: {integrity: sha512-UMxX54taQXnEWYEuesbH+pkjlXRVV1u/Wx6YbVeU3QoJdFGqT3Z7si9zsokoG6MXDcdi1LGny7A0KwownmPvUQ==}
+    engines: {node: '>=18'}
+    dependencies:
+      zod: 3.23.8
+    dev: false
+
+  /@scalar/types@0.1.11:
+    resolution: {integrity: sha512-fNcaZbZKoZ2PvoW+KJHmk4au8ZukgWlb6qLK3k/SLkfsTggN3DO4PR57ch6cyl2WhwENNbw+iI+ss7fTRcPnOA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@scalar/openapi-types': 0.2.1
+      '@unhead/schema': 1.11.20
+      nanoid: 5.1.5
+      type-fest: 4.40.1
+      zod: 3.23.8
+    dev: false
+
   /@sinclair/typebox@0.27.8:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
@@ -11155,6 +11196,13 @@ packages:
   /@ungap/structured-clone@1.2.0:
     resolution: {integrity: sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==}
     dev: true
+
+  /@unhead/schema@1.11.20:
+    resolution: {integrity: sha512-0zWykKAaJdm+/Y7yi/Yds20PrUK7XabLe9c3IRcjnwYmSWY6z0Cr19VIs3ozCj8P+GhR+/TI2mwtGlueCEYouA==}
+    dependencies:
+      hookable: 5.5.3
+      zhead: 2.2.4
+    dev: false
 
   /@webassemblyjs/ast@1.11.6:
     resolution: {integrity: sha512-IN1xI7PwOvLPgjcf180gC1bqn3q/QaOCwYUahIOhbYUu8KA/3tw2RT/T0Gidi1l7Hhj5D/INhJxiICObqpMu4Q==}
@@ -16812,6 +16860,10 @@ packages:
       react-is: 16.13.1
     dev: false
 
+  /hookable@5.5.3:
+    resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
+    dev: false
+
   /hpagent@1.2.0:
     resolution: {integrity: sha512-A91dYTeIB6NoXG+PxTQpCCDDnfHsW9kc06Lvpu1TEe9gnd6ZFeiBoRO9JvzEv6xK7EX97/dUE8g/vBMTqTS3CA==}
     engines: {node: '>=14'}
@@ -19572,6 +19624,12 @@ packages:
   /nanoid@4.0.2:
     resolution: {integrity: sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==}
     engines: {node: ^14 || ^16 || >=18}
+    hasBin: true
+    dev: false
+
+  /nanoid@5.1.5:
+    resolution: {integrity: sha512-Ir/+ZpE9fDsNH0hQ3C68uyThDXzYcim2EqcZ8zn8Chtt1iylPT9xXJB0kPCnqzgcEGikO9RxSrh63MsmVCU7Fw==}
+    engines: {node: ^18 || >=20}
     hasBin: true
     dev: false
 
@@ -23960,6 +24018,11 @@ packages:
     engines: {node: '>=16'}
     dev: false
 
+  /type-fest@4.40.1:
+    resolution: {integrity: sha512-9YvLNnORDpI+vghLU/Nf+zSv0kL47KbVJ1o3sKgoTefl6i+zebxbiDQWoe/oWWqPhIgQdRZRT1KA9sCPL810SA==}
+    engines: {node: '>=16'}
+    dev: false
+
   /type-is@1.3.2:
     resolution: {integrity: sha512-sdIhnvhWEyIP2DKjj1o9tL31m8vFxDfLPD56KXz2absqY5AF2QYkJC7Wrw2fkzsZA9mv+PCtgyB7EqYOgR+r3Q==}
     engines: {node: '>= 0.8'}
@@ -25152,6 +25215,10 @@ packages:
   /yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
+
+  /zhead@2.2.4:
+    resolution: {integrity: sha512-8F0OI5dpWIA5IGG5NHUg9staDwz/ZPxZtvGVf01j7vHqSyZ0raHY+78atOVxRqb73AotX22uV1pXt3gYSstGag==}
+    dev: false
 
   /zod-openapi@4.2.4(zod@3.23.8):
     resolution: {integrity: sha512-tsrQpbpqFCXqVXUzi3TPwFhuMtLN3oNZobOtYnK6/5VkXsNdnIgyNr4r8no4wmYluaxzN3F7iS+8xCW8BmMQ8g==}
