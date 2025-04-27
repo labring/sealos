@@ -57,6 +57,10 @@ import {
   DeployDevboxSuccessResponseSchema,
   DeployDevboxErrorResponseSchema
 } from './deployDevbox/schema';
+import {
+  ReleaseAndDeployDevboxRequestSchema,
+  ReleaseAndDeployDevboxResponseSchema
+} from './releaseAndDeployDevbox/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -580,6 +584,54 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: GetDevboxVersionListErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/releaseAndDeployDevbox': {
+      post: {
+        summary: 'Release and deploy a devbox',
+        description:
+          'Create a new release for a devbox and deploy it with specific resource configuration',
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: ReleaseAndDeployDevboxRequestSchema
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Devbox released and deployed successfully',
+            content: {
+              'application/json': {
+                schema: ReleaseAndDeployDevboxResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request body',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
+              }
+            }
+          },
+          '409': {
+            description: 'Devbox release already exists',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
               }
             }
           }

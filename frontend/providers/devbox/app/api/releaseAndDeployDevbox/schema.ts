@@ -14,7 +14,13 @@ export const ReleaseAndDeployDevboxResponseSchema = z.object({
   data: z
     .object({
       message: z.string(),
-      appName: z.string()
+      appName: z.string(),
+      publicDomains: z.array(
+        z.object({
+          host: z.string(),
+          port: z.number()
+        })
+      )
     })
     .optional(),
   error: z.any().optional()

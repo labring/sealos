@@ -209,7 +209,10 @@ export async function POST(req: NextRequest) {
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =
-      ingressResource?.spec?.rules?.map((rule: any) => rule.host) || ([] as string[]);
+      ingressResource?.spec?.rules?.map((rule: any) => ({
+        host: rule.host,
+        port: rule.http?.paths?.[0]?.backend?.service?.port?.number || 80
+      })) || [];
 
     const response = {
       data: {
