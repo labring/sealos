@@ -272,11 +272,11 @@ func main() {
 	//	setupLog.Error(err, "unable to create controller", "controller", "OperationRequest")
 	//	os.Exit(1)
 	//}
-	if err = (&controller.ScheduledShutdownReconciler{
+	if err = (&controller.DevBoxScheduleReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ScheduledShutdown")
+		setupLog.Error(err, "unable to create controller", "controller", "DevBoxSchedule")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

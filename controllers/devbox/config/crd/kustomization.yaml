@@ -19,7 +19,7 @@ resources:
 - bases/devbox.sealos.io_devboxes.yaml
 - bases/devbox.sealos.io_devboxreleases.yaml
 - bases/devbox.sealos.io_operationrequests.yaml
-- bases/devbox.sealos.io_scheduledshutdowns.yaml
+- bases/devbox.sealos.io_devboxschedules.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

@@ -30,7 +30,7 @@ import (
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 )
 
-var _ = Describe("ScheduledShutdown Controller", func() {
+var _ = Describe("DevBoxSchedule Controller", func() {
 	Context("When reconciling a resource", func() {
 		const resourceName = "test-resource"
 
@@ -40,13 +40,13 @@ var _ = Describe("ScheduledShutdown Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		scheduledshutdown := &devboxv1alpha1.ScheduledShutdown{}
+		devboxschedule := &devboxv1alpha1.DevBoxSchedule{}
 
 		BeforeEach(func() {
-			By("creating the custom resource for the Kind ScheduledShutdown")
-			err := k8sClient.Get(ctx, typeNamespacedName, scheduledshutdown)
+			By("creating the custom resource for the Kind DevBoxSchedule")
+			err := k8sClient.Get(ctx, typeNamespacedName, devboxschedule)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &devboxv1alpha1.ScheduledShutdown{
+				resource := &devboxv1alpha1.DevBoxSchedule{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,16 +59,16 @@ var _ = Describe("ScheduledShutdown Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &devboxv1alpha1.ScheduledShutdown{}
+			resource := &devboxv1alpha1.DevBoxSchedule{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 
-			By("Cleanup the specific resource instance ScheduledShutdown")
+			By("Cleanup the specific resource instance DevBoxSchedule")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
 		It("should successfully reconcile the resource", func() {
 			By("Reconciling the created resource")
-			controllerReconciler := &ScheduledShutdownReconciler{
+			controllerReconciler := &DevBoxScheduleReconciler{
 				Client: k8sClient,
 				Scheme: k8sClient.Scheme(),
 			}

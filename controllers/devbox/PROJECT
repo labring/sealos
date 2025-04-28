@@ -57,7 +57,7 @@ resources:
   controller: true
   domain: sealos.io
   group: devbox
-  kind: ScheduledShutdown
+  kind: DevBoxSchedule
   path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
   version: v1alpha1
 version: "3"
