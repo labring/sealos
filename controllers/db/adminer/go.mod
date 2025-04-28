@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.4
 
 require (
-	github.com/jaevor/go-nanoid v1.3.0
+    github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.30.0
