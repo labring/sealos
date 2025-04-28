@@ -27,13 +27,13 @@ const NetworkSchema = (devboxName: string) =>
         'Port number, this port can be found in the /templateRepository/template/list response data JSON templateList config (you need to call this interface before creating a Devbox)'
       ),
     protocol: z.enum(['HTTP', 'GRPC', 'WS']).optional().default('HTTP').describe('Protocol'),
-    openPublicDomain: z.boolean().default(false).describe('Open public domain'),
+    openPublicDomain: z.boolean().default(true).describe('Open public domain'),
     publicDomain: z
       .string()
-      .default(`${nanoid()}.${process.env.INGRESS_DOMAIN}`)
       .optional()
+      .default(`${nanoid()}.${process.env.INGRESS_DOMAIN}`)
       .describe('Public domain, no need to fill in'),
-    customDomain: z.string().default('').optional().describe('Custom domain, no need to fill in')
+    customDomain: z.string().optional().default('').describe('Custom domain, no need to fill in')
   });
 
 export const DevboxFormSchema = z
