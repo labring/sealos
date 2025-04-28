@@ -27,29 +27,38 @@ export default function useDriver() {
 
   useEffect(() => {
     const fetchUserTasks = async () => {
-      await checkUserTask();
-      const data = await getUserTasks();
-      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
-      setTasks(filteredTasks);
+      try {
+        await checkUserTask();
+        const data = await getUserTasks();
+        console.log(data, 111);
+        const filteredTasks = data?.data?.filter((task) => task.isNewUserTask);
+        setTasks(filteredTasks);
+      } catch (error) {
+        console.log(error, 222);
+      }
     };
     fetchUserTasks();
   }, [taskComponentState]);
 
   useEffect(() => {
     const handleUserGuide = async () => {
-      const data = await getUserTasks();
-      const filteredTasks = data.data.filter((task) => task.isNewUserTask);
-      setTasks(filteredTasks);
-      const desktopTask = filteredTasks.find((task) => task.taskType === 'DESKTOP');
-      const allTasksCompleted = filteredTasks.every((task) => task.isCompleted);
+      try {
+        const data = await getUserTasks();
+        const filteredTasks = data.data.filter((task) => task.isNewUserTask);
+        setTasks(filteredTasks);
+        const desktopTask = filteredTasks.find((task) => task.taskType === 'DESKTOP');
+        const allTasksCompleted = filteredTasks.every((task) => task.isCompleted);
 
-      if (!desktopTask?.isCompleted && desktopTask?.id) {
-        setTaskComponentState('none');
-        driverObj.drive();
-      } else if (allTasksCompleted) {
-        setTaskComponentState('none');
-      } else {
-        setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+        if (!desktopTask?.isCompleted && desktopTask?.id) {
+          setTaskComponentState('none');
+          driverObj.drive();
+        } else if (allTasksCompleted) {
+          setTaskComponentState('none');
+        } else {
+          setTaskComponentState(taskComponentState !== 'none' ? taskComponentState : 'button');
+        }
+      } catch (error) {
+        console.log(error, 333);
       }
     };
 

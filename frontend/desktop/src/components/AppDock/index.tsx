@@ -87,16 +87,11 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
 
   const distance = useTransform(mouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 };
-    console.log(val, bounds, 'bounds');
     return val - bounds.x - bounds.width / 2;
   });
-  console.log(distance, 'distance');
 
   const widthTransform = useTransform(distance, [-150, 0, 150], [54, 70, 54]);
   const heightTransform = useTransform(distance, [-150, 0, 150], [54, 70, 54]);
-
-  console.log(widthTransform, 'widthTransform');
-  console.log(heightTransform, 'heightTransform');
 
   const width = useSpring(widthTransform, {
     mass: 0.1,
@@ -109,9 +104,6 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
     stiffness: 150,
     damping: 12
   });
-
-  console.log(width, 'width');
-  console.log(height, 'height');
 
   return (
     <MotionFlex

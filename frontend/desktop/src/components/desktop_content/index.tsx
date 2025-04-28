@@ -153,27 +153,32 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     const globalNotification = async () => {
-      const { data: notification } = await getGlobalNotification();
-      if (!notification) return;
-      const newID = notification?.uid;
-      const title = notification?.i18n[i18n?.language]?.title;
+      try {
+        const { data: notification } = await getGlobalNotification();
+        if (!notification) return;
+        const newID = notification?.uid;
+        const title = notification?.i18n[i18n?.language]?.title;
 
-      if (notification.licenseFrontend) {
-        message({
-          title: title,
-          status: 'info',
-          isClosable: true
-        });
-      } else {
-        if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-        localStorage.setItem('GlobalNotification', newID);
-        message({
-          title: title,
-          status: 'info',
-          isClosable: true
-        });
+        if (notification.licenseFrontend) {
+          message({
+            title: title,
+            status: 'info',
+            isClosable: true
+          });
+        } else {
+          if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
+          localStorage.setItem('GlobalNotification', newID);
+          message({
+            title: title,
+            status: 'info',
+            isClosable: true
+          });
+        }
+      } catch (error) {
+        console.log(error);
       }
     };
+
     globalNotification();
   }, []);
 
@@ -208,8 +213,7 @@ export default function Desktop(props: any) {
       <Flex
         width={'100%'}
         height={'calc(100% - 87px)'}
-        pt={isBannerVisible ? '10px' : '24px'}
-        px={'24px'}
+        pt={'120px'}
         maxW={'1074px'}
         pb={'84px'}
         mx={'auto'}
