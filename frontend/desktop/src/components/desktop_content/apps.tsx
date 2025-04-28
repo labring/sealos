@@ -487,7 +487,7 @@ export default function Apps() {
                   </Box>
                   <Text
                     mt="12px"
-                    color="#18181B"
+                    color="primary"
                     fontSize="14px"
                     fontWeight={500}
                     textAlign="center"

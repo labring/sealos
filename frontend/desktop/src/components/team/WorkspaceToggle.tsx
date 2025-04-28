@@ -63,12 +63,12 @@ export default function WorkspaceToggle() {
         userSelect={'none'}
         gap={'8px'}
         _hover={{
-          bg: '#F4F4F5'
+          bg: 'secondary'
         }}
         borderRadius={'8px'}
         pl={'12px'}
         pr={'8px'}
-        bg={disclosure.isOpen ? '#F4F4F5' : ''}
+        bg={disclosure.isOpen ? 'secondary' : ''}
       >
         <Text color={'primary'} fontSize={'14px'} fontWeight={'500'}>
           {namespace?.teamName}

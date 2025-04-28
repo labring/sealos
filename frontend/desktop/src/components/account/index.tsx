@@ -5,11 +5,9 @@ import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import {
   Box,
-  Button,
   Center,
   Divider,
   Flex,
-  IconButton,
   Image,
   Menu,
   MenuButton,
@@ -192,10 +190,10 @@ export default function Account() {
             </MenuButton>
             <MenuList p="0" borderRadius="12px" overflow="hidden" boxShadow="lg" minW="246px">
               <Box p="16px">
-                <Text color={'#18181B'} fontSize="16px" fontWeight="500" mb="4px">
+                <Text color={'primary'} fontSize="16px" fontWeight="500" mb="4px">
                   {user?.name}
                 </Text>
-                <Text color="#71717A" fontSize="14px" lineHeight={'14px'}>
+                <Text color={'muted-foreground'} fontSize="14px" lineHeight={'14px'}>
                   ID: {user?.userId}
                 </Text>
               </Box>

@@ -34,7 +34,6 @@ import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
 const Account = dynamic(() => import('../account'), { ssr: false });
-const TriggerAccountModule = dynamic(() => import('../account/trigger'), { ssr: false });
 const Apps = dynamic(() => import('./apps'), { ssr: false });
 
 export const blurBackgroundStyles = {

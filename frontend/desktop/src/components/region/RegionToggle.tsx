@@ -68,9 +68,9 @@ export default function RegionToggle() {
             position={'relative'}
             gap={'8px'}
             _hover={{
-              bg: '#F4F4F5'
+              bg: 'secondary'
             }}
-            bg={disclosure.isOpen ? '#F4F4F5' : ''}
+            bg={disclosure.isOpen ? 'secondary' : ''}
             borderRadius={'8px'}
             pl={'12px'}
             pr={'8px'}

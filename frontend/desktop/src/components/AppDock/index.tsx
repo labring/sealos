@@ -149,7 +149,6 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
         borderRadius={'full'}
         bg={'rgba(0, 0, 0, 0.50)'}
       ></MotionBox>
-
       <AnimatePresence>
         {hovered && (
           <MotionBox
@@ -158,7 +157,6 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
             exit={{ opacity: 0, y: 2 }}
             position="absolute"
             top="-40px"
-            bg="white"
             borderRadius="6px"
             px="10px"
             py="5px"
@@ -166,6 +164,8 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
             fontWeight="medium"
             whiteSpace="nowrap"
             boxShadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
+            bg="primary"
+            color={'primary-foreground'}
           >
             {item?.i18n?.[i18n?.language]?.name
               ? item?.i18n?.[i18n?.language]?.name
