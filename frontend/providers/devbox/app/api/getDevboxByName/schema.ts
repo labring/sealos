@@ -1,45 +1,94 @@
+import 'zod-openapi/extend';
+
 import { z } from 'zod';
 
 export const RequestSchema = z.object({
-  devboxName: z.string().min(1).describe('Devbox name')
+  devboxName: z.string().min(1).openapi({
+    description: 'Devbox name'
+  })
 });
 
 export const TemplateRepositorySchema = z.object({
-  uid: z.string().describe('Runtime ID'),
-  iconId: z.string().describe('Runtime Icon'),
-  name: z.string().describe('Runtime Name'),
-  kind: z.string().describe('Runtime Kind')
+  uid: z.string().openapi({
+    description: 'Runtime ID'
+  }),
+  iconId: z.string().openapi({
+    description: 'Runtime Icon'
+  }),
+  name: z.string().openapi({
+    description: 'Runtime Name'
+  }),
+  kind: z.string().openapi({
+    description: 'Runtime Kind'
+  })
 });
 
 export const TemplateSchema = z.object({
   templateRepository: TemplateRepositorySchema,
-  uid: z.string().describe('Runtime Specific Version ID'),
-  image: z.string().describe('Runtime Specific Version Image'),
-  name: z.string().describe('Runtime Specific Version Name')
+  uid: z.string().openapi({
+    description: 'Runtime Specific Version ID'
+  }),
+  image: z.string().openapi({
+    description: 'Runtime Specific Version Image'
+  }),
+  name: z.string().openapi({
+    description: 'Runtime Specific Version Name'
+  })
 });
 
 export const PortInfoSchema = z.object({
-  portName: z.string().describe('Port Name'),
-  port: z.number().describe('Port'),
-  protocol: z.string().describe('Protocol'),
-  networkName: z.string().optional().describe('Network Name'),
-  openPublicDomain: z.boolean().describe('Open Public Domain'),
-  publicDomain: z.string().optional().describe('Public Domain'),
-  customDomain: z.string().optional().describe('Custom Domain')
+  portName: z.string().openapi({
+    description: 'Port Name'
+  }),
+  port: z.number().openapi({
+    description: 'Port'
+  }),
+  protocol: z.string().openapi({
+    description: 'Protocol'
+  }),
+  networkName: z.string().optional().openapi({
+    description: 'Network Name'
+  }),
+  openPublicDomain: z.boolean().openapi({
+    description: 'Open Public Domain'
+  }),
+  publicDomain: z.string().optional().openapi({
+    description: 'Public Domain'
+  }),
+  customDomain: z.string().optional().openapi({
+    description: 'Custom Domain'
+  })
 });
 
 export const SuccessResponseSchema = z.object({
   data: z.object({
-    name: z.string().describe('Devbox name'),
-    templateID: z.string().describe('Runtime Specific Version ID'),
-    templateRepositoryID: z.string().describe('Runtime ID'),
-    templateRepositoryName: z.string().describe('Runtime Name'),
-    templateRepositoryIcon: z.string().describe('Runtime Icon'),
-    templateRepositoryKind: z.string().describe('Runtime Kind'),
-    templateName: z.string().describe('Runtime Specific Version Name'),
-    templateImage: z.string().describe('Runtime Specific Version Image'),
-    cpu: z.number().describe('CPU'),
-    memory: z.number().describe('Memory'),
+    name: z.string().openapi({
+      description: 'Devbox name'
+    }),
+    templateID: z.string().openapi({
+      description: 'Runtime Specific Version ID'
+    }),
+    templateRepositoryID: z.string().openapi({
+      description: 'Runtime ID'
+    }),
+    templateRepositoryName: z.string().openapi({
+      description: 'Runtime Name'
+    }),
+    templateRepositoryIcon: z.string().openapi({
+      description: 'Runtime Icon'
+    }),
+    templateRepositoryKind: z.string().openapi({
+      description: 'Runtime Kind'
+    }),
+    templateImage: z.string().openapi({
+      description: 'Runtime Specific Version Image'
+    }),
+    cpu: z.number().openapi({
+      description: 'CPU'
+    }),
+    memory: z.number().openapi({
+      description: 'Memory'
+    }),
     gpu: z
       .object({
         manufacturers: z.string(),
@@ -47,9 +96,15 @@ export const SuccessResponseSchema = z.object({
         amount: z.number()
       })
       .optional()
-      .describe('GPU'),
-    status: z.string().describe('Status'),
-    portInfos: z.array(PortInfoSchema).describe('Port Infos')
+      .openapi({
+        description: 'GPU'
+      }),
+    status: z.string().openapi({
+      description: 'Status'
+    }),
+    portInfos: z.array(PortInfoSchema).openapi({
+      description: 'Port Infos'
+    })
   })
 });
 

@@ -1,7 +1,11 @@
+import 'zod-openapi/extend';
+
 import { z } from 'zod';
 
 export const RequestSchema = z.object({
-  devboxName: z.string().min(1).describe('Devbox name to delete')
+  devboxName: z.string().min(1).openapi({
+    description: 'Devbox name to delete'
+  })
 });
 
 export const SuccessResponseSchema = z.object({

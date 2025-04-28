@@ -1,10 +1,20 @@
+import 'zod-openapi/extend';
+
 import { z } from 'zod';
 
 export const ReleaseFormSchema = z.object({
-  devboxName: z.string().min(1).describe('Devbox name'),
-  tag: z.string().min(1).describe('Release tag'),
-  releaseDes: z.string().optional().default('').describe('Release description'),
-  devboxUid: z.string().min(1).describe('Devbox UID')
+  devboxName: z.string().min(1).openapi({
+    description: 'Devbox name'
+  }),
+  tag: z.string().min(1).openapi({
+    description: 'Release tag'
+  }),
+  releaseDes: z.string().optional().default('').openapi({
+    description: 'Release description'
+  }),
+  devboxUid: z.string().min(1).openapi({
+    description: 'Devbox UID'
+  })
 });
 
 export const RequestSchema = z.object({

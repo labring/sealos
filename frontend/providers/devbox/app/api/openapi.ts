@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createDocument, extendZodWithOpenApi } from 'zod-openapi';
+import { createDocument } from 'zod-openapi';
 import {
   RequestSchema as CreateDevboxRequestSchema,
   SuccessResponseSchema as CreateDevboxSuccessResponseSchema
@@ -66,9 +66,6 @@ import {
   SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
 } from './getDevboxByName/schema';
-
-// extend zod with openapi
-extendZodWithOpenApi(z);
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),

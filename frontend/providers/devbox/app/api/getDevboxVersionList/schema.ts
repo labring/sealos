@@ -1,32 +1,55 @@
+import 'zod-openapi/extend';
+
 import { z } from 'zod';
 
 export const RequestSchema = z.object({
-  devboxName: z.string().min(1).describe('Devbox name'),
-  devboxUid: z
-    .string()
-    .min(1)
-    .describe('Devbox UID,you can get it from api/getDevboxByName response data->templateID')
+  devboxName: z.string().min(1).openapi({
+    description: 'Devbox name'
+  }),
+  devboxUid: z.string().min(1).openapi({
+    description: 'Devbox UID,you can get it from api/getDevboxByName response data->templateID'
+  })
 });
 
 export const SuccessResponseSchema = z.object({
   data: z
     .array(
       z.object({
-        id: z.string().describe('Version ID'),
-        name: z.string().describe('Version name'),
-        devboxName: z.string().describe('Devbox name'),
-        createTime: z.string().describe('Creation time in YYYY-MM-DD HH:mm format'),
-        tag: z.string().describe('Version tag'),
+        id: z.string().openapi({
+          description: 'Version ID'
+        }),
+        name: z.string().openapi({
+          description: 'Version name'
+        }),
+        devboxName: z.string().openapi({
+          description: 'Devbox name'
+        }),
+        createTime: z.string().openapi({
+          description: 'Creation time in YYYY-MM-DD HH:mm format'
+        }),
+        tag: z.string().openapi({
+          description: 'Version tag'
+        }),
         status: z
           .object({
-            value: z.string().describe('Status value'),
-            label: z.string().describe('Status label')
+            value: z.string().openapi({
+              description: 'Status value'
+            }),
+            label: z.string().openapi({
+              description: 'Status label'
+            })
           })
-          .describe('Version status'),
-        description: z.string().describe('Version description')
+          .openapi({
+            description: 'Version status'
+          }),
+        description: z.string().openapi({
+          description: 'Version description'
+        })
       })
     )
-    .describe('List of devbox versions')
+    .openapi({
+      description: 'List of devbox versions'
+    })
 });
 
 export const ErrorResponseSchema = z.object({

@@ -1,13 +1,18 @@
+import 'zod-openapi/extend';
+
 import { z } from 'zod';
 
 export const RequestSchema = z.object({
-  devboxName: z.string().min(1).describe('Devbox name to shutdown'),
+  devboxName: z.string().min(1).openapi({
+    description: 'Devbox name to shutdown'
+  }),
   shutdownMode: z
     .enum(['Stopped', 'Shutdown'] as const)
     .default('Stopped')
-    .describe(
-      'Shutdown mode: Stopped is to shut down and not release the port, and will continue to charge port fees(a little bit); Shutdown is to shut down and release the port, and will not continue to charge any fees'
-    )
+    .openapi({
+      description:
+        'Shutdown mode: Stopped is to shut down and not release the port, and will continue to charge port fees(a little bit); Shutdown is to shut down and release the port, and will not continue to charge any fees'
+    })
 });
 
 export const SuccessResponseSchema = z.object({
