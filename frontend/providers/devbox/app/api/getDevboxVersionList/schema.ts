@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 export const RequestSchema = z.object({
   devboxName: z.string().min(1).describe('Devbox name'),
-  devboxUid: z.string().min(1).describe('Devbox UID')
+  devboxUid: z
+    .string()
+    .min(1)
+    .describe('Devbox UID,you can get it from api/getDevboxByName response data->templateID')
 });
 
 export const SuccessResponseSchema = z.object({

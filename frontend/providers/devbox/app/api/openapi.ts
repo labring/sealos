@@ -61,6 +61,11 @@ import {
   ReleaseAndDeployDevboxRequestSchema,
   ReleaseAndDeployDevboxResponseSchema
 } from './releaseAndDeployDevbox/schema';
+import {
+  RequestSchema as GetDevboxByNameRequestSchema,
+  SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
+  ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
+} from './getDevboxByName/schema';
 
 // extend zod with openapi
 extendZodWithOpenApi(z);
@@ -558,7 +563,8 @@ export const openApiDocument = createDocument({
     '/api/getDevboxVersionList': {
       get: {
         summary: 'Get devbox version list',
-        description: 'Get all versions of a specific devbox',
+        description:
+          'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
         requestParams: {
           query: GetDevboxVersionListRequestSchema
         },
@@ -632,6 +638,41 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: ErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/getDevboxByName': {
+      get: {
+        summary: 'Get devbox by name',
+        description: 'Get detailed information about a specific devbox by its name',
+        requestParams: {
+          query: GetDevboxByNameRequestSchema
+        },
+        responses: {
+          '200': {
+            description: 'Successfully retrieved devbox information',
+            content: {
+              'application/json': {
+                schema: GetDevboxByNameSuccessResponseSchema
+              }
+            }
+          },
+          '400': {
+            description: 'Invalid request parameters',
+            content: {
+              'application/json': {
+                schema: GetDevboxByNameErrorResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: GetDevboxByNameErrorResponseSchema
               }
             }
           }

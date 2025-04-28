@@ -9,6 +9,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,10 +20,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
 
-    if (!devboxName) {
+    const validationResult = RequestSchema.safeParse({ devboxName });
+
+    if (!validationResult.success) {
       return jsonRes({
         code: 400,
-        error: 'devboxName is required'
+        error: 'Invalid request parameters'
       });
     }
 
