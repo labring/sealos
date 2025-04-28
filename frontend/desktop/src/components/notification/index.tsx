@@ -184,7 +184,6 @@ export default function Notification(props: NotificationProps) {
             <Text color={'#1C4EF5'} fontSize={'12px'} fontWeight={500} onClick={markAllAsRead}>
               {t('common:read_all')}
             </Text>
-
             <X
               cursor={'pointer'}
               size={16}

@@ -493,6 +493,7 @@ export default function Apps() {
                     fontWeight={500}
                     textAlign="center"
                     noOfLines={1}
+                    lineHeight={'18px'}
                   >
                     {app?.i18n?.[i18n?.language]?.name
                       ? app?.i18n?.[i18n?.language]?.name
