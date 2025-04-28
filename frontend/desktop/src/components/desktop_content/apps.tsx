@@ -317,13 +317,13 @@ export default function Apps() {
                 borderRadius={'24px'}
                 border={'1px solid rgba(0, 0, 0, 0.05)'}
                 boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
-                overflow={'hidden'}
                 transition="transform 0.2s ease"
+                overflow={'hidden'}
                 _hover={{ transform: 'scale(1.05)' }}
               >
                 <Image
-                  width="100%"
-                  height="100%"
+                  w={'100%'}
+                  h={'100%'}
                   src={item?.icon}
                   fallbackSrc={logo}
                   draggable={false}
@@ -336,6 +336,7 @@ export default function Apps() {
                 fontSize={'14px'}
                 fontWeight={500}
                 textAlign={'center'}
+                lineHeight={'18px'}
               >
                 {item?.i18n?.[i18n?.language]?.name
                   ? item?.i18n?.[i18n?.language]?.name

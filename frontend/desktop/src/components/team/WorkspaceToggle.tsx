@@ -70,7 +70,7 @@ export default function WorkspaceToggle() {
         pr={'8px'}
         bg={disclosure.isOpen ? 'secondary' : ''}
       >
-        <Text color={'primary'} fontSize={'14px'} fontWeight={'500'}>
+        <Text color={'primary'} fontSize={'14px'} fontWeight={'500'} textTransform={'capitalize'}>
           {namespace?.teamName}
           {/* {namespace?.nstype === NSType.Private ? t('common:default_team') : namespace?.teamName} */}
         </Text>

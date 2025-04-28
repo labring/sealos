@@ -10,6 +10,7 @@
   "added": "已加入",
   "agree_policy": "我已阅读并同意",
   "alarm_pod": "告警 Pods: {{count}}",
+  "alert": "通知",
   "alerts": "告警",
   "all_apps": "所有应用",
   "already_sent_code": "已经发送验证码",

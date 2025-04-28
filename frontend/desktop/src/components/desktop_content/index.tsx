@@ -5,7 +5,7 @@ import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Center, Flex, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -194,16 +194,18 @@ export default function Desktop(props: any) {
   }, []);
 
   return (
-    <Box
-      id="desktop"
-      className={styles.desktop}
-      backgroundImage={`url(${
-        backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'
-      })`}
-      backgroundRepeat={'no-repeat'}
-      backgroundSize={'cover'}
-      position={'relative'}
-    >
+    <Box id="desktop" className={styles.desktop} position={'relative'}>
+      <Box position="absolute" top="0" left="0" right="0" bottom="0" zIndex={-10} overflow="hidden">
+        <Image
+          src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
+          alt="background"
+          width="100%"
+          height="100vh"
+          objectFit="cover"
+          objectPosition="bottom"
+        />
+      </Box>
+
       {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
       {layoutConfig?.common?.bannerEnabled && (
@@ -216,7 +218,7 @@ export default function Desktop(props: any) {
       <Flex
         width={'100%'}
         height={'calc(100% - 87px)'}
-        pt={'120px'}
+        pt={{ base: '20px', md: '80px', xl: '120px' }}
         maxW={'1074px'}
         pb={'84px'}
         mx={'auto'}

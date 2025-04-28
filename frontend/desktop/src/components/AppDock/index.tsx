@@ -129,15 +129,16 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
         position="relative"
         bg={'rgba(255, 255, 255, 0.85)'}
         backdropFilter={'blur(25px)'}
-        boxShadow={' 0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        border={'1px solid rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
         overflow={'hidden'}
       >
         <Image
           src={item?.icon}
           fallbackSrc={logo || '/logo.svg'}
           alt={item?.name}
-          w="80%"
-          h="80%"
+          w="100%"
+          h="100%"
           draggable={false}
         />
       </MotionCenter>
@@ -164,8 +165,8 @@ function AnimatedIcon({ item, logo, t, i18n, handleNavItem, mouseX }: any) {
             fontWeight="medium"
             whiteSpace="nowrap"
             boxShadow="0px 2px 4px rgba(0, 0, 0, 0.1)"
-            bg="primary"
-            color={'primary-foreground'}
+            bg="white"
+            color={'#18181B'}
           >
             {item?.i18n?.[i18n?.language]?.name
               ? item?.i18n?.[i18n?.language]?.name
@@ -303,7 +304,7 @@ export default function AppDock() {
       bottom={'4px'}
       zIndex={'1000'}
       transition={getTransitionValue()}
-      transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 76px)'}
+      transform={isNavbarVisible ? 'translate(-50%, 0)' : 'translate(-50%, 82px)'}
       will-change="transform, opacity"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

@@ -10,6 +10,7 @@
   "added": "Added",
   "agree_policy": "I have read and agree to the",
   "alarm_pod": "Unhealthy Pods: {{count}}",
+  "alert": "Alert",
   "alerts": "Alerts",
   "all_apps": "All Apps",
   "already_sent_code": "Already sent code",

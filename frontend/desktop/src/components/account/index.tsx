@@ -91,9 +91,10 @@ export default function Account() {
 
   return (
     <Box position={'relative'} flex={1}>
-      <Flex justifyContent={'space-between'} alignItems={'center'} height={'100%'} zIndex={3}>
-        <Flex alignItems={'center'} gap={'12px'}>
+      <Flex alignItems={'center'} height={'100%'} zIndex={3}>
+        <Flex alignItems={'center'}>
           <Center
+            mr={'12px'}
             boxSize={'36px'}
             borderRadius={'10px'}
             border={'1px solid rgba(0, 0, 0, 0.05)'}
@@ -102,28 +103,31 @@ export default function Account() {
               '0px -1px 3px 0px rgba(191, 202, 219, 0.05), 0px 4.5px 4px 0px rgba(191, 202, 219, 0.35)'
             }
           >
-            <Image src={'/logo.svg'} alt="Logo" width="32px" height="32px" />
+            <Image src={'/logo.svg'} alt="Logo" width="28px" height="28px" />
           </Center>
           <RegionToggle />
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="8"
-            height="24"
-            viewBox="0 0 8 24"
-            fill="none"
-          >
-            <path
-              d="M1 22.625L6.69402 1.37463"
-              stroke="black"
-              strokeOpacity="0.15"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Center mx={'3px'}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="8"
+              height="24"
+              viewBox="0 0 8 24"
+              fill="none"
+            >
+              <path
+                d="M1 22.625L6.69402 1.37463"
+                stroke="black"
+                strokeOpacity="0.15"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </Center>
+
           <WorkspaceToggle />
         </Flex>
 
-        <Flex gap={'12px'} position={'relative'} zIndex={3} height={'100%'} alignItems={'center'}>
+        <Flex gap={'4px'} ml={'auto'}>
           <Center
             className="guide-button"
             cursor={'pointer'}
@@ -146,7 +150,16 @@ export default function Account() {
               {t('common:doc')}
             </Center>
           )}
+        </Flex>
 
+        <Flex
+          ml={'20px'}
+          gap={'12px'}
+          position={'relative'}
+          zIndex={3}
+          height={'100%'}
+          alignItems={'center'}
+        >
           {/* <CustomTooltip placement={'bottom'} label={t('common:language')}>
             <Center>
               <LangSelectSimple {...baseItemStyle} />
@@ -160,7 +173,9 @@ export default function Account() {
               </Center>
             </CustomTooltip>
           )} */}
+
           <ThemeToggle />
+
           <Center
             {...baseItemStyle}
             boxSize={'36px'}
