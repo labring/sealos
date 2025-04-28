@@ -66,6 +66,7 @@ import {
   SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
 } from './getDevboxByName/schema';
+import { ResponseSchema as GetDevboxListResponseSchema } from './getDevboxList/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -671,6 +672,30 @@ export const openApiDocument = createDocument({
             content: {
               'application/json': {
                 schema: GetDevboxByNameErrorResponseSchema
+              }
+            }
+          }
+        }
+      }
+    },
+    '/api/getDevboxList': {
+      get: {
+        summary: 'Get devbox list',
+        description: 'Get all devboxes in the current namespace',
+        responses: {
+          '200': {
+            description: 'Successfully retrieved devbox list',
+            content: {
+              'application/json': {
+                schema: GetDevboxListResponseSchema
+              }
+            }
+          },
+          '500': {
+            description: 'Internal server error',
+            content: {
+              'application/json': {
+                schema: ErrorResponseSchema
               }
             }
           }
