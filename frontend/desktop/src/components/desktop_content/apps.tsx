@@ -380,12 +380,12 @@ export default function Apps() {
                     ? moreApps.slice(0, 4).map((app, idx) => (
                         <Box
                           key={idx}
-                          width="100%"
-                          height="100%"
+                          width="32px"
+                          height="32px"
                           overflow="hidden"
-                          borderRadius="8px"
-                          border={'1px solid rgba(0, 0, 0, 0.05)'}
                           bg="white"
+                          borderRadius={'10px'}
+                          boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
                           draggable={false}
                           // onDragStart={(e) => handleDragStart(e, app, 'folder')}
                         >
@@ -395,7 +395,6 @@ export default function Apps() {
                             src={app?.icon}
                             fallbackSrc={logo}
                             objectFit="contain"
-                            p="2px"
                             alt="app icon"
                           />
                         </Box>
