@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { V1Ingress, V1Service } from '@kubernetes/client-node';
 import { PatchUtils } from '@kubernetes/client-node';
+import { V1Ingress, V1Service } from '@kubernetes/client-node';
 
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
@@ -8,6 +8,7 @@ import { jsonRes } from '@/services/backend/response';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { RequestSchema } from './schema';
 import { json2Service, json2Ingress } from '@/utils/json2Yaml';
+import { nanoid } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     const { devboxName, port, protocol } = validationResult.data;
     const headerList = req.headers;
 
-    const { k8sCore, k8sNetworkingApp, namespace } = await getK8s({
+    const { k8sCore, k8sNetworkingApp, namespace, applyYamlList } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
 
@@ -86,30 +87,38 @@ export async function POST(req: NextRequest) {
       name: devboxName,
       networks: [
         {
-          networkName: `${devboxName}-${port}`,
-          portName: `port-${port}`,
+          networkName: `${devboxName}-${nanoid()}`,
+          portName: `${nanoid()}`,
           port,
           protocol,
-          openPublicDomain: true // Default public domain is enabled
+          openPublicDomain: true, // Default public domain is enabled
+          publicDomain: `${nanoid()}.${process.env.INGRESS_DOMAIN}`,
+          customDomain: ''
         }
       ]
     };
 
-    const serviceYaml = json2Service(newNetwork);
     const ingressYaml = json2Ingress(newNetwork, INGRESS_SECRET as string);
 
-    // Parse YAML to JSON for patch
-    const serviceJson = JSON.parse(serviceYaml);
-    const ingressJson = JSON.parse(ingressYaml);
-
     // Update service
-    await k8sCore.replaceNamespacedService(devboxName, namespace, serviceJson);
+    const existingService = await k8sCore.readNamespacedService(devboxName, namespace);
+    const servicePorts = existingService.body.spec?.ports || [];
 
-    // Update ingress
-    await k8sNetworkingApp.patchNamespacedIngress(
-      ingressJson.metadata.name,
+    await k8sCore.patchNamespacedService(
+      devboxName,
       namespace,
-      ingressJson,
+      {
+        spec: {
+          ports: [
+            ...servicePorts,
+            {
+              port: port,
+              targetPort: port,
+              name: `port-${port}`
+            }
+          ]
+        }
+      },
       undefined,
       undefined,
       undefined,
@@ -117,6 +126,9 @@ export async function POST(req: NextRequest) {
       undefined,
       { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
     );
+
+    // Update ingress
+    await applyYamlList([ingressYaml], 'create');
 
     return jsonRes({
       data: [
@@ -126,11 +138,14 @@ export async function POST(req: NextRequest) {
           port,
           protocol,
           networkName: `${devboxName}-${port}`,
-          openPublicDomain: true
+          openPublicDomain: true,
+          publicDomain: `${nanoid()}.${process.env.INGRESS_DOMAIN}`,
+          customDomain: ''
         }
       ]
     });
   } catch (err: any) {
+    console.log('err', err);
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

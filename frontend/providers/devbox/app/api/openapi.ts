@@ -453,9 +453,9 @@ export const openApiDocument = createDocument({
     },
     '/api/createDevboxPort': {
       post: {
-        summary: 'Check port availability and get port information',
+        summary: 'Create a new devbox port',
         description:
-          'Check if a port is available for a devbox and get port information including internal and external addresses',
+          'Create a new devbox port,if the port is already exists,it will return the port information directly',
         requestBody: {
           content: {
             'application/json': {
@@ -465,7 +465,7 @@ export const openApiDocument = createDocument({
         },
         responses: {
           '200': {
-            description: 'Successfully checked port availability and retrieved port information',
+            description: 'Successfully created devbox port',
             content: {
               'application/json': {
                 schema: CreateDevboxPortSuccessResponseSchema
