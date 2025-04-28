@@ -6,7 +6,6 @@ use (
 	./account
 	./app
 	./db/adminer
-	./devbox
 	./job/heartbeat
 	./job/init
 	./license
