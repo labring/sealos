@@ -1,9 +1,10 @@
-import { NextRequest } from 'next/server';
-import { nanoid } from '@/utils/tools';
-import { jsonRes } from '@/services/backend/response';
-import { devboxIdKey } from '@/constants/devbox';
-import { DeployDevboxRequestSchema, DeployDevboxHeaderSchema } from './schema';
 import { z } from 'zod';
+import { NextRequest } from 'next/server';
+
+import { nanoid } from '@/utils/tools';
+import { devboxIdKey } from '@/constants/devbox';
+import { DeployDevboxRequestSchema } from './schema';
+import { jsonRes } from '@/services/backend/response';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +12,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validatedBody = DeployDevboxRequestSchema.parse(body);
-    const { devboxName, tag, cpu = 200, memory = 128 } = validatedBody;
+    const { devboxName, tag, cpu = 2000, memory = 4096, port = 80 } = validatedBody;
     const headerList = req.headers;
 
     const headers = {
       Authorization: headerList.get('Authorization') || ''
     };
-    DeployDevboxHeaderSchema.parse(headers);
 
     const appName = `${devboxName}-release-${nanoid()}`;
     const image = `${process.env.REGISTRY_ADDR}/${process.env.NAMESPACE}/${devboxName}:${tag}`;
@@ -37,9 +37,9 @@ export async function POST(req: NextRequest) {
           {
             networkName: `network-${appName}`,
             portName: 'host',
-            port: 80,
+            port: port,
             protocol: 'TCP',
-            publicDomain: '',
+            publicDomain: `${nanoid()}`,
             openPublicDomain: true,
             customDomain: '',
             domain: process.env.INGRESS_DOMAIN || '',
@@ -83,7 +83,10 @@ export async function POST(req: NextRequest) {
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =
-      ingressResource?.spec?.rules?.map((rule: any) => rule.host) || ([] as string[]);
+      ingressResource?.spec?.rules?.map((rule: any) => ({
+        host: rule.host,
+        port: rule.http?.paths?.[0]?.backend?.service?.port?.number || 80
+      })) || [];
 
     const response = {
       data: {

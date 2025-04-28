@@ -3,9 +3,10 @@ import { z } from 'zod';
 export const RequestSchema = z.object({
   devboxName: z.string().min(1).describe('Devbox name to shutdown'),
   shutdownMode: z
-    .enum(['Stopped', 'Paused'] as const)
+    .enum(['Stopped', 'Shutdown'] as const)
+    .default('Stopped')
     .describe(
-      'Shutdown mode: Pause is to shut down but not release the port, so it will still charge for the port fee; Stopped is to shut down and release the port, and will not continue to charge any fees'
+      'Shutdown mode: Stopped is to shut down and not release the port, and will continue to charge port fees(a little bit); Shutdown is to shut down and release the port, and will not continue to charge any fees'
     )
 });
 

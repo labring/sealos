@@ -172,7 +172,8 @@ export const openApiDocument = createDocument({
     '/api/deployDevbox': {
       post: {
         summary: 'Deploy a devbox',
-        description: 'Deploy a devbox with specific tag and resource configuration',
+        description:
+          'Deploy a devbox with specific tag and resource configuration, you can use the /api/getDevboxVersionList interface to get the devbox version list to get the tag',
         requestBody: {
           content: {
             'application/json': {
@@ -212,7 +213,7 @@ export const openApiDocument = createDocument({
       post: {
         summary: 'Create a new devbox release',
         description:
-          'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.',
+          'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.Beside,you need to shutdown the devbox(stopped is ok) before releasing it.',
         requestBody: {
           content: {
             'application/json': {

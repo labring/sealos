@@ -6,7 +6,11 @@ export const DeployDevboxHeaderSchema = z.object({
 
 export const DeployDevboxRequestSchema = z.object({
   devboxName: z.string().min(1).describe('Devbox name'),
-  tag: z.string().min(1).describe('Devbox tag'),
+  port: z.number().min(1).default(65535).describe('Port number'),
+  tag: z
+    .string()
+    .min(1)
+    .describe('Devbox release version tag, you can get it from /api/getDevboxVersionList'),
   cpu: z
     .number()
     .min(0)
@@ -27,7 +31,14 @@ export const DeployDevboxSuccessResponseSchema = z.object({
   data: z.object({
     message: z.string().default('success deploy devbox').describe('Deploy devbox success message'),
     appName: z.string().describe('Application name'),
-    publicDomains: z.array(z.string()).describe('Public domains')
+    publicDomains: z
+      .array(
+        z.object({
+          host: z.string(),
+          port: z.number()
+        })
+      )
+      .describe('Public domains')
   })
 });
 
