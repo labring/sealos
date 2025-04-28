@@ -50,7 +50,7 @@ spec:
           layout:
             title: "Sealos Cloud"
             logo: "/logo.png"
-            backgroundImage: "/images/light-bg.svg"
+            backgroundImage: "/images/bg-light.svg"
             meta:
               title: "Sealos Cloud"
               description: "Sealos Cloud"

@@ -5,6 +5,7 @@ import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import {
   Box,
+  Button,
   Center,
   Divider,
   Flex,
@@ -15,6 +16,7 @@ import {
   MenuItem,
   MenuList,
   Text,
+  useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,15 +27,16 @@ import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
 import { Bell, Copy, CreditCard, FileCode, Gift, LogOut, Palette, User } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 
 const baseItemStyle = {
   minW: '36px',
   h: '40px',
   fontSize: '14px',
   fontWeight: '500',
-  color: '#262626',
+  color: 'primary',
   _hover: {
-    background: '#F4F4F5'
+    background: 'secondary'
   }
 };
 
@@ -50,6 +53,7 @@ export default function Account() {
   const showDisclosure = useDisclosure();
   const [notificationAmount, setNotificationAmount] = useState(0);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
@@ -158,7 +162,7 @@ export default function Account() {
               </Center>
             </CustomTooltip>
           )} */}
-
+          <ThemeToggle />
           <Center
             {...baseItemStyle}
             boxSize={'36px'}

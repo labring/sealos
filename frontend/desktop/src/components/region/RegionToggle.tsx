@@ -57,7 +57,7 @@ export default function RegionToggle() {
           <HStack
             w={'full'}
             fontSize={'14px'}
-            color={'#0A0A0A'}
+            color={'primary'}
             fontWeight={'500'}
             minH={'36px'}
             onClick={() => {

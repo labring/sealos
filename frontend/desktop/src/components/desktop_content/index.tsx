@@ -29,6 +29,7 @@ import TaskModal from '../task/taskModal';
 import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
+import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -48,6 +49,7 @@ export default function Desktop(props: any) {
   const { isAppBar } = useDesktopConfigStore();
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
+  const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
   const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
@@ -196,7 +198,9 @@ export default function Desktop(props: any) {
     <Box
       id="desktop"
       className={styles.desktop}
-      backgroundImage={`url(${backgroundImage || '/images/light-bg.svg'})`}
+      backgroundImage={`url(${
+        backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'
+      })`}
       backgroundRepeat={'no-repeat'}
       backgroundSize={'cover'}
       position={'relative'}

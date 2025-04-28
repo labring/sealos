@@ -271,7 +271,7 @@ export const DefaultCloudConfig: CloudConfigType = {
 export const DefaultLayoutConfig: LayoutConfigType = {
   title: 'Sealos Cloud',
   logo: '/logo.svg',
-  backgroundImage: '/images/light-bg.svg',
+  backgroundImage: '/images/bg-light.svg',
   protocol: {
     serviceProtocol: {
       zh: '',
