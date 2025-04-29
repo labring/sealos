@@ -32,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 	"github/labring/sealos/controllers/objectstorage/controllers"
 	//+kubebuilder:scaffold:imports
 )
