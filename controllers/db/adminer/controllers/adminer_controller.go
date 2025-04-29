@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/jaevor/go-nanoid"
+	nanoid "github.com/matoous/go-nanoid/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -360,12 +360,12 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 		}
 
 		if deployment.Spec.Template.Spec.Hostname == "" {
-			letterID, err := nanoid.CustomASCII(LetterBytes, HostnameLength)
+			letterID, err := nanoid.Generate(LetterBytes, HostnameLength)
 			if err != nil {
 				return err
 			}
 			// to keep pace with ingress host, hostname must start with a lower case letter
-			*hostname = "a" + letterID()
+			*hostname = "a" + letterID
 			deployment.Spec.Template.Spec.Hostname = *hostname
 		} else {
 			*hostname = deployment.Spec.Template.Spec.Hostname
