@@ -4,10 +4,7 @@ import {
   RequestSchema as CreateDevboxRequestSchema,
   SuccessResponseSchema as CreateDevboxSuccessResponseSchema
 } from './createDevbox/schema';
-import {
-  RequestSchema as ListOfficialRequestSchema,
-  SuccessResponseSchema as ListOfficialSuccessResponseSchema
-} from './templateRepository/listOfficial/schema';
+import { SuccessResponseSchema as ListOfficialSuccessResponseSchema } from './v1/getOfficialRuntimeList/schema';
 import {
   RequestSchema as ListTemplatesRequestSchema,
   SuccessResponseSchema as ListTemplatesSuccessResponseSchema
@@ -85,7 +82,7 @@ export const openApiDocument = (sealosDomain: string) =>
     },
     servers: [
       {
-        url: `http://localhost:3000`,
+        url: `http://127.0.0.1:3000`,
         description: 'Development'
       },
       {
@@ -496,7 +493,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/templateRepository/listOfficial': {
+      '/api/v1/getOfficialRuntimeList': {
         get: {
           summary: 'Get the official runtime list',
           description: 'Get all available official runtime lists, no authentication required',
