@@ -63,8 +63,7 @@ import {
   SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
 } from './getDevboxByName/schema';
-import { ResponseSchema as GetDevboxListResponseSchema } from './getDevboxList/schema';
-
+import { ResponseSchema as GetDevboxListResponseSchema } from './v1/getDevboxListEasyResponse/schema';
 export const ErrorResponseSchema = z.object({
   code: z.number(),
   message: z.string(),
@@ -680,7 +679,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/getDevboxList': {
+      '/api/v1/getDevboxListEasyResponse': {
         get: {
           summary: 'Get devbox list',
           description: 'Get all devboxes in the current namespace',
