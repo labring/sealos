@@ -66,7 +66,8 @@ const (
 // DevBoxScheduleStatus defines the observed state of DevBoxSchedule.
 type DevBoxScheduleStatus struct {
 	// State represents the current state of the scheduled shutdown
-	// +kubebuilder:validation:Enum=Pending;Completed;Unknown;NotFound;NotMatch
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=Pending
 	State ScheduleState `json:"state,omitempty"`
 }
 

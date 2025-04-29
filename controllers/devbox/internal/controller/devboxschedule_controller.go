@@ -86,9 +86,7 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 	// Check if the scheduled time has been reached
 	if r.checkScheduleReached(ctx, &devboxSchedule) {
-		logger.Info("Schedule time reached, performing operator",
-			"DevBoxName", devboxSchedule.Spec.DevBoxName,
-			"ScheduleType", devboxSchedule.Spec.ScheduleType)
+		logger.Info("Schedule time reached, performing operator", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleType", devboxSchedule.Spec.ScheduleType)
 		// Execute the scheduled operation (start or shutdown DevBox)
 		if err := r.performSchedule(ctx, &devbox, devboxSchedule.Spec.ScheduleType); err != nil {
 			logger.Error(err, "Failed to perform scheduled operation",
