@@ -1,16 +1,17 @@
 import { NextRequest } from 'next/server';
 
+import { KBDevboxTypeV2 } from '@/types/k8s';
+import { devboxDB } from '@/services/db/init';
+import { adaptDevboxListItemV2 } from '@/utils/adapt';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { devboxDB } from '@/services/db/init';
-import { KBDevboxTypeV2 } from '@/types/k8s';
 
 export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const headerList = req.headers;
-    const { ROOT_RUNTIME_NAMESPACE } = process.env;
 
     const { k8sCustomObjects, namespace } = await getK8s({
       kubeconfig: await authSession(headerList)
@@ -46,10 +47,14 @@ export async function GET(req: NextRequest) {
         (templateResult) => templateResult.uid === item.spec.templateID
       );
       if (!templateItem) return [];
-      return [[item, templateItem] as const];
+      return [[item, templateItem] as [KBDevboxTypeV2, typeof templateItem]];
     });
 
-    return jsonRes({ data: resp });
+    const adaptedData = resp.map(adaptDevboxListItemV2).sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+    });
+
+    return jsonRes({ data: adaptedData });
   } catch (err: any) {
     return jsonRes({
       code: 500,

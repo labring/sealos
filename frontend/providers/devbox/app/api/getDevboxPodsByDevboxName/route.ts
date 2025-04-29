@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 
+import { adaptPod } from '@/utils/adapt';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -29,8 +30,10 @@ export async function GET(req: NextRequest) {
       `app.kubernetes.io/name=${devboxName}`
     );
 
+    const adaptedPods = pods.map(adaptPod);
+
     return jsonRes({
-      data: pods
+      data: adaptedPods
     });
   } catch (err: any) {
     return jsonRes({

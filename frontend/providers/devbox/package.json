@@ -19,6 +19,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.21.0",
     "@prisma/client": "^5.10.2",
+    "@scalar/nextjs-api-reference": "^0.7.12",
     "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
@@ -50,6 +51,7 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "zod": "^3.23.8",
+    "zod-openapi": "^4.2.4",
     "zustand": "^4.5.4"
   },
   "devDependencies": {
