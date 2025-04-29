@@ -22,12 +22,12 @@ export default function References() {
         kubeconfigAuth: {
           in: 'header',
           name: 'Authorization',
-          value: session?.kubeconfig || ''
+          value: encodeURIComponent(session?.kubeconfig || '')
         },
         jwtAuth: {
           in: 'header',
           name: 'Authorization-Bearer',
-          value: devboxToken || session?.token || ''
+          value: encodeURIComponent(devboxToken || session?.token || '')
         }
       }
     },
