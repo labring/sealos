@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"time"
@@ -54,13 +55,13 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var devboxSchedule devboxv1alpha1.DevBoxSchedule
 	if err := r.Get(ctx, req.NamespacedName, &devboxSchedule); err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("DevboxSchedule resource not found. Ignoring since object must be deleted")
+			// DevBoxSchedule resource not found, likely deleted after reconcile request.
+			logger.Info("DevBoxSchedule resource not found, ignoring")
 			return ctrl.Result{}, nil
 		}
-		logger.Error(err, "Failed to get DevboxSchedule")
+		logger.Error(err, "Failed to get DevBoxSchedule")
 		return ctrl.Result{}, err
 	}
-
 	if devboxSchedule.Status.State == devboxv1alpha1.ScheduleStateCompleted {
 		logger.Info("Schedule already completed, deleting the CR")
 		if err := r.Delete(ctx, &devboxSchedule); err != nil {
@@ -78,6 +79,10 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		logger.Error(err, "Failed to get DevBox", "DevBoxName", devboxSchedule.Spec.DevBoxName)
 		return ctrl.Result{}, err
+	}
+	if devbox.ObjectMeta.UID != devboxSchedule.ObjectMeta.UID {
+		logger.Error(fmt.Errorf("UID mismatch: devbox=%s, schedule=%s", devbox.ObjectMeta.UID, devboxSchedule.ObjectMeta.UID), "DevBox UID does not match DevBoxSchedule reference")
+		return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotMatch)
 	}
 	// Check if the scheduled time has been reached
 	if r.checkScheduleReached(ctx, &devboxSchedule) {
@@ -118,7 +123,7 @@ func (r *DevBoxScheduleReconciler) performSchedule(ctx context.Context, devbox *
 	logger := log.FromContext(ctx)
 	logger.Info("Performing schedule operation", "DevBoxName", devbox.Name, "ScheduleType", scheduleType)
 	switch scheduleType {
-	case devboxv1alpha1.Stopped:
+	case devboxv1alpha1.ScheduleStopped:
 		devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
 		return r.Update(ctx, devbox)
 	default:

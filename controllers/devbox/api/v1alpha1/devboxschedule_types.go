@@ -25,8 +25,8 @@ import (
 type ScheduleType string
 
 const (
-	// Stopped indicates the devbox should be stopped
-	Stopped ScheduleType = "Stopped"
+	// ScheduleStopped indicates the devbox should be stopped
+	ScheduleStopped ScheduleType = "Stopped"
 )
 
 // DevBoxScheduleSpec defines the desired state of DevBoxSchedule.
@@ -42,12 +42,12 @@ type DevBoxScheduleSpec struct {
 	ScheduleTime metav1.Time `json:"scheduleTime"`
 
 	// +kubebuilder:validation:Required
-	// +kubebuilder:default=Stopped;Shutdown
+	// +kubebuilder:default=Stopped
 	ScheduleType ScheduleType `json:"scheduleType"`
 }
 
 // ScheduleState defines the current state of the devbox schedule process
-// +kubebuilder:validation:Enum=Pending;Completed;Unknown
+// +kubebuilder:validation:Enum=Pending;Completed;Unknown;NotFound;NotMatch
 type ScheduleState string
 
 const (
@@ -59,12 +59,14 @@ const (
 	ScheduleStateUnknown ScheduleState = "Unknown"
 	// ScheduleStateNotFound indicates the devbox is not found.
 	ScheduleStateNotFound ScheduleState = "NotFound"
+	// ScheduleStateNotMatch indicates the devbox uid is not match.
+	ScheduleStateNotMatch ScheduleState = "NotMatch"
 )
 
 // DevBoxScheduleStatus defines the observed state of DevBoxSchedule.
 type DevBoxScheduleStatus struct {
 	// State represents the current state of the scheduled shutdown
-	// +kubebuilder:validation:Enum=Pending;Completed;Unknown
+	// +kubebuilder:validation:Enum=Pending;Completed;Unknown;NotFound;NotMatch
 	State ScheduleState `json:"state,omitempty"`
 }
 
