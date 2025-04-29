@@ -15,7 +15,7 @@ export default function References() {
   const session = getDesktopSessionFromSessionStorage();
 
   const config = {
-    content: openApiDocument,
+    content: openApiDocument(env.sealosDomain),
     authentication: {
       preferredSecurityScheme: ['kubeconfigAuth', 'jwtAuth'],
       securitySchemes: {
