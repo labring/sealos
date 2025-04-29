@@ -62,7 +62,9 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		logger.Error(err, "Failed to get DevBoxSchedule")
 		return ctrl.Result{}, err
 	}
-	if devboxSchedule.Status.State == devboxv1alpha1.ScheduleStateCompleted {
+	var devbox devboxv1alpha1.Devbox
+	switch devboxSchedule.Status.State {
+	case devboxv1alpha1.ScheduleStateCompleted:
 		logger.Info("Schedule already completed, deleting the CR")
 		if err := r.Delete(ctx, &devboxSchedule); err != nil {
 			logger.Error(err, "Failed to delete completed DevboxSchedule")
@@ -70,40 +72,37 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		logger.Info("Successfully deleted completed DevboxSchedule")
 		return ctrl.Result{}, nil
-	}
-	var devbox devboxv1alpha1.Devbox
-	if err := r.Get(ctx, types.NamespacedName{Name: devboxSchedule.Spec.DevBoxName, Namespace: devboxSchedule.Namespace}, &devbox); err != nil {
-		if errors.IsNotFound(err) {
-			logger.Error(err, "DevBox not found", "DevBoxName", devboxSchedule.Spec.DevBoxName)
-			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotFound)
-		}
-		logger.Error(err, "Failed to get DevBox", "DevBoxName", devboxSchedule.Spec.DevBoxName)
-		return ctrl.Result{}, err
-	}
-	if devbox.ObjectMeta.UID != devboxSchedule.ObjectMeta.UID {
-		logger.Error(fmt.Errorf("UID mismatch: devbox=%s, schedule=%s", devbox.ObjectMeta.UID, devboxSchedule.ObjectMeta.UID), "DevBox UID does not match DevBoxSchedule reference")
-		return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotMatch)
-	}
-	// Check if the scheduled time has been reached
-	if r.checkScheduleReached(ctx, &devboxSchedule) {
-		logger.Info("Schedule time reached, performing operator", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleType", devboxSchedule.Spec.ScheduleType)
-		// Execute the scheduled operation (start or shutdown DevBox)
-		if err := r.performSchedule(ctx, &devbox, devboxSchedule.Spec.ScheduleType); err != nil {
-			logger.Error(err, "Failed to perform scheduled operation",
-				"DevBoxName", devboxSchedule.Spec.DevBoxName)
-			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateUnknown)
-		}
-		return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateCompleted)
-	}
-
-	requeueAfter := calculateRequeueTime(time.Now(), devboxSchedule.Spec.ScheduleTime.Time)
-	logger.Info("Schedule time not yet reached, scheduling requeue", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleTime", devboxSchedule.Spec.ScheduleTime.Time, "RequeueAfter", requeueAfter, "NextCheck", time.Now().Add(requeueAfter))
-	if devboxSchedule.Status.State != devboxv1alpha1.ScheduleStatePending {
-		if _, err := r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStatePending); err != nil {
+	case devboxv1alpha1.ScheduleStatePending:
+		if err := r.Get(ctx, types.NamespacedName{Name: devboxSchedule.Spec.DevBoxName, Namespace: devboxSchedule.Namespace}, &devbox); err != nil {
+			if errors.IsNotFound(err) {
+				logger.Error(err, "DevBox not found", "DevBoxName", devboxSchedule.Spec.DevBoxName)
+				return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotFound)
+			}
+			logger.Error(err, "Failed to get DevBox", "DevBoxName", devboxSchedule.Spec.DevBoxName)
 			return ctrl.Result{}, err
 		}
+		if devbox.ObjectMeta.UID != devboxSchedule.ObjectMeta.UID {
+			logger.Error(fmt.Errorf("UID mismatch: devbox=%s, schedule=%s", devbox.ObjectMeta.UID, devboxSchedule.ObjectMeta.UID), "DevBox UID does not match DevBoxSchedule reference")
+			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotMatch)
+		}
+		// Check if the scheduled time has been reached
+		if r.checkScheduleReached(ctx, &devboxSchedule) {
+			logger.Info("Schedule time reached, performing operator", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleType", devboxSchedule.Spec.ScheduleType)
+			// Execute the scheduled operation (start or shutdown DevBox)
+			if err := r.performSchedule(ctx, &devbox, devboxSchedule.Spec.ScheduleType); err != nil {
+				logger.Error(err, "Failed to perform scheduled operation", "DevBoxName", devboxSchedule.Spec.DevBoxName)
+				return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateUnknown)
+			}
+			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateCompleted)
+		} else {
+			requeueAfter := calculateRequeueTime(devboxSchedule.Spec.ScheduleTime.Time)
+			logger.Info("Schedule time not yet reached, scheduling requeue", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleTime", devboxSchedule.Spec.ScheduleTime.Time, "RequeueAfter", requeueAfter, "NextCheck", time.Now().Add(requeueAfter))
+			return ctrl.Result{RequeueAfter: requeueAfter}, nil
+		}
+	default:
+		logger.Info("DevBoxSchedule in unexpected state", "state", devboxSchedule.Status.State, "devBoxName", devboxSchedule.Spec.DevBoxName)
 	}
-	return ctrl.Result{RequeueAfter: requeueAfter}, nil
+	return ctrl.Result{}, nil
 }
 
 func (r *DevBoxScheduleReconciler) updateStatus(ctx context.Context, scheduledShutdown *devboxv1alpha1.DevBoxSchedule, state devboxv1alpha1.ScheduleState) (ctrl.Result, error) {
@@ -134,25 +133,24 @@ func (r *DevBoxScheduleReconciler) checkScheduleReached(ctx context.Context, dev
 	return time.Now().After(devboxSchedule.Spec.ScheduleTime.Time)
 }
 
-func calculateRequeueTime(now time.Time, shutdownTime time.Time) time.Duration {
-	totalWaitDuration := shutdownTime.Sub(now)
-	var requeueAfter time.Duration
-	switch {
-	case totalWaitDuration > 24*time.Hour:
-		requeueAfter = 24 * time.Hour
-	case totalWaitDuration > 6*time.Hour:
-		requeueAfter = 6 * time.Hour
-	case totalWaitDuration > 1*time.Hour:
-		requeueAfter = 1 * time.Hour
-	case totalWaitDuration > 10*time.Minute:
-		requeueAfter = 10 * time.Minute
-	default:
-		requeueAfter = totalWaitDuration
+var requeueTimeSteps = []time.Duration{24 * time.Hour, 6 * time.Hour, 1 * time.Hour, 10 * time.Minute, 0}
+
+func calculateRequeueTime(targetTime time.Time) time.Duration {
+	now := time.Now()
+	totalWaitDuration := targetTime.Sub(now)
+	if totalWaitDuration <= 0 {
+		return 0
 	}
-	if now.Add(requeueAfter).After(shutdownTime) {
-		requeueAfter = totalWaitDuration
+	for _, step := range requeueTimeSteps {
+		if totalWaitDuration > step {
+			requeueAfter := step
+			if now.Add(requeueAfter).After(targetTime) {
+				requeueAfter = totalWaitDuration
+			}
+			return requeueAfter
+		}
 	}
-	return requeueAfter
+	return totalWaitDuration
 }
 
 // SetupWithManager sets up the controller with the Manager.
