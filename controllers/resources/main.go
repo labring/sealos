@@ -23,8 +23,6 @@ import (
 	"os"
 	"time"
 
-	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/mongo"
 	"github.com/labring/sealos/controllers/pkg/objectstorage"
@@ -163,7 +161,7 @@ func main() {
 	)
 	if endpoint, ak, sk, mAddr := os.Getenv(MinioEndpoint), os.Getenv(MinioAk), os.Getenv(MinioSk), os.Getenv(MinioMetricsAddr); endpoint != "" && ak != "" && sk != "" && mAddr != "" {
 		reconciler.Logger.Info("init minio client")
-		if reconciler.ObjStorageClient, err = objectstoragev1.NewOSClient(endpoint, ak, sk); err != nil {
+		if reconciler.ObjStorageClient, err = objectstorage.NewOSClient(endpoint, ak, sk); err != nil {
 			reconciler.Logger.Error(err, "failed to new minio client")
 			os.Exit(1)
 		}

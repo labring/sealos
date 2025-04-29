@@ -21,6 +21,8 @@ import (
 	"os"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/config"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -83,6 +85,7 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
+		Controller: config.Controller{UsePriorityQueue: ptr.To(true)},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
