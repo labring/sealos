@@ -101,31 +101,40 @@ export async function POST(req: NextRequest) {
     const ingressYaml = json2Ingress(newNetwork, INGRESS_SECRET as string);
 
     // Update service
-    const existingService = await k8sCore.readNamespacedService(devboxName, namespace);
-    const servicePorts = existingService.body.spec?.ports || [];
+    try {
+      const existingService = await k8sCore.readNamespacedService(devboxName, namespace);
+      const servicePorts = existingService.body.spec?.ports || [];
 
-    await k8sCore.patchNamespacedService(
-      devboxName,
-      namespace,
-      {
-        spec: {
-          ports: [
-            ...servicePorts,
-            {
-              port: port,
-              targetPort: port,
-              name: `port-${port}`
-            }
-          ]
-        }
-      },
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
-    );
+      await k8sCore.patchNamespacedService(
+        devboxName,
+        namespace,
+        {
+          spec: {
+            ports: [
+              ...servicePorts,
+              {
+                port: port,
+                targetPort: port,
+                name: `port-${port}`
+              }
+            ]
+          }
+        },
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+      );
+    } catch (error: any) {
+      if (error?.response?.statusCode === 404) {
+        // Service doesn't exist, create a new one
+        await applyYamlList([json2Service(newNetwork)], 'create');
+      } else {
+        throw error;
+      }
+    }
 
     // Update ingress
     await applyYamlList([ingressYaml], 'create');

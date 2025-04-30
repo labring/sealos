@@ -34,7 +34,7 @@ import {
   RequestSchema as CreateDevboxPortRequestSchema,
   SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
-} from './createDevboxPort/schema';
+} from './v1/createDevboxPort/schema';
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
@@ -44,7 +44,7 @@ import {
   RequestSchema as GetDevboxVersionListRequestSchema,
   SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
-} from './v1/getDevboxVersionListDefault/schema';
+} from './v1/getDevboxReleaseListDefault/schema';
 import {
   DeployDevboxRequestSchema,
   DeployDevboxSuccessResponseSchema,
@@ -60,6 +60,7 @@ import {
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
 } from './v1/getDevboxByNameEasyResponse/schema';
 import { ResponseSchema as GetDevboxListResponseSchema } from './v1/getDevboxListEasyResponse/schema';
+
 export const ErrorResponseSchema = z.object({
   code: z.number(),
   message: z.string(),
@@ -404,7 +405,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/createDevboxPort': {
+      '/api/v1/createDevboxPort': {
         post: {
           summary: 'Create a new devbox port',
           description:
@@ -512,9 +513,9 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/getDevboxVersionListDefault': {
+      '/api/v1/getDevboxReleaseListDefault': {
         get: {
-          summary: 'Get devbox version list',
+          summary: 'Get devbox release list',
           description:
             'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
           requestParams: {
