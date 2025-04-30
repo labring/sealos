@@ -60,6 +60,11 @@ import {
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
 } from './v1/getDevboxByNameEasyResponse/schema';
 import { ResponseSchema as GetDevboxListResponseSchema } from './v1/getDevboxListEasyResponse/schema';
+import {
+  RequestSchema as RemoveDevboxPortRequestSchema,
+  SuccessResponseSchema as RemoveDevboxPortSuccessResponseSchema,
+  ErrorResponseSchema as RemoveDevboxPortErrorResponseSchema
+} from './v1/removeDevboxPort/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -469,6 +474,54 @@ export const openApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: CreateDevboxPortErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/removeDevboxPort': {
+        post: {
+          tags: ['Port'],
+          summary: 'Remove a devbox port',
+          description: 'Remove a port from devbox and delete its associated ingress',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: RemoveDevboxPortRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Successfully removed devbox port',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Service or port not found',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
                 }
               }
             }
