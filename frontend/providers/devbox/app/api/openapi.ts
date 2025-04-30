@@ -76,6 +76,28 @@ export const openApiDocument = (sealosDomain: string) =>
       version: '1.0.0',
       description: 'API documentation for Devbox service'
     },
+    tags: [
+      {
+        name: 'Lifecycle',
+        description: 'Devbox lifecycle management operations'
+      },
+      {
+        name: 'ReleaseAndDeploy',
+        description: 'Devbox release management and deployment'
+      },
+      {
+        name: 'Query',
+        description: 'Devbox information retrieval operations'
+      },
+      {
+        name: 'Runtime',
+        description: 'Devbox Runtime management'
+      },
+      {
+        name: 'Port',
+        description: 'Devbox port management'
+      }
+    ],
     servers: [
       {
         url: `http://127.0.0.1:3000`,
@@ -111,6 +133,7 @@ export const openApiDocument = (sealosDomain: string) =>
     paths: {
       '/api/createDevbox': {
         post: {
+          tags: ['Lifecycle'],
           summary: 'Create a new devbox',
           description:
             'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
@@ -167,6 +190,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/deployDevbox': {
         post: {
+          tags: ['ReleaseAndDeploy'],
           summary: 'Deploy a devbox',
           description:
             'Deploy a devbox with specific tag and resource configuration, you can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list to get the tag',
@@ -207,6 +231,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/releaseDevboxDefault': {
         post: {
+          tags: ['ReleaseAndDeploy'],
           summary: 'Create a new devbox release',
           description:
             'Create a new release for an existing devbox with a specific tag and description. You can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/v1/getDevboxVersionListDefault interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
@@ -255,6 +280,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/delDevbox': {
         delete: {
+          tags: ['Lifecycle'],
           summary: 'Delete a devbox',
           description: 'Delete a devbox and its associated resources (service, ingress, etc.)',
           requestParams: {
@@ -290,6 +316,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/startDevbox': {
         post: {
+          tags: ['Lifecycle'],
           summary: 'Start a devbox',
           description: 'Start a devbox and its associated resources (service, ingress, etc.)',
           requestBody: {
@@ -329,6 +356,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/shutdownDevbox': {
         post: {
+          tags: ['Lifecycle'],
           summary: 'Shutdown a devbox',
           description: 'Shutdown a devbox and its associated resources (service, ingress, etc.)',
           requestBody: {
@@ -368,6 +396,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/restartDevbox': {
         post: {
+          tags: ['Lifecycle'],
           summary: 'Restart a devbox',
           description: 'Restart a devbox and its associated resources (service, ingress, etc.)',
           requestBody: {
@@ -407,6 +436,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/createDevboxPort': {
         post: {
+          tags: ['Port'],
           summary: 'Create a new devbox port',
           description:
             'Create a new devbox port,if the port is already exists,it will return the port information directly',
@@ -447,6 +477,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/getOfficialRuntimeList': {
         get: {
+          tags: ['Runtime'],
           summary: 'Get the official runtime list',
           description: 'Get all available official runtime lists, no authentication required',
           responses: {
@@ -471,6 +502,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/templateRepository/template/list': {
         get: {
+          tags: ['Runtime'],
           summary: 'Get the runtime version list of the specified runtime',
           description:
             'Get all available runtime version list of the specified runtime, need JWT authentication',
@@ -515,6 +547,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/getDevboxReleaseListDefault': {
         get: {
+          tags: ['ReleaseAndDeploy'],
           summary: 'Get devbox release list',
           description:
             'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
@@ -551,7 +584,8 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/releaseAndDeployDevbox': {
         post: {
-          summary: 'Release and deploy a devbox',
+          tags: ['ReleaseAndDeploy'],
+          summary: 'ReleaseAndDeploy and deploy a devbox',
           description:
             'Create a new release for a devbox and deploy it with specific resource configuration,you need to shutdown the devbox before releasing it',
           requestBody: {
@@ -599,6 +633,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/getDevboxByNameEasyResponse': {
         get: {
+          tags: ['Query'],
           summary: 'Get devbox by name',
           description: 'Get detailed information about a specific devbox by its name',
           requestParams: {
@@ -634,6 +669,7 @@ export const openApiDocument = (sealosDomain: string) =>
       },
       '/api/v1/getDevboxListEasyResponse': {
         get: {
+          tags: ['Query'],
           summary: 'Get devbox list',
           description: 'Get all devboxes in the current namespace',
           responses: {
