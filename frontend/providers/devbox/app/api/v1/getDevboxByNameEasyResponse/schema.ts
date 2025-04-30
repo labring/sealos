@@ -40,21 +40,6 @@ export const SuccessResponseSchema = z.object({
     name: z.string().openapi({
       description: 'Devbox name'
     }),
-    runtimeId: z.string().openapi({
-      description: 'Runtime ID'
-    }),
-    runtimeName: z.string().openapi({
-      description: 'Runtime Name'
-    }),
-    runtimeConfig: z.any().openapi({
-      description: 'Runtime Configuration'
-    }),
-    runtimeVersionId: z.string().openapi({
-      description: 'Runtime Version ID'
-    }),
-    runtimeVersionName: z.string().openapi({
-      description: 'Runtime Version Name'
-    }),
     status: z.string().openapi({
       description: 'Devbox Status'
     }),
@@ -75,6 +60,18 @@ export const SuccessResponseSchema = z.object({
     }),
     networks: z.array(NetworkSchema).openapi({
       description: 'Network Configurations'
+    }),
+    base64PrivateKey: z.string().openapi({
+      description: 'Base64 encoded private key'
+    }),
+    userName: z.string().openapi({
+      description: 'User name'
+    }),
+    workingDir: z.string().openapi({
+      description: 'Working directory'
+    }),
+    domain: z.string().openapi({
+      description: 'Sealos domain'
     })
   })
 });

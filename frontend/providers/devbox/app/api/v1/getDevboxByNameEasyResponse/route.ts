@@ -10,6 +10,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
 import { RequestSchema } from './schema';
+import { parseTemplateConfig } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,8 @@ export async function GET(req: NextRequest) {
         },
         uid: true,
         image: true,
-        name: true
+        name: true,
+        config: true
       }
     });
     if (!template) {
@@ -103,22 +105,35 @@ export async function GET(req: NextRequest) {
       }) || [];
     const resp = [devboxBody, portInfos, template] as [KBDevboxTypeV2, PortInfos, typeof template];
     const adaptedData = adaptDevboxDetailV2(resp);
+
+    // get ssh info
+    const response = await k8sCore.readNamespacedSecret(devboxName, namespace);
+    const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
+
+    if (!base64PrivateKey) {
+      return jsonRes({
+        code: 404,
+        message: 'SSH keys not found'
+      });
+    }
+
+    const config = parseTemplateConfig(template.config);
+
     return jsonRes({
       data: {
         id: adaptedData.id,
         name: adaptedData.name,
-        runtimeId: adaptedData.templateRepositoryUid,
-        runtimeName: adaptedData.templateRepositoryName,
-        runtimeConfig: adaptedData.templateConfig,
-        runtimeVersionId: adaptedData.templateUid,
-        runtimeVersionName: adaptedData.templateName,
         status: adaptedData.status.value,
         createTime: adaptedData.createTime,
         imageName: adaptedData.image,
-        sshPort: adaptedData.sshPort,
         cpu: adaptedData.cpu,
         memory: adaptedData.memory,
-        networks: adaptedData.networks
+        networks: adaptedData.networks,
+        sshPort: adaptedData.sshPort,
+        base64PrivateKey,
+        userName: config.user,
+        workingDir: config.workingDir,
+        domain: process.env.SEALOS_DOMAIN
       }
     });
   } catch (err: any) {

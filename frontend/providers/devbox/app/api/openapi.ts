@@ -29,11 +29,7 @@ import {
   SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
   ErrorResponseSchema as RestartDevboxErrorResponseSchema
 } from './restartDevbox/schema';
-import {
-  RequestSchema as GetSSHConnectionInfoRequestSchema,
-  SuccessResponseSchema as GetSSHConnectionInfoSuccessResponseSchema,
-  ErrorResponseSchema as GetSSHConnectionInfoErrorResponseSchema
-} from './v1/getSshInfo/schema';
+
 import {
   RequestSchema as CreateDevboxPortRequestSchema,
   SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
@@ -402,50 +398,6 @@ export const openApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: RestartDevboxErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/v1/getSshInfo': {
-        get: {
-          summary: 'Get SSH connection information',
-          description:
-            'Get SSH connection information for a devbox, including keys, token, and configuration',
-          requestParams: {
-            query: GetSSHConnectionInfoRequestSchema
-          },
-          responses: {
-            '200': {
-              description: 'Successfully retrieved SSH connection information',
-              content: {
-                'application/json': {
-                  schema: GetSSHConnectionInfoSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request parameters',
-              content: {
-                'application/json': {
-                  schema: GetSSHConnectionInfoErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'SSH keys not found',
-              content: {
-                'application/json': {
-                  schema: GetSSHConnectionInfoErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: GetSSHConnectionInfoErrorResponseSchema
                 }
               }
             }
