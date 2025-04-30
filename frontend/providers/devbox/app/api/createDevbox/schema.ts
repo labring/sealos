@@ -55,9 +55,6 @@ export const DevboxFormSchema = z
     templateUid: z.string().min(1).openapi({
       description: 'Template UID'
     }),
-    templateRepositoryUid: z.string().min(1).openapi({
-      description: 'Template Repository UID'
-    }),
     templateConfig: z.string().default('{}').openapi({
       description: 'Template configuration in JSON format'
     }),

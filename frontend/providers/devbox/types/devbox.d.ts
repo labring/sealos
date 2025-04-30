@@ -54,7 +54,7 @@ export interface DevboxEditType {
 export interface DevboxEditTypeV2 {
   name: string;
   templateUid: string;
-  templateRepositoryUid: string;
+  templateRepositoryUid?: string;
   templateConfig: string; //json
   image: string;
   cpu: number;
