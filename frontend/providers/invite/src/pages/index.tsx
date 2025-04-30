@@ -151,7 +151,15 @@ export default function InvitationPage({
   // }, []);
 
   return (
-    <Flex flexDirection="column" py={'40px'} px={'56px'} position="relative" overflowY={'auto'}>
+    <Flex
+      flexDirection="column"
+      py={'40px'}
+      px={'56px'}
+      position="relative"
+      overflowY={'auto'}
+      bg={'linear-gradient(180deg, #FAFAFA 0%, #FAFAFA 100%)'}
+      h={'100vh'}
+    >
       <Flex justifyContent="space-between" alignItems="center">
         <Box>
           <Text fontSize="24px" fontWeight="600">
@@ -185,18 +193,18 @@ export default function InvitationPage({
         </Center>
       </Flex>
 
-      <Flex py={'36px'} gap={'46px'}>
+      <Flex py={'36px'} gap={'46px'} alignItems={'center'}>
         <Box fontSize={'16px'} fontWeight={400}>
           <Text color={'#71717A'}>{t('total_earnings')}</Text>
-          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'}>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'} lineHeight={'20px'}>
             <Image src="/sealos.svg" alt="icon" w={'18px'} h={'18px'} />
             <Text>{isLoading ? t('loading') : invitationData.totalAmount.toString()}</Text>
           </Center>
         </Box>
-        <Divider orientation="vertical" />
+        <Divider h={'40px'} orientation="vertical" borderColor={'#E4E4E7'} />
         <Box fontSize={'16px'} fontWeight={400}>
           <Text color={'#71717A'}>{t('invitation_code')}</Text>
-          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'} h={'30px'}>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'} lineHeight={'20px'}>
             <Text>{userInfo?.id || ''}</Text>
             <Icon
               size={'20px'}
@@ -208,11 +216,10 @@ export default function InvitationPage({
             />
           </Center>
         </Box>
-
-        <Divider orientation="vertical" />
+        <Divider h={'40px'} orientation="vertical" borderColor={'#E4E4E7'} />
         <Box fontSize={'16px'} fontWeight={400}>
           <Text color={'#71717A'}>{t('Invitation link')}</Text>
-          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'8px'}>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'8px'} lineHeight={'20px'}>
             <Text>{`https://${SEALOS_DOMAIN}/?uid=${userInfo?.id || ''}`}</Text>
             <Icon
               size={'20px'}
@@ -226,7 +233,7 @@ export default function InvitationPage({
         </Box>
       </Flex>
 
-      <Grid templateColumns={['1fr', 'repeat(3,1fr)']} gap={5} mb={6}>
+      <Grid templateColumns={['1fr', 'repeat(3,1fr)']} gap={5}>
         <UserStatBox
           title={t('Cumulative number of invitees')}
           count={isLoading ? 0 : invitationData.totalPeople}
@@ -473,10 +480,10 @@ function UserStatBox({
 }) {
   return (
     <Box p={'24px'} border="1px solid #E4E4E7" borderRadius="16px" bg={'#FFF'}>
-      <Text color="#71717A" mb={4}>
+      <Text color="#71717A" mb={'8px'}>
         {title}
       </Text>
-      <Flex justifyContent="space-between" alignItems="center">
+      <Flex justifyContent="space-between" alignItems="center" h={'30px'}>
         <Text fontSize="30px" fontWeight="600">
           {count} {title.includes('invitees') ? '' : '个'}
         </Text>
