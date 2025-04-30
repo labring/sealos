@@ -43,12 +43,12 @@ import {
   RequestSchema as ReleaseDevboxRequestSchema,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
   ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
-} from './releaseDevbox/schema';
+} from './v1/releaseDevboxDefault/schema';
 import {
   RequestSchema as GetDevboxVersionListRequestSchema,
   SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
-} from './getDevboxVersionList/schema';
+} from './v1/getDevboxVersionListDefault/schema';
 import {
   DeployDevboxRequestSchema,
   DeployDevboxSuccessResponseSchema,
@@ -172,7 +172,7 @@ export const openApiDocument = (sealosDomain: string) =>
         post: {
           summary: 'Deploy a devbox',
           description:
-            'Deploy a devbox with specific tag and resource configuration, you can use the /api/getDevboxVersionList interface to get the devbox version list to get the tag',
+            'Deploy a devbox with specific tag and resource configuration, you can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list to get the tag',
           requestBody: {
             content: {
               'application/json': {
@@ -208,11 +208,11 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/releaseDevbox': {
+      '/api/v1/releaseDevboxDefault': {
         post: {
           summary: 'Create a new devbox release',
           description:
-            'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
+            'Create a new release for an existing devbox with a specific tag and description. You can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/v1/getDevboxVersionListDefault interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
           requestBody: {
             content: {
               'application/json': {
@@ -560,7 +560,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/getDevboxVersionList': {
+      '/api/v1/getDevboxVersionListDefault': {
         get: {
           summary: 'Get devbox version list',
           description:

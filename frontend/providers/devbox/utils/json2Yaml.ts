@@ -167,7 +167,7 @@ export const json2DevboxRelease = (data: {
   devboxName: string;
   tag: string;
   releaseDes: string;
-  devboxUid: string;
+  devboxUid?: string;
 }) => {
   const json = {
     apiVersion: 'devbox.sealos.io/v1alpha1',
@@ -181,7 +181,7 @@ export const json2DevboxRelease = (data: {
           name: data.devboxName,
           blockOwnerDeletion: false,
           controller: false,
-          uid: data.devboxUid
+          uid: data.devboxUid || ''
         }
       ]
     },
