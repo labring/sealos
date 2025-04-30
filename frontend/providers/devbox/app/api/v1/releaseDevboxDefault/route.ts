@@ -36,6 +36,17 @@ export async function POST(req: NextRequest) {
       'devboxreleases'
     )) as { body: { items: KBDevboxReleaseType[] } };
 
+    const { body: devboxBody } = (await k8sCustomObjects.listNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes'
+    )) as { body: { items: KBDevboxReleaseType[] } };
+
+    const devbox = devboxBody.items.find(
+      (item: any) => item.metadata.name === devboxForm.devboxName
+    );
+
     if (
       releaseBody.items.some((item: any) => {
         return (
@@ -51,8 +62,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const devbox = json2DevboxRelease(devboxForm);
-    await applyYamlList([devbox], 'create');
+    const devboxYaml = json2DevboxRelease({
+      ...devboxForm,
+      devboxUid: devbox?.metadata.uid || ''
+    });
+    await applyYamlList([devboxYaml], 'create');
 
     return jsonRes({
       data: 'success create devbox release'
