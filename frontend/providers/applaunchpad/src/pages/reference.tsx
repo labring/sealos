@@ -1,5 +1,3 @@
-'use client';
-
 import { ApiReferenceReact } from '@scalar/api-reference-react';
 
 import { openApiDocument } from '@/api/openapi';
@@ -21,10 +19,10 @@ export default function References() {
           value: encodeURIComponent(getUserKubeConfig() || '')
         }
       }
-    },
-    cdn: process.env.NEXT_PUBLIC_MOCK_USER
-      ? undefined
-      : `https://devbox.${SEALOS_DOMAIN}/scalar/cdn.js`
+    }
+    // cdn: process.env.NEXT_PUBLIC_MOCK_USER
+    //   ? undefined
+    //   : `https://devbox.${SEALOS_DOMAIN}/scalar/cdn.js`
   };
   return <ApiReferenceReact configuration={config} />;
 }
