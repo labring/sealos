@@ -600,7 +600,7 @@ export const openApiDocument = (sealosDomain: string) =>
         post: {
           summary: 'Release and deploy a devbox',
           description:
-            'Create a new release for a devbox and deploy it with specific resource configuration',
+            'Create a new release for a devbox and deploy it with specific resource configuration,you need to shutdown the devbox before releasing it',
           requestBody: {
             content: {
               'application/json': {
