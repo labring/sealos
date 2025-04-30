@@ -20,6 +20,7 @@
     "@emotion/styled": "^11.11.0",
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
+    "@scalar/api-reference-react": "^0.6.24",
     "@sealos/driver": "workspace:^",
     "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
@@ -59,6 +60,8 @@
     "sass": "^1.68.0",
     "sealos-desktop-sdk": "workspace:*",
     "typescript": "^5.2.2",
+    "zod": "^3.23.8",
+    "zod-openapi": "^4.2.4",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
