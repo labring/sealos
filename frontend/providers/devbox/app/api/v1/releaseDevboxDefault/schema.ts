@@ -19,7 +19,20 @@ export const RequestSchema = z.object({
 });
 
 export const SuccessResponseSchema = z.object({
-  data: z.string().default('success')
+  data: z.object({
+    devboxName: z.string().openapi({
+      description: 'Devbox name'
+    }),
+    tag: z.string().openapi({
+      description: 'Release tag'
+    }),
+    releaseDes: z.string().openapi({
+      description: 'Release description'
+    }),
+    createdAt: z.string().openapi({
+      description: 'Release creation time'
+    })
+  })
 });
 
 export const ErrorResponseSchema = z.object({

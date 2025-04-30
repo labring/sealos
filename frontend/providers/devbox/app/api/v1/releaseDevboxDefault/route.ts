@@ -69,7 +69,12 @@ export async function POST(req: NextRequest) {
     await applyYamlList([devboxYaml], 'create');
 
     return jsonRes({
-      data: 'success create devbox release'
+      data: {
+        devboxName: devboxForm.devboxName,
+        tag: devboxForm.tag,
+        releaseDes: devboxForm.releaseDes || '',
+        createdAt: new Date().toISOString()
+      }
     });
   } catch (err: any) {
     return jsonRes({
