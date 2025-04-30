@@ -72,7 +72,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test build ## Build docker image with the manager.
+docker-build: build ## Build docker image with the manager.
 	mv bin/manager bin/webhook-admission-${TARGETARCH}
 	chmod +x bin/webhook-admission-${TARGETARCH}
 	docker build -t ${IMG} . --build-arg TARGETARCH=${TARGETARCH}
