@@ -65,6 +65,10 @@ import {
   SuccessResponseSchema as RemoveDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as RemoveDevboxPortErrorResponseSchema
 } from './v1/removeDevboxPort/schema';
+import {
+  RequestSchema as CreateSimpleDevboxRequestSchema,
+  SuccessResponseSchema as CreateSimpleDevboxSuccessResponseSchema
+} from './v1/createSimpleDevbox/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -155,6 +159,63 @@ export const openApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: CreateDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Template not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '409': {
+              description: 'Devbox already exists',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/createSimpleDevbox': {
+        post: {
+          tags: ['Lifecycle'],
+          summary: 'Create a new devbox with a simple runtime',
+          description:
+            'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: CreateSimpleDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox created successfully',
+              content: {
+                'application/json': {
+                  schema: CreateSimpleDevboxSuccessResponseSchema
                 }
               }
             },
