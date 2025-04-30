@@ -215,7 +215,8 @@ export async function POST(req: NextRequest) {
 
     // 6. deploy app
     const appName = `${devboxName}-release-${nanoid()}`;
-    const image = `${process.env.REGISTRY_ADDR}/${process.env.NAMESPACE}/${devboxName}:${tag}`;
+    const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
+
     const formData = {
       appForm: {
         appName,
@@ -277,7 +278,6 @@ export async function POST(req: NextRequest) {
     );
 
     const responseData = await fetchResponse.json();
-    console.log(responseData);
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =

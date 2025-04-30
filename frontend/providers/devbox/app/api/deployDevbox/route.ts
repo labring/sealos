@@ -5,6 +5,8 @@ import { nanoid } from '@/utils/tools';
 import { devboxIdKey } from '@/constants/devbox';
 import { DeployDevboxRequestSchema } from './schema';
 import { jsonRes } from '@/services/backend/response';
+import { getK8s } from '@/services/backend/kubernetes';
+import { authSession } from '@/services/backend/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +20,13 @@ export async function POST(req: NextRequest) {
     const headers = {
       Authorization: headerList.get('Authorization') || ''
     };
+    const { namespace } = await getK8s({
+      kubeconfig: await authSession(headerList)
+    });
 
     const appName = `${devboxName}-release-${nanoid()}`;
-    const image = `${process.env.REGISTRY_ADDR}/${process.env.NAMESPACE}/${devboxName}:${tag}`;
+    const image = `${process.env.REGISTRY_ADDR}/${namespace}/${devboxName}:${tag}`;
+
     const formData = {
       appForm: {
         appName,
