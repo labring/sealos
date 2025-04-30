@@ -43,8 +43,7 @@ export async function POST(req: NextRequest) {
             openPublicDomain: true,
             customDomain: '',
             domain: process.env.INGRESS_DOMAIN || '',
-            appProtocol: 'HTTP',
-            openNodePort: false
+            appProtocol: 'HTTP'
           }
         ],
         envs: [],

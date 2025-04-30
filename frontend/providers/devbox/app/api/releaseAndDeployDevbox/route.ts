@@ -28,7 +28,80 @@ export async function POST(req: NextRequest) {
       kubeconfig: await authSession(headerList)
     });
 
-    // 1. Check if the same version already exists
+    // 2. shutdown devbox
+    const ingressesResponse2 = await k8sNetworkingApp.listNamespacedIngress(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${devboxKey}=${devboxName}`
+    );
+    const ingresses2: any = (ingressesResponse2.body as { items: any[] }).items;
+
+    ingresses2.forEach(async (ingress: any) => {
+      const annotationsIngressClass =
+        ingress.metadata?.annotations?.['kubernetes.io/ingress.class'];
+      const specIngressClass = ingress.spec?.ingressClassName;
+
+      if (
+        (annotationsIngressClass && annotationsIngressClass === 'nginx') ||
+        (specIngressClass && specIngressClass === 'nginx')
+      ) {
+        if (annotationsIngressClass) {
+          await k8sNetworkingApp.patchNamespacedIngress(
+            ingress.metadata.name,
+            namespace,
+            { metadata: { annotations: { 'kubernetes.io/ingress.class': 'pause' } } },
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            {
+              headers: {
+                'Content-Type': 'application/merge-patch+json'
+              }
+            }
+          );
+        } else if (specIngressClass) {
+          await k8sNetworkingApp.patchNamespacedIngress(
+            ingress.metadata.name,
+            namespace,
+            { spec: { ingressClassName: 'pause' } },
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            {
+              headers: {
+                'Content-Type': 'application/merge-patch+json'
+              }
+            }
+          );
+        }
+      }
+    });
+
+    await k8sCustomObjects.patchNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName,
+      { spec: { state: 'Stopped' } },
+      undefined,
+      undefined,
+      undefined,
+      {
+        headers: {
+          'Content-Type': 'application/merge-patch+json'
+        }
+      }
+    );
+
+    // 3. create devbox release
     const { body: releaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
@@ -55,11 +128,11 @@ export async function POST(req: NextRequest) {
     const devbox = json2DevboxRelease({ devboxName, tag, releaseDes, devboxUid });
     await applyYamlList([devbox], 'create');
 
-    // 2. wait for release success
+    // 4. wait for release success
     let isReleaseSuccess = false;
     let retryCount = 0;
     const maxRetries = 30; // max wait 30 times
-    const retryInterval = 30000; // wait 30 seconds
+    const retryInterval = 10000; // wait 10 seconds
 
     while (!isReleaseSuccess && retryCount < maxRetries) {
       const { body: currentReleaseBody } = (await k8sCustomObjects.listNamespacedCustomObject(
@@ -100,7 +173,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. get network info
+    // 5. get network info
     const label = `${devboxKey}=${devboxName}`;
     const [ingressesResponse, serviceResponse] = await Promise.all([
       k8sNetworkingApp
@@ -130,18 +203,17 @@ export async function POST(req: NextRequest) {
         return {
           portName: svcport.name!,
           port: svcport.port,
-          protocol: ingressInfo?.protocol || 'TCP',
-          networkName: ingressInfo?.networkName || `network-${devboxName}-${nanoid()}`,
+          protocol: 'TCP',
+          networkName: `network-${devboxName}-${nanoid()}`,
           openPublicDomain: !!ingressInfo?.openPublicDomain,
           publicDomain: ingressInfo?.publicDomain || `${devboxName}-${nanoid()}`,
           customDomain: ingressInfo?.customDomain || '',
           domain: process.env.INGRESS_DOMAIN || '',
-          appProtocol: 'HTTP',
-          openNodePort: false
+          appProtocol: 'HTTP'
         };
       }) || [];
 
-    // 4. deploy app
+    // 6. deploy app
     const appName = `${devboxName}-release-${nanoid()}`;
     const image = `${process.env.REGISTRY_ADDR}/${process.env.NAMESPACE}/${devboxName}:${tag}`;
     const formData = {
@@ -169,8 +241,7 @@ export async function POST(req: NextRequest) {
                   openPublicDomain: true,
                   customDomain: '',
                   domain: process.env.INGRESS_DOMAIN || '',
-                  appProtocol: 'HTTP',
-                  openNodePort: false
+                  appProtocol: 'HTTP'
                 }
               ],
         envs: [],
@@ -206,6 +277,7 @@ export async function POST(req: NextRequest) {
     );
 
     const responseData = await fetchResponse.json();
+    console.log(responseData);
 
     const ingressResource = responseData.data.find((item: any) => item.kind === 'Ingress');
     const publicDomains =
@@ -224,6 +296,7 @@ export async function POST(req: NextRequest) {
 
     return jsonRes(response);
   } catch (err: any) {
+    console.log(err);
     if (err instanceof z.ZodError) {
       return jsonRes({
         code: 400,

@@ -212,7 +212,7 @@ export const openApiDocument = (sealosDomain: string) =>
         post: {
           summary: 'Create a new devbox release',
           description:
-            'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.Beside,you need to shutdown the devbox(stopped is ok) before releasing it.',
+            'Create a new release for an existing devbox with a specific tag and description. You can use the /api/getDevboxVersionList interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/getDevboxVersionList interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
           requestBody: {
             content: {
               'application/json': {
