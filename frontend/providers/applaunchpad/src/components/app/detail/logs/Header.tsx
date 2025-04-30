@@ -103,8 +103,8 @@ export const Header = ({
               const val = Number(e.target.value);
               if (isNaN(val)) {
                 formHook.setValue('limit', 1);
-              } else if (val > 500) {
-                formHook.setValue('limit', 500);
+              } else if (val > 2000) {
+                formHook.setValue('limit', 2000);
               } else if (val < 1) {
                 formHook.setValue('limit', 1);
               } else {

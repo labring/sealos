@@ -1,14 +1,23 @@
+import { GetAppByAppNameQuerySchema } from '@/constants/schema';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetAppByAppName } from '../getAppByAppName';
+import { adaptAppDetail } from '@/utils/adapt';
+import { DeployKindsType } from '@/types/app';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { appName } = req.query as { appName: string };
-    if (!appName) {
-      throw new Error('appName is empty');
+    const parseResult = GetAppByAppNameQuerySchema.safeParse(req.query);
+
+    if (!parseResult.success) {
+      return jsonRes(res, {
+        code: 400,
+        error: parseResult.error
+      });
     }
+
+    const { appName } = parseResult.data;
 
     const response = await GetAppByAppName({ appName, req });
 
@@ -20,10 +29,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         throw new Error('Get APP Deployment Error');
       })
       .filter((item) => item)
-      .flat();
+      .flat() as DeployKindsType[];
+
+    const data = await adaptAppDetail(responseData, {
+      SEALOS_DOMAIN: global.AppConfig.cloud.domain,
+      SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
+    });
 
     jsonRes(res, {
-      data: responseData
+      data
     });
   } catch (err: any) {
     jsonRes(res, {

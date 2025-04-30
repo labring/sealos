@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
-import { RequestSchema, SuccessResponseSchema } from './schema';
+import {
+  CreateAppRequestSchema,
+  SuccessResponseSchema,
+  GetAppByAppNameQuerySchema,
+  GetAppByAppNameResponseSchema,
+  DeleteAppByNameQuerySchema,
+  DeleteAppByNameResponseSchema
+} from '../constants/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -19,7 +26,7 @@ export const openApiDocument = (sealosDomain: string) =>
     },
     servers: [
       {
-        url: `http://127.0.0.1:3000`,
+        url: `http://localhost:3000`,
         description: 'Development'
       },
       {
@@ -50,7 +57,7 @@ export const openApiDocument = (sealosDomain: string) =>
           requestBody: {
             content: {
               'application/json': {
-                schema: RequestSchema
+                schema: CreateAppRequestSchema
               }
             }
           },
@@ -65,6 +72,94 @@ export const openApiDocument = (sealosDomain: string) =>
             },
             '400': {
               description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1alpha/getAppByAppName': {
+        get: {
+          summary: 'Get application by name',
+          description: 'Retrieve application details by application name',
+          parameters: [
+            {
+              name: 'appName',
+              in: 'query',
+              description: 'Application name',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Application details retrieved successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    data: GetAppByAppNameResponseSchema
+                  })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid query parameters',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1alpha/delAppByName': {
+        delete: {
+          summary: 'Delete application',
+          description: 'Delete an application by its name',
+          parameters: [
+            {
+              name: 'name',
+              in: 'query',
+              description: 'Name of the application to delete',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Application deleted successfully',
+              content: {
+                'application/json': {
+                  schema: DeleteAppByNameResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid query parameters',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
