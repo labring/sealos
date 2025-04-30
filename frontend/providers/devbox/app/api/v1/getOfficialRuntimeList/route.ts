@@ -21,24 +21,13 @@ export const GET = async function GET(req: NextRequest) {
         regionUid
       },
       select: {
-        kind: true,
-        iconId: true,
         name: true,
-        uid: true,
-        description: true,
-        templateRepositoryTags: {
-          select: {
-            tag: true
-          }
-        }
+        uid: true
       }
     });
     return jsonRes({
       data: {
-        templateRepositoryList: templateRepositoryList.map((item) => ({
-          name: item.name,
-          uid: item.uid
-        }))
+        templateRepositoryList
       }
     });
   } catch (err: any) {
