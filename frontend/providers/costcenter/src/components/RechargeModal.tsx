@@ -2,12 +2,14 @@ import vector from '@/assert/Vector.svg';
 import stripe_icon from '@/assert/bi_stripe.svg';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
+import wehchatMore from 'public/sealos-wechat.jpeg';
 import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useEnvStore from '@/stores/env';
 import useSessionStore from '@/stores/session';
 import { ApiResp } from '@/types/api';
 import { Pay, Payment } from '@/types/payment';
+import rechareMore from '@/assert/recharge_more.svg';
 import { deFormatMoney, formatMoney } from '@/utils/format';
 import {
   Box,
@@ -39,6 +41,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import GiftIcon from './icons/GiftIcon';
 import HelpIcon from './icons/HelpIcon';
+import Activities from './ActiveRules';
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -117,6 +120,40 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
             {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
           </Text>
         </Box>
+      </Flex>
+    </Flex>
+  );
+}
+function WechatMorePayment() {
+  const { t } = useTranslation();
+  return (
+    <Flex
+      flexDirection="column"
+      px="37px"
+      justify={'center'}
+      align={'center'}
+      m={'auto'}
+      display={'flex'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      position={'relative'}
+    >
+      <Flex
+        width={'267px'}
+        height={'295px'}
+        direction={'column'}
+        align="center"
+        justify={'space-between'}
+      >
+        <Img src={wehchatMore.src}></Img>
+        <Flex mt="8px">
+          <Img src={rechareMore.src} boxSize={'16px'} mr={'8px'}></Img>
+          <Box>
+            <Text color="black" fontSize="12px">
+              {t('recharge_instruction')}
+            </Text>
+          </Box>
+        </Flex>
       </Flex>
     </Flex>
   );
@@ -212,7 +249,7 @@ const BonusBox = (props: {
           fontWeight="500"
           fontSize="12px"
         >
-          <Text mr="4px">{t('Bonus')}</Text>
+          <Text mr="4px">{/* {t('Bonus')} */}+</Text>
           <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
           <Text> {props.bouns}</Text>
         </Flex>
@@ -264,7 +301,7 @@ const RechargeModal = forwardRef(
     // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
     const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
     // 0 是微信，1 是stripe
-    const [payType, setPayType] = useState<'wechat' | 'stripe'>('wechat');
+    const [payType, setPayType] = useState<'wechat' | 'stripe' | 'more'>('wechat');
     // 计费详情
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
@@ -365,17 +402,22 @@ const RechargeModal = forwardRef(
         }
       });
       steps.unshift(...temp);
-      ratios.unshift(...temp.map(() => 0));
+      // ratios.unshift(...temp.map(() => 0));
       return [defaultSteps, ratios, steps, specialBonus];
     }, [bonuses?.data?.discount.defaultSteps, bonuses?.data?.discount.firstRechargeDiscount]);
     const [amount, setAmount] = useState(() => 0);
     const getBonus = (amount: number) => {
       let ratio = 0;
       let specialIdx = specialBonus.findIndex(([k]) => +k === amount);
-      if (specialIdx >= 0) return Math.floor((amount * specialBonus[specialIdx][1]) / 100);
-      const step = [...steps].reverse().findIndex((step) => amount >= step);
-      if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
-      return Math.floor((amount * ratio) / 100);
+      // if (specialIdx >= 0) return Math.floor((amount * specialBonus[specialIdx][1]) / 100);
+      if (specialIdx >= 0) return Math.floor(specialBonus[specialIdx][1]);
+      // const step = [...steps].reverse().findIndex((step) => amount >= step);
+      // if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
+      // return Math.floor((amount * ratio) / 100);
+      // return ratio;
+      const commonIdx = steps.findIndex((step) => step === amount);
+      if (commonIdx < 0) return 0;
+      else return ratios[commonIdx];
     };
     const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
@@ -389,6 +431,12 @@ const RechargeModal = forwardRef(
       }
     }, [steps]);
     const handleWechatConfirm = () => {
+      if (amount >= 6000) {
+        // 对公打款
+        setPayType('more');
+        setComplete(2);
+        return;
+      }
       setPayType('wechat');
       setComplete(1);
       createPaymentRes.mutate();
@@ -457,18 +505,27 @@ const RechargeModal = forwardRef(
                       <Text color="grayModern.600" fontWeight={'normal'}>
                         {t('Select Amount')}
                       </Text>
-                      {specialBonus && specialBonus.length > 0 && (
-                        <Flex align={'center'}>
-                          <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
-                          <Text
+                      {
+                        // specialBonus && specialBonus.length > 0
+                        ratios.length > 0 && ratios.every((ratio) => ratio > 0) && (
+                          <Flex align={'center'}>
+                            {/* <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon> */}
+                            {/* <Text
                             mr={'4px'}
                             color={'grayModern.900'}
                             fontSize={'14px'}
                             fontWeight={500}
                           >
                             {t('first_recharge_title')}
-                          </Text>
-                          <MyTooltip
+                          </Text> */}
+                            <OuterLink
+                              text={t('specification_selection')}
+                              color={'grayModern.500'}
+                              textDecoration={'none'}
+                              target={'_blank'}
+                              href="https://mp.weixin.qq.com/s/bnLMItoH2NVUZ_smYzhfEg?poc_token=HKcOBmij9hKCkMm8wl_LarCpLpJ2PiixseP-aArk"
+                            ></OuterLink>
+                            {/* <MyTooltip
                             px={'12px'}
                             py={'8px'}
                             minW={'unset'}
@@ -480,9 +537,10 @@ const RechargeModal = forwardRef(
                             }
                           >
                             <HelpIcon boxSize={'16px'}></HelpIcon>
-                          </MyTooltip>
-                        </Flex>
-                      )}
+                          </MyTooltip> */}
+                          </Flex>
+                        )
+                      }
                     </Flex>
                     <Flex wrap={'wrap'} gap={'16px'}>
                       {steps.map((amount, index) => (
@@ -645,12 +703,14 @@ const RechargeModal = forwardRef(
                     codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
                   />
-                ) : (
+                ) : payType === 'stripe' ? (
                   <StripeForm
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
                     complete={complete}
                     stripePromise={props.stripePromise}
                   />
+                ) : (
+                  <WechatMorePayment />
                 )}
               </>
             )
@@ -679,55 +739,67 @@ const RechargeModal = forwardRef(
                 alignItems={'center'}
                 position={'relative'}
               >
-                <SimpleGrid columns={2} rowGap={'13px'}>
+                {/* <SimpleGrid columns={2} rowGap={'13px'}>
                   <Box bgColor={'grayModern.100'} color={'grayModern.600'} px={'24px'} py={'14px'}>
                     {t('Recharge Amount')}
                   </Box>
                   <Box bgColor={'grayModern.100'} px={'24px'} py={'14px'} color={'grayModern.600'}>
                     {t('preferential_strength')}
-                  </Box>
-                  {steps &&
-                    ratios &&
-                    steps.length === ratios.length &&
-                    steps
-                      .map(
-                        (step, idx, steps) =>
-                          [
-                            step,
-                            idx < steps.length - 1 ? steps[idx + 1] : undefined,
-                            ratios[idx]
-                          ] as const
-                      )
-                      .filter(([_, _2, ratio], idx) => {
-                        return ratio > 0;
-                      })
-
-                      .map(([pre, next, ratio], idx) => (
-                        <>
-                          <Text key={idx} pl={'24px'} color={'grayModern.900'}>
-                            {pre}
-                            {' <= '}
-                            {t('Recharge Amount')}
-                            {next ? `< ${next}` : ''}
-                          </Text>
-                          <Text px={'24px'} color={'grayModern.900'}>
-                            {t('Bonus')}
-                            {ratio.toFixed(2)}%
-                          </Text>
-                        </>
-                      ))}
-                  {specialBonus &&
-                    specialBonus.map(([k, v], i) => (
-                      <>
-                        <Text key={i} pl={'24px'} color={'grayModern.900'}>
-                          {k} = {t('Recharge Amount')}{' '}
-                        </Text>
-                        <Text pl={'24px'} color={'grayModern.900'}>
-                          {t('Bonus')} {v} %
-                        </Text>
-                      </>
-                    ))}
-                </SimpleGrid>
+                  </Box> */}
+                {
+                  // steps &&
+                  // ratios &&
+                  // steps.length === ratios.length &&
+                  // steps
+                  //   .map(
+                  //     (step, idx, steps) =>
+                  //       [
+                  //         step,
+                  //         idx < steps.length - 1 ? steps[idx + 1] : undefined,
+                  //         ratios[idx]
+                  //       ] as const
+                  //   )
+                  //   .filter(([step, _2, ratio], idx) => {
+                  //     return (
+                  //       ratio > 0 &&
+                  //       specialBonus.findIndex(([k, v]) => +k === step && v !== 0) === -1
+                  //     );
+                  //   })
+                  //   .map(([pre, next, ratio], idx) => (
+                  //     <>
+                  //       {/* <Text key={idx} pl={'24px'} color={'grayModern.900'}>
+                  //         {pre}
+                  //         {' <= '}
+                  //         {t('Recharge Amount')}
+                  //         {next ? `< ${next}` : ''}
+                  //       </Text> */}
+                  //       <Text key={idx} pl={'24px'} color={'grayModern.900'}>
+                  //         {pre}
+                  //         {/* = {t('Recharge Amount')}{' '} */}
+                  //       </Text>
+                  //       <Text px={'24px'} color={'grayModern.900'}>
+                  //         {t('Bonus')}
+                  //         {ratio.toFixed(2)}
+                  //       </Text>
+                  //     </>
+                  //   ))
+                }
+                {
+                  // specialBonus &&
+                  // specialBonus.map(([k, v], i) => (
+                  //   <>
+                  //     <Text key={i} pl={'24px'} color={'grayModern.900'}>
+                  //       {k}
+                  //       {/* = {t('Recharge Amount')}{' '} */}
+                  //     </Text>
+                  //     <Text pl={'24px'} color={'grayModern.900'}>
+                  //       {t('Bonus')} {v}
+                  //     </Text>
+                  //   </>
+                  // ))
+                }
+                {/* </SimpleGrid> */}
+                <Activities />
               </Flex>
             </>
           )}

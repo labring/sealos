@@ -241,5 +241,14 @@
   "first_recharge_title": "Get Double with Initial Purchase!",
   "credit_purchase": "Credit Purchase",
   "remaining_balance": "Remaining Balance",
-  "custom_amount": "Custom Amount"
+  "custom_amount": "Custom Amount",
+  "specification_selection": "Choose one specification and participate once",
+  "recharge_instruction": "Recharge amounts of 6,000 or more require a public transfer. Please add the customer service WeChat to participate in the event.",
+  "limitedActivity": "Temporary activity",
+  "longTermActivity": "Long-term activity",
+  "limitedTitle": "Limited Time Discount, ",
+  "limitedDescription": "each user can only choose one specification and participate once.",
+  "longTermTitle": "Double First Charge, ",
+  "longTermDescription": "Exclusive for New Users, three specifications can be charged separately once.",
+  "participate": "Participate"
 }

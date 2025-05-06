@@ -241,5 +241,14 @@
   "first_recharge_title": "首充双倍!",
   "credit_purchase": "余额充值",
   "remaining_balance": "当前余额",
-  "custom_amount": "输入金额"
+  "custom_amount": "输入金额",
+  "specification_selection": "限时折扣：每个用户仅可选择一种规格，参与一次",
+  "recharge_instruction": "充值金额6000以上，需对公打款，请添加客服微信参与活动。",
+  "limitedActivity": "限时活动，",
+  "longTermActivity": "长期活动，",
+  "limitedDescription": "每个用户仅可选择一种规格，参与一次。",
+  "longTermDescription": "新用户专享，三个规格可分别充值一次",
+  "limitedTitle": "限时折扣",
+  "longTermTitle": "首充双倍",
+  "participate": "参与"
 }
