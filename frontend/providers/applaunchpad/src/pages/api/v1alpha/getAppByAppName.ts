@@ -5,6 +5,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetAppByAppName } from '../getAppByAppName';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType } from '@/types/app';
+import { filterUnusedKeys } from '@/utils/tools';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -36,8 +37,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
     });
 
+    const filteredData = filterUnusedKeys(data);
+
     jsonRes(res, {
-      data
+      data: filteredData
     });
   } catch (err: any) {
     jsonRes(res, {
