@@ -32,7 +32,7 @@ type Task struct {
 	IsActive      bool      `gorm:"column:isActive;type:boolean;default:true;not null" json:"isActive"`
 	IsNewUserTask bool      `gorm:"column:isNewUserTask;type:boolean;default:false;not null" json:"isNewUserTask"`
 	TaskType      TaskType  `gorm:"column:taskType;type:TaskType;not null" json:"taskType"`
-	CreatedAt     time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null" json:"createdAt"`
+	CreatedAt     time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp;not null" json:"createdAt"`
 	UpdatedAt     time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;not null" json:"updatedAt"`
 }
 
@@ -44,7 +44,7 @@ type UserTask struct {
 	Status       TaskStatus `gorm:"column:status;type:TaskStatus;not null" json:"status"`
 	RewardStatus TaskStatus `gorm:"column:rewardStatus;type:TaskStatus;not null" json:"rewardStatus"`
 	CompletedAt  time.Time  `gorm:"column:completedAt;type:timestamp(3);not null" json:"completedAt"`
-	CreatedAt    time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp();not null" json:"createdAt"`
+	CreatedAt    time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp;not null" json:"createdAt"`
 	UpdatedAt    time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;not null" json:"updatedAt"`
 
 	//User         User       `gorm:"foreignKey:UserUid;references:UID" json:"user"`

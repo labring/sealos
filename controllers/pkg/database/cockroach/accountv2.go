@@ -880,6 +880,7 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	if isActive {
 		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
 	}
+	exprs["updated_at"] = gorm.Expr("CURRENT_TIMESTAMP")
 	result := db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs)
 	return HandleUpdateResult(result, types.Account{}.TableName())
 }
