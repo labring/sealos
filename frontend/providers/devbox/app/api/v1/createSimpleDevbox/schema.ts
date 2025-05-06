@@ -4,17 +4,16 @@ import { customAlphabet } from 'nanoid';
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 const RuntimeName = z.enum([
-  'Vue.js',
-  'React',
-  'Nuxt3',
-  'Next.js',
+  'Debian',
+  'C++',
+  'Rust',
+  'Java',
+  'Go',
+  'Python',
   'Node.js',
-  'Express.js',
-  'Angular',
-  'Svelte',
-  'UmiJS',
-  'Astro',
-  'Debian'
+  '.Net',
+  'C',
+  'PHP'
 ]);
 
 export const DevboxFormSchema = z.object({
