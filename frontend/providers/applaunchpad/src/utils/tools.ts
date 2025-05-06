@@ -509,9 +509,10 @@ export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => 
   }
 };
 
-export const filterUnusedKeys = <T extends object>(data: T): Partial<T> => {
-  const keysToFilter = ['crYamlList', 'usedCpu', 'usedMemory'];
-
+export const filterUnusedKeys = <T extends object>(
+  data: T,
+  keysToFilter: string[] = ['crYamlList', 'usedCpu', 'usedMemory']
+): Partial<T> => {
   const filteredData = { ...data };
 
   keysToFilter.forEach((key) => {
