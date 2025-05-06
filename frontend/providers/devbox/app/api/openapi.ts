@@ -77,7 +77,7 @@ export const ErrorResponseSchema = z.object({
 });
 
 // generate openapi document
-export const openApiDocument = (sealosDomain: string) =>
+const tmpOpenApiDocument = (sealosDomain: string) =>
   createDocument({
     openapi: '3.0.0',
     info: {
@@ -105,6 +105,10 @@ export const openApiDocument = (sealosDomain: string) =>
       {
         name: 'Port',
         description: 'Devbox port management'
+      },
+      {
+        name: 'Application',
+        description: 'Application management'
       }
     ],
     servers: [
@@ -808,3 +812,508 @@ export const openApiDocument = (sealosDomain: string) =>
       }
     }
   });
+
+const applaunchpadDocument = {
+  '/api/v1alpha/createApp': {
+    post: {
+      tags: ['Application'],
+      summary: 'Create a new application',
+      description: 'Create a new application with the specified configuration',
+      requestBody: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+              properties: {
+                appForm: {
+                  type: 'object',
+                  properties: {
+                    appName: {
+                      type: 'string',
+                      default: 'hello-world'
+                    },
+                    imageName: {
+                      type: 'string',
+                      default: 'nginx'
+                    },
+                    runCMD: {
+                      type: 'string',
+                      default: ''
+                    },
+                    cmdParam: {
+                      type: 'string',
+                      default: ''
+                    },
+                    replicas: {
+                      anyOf: [
+                        {
+                          type: 'number'
+                        },
+                        {
+                          type: 'string',
+                          enum: ['']
+                        }
+                      ],
+                      default: 1
+                    },
+                    cpu: {
+                      type: 'number',
+                      default: 200
+                    },
+                    memory: {
+                      type: 'number',
+                      default: 256
+                    },
+                    gpu: {
+                      type: 'object',
+                      properties: {
+                        manufacturers: {
+                          type: 'string',
+                          default: 'nvidia'
+                        },
+                        type: {
+                          type: 'string',
+                          default: ''
+                        },
+                        amount: {
+                          type: 'number',
+                          default: 1
+                        }
+                      }
+                    },
+                    networks: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          networkName: {
+                            type: 'string',
+                            default: ''
+                          },
+                          portName: {
+                            type: 'string',
+                            default: 'zqpqdcalxjeq'
+                          },
+                          port: {
+                            type: 'number',
+                            default: 80
+                          },
+                          protocol: {
+                            type: 'string',
+                            enum: ['TCP', 'UDP', 'SCTP'],
+                            default: 'TCP'
+                          },
+                          appProtocol: {
+                            type: 'string',
+                            enum: ['HTTP', 'GRPC', 'WS'],
+                            default: 'HTTP'
+                          },
+                          openPublicDomain: {
+                            type: 'boolean',
+                            default: false
+                          },
+                          publicDomain: {
+                            type: 'string',
+                            default: ''
+                          },
+                          customDomain: {
+                            type: 'string',
+                            default: ''
+                          },
+                          domain: {
+                            type: 'string',
+                            default: ''
+                          },
+                          nodePort: {
+                            type: 'number'
+                          },
+                          openNodePort: {
+                            type: 'boolean',
+                            default: false
+                          }
+                        }
+                      },
+                      default: [
+                        {
+                          networkName: '',
+                          portName: 'sscvofyimjui',
+                          port: 80,
+                          protocol: 'TCP',
+                          appProtocol: 'HTTP',
+                          openPublicDomain: false,
+                          openNodePort: false,
+                          publicDomain: '',
+                          customDomain: '',
+                          domain: ''
+                        }
+                      ]
+                    },
+                    envs: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          key: {
+                            type: 'string'
+                          },
+                          value: {
+                            type: 'string'
+                          },
+                          valueFrom: {}
+                        },
+                        required: ['key', 'value']
+                      },
+                      default: []
+                    },
+                    hpa: {
+                      type: 'object',
+                      properties: {
+                        use: {
+                          type: 'boolean',
+                          default: false
+                        },
+                        target: {
+                          type: 'string',
+                          enum: ['cpu', 'memory', 'gpu'],
+                          default: 'cpu'
+                        },
+                        value: {
+                          type: 'number',
+                          default: 50
+                        },
+                        minReplicas: {
+                          type: 'number',
+                          default: 1
+                        },
+                        maxReplicas: {
+                          type: 'number',
+                          default: 5
+                        }
+                      }
+                    },
+                    secret: {
+                      type: 'object',
+                      properties: {
+                        use: {
+                          type: 'boolean',
+                          default: false
+                        },
+                        username: {
+                          type: 'string',
+                          default: ''
+                        },
+                        password: {
+                          type: 'string',
+                          default: ''
+                        },
+                        serverAddress: {
+                          type: 'string',
+                          default: 'docker.io'
+                        }
+                      }
+                    },
+                    configMapList: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          mountPath: {
+                            type: 'string'
+                          },
+                          value: {
+                            type: 'string'
+                          }
+                        },
+                        required: ['mountPath', 'value']
+                      },
+                      default: []
+                    },
+                    storeList: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          name: {
+                            type: 'string'
+                          },
+                          path: {
+                            type: 'string'
+                          },
+                          value: {
+                            type: 'number'
+                          }
+                        },
+                        required: ['name', 'path', 'value']
+                      },
+                      default: []
+                    },
+                    labels: {
+                      type: 'object',
+                      additionalProperties: {
+                        type: 'string'
+                      },
+                      default: {}
+                    },
+                    volumes: {
+                      type: 'array',
+                      items: {},
+                      default: []
+                    },
+                    volumeMounts: {
+                      type: 'array',
+                      items: {},
+                      default: []
+                    },
+                    kind: {
+                      type: 'string',
+                      enum: ['deployment', 'statefulset'],
+                      default: 'deployment'
+                    }
+                  },
+                  required: ['hpa', 'secret']
+                }
+              },
+              required: ['appForm']
+            }
+          }
+        }
+      },
+      responses: {
+        '200': {
+          description: 'Application created successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  data: {
+                    type: 'string',
+                    default: 'success'
+                  }
+                },
+                required: ['data']
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid request body',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/v1alpha/getAppByAppName': {
+    get: {
+      tags: ['Application'],
+      summary: 'Get application by name',
+      description: 'Retrieve application details by application name',
+      parameters: [
+        {
+          name: 'appName',
+          in: 'query',
+          description: 'Application name',
+          required: true,
+          schema: {
+            type: 'string'
+          }
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Application details retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  data: {
+                    type: 'array',
+                    nullable: true,
+                    items: {}
+                  }
+                },
+                required: ['data']
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/v1alpha/delAppByName': {
+    delete: {
+      tags: ['Application'],
+      summary: 'Delete application',
+      description: 'Delete an application by its name',
+      parameters: [
+        {
+          name: 'name',
+          in: 'query',
+          description: 'Name of the application to delete',
+          required: true,
+          schema: {
+            type: 'string'
+          }
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Application deleted successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  message: {
+                    type: 'string'
+                  }
+                },
+                required: ['message']
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+export const openApiDocument = (sealosDomain: string) => {
+  const baseDoc = tmpOpenApiDocument(sealosDomain);
+  return {
+    ...baseDoc,
+    paths: {
+      ...baseDoc.paths,
+      ...applaunchpadDocument
+    }
+  };
+};
