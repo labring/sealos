@@ -87,3 +87,25 @@ spec:
           name: region-info
         name: region-info
       serviceAccountName: account-controller-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-node-viewer
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: account-node-viewer-binding
+subjects:
+- kind: ServiceAccount
+  name: account-controller-manager
+  namespace: account-system
+roleRef:
+  kind: ClusterRole
+  name: account-node-viewer
+  apiGroup: rbac.authorization.k8s.io
