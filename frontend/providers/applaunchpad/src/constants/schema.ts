@@ -123,3 +123,93 @@ export const DeleteAppByNameQuerySchema = z.object({
 export const DeleteAppByNameResponseSchema = z.object({
   message: z.string()
 });
+
+// Schema for MonitorDataResult
+const MonitorDataResultSchema = z.object({
+  name: z.string().optional(),
+  xData: z.array(z.number()),
+  yData: z.array(z.string())
+});
+
+// Schema for GpuType
+const GpuTypeSchema = z
+  .object({
+    manufacturers: z.string(),
+    type: z.string(),
+    amount: z.number()
+  })
+  .optional();
+
+// Schema for AppStatusMapType
+const AppStatusMapTypeSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  color: z.string(),
+  backgroundColor: z.string(),
+  dotColor: z.string()
+});
+
+// Schema for TAppSource
+const TAppSourceSchema = z.object({
+  hasSource: z.boolean(),
+  sourceName: z.string(),
+  sourceType: z.string()
+});
+
+// Schema for AppListItemType
+export const AppListItemTypeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: AppStatusMapTypeSchema,
+  isPause: z.boolean(),
+  createTime: z.string(),
+  cpu: z.number(),
+  memory: z.number(),
+  gpu: GpuTypeSchema,
+  usedCpu: MonitorDataResultSchema,
+  usedMemory: MonitorDataResultSchema,
+  activeReplicas: z.number(),
+  minReplicas: z.number(),
+  maxReplicas: z.number(),
+  storeAmount: z.number(),
+  labels: z.record(z.string()),
+  source: TAppSourceSchema
+});
+
+export const GetAppsResponseSchema = z.array(AppListItemTypeSchema);
+
+// Schema for PodStatusMapType
+const PodStatusMapTypeSchema = z.object({
+  label: z.string(),
+  value: z.string(),
+  color: z.string(),
+  reason: z.string().optional(),
+  message: z.string().optional()
+});
+
+// Query params schema for GetAppPodsByAppName
+export const GetAppPodsByAppNameQuerySchema = z.object({
+  name: z.string().min(1, { message: 'App name cannot be empty' })
+});
+
+// Schema for PodDetailType
+const PodDetailTypeSchema = z
+  .object({
+    podName: z.string(),
+    status: PodStatusMapTypeSchema,
+    nodeName: z.string(),
+    ip: z.string(),
+    restarts: z.number(),
+    age: z.string(),
+    usedCpu: MonitorDataResultSchema,
+    usedMemory: MonitorDataResultSchema,
+    cpu: z.number(),
+    memory: z.number(),
+    podReason: z.string().optional(),
+    podMessage: z.string().optional(),
+    containerStatus: PodStatusMapTypeSchema
+  })
+  .and(z.record(z.any())); // Using z.record(z.any()) to cover other fields from V1Pod
+
+// Response schema for GetAppPodsByAppName
+export const GetAppPodsByAppNameResponseSchema = z.array(PodDetailTypeSchema);
