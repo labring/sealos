@@ -476,3 +476,17 @@ export const convertBytes = (bytes: number, unit: 'kb' | 'mb' | 'gb' | 'tb') => 
       return bytes;
   }
 };
+
+export const filterUnusedKeys = <T extends object>(data: T): Partial<T> => {
+  const keysToFilter = ['crYamlList', 'usedCpu', 'usedMemory'];
+
+  const filteredData = { ...data };
+
+  keysToFilter.forEach((key) => {
+    if (key in filteredData) {
+      delete filteredData[key as keyof T];
+    }
+  });
+
+  return filteredData;
+};
