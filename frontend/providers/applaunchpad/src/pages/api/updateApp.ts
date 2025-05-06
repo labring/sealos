@@ -8,6 +8,7 @@ import { PatchUtils } from '@kubernetes/client-node';
 import type { AppPatchPropsType } from '@/types/app';
 import { initK8s } from 'sealos-desktop-sdk/service';
 import { errLog, infoLog, warnLog } from 'sealos-desktop-sdk';
+import type { V1Service } from '@kubernetes/client-node';
 
 export type Props = {
   patch: AppPatchPropsType;
@@ -24,6 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
     return;
   }
+  console.log('patch', patch);
+
   try {
     const {
       applyYamlList,
@@ -85,8 +88,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         delete: (name) => k8sApp.deleteNamespacedStatefulSet(name, namespace)
       },
       [YamlKindEnum.Service]: {
-        patch: (jsonPatch: Object) =>
-          k8sCore.replaceNamespacedService(appName, namespace, jsonPatch),
+        patch: (jsonPatch: V1Service) =>
+          k8sCore.replaceNamespacedService(
+            jsonPatch?.metadata?.name || appName,
+            namespace,
+            jsonPatch
+          ),
         delete: (name) => k8sCore.deleteNamespacedService(name, namespace)
       },
       [YamlKindEnum.ConfigMap]: {
@@ -306,7 +313,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   } catch (err: any) {
     jsonRes(res, {
       code: 500,
-      error: err
+      error: err?.body
     });
   }
 }
