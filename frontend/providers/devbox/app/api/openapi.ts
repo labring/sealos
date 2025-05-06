@@ -69,6 +69,11 @@ import {
   RequestSchema as CreateSimpleDevboxRequestSchema,
   SuccessResponseSchema as CreateSimpleDevboxSuccessResponseSchema
 } from './v1/createSimpleDevbox/schema';
+import {
+  RequestSchema as LifecycleDevboxRequestSchema,
+  SuccessResponseSchema as LifecycleDevboxSuccessResponseSchema,
+  ErrorResponseSchema as LifecycleDevboxErrorResponseSchema
+} from './v1/lifecycleDevbox/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -252,6 +257,38 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/lifecycleDevbox': {
+        post: {
+          tags: ['Lifecycle'],
+          summary: 'Lifecycle a devbox',
+          description: 'Lifecycle a devbox',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: LifecycleDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox lifecycle updated successfully',
+              content: {
+                'application/json': {
+                  schema: LifecycleDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: LifecycleDevboxErrorResponseSchema
                 }
               }
             }
