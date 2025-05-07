@@ -29,6 +29,9 @@ export const SuccessResponseSchema = z.object({
     releaseDes: z.string().openapi({
       description: 'Release description'
     }),
+    image: z.string().optional().openapi({
+      description: 'Release image'
+    }),
     createdAt: z.string().openapi({
       description: 'Release creation time'
     })

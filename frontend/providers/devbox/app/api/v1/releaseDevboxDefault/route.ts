@@ -68,10 +68,15 @@ export async function POST(req: NextRequest) {
     });
     await applyYamlList([devboxYaml], 'create');
 
+    const { REGISTRY_ADDR } = process.env;
+
+    const imageName = `${REGISTRY_ADDR}/${namespace}/${devboxForm.devboxName}:${devboxForm.tag}`;
+
     return jsonRes({
       data: {
         devboxName: devboxForm.devboxName,
         tag: devboxForm.tag,
+        image: imageName,
         releaseDes: devboxForm.releaseDes || '',
         createdAt: new Date().toISOString()
       }
