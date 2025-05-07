@@ -2,7 +2,7 @@ import 'zod-openapi/extend';
 
 import { z } from 'zod';
 
-export const ReleaseFormSchema = z.object({
+export const RequestSchema = z.object({
   devboxName: z.string().min(1).openapi({
     description: 'Devbox name'
   }),
@@ -15,10 +15,6 @@ export const ReleaseFormSchema = z.object({
   devboxUid: z.string().min(1).openapi({
     description: 'Devbox UID'
   })
-});
-
-export const RequestSchema = z.object({
-  devboxForm: ReleaseFormSchema
 });
 
 export const SuccessResponseSchema = z.object({
