@@ -96,7 +96,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
         description: 'Devbox lifecycle management operations'
       },
       {
-        name: 'ReleaseAndDeploy',
+        name: 'Release',
         description: 'Devbox release management and deployment'
       },
       {
@@ -149,63 +149,6 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
       }
     ],
     paths: {
-      '/api/createDevbox': {
-        post: {
-          tags: ['Lifecycle'],
-          summary: 'Create a new devbox',
-          description:
-            'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: CreateDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox created successfully',
-              content: {
-                'application/json': {
-                  schema: CreateDevboxSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Template not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '409': {
-              description: 'Devbox already exists',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
       '/api/v1/createSimpleDevbox': {
         post: {
           tags: ['Lifecycle'],
@@ -295,51 +238,10 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/deployDevbox': {
-        post: {
-          tags: ['ReleaseAndDeploy'],
-          summary: 'Deploy a devbox',
-          description:
-            'Deploy a devbox with specific tag and resource configuration, you can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list to get the tag',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: DeployDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox deployed successfully',
-              content: {
-                'application/json': {
-                  schema: DeployDevboxSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: DeployDevboxErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: DeployDevboxErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
       '/api/v1/releaseDevboxDefault': {
         post: {
-          tags: ['ReleaseAndDeploy'],
-          summary: 'Create a new devbox release',
+          tags: ['Release'],
+          summary: 'Release a devbox version',
           description:
             'Create a new release for an existing devbox with a specific tag and description. You can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/v1/getDevboxVersionListDefault interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
           requestBody: {
@@ -415,126 +317,6 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: DelDevboxErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/startDevbox': {
-        post: {
-          tags: ['Lifecycle'],
-          summary: 'Start a devbox',
-          description: 'Start a devbox and its associated resources (service, ingress, etc.)',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: StartDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox started successfully',
-              content: {
-                'application/json': {
-                  schema: StartDevboxSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: StartDevboxErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: StartDevboxErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/shutdownDevbox': {
-        post: {
-          tags: ['Lifecycle'],
-          summary: 'Shutdown a devbox',
-          description: 'Shutdown a devbox and its associated resources (service, ingress, etc.)',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: ShutdownDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox shutdown successfully',
-              content: {
-                'application/json': {
-                  schema: ShutdownDevboxSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: ShutdownDevboxErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ShutdownDevboxErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/restartDevbox': {
-        post: {
-          tags: ['Lifecycle'],
-          summary: 'Restart a devbox',
-          description: 'Restart a devbox and its associated resources (service, ingress, etc.)',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: RestartDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox restarted successfully',
-              content: {
-                'application/json': {
-                  schema: RestartDevboxSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: RestartDevboxErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: RestartDevboxErrorResponseSchema
                 }
               }
             }
@@ -630,79 +412,9 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/getOfficialRuntimeList': {
-        get: {
-          tags: ['Runtime'],
-          summary: 'Get the official runtime list',
-          description: 'Get all available official runtime lists, no authentication required',
-          responses: {
-            '200': {
-              description: 'Successfully retrieved official runtime list',
-              content: {
-                'application/json': {
-                  schema: ListOfficialSuccessResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/templateRepository/template/list': {
-        get: {
-          tags: ['Runtime'],
-          summary: 'Get the runtime version list of the specified runtime',
-          description:
-            'Get all available runtime version list of the specified runtime, need JWT authentication',
-          requestParams: {
-            query: ListTemplatesRequestSchema
-          },
-          responses: {
-            '200': {
-              description: 'Successfully retrieved runtime version list',
-              content: {
-                'application/json': {
-                  schema: ListTemplatesSuccessResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '404': {
-              description: 'Repository not found',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
       '/api/v1/getDevboxReleaseListDefault': {
         get: {
-          tags: ['ReleaseAndDeploy'],
+          tags: ['Release'],
           summary: 'Get devbox release list',
           description:
             'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
@@ -731,55 +443,6 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: GetDevboxVersionListErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/releaseAndDeployDevbox': {
-        post: {
-          tags: ['ReleaseAndDeploy'],
-          summary: 'ReleaseAndDeploy and deploy a devbox',
-          description:
-            'Create a new release for a devbox and deploy it with specific resource configuration,you need to shutdown the devbox before releasing it',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: ReleaseAndDeployDevboxRequestSchema
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Devbox released and deployed successfully',
-              content: {
-                'application/json': {
-                  schema: ReleaseAndDeployDevboxResponseSchema
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '409': {
-              description: 'Devbox release already exists',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
                 }
               }
             }
@@ -929,7 +592,7 @@ const applaunchpadDocument = {
                           },
                           portName: {
                             type: 'string',
-                            default: 'zqpqdcalxjeq'
+                            default: 'agbsrpjnhuxc'
                           },
                           port: {
                             type: 'number',
@@ -973,7 +636,7 @@ const applaunchpadDocument = {
                       default: [
                         {
                           networkName: '',
-                          portName: 'sscvofyimjui',
+                          portName: 'hxohddqzhfce',
                           port: 80,
                           protocol: 'TCP',
                           appProtocol: 'HTTP',
@@ -1180,6 +843,204 @@ const applaunchpadDocument = {
       }
     }
   },
+  '/api/v1alpha/getApps': {
+    get: {
+      tags: ['Application'],
+      summary: 'Get all applications',
+      description: 'Retrieve a list of all applications for the current user',
+      responses: {
+        '200': {
+          description: 'Applications list retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  data: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        id: {
+                          type: 'string'
+                        },
+                        name: {
+                          type: 'string'
+                        },
+                        status: {
+                          type: 'object',
+                          properties: {
+                            label: {
+                              type: 'string'
+                            },
+                            value: {
+                              type: 'string'
+                            },
+                            color: {
+                              type: 'string'
+                            },
+                            backgroundColor: {
+                              type: 'string'
+                            },
+                            dotColor: {
+                              type: 'string'
+                            }
+                          },
+                          required: ['label', 'value', 'color', 'backgroundColor', 'dotColor']
+                        },
+                        isPause: {
+                          type: 'boolean'
+                        },
+                        createTime: {
+                          type: 'string'
+                        },
+                        cpu: {
+                          type: 'number'
+                        },
+                        memory: {
+                          type: 'number'
+                        },
+                        gpu: {
+                          type: 'object',
+                          properties: {
+                            manufacturers: {
+                              type: 'string'
+                            },
+                            type: {
+                              type: 'string'
+                            },
+                            amount: {
+                              type: 'number'
+                            }
+                          },
+                          required: ['manufacturers', 'type', 'amount']
+                        },
+                        usedCpu: {
+                          type: 'object',
+                          properties: {
+                            name: {
+                              type: 'string'
+                            },
+                            xData: {
+                              type: 'array',
+                              items: {
+                                type: 'number'
+                              }
+                            },
+                            yData: {
+                              type: 'array',
+                              items: {
+                                type: 'string'
+                              }
+                            }
+                          },
+                          required: ['xData', 'yData']
+                        },
+                        usedMemory: {
+                          type: 'object',
+                          properties: {
+                            name: {
+                              type: 'string'
+                            },
+                            xData: {
+                              type: 'array',
+                              items: {
+                                type: 'number'
+                              }
+                            },
+                            yData: {
+                              type: 'array',
+                              items: {
+                                type: 'string'
+                              }
+                            }
+                          },
+                          required: ['xData', 'yData']
+                        },
+                        activeReplicas: {
+                          type: 'number'
+                        },
+                        minReplicas: {
+                          type: 'number'
+                        },
+                        maxReplicas: {
+                          type: 'number'
+                        },
+                        storeAmount: {
+                          type: 'number'
+                        },
+                        labels: {
+                          type: 'object',
+                          additionalProperties: {
+                            type: 'string'
+                          }
+                        },
+                        source: {
+                          type: 'object',
+                          properties: {
+                            hasSource: {
+                              type: 'boolean'
+                            },
+                            sourceName: {
+                              type: 'string'
+                            },
+                            sourceType: {
+                              type: 'string'
+                            }
+                          },
+                          required: ['hasSource', 'sourceName', 'sourceType']
+                        }
+                      },
+                      required: [
+                        'id',
+                        'name',
+                        'status',
+                        'isPause',
+                        'createTime',
+                        'cpu',
+                        'memory',
+                        'usedCpu',
+                        'usedMemory',
+                        'activeReplicas',
+                        'minReplicas',
+                        'maxReplicas',
+                        'storeAmount',
+                        'labels',
+                        'source'
+                      ]
+                    }
+                  }
+                },
+                required: ['data']
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        }
+      }
+    }
+  },
   '/api/v1alpha/getAppByAppName': {
     get: {
       tags: ['Application'],
@@ -1291,6 +1152,223 @@ const applaunchpadDocument = {
                   }
                 },
                 required: ['message']
+              }
+            }
+          }
+        },
+        '400': {
+          description: 'Invalid query parameters',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        },
+        '500': {
+          description: 'Internal server error',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  code: {
+                    type: 'number'
+                  },
+                  message: {
+                    type: 'string'
+                  },
+                  data: {
+                    type: 'string'
+                  }
+                },
+                required: ['code', 'message']
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  '/api/v1alpha/getAppPodsByAppName': {
+    get: {
+      tags: ['Application'],
+      summary: 'Get application pods',
+      description: 'Retrieve all pods for a specific application by name',
+      parameters: [
+        {
+          name: 'name',
+          in: 'query',
+          description: 'Application name',
+          required: true,
+          schema: {
+            type: 'string'
+          }
+        }
+      ],
+      responses: {
+        '200': {
+          description: 'Pods retrieved successfully',
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  data: {
+                    type: 'array',
+                    items: {
+                      allOf: [
+                        {
+                          type: 'object',
+                          properties: {
+                            podName: {
+                              type: 'string'
+                            },
+                            status: {
+                              type: 'object',
+                              properties: {
+                                label: {
+                                  type: 'string'
+                                },
+                                value: {
+                                  type: 'string'
+                                },
+                                color: {
+                                  type: 'string'
+                                },
+                                reason: {
+                                  type: 'string'
+                                },
+                                message: {
+                                  type: 'string'
+                                }
+                              },
+                              required: ['label', 'value', 'color']
+                            },
+                            nodeName: {
+                              type: 'string'
+                            },
+                            ip: {
+                              type: 'string'
+                            },
+                            restarts: {
+                              type: 'number'
+                            },
+                            age: {
+                              type: 'string'
+                            },
+                            usedCpu: {
+                              type: 'object',
+                              properties: {
+                                name: {
+                                  type: 'string'
+                                },
+                                xData: {
+                                  type: 'array',
+                                  items: {
+                                    type: 'number'
+                                  }
+                                },
+                                yData: {
+                                  type: 'array',
+                                  items: {
+                                    type: 'string'
+                                  }
+                                }
+                              },
+                              required: ['xData', 'yData']
+                            },
+                            usedMemory: {
+                              type: 'object',
+                              properties: {
+                                name: {
+                                  type: 'string'
+                                },
+                                xData: {
+                                  type: 'array',
+                                  items: {
+                                    type: 'number'
+                                  }
+                                },
+                                yData: {
+                                  type: 'array',
+                                  items: {
+                                    type: 'string'
+                                  }
+                                }
+                              },
+                              required: ['xData', 'yData']
+                            },
+                            cpu: {
+                              type: 'number'
+                            },
+                            memory: {
+                              type: 'number'
+                            },
+                            podReason: {
+                              type: 'string'
+                            },
+                            podMessage: {
+                              type: 'string'
+                            },
+                            containerStatus: {
+                              type: 'object',
+                              properties: {
+                                label: {
+                                  type: 'string'
+                                },
+                                value: {
+                                  type: 'string'
+                                },
+                                color: {
+                                  type: 'string'
+                                },
+                                reason: {
+                                  type: 'string'
+                                },
+                                message: {
+                                  type: 'string'
+                                }
+                              },
+                              required: ['label', 'value', 'color']
+                            }
+                          },
+                          required: [
+                            'podName',
+                            'status',
+                            'nodeName',
+                            'ip',
+                            'restarts',
+                            'age',
+                            'usedCpu',
+                            'usedMemory',
+                            'cpu',
+                            'memory',
+                            'containerStatus'
+                          ]
+                        },
+                        {
+                          type: 'object',
+                          additionalProperties: {}
+                        }
+                      ]
+                    }
+                  }
+                },
+                required: ['data']
               }
             }
           }
