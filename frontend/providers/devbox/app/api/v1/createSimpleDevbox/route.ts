@@ -8,6 +8,8 @@ import { KBDevboxTypeV2 } from '@/types/k8s';
 import { json2DevboxV2 } from '@/utils/json2Yaml';
 import { RequestSchema } from './schema';
 import { getRegionUid } from '@/utils/env';
+import { adaptDevboxDetailV2 } from '@/utils/adapt';
+import { parseTemplateConfig } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
     const { devboxForm } = validationResult.data;
     const headerList = req.headers;
 
-    const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({
+    const { applyYamlList, k8sCustomObjects, namespace, k8sCore } = await getK8s({
       kubeconfig: await authSession(headerList)
     });
 
@@ -86,6 +88,20 @@ export async function POST(req: NextRequest) {
       where: {
         templateRepositoryUid: templateRepository.uid,
         isDeleted: false
+      },
+      select: {
+        templateRepository: {
+          select: {
+            uid: true,
+            iconId: true,
+            name: true,
+            kind: true
+          }
+        },
+        uid: true,
+        image: true,
+        name: true,
+        config: true
       }
     });
 
@@ -111,13 +127,39 @@ export async function POST(req: NextRequest) {
 
     await applyYamlList([devbox], 'create');
 
+    // return devbox detail
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxForm.name
+    )) as { body: KBDevboxTypeV2 };
+
+    const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
+    const adaptedData = adaptDevboxDetailV2(resp);
+
+    // get ssh info
+    const response = await k8sCore.readNamespacedSecret(devboxForm.name, namespace);
+    const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
+
+    if (!base64PrivateKey) {
+      return jsonRes({
+        code: 404,
+        message: 'SSH keys not found'
+      });
+    }
+
+    const config = parseTemplateConfig(template.config);
+
     return jsonRes({
       data: {
-        name: devboxForm.name,
-        runtimeName: templateRepository.name,
-        image: template.image,
-        cpu: devboxForm.cpu,
-        memory: devboxForm.memory
+        name: adaptedData.name,
+        sshPort: adaptedData.sshPort,
+        base64PrivateKey,
+        userName: config.user,
+        workingDir: config.workingDir,
+        domain: process.env.SEALOS_DOMAIN
       }
     });
   } catch (err: any) {

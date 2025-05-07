@@ -42,17 +42,20 @@ export const SuccessResponseSchema = z.object({
     name: z.string().openapi({
       description: 'Devbox name'
     }),
-    runtimeName: z.string().openapi({
-      description: 'Runtime name'
+    sshPort: z.number().openapi({
+      description: 'SSH port'
     }),
-    image: z.string().openapi({
-      description: 'Image'
+    base64PrivateKey: z.string().openapi({
+      description: 'Base64 encoded private key'
     }),
-    cpu: z.number().openapi({
-      description: 'CPU'
+    userName: z.string().openapi({
+      description: 'User name'
     }),
-    memory: z.number().openapi({
-      description: 'Memory'
+    workingDir: z.string().openapi({
+      description: 'Working directory'
+    }),
+    domain: z.string().openapi({
+      description: 'Domain'
     })
   })
 });
