@@ -71,7 +71,6 @@ func (r *DevBoxReleaseReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	logger.Info("Reconciling DevBoxRelease", "devbox", devboxRelease.Spec.DevboxName, "newTag", devboxRelease.Spec.NewTag, "phase", devboxRelease.Status.Phase)
-
 	if devboxRelease.Status.Phase == "" {
 		devboxRelease.Status.Phase = devboxv1alpha1.DevboxReleasePhasePending
 		err := r.Status().Update(ctx, devboxRelease)

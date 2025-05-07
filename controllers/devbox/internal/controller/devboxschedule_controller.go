@@ -81,8 +81,16 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			logger.Error(err, "Failed to get DevBox", "DevBoxName", devboxSchedule.Spec.DevBoxName)
 			return ctrl.Result{}, err
 		}
-		if devbox.ObjectMeta.UID != devboxSchedule.ObjectMeta.UID {
-			logger.Error(fmt.Errorf("UID mismatch: devbox=%s, schedule=%s", devbox.ObjectMeta.UID, devboxSchedule.ObjectMeta.UID), "DevBox UID does not match DevBoxSchedule reference")
+		var foundOwnerRef bool
+		for _, ownerRef := range devboxSchedule.OwnerReferences {
+			if ownerRef.Kind == "DevBox" && ownerRef.Name == devbox.Name && ownerRef.UID == devbox.UID {
+				foundOwnerRef = true
+				break
+			}
+		}
+		if !foundOwnerRef {
+			logger.Error(fmt.Errorf("DevBox not found in ownerReferences or UID mismatch: devbox=%s", devbox.UID),
+				"DevBox is not properly referenced by DevBoxSchedule")
 			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateNotMatch)
 		}
 		// Check if the scheduled time has been reached
