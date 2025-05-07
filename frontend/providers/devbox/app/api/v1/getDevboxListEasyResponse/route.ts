@@ -55,12 +55,7 @@ export async function GET(req: NextRequest) {
       .map((item) => ({
         id: item.id,
         name: item.name,
-        runtimeId: item.template.uid,
-        runtimeName: item.template.templateRepository.iconId,
-        status: item.status.value,
-        createTime: item.createTime,
-        cpu: item.cpu,
-        memory: item.memory
+        createTime: item.createTime
       }))
       .sort((a, b) => {
         return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();

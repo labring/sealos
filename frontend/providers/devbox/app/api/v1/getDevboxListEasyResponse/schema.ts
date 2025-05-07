@@ -7,24 +7,6 @@ export const DevboxListItemSchema = z.object({
   }),
   id: z.string().openapi({
     description: 'Devbox UID'
-  }),
-  runtimeId: z.string().openapi({
-    description: 'Runtime UID'
-  }),
-  runtimeName: z.string().openapi({
-    description: 'Runtime name'
-  }),
-  createTime: z.string().openapi({
-    description: 'Creation time'
-  }),
-  status: z.string().openapi({
-    description: 'Status'
-  }),
-  cpu: z.number().openapi({
-    description: 'CPU'
-  }),
-  memory: z.number().openapi({
-    description: 'Memory'
   })
 });
 
