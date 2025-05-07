@@ -863,7 +863,6 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 func AddDeductionAccount(tx *gorm.DB, userUID uuid.UUID, amount int64) error {
 	return tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(map[string]interface{}{
 		`"deduction_balance"`: gorm.Expr("deduction_balance + ?", amount),
-		`"updated_at"`:        gorm.Expr("CURRENT_TIMESTAMP"),
 	}).Error
 }
 
@@ -881,7 +880,6 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	if isActive {
 		exprs[`"activityBonus"`] = gorm.Expr(`"activityBonus" + ?`, amount)
 	}
-	exprs["updated_at"] = gorm.Expr("CURRENT_TIMESTAMP")
 	result := db.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(exprs)
 	return HandleUpdateResult(result, types.Account{}.TableName())
 }
