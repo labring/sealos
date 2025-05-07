@@ -49,21 +49,19 @@ type Options struct {
 
 type Server interface {
 	RegisterImageService(conn *grpc.ClientConn) error
-
+	RegisterRuntimeService(conn *grpc.ClientConn) error
 	Chown(uid, gid int) error
-
 	Chmod(mode os.FileMode) error
-
 	Start() error
-
 	Stop()
 }
 
 type server struct {
-	server        *grpc.Server
-	imageV1Client k8sv1api.ImageServiceClient
-	options       Options
-	listener      net.Listener // socket our gRPC server listens on
+	server          *grpc.Server
+	imageV1Client   k8sv1api.ImageServiceClient
+	runtimeV1Client k8sv1api.RuntimeServiceClient
+	options         Options
+	listener        net.Listener // socket our gRPC server listens on
 }
 
 // RegisterImageService registers an image service with the server.
@@ -82,6 +80,25 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		imageClient:       s.imageV1Client,
 		CRIConfigs:        s.options.CRIConfigs,
 		OfflineCRIConfigs: s.options.OfflineCRIConfigs,
+	})
+
+	return nil
+}
+
+// RegisterRuntimeService registers a runtime service with the server.
+func (s *server) RegisterRuntimeService(conn *grpc.ClientConn) error {
+	if s.runtimeV1Client != nil {
+		return serverError("can't register runtime service, already registered")
+	}
+
+	s.setupRuntimeServiceClients(conn)
+
+	if err := s.createGrpcServer(); err != nil {
+		return err
+	}
+
+	k8sv1api.RegisterRuntimeServiceServer(s.server, &v1RuntimeService{
+		runtimeClient: s.runtimeV1Client,
 	})
 
 	return nil
@@ -210,4 +227,8 @@ func serverError(format string, args ...interface{}) error {
 
 func (s *server) setupImageServiceClients(conn *grpc.ClientConn) {
 	s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
+}
+
+func (s *server) setupRuntimeServiceClients(conn *grpc.ClientConn) {
+	s.runtimeV1Client = k8sv1api.NewRuntimeServiceClient(conn)
 }
