@@ -63,6 +63,13 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 	var devbox devboxv1alpha1.Devbox
+	if devboxSchedule.Status.State == "" {
+		devboxSchedule.Status.State = devboxv1alpha1.ScheduleStatePending
+		err := r.Update(ctx, &devboxSchedule)
+		if err != nil {
+			logger.Error(err, "Failed to update DevBoxSchedule")
+		}
+	}
 	switch devboxSchedule.Status.State {
 	case devboxv1alpha1.ScheduleStateCompleted:
 		logger.Info("Schedule already completed, deleting the CR")
