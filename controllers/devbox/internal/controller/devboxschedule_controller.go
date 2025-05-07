@@ -141,24 +141,26 @@ func (r *DevBoxScheduleReconciler) checkScheduleReached(ctx context.Context, dev
 	return time.Now().After(devboxSchedule.Spec.ScheduleTime.Time)
 }
 
-var requeueTimeSteps = []time.Duration{24 * time.Hour, 6 * time.Hour, 1 * time.Hour, 10 * time.Minute, 0}
-
-func calculateRequeueTime(targetTime time.Time) time.Duration {
+func calculateRequeueTime(scheduleTime time.Time) time.Duration {
 	now := time.Now()
-	totalWaitDuration := targetTime.Sub(now)
-	if totalWaitDuration <= 0 {
-		return 0
+	totalWaitDuration := scheduleTime.Sub(now)
+	var requeueAfter time.Duration
+	switch {
+	case totalWaitDuration > 24*time.Hour:
+		requeueAfter = 24 * time.Hour
+	case totalWaitDuration > 6*time.Hour:
+		requeueAfter = 6 * time.Hour
+	case totalWaitDuration > 1*time.Hour:
+		requeueAfter = 1 * time.Hour
+	case totalWaitDuration > 10*time.Minute:
+		requeueAfter = 10 * time.Minute
+	default:
+		requeueAfter = totalWaitDuration
 	}
-	for _, step := range requeueTimeSteps {
-		if totalWaitDuration > step {
-			requeueAfter := step
-			if now.Add(requeueAfter).After(targetTime) {
-				requeueAfter = totalWaitDuration
-			}
-			return requeueAfter
-		}
+	if now.Add(requeueAfter).After(scheduleTime) {
+		requeueAfter = totalWaitDuration
 	}
-	return totalWaitDuration
+	return requeueAfter
 }
 
 // SetupWithManager sets up the controller with the Manager.
