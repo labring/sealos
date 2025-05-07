@@ -65,10 +65,11 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	var devbox devboxv1alpha1.Devbox
 	if devboxSchedule.Status.State == "" {
 		devboxSchedule.Status.State = devboxv1alpha1.ScheduleStatePending
-		err := r.Update(ctx, &devboxSchedule)
-		if err != nil {
-			logger.Error(err, "Failed to update DevBoxSchedule")
+		if err := r.Status().Update(ctx, &devboxSchedule); err != nil {
+			logger.Error(err, "Failed to update DevBoxSchedule status")
+			return ctrl.Result{}, err
 		}
+		return ctrl.Result{}, nil
 	}
 	switch devboxSchedule.Status.State {
 	case devboxv1alpha1.ScheduleStateCompleted:
