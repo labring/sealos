@@ -222,8 +222,17 @@ export enum YamlKindEnum {
   PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
-export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = await getInitData();
+export const adaptAppDetail = async (
+  configs: DeployKindsType[],
+  options?: {
+    SEALOS_DOMAIN: string;
+    SEALOS_USER_DOMAINS: {
+      name: string;
+      secretName: string;
+    }[];
+  }
+): Promise<AppDetailType> => {
+  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
 
   const allServicePorts = configs.flatMap((item) => {
     if (item.kind === YamlKindEnum.Service) {
