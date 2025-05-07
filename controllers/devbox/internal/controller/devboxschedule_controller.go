@@ -63,15 +63,7 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, err
 	}
 	var devbox devboxv1alpha1.Devbox
-	if devboxSchedule.Status.State == "" {
-		devboxSchedule.Status.State = devboxv1alpha1.ScheduleStatePending
-		if err := r.Status().Update(ctx, &devboxSchedule); err != nil {
-			logger.Error(err, "Failed to update DevBoxSchedule status")
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-	switch devboxSchedule.Status.State {
+	switch devboxSchedule.Spec.State {
 	case devboxv1alpha1.ScheduleStateCompleted:
 		logger.Info("Schedule already completed, deleting the CR")
 		if err := r.Delete(ctx, &devboxSchedule); err != nil {
@@ -108,7 +100,7 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{RequeueAfter: requeueAfter}, nil
 		}
 	default:
-		logger.Info("DevBoxSchedule in unexpected state", "state", devboxSchedule.Status.State, "devBoxName", devboxSchedule.Spec.DevBoxName)
+		logger.Info("DevBoxSchedule in unexpected state", "state", devboxSchedule.Spec.State, "devBoxName", devboxSchedule.Spec.DevBoxName)
 	}
 	return ctrl.Result{}, nil
 }
@@ -116,7 +108,7 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *DevBoxScheduleReconciler) updateStatus(ctx context.Context, scheduledShutdown *devboxv1alpha1.DevBoxSchedule, state devboxv1alpha1.ScheduleState) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("Updating ScheduledDevbox status", "State", state)
-	scheduledShutdown.Status.State = state
+	scheduledShutdown.Spec.State = state
 	if err := r.Status().Update(ctx, scheduledShutdown); err != nil {
 		logger.Error(err, "Failed to update ScheduledShutdown status")
 		return ctrl.Result{}, err

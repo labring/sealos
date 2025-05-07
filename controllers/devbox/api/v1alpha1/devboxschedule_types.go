@@ -41,6 +41,11 @@ type DevBoxScheduleSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:default=Stopped
 	ScheduleType ScheduleType `json:"scheduleType"`
+
+	// State represents the current state of the scheduled shutdown
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=Pending
+	State ScheduleState `json:"state,omitempty"`
 }
 
 // ScheduleState defines the current state of the devbox schedule process
@@ -62,10 +67,6 @@ const (
 
 // DevBoxScheduleStatus defines the observed state of DevBoxSchedule.
 type DevBoxScheduleStatus struct {
-	// State represents the current state of the scheduled shutdown
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default=Pending
-	State ScheduleState `json:"state,omitempty"`
 }
 
 // +kubebuilder:object:root=true

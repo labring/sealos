@@ -52,14 +52,6 @@ spec:
                 - Stopped
                 - Shutdown
                 type: string
-            required:
-            - devBoxName
-            - scheduleTime
-            - scheduleType
-            type: object
-          status:
-            description: DevBoxScheduleStatus defines the observed state of DevBoxSchedule.
-            properties:
               state:
                 default: Pending
                 description: State represents the current state of the scheduled shutdown
@@ -70,6 +62,13 @@ spec:
                 - NotFound
                 - NotMatch
                 type: string
+            required:
+            - devBoxName
+            - scheduleTime
+            - scheduleType
+            type: object
+          status:
+            description: DevBoxScheduleStatus defines the observed state of DevBoxSchedule.
             type: object
         type: object
     served: true
