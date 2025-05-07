@@ -105,6 +105,32 @@ rules:
 - apiGroups:
   - devbox.sealos.io
   resources:
+  - devboxschedules
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - devboxschedules/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - devbox.sealos.io
+  resources:
+  - devboxschedules/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - devbox.sealos.io
+  resources:
   - runtimeclasses
   verbs:
   - create
@@ -126,29 +152,3 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - devbox.sealos.io
-  resources:
-  - scheduledshutdowns
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - devbox.sealos.io
-  resources:
-  - scheduledshutdowns/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - devbox.sealos.io
-  resources:
-  - scheduledshutdowns/status
-  verbs:
-  - get
-  - patch
-  - update

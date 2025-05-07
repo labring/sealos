@@ -34,9 +34,6 @@ type DevBoxScheduleSpec struct {
 	// +kubebuilder:validation:Required
 	DevBoxName string `json:"devBoxName"`
 
-	// +kubebuilder:validation:Required
-	DevBoxUID string `json:"devBoxUID"`
-
 	// Format: RFC3339 (e.g., "2006-01-02T15:04:05Z")
 	// +kubebuilder:validation:Required
 	ScheduleTime metav1.Time `json:"scheduleTime"`
