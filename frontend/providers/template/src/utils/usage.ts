@@ -144,9 +144,9 @@ function convertMemory(memory: string): number {
 function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
   let cpu = 0;
   let memory = 0;
+  let storage = 0;
   let totalCpu = 0;
   let totalMemory = 0;
-  let storage = 0;
   let totalStorage = 0;
 
   obj.forEach((comp) => {
@@ -157,19 +157,18 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
     );
     cpu += parseCpu;
     memory += parseMemory;
+    storage += parseStorage;
     totalCpu += parseCpu * comp.replicas;
     totalMemory += parseMemory * comp.replicas;
-
-    storage += parseStorage;
     totalStorage += parseStorage * comp.replicas;
   });
 
   return {
     cpu,
     memory,
+    storage,
     totalCpu,
     totalMemory,
-    storage,
     totalStorage
   };
 }
