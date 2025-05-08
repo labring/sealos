@@ -1,3 +1,4 @@
+import { KubeBlockClusterSpec } from '@/types/db';
 import JsYaml from 'js-yaml';
 
 export interface ResourceUsage {
@@ -78,6 +79,11 @@ function parseResourceUsage(yamlObj: any): ResourceUsage {
     }
   } else if (kind === 'Service' && yamlObj.spec?.type === 'NodePort') {
     nodeport = yamlObj.spec.ports?.length || 0;
+  } else if (kind === 'Cluster') {
+    const dbResource = calcTotalResource(yamlObj.spec.componentSpecs);
+    cpu = dbResource.totalCpu;
+    memory = dbResource.totalMemory;
+    storage = dbResource.totalStorage;
   }
 
   return {
@@ -133,4 +139,37 @@ function convertMemory(memory: string): number {
     default:
       return memoryValue / (1024 * 1024); // Convert bytes to MiB
   }
+}
+
+function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
+  let cpu = 0;
+  let memory = 0;
+  let totalCpu = 0;
+  let totalMemory = 0;
+  let storage = 0;
+  let totalStorage = 0;
+
+  obj.forEach((comp) => {
+    const parseCpu = convertCpu(comp?.resources?.limits?.cpu || '0');
+    const parseMemory = convertMemory(comp?.resources?.limits?.memory || '0');
+    const parseStorage = convertMemory(
+      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
+    );
+    cpu += parseCpu;
+    memory += parseMemory;
+    totalCpu += parseCpu * comp.replicas;
+    totalMemory += parseMemory * comp.replicas;
+
+    storage += parseStorage;
+    totalStorage += parseStorage * comp.replicas;
+  });
+
+  return {
+    cpu,
+    memory,
+    totalCpu,
+    totalMemory,
+    storage,
+    totalStorage
+  };
 }
