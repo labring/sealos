@@ -6,9 +6,6 @@ export const DeployDevboxRequestSchema = z.object({
   devboxName: z.string().min(1).openapi({
     description: 'Devbox name'
   }),
-  port: z.number().min(1).default(65535).openapi({
-    description: 'Port number'
-  }),
   tag: z.string().min(1).openapi({
     description: 'Devbox release version tag, you can get it from /api/getDevboxVersionList'
   }),

@@ -149,6 +149,30 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
       }
     ],
     paths: {
+      '/api/deployDevbox': {
+        post: {
+          tags: ['Release'],
+          summary: 'Deploy a devbox',
+          description: 'Deploy a devbox',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: DeployDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox deployed successfully',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxSuccessResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
       '/api/v1/createSimpleDevbox': {
         post: {
           tags: ['Lifecycle'],
