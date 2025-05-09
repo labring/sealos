@@ -1,21 +1,22 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { DeleteAppByName, DeleteAppParams } from '../delApp';
+import { GetPodMetrics, GetPodMetricsProps } from '../getPodsMetrics';
 
+// get App Metrics By DeployName. compute average value
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query as DeleteAppParams;
-    if (!name) {
-      throw new Error('deploy name is empty');
+    const { podsName } = req.body as GetPodMetricsProps;
+
+    if (!podsName) {
+      throw new Error('podsName is empty');
     }
 
-    await DeleteAppByName({ name, req });
-
     jsonRes(res, {
-      message: 'successfully deleted'
+      data: await GetPodMetrics({ req, podsName })
     });
   } catch (err: any) {
+    console.log(err, 'get metrics error');
     jsonRes(res, {
       code: 500,
       error: err
