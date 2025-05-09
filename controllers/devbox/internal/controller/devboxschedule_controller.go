@@ -131,6 +131,9 @@ func (r *DevBoxScheduleReconciler) performSchedule(ctx context.Context, devbox *
 	case devboxv1alpha1.ScheduleStopped:
 		devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
 		return r.Update(ctx, devbox)
+	case devboxv1alpha1.ScheduleShutdown:
+		devbox.Spec.State = devboxv1alpha1.DevboxStateShutdown
+		return r.Update(ctx, devbox)
 	default:
 		logger.Error(errors.NewBadRequest("Unknown shutdown type"), "DevBoxName", devbox.Name, "ScheduleType", scheduleType)
 		return errors.NewBadRequest("Unknown shutdown type")

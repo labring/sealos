@@ -27,6 +27,8 @@ type ScheduleType string
 const (
 	// ScheduleStopped indicates the devbox should be stopped
 	ScheduleStopped ScheduleType = "Stopped"
+	// ScheduleShutdown indicates the devbox should be shutdown
+	ScheduleShutdown ScheduleType = "Shutdown"
 )
 
 // DevBoxScheduleSpec defines the desired state of DevBoxSchedule.
