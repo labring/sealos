@@ -37,6 +37,7 @@ import UploadModal from '../common/modal/UploadModal';
 import CreateFolderModal from '../common/modal/CreateFolderModal';
 import RefreshIcon from '../Icons/RefreshIcon';
 import VisibityIcon from '../Icons/VisibilityIcon';
+import { Download } from 'lucide-react';
 import LinkIcon from '../Icons/LinkIcon';
 import FileIcon from '../Icons/FileIcon';
 import FolderIcon from '../Icons/FolderIcon';
@@ -431,7 +432,7 @@ export default function FileManager({ ...styles }: FlexProps) {
             <ButtonGroup variant={'white-bg-icon'} color={'grayModern.900'}>
               {!file.isDir && (
                 <IconButton
-                  icon={<VisibityIcon boxSize={'14px'} />}
+                  icon={<Download size={14} />}
                   p="5px"
                   onClick={(e) => {
                     e.stopPropagation();
