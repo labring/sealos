@@ -98,7 +98,10 @@ export async function POST(req: NextRequest) {
       });
     }
     const tagretImage = `${imageHub}/${organization.id}/${templateRepository.name}:${query.version}`;
-    const originalImage = `${imageHub}/${devboxReleaseImage}`;
+    const originalImage = devboxReleaseImage.startsWith(imageHub)
+      ? devboxReleaseImage
+      : `${imageHub}/${devboxReleaseImage}`;
+
     const retagbody = {
       original: originalImage,
       target: tagretImage

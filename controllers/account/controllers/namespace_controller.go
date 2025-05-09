@@ -23,6 +23,14 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"k8s.io/client-go/rest"
+
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+
 	"k8s.io/utils/ptr"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -54,6 +62,7 @@ import (
 // NamespaceReconciler reconciles a Namespace object
 type NamespaceReconciler struct {
 	Client           client.WithWatch
+	dynamicClient    dynamic.Interface
 	Log              logr.Logger
 	Scheme           *runtime.Scheme
 	OSAdminClient    *madmin.AdminClient
@@ -113,6 +122,11 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logger.Error(err, "suspend namespace resources failed")
 			return ctrl.Result{}, err
 		}
+	case v1.FinalDeletionDebtNamespaceAnnoStatus:
+		if err := r.DeleteUserResource(ctx, req.NamespacedName.Name); err != nil {
+			logger.Error(err, "delete namespace resources failed")
+			return ctrl.Result{}, err
+		}
 	case v1.ResumeDebtNamespaceAnnoStatus:
 		if err := r.ResumeUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "resume namespace resources failed")
@@ -150,6 +164,20 @@ func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace
 	}
 	for _, fn := range pipelines {
 		if err := fn(ctx, namespace); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace string) error {
+	deleteResources := []string{
+		"backup", "cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
+		"objectstorageuser", "deploy", "sts", "pvc", "Service", "Ingress",
+		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
+	}
+	for _, rs := range deleteResources {
+		if err := deleteResource(r.dynamicClient, rs, namespace); err != nil {
 			return err
 		}
 	}
@@ -455,6 +483,15 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
 	r.OSNamespace = os.Getenv(OSNamespace)
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load in-cluster config: %v", err))
+	}
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create dynamic client: %v", err))
+	}
+	r.dynamicClient = dynamicClient
 
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
@@ -503,6 +540,121 @@ func (r *NamespaceReconciler) suspendCronJob(ctx context.Context, namespace stri
 		if err := r.Client.Update(ctx, &cronJob); err != nil {
 			return fmt.Errorf("failed to suspend cronjob %s: %w", cronJob.Name, err)
 		}
+	}
+	return nil
+}
+
+func deleteResource(dynamicClient dynamic.Interface, resource, namespace string) error {
+	ctx := context.Background()
+	deletePolicy := v12.DeletePropagationForeground
+
+	var gvr schema.GroupVersionResource
+	switch resource {
+	case "backup":
+		gvr = schema.GroupVersionResource{
+			Group:    "dataprotection.kubeblocks.io",
+			Version:  "v1alpha1",
+			Resource: "backups",
+		}
+	case "cluster.apps.kubeblocks.io":
+		gvr = schema.GroupVersionResource{
+			Group:    "apps.kubeblocks.io",
+			Version:  "v1alpha1",
+			Resource: "clusters",
+		}
+	case "backupschedules":
+		gvr = schema.GroupVersionResource{
+			Group:    "dataprotection.kubeblocks.io",
+			Version:  "v1alpha1",
+			Resource: "backupschedules",
+		}
+	case "cronjob":
+		gvr = schema.GroupVersionResource{
+			Group:    "batch",
+			Version:  "v1",
+			Resource: "cronjobs",
+		}
+	case "objectstorageuser":
+		gvr = schema.GroupVersionResource{
+			Group:    "objectstorage.sealos.io",
+			Version:  "v1",
+			Resource: "objectstorageusers",
+		}
+	case "deploy":
+		gvr = schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: "deployments",
+		}
+	case "sts":
+		gvr = schema.GroupVersionResource{
+			Group:    "apps",
+			Version:  "v1",
+			Resource: "statefulsets",
+		}
+	case "pvc":
+		gvr = schema.GroupVersionResource{
+			Group:    "",
+			Version:  "v1",
+			Resource: "persistentvolumeclaims",
+		}
+	case "Service":
+		gvr = schema.GroupVersionResource{
+			Group:    "",
+			Version:  "v1",
+			Resource: "services",
+		}
+	case "Ingress":
+		gvr = schema.GroupVersionResource{
+			Group:    "networking.k8s.io",
+			Version:  "v1",
+			Resource: "ingresses",
+		}
+	case "Issuer":
+		gvr = schema.GroupVersionResource{
+			Group:    "cert-manager.io",
+			Version:  "v1",
+			Resource: "issuers",
+		}
+	case "Certificate":
+		gvr = schema.GroupVersionResource{
+			Group:    "cert-manager.io",
+			Version:  "v1",
+			Resource: "certificates",
+		}
+	case "HorizontalPodAutoscaler":
+		gvr = schema.GroupVersionResource{
+			Group:    "autoscaling",
+			Version:  "v1",
+			Resource: "horizontalpodautoscalers",
+		}
+	case "instance":
+		gvr = schema.GroupVersionResource{
+			Group:    "app.sealos.io",
+			Version:  "v1",
+			Resource: "instances",
+		}
+	case "devboxes":
+		gvr = schema.GroupVersionResource{
+			Group:    "devbox.sealos.io",
+			Version:  "v1alpha1",
+			Resource: "devboxes",
+		}
+	case "devboxreleases":
+		gvr = schema.GroupVersionResource{
+			Group:    "devbox.sealos.io",
+			Version:  "v1alpha1",
+			Resource: "devboxreleases",
+		}
+	default:
+		return fmt.Errorf("unknown resource: %s", resource)
+	}
+
+	err := dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}, v12.ListOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete %s: %v", resource, err)
 	}
 	return nil
 }

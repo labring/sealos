@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@kubernetes/client-node": "^1.1.2",
     "@sealos/ui": "workspace:*",
     "@tanstack/react-query": "^4.35.3",
     "@tanstack/react-table": "^8.10.7",
@@ -30,6 +31,7 @@
     "react-dom": "^18",
     "react-hook-form": "^7.46.2",
     "react-json-view": "^1.21.3",
+    "react-syntax-highlighter": "^15.5.0",
     "sealos-desktop-sdk": "workspace:*",
     "zod": "^3.23.8",
     "zustand": "^4.5.4"

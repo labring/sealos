@@ -179,7 +179,7 @@ jobs:
           GHCR_REPO: ${{ env.GHCR_REPO }}
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${GHCR_REPO}@sha256:%s ' *)
+            $(printf "${GHCR_REPO}@sha256:%s " *)
 
       - name: Inspect image
         env:

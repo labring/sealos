@@ -15,8 +15,12 @@
 package resources
 
 import (
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/types"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -174,6 +178,13 @@ const (
 	// 0: 未结算 1: 已结算
 	Unsettled BillingStatus = iota
 	Settled
+)
+
+const (
+	// Consumption 消费
+	Consumption common.Type = iota
+	//Subconsumption 子消费
+	SubConsumption
 )
 
 const (
@@ -438,6 +449,51 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		ResourceObjectStorageBucket:           resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageBucket, DefaultQuotaObjectStorageBucket)),
 		//TODO storage.diskio.read, storage.diskio.write
 	}
+}
+
+func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[string]corev1.ResourceList, error) {
+	subPlansLimit := make(map[string]corev1.ResourceList)
+	for i := range plans {
+		//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
+		res := plans[i].MaxResources
+		if res == "" {
+			subPlansLimit[plans[i].Name] = DefaultResourceQuotaHard()
+		} else {
+			var maxResources map[string]string
+			if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
+				return nil, fmt.Errorf("parse max_resources failed: %v", err)
+			}
+			rl := make(corev1.ResourceList)
+			for k, v := range maxResources {
+				_v, err := ParseCustomQuantity(v)
+				if err != nil {
+					return nil, fmt.Errorf("parse %s failed: %v", k, err)
+				}
+				switch k {
+				case "cpu":
+					rl[corev1.ResourceLimitsCPU] = _v
+				case "memory":
+					rl[corev1.ResourceLimitsMemory] = _v
+				case "storage":
+					rl[corev1.ResourceRequestsStorage] = _v
+				case "nodeports":
+					rl[corev1.ResourceServicesNodePorts] = _v
+				case ResourceObjectStorageSize.String():
+					rl[ResourceObjectStorageSize] = _v
+				case ResourceObjectStorageBucket.String():
+					rl[ResourceObjectStorageBucket] = _v
+				}
+			}
+			subPlansLimit[plans[i].Name] = rl
+		}
+	}
+	return subPlansLimit, nil
+}
+
+func ParseCustomQuantity(s string) (resource.Quantity, error) {
+	s = strings.Replace(s, "GiB", "Gi", 1)
+	s = strings.Replace(s, "MiB", "Mi", 1)
+	return resource.ParseQuantity(s)
 }
 
 func DefaultLimitRangeLimits() []corev1.LimitRangeItem {

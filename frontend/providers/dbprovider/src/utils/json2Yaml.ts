@@ -7,17 +7,26 @@ import {
   DBTypeEnum,
   MigrationRemark,
   RedisHAConfig,
-  crLabelKey
+  crLabelKey,
+  defaultDBEditValue
 } from '@/constants/db';
 import { StorageClassName } from '@/store/env';
-import type { BackupItemType, DBDetailType, DBEditType, DBType } from '@/types/db';
+import type {
+  BackupItemType,
+  DBComponentsName,
+  DBDetailType,
+  DBEditType,
+  DBType
+} from '@/types/db';
 import { MigrateForm } from '@/types/migrate';
-import { encodeToHex, formatTime, str2Num } from '@/utils/tools';
+import { encodeToHex, formatNumber, formatTime, str2Num } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { getUserNamespace } from './user';
 import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
+import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
+import { distributeResources } from './database';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -30,23 +39,15 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
  * @returns Generated YAML configuration.
  */
 export const json2CreateCluster = (
-  data: DBEditType,
+  rawData: Partial<DBEditType> = {},
   backupInfo?: BackupItemType,
   options?: {
     storageClassName?: string;
   }
 ) => {
-  const resources = {
-    limits: {
-      cpu: `${str2Num(Math.floor(data.cpu))}m`,
-      memory: `${str2Num(data.memory)}Mi`
-    },
-    requests: {
-      cpu: `${Math.floor(str2Num(data.cpu) * 0.1)}m`,
-      memory: `${Math.floor(str2Num(data.memory) * 0.1)}Mi`
-    }
-  };
-  const terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
+  const data: DBEditType = { ...defaultDBEditValue, ...rawData };
+  const resources = distributeResources(data);
+
   const metadata = {
     finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
@@ -76,10 +77,22 @@ export const json2CreateCluster = (
       ? { storageClassName: options?.storageClassName || StorageClassName }
       : {};
 
-  const redisHA = RedisHAConfig(data.replicas > 1);
+  function createDBObject(dbType: DBType) {
+    // Special circumstances process here
+    let terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
 
-  const map = {
-    [DBTypeEnum.postgresql]: [
+    switch (dbType) {
+      case DBTypeEnum.postgresql:
+      case DBTypeEnum.mysql:
+      case DBTypeEnum.mongodb:
+      case DBTypeEnum.redis:
+        terminationPolicy = data.terminationPolicy;
+        break;
+      default:
+        break;
+    }
+
+    return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
@@ -91,186 +104,20 @@ export const json2CreateCluster = (
             tenancy: 'SharedNode',
             topologyKeys: ['kubernetes.io/hostname']
           },
-          clusterDefinitionRef: 'postgresql',
+          clusterDefinitionRef: dbType,
           clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'postgresql',
+          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
+            return {
+              componentDefRef: key,
               monitor: true,
-              name: 'postgresql',
-              replicas: data.replicas,
-              resources,
+              name: key,
+              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
+              resources: resourceData.cpuMemory,
               serviceAccountName: data.dbName,
               switchPolicy: {
                 type: 'Noop'
               },
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    },
-                    ...storageClassName
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy: data.terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.mysql]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
-          },
-          clusterDefinitionRef: 'apecloud-mysql',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'mysql',
-              monitor: true,
-              name: 'mysql',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    },
-                    ...storageClassName
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy: data.terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.mongodb]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata: {
-          ...metadata,
-          generation: 1
-        },
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
-          },
-          clusterDefinitionRef: 'mongodb',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'mongodb',
-              monitor: true,
-              name: 'mongodb',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    },
-                    ...storageClassName
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy: data.terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.redis]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
-          },
-          clusterDefinitionRef: 'redis',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'redis',
-              monitor: true,
-              name: 'redis',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              switchPolicy: {
-                type: 'Noop'
-              },
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    },
-                    ...storageClassName
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'redis-sentinel',
-              monitor: true,
-              name: 'redis-sentinel',
-              replicas: redisHA.replicas,
-              resources: {
-                limits: {
-                  cpu: `${redisHA.cpu}m`,
-                  memory: `${redisHA.memory}Mi`
-                },
-                requests: {
-                  cpu: `${redisHA.cpu}m`,
-                  memory: `${redisHA.memory}Mi`
-                }
-              },
-              serviceAccountName: data.dbName,
-              ...(redisHA.storage > 0
+              ...(resourceData.storage > 0
                 ? {
                     volumeClaimTemplates: [
                       {
@@ -279,7 +126,7 @@ export const json2CreateCluster = (
                           accessModes: ['ReadWriteOnce'],
                           resources: {
                             requests: {
-                              storage: `${redisHA.storage}Gi`
+                              storage: `${resourceData.storage}Gi`
                             }
                           },
                           ...storageClassName
@@ -288,402 +135,18 @@ export const json2CreateCluster = (
                     ]
                   }
                 : {})
-            }
-          ],
-          terminationPolicy: data.terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.kafka]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: []
-          },
-          clusterDefinitionRef: 'kafka',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'kafka-server',
-              monitor: true,
-              name: 'kafka-server',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'kafka-broker',
-              monitor: true,
-              name: 'kafka-broker',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'controller',
-              monitor: true,
-              name: 'controller',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'kafka-exporter',
-              monitor: true,
-              name: 'kafka-exporter',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ],
+            };
+          }),
           terminationPolicy,
           tolerations: []
         }
       }
-    ],
-    [DBTypeEnum.qdrant]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: []
-          },
-          clusterDefinitionRef: 'qdrant',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'qdrant',
-              monitor: true,
-              name: 'qdrant',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.nebula]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: []
-          },
-          clusterDefinitionRef: 'nebula',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'nebula-console',
-              monitor: true,
-              name: 'nebula-console',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'nebula-graphd',
-              monitor: true,
-              name: 'nebula-graphd',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'nebula-metad',
-              monitor: true,
-              name: 'nebula-metad',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'nebula-storaged',
-              monitor: true,
-              name: 'nebula-storaged',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.weaviate]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: []
-          },
-          clusterDefinitionRef: 'weaviate',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'weaviate',
-              monitor: true,
-              name: 'weaviate',
-              replicas: data.replicas,
-              resources,
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy,
-          tolerations: []
-        }
-      }
-    ],
-    [DBTypeEnum.milvus]: [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode'
-          },
-          clusterDefinitionRef: 'milvus',
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: [
-            {
-              componentDefRef: 'milvus',
-              monitor: false,
-              name: 'milvus',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              rsmTransformPolicy: 'ToSts',
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'etcd',
-              monitor: false,
-              name: 'etcd',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              rsmTransformPolicy: 'ToSts',
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            },
-            {
-              componentDefRef: 'minio',
-              monitor: false,
-              name: 'minio',
-              noCreatePDB: false,
-              replicas: data.replicas,
-              resources,
-              rsmTransformPolicy: 'ToSts',
-              serviceAccountName: data.dbName,
-              volumeClaimTemplates: [
-                {
-                  name: 'data',
-                  spec: {
-                    accessModes: ['ReadWriteOnce'],
-                    resources: {
-                      requests: {
-                        storage: `${data.storage}Gi`
-                      }
-                    }
-                  }
-                }
-              ]
-            }
-          ],
-          terminationPolicy,
-          tolerations: []
-        }
-      }
-    ]
-  };
+    ];
+  }
 
-  return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
+  return createDBObject(data.dbType)
+    .map((item) => yaml.dump(item))
+    .join('\n---\n');
 };
 
 /**
@@ -694,7 +157,9 @@ export const json2CreateCluster = (
  * @param ownerId Optional owner ID for cluster association.
  * @returns Generated account info.
  */
-export const json2Account = (data: DBEditType, ownerId?: string) => {
+export const json2Account = (rawData: Partial<DBEditType> = {}, ownerId?: string) => {
+  const data: DBEditType = { ...defaultDBEditValue, ...rawData };
+
   const commonLabels = {
     [crLabelKey]: data.dbName,
     'app.kubernetes.io/instance': data.dbName,
@@ -807,7 +272,9 @@ export const json2Account = (data: DBEditType, ownerId?: string) => {
     [DBTypeEnum.qdrant]: pgAccountTemplate,
     [DBTypeEnum.nebula]: pgAccountTemplate,
     [DBTypeEnum.weaviate]: pgAccountTemplate,
-    [DBTypeEnum.milvus]: pgAccountTemplate
+    [DBTypeEnum.milvus]: pgAccountTemplate,
+    [DBTypeEnum.pulsar]: pgAccountTemplate,
+    [DBTypeEnum.clickhouse]: pgAccountTemplate
   };
   return map[data.dbType].map((item) => yaml.dump(item)).join('\n---\n');
 };
@@ -960,7 +427,6 @@ spec:
 
 export const json2MigrateCR = (data: MigrateForm) => {
   const userNS = getUserNamespace();
-  const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
   const isMigrateAll = data.sourceDatabaseTable.includes('All');
 
   const templateByDB: Record<DBType, string> = {
@@ -972,71 +438,100 @@ export const json2MigrateCR = (data: MigrateForm) => {
     qdrant: '',
     nebula: '',
     weaviate: '',
-    milvus: ''
+    milvus: '',
+    pulsar: '',
+    clickhouse: ''
+  };
+
+  const stepResources = {
+    limits: {
+      cpu: '2000m',
+      memory: '4Gi'
+    },
+    requests: {
+      cpu: '500m',
+      memory: '512Mi'
+    }
   };
 
   const template = {
     apiVersion: 'datamigration.apecloud.io/v1alpha1',
     kind: 'MigrationTask',
     metadata: {
-      name: `${userNS}-${time}-${data.dbName}`,
+      name: `${data.dbName}-migrate-${nanoid()}`,
       labels: {
         [CloudMigraionLabel]: data.dbName,
         [MigrationRemark]: data?.remark || ''
-      }
+      },
+      namespace: userNS
     },
     spec: {
       cdc: {
         config: {
+          metrics: {},
           param: {
-            'extractor.server_id': 1565001796
-          }
+            'extractor.server_id': crypto.getRandomValues(new Uint32Array(1))[0]
+          },
+          persistentVolumeClaimName: '',
+          resource: {}
         }
       },
+      globalResources: {},
       initialization: {
-        steps:
-          data.dbType === 'postgresql'
-            ? ['initStruct', 'initData']
-            : ['preCheck', 'initStruct', 'initData']
-      },
-      sinkEndpoint: {
-        address: `${data.sinkHost}:${data.sinkPort}`,
-        password: data.sinkPassword,
-        userName: data.sinkUser,
-        ...(data.dbType === 'postgresql'
-          ? {
-              databaseName: data.sourceDatabase
-            }
-          : {})
-      },
-      sourceEndpoint: {
-        address: `${data.sourceHost}:${data.sourcePort}`,
-        password: `${data.sourcePassword}`,
-        userName: `${data.sourceUsername}`,
-        ...(data.dbType === 'postgresql'
-          ? {
-              databaseName: data.sourceDatabase
-            }
-          : {})
+        config: {
+          initData: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          },
+          initStruct: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          },
+          preCheck: {
+            metrics: {},
+            persistentVolumeClaimName: '',
+            resource: stepResources
+          }
+        },
+        steps: ['preCheck', 'initStruct', 'initData']
       },
       migrationObj: {
         whiteList: [
-          isMigrateAll
-            ? {
-                isAll: true,
-                schemaName: data.sourceDatabase
-              }
-            : {
-                isAll: false,
-                schemaName: data.sourceDatabase,
-                tableList: data.sourceDatabaseTable.map((name) => {
-                  return {
+          {
+            isAll: isMigrateAll,
+            schemaMappingName: '',
+            schemaName: data.dbType === DBTypeEnum.postgresql ? 'public' : data.sourceDatabase,
+            ...(!isMigrateAll
+              ? {
+                  tableList: data.sourceDatabaseTable.map((name) => ({
                     isAll: true,
+                    tableMappingName: '',
                     tableName: name
-                  };
-                })
-              }
+                  }))
+                }
+              : {})
+          }
         ]
+      },
+      sinkEndpoint: {
+        address: `${data.sinkHost}:${data.sinkPort}`,
+        databaseName: data.dbType === DBTypeEnum.mongodb ? 'admin' : data.sourceDatabase,
+        password: data.sinkPassword,
+        secret: {
+          name: ''
+        },
+        userName: data.sinkUser
+      },
+      sourceEndpoint: {
+        address: `${data.sourceHost}:${data.sourcePort}`,
+        databaseName: data.dbType === DBTypeEnum.mongodb ? 'admin' : data.sourceDatabase,
+        password: data.sourcePassword,
+        secret: {
+          name: ''
+        },
+        userName: data.sourceUsername
       },
       taskType: data.continued ? 'initialization-and-cdc' : 'initialization',
       template: templateByDB[data.dbType]
@@ -1062,7 +557,9 @@ export const json2NetworkService = ({
     qdrant: '',
     nebula: '',
     weaviate: '',
-    milvus: 19530
+    milvus: 19530,
+    pulsar: 6650,
+    clickhouse: 8123
   };
   const labelMap = {
     postgresql: {
@@ -1085,7 +582,9 @@ export const json2NetworkService = ({
     weaviate: {},
     milvus: {
       'apps.kubeblocks.io/component-name': 'milvus'
-    }
+    },
+    pulsar: {},
+    clickhouse: {}
   };
 
   const template = {
@@ -1299,3 +798,40 @@ export const json2BasicOps = (data: {
 
   return yaml.dump(template);
 };
+
+export function json2SwitchMsNode(data: SwitchMsData) {
+  const template = {
+    apiVersion: 'apps.kubeblocks.io/v1alpha1',
+    kind: 'OpsRequest',
+    metadata: {
+      labels: {
+        'app.kubernetes.io/instance': data.dbName,
+        'app.kubernetes.io/managed-by': 'kubeblocks',
+        'ops.kubeblocks.io/ops-type': 'Switchover'
+      },
+      name: `${data.dbName}-switchover-${nanoid()}`,
+      namespace: data.namespace,
+      ownerReferences: [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          name: data.dbName,
+          uid: data.uid
+        }
+      ]
+    },
+    spec: {
+      clusterRef: data.dbName,
+      switchover: [
+        {
+          componentName: data.componentName,
+          instanceName: data.podName
+        }
+      ],
+      ttlSecondsBeforeAbort: 0,
+      type: 'Switchover'
+    }
+  };
+
+  return yaml.dump(template);
+}

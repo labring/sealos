@@ -5,6 +5,8 @@ export type CloudConfigType = {
   port: string;
   regionUID: string;
   certSecretName: string;
+  proxyDomain: string;
+  allowedOrigins: string[];
 };
 
 export type CommonConfigType = {
@@ -71,6 +73,7 @@ export type LayoutConfigType = {
     accountSettingEnabled: boolean;
     docsUrl?: string;
     aiAssistantEnabled: boolean;
+    bannerEnabled: boolean;
   };
 };
 
@@ -254,7 +257,9 @@ export const DefaultCloudConfig: CloudConfigType = {
   domain: 'cloud.sealos.io',
   port: '443',
   regionUID: 'sealos-cloud',
-  certSecretName: 'wildcard-cert'
+  certSecretName: 'wildcard-cert',
+  proxyDomain: 'cloud.sealos.io',
+  allowedOrigins: ['cloud.sealos.io']
 };
 
 export const DefaultLayoutConfig: LayoutConfigType = {
@@ -281,7 +286,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     githubStarEnabled: false,
     workorderEnabled: false,
     accountSettingEnabled: false,
-    aiAssistantEnabled: false
+    aiAssistantEnabled: false,
+    bannerEnabled: false
   }
 };
 

@@ -16,8 +16,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 function genResCloudConfig(conf: CloudConfigType): CloudConfigType {
   return {
     domain: conf.domain,
-    port: conf.port
-  } as CloudConfigType;
+    port: conf.port,
+    proxyDomain: conf.proxyDomain,
+    regionUID: conf.regionUID,
+    certSecretName: conf.certSecretName,
+    allowedOrigins: conf.allowedOrigins
+  };
 }
 
 export async function getCloudConfig(): Promise<CloudConfigType> {

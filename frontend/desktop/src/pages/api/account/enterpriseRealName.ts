@@ -193,21 +193,6 @@ async function handlePost(
 
     const data = validationResult.data;
 
-    // check if the enterprise name has been verified
-    const enterprise = await globalPrisma.enterpriseRealNameInfo.findFirst({
-      where: {
-        enterpriseName: data.keyName,
-        isVerified: true
-      }
-    });
-
-    if (enterprise) {
-      return jsonRes(res, {
-        code: 400,
-        message: 'Enterprise real name information has been used'
-      });
-    }
-
     const globalToken = generateAuthenticationToken({
       userUid: payload.userUid,
       userId: payload.userId,

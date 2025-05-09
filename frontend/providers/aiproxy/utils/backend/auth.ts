@@ -31,7 +31,7 @@ export async function parseJwtToken(headers: Headers): Promise<string> {
 
     const decoded = jwt.verify(
       token,
-      global.AppConfig?.auth.appTokenJwtKey || ''
+      global.AppConfig?.auth.appTokenJwtKey || process.env.APP_TOKEN_JWT_KEY || ''
     ) as AppTokenPayload
     const now = Math.floor(Date.now() / 1000)
     if (decoded.exp && decoded.exp < now) {

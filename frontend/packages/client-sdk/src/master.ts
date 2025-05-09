@@ -11,6 +11,7 @@ import { getCookie } from './utils/cookieUtils';
 
 class MasterSDK {
   private readonly eventBus = new Map<string, (e?: any) => any>();
+  private readonly allowedOrigins: string[] = [];
   private readonly apiFun: {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;
   } = {
@@ -19,7 +20,28 @@ class MasterSDK {
     [API_NAME.GET_LANGUAGE]: (data, source, origin) => this.getLanguage(data, source, origin)
   };
 
-  constructor() {}
+  constructor(allowedOrigins: string[] = []) {
+    this.allowedOrigins = allowedOrigins;
+  }
+
+  /**
+   * Check if origin is in the allowed list
+   * Support wildcard '*' to allow all origins
+   */
+  private isOriginAllowed(origin: string): boolean {
+    if (origin === window.location.origin) {
+      return true;
+    }
+
+    if (this.allowedOrigins.length > 0) {
+      if (this.allowedOrigins.includes('*')) {
+        return true;
+      }
+      return this.allowedOrigins.includes(origin);
+    }
+
+    return false;
+  }
 
   private replyAppMessage({
     source,
@@ -29,6 +51,12 @@ class MasterSDK {
     message = '',
     data = {}
   }: MasterReplyMessageType) {
+    // Verify origin
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access:', origin);
+      return;
+    }
+
     // if not define source or source is self(Not need send message to self). Skip it
     if (!source || source === window) return;
 
@@ -66,12 +94,18 @@ class MasterSDK {
   }
 
   /**
-   * run in hook
+   * Initialize message listener
    */
   init() {
     console.log('init desktop onmessage');
 
     const windowMessage = ({ data, origin, source }: MessageEvent<AppSendMessageType>) => {
+      // Verify origin
+      if (!this.isOriginAllowed(origin)) {
+        console.error('Unauthorized origin trying to access:', origin);
+        return;
+      }
+
       const { apiName, messageId } = data || {};
 
       if (!source) return;
@@ -111,7 +145,7 @@ class MasterSDK {
   }
 
   /**
-   * add event bus
+   * Add event listener
    */
   addEventListen(name: string, fn: (e?: any) => any) {
     if (this.eventBus.has(name)) {
@@ -128,14 +162,14 @@ class MasterSDK {
   }
 
   /**
-   * remove event bus
+   * Remove event listener
    */
   removeEventListen(name: string) {
     this.eventBus.delete(name);
   }
 
   /**
-   * run event bus function
+   * Execute event bus function
    */
   private async runEventBus(data: AppSendMessageType, source: MessageEventSource, origin: string) {
     const {
@@ -162,9 +196,22 @@ class MasterSDK {
   }
 
   /**
-   * return session to app
+   * Return session to app
    */
   private getUserInfo(data: AppSendMessageType, source: MessageEventSource, origin: string) {
+    // Verify origin is allowed
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access session:', origin);
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'unauthorized origin'
+      });
+      return;
+    }
+
     if (this.session) {
       this.replyAppMessage({
         source,
@@ -185,9 +232,22 @@ class MasterSDK {
   }
 
   /**
-   * return desktop  language
+   * Return desktop language
    */
   private getLanguage(data: AppSendMessageType, source: MessageEventSource, origin: string) {
+    // Verify origin is allowed
+    if (!this.isOriginAllowed(origin)) {
+      console.error('Unauthorized origin trying to access language:', origin);
+      this.replyAppMessage({
+        source,
+        origin,
+        messageId: data.messageId,
+        success: false,
+        message: 'unauthorized origin'
+      });
+      return;
+    }
+
     if (this.session) {
       this.replyAppMessage({
         source,
@@ -210,7 +270,7 @@ class MasterSDK {
   }
 
   /**
-   * send message to all app
+   * Send message to all apps
    */
   sendMessageToAll(data: MasterSendMessageType) {
     const iframes = document.querySelectorAll('iframe');
@@ -223,12 +283,12 @@ class MasterSDK {
 
 export let masterApp: MasterSDK;
 
-export const createMasterAPP = () => {
+export const createMasterAPP = (allowedOrigins: string[] = []) => {
   if (!isBrowser()) {
     console.error('This method need run in the browser.');
     return;
   }
-  masterApp = new MasterSDK();
+  masterApp = new MasterSDK(allowedOrigins);
 
   return masterApp.init();
 };

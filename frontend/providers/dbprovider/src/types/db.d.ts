@@ -1,20 +1,19 @@
-import { DBTypeEnum, DBStatusEnum, PodStatusEnum } from '@/constants/db';
 import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
+import { DBStatusEnum, DBTypeEnum } from '@/constants/db';
 import type {
-  V1Deployment,
   V1ConfigMap,
-  V1Service,
-  V1Ingress,
-  V1Secret,
+  V1ContainerStatus,
+  V1Deployment,
   V1HorizontalPodAutoscaler,
+  V1Ingress,
   V1Pod,
-  SinglePodMetrics,
-  V1StatefulSet,
-  V1ContainerStatus
+  V1Secret,
+  V1Service,
+  V1StatefulSet
 } from '@kubernetes/client-node';
-import { I18nCommonKey } from './i18next';
 import { AutoBackupFormType } from './backup';
 import { KubeBlockClusterTerminationPolicy } from './cluster';
+import { I18nCommonKey } from './i18next';
 
 export type DBType = `${DBTypeEnum}`;
 
@@ -54,12 +53,42 @@ export interface DBListItemType {
   createTime: string;
   cpu: number;
   memory: number;
-  storage: string;
+  storage: number;
+  replicas: number;
+  totalCpu: number;
+  totalMemory: number;
+  totalStorage: number;
   conditions: DBConditionItemType[];
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
   source: DBSource;
 }
+
+export type DBComponentsName =
+  | 'postgresql'
+  | 'mongodb'
+  | 'mysql'
+  | 'redis'
+  | 'redis-sentinel'
+  | 'kafka'
+  | 'kafka-server'
+  | 'kafka-broker'
+  | 'controller'
+  | 'kafka-exporter'
+  | 'milvus'
+  | 'etcd'
+  | 'minio'
+  | 'qdrant'
+  | 'nebula-console'
+  | 'nebula-graphd'
+  | 'nebula-metad'
+  | 'nebula-storaged'
+  | 'weaviate'
+  | 'bookies'
+  | 'pulsar-proxy'
+  | 'ch-keeper'
+  | 'clickhouse'
+  | 'zookeeper';
 
 export interface DBEditType {
   dbType: DBType;
@@ -90,6 +119,9 @@ export interface DBDetailType extends DBEditType {
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
   source: DBSource;
+  totalCpu: number;
+  totalMemory: number;
+  totalStorage: number;
 }
 
 export interface DBConditionItemType {
@@ -154,5 +186,9 @@ export interface OpsRequestItemType {
   status: ReconfigStatusMapType;
   startTime: Date;
   namespace: string;
-  configurations: { parameterName: string; newValue: string; oldValue?: string }[];
+  configurations?: { parameterName: string; newValue: string; oldValue?: string }[];
+  switchover?: {
+    componentName: string;
+    instanceName: string;
+  };
 }

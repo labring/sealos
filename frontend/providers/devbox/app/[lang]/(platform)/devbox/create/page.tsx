@@ -186,26 +186,27 @@ const DevboxCreatePage = () => {
         }
       }
       // quote check
-      const quoteCheckRes = checkQuotaAllow(
-        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
-          nodeports: number;
-        },
-        {
-          ...oldDevboxEditData.current,
-          nodeports: devboxList.length
-        } as DevboxEditType & {
-          nodeports: number;
-        }
-      );
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(
+      //   { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
+      //     nodeports: number;
+      //   },
+      //   {
+      //     ...oldDevboxEditData.current,
+      //     nodeports: devboxList.length
+      //   } as DevboxEditType & {
+      //     nodeports: number;
+      //   }
+      // );
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
+
       // update
       if (isEdit) {
         const yamlList = generateYamlList(formData, env);
@@ -254,8 +255,7 @@ const DevboxCreatePage = () => {
       }
       router.push(lastRoute);
     } catch (error) {
-      console.log('error', error);
-      if (error instanceof String && error.includes('402')) {
+      if (typeof error === 'string' && error.includes('402')) {
         setErrorMessage(t('outstanding_tips'));
       } else setErrorMessage(JSON.stringify(error));
     }

@@ -1,4 +1,4 @@
-import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { defaultDBDetail } from '@/constants/db';
@@ -52,7 +52,7 @@ const Header = ({
       setLoading(true);
       await restartDB(db);
       toast({
-        title: 'restart_success',
+        title: t('restart_success'),
         status: 'success'
       });
     } catch (error: any) {

@@ -23,6 +23,8 @@ export const getUserKubeConfig = () =>
   //   ? process.env.NEXT_PUBLIC_MOCK_USER
   useSessionStore.getState().session?.kubeconfig || '';
 
+export const getAppToken = () => useSessionStore.getState().session?.token || '';
+
 export const getUserNamespace = () => {
   const kubeConfig = getUserKubeConfig();
   const json = yaml.load(kubeConfig) as KC;

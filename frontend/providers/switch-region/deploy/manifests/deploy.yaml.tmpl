@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desktop-switch-region
+  namespace: sealos
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: desktop-switch-region
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: desktop-switch-region
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: desktop-switch-region
+          image: ghcr.io/labring/sealos-desktop-switch-region:latest
+          env: []
+          resources:
+            requests:
+              cpu: 20m
+              memory: 25Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          ports:
+            - containerPort: 80
+              name: pwihfnbsxdbv
+          imagePullPolicy: Always
+          volumeMounts: []
+      volumes: []
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: desktop-switch-region
+  namespace: sealos
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      name: pwihfnbsxdbv
+      protocol: TCP
+  selector:
+    app: desktop-switch-region
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: desktop-switch-region
+  namespace: sealos
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: 32m
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
+    nginx.ingress.kubernetes.io/proxy-send-timeout: '300'
+    nginx.ingress.kubernetes.io/proxy-read-timeout: '300'
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_header_buffer_size 64k;
+      large_client_header_buffers 4 128k;
+spec:
+  rules:
+    - host: cloud.sealos.run
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: desktop-switch-region
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - cloud.sealos.run
+      secretName: wildcard-cert

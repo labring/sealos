@@ -513,6 +513,9 @@ func (m *mongoDB) GenerateBillingData(startTime, endTime time.Time, prols *resou
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate billing data: %v", err)
 		}
+		if len(billings) == 0 {
+			continue
+		}
 		ownerBillings[owner] = billings
 	}
 	return ownerBillings, nil

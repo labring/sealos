@@ -4,6 +4,7 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KbPgClusterType } from '@/types/cluster';
+import { adaptDBDetail } from '@/utils/adapt';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -15,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const body = await getCluster(req, name);
 
     jsonRes(res, {
-      data: body
+      data: adaptDBDetail(body)
     });
   } catch (err: any) {
     jsonRes(res, {

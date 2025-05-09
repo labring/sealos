@@ -16,15 +16,20 @@ import useEnvStore from '@/store/env';
 import { DBVersionMap, INSTALL_ACCOUNT } from '@/store/static';
 import type { QueryType } from '@/types';
 import { AutoBackupType } from '@/types/backup';
-import type { DBEditType } from '@/types/db';
+import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
+import { distributeResources } from '@/utils/database';
+import { tWithParams } from '@/utils/i18n-client';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Box,
-  Button,
   Center,
   Checkbox,
-  Collapse,
   Flex,
   FormControl,
   Grid,
@@ -36,25 +41,150 @@ import {
   NumberInputField,
   NumberInputStepper,
   Switch,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
   Text,
-  useDisclosure,
+  Th,
+  Thead,
+  Tr,
   useTheme
 } from '@chakra-ui/react';
 import { MySelect, MySlider, MyTooltip, RangeInput, Tabs } from '@sealos/ui';
-import { throttle } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { MutableRefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+
+function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
+  const resources = distributeResources(data);
+  const { t } = useTranslation();
+
+  const compNum = Object.keys(resources).length;
+  const dbName = DBTypeList.findLast((item) => item.id === data.dbType)!.label;
+
+  const descriptionMap: Map<DBType, string> = new Map([
+    [DBTypeEnum.postgresql, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.mongodb, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.mysql, tWithParams('occupy', { num: '100%' })],
+    [DBTypeEnum.redis, `redis ${tWithParams('occupy', { num: '100%' })}, ${t('ha_desc')}`],
+    [DBTypeEnum.kafka, tWithParams('each', { perc: '25%' })],
+    [DBTypeEnum.milvus, tWithParams('each', { perc: '30%, 40%, 30%' })]
+  ]);
+
+  return (
+    <Accordion
+      variant="unstyled"
+      defaultIndex={[-1]}
+      allowMultiple
+      border="1px solid #BCE7FF"
+      borderRadius="6px"
+      overflow="hidden"
+      marginTop={5}
+      width={'100%'}
+    >
+      <AccordionItem borderStyle={'none'}>
+        <h2>
+          <AccordionButton
+            bgColor="#F9FDFE"
+            px={5}
+            py={3}
+            _hover={{ bg: '#F9FDFE' }}
+            _expanded={{ bg: '#F9FDFE', borderBottom: '1px solid #BCE7FF' }}
+            color="#485264"
+          >
+            <Box
+              as="span"
+              flex="1"
+              textAlign="left"
+              display="flex"
+              flexDirection="row"
+              color="#485264"
+              alignItems="center"
+            >
+              <MyIcon name="warningInfo" w={'16px'} h={'16px'} mr={2} />
+              <Text fontWeight="500">
+                {dbName}
+                {tWithParams('has_comps', { number: compNum })}:&emsp;
+              </Text>
+              <Text>
+                {Object.keys(resources)
+                  .sort()
+                  .map((item) => {
+                    return item.split('-').at(-1);
+                  })
+                  .join(', ')}
+              </Text>
+              <Text mx={2} color="#C4CBD7">
+                |
+              </Text>
+              <Text>{descriptionMap.get(data.dbType)}</Text>
+            </Box>
+            <AccordionIcon />
+          </AccordionButton>
+        </h2>
+        <AccordionPanel pb={4}>
+          <TableContainer>
+            <Table variant="unstyled" width={'full'}>
+              <Thead>
+                <Tr>
+                  {[t('comp_name'), t('cpu'), t('memory'), t('storage_volumes'), t('Replicas')].map(
+                    (header, i) => {
+                      return (
+                        <Th
+                          fontSize={'12px'}
+                          py="13px"
+                          px={'24px'}
+                          key={i}
+                          bg={'grayModern.100'}
+                          color={'grayModern.600'}
+                          border={'none'}
+                          _first={{
+                            borderLeftRadius: '6px'
+                          }}
+                          _last={{
+                            borderRightRadius: '6px'
+                          }}
+                        >
+                          {header}
+                        </Th>
+                      );
+                    }
+                  )}
+                </Tr>
+              </Thead>
+              <Tbody>
+                {Object.entries(resources)
+                  .sort()
+                  .map(([keyName, value]) => {
+                    return (
+                      <Tr key={keyName}>
+                        <Td w="190px">{keyName}</Td>
+                        <Td>{value.cpuMemory.limits.cpu}</Td>
+                        <Td>{value.cpuMemory.limits.memory}</Td>
+                        <Td>{value.storage} G</Td>
+                        <Td>{value.other?.replicas ?? data.replicas}</Td>
+                      </Tr>
+                    );
+                  })}
+              </Tbody>
+            </Table>
+          </TableContainer>
+        </AccordionPanel>
+      </AccordionItem>
+    </Accordion>
+  );
+}
 
 const Form = ({
   formHook,
   pxVal,
-  minStorage
+  allocatedStorage
 }: {
   formHook: UseFormReturn<DBEditType, any>;
   pxVal: number;
-  minStorage: number;
+  allocatedStorage: number;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -70,47 +200,23 @@ const Form = ({
     formState: { errors }
   } = formHook;
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = [
-    {
-      id: 'baseInfo',
-      label: 'basic',
-      icon: 'formInfo'
-    },
-    {
-      id: 'backupSettings',
-      label: 'backup_settings',
-      icon: 'backupSettings'
-    }
-  ];
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
+    () => [
+      {
+        id: 'baseInfo',
+        label: 'basic',
+        icon: 'formInfo'
+      },
+      {
+        id: 'backupSettings',
+        label: 'backup_settings',
+        icon: 'backupSettings'
+      }
+    ],
+    []
+  );
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
-
-  // listen scroll and set activeNav
-  useEffect(() => {
-    const scrollFn = throttle((e: Event) => {
-      if (!e.target) return;
-      const doms = navList.map((item) => ({
-        dom: document.getElementById(item.id),
-        id: item.id
-      }));
-
-      const dom = e.target as HTMLDivElement;
-      const scrollTop = dom.scrollTop;
-
-      for (let i = doms.length - 1; i >= 0; i--) {
-        const offsetTop = doms[i].dom?.offsetTop || 0;
-        if (scrollTop + 200 >= offsetTop) {
-          setActiveNav(doms[i].id);
-          break;
-        }
-      }
-    }, 200);
-    document.getElementById('form-container')?.addEventListener('scroll', scrollFn);
-    return () => {
-      document.getElementById('form-container')?.removeEventListener('scroll', scrollFn);
-    };
-    // eslint-disable-next-line
-  }, []);
 
   const Label = ({
     children,
@@ -151,6 +257,84 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
+  const supportBackup = useMemo(
+    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [getValues('dbType')]
+  );
+
+  const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
+    const dbType = getValues('dbType');
+    let minStorageChange = 1,
+      minCPU = 0,
+      minMemory = 0;
+    let specialUse = 0;
+    switch (dbType) {
+      case DBTypeEnum.redis:
+        minStorageChange = 1;
+        specialUse = 2;
+        break;
+      case DBTypeEnum.kafka:
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
+        break;
+      case DBTypeEnum.milvus:
+        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        break;
+      default:
+        break;
+    }
+    let minStorage = Math.max(allocatedStorage, minStorageChange, specialUse);
+    return {
+      minStorageChange,
+      minCPU: minCPU * 1000,
+      minMemory: minMemory * 1024,
+      minStorage
+    };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getValues('dbType'), allocatedStorage]);
+
+  useEffect(() => {
+    if (getValues('cpu') < minCPU) {
+      setValue('cpu', minCPU);
+    }
+    if (getValues('memory') < minMemory) {
+      setValue('memory', minMemory);
+    }
+    setValue('storage', Math.max(3, minStorage, allocatedStorage));
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getValues('dbType'), allocatedStorage]);
+
+  const backupSettingsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const tempRef = backupSettingsRef.current;
+    const observerCallback = (
+      entries: IntersectionObserverEntry[],
+      observer: IntersectionObserver
+    ) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
+          setActiveNav(navList[1].id);
+        } else {
+          setActiveNav(navList[0].id);
+        }
+      });
+    };
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      threshold: 0.85
+    });
+    if (tempRef) {
+      observer.observe(tempRef);
+    }
+    return () => {
+      if (tempRef) {
+        observer.unobserve(tempRef);
+      }
+    };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backupSettingsRef, supportBackup]);
+
   return (
     <>
       <Grid
@@ -184,7 +368,7 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}
           >
-            {navList.map((item) => (
+            {navList.slice(0, supportBackup ? 2 : 1).map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
                   borderRadius={'base'}
@@ -321,7 +505,6 @@ const Form = ({
               </Flex>
               <Flex alignItems={'center'} mb={7}>
                 <Label w={100}>{t('version')}</Label>
-
                 <MySelect
                   isDisabled={isEdit}
                   width={'200px'}
@@ -362,10 +545,14 @@ const Form = ({
                   markList={CpuSlideMarkList}
                   activeVal={getValues('cpu')}
                   setVal={(e) => {
-                    setValue('cpu', CpuSlideMarkList[e].value);
+                    if (CpuSlideMarkList[e].value < minCPU) {
+                      setValue('cpu', minCPU);
+                    } else {
+                      setValue('cpu', CpuSlideMarkList[e].value);
+                    }
                   }}
                   max={CpuSlideMarkList.length - 1}
-                  min={0}
+                  min={minCPU / 1000}
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
@@ -378,14 +565,18 @@ const Form = ({
                   markList={MemorySlideMarkList}
                   activeVal={getValues('memory')}
                   setVal={(e) => {
-                    setValue('memory', MemorySlideMarkList[e].value);
+                    if (MemorySlideMarkList[e].value < minMemory) {
+                      setValue('memory', minMemory);
+                    } else {
+                      setValue('memory', MemorySlideMarkList[e].value);
+                    }
                   }}
                   max={MemorySlideMarkList.length - 1}
-                  min={0}
+                  min={minMemory / 1024}
                   step={1}
                 />
               </Flex>
-              <Flex mb={8} alignItems={'center'}>
+              <Flex mb={7} alignItems={'center'}>
                 <Label w={100}>{t('Replicas')}</Label>
                 <RangeInput
                   w={180}
@@ -421,7 +612,7 @@ const Form = ({
                 {getValues('replicas') === 1 && (
                   <Tip
                     ml={4}
-                    icon={<MyIcon name="warningInfo" width={'14px'}></MyIcon>}
+                    icon={<MyIcon name="warningInfo" width={'14px'} fill="#0884DD"></MyIcon>}
                     text={t('single_node_tip')}
                     size="sm"
                     borderRadius={'md'}
@@ -436,6 +627,7 @@ const Form = ({
                     borderRadius={'md'}
                   />
                 )}
+
                 {(getValues('dbType') === DBTypeEnum.mongodb ||
                   getValues('dbType') === DBTypeEnum.mysql) &&
                   getValues('replicas') > 1 && (
@@ -451,7 +643,7 @@ const Form = ({
                   )}
               </Flex>
 
-              <FormControl isInvalid={!!errors.storage} w={'500px'}>
+              <FormControl isInvalid={!!errors.storage} paddingTop={1}>
                 <Flex alignItems={'center'}>
                   <Label w={100}>{t('storage')}</Label>
                   <MyTooltip
@@ -461,9 +653,12 @@ const Form = ({
                       w={'180px'}
                       max={SystemEnv.STORAGE_MAX_SIZE}
                       min={minStorage}
-                      step={1}
+                      step={minStorageChange}
                       position={'relative'}
-                      value={getValues('storage')}
+                      value={
+                        Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                        minStorageChange
+                      }
                       onChange={(e) => {
                         e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
                       }}
@@ -517,12 +712,36 @@ const Form = ({
                       </Box>
                     </NumberInput>
                   </MyTooltip>
+                  {[DBTypeEnum.redis, DBTypeEnum.kafka, DBTypeEnum.milvus].includes(
+                    getValues('dbType') as DBTypeEnum
+                  ) && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={t('multi_components_tip')}
+                      size="sm"
+                      borderRadius={'md'}
+                      height={'fit-content'}
+                      maxWidth={310}
+                      maxHeight={'100%'}
+                    />
+                  )}
                 </Flex>
               </FormControl>
+              <ResourcesDistributeTable
+                data={{
+                  dbType: getValues('dbType'),
+                  cpu: getValues('cpu'),
+                  memory: getValues('memory'),
+                  storage: getValues('storage'),
+                  replicas: getValues('replicas'),
+                  forDisplay: true
+                }}
+              />
             </Box>
           </Box>
-          {BackupSupportedDBTypeList.includes(getValues('dbType')) && (
-            <Box id={'backupSettings'} {...boxStyles}>
+          {supportBackup && (
+            <Box id={'backupSettings'} ref={backupSettingsRef} {...boxStyles}>
               <Box {...headerStyles}>
                 <MyIcon name={'backupSettings'} mr={5} w={'20px'} color={'grayModern.600'} />
                 {t('backup_settings')}
@@ -617,42 +836,75 @@ const Form = ({
                     </Flex>
                   </Flex>
 
-                  <Flex mt={7} alignItems={'center'}>
-                    <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
-                    <Input
-                      height={'35px'}
-                      maxW={'100px'}
-                      bg={'#F7F8FA'}
-                      borderTopRightRadius={0}
-                      borderBottomRightRadius={0}
-                      _focus={{
-                        boxShadow: 'none',
-                        borderColor: 'myGray.200',
-                        bg: 'white'
-                      }}
-                      {...register('autoBackup.saveTime', {
-                        min: 1,
-                        valueAsNumber: true
-                      })}
-                    />
-                    <MySelect
-                      width={'80px'}
-                      value={getValues('autoBackup.saveType').toString()}
-                      borderLeft={0}
-                      boxShadow={'none !important'}
-                      borderColor={'myGray.200'}
-                      list={[
-                        { value: 'd', label: t('Day') },
-                        { value: 'h', label: t('Hour') }
-                      ]}
-                      h={'35px'}
-                      borderTopLeftRadius={0}
-                      borderBottomLeftRadius={0}
-                      onchange={(val: any) => {
-                        setValue('autoBackup.saveType', val);
-                      }}
-                    />
-                  </Flex>
+                  <FormControl isInvalid={Boolean(errors?.autoBackup?.saveTime)} mt={7}>
+                    <Flex alignItems={'center'}>
+                      <Box flex={'0 0 110px'}>{t('SaveTime')}</Box>
+                      <MyTooltip label={'1~100' + t('Day')}>
+                        <NumberInput
+                          w={'120px'}
+                          max={100}
+                          min={1}
+                          step={1}
+                          position={'relative'}
+                          value={getValues('autoBackup.saveTime')}
+                          onChange={(e) => {
+                            e !== ''
+                              ? setValue('autoBackup.saveTime', Math.min(+e, 100))
+                              : setValue('autoBackup.saveTime', 1);
+                          }}
+                        >
+                          <NumberInputField
+                            {...register('autoBackup.saveTime', {
+                              required: t('storage_cannot_empty'),
+                              min: {
+                                value: 1,
+                                message: `${t('backup_saveTime_max')}1${t('Day')}`
+                              },
+                              max: {
+                                value: 100,
+                                message: `${t('backup_saveTime_min')}100${t('Day')} `
+                              },
+                              valueAsNumber: true
+                            })}
+                            min={0}
+                            max={100}
+                            borderRadius={'md'}
+                            borderColor={'#E8EBF0'}
+                            bg={'#F7F8FA'}
+                            _focusVisible={{
+                              borderColor: 'brightBlue.500',
+                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                              bg: '#FFF',
+                              color: '#111824'
+                            }}
+                            _hover={{
+                              borderColor: 'brightBlue.300'
+                            }}
+                          />
+
+                          <NumberInputStepper>
+                            <NumberIncrementStepper>
+                              <MyIcon name="arrowUp" width={'12px'} />
+                            </NumberIncrementStepper>
+                            <NumberDecrementStepper>
+                              <MyIcon name="arrowDown" width={'12px'} />
+                            </NumberDecrementStepper>
+                          </NumberInputStepper>
+                          <Box
+                            zIndex={100}
+                            position={'absolute'}
+                            right={10}
+                            top={'50%'}
+                            transform={'translateY(-50%)'}
+                            color={'grayModern.600'}
+                          >
+                            {t('Day')}
+                          </Box>
+                        </NumberInput>
+                      </MyTooltip>
+                    </Flex>
+                  </FormControl>
+
                   <Flex mt={7} alignItems={'start'}>
                     <Box flex={'0 0 110px'}>{t('termination_policy')}</Box>
                     {/* <Switch

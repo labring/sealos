@@ -26,8 +26,8 @@
     "createdAt": "Creation time",
     "lastUsedAt": "Last use time",
     "status": "State",
-    "namePlaceholder": "please enter name",
-    "nameRequired": "please enter key name",
+    "namePlaceholder": "Please enter name",
+    "nameRequired": "Please enter key name",
     "nameMaxLength": "Key length is illegal",
     "nameOnlyLettersAndNumbers": "key name contains special characters",
     "createSuccess": "Created successfully",
@@ -55,8 +55,8 @@
     "prompt_tokens": "Input Tokens",
     "completion_tokens": "Output Tokens",
     "price": "Price",
-    "select_modal": "please select model",
-    "select_token_name": "please select name",
+    "select_modal": "Please select model",
+    "select_token_name": "Please select name",
     "model": "Model",
     "total_price": "Total Charged",
     "total_price_tip": "(Number of input tokens × Input price) + (Number of output tokens × Output price)",
@@ -106,6 +106,7 @@
   "enable": "Enable",
   "copySuccess": "Copied",
   "copyFailed": "Copy failed",
+  "pricing": "Pricing",
   "noData": "You don’t have an API Key yet",
   "price": {
     "all": "All",
@@ -121,7 +122,9 @@
     "modelVision": "Vision",
     "modelVisionLabel": "This model supports vision capabilities",
     "modelToolChoice": "Tool Chocice",
-    "response": "Output"
+    "response": "Output",
+    "fixedPrice": "Fixed price",
+    "perRequest": "/request"
   },
   "createKey2": "Create Key",
   "dashboard": {
@@ -131,7 +134,9 @@
     "export": "Export",
     "exportAll": "Export All",
     "importSuccess": "Import successful",
-    "importError": "Import failed"
+    "importError": "Import failed",
+    "doc": "Docs",
+    "invite": "Invite"
   },
   "channelStatus": {
     "autoDisabled": "System disabled"
@@ -174,8 +179,8 @@
     "modelInput": "enter custom model name",
     "modelMappingInput": "input model",
     "modelMappingOutput": "output model",
-    "key": "please enter the channel key",
-    "base_url": "please enter agent"
+    "key": "Please enter the channel key",
+    "base_url": "Please enter agent"
   },
   "common": {
     "add": "Add"
@@ -211,7 +216,8 @@
     "7": "TTS",
     "8": "STT",
     "9": "Audio",
-    "10": "Rerank"
+    "10": "Rerank",
+    "11": "PDF Parsing"
   },
   "modeOwner": {
     "openai": "OpenAI",
@@ -294,5 +300,13 @@
     "tpm": "Current TPM",
     "cost": "Charges",
     "requestData": "Call Data"
+  },
+  "drawer": {
+    "doc": "Docs",
+    "requestExample": "Request Example",
+    "voice": "required",
+    "voiceValues": "Available options:",
+    "responseFormatValues": "The audio output supports for the following formats:",
+    "responseExample": "Response Example"
   }
 }

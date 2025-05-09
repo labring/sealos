@@ -1,4 +1,4 @@
-import { KBMigrationTaskLabel, SealosMigrationTaskLabel } from '@/constants/db';
+import { CloudMigraionLabel, KBMigrationTaskLabel, SealosMigrationTaskLabel } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -22,13 +22,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       undefined,
       undefined,
       undefined,
-      migrateType === 'network'
-        ? `${KBMigrationTaskLabel}=${migrateName}`
-        : `job-name=${migrateName}`
+      migrateType === 'network' ? `${CloudMigraionLabel}=${migrateName}` : `job-name=${migrateName}`
     );
 
     return jsonRes(res, {
-      data: response.body.items
+      data: response.body.items.map((i) => i.metadata)
     });
   } catch (err: any) {
     jsonRes(res, {

@@ -21,12 +21,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -91,20 +97,34 @@ const (
 	DEFAULTACCOUNTNAMESPACE = "sealos-system"
 	RECHARGEGIFT            = "recharge-gift"
 	SEALOS                  = "sealos"
+
+	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
+	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
+	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
 )
+
+var SubscriptionEnabled = false
 
 // AccountReconciler reconciles an Account object
 type AccountReconciler struct {
 	client.Client
-	AccountV2              database.AccountV2
-	Scheme                 *runtime.Scheme
-	Logger                 logr.Logger
-	AccountSystemNamespace string
-	DBClient               database.Account
-	CVMDBClient            database.CVM
-	MongoDBURI             string
-	Activities             pkgtypes.Activities
-	DefaultDiscount        pkgtypes.RechargeDiscount
+	AccountV2                   database.AccountV2
+	InitUserAccountFunc         func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
+	Scheme                      *runtime.Scheme
+	Logger                      logr.Logger
+	accountSystemNamespace      string
+	DBClient                    database.Account
+	CVMDBClient                 database.CVM
+	MongoDBURI                  string
+	Activities                  pkgtypes.Activities
+	DefaultDiscount             pkgtypes.RechargeDiscount
+	SubscriptionQuotaLimit      map[string]corev1.ResourceList
+	SyncNSQuotaFunc             func(ctx context.Context, owner, nsName string) error
+	SkipExpiredUserTimeDuration time.Duration
+	localDomain                 string
+	allRegionDomain             []string
+	jwtManager                  *utils.JWTManager
+	desktopJwtManager           *utils.JWTManager
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -128,7 +148,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
 		// and only the resource quota created by the team user
 		_, err = r.syncAccount(ctx, owner, "ns-"+user.Name)
-		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(20*24*time.Hour).Before(time.Now()) {
+		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -139,24 +159,127 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (*pkgtypes.Account, error) {
-	if err := r.syncResourceQuotaAndLimitRange(ctx, userNamespace); err != nil {
-		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
-	}
+func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userNamespace string) (account *pkgtypes.Account, err error) {
 	//if err := r.adaptEphemeralStorageLimitRange(ctx, userNamespace); err != nil {
 	//	r.Logger.Error(err, "adapt ephemeral storage limitRange failed")
 	//}
-	if getUsername(userNamespace) != owner {
-		return nil, nil
+	if getUsername(userNamespace) == owner {
+		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: owner, IgnoreEmpty: true})
+		if err != nil {
+			return nil, err
+		}
+		if user == nil {
+			return nil, gorm.ErrRecordNotFound
+		}
+
+		account, err = r.InitUserAccountFunc(&pkgtypes.UserQueryOpts{Owner: owner})
+		if err != nil {
+			return nil, err
+		}
+		if err := r.syncDebt(ctx, owner); err != nil {
+			return nil, fmt.Errorf("sync user debt failed: %v", err)
+		}
 	}
-	account, err := r.AccountV2.NewAccount(&pkgtypes.UserQueryOpts{Owner: owner})
-	if err != nil {
-		return nil, err
+	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
+		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
 	}
-	return account, nil
+	return
 }
 
-func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, nsName string) error {
+func (r *AccountReconciler) syncDebt(ctx context.Context, owner string) error {
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: owner})
+	if err != nil {
+		return fmt.Errorf("get userUID failed: %v", err)
+	}
+	var count int64
+	err = r.AccountV2.GetGlobalDB().Model(&pkgtypes.Debt{}).Where("user_uid = ?", userUID).Count(&count).Error
+	if err != nil {
+		return fmt.Errorf("check user debt existence failed: %v", err)
+	}
+	if count <= 0 {
+		createDebt, err := r.initializeDebt(ctx, owner, userUID)
+		if err != nil {
+			return fmt.Errorf("initialize user debt failed: %v", err)
+		}
+		if err = r.AccountV2.GetGlobalDB().Create(createDebt).Error; err != nil {
+			return fmt.Errorf("create user debt failed: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *AccountReconciler) initializeDebt(ctx context.Context, owner string, userUID uuid.UUID) (*pkgtypes.Debt, error) {
+	debtCr := &accountv1.Debt{}
+	err := r.Get(ctx, client.ObjectKey{Namespace: r.accountSystemNamespace, Name: "debt-" + owner}, debtCr)
+	if err != nil {
+		if !apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to get user debt from CR: %v", err)
+		}
+		return &pkgtypes.Debt{
+			UserUID:           userUID,
+			AccountDebtStatus: pkgtypes.NormalPeriod,
+			CreatedAt:         time.Now().UTC(),
+			UpdatedAt:         time.Now().UTC(),
+		}, nil
+	}
+
+	return convertDebtCrToDebt(debtCr, userUID), nil
+}
+
+func convertDebtCrToDebt(debtCr *accountv1.Debt, userUID uuid.UUID) *pkgtypes.Debt {
+	debt := &pkgtypes.Debt{
+		UserUID:           userUID,
+		AccountDebtStatus: convertDebtStatus(debtCr.Status.AccountDebtStatus),
+		CreatedAt:         debtCr.CreationTimestamp.Time.UTC(),
+	}
+	if debtCr.Status.LastUpdateTimestamp > 0 {
+		debt.UpdatedAt = time.Unix(debtCr.Status.LastUpdateTimestamp, 0).UTC()
+	} else {
+		debt.UpdatedAt = debtCr.CreationTimestamp.Time.UTC()
+	}
+	statusRecords := make([]pkgtypes.DebtStatusRecord, len(debtCr.Status.DebtStatusRecords))
+	for i, record := range debtCr.Status.DebtStatusRecords {
+		statusRecords[i] = pkgtypes.DebtStatusRecord{
+			ID:            uuid.New(),
+			UserUID:       userUID,
+			LastStatus:    convertDebtStatus(record.LastStatus),
+			CurrentStatus: convertDebtStatus(record.CurrentStatus),
+			CreateAt:      record.UpdateTime.UTC(),
+		}
+	}
+	debt.StatusRecords = statusRecords
+	return debt
+}
+
+func convertDebtStatus(statusType accountv1.DebtStatusType) pkgtypes.DebtStatusType {
+	switch statusType {
+	case accountv1.NormalPeriod:
+		return pkgtypes.NormalPeriod
+	case accountv1.WarningPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.ApproachingDeletionPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.ImminentDeletionPeriod:
+		return pkgtypes.DebtDeletionPeriod
+	case accountv1.LowBalancePeriod:
+		return pkgtypes.LowBalancePeriod
+	case accountv1.CriticalBalancePeriod:
+		return pkgtypes.CriticalBalancePeriod
+	case accountv1.DebtPeriod:
+		return pkgtypes.DebtPeriod
+	case accountv1.DebtDeletionPeriod:
+		return pkgtypes.DebtDeletionPeriod
+	case accountv1.FinalDeletionPeriod:
+		return pkgtypes.FinalDeletionPeriod
+	case "":
+		return pkgtypes.NormalPeriod
+	default:
+		logrus.Errorf("unknown debt status type: %v", statusType)
+		return ""
+	}
+}
+
+func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
 	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
 	for i := range objs {
 		err := retry.Retry(10, 1*time.Second, func() error {
@@ -170,6 +293,46 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 		}
 	}
 	return nil
+}
+
+func (r *AccountReconciler) syncResourceQuotaAndLimitRangeBySubscription(ctx context.Context, owner, nsName string) error {
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: owner})
+	if err != nil {
+		return fmt.Errorf("get userUID failed: %v", err)
+	}
+	userSub, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return fmt.Errorf("get user subscription failed: %v", err)
+	}
+	quota, ok := r.SubscriptionQuotaLimit[userSub.PlanName]
+	if !ok {
+		return fmt.Errorf("subscription plan %s not found", userSub.PlanName)
+	}
+	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(getDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName, quota))}
+	for i := range objs {
+		err := retry.Retry(10, 1*time.Second, func() error {
+			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
+				return nil
+			})
+			return err
+		})
+		if err != nil {
+			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
+		}
+	}
+	return nil
+}
+
+func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
+	return &corev1.ResourceQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: corev1.ResourceQuotaSpec{
+			Hard: hard,
+		},
+	}
 }
 
 //func (r *AccountReconciler) adaptEphemeralStorageLimitRange(ctx context.Context, nsName string) error {
@@ -192,7 +355,44 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
 	r.Logger = ctrl.Log.WithName("account_controller")
-	r.AccountSystemNamespace = env.GetEnvWithDefault(ACCOUNTNAMESPACEENV, DEFAULTACCOUNTNAMESPACE)
+	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
+	regions, err := r.AccountV2.GetRegions()
+	if err != nil {
+		return fmt.Errorf("get regions failed: %v", err)
+	}
+	r.allRegionDomain = make([]string, len(regions))
+	for i, region := range regions {
+		r.allRegionDomain[i] = region.Domain
+	}
+	r.localDomain = r.AccountV2.GetLocalRegion().Domain
+	r.jwtManager = utils.NewJWTManager(os.Getenv(EnvJwtSecret), 10*time.Minute)
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
+	if SubscriptionEnabled {
+		r.InitUserAccountFunc = r.AccountV2.NewAccountWithFreeSubscriptionPlan
+		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRangeBySubscription
+		plans, err := r.AccountV2.GetSubscriptionPlanList()
+		if err != nil {
+			return fmt.Errorf("get subscription plan list failed: %v", err)
+		}
+		if len(plans) == 0 {
+			return fmt.Errorf("subscription plan list is empty")
+		}
+		r.SubscriptionQuotaLimit, err = resources.ParseResourceLimitWithSubscription(plans)
+		if err != nil {
+			return fmt.Errorf("parse resource limit with subscription failed: %v", err)
+		}
+		for plan, limit := range r.SubscriptionQuotaLimit {
+			r.Logger.Info("subscription plan", "name", plan, "quota", limit)
+		}
+		// manager 添加 subscription controller
+		if err := mgr.Add(NewSubscriptionProcessor(r)); err != nil {
+			return fmt.Errorf("add subscription processor failed: %v", err)
+		}
+		r.desktopJwtManager = utils.NewJWTManager(os.Getenv(EnvDesktopJwtSecret), 10*time.Minute)
+	} else {
+		r.InitUserAccountFunc = r.AccountV2.NewAccount
+		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).
@@ -257,34 +457,14 @@ func parseConfigList(s string, list interface{}, configName string) error {
 
 const BaseUnit = 1_000_000
 
-func getAmountWithDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) int64 {
-	var r float64
-	for _, step := range sortSteps(discount.DefaultSteps) {
-		ratio := discount.DefaultSteps[step]
-		if amount >= step*BaseUnit {
-			r = ratio
-		} else {
-			break
-		}
-	}
-	return int64(math.Ceil(float64(amount) * r / 100))
-}
-
-func sortSteps(steps map[int64]float64) (keys []int64) {
-	for k := range steps {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
-	return
-}
-
 func getFirstRechargeDiscount(amount int64, discount pkgtypes.UserRechargeDiscount) (bool, int64) {
-	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] != 0 {
-		return true, int64(math.Ceil(float64(amount) * discount.FirstRechargeSteps[amount/BaseUnit] / 100))
+	if discount.FirstRechargeSteps != nil && discount.FirstRechargeSteps[amount/BaseUnit] > 0 {
+		return true, discount.FirstRechargeSteps[amount/BaseUnit] * BaseUnit
 	}
-	return false, getAmountWithDiscount(amount, discount)
+	if discount.DefaultSteps != nil {
+		return false, discount.DefaultSteps[amount/BaseUnit] * BaseUnit
+	}
+	return false, 0
 }
 
 func (r *AccountReconciler) BillingCVM() error {
@@ -350,4 +530,8 @@ func (r *AccountReconciler) BillingCVM() error {
 		fmt.Printf("billing cvm success %#+v\n", billing)
 	}
 	return nil
+}
+
+func init() {
+	SubscriptionEnabled = os.Getenv(EnvSubscriptionEnabled) == trueStatus
 }

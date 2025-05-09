@@ -108,9 +108,8 @@ const DelModal = ({
           <Box color={'myGray.600'}>
             {activePage === Page.REMINDER && source?.sourceType
               ? deleteTypeTipMap[source?.sourceType]
-              : t(
-                  'Are you sure you want to delete this application? If you proceed, all data for this project will be deleted'
-                )}
+              : t('delete_app_tip')}
+
             {activePage === Page.DELETION_WARNING && (
               <Box my={3}>
                 {t('Please enter')}
@@ -141,7 +140,8 @@ const DelModal = ({
           <Button width={'64px'} onClick={onClose} variant={'outline'}>
             {t('Cancel')}
           </Button>
-          {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
+
+          {/* {activePage === Page.REMINDER && source?.sourceType !== 'sealaf' && (
             <Button
               ml={3}
               variant={'outline'}
@@ -152,7 +152,8 @@ const DelModal = ({
             >
               {t('Delete anyway')}
             </Button>
-          )}
+          )} */}
+
           <Button
             ml={3}
             variant={'solid'}

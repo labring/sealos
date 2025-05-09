@@ -25,24 +25,6 @@ import Yaml from './components/Yaml';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
-const defaultEdit: MigrateForm = {
-  ...defaultDBEditValue,
-  labels: {},
-  sinkHost: '',
-  sinkPort: '',
-  sinkPassword: '',
-  sinkUser: '',
-  sourceHost: '',
-  sourcePort: '',
-  sourceUsername: '',
-  sourcePassword: '',
-  sourceDatabase: '',
-  sourceDatabaseTable: ['All'],
-  isChecked: false,
-  continued: false,
-  terminationPolicy: 'Delete'
-};
-
 const EditApp = ({
   dbName,
   tabType,
@@ -57,13 +39,13 @@ const EditApp = ({
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const { message: toast } = useMessage();
-  const { Loading, setIsLoading } = useLoading();
-  const { checkQuotaAllow, balance } = useUserStore();
+  const { setIsLoading } = useLoading();
+  const { checkQuotaAllow } = useUserStore();
   const { openConfirm, ConfirmChild } = useConfirm({
     content: t('are_you_sure_to_perform_database_migration')
   });
   const { loadDBDetail } = useDBStore();
-  const { screenWidth, lastRoute } = useGlobalStore();
+  const { screenWidth } = useGlobalStore();
 
   const pxVal = useMemo(() => {
     const val = Math.floor((screenWidth - 1050) / 2);
@@ -74,6 +56,28 @@ const EditApp = ({
   }, [screenWidth]);
 
   // form
+  const defaultEdit: MigrateForm = {
+    ...defaultDBEditValue,
+    dbName: dbName,
+    dbType: dbType,
+    cpu: 2000,
+    memory: 4048,
+    labels: {},
+    sinkHost: '',
+    sinkPort: '',
+    sinkPassword: '',
+    sinkUser: '',
+    sourceHost: '',
+    sourcePort: '',
+    sourceUsername: '',
+    sourcePassword: '',
+    sourceDatabase: '',
+    sourceDatabaseTable: ['All'],
+    isChecked: false,
+    continued: false,
+    terminationPolicy: 'Delete'
+  };
+
   const formHook = useForm<MigrateForm>({
     defaultValues: defaultEdit
   });
@@ -93,7 +97,7 @@ const EditApp = ({
       try {
         setYamlList(generateYamlList(data));
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }, 200),
     []
@@ -105,22 +109,20 @@ const EditApp = ({
   });
 
   const submitSuccess = async (formData: MigrateForm) => {
-    console.log(formData);
     setIsLoading(true);
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
-      console.log(json2MigrateCR(formData));
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData);
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(formData);
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
       await applyYamlList(yamlList, 'create');
       toast({
         title: t('migration_task_created_successfully'),
@@ -129,8 +131,9 @@ const EditApp = ({
       router.push({
         pathname: '/db/detail',
         query: {
-          ...router.query,
-          listType: 'InternetMigration'
+          name: formData.dbName,
+          dbType: formData.dbType,
+          listType: 'dataImport'
         }
       });
     } catch (error) {

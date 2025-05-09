@@ -63,9 +63,11 @@ export { MySlider } from './MySlider';
 export { MyTable } from './MyTable';
 
 import MySelect from './Select';
+import AutoComplete from './AutoComplete';
 
 export {
   MySelect,
+  AutoComplete,
   SealosCoin,
   WarningIcon,
   useMessage,

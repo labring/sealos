@@ -63,21 +63,20 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build:  ## Build manager binary.
-	LD_FLAGS="-s -w"; \
-	[ -n "$(CRYPTOKEY)" ] && LD_FLAGS+=" -X github.com/labring/sealos/controllers/pkg/crypto.encryptionKey=${CRYPTOKEY} -X github.com/labring/sealos/controllers/pkg/database.cryptoKey=${CRYPTOKEY}"; \
-	CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
+	LD_FLAGS="-s -w" && CGO_ENABLED=0 GOOS=linux go build -ldflags "$${LD_FLAGS}" -trimpath -o bin/manager main.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build: build
+	mv bin/manager bin/controller-account-${TARGETARCH}
+	docker build -t $(IMG) . --build-arg TARGETARCH=${TARGETARCH}
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+docker-push: docker-build
+	docker push $(IMG)
 
 ##@ Deployment
 

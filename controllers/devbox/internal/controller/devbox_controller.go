@@ -149,12 +149,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// create or update pod
 	logger.Info("syncing pod")
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
-			return err
-		}
-		return r.syncPod(ctx, devbox, recLabels)
-	}); err != nil {
+	if err := r.syncPod(ctx, devbox, recLabels); err != nil {
 		logger.Error(err, "sync pod failed")
 		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
 		return ctrl.Result{}, err
@@ -237,6 +232,17 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	}
 	// only one pod is allowed, if more than one pod found, return error
 	if len(podList.Items) > 1 {
+		// remove finalizer and delete them
+		for _, pod := range podList.Items {
+			if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
+				if err := r.Update(ctx, &pod); err != nil {
+					logger.Error(err, "remove finalizer failed")
+				}
+			}
+			if err := r.Delete(ctx, &pod); err != nil {
+				logger.Error(err, "delete pod failed")
+			}
+		}
 		return fmt.Errorf("more than one pod found")
 	}
 	logger.Info("pod list", "length", len(podList.Items))

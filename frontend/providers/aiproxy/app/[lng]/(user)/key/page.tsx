@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Flex, Link, Text } from '@chakra-ui/react'
+import { Button, Flex, Text } from '@chakra-ui/react'
 
 import KeyList from '@/components/user/KeyList'
 import { useBackendStore } from '@/store/backend'

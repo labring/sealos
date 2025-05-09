@@ -63,11 +63,11 @@ export default function ChannelTable({
   }, [selectedChannels])
 
   const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
+    warningBoxBg: '#FFFAEB',
+    warningIconBg: '#F79009',
     warningIconFill: 'white',
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
+    successBoxBg: '#EDFBF3',
+    successIconBg: '#039855',
     successIconFill: 'white'
   })
 

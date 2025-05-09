@@ -90,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error('faceidRealNameAuth: Real name authentication configuration not found');
     }
 
-    const realNameAuthReward = config.realNameAuthReward;
+    let realNameAuthReward = config.realNameAuthReward ?? 0;
 
     const userRealNameFaceAuthInfo = await getUserRealNameInfo(bizToken, config);
     const isFaceRecognitionSuccess = userRealNameFaceAuthInfo.Text?.ErrCode === 0;
@@ -204,160 +204,150 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     if (realnameInfo) {
+      realNameAuthReward = 0;
+    }
+
+    await globalPrisma.$transaction(async (globalPrisma) => {
+      try {
+        await globalPrisma.$queryRawUnsafe(
+          'SELECT * FROM "UserRealNameInfo" WHERE "userUid" = $1 FOR UPDATE NOWAIT',
+          userUid
+        );
+      } catch (lockError) {
+        return;
+      }
+
       await globalPrisma.userRealNameInfo.update({
         where: { userUid: userUid },
         data: {
-          isVerified: false,
-          idVerifyFailedTimes: { increment: 1 },
+          realName: userRealNameFaceAuthInfo.Text?.Name,
+          idCard: userRealNameFaceAuthInfo.Text?.IdCard,
+          isVerified: true,
           additionalInfo: additionalInfo
         }
       });
 
-      res.setHeader('Content-Type', 'text/html');
-      return res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Real Name Authentication</title>
-          <style>
-            body, html {
-              height: 100%;
-              margin: 0;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            h1 {
-              text-align: center;
-              color: #ff0000; /* Red color for error message */
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Real name information has been used</h1>
-        </body>
-        </html>
-      `);
-    }
+      await globalPrisma.userTask.updateMany({
+        where: {
+          userUid: userUid,
+          task: {
+            taskType: 'REAL_NAME_AUTH'
+          },
+          status: 'NOT_COMPLETED'
+        },
+        data: {
+          rewardStatus: 'COMPLETED',
+          status: 'COMPLETED',
+          completedAt: new Date()
+        }
+      });
 
-    if (realNameAuthReward && realNameAuthReward > 0) {
-      await globalPrisma.$transaction(async (globalPrisma) => {
-        const currentAccount = await globalPrisma.account.findUniqueOrThrow({
-          where: { userUid }
+      const userAccount = await globalPrisma.account.findUniqueOrThrow({
+        where: { userUid: userUid }
+      });
+
+      if (!userAccount.balance) {
+        throw new Error('faceidRealNameAuth: Account balance not found');
+      }
+
+      let totalUserReward = BigInt(0);
+      const userActivityBonus = userAccount.activityBonus || BigInt(0);
+      let currentUserBalance = userAccount.balance;
+
+      if (inviteInfo.inviterId && inviteInfo.amount) {
+        const realnameInviteReward = inviteInfo.amount;
+
+        await globalPrisma.accountTransaction.create({
+          data: {
+            type: 'REALNAME_AUTH_INVITE_REWARD',
+            userUid: userUid,
+            balance: realnameInviteReward,
+            balance_before: currentUserBalance,
+            deduction_balance: 0,
+            deduction_balance_before: userAccount.deduction_balance,
+            message: 'Real name authentication invite reward',
+            billing_id: userRealNameInfo.id
+          }
         });
 
-        if (!currentAccount.balance) {
-          throw new Error('faceidRealNameAuth: Account balance not found');
+        currentUserBalance += realnameInviteReward;
+        totalUserReward += realnameInviteReward;
+
+        const inviterUser = await globalPrisma.user.findUniqueOrThrow({
+          where: { id: inviteInfo.inviterId }
+        });
+
+        if (!inviterUser) {
+          throw new Error('faceidRealNameAuth: Inviter user not found');
         }
 
-        const currentActivityBonus = currentAccount.activityBonus || BigInt(0);
+        const inviterAccount = await globalPrisma.account.findUniqueOrThrow({
+          where: { userUid: inviterUser.uid }
+        });
+
+        if (!inviterAccount.balance) {
+          throw new Error('faceidRealNameAuth: Inviter account balance not found');
+        }
+
+        const inviterActivityBonus = inviterAccount.activityBonus || BigInt(0);
+
+        await globalPrisma.account.update({
+          where: { userUid: inviterUser.uid },
+          data: {
+            activityBonus: inviterActivityBonus + realnameInviteReward,
+            balance: inviterAccount.balance + realnameInviteReward
+          }
+        });
+
+        await globalPrisma.accountTransaction.create({
+          data: {
+            type: 'REALNAME_AUTH_INVITE_REWARD',
+            userUid: inviterUser.uid,
+            balance: realnameInviteReward,
+            balance_before: inviterAccount.balance,
+            deduction_balance: 0,
+            deduction_balance_before: inviterAccount.deduction_balance,
+            message: 'Real name authentication invite reward',
+            billing_id: userRealNameInfo.id
+          }
+        });
+      }
+
+      if (realNameAuthReward > 0) {
         const realnameReward = BigInt(realNameAuthReward);
 
-        const newActivityBonus = currentActivityBonus + realnameReward;
-        const newBalance = currentAccount.balance + realnameReward;
-
-        const updatedAccount = await globalPrisma.account.update({
-          where: { userUid },
-          data: {
-            activityBonus: newActivityBonus,
-            balance: newBalance
-          }
-        });
-
-        const userRealNameInfo = await globalPrisma.userRealNameInfo.update({
-          where: { userUid },
-          data: {
-            realName: userRealNameFaceAuthInfo.Text?.Name,
-            idCard: userRealNameFaceAuthInfo.Text?.IdCard,
-            isVerified: true,
-            additionalInfo: additionalInfo
-          }
-        });
-
-        const accountTransaction = await globalPrisma.accountTransaction.create({
+        await globalPrisma.accountTransaction.create({
           data: {
             type: 'REALNAME_AUTH_REWARD',
             userUid: userUid,
             balance: realnameReward,
-            balance_before: currentAccount.balance,
-            deduction_balance: 0, // No deduction in this case
-            deduction_balance_before: currentAccount.deduction_balance,
+            balance_before: currentUserBalance,
+            deduction_balance: 0,
+            deduction_balance_before: userAccount.deduction_balance,
             message: 'Real name authentication reward',
-            billing_id: userRealNameInfo.id // You'll need to implement this function
+            billing_id: userRealNameInfo.id
           }
         });
 
-        await globalPrisma.userTask.updateMany({
-          where: {
-            userUid,
-            task: {
-              taskType: 'REAL_NAME_AUTH'
-            },
-            status: 'NOT_COMPLETED'
-          },
+        currentUserBalance += realnameReward;
+        totalUserReward += realnameReward;
+      }
+
+      if (totalUserReward > 0) {
+        await globalPrisma.account.update({
+          where: { userUid: userUid },
           data: {
-            rewardStatus: 'COMPLETED',
-            status: 'COMPLETED',
-            completedAt: new Date()
+            activityBonus: userActivityBonus + totalUserReward,
+            balance: currentUserBalance
           }
         });
+      }
 
-        if (inviteInfo.inviterId && inviteInfo.amount) {
-          const inviterUser = await globalPrisma.user.findUniqueOrThrow({
-            where: { id: inviteInfo.inviterId }
-          });
+      return;
+    });
 
-          if (!inviterUser) {
-            throw new Error('faceidRealNameAuth: Inviter user not found');
-          }
-
-          const inviterAccount = await globalPrisma.account.findUniqueOrThrow({
-            where: { userUid: inviterUser.uid }
-          });
-
-          if (!inviterAccount.balance) {
-            throw new Error('faceidRealNameAuth: Inviter account balance not found');
-          }
-
-          const currentActivityBonus = inviterAccount.activityBonus || BigInt(0);
-          const realnameInviteReward = inviteInfo.amount;
-
-          const newActivityBonus = currentActivityBonus + realnameInviteReward;
-          const newBalance = inviterAccount.balance + realnameInviteReward;
-
-          await globalPrisma.account.update({
-            where: { userUid: inviterUser.uid },
-            data: {
-              activityBonus: newActivityBonus,
-              balance: newBalance
-            }
-          });
-
-          await globalPrisma.accountTransaction.create({
-            data: {
-              type: 'REALNAME_AUTH_INVITE_REWARD',
-              userUid: inviterUser.uid,
-              balance: realnameInviteReward,
-              balance_before: inviterAccount.balance,
-              deduction_balance: 0, // No deduction in this case
-              deduction_balance_before: inviterAccount.deduction_balance,
-              message: 'Real name authentication invite reward',
-              billing_id: userRealNameInfo.id // You'll need to implement this function
-            }
-          });
-        }
-
-        return {
-          account: updatedAccount,
-          transaction: accountTransaction,
-          userRealNameInfo: userRealNameInfo
-        };
-      });
-
-      res.setHeader('Content-Type', 'text/html');
-      return res.send(`
+    res.setHeader('Content-Type', 'text/html');
+    return res.send(`
           <!DOCTYPE html>
           <html lang="en">
           <head>
@@ -382,44 +372,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           </body>
           </html>
         `);
-    }
-
-    await globalPrisma.userRealNameInfo.update({
-      where: { userUid },
-      data: {
-        realName: userRealNameFaceAuthInfo.Text?.Name,
-        idCard: userRealNameFaceAuthInfo.Text?.IdCard,
-        isVerified: true,
-        additionalInfo: additionalInfo
-      }
-    });
-
-    res.setHeader('Content-Type', 'text/html');
-    return res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Real Name Authentication</title>
-          <style>
-            body, html {
-              height: 100%;
-              margin: 0;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-            }
-            h1 {
-              text-align: center;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Real Name Authentication Successful</h1>
-        </body>
-        </html>
-      `);
   } catch (error) {
     console.error('faceidRealNameAuth: Internal error');
     if (error instanceof Error) {

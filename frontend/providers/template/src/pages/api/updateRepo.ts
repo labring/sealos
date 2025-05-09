@@ -108,7 +108,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         const { templateYaml } = getYamlTemplate(content);
         if (!!templateYaml) {
           const appTitle = templateYaml.spec.title.toUpperCase();
-          templateYaml.spec['deployCount'] = templateStaticMap[appTitle];
+          const currentCount = templateStaticMap[appTitle] || 0;
+          const randomFactor = 11 + Math.floor(Math.random() * 5); // [11,12,13,14,15]
+          const newCount = (currentCount + 1) * randomFactor;
+
+          templateYaml.spec['deployCount'] = newCount;
           templateYaml.spec['filePath'] = item;
           templateYaml.spec['fileName'] = fileName;
           jsonObjArr.push(templateYaml);

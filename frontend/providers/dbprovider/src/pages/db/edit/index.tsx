@@ -1,5 +1,5 @@
 import { adapterMongoHaConfig, applyYamlList, createDB } from '@/api/db';
-import { BackupSupportedDBTypeList, defaultDBEditValue } from '@/constants/db';
+import { defaultDBEditValue } from '@/constants/db';
 import { editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -9,7 +9,7 @@ import { DBVersionMap } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { YamlItemType } from '@/types';
 import type { DBEditType } from '@/types/db';
-import { adaptDBForm, convertBackupFormToSpec } from '@/utils/adapt';
+import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
@@ -25,7 +25,6 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import useDriver from '@/hooks/useDriver';
-import { updateBackupPolicy } from '@/api/backup';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -41,7 +40,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [forceUpdate, setForceUpdate] = useState(false);
-  const [minStorage, setMinStorage] = useState(1);
+  const [allocatedStorage, setAllocatedStorage] = useState(1);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail, dbDetail } = useDBStore();
@@ -73,6 +72,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     if (isGuided) {
       formHook.setValue('storage', 1);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isGuided]);
 
   const generateYamlList = (data: DBEditType) => {
@@ -98,7 +98,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       try {
         setYamlList(generateYamlList(data));
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     }, 200),
     []
@@ -120,16 +120,17 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     } catch (err) {}
     try {
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
+
       await createDB({ dbForm: formData, isEdit });
       toast({
         title: t(applySuccess),
@@ -138,7 +139,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       router.replace(`/db/detail?name=${formData.dbName}&dbType=${formData.dbType}`);
     } catch (error) {
       console.error(error);
-      setErrorMessage(JSON.stringify(error));
+      setErrorMessage(typeof error === 'string' ? error : JSON.stringify(error));
     }
     setIsLoading(false);
   };
@@ -185,7 +186,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         if (!res) return;
         oldDBEditData.current = res;
         formHook.reset(adaptDBForm(res));
-        setMinStorage(res.storage);
+        setAllocatedStorage(res.storage);
       },
       onError(err) {
         toast({
@@ -223,7 +224,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} minStorage={minStorage} pxVal={pxVal} />
+            <Form formHook={formHook} allocatedStorage={allocatedStorage} pxVal={pxVal} />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
@@ -232,7 +233,11 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={t(applyError)}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </>
   );
