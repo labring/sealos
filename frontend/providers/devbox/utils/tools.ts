@@ -8,6 +8,8 @@ import { useTranslations } from 'next-intl';
 import { YamlKindEnum } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
 import { customAlphabet } from 'nanoid';
+import { AccessTokenPayload } from '@/types/user';
+import { verify } from 'jsonwebtoken';
 
 dayjs.extend(duration);
 
