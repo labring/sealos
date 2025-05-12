@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -81,6 +82,16 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			logger.Error(err, "Failed to get DevBox", "DevBoxName", devboxSchedule.Spec.DevBoxName)
 			return ctrl.Result{}, err
 		}
+		if len(devboxSchedule.OwnerReferences) == 0 {
+			err := controllerutil.SetControllerReference(&devbox, &devboxSchedule, r.Scheme)
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.Update(ctx, &devboxSchedule); err != nil {
+				logger.Error(err, "Failed to update DevBoxSchedule with owner reference")
+				return ctrl.Result{}, err
+			}
+		}
 		var foundOwnerRef bool
 		for _, ownerRef := range devboxSchedule.OwnerReferences {
 			if ownerRef.Kind == "DevBox" && ownerRef.Name == devbox.Name && ownerRef.UID == devbox.UID {
@@ -101,7 +112,12 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				logger.Error(err, "Failed to perform scheduled operation", "DevBoxName", devboxSchedule.Spec.DevBoxName)
 				return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateUnknown)
 			}
-			return r.updateStatus(ctx, &devboxSchedule, devboxv1alpha1.ScheduleStateCompleted)
+			logger.Info("Successfully performed scheduled operation，delete schedule cr", "DevBoxName", devboxSchedule.Spec.DevBoxName)
+			if err := r.Delete(ctx, &devboxSchedule); err != nil {
+				logger.Error(err, "Failed to delete completed DevboxSchedule")
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{}, nil
 		} else {
 			requeueAfter := calculateRequeueTime(devboxSchedule.Spec.ScheduleTime.Time)
 			logger.Info("Schedule time not yet reached, scheduling requeue", "DevBoxName", devboxSchedule.Spec.DevBoxName, "ScheduleTime", devboxSchedule.Spec.ScheduleTime.Time, "RequeueAfter", requeueAfter, "NextCheck", time.Now().Add(requeueAfter))
