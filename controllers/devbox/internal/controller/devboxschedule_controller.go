@@ -94,7 +94,7 @@ func (r *DevBoxScheduleReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		var foundOwnerRef bool
 		for _, ownerRef := range devboxSchedule.OwnerReferences {
-			if ownerRef.Kind == "DevBox" && ownerRef.Name == devbox.Name && ownerRef.UID == devbox.UID {
+			if ownerRef.Kind == "Devbox" && ownerRef.Name == devbox.Name && ownerRef.UID == devbox.UID {
 				foundOwnerRef = true
 				break
 			}
