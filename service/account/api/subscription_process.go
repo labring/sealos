@@ -445,7 +445,7 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 	}
 
 	if !acquired {
-		logrus.Info("Another instance is currently processing KYC credits")
+		//logrus.Info("Another instance is currently processing KYC credits")
 		return
 	}
 
@@ -461,8 +461,6 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 }
 
 func (p *SubscriptionProcessor) processKYCCredits() error {
-	logrus.Info("Processing KYC credits")
-
 	var users []types.UserKYC
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().UTC().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
@@ -470,7 +468,9 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to query completed KYC: %w", err)
 	}
-	logrus.Infof("Found %d completed KYC", len(users))
+	if len(users) == 0 {
+		logrus.Infof("Found %d completed KYC", len(users))
+	}
 	if len(users) == 0 {
 		return nil
 	}

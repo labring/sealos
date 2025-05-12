@@ -135,8 +135,8 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.processWithTimeRange(&types.Credits{}, "created_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
-			users := getUniqueUsers(db, &types.Credits{}, "created_at", start, end)
+		r.processWithTimeRange(&types.Credits{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
+			users := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
 			if len(users) > 0 {
 				r.processUsersInParallel(users)
 				r.Logger.Info("processed credits refresh", "count", len(users), "users", users, "start", start, "end", end)

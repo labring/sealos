@@ -84,12 +84,12 @@ type Interface interface {
 	NewCardSubscriptionPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error)
 	NewCardPaymentFailureHandler(paymentRequestID string) (uuid.UUID, error)
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
+	GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
 	GetLastSubscriptionTransaction(userUID uuid.UUID) (*types.SubscriptionTransaction, error)
 	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
 	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
-	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 }
@@ -217,6 +217,10 @@ func (g *Cockroach) GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, 
 
 func (g *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error) {
 	return g.ck.GetSubscription(ops)
+}
+
+func (g *Cockroach) GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error) {
+	return g.ck.GetAvailableCredits(ops)
 }
 
 func (g *Cockroach) GetSubscriptionPlanList() ([]types.SubscriptionPlan, error) {
@@ -379,10 +383,6 @@ func (g *Cockroach) DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error {
 
 func (g *Cockroach) SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error {
 	return g.ck.SetDefaultCard(cardID, userUID)
-}
-
-func (g *Cockroach) GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error) {
-	return g.ck.GetBalanceWithCredits(ops)
 }
 
 func (g *Cockroach) Transfer(req *helper.TransferAmountReq) error {
@@ -1714,6 +1714,41 @@ func newAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (
 		if err = ck.InitTables(); err != nil {
 			return nil, fmt.Errorf("failed to init tables: %v", err)
 		}
+		account.Cockroach = &Cockroach{ck: ck}
+	} else {
+		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")
+	}
+	return account, nil
+}
+
+func NewAccountForTest(mongoURI, globalCockRoachURI, localCockRoachURI string) (Interface, error) {
+	account := &Account{}
+	if mongoURI != "" {
+		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(mongoURI))
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect mongodb: %v", err)
+		}
+		if err = client.Ping(context.Background(), nil); err != nil {
+			return nil, fmt.Errorf("failed to ping mongodb: %v", err)
+		}
+		account.MongoDB = &MongoDB{
+			Client:            client,
+			AccountDBName:     "sealos-resources",
+			BillingConn:       "billing",
+			ActiveBillingConn: "active-billing",
+			PropertiesConn:    "properties",
+		}
+	} else {
+		fmt.Printf("mongoURI is empty, skip connecting to mongodb\n")
+	}
+	if globalCockRoachURI != "" && localCockRoachURI != "" {
+		ck, err := cockroach.NewCockRoach(globalCockRoachURI, localCockRoachURI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to connect cockroach: %v", err)
+		}
+		//if err = ck.InitTables(); err != nil {
+		//	return nil, fmt.Errorf("failed to init tables: %v", err)
+		//}
 		account.Cockroach = &Cockroach{ck: ck}
 	} else {
 		fmt.Printf("globalCockRoachURI or localCockRoachURI is empty, skip connecting to cockroach\n")

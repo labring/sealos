@@ -96,13 +96,14 @@ type Traffic interface {
 type AccountV2 interface {
 	Close() error
 	GetGlobalDB() *gorm.DB
+	GetLocalDB() *gorm.DB
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
 	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
 	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
 	GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error)
-	GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error)
+	GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error)
 	GetAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)

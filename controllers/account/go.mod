@@ -28,6 +28,7 @@ require (
 	github.com/minio/madmin-go/v3 v3.0.35
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.30.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/volcengine/volc-sdk-golang v1.0.159
 	go.mongodb.org/mongo-driver v1.12.1
 	gorm.io/gorm v1.25.5
