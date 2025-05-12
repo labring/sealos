@@ -425,6 +425,7 @@ rules:
   - batch
   resources:
   - cronjobs
+  - jobs
   verbs:
   - create
   - delete
@@ -573,7 +574,7 @@ rules:
   resources: ["deployments", "statefulsets"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["batch"]
-  resources: ["cronjobs"]
+  resources: ["cronjobs","jobs"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["networking.k8s.io"]
   resources: ["ingresses"]
@@ -594,7 +595,7 @@ rules:
   resources: ["objectstorageusers"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["app.sealos.io"]
-  resources: ["instances"]
+  resources: ["instances", "apps"]
   verbs: ["delete", "deletecollection"]
 - apiGroups: ["devbox.sealos.io"]
   resources: ["devboxes", "devboxreleases"]
