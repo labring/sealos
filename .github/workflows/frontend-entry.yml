@@ -1,0 +1,86 @@
+name: Default frontend workflow entry
+
+on:
+  create:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "frontend/desktop/**"
+      - "frontend/providers/**"
+      - "!**/*.md"
+      - "!**/*.yaml"
+
+jobs:
+  fetch-sealos:
+    permissions: {}
+    uses: ./.github/workflows/fetch-sealos.yml
+    with:
+      artifact_name: "sealos"
+  detect-frontend:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontends: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all frontends
+        with:
+          filters: ./.github/frontend-filters.yml
+  # TODO: move desktop to providers/
+  detect-desktop:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter desktop
+        with:
+          filters: ./.github/desktop-filters.yml
+  provider-entry:
+    needs: [detect-frontend, fetch-sealos]
+    if: ${{ needs.detect-frontend.outputs.frontends != '[]' && needs.detect-frontend.outputs.frontends != '' }}
+    strategy:
+      matrix:
+        # Parse JSON array containing names of all filters matching any of changed files
+        # e.g. ['package1', 'package2'] if both package folders contains changes
+        frontend: ${{ fromJSON(needs.detect-frontend.outputs.frontends) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/frontend.yml
+    with:
+      module_name: "${{ matrix.frontend }}"
+      module_path: "providers/${{ matrix.frontend }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+  # TODO: move desktop to providers/
+  desktop-entry:
+    needs: [detect-desktop, fetch-sealos]
+    if: ${{ needs.detect-desktop.outputs.desktop == 'true' }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/frontend.yml
+    with:
+      module_name: "desktop"
+      module_path: "desktop"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}

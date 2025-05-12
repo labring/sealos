@@ -1,0 +1,192 @@
+name: Default backend workflow entry
+
+on:
+  create:
+  push:
+    branches:
+      - main
+    paths:
+      - "controllers/**"
+      - "webhooks/**"
+      - "service/**"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - "controllers/**"
+      - "webhooks/**"
+      - "service/**"
+      - "!**/*.md"
+      - "!**/*.yaml"
+
+
+jobs:
+  fetch-sealos:
+    permissions: {}
+    uses: ./.github/workflows/fetch-sealos.yml
+    with:
+      artifact_name: "sealos"
+  detect-controller:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      controllers: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all backends
+        with:
+          filters: ./.github/controller-filters.yml
+  detect-db-controller:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      controllers: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all backends
+        with:
+          filters: ./.github/db-controller-filters.yml
+  detect-webhook:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      webhooks: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all webhooks
+        with:
+          filters: ./.github/webhook-filters.yml
+  detect-service:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all services
+        with:
+          filters: ./.github/service-filters.yml
+
+  detect-job-controller:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      jobs: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        name: Filter all job controllers
+        with:
+          filters: ./.github/job-controller-filters.yml
+  controller-entry:
+    needs: [fetch-sealos, detect-controller]
+    if: ${{ needs.detect-controller.outputs.controllers != '[]' && needs.detect-controller.outputs.controllers != '' }}
+    strategy:
+      matrix:
+        # Parse JSON array containing names of all filters matching any of changed files
+        # e.g. ['package1', 'package2'] if both package folders contains changes
+        controller: ${{ fromJSON(needs.detect-controller.outputs.controllers) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "${{ matrix.controller }}"
+      module_path: "${{ matrix.controller }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      workdir: "controllers"
+      comp: "controller"
+
+  job-controller-entry:
+    needs: [fetch-sealos, detect-job-controller]
+    if: ${{ needs.detect-job-controller.outputs.jobs != '[]' && needs.detect-job-controller.outputs.jobs != '' }}
+    strategy:
+      matrix:
+        job: ${{ fromJSON(needs.detect-job-controller.outputs.jobs) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "job-${{ matrix.job }}"
+      module_path: "job/${{ matrix.job }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      workdir: "controllers"
+      comp: "controller"
+  db-controller-entry:
+    needs: [fetch-sealos, detect-db-controller]
+    if: ${{ needs.detect-db-controller.outputs.controllers != '[]' && needs.detect-db-controller.outputs.controllers != '' }}
+    strategy:
+      matrix:
+        # Parse JSON array containing names of all filters matching any of changed files
+        # e.g. ['package1', 'package2'] if both package folders contains changes
+        controller: ${{ fromJSON(needs.detect-db-controller.outputs.controllers) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "db-${{ matrix.controller }}"
+      module_path: "db/${{ matrix.controller }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      workdir: "controllers"
+      comp: "controller"
+  webhook-entry:
+    needs: [fetch-sealos, detect-webhook]
+    if: ${{ needs.detect-webhook.outputs.webhooks != '[]' && needs.detect-webhook.outputs.webhooks != '' }}
+    strategy:
+      matrix:
+        webhook: ${{ fromJSON(needs.detect-webhook.outputs.webhooks) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "${{ matrix.webhook }}"
+      module_path: "${{ matrix.webhook }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      workdir: "webhooks"
+      comp: "webhook"
+
+  service-entry:
+    needs: [fetch-sealos, detect-service]
+    if: ${{ needs.detect-service.outputs.services != '[]' && needs.detect-service.outputs.services != '' }}
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.detect-service.outputs.services) }}
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/backend.yml
+    with:
+      module_name: "${{ matrix.service }}"
+      module_path: "${{ matrix.service }}"
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      workdir: "service"
+      comp: "service"

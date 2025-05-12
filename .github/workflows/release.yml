@@ -2,8 +2,7 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
-  DEFAULT_OWNER: "labring"
+  GO_VERSION: "1.22"
 
 on:
   workflow_dispatch:
@@ -14,6 +13,9 @@ on:
 
 jobs:
   goreleaser:
+    permissions:
+      contents: write
+      packages: write
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout
@@ -47,52 +49,11 @@ jobs:
         env:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-
-  sync:
-    runs-on: ubuntu-24.04
-    needs:
-      - goreleaser
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Fetch Current version
-        id: get-current-tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - name: Renew issue and Sync Patch Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos-patch ${{steps.get-current-tag.outputs.tag }}"
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
-
   changelog:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
     needs:
       - goreleaser
     steps:
@@ -100,29 +61,36 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Fetch Current version
-        id: get-current-tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - run: git fetch --prune --prune-tags
-      - run: git tag -l 'v*'
+      - name: Validate tag exists
+        if: startsWith(github.ref, 'refs/tags/v') == false
+        run: |
+          echo "::error::This workflow requires a version tag (vX.Y.Z)"
+          exit 1
+      - name: Check for version tag
+        id: check_tag
+        run: |
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+      - name: Use the tag
+        if: steps.check_tag.outputs.tag
+        run: |
+          echo "Found tag: ${{ steps.check_tag.outputs.tag }}"
       - name: Generator changelog
         env:
           REPOSITORY: ${{ github.repository }}
         run: ./scripts/changelog.sh "${REPOSITORY}"
-      - uses: peter-evans/create-pull-request@v5
+      - uses: peter-evans/create-pull-request@v7
         with:
-          title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'
+          title: 'docs: Automated Changelog Update for ${{steps.check_tag.outputs.tag }}'
           body: |
             copilot:all
             
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
-            🤖 add release changelog using rebot.
-          branch: changelog-${{steps.get-current-tag.outputs.tag }}
+            🤖 add release changelog for ${{steps.check_tag.outputs.tag }}.
+          branch: changelog-${{steps.check_tag.outputs.tag }}
           base: main
           signoff: true
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: cuisongliu
-          committer: sealos-release-robot <sealos-release-robot@sealos.io>
-          author: sealos-release-robot <sealos-release-robot@sealos.io>
