@@ -104,7 +104,9 @@ func RegisterPayRouter() {
 			log.Fatalf("Error initializing subscription processor tables: %v", err)
 		}
 		go processor.StartProcessing(ctx)
-		go processor.StartKYCProcessing(ctx)
+		if os.Getenv(helper.EnvKycProcessEnabled) == "true" {
+			go processor.StartKYCProcessing(ctx)
+		}
 		//go processor.StartFlushQuotaProcessing(ctx)
 	}
 	//POST(helper.AdminActiveBilling, api.AdminActiveBilling)
