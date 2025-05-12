@@ -50,8 +50,6 @@ type CreditsInfoReq struct {
 	KYCDeductionCreditsBalance          int64 `json:"kycDeductionCreditsBalance"`
 	CurrentPlanCreditsBalance           int64 `json:"currentPlanCreditsBalance"`
 	CurrentPlanCreditsDeductionBalance  int64 `json:"currentPlanCreditsDeductionBalance"`
-	BonusCreditsBalance                 int64 `json:"bonusCreditsBalance"`
-	BonusCreditsDeductionBalance        int64 `json:"bonusCreditsDeductionBalance"`
 }
 
 func getCreditsInfo(userUID uuid.UUID) (any, error) {
