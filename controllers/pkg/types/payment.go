@@ -10,7 +10,7 @@ import (
 type PaymentRaw struct {
 	UserUID         uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
 	RegionUID       uuid.UUID `gorm:"column:regionUid;type:uuid;not null"`
-	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt       time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	RegionUserOwner string    `gorm:"column:regionUserOwner;type:text"`
 	Method          string    `gorm:"type:text;not null"`
 	Amount          int64     `gorm:"type:bigint;not null"`
@@ -92,7 +92,7 @@ type CardInfo struct {
 	CardNo               string    `gorm:"type:text"`
 	CardBrand            string    `gorm:"type:text"`
 	CardToken            string    `gorm:"type:text"`
-	CreatedAt            time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt            time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	NetworkTransactionID string    `gorm:"type:text"`
 	Default              bool      `gorm:"type:boolean;default:false"`
 	//上次支付状态

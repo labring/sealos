@@ -445,7 +445,7 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 	}
 
 	if !acquired {
-		logrus.Info("Another instance is currently processing KYC credits")
+		//logrus.Info("Another instance is currently processing KYC credits")
 		return
 	}
 
@@ -461,8 +461,6 @@ func (p *SubscriptionProcessor) ProcessKYCCredits() {
 }
 
 func (p *SubscriptionProcessor) processKYCCredits() error {
-	logrus.Info("Processing KYC credits")
-
 	var users []types.UserKYC
 	err := p.db.Transaction(func(tx *gorm.DB) error {
 		return tx.Where("next_at < ? AND (status = ? OR status = ?)", time.Now().UTC().Add(10*time.Minute), types.UserKYCStatusPending, types.UserKYCStatusCompleted).Find(&users).Error
@@ -470,10 +468,10 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to query completed KYC: %w", err)
 	}
-	logrus.Infof("Found %d completed KYC", len(users))
 	if len(users) == 0 {
 		return nil
 	}
+	logrus.Infof("Found %d completed KYC", len(users))
 	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get subscription plan: %w", err)
@@ -513,10 +511,10 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 				}
 			}
 			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one
-			dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
-			if dErr != nil && dErr != gorm.ErrRecordNotFound {
-				return fmt.Errorf("failed to check credits: %w", dErr)
-			}
+			//dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
+			//if dErr != nil && dErr != gorm.ErrRecordNotFound {
+			//	return fmt.Errorf("failed to check credits: %w", dErr)
+			//}
 			now := time.Now().UTC()
 			credits := &types.Credits{
 				ID:         uuid.New(),
@@ -525,15 +523,15 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 				UsedAmount: 0,
 				FromID:     freePlan.ID.String(),
 				FromType:   types.CreditsFromTypeSubscription,
-				ExpireAt:   now.AddDate(0, 1, 0),
+				ExpireAt:   user.NextAt.AddDate(0, 1, 0),
 				CreatedAt:  now,
-				StartAt:    now,
+				StartAt:    user.NextAt,
 				Status:     types.CreditsStatusActive,
 			}
-			if dErr = tx.Create(credits).Error; dErr != nil {
+			if dErr := tx.Create(credits).Error; dErr != nil {
 				return fmt.Errorf("failed to create credits: %w", dErr)
 			}
-			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", now.AddDate(0, 1, 0)).Error
+			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", user.NextAt.AddDate(0, 1, 0)).Error
 		})
 		if err != nil {
 			logrus.Errorf("Failed to update %#+v credits: %v", user, err)

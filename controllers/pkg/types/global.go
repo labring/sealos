@@ -31,8 +31,8 @@ type Account struct {
 	// Discard EncryptBalance and EncryptDeductionBalance
 	EncryptBalance          string    `gorm:"column:encryptBalance;type:text"`
 	EncryptDeductionBalance string    `gorm:"column:encryptDeductionBalance;type:text"`
-	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt               time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp()"`
+	CreatedAt               time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt               time.Time `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
 	CreateRegionID          string    `gorm:"type:text;not null"`
 	Balance                 int64
 	DeductionBalance        int64
@@ -96,8 +96,8 @@ type RegionUserCr struct {
 	UID       uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	CrName    string    `gorm:"type:text;column:crName;not null;unique"`
 	UserUID   uuid.UUID `gorm:"column:userUid;type:uuid;not null"`
-	CreatedAt time.Time `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp()"`
-	UpdatedAt time.Time `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp()"`
+	CreatedAt time.Time `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp"`
+	UpdatedAt time.Time `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp"`
 }
 
 type OauthProvider struct {
@@ -105,8 +105,8 @@ type OauthProvider struct {
 	UserUID      uuid.UUID         `gorm:"column:userUid;type:uuid;not null"`
 	ProviderType OauthProviderType `gorm:"column:providerType;type:text;not null"`
 	ProviderID   string            `gorm:"column:providerId;type:text;not null"`
-	CreatedAt    time.Time         `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp()"`
-	UpdatedAt    time.Time         `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp()"`
+	CreatedAt    time.Time         `gorm:"column:createdAt;type:timestamp(3);default:current_timestamp"`
+	UpdatedAt    time.Time         `gorm:"column:updatedAt;type:timestamp(3);default:current_timestamp"`
 	Password     string            `gorm:"type:text"`
 }
 
@@ -119,7 +119,7 @@ type Transfer struct {
 	ToUserID    string    `gorm:"column:toUserId;type:text;not null"`
 	Amount      int64     `gorm:"type:bigint;not null"`
 	Remark      string    `gorm:"type:text;not null"`
-	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 }
 
 func (Transfer) TableName() string {
@@ -128,8 +128,8 @@ func (Transfer) TableName() string {
 
 type User struct {
 	UID       uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
-	CreatedAt time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt time.Time  `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt time.Time  `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp"`
 	AvatarURI string     `gorm:"column:avatarUri;type:text"`
 	Nickname  string     `gorm:"type:text"`
 	ID        string     `gorm:"type:text;not null;unique"`
@@ -152,14 +152,14 @@ type Workspace struct {
 	UID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
 	ID          string    `gorm:"type:text;not null;unique"`
 	DisplayName string    `gorm:"column:displayName;type:text;not null"`
-	CreatedAt   time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt   time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt   time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt   time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp"`
 }
 
 type UserWorkspace struct {
 	UID          uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primary_key"`
-	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt    time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt    time.Time `gorm:"column:updatedAt;type:timestamp(3) with time zone;default:current_timestamp"`
 	WorkspaceUID uuid.UUID `gorm:"column:workspaceUid;type:uuid;not null"`
 	UserCrUID    uuid.UUID `gorm:"column:userCrUid;type:uuid;not null"`
 	HandlerUID   uuid.UUID `gorm:"column:handlerUid;type:uuid"`
@@ -221,8 +221,8 @@ const (
 type Invoice struct {
 	ID          string    `gorm:"type:text;primary_key" json:"id" bson:"id"`
 	UserID      string    `gorm:"type:text;not null" json:"userID" bson:"userID"`
-	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"createdAt" json:"createdAt"`
-	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp()" bson:"updatedAt" json:"updatedAt"`
+	CreatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" bson:"createdAt" json:"createdAt"`
+	UpdatedAt   time.Time `gorm:"type:timestamp(3) with time zone;default:current_timestamp" bson:"updatedAt" json:"updatedAt"`
 	Detail      string    `gorm:"type:text;not null" json:"detail" bson:"detail"`
 	Remark      string    `gorm:"type:text" json:"remark" bson:"remark"`
 	TotalAmount int64     `gorm:"type:bigint;not null" json:"totalAmount" bson:"totalAmount"`
@@ -251,7 +251,7 @@ type GiftCode struct {
 	Used         bool      `gorm:"column:used;type:boolean;default:false;not null"`
 	UsedBy       uuid.UUID `gorm:"column:usedBy;type:uuid"`
 	UsedAt       time.Time `gorm:"column:usedAt;type:timestamp(3) with time zone"`
-	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt    time.Time `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
 	ExpiredAt    time.Time `gorm:"column:expiredAt;type:timestamp(3) with time zone"`
 	Comment      string    `gorm:"column:comment;type:text"`
 }
@@ -269,8 +269,8 @@ type AccountTransaction struct {
 	Balance                int64          `gorm:"column:balance;type:bigint"`
 	DeductionCredit        int64          `gorm:"column:deduction_credit;type:bigint"`
 	Message                *string        `gorm:"column:message;type:text"`
-	CreatedAt              time.Time      `gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp()"`
-	UpdatedAt              time.Time      `gorm:"column:updated_at;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt              time.Time      `gorm:"column:created_at;type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt              time.Time      `gorm:"column:updated_at;type:timestamp(3) with time zone;default:current_timestamp"`
 	BillingID              uuid.UUID      `gorm:"column:billing_id;type:uuid"`
 	BillingIDList          pq.StringArray `gorm:"column:billing_id_list;type:text[]"`
 	CreditIDList           pq.StringArray `gorm:"column:credit_id_list;type:text[]"`
@@ -290,7 +290,7 @@ type UserRealNameInfo struct {
 	Phone               *string         `gorm:"column:phone;type:text"`
 	IsVerified          bool            `gorm:"column:isVerified;type:boolean;default:false"`
 	IDVerifyFailedTimes int             `gorm:"column:idVerifyFailedTimes;type:integer;default:0"`
-	CreatedAt           time.Time       `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt           time.Time       `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
 	UpdatedAt           time.Time       `gorm:"column:updatedAt;type:timestamp(3) with time zone;autoUpdateTime"`
 	AdditionalInfo      json.RawMessage `gorm:"column:additionalInfo;type:jsonb"`
 }
@@ -307,7 +307,7 @@ type EnterpriseRealNameInfo struct {
 	LegalRepresentativePhone *string         `gorm:"column:legalRepresentativePhone;type:text"`
 	IsVerified               bool            `gorm:"column:isVerified;type:boolean;default:false"`
 	VerificationStatus       *string         `gorm:"column:verificationStatus;type:text"`
-	CreatedAt                time.Time       `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp()"`
+	CreatedAt                time.Time       `gorm:"column:createdAt;type:timestamp(3) with time zone;default:current_timestamp"`
 	UpdatedAt                time.Time       `gorm:"column:updatedAt;type:timestamp(3) with time zone;autoUpdateTime"`
 	AdditionalInfo           json.RawMessage `gorm:"column:additionalInfo;type:jsonb"`
 	SupportingMaterials      json.RawMessage `gorm:"column:supportingMaterials;type:jsonb"`

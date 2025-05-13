@@ -17,7 +17,6 @@ import (
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // SubscriptionProcessor 处理订阅事务的处理器
@@ -75,8 +74,7 @@ func (sp *SubscriptionProcessor) processPendingTransactions(ctx context.Context)
 	now := time.Now()
 
 	// 查询待处理事务并加锁
-	err := sp.db.WithContext(ctx).
-		Clauses(clause.Locking{Strength: "UPDATE"}).
+	err := sp.db.WithContext(ctx).Model(&types.SubscriptionTransaction{}).
 		Where("pay_status IN (?, ?) AND start_at <= ? AND status NOT IN (?, ?)",
 			types.SubscriptionPayStatusPaid,
 			types.SubscriptionPayStatusNoNeed,

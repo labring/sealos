@@ -76,6 +76,7 @@ const (
 	EnvJwtSecret       = "ACCOUNT_API_JWT_SECRET"
 
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
+	EnvKycProcessEnabled   = "KYC_PROCESS_ENABLED"
 )
 
 const (

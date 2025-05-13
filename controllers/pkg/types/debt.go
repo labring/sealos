@@ -54,8 +54,8 @@ func ContainDebtStatus(statuses []DebtStatusType, status DebtStatusType) bool {
 // Debt 表示 debts 表
 type Debt struct {
 	UserUID           uuid.UUID          `gorm:"column:user_uid;type:uuid;not null;primary_key"`
-	CreatedAt         time.Time          `gorm:"column:created_at;autoCreateTime;default:current_timestamp()"` // 创建时间
-	UpdatedAt         time.Time          `gorm:"column:updated_at;autoUpdateTime;default:current_timestamp()"` // 更新时间
+	CreatedAt         time.Time          `gorm:"column:created_at;autoCreateTime;default:current_timestamp"` // 创建时间
+	UpdatedAt         time.Time          `gorm:"column:updated_at;autoUpdateTime;default:current_timestamp"` // 更新时间
 	AccountDebtStatus DebtStatusType     `gorm:"column:account_debt_status;not null" json:"account_debt_status,omitempty"`
 	StatusRecords     []DebtStatusRecord `gorm:"foreignKey:UserUID;references:UserUID"`
 }
@@ -66,7 +66,7 @@ type DebtStatusRecord struct {
 	UserUID       uuid.UUID      `gorm:"column:user_uid;type:uuid;not null" json:"user_uid"` // 外键，关联 User.ID
 	LastStatus    DebtStatusType `gorm:"column:last_status" json:"last_status,omitempty"`
 	CurrentStatus DebtStatusType `gorm:"column:current_status" json:"current_status,omitempty"`
-	CreateAt      time.Time      `gorm:"column:create_at;not null;autoCreateTime;default:current_timestamp()" json:"create_at,omitempty"`
+	CreateAt      time.Time      `gorm:"column:create_at;not null;autoCreateTime;default:current_timestamp" json:"create_at,omitempty"`
 }
 
 func (Debt) TableName() string {
@@ -83,7 +83,7 @@ type DebtResumeDeductionBalanceTransaction struct {
 	BeforeDeductionBalance int64     `json:"before_deduction_balance" gorm:"column:before_deduction_balance;not null"`
 	AfterDeductionBalance  int64     `json:"after_deduction_balance" gorm:"column:after_deduction_balance;not null"`
 	BeforeBalance          int64     `json:"before_balance" gorm:"column:before_balance;not null"`
-	CreatedAt              time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime;default:current_timestamp()"`
+	CreatedAt              time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime;default:current_timestamp"`
 }
 
 func (DebtResumeDeductionBalanceTransaction) TableName() string {

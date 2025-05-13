@@ -23,40 +23,29 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
-	"k8s.io/client-go/rest"
-
-	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
-
-	"k8s.io/utils/ptr"
-
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/minio/madmin-go/v3"
-
-	v1 "github.com/labring/sealos/controllers/account/api/v1"
-
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/watch"
-
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
 	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
-
 	"github.com/go-logr/logr"
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/minio/madmin-go/v3"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	v12 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // NamespaceReconciler reconciles a Namespace object
@@ -86,26 +75,19 @@ const (
 //+kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces/finalizers,verbs=update
 //+kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=clusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps.kubeblocks.io,resources=opsrequests/status,verbs=get;update;watch
+//+kubebuilder:rbac:groups=app.sealos.io,resources=apps,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app.sealos.io,resources=instances,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Namespace object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Log.WithValues("Namespace", req.Namespace, "Name", req.NamespacedName)
 
 	ns := corev1.Namespace{}
-
 	if err := r.Client.Get(ctx, req.NamespacedName, &ns); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -116,10 +98,29 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, nil
 	}
 	logger.V(1).Info("debt status", "status", debtStatus)
+	// Skip if namespace is in any completed state
+	if debtStatus == v1.SuspendCompletedDebtNamespaceAnnoStatus ||
+		debtStatus == v1.FinalDeletionCompletedDebtNamespaceAnnoStatus ||
+		debtStatus == v1.ResumeCompletedDebtNamespaceAnnoStatus ||
+		debtStatus == v1.TerminateSuspendCompletedDebtNamespaceAnnoStatus {
+		logger.V(1).Info("Skipping completed namespace")
+		return ctrl.Result{}, nil
+	}
+
 	switch debtStatus {
 	case v1.SuspendDebtNamespaceAnnoStatus, v1.TerminateSuspendDebtNamespaceAnnoStatus:
 		if err := r.SuspendUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "suspend namespace resources failed")
+			return ctrl.Result{}, err
+		}
+		// Update to corresponding completed state
+		newStatus := v1.SuspendCompletedDebtNamespaceAnnoStatus
+		if debtStatus == v1.TerminateSuspendDebtNamespaceAnnoStatus {
+			newStatus = v1.TerminateSuspendCompletedDebtNamespaceAnnoStatus
+		}
+		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = newStatus
+		if err := r.Client.Update(ctx, &ns); err != nil {
+			logger.Error(err, "update namespace status to completed failed")
 			return ctrl.Result{}, err
 		}
 	case v1.FinalDeletionDebtNamespaceAnnoStatus:
@@ -127,17 +128,23 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logger.Error(err, "delete namespace resources failed")
 			return ctrl.Result{}, err
 		}
+		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.FinalDeletionCompletedDebtNamespaceAnnoStatus
+		if err := r.Client.Update(ctx, &ns); err != nil {
+			logger.Error(err, "update namespace status to FinalDeletionCompleted failed")
+			return ctrl.Result{}, err
+		}
 	case v1.ResumeDebtNamespaceAnnoStatus:
 		if err := r.ResumeUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "resume namespace resources failed")
 			return ctrl.Result{}, err
 		}
-		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.NormalDebtNamespaceAnnoStatus
+		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.ResumeCompletedDebtNamespaceAnnoStatus
 		if err := r.Client.Update(ctx, &ns); err != nil {
-			logger.Error(err, "update namespace status failed")
+			logger.Error(err, "update namespace status to ResumeCompleted failed")
 			return ctrl.Result{}, err
 		}
 	case v1.NormalDebtNamespaceAnnoStatus:
+		// No action needed for Normal state
 	default:
 		logger.Error(fmt.Errorf("unknown namespace debt status, change to normal"), "", "debt status", ns.Annotations[v1.DebtNamespaceAnnoStatusKey])
 		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.NormalDebtNamespaceAnnoStatus
@@ -150,10 +157,6 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
-	// suspend kb cluster
-	// limit0 resource quota
-	// suspend pod: deploy pod && clone unmanaged pod
-	// suspend cronjob
 	pipelines := []func(context.Context, string) error{
 		r.suspendKBCluster,
 		r.suspendOrphanPod,
@@ -175,6 +178,7 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 		"backup", "cluster.apps.kubeblocks.io", "backupschedules", "devboxes", "devboxreleases", "cronjob",
 		"objectstorageuser", "deploy", "sts", "pvc", "Service", "Ingress",
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
+		"job", "app",
 	}
 	for _, rs := range deleteResources {
 		if err := deleteResource(r.dynamicClient, rs, namespace); err != nil {
@@ -185,8 +189,6 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 }
 
 func (r *NamespaceReconciler) ResumeUserResource(ctx context.Context, namespace string) error {
-	// delete limit0 resource quota
-	// resume pod
 	pipelines := []func(context.Context, string) error{
 		r.limitResourceQuotaDelete,
 		r.resumePod,
@@ -262,28 +264,18 @@ func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace st
 		if pod.Spec.SchedulerName == v1.DebtSchedulerName || len(pod.ObjectMeta.OwnerReferences) > 0 {
 			continue
 		}
-		/*Orphan pod is backed up separately*/
 		clone := pod.DeepCopy()
-		// We won't be able to create the object with the same resource version
 		clone.ObjectMeta.ResourceVersion = ""
-
-		// Remove assigned node to avoid scheduling
 		clone.Spec.NodeName = ""
-
-		// Reset status, not needed as its ignored but nice
 		clone.Status = corev1.PodStatus{}
-
-		// Assign our own scheduler to avoid the default scheduler interfer with the workload
 		clone.Spec.SchedulerName = v1.DebtSchedulerName
-
 		if clone.Annotations == nil {
 			clone.Annotations = make(map[string]string)
 		}
-
 		clone.Annotations[v1.PreviousSchedulerName] = pod.Spec.SchedulerName
 		err := r.recreatePod(ctx, pod, clone)
 		if err != nil {
-			return fmt.Errorf("recrete unowned pod `%s` failed: %w", pod.Name, err)
+			return fmt.Errorf("recreate unowned pod `%s` failed: %w", pod.Name, err)
 		}
 	}
 	return nil
@@ -326,30 +318,21 @@ func (r *NamespaceReconciler) resumePod(ctx context.Context, namespace string) e
 			}
 		} else {
 			clone := pod.DeepCopy()
-
-			// We won't be able to create the object with the same resource version
 			clone.ObjectMeta.ResourceVersion = ""
-
-			// Remove assigned node to avoid scheduling
 			clone.Spec.NodeName = ""
-
-			// Reset status, not needed as its ignored but nice
 			clone.Status = corev1.PodStatus{}
-
 			if scheduler, ok := clone.Annotations[v1.PreviousSchedulerName]; ok {
 				clone.Spec.SchedulerName = scheduler
 				delete(clone.Annotations, v1.PreviousSchedulerName)
 			} else {
 				clone.Spec.SchedulerName = ""
 			}
-
 			err := r.recreatePod(deleteCtx, pod, clone)
 			if err != nil {
-				return fmt.Errorf("recrete unowned pod %s failed: %v", pod.Name, err)
+				return fmt.Errorf("recreate unowned pod %s failed: %v", pod.Name, err)
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -359,15 +342,11 @@ func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod
 	if err != nil {
 		return fmt.Errorf("failed to start watch stream for pod %s: %w", oldPod.Name, err)
 	}
-
 	ch := watcher.ResultChan()
-
 	err = r.Client.Delete(ctx, &oldPod)
 	if err != nil {
 		return fmt.Errorf("failed to delete pod %s: %w", oldPod.Name, err)
 	}
-
-	// Wait for delete event before we can attempt create the clone
 	for event := range ch {
 		if event.Type == watch.Deleted {
 			if val, ok := event.Object.(*corev1.Pod); ok && val.Name == oldPod.Name {
@@ -375,41 +354,33 @@ func (r *NamespaceReconciler) recreatePod(ctx context.Context, oldPod corev1.Pod
 				if err != nil {
 					return fmt.Errorf("failed to recreate pod %s: %w", newPod.Name, err)
 				}
-
 				watcher.Stop()
 				break
 			}
 		}
 	}
-
 	return nil
 }
 
 func (r *NamespaceReconciler) suspendObjectStorage(ctx context.Context, namespace string) error {
 	split := strings.Split(namespace, "-")
 	user := split[1]
-
 	err := r.setOSUserStatus(ctx, user, Disabled)
 	if err != nil {
 		r.Log.Error(err, "failed to suspend object storage", "user", user)
 		return err
 	}
-
-	//r.Log.Info("suspend object storage", "user", user)
 	return nil
 }
 
 func (r *NamespaceReconciler) resumeObjectStorage(ctx context.Context, namespace string) error {
 	split := strings.Split(namespace, "-")
 	user := split[1]
-
 	err := r.setOSUserStatus(ctx, user, Enabled)
 	if err != nil {
 		r.Log.Error(err, "failed to resume object storage", "user", user)
 		return err
 	}
-
-	//r.Log.Info("resume object storage", "user", user)
 	return nil
 }
 
@@ -418,17 +389,14 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 		r.Log.V(1).Info("the endpoint or namespace or admin secret env of object storage is nil")
 		return nil
 	}
-
 	if r.OSAdminClient == nil {
 		secret := &corev1.Secret{}
 		if err := r.Client.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
 			r.Log.Error(err, "failed to get secret", "name", r.OSAdminSecret, "namespace", r.OSNamespace)
 			return err
 		}
-
 		accessKey := string(secret.Data[OSAccessKey])
 		secretKey := string(secret.Data[OSSecretKey])
-
 		oSAdminClient, err := objectstoragev1.NewOSAdminClient(r.InternalEndpoint, accessKey, secretKey)
 		if err != nil {
 			r.Log.Error(err, "failed to new object storage admin client")
@@ -436,50 +404,24 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 		}
 		r.OSAdminClient = oSAdminClient
 	}
-
 	users, err := r.OSAdminClient.ListUsers(ctx)
 	if err != nil {
 		r.Log.Error(err, "failed to list minio user", "user", user)
 		return err
 	}
-
 	if _, ok := users[user]; !ok {
 		return nil
 	}
-
 	err = r.OSAdminClient.SetUserStatus(ctx, user, madmin.AccountStatus(status))
 	if err != nil {
 		r.Log.Error(err, "failed to set user status", "user", user, "status", status)
 		return err
 	}
-
 	return nil
 }
 
-//func (r *NamespaceReconciler) deleteInfraResources(ctx context.Context, namespace string) error {
-//
-//	u := unstructured.UnstructuredList{}
-//	u.SetGroupVersionKind(schema.GroupVersionKind{
-//		Group:   "infra.sealos.io",
-//		Version: "v1",
-//		Kind:    "infra",
-//	})
-//	if err := r.Client.List(ctx, &u, client.InNamespace(namespace)); err != nil {
-//		return client.IgnoreNotFound(err)
-//	}
-//	for _, item := range u.Items {
-//		r.Log.Info("delete resource", "resource name:", item.GetName(), "get GVK", item.GroupVersionKind())
-//		if err := r.Client.Delete(ctx, &item); err != nil {
-//			return client.IgnoreNotFound(err)
-//		}
-//	}
-//	return nil
-//}
-
-// SetupWithManager sets up the controller with the Manager.
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
-
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
 	r.OSNamespace = os.Getenv(OSNamespace)
@@ -492,11 +434,9 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		panic(fmt.Sprintf("Failed to create dynamic client: %v", err))
 	}
 	r.dynamicClient = dynamicClient
-
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
 		Complete(r)
@@ -509,7 +449,6 @@ type AnnotationChangedPredicate struct {
 func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 	oldObj, _ok1 := e.ObjectOld.(*corev1.Namespace)
 	newObj, _ok2 := e.ObjectNew.(*corev1.Namespace)
-
 	if !_ok1 || !_ok2 || newObj.Annotations == nil {
 		return false
 	}
@@ -518,13 +457,16 @@ func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
 		oldStatus = oldAno[v1.DebtNamespaceAnnoStatusKey]
 	}
 	newStatus, ok := newObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
-
 	return ok && oldStatus != newStatus
 }
 
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {
-	_, ok := e.Object.GetAnnotations()[v1.DebtNamespaceAnnoStatusKey]
-	return ok
+	status, ok := e.Object.GetAnnotations()[v1.DebtNamespaceAnnoStatusKey]
+	return ok && status != v1.NormalDebtNamespaceAnnoStatus &&
+		status != v1.SuspendCompletedDebtNamespaceAnnoStatus &&
+		status != v1.FinalDeletionCompletedDebtNamespaceAnnoStatus &&
+		status != v1.ResumeCompletedDebtNamespaceAnnoStatus &&
+		status != v1.TerminateSuspendCompletedDebtNamespaceAnnoStatus
 }
 
 func (r *NamespaceReconciler) suspendCronJob(ctx context.Context, namespace string) error {
@@ -547,109 +489,47 @@ func (r *NamespaceReconciler) suspendCronJob(ctx context.Context, namespace stri
 func deleteResource(dynamicClient dynamic.Interface, resource, namespace string) error {
 	ctx := context.Background()
 	deletePolicy := v12.DeletePropagationForeground
-
 	var gvr schema.GroupVersionResource
 	switch resource {
 	case "backup":
-		gvr = schema.GroupVersionResource{
-			Group:    "dataprotection.kubeblocks.io",
-			Version:  "v1alpha1",
-			Resource: "backups",
-		}
+		gvr = schema.GroupVersionResource{Group: "dataprotection.kubeblocks.io", Version: "v1alpha1", Resource: "backups"}
 	case "cluster.apps.kubeblocks.io":
-		gvr = schema.GroupVersionResource{
-			Group:    "apps.kubeblocks.io",
-			Version:  "v1alpha1",
-			Resource: "clusters",
-		}
+		gvr = schema.GroupVersionResource{Group: "apps.kubeblocks.io", Version: "v1alpha1", Resource: "clusters"}
 	case "backupschedules":
-		gvr = schema.GroupVersionResource{
-			Group:    "dataprotection.kubeblocks.io",
-			Version:  "v1alpha1",
-			Resource: "backupschedules",
-		}
+		gvr = schema.GroupVersionResource{Group: "dataprotection.kubeblocks.io", Version: "v1alpha1", Resource: "backupschedules"}
 	case "cronjob":
-		gvr = schema.GroupVersionResource{
-			Group:    "batch",
-			Version:  "v1",
-			Resource: "cronjobs",
-		}
+		gvr = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjobs"}
 	case "objectstorageuser":
-		gvr = schema.GroupVersionResource{
-			Group:    "objectstorage.sealos.io",
-			Version:  "v1",
-			Resource: "objectstorageusers",
-		}
+		gvr = schema.GroupVersionResource{Group: "objectstorage.sealos.io", Version: "v1", Resource: "objectstorageusers"}
 	case "deploy":
-		gvr = schema.GroupVersionResource{
-			Group:    "apps",
-			Version:  "v1",
-			Resource: "deployments",
-		}
+		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	case "sts":
-		gvr = schema.GroupVersionResource{
-			Group:    "apps",
-			Version:  "v1",
-			Resource: "statefulsets",
-		}
+		gvr = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"}
 	case "pvc":
-		gvr = schema.GroupVersionResource{
-			Group:    "",
-			Version:  "v1",
-			Resource: "persistentvolumeclaims",
-		}
+		gvr = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaims"}
 	case "Service":
-		gvr = schema.GroupVersionResource{
-			Group:    "",
-			Version:  "v1",
-			Resource: "services",
-		}
+		gvr = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "services"}
 	case "Ingress":
-		gvr = schema.GroupVersionResource{
-			Group:    "networking.k8s.io",
-			Version:  "v1",
-			Resource: "ingresses",
-		}
+		gvr = schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresses"}
 	case "Issuer":
-		gvr = schema.GroupVersionResource{
-			Group:    "cert-manager.io",
-			Version:  "v1",
-			Resource: "issuers",
-		}
+		gvr = schema.GroupVersionResource{Group: "cert-manager.io", Version: "v1", Resource: "issuers"}
 	case "Certificate":
-		gvr = schema.GroupVersionResource{
-			Group:    "cert-manager.io",
-			Version:  "v1",
-			Resource: "certificates",
-		}
+		gvr = schema.GroupVersionResource{Group: "cert-manager.io", Version: "v1", Resource: "certificates"}
 	case "HorizontalPodAutoscaler":
-		gvr = schema.GroupVersionResource{
-			Group:    "autoscaling",
-			Version:  "v1",
-			Resource: "horizontalpodautoscalers",
-		}
+		gvr = schema.GroupVersionResource{Group: "autoscaling", Version: "v1", Resource: "horizontalpodautoscalers"}
 	case "instance":
-		gvr = schema.GroupVersionResource{
-			Group:    "app.sealos.io",
-			Version:  "v1",
-			Resource: "instances",
-		}
+		gvr = schema.GroupVersionResource{Group: "app.sealos.io", Version: "v1", Resource: "instances"}
+	case "job":
+		gvr = schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "jobs"}
+	case "app":
+		gvr = schema.GroupVersionResource{Group: "app.sealos.io", Version: "v1", Resource: "apps"}
 	case "devboxes":
-		gvr = schema.GroupVersionResource{
-			Group:    "devbox.sealos.io",
-			Version:  "v1alpha1",
-			Resource: "devboxes",
-		}
+		gvr = schema.GroupVersionResource{Group: "devbox.sealos.io", Version: "v1alpha1", Resource: "devboxes"}
 	case "devboxreleases":
-		gvr = schema.GroupVersionResource{
-			Group:    "devbox.sealos.io",
-			Version:  "v1alpha1",
-			Resource: "devboxreleases",
-		}
+		gvr = schema.GroupVersionResource{Group: "devbox.sealos.io", Version: "v1alpha1", Resource: "devboxreleases"}
 	default:
 		return fmt.Errorf("unknown resource: %s", resource)
 	}
-
 	err := dynamicClient.Resource(gvr).Namespace(namespace).DeleteCollection(ctx, v12.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}, v12.ListOptions{})

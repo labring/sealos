@@ -564,39 +564,21 @@ func (c *Cockroach) GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalan
 	return result, nil
 }
 
-func (c *Cockroach) GetBalanceWithCredits(ops *types.UserQueryOpts) (*types.BalanceWithCredits, error) {
+func (c *Cockroach) GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error) {
 	userUID, err := c.GetUserUID(ops)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user uid: %v", err)
 	}
-	ctx := context.Background()
-	result := &types.BalanceWithCredits{
-		UserUID: userUID,
+	var credits []types.Credits
+	err = c.DB.Model(&types.Credits{}).Where(
+		`user_uid = ? 
+		AND (expire_at IS NULL OR expire_at > CURRENT_TIMESTAMP)
+		AND (start_at IS NULL OR start_at <= CURRENT_TIMESTAMP)
+		AND status != 'expired'`, userUID).Find(&credits).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("failed to get credits: %v", err)
 	}
-
-	err = c.DB.WithContext(ctx).Raw(`
-        SELECT 
-            a.balance,
-            a.deduction_balance,
-            COALESCE((
-                SELECT SUM(c.amount)
-                FROM "Credits" c
-                WHERE c.user_uid = a."userUid"
-                AND (c.expire_at IS NULL OR c.expire_at > CURRENT_TIMESTAMP)
-                AND (c.start_at IS NULL OR c.start_at <= CURRENT_TIMESTAMP)
-            ), 0) as credits,
-            COALESCE((
-                SELECT SUM(c.used_amount)
-                FROM "Credits" c
-                WHERE c.user_uid = a."userUid"
-                AND (c.expire_at IS NULL OR c.expire_at > CURRENT_TIMESTAMP)
-                AND (c.start_at IS NULL OR c.start_at <= CURRENT_TIMESTAMP)
-            ), 0) as deduction_credits
-        FROM "Account" a
-        WHERE a."userUid" = ?
-        LIMIT 1
-    `, userUID).Scan(result).Error
-	return result, err
+	return credits, nil
 }
 
 func (c *Cockroach) SetAccountCreateLocalRegion(account *types.Account, region string) error {
@@ -780,13 +762,16 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 					CreatedAt:            now,
 					Reason:               types.CreditsRecordReasonResourceAccountTransaction,
 				})
+				credits[i].UpdatedAt = now
 				updateCredits = append(updateCredits, credits[i])
 				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
 			}
 		}
 		if len(updateCredits) > 0 {
-			if dErr = tx.Save(&updateCredits).Error; dErr != nil {
-				return fmt.Errorf("failed to update credits: %v", dErr)
+			for _, credit := range updateCredits {
+				if dErr = tx.Save(&credit).Error; dErr != nil {
+					return fmt.Errorf("failed to update credits: %v", dErr)
+				}
 			}
 			accountTransaction.DeductionCredit = creditUsedAmountAll
 			accountTransaction.CreditIDList = updateCreditsIDs
@@ -863,7 +848,6 @@ func (c *Cockroach) updateBalanceRaw(tx *gorm.DB, ops *types.UserQueryOpts, amou
 func AddDeductionAccount(tx *gorm.DB, userUID uuid.UUID, amount int64) error {
 	return tx.Model(&types.Account{}).Where(`"userUid" = ?`, userUID).Updates(map[string]interface{}{
 		`"deduction_balance"`: gorm.Expr("deduction_balance + ?", amount),
-		`"updated_at"`:        gorm.Expr("CURRENT_TIMESTAMP"),
 	}).Error
 }
 
@@ -1269,7 +1253,9 @@ func (c *Cockroach) GetSubscription(ops *types.UserQueryOpts) (*types.Subscripti
 		return nil, fmt.Errorf("failed to get user uid: %v", err)
 	}
 	var subscription types.Subscription
-	if err := c.DB.Where(types.Subscription{UserUID: userUID}).Find(&subscription).Error; err != nil {
+	if err := c.DB.Where(
+		"user_uid", userUID,
+	).Find(&subscription).Error; err != nil {
 		return nil, err
 	}
 	return &subscription, nil
@@ -1697,8 +1683,16 @@ func (c *Cockroach) InitTables() error {
 			return fmt.Errorf("failed to add column activityType: %v", err)
 		}
 	}
+	if !c.DB.Migrator().HasColumn(&types.Credits{}, `updated_at`) {
+		fmt.Println("add table `Credits` column updated_at")
+		tableName := types.Credits{}.TableName()
+		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`, gorm.Expr(tableName)).Error
+		if err != nil {
+			return fmt.Errorf("failed to add column updated_at: %v", err)
+		}
+	}
 	if !c.DB.Migrator().HasColumn(&types.Account{}, `updated_at`) {
-		fmt.Println("add column updated_at")
+		fmt.Println("add table `Account` column updated_at")
 		tableName := types.Account{}.TableName()
 		err := c.DB.Exec(`ALTER TABLE "?" ADD COLUMN "updated_at" TIMESTAMP(3) WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;`, gorm.Expr(tableName)).Error
 		if err != nil {
@@ -1835,6 +1829,10 @@ func (c *Cockroach) Close() error {
 
 func (c *Cockroach) GetGlobalDB() *gorm.DB {
 	return c.DB
+}
+
+func (c *Cockroach) GetLocalDB() *gorm.DB {
+	return c.Localdb
 }
 
 // RetryableTransaction wraps a GORM transaction and retries on CockroachDB retryable errors (SQLSTATE 40001)
