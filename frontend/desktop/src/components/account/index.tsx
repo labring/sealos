@@ -441,27 +441,29 @@ export default function Account() {
                   </Flex>
                 </MenuItem>
 
-                <MenuItem
-                  py="6px"
-                  px="8px"
-                  borderRadius="8px"
-                  _hover={{ bg: '#F4F4F5' }}
-                  onClick={toggleLanguage}
-                >
-                  <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
-                    <Flex alignItems="center" gap="8px">
-                      <Center w="20px" h="20px">
-                        <Globe size={16} color="#737373" />
-                      </Center>
-                      <Text fontSize="14px" fontWeight="400">
-                        {currentLanguage === 'zh' ? '中文' : 'English'}
-                      </Text>
+                {layoutConfig?.version === 'cn' && (
+                  <MenuItem
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={toggleLanguage}
+                  >
+                    <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
+                      <Flex alignItems="center" gap="8px">
+                        <Center w="20px" h="20px">
+                          <Globe size={16} color="#737373" />
+                        </Center>
+                        <Text fontSize="14px" fontWeight="400">
+                          {currentLanguage === 'zh' ? '中文' : 'English'}
+                        </Text>
+                      </Flex>
+                      <Box p="2px" cursor="pointer">
+                        <ArrowLeftRight size={16} color="#737373" />
+                      </Box>
                     </Flex>
-                    <Box p="2px" cursor="pointer">
-                      <ArrowLeftRight size={16} color="#737373" />
-                    </Box>
-                  </Flex>
-                </MenuItem>
+                  </MenuItem>
+                )}
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p="8px">
