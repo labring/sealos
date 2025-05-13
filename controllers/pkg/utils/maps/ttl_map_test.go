@@ -167,12 +167,12 @@ func TestLastAccessUpdate(t *testing.T) {
 	m := New[string](2) // 2 second TTL
 
 	// Put a value
-	m.Put("key1", "value1")
+	m.Put("key1", "TestLastAccessUpdatevalue1")
 
 	// Get it multiple times to update lastAccess
 	for i := 0; i < 3; i++ {
 		time.Sleep(500 * time.Millisecond)
-		if v, _ := m.Get("key1"); v != "value1" {
+		if v, _ := m.Get("key1"); v != "TestLastAccessUpdatevalue1" {
 			t.Errorf("Get(key1) = %v; want value1 at iteration %d", v, i)
 		}
 	}
