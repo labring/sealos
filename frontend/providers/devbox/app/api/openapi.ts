@@ -538,7 +538,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
   });
 
 const applaunchpadDocument = {
-  '/api/v1alpha/createApp': {
+  '/api/v1/createApp': {
     post: {
       tags: ['Application'],
       summary: 'Create a new application',
@@ -867,7 +867,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1alpha/getApps': {
+  '/api/v1/getApps': {
     get: {
       tags: ['Application'],
       summary: 'Get all applications',
@@ -1065,7 +1065,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1alpha/getAppByAppName': {
+  '/api/v1/getAppByAppName': {
     get: {
       tags: ['Application'],
       summary: 'Get application by name',
@@ -1147,7 +1147,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1alpha/delAppByName': {
+  '/api/v1/delAppByName': {
     delete: {
       tags: ['Application'],
       summary: 'Delete application',
@@ -1227,7 +1227,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1alpha/getAppPodsByAppName': {
+  '/api/v1/getAppPodsByAppName': {
     get: {
       tags: ['Application'],
       summary: 'Get application pods',
