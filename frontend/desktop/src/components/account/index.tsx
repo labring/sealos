@@ -5,6 +5,7 @@ import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import {
   Box,
+  Button,
   Center,
   Divider,
   Flex,
@@ -24,8 +25,10 @@ import { useCallback, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
-import { Bell, Copy, CreditCard, FileCode, Gift, LogOut, Palette, User } from 'lucide-react';
-import { ThemeToggle } from '../ThemeToggle';
+import { Bell, Copy, CreditCard, FileCode, Gift, LogOut, Sparkles, User } from 'lucide-react';
+import { useInitWorkspaceStore } from '@/stores/initWorkspace';
+import GuideModal from './GuideModal';
+import LangSelectSimple from '../LangSelect/simple';
 
 const baseItemStyle = {
   minW: '36px',
@@ -52,6 +55,8 @@ export default function Account() {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { colorMode, toggleColorMode } = useColorMode();
+  const guideDisclosure = useDisclosure();
+  const { setInitGuide, initGuide } = useInitWorkspaceStore();
 
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
@@ -62,6 +67,8 @@ export default function Account() {
     router.replace('/signin');
     setToken('');
   };
+
+  console.log(layoutConfig, 'layoutConfig');
 
   const openWorkOrderApp = () => {
     const workorder = installedApps.find((t) => t.key === 'system-workorder');
@@ -123,11 +130,44 @@ export default function Account() {
               />
             </svg>
           </Center>
-
           <WorkspaceToggle />
         </Flex>
 
         <Flex gap={'4px'} ml={'auto'}>
+          <Center
+            borderRadius={'8px'}
+            bg={
+              'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+            }
+            px={'12px'}
+            py={'8px'}
+            gap={'12px'}
+            color="#2563EB"
+            fontSize={'14px'}
+            fontWeight={'500'}
+            cursor={'pointer'}
+          >
+            <Sparkles color="#2563EB" width={'16px'} height={'16px'} />
+            {t('v2:upgrade_plan')}
+          </Center>
+
+          {layoutConfig?.version === 'cn' && (
+            <Center
+              className="guide-button"
+              cursor={'pointer'}
+              {...baseItemStyle}
+              px={'8px'}
+              borderRadius={'8px'}
+              border={'1px solid transparent'}
+              onClick={() => {
+                guideDisclosure.onOpen();
+                setInitGuide(false);
+              }}
+            >
+              {t('v2:support')}
+            </Center>
+          )}
+
           <Center
             className="guide-button"
             cursor={'pointer'}
@@ -135,6 +175,10 @@ export default function Account() {
             px={'8px'}
             borderRadius={'8px'}
             border={'1px solid transparent'}
+            onClick={() => {
+              guideDisclosure.onOpen();
+              setInitGuide(false);
+            }}
           >
             {t('common:guide')}
           </Center>
@@ -160,9 +204,9 @@ export default function Account() {
           height={'100%'}
           alignItems={'center'}
         >
+          <LangSelectSimple {...baseItemStyle} />
           {/* <CustomTooltip placement={'bottom'} label={t('common:language')}>
             <Center>
-              <LangSelectSimple {...baseItemStyle} />
             </Center>
           </CustomTooltip> */}
 
@@ -174,7 +218,7 @@ export default function Account() {
             </CustomTooltip>
           )} */}
 
-          <ThemeToggle />
+          {/* <ThemeToggle /> */}
 
           <Center
             {...baseItemStyle}
@@ -235,7 +279,7 @@ export default function Account() {
                     </Flex>
                   </MenuItem>
                 )}
-                <MenuItem
+                {/* <MenuItem
                   py="6px"
                   px="8px"
                   borderRadius="8px"
@@ -273,7 +317,7 @@ export default function Account() {
                       {t('common:plan')}
                     </Text>
                   </Flex>
-                </MenuItem>
+                </MenuItem> */}
                 <MenuItem
                   py="6px"
                   px="8px"
@@ -312,7 +356,7 @@ export default function Account() {
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>
-                <MenuItem
+                {/* <MenuItem
                   py="6px"
                   px="8px"
                   borderRadius="8px"
@@ -329,7 +373,7 @@ export default function Account() {
                       </Text>
                     </Flex>
                   </Flex>
-                </MenuItem>
+                </MenuItem> */}
                 <MenuItem
                   py="6px"
                   px="8px"
@@ -458,6 +502,8 @@ export default function Account() {
           </Flex>
         </Flex> */}
       </Flex>
+
+      <GuideModal isOpen={guideDisclosure.isOpen} onClose={guideDisclosure.onClose} />
     </Box>
   );
 }
