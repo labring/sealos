@@ -469,9 +469,9 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 		return fmt.Errorf("failed to query completed KYC: %w", err)
 	}
 	if len(users) == 0 {
-		logrus.Infof("Found %d completed KYC", len(users))
 		return nil
 	}
+	logrus.Infof("Found %d completed KYC", len(users))
 	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
 	if err != nil {
 		return fmt.Errorf("failed to get subscription plan: %w", err)

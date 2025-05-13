@@ -87,7 +87,8 @@ func RegisterPayRouter() {
 		POST(helper.CardSetDefault, api.SetDefaultCard).
 		POST(helper.CreditsInfo, api.GetCreditsInfo)
 
-	if os.Getenv(helper.EnvSubscriptionEnabled) == "true" {
+	_true := "true"
+	if os.Getenv(helper.EnvSubscriptionEnabled) == _true {
 		paymentGroup.POST(helper.SubscriptionUserInfo, api.GetSubscriptionUserInfo).
 			POST(helper.SubscriptionPlanList, api.GetSubscriptionPlanList).
 			POST(helper.SubscriptionLastTransaction, api.GetLastSubscriptionTransaction).
@@ -104,7 +105,7 @@ func RegisterPayRouter() {
 			log.Fatalf("Error initializing subscription processor tables: %v", err)
 		}
 		go processor.StartProcessing(ctx)
-		if os.Getenv(helper.EnvKycProcessEnabled) == "true" {
+		if os.Getenv(helper.EnvKycProcessEnabled) == _true {
 			go processor.StartKYCProcessing(ctx)
 		}
 		//go processor.StartFlushQuotaProcessing(ctx)
@@ -132,7 +133,7 @@ func RegisterPayRouter() {
 	}()
 
 	// process task
-	if os.Getenv("REWARD_PROCESSING") == "true" {
+	if os.Getenv("REWARD_PROCESSING") == _true {
 		fmt.Println("Start reward processing timer")
 		go startRewardProcessingTimer(ctx)
 	}
