@@ -470,8 +470,6 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 	}
 	if len(users) == 0 {
 		logrus.Infof("Found %d completed KYC", len(users))
-	}
-	if len(users) == 0 {
 		return nil
 	}
 	freePlan, err := dao.DBClient.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
@@ -513,10 +511,10 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 				}
 			}
 			// Obtain the integral records that are in the active state within normal time. If yes, change the status to failed and create a new one
-			dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
-			if dErr != nil && dErr != gorm.ErrRecordNotFound {
-				return fmt.Errorf("failed to check credits: %w", dErr)
-			}
+			//dErr := tx.Model(&types.Credits{}).Where("user_uid = ? AND from_id = ? AND from_type = ? AND status = ? AND expire_at > ?", user.UserUID, freePlan.ID, types.CreditsFromTypeSubscription, types.CreditsStatusActive, time.Now().UTC()).Update("status", types.CreditsStatusExpired).Error
+			//if dErr != nil && dErr != gorm.ErrRecordNotFound {
+			//	return fmt.Errorf("failed to check credits: %w", dErr)
+			//}
 			now := time.Now().UTC()
 			credits := &types.Credits{
 				ID:         uuid.New(),
@@ -525,15 +523,15 @@ func (p *SubscriptionProcessor) processKYCCredits() error {
 				UsedAmount: 0,
 				FromID:     freePlan.ID.String(),
 				FromType:   types.CreditsFromTypeSubscription,
-				ExpireAt:   now.AddDate(0, 1, 0),
+				ExpireAt:   user.NextAt.AddDate(0, 1, 0),
 				CreatedAt:  now,
-				StartAt:    now,
+				StartAt:    user.NextAt,
 				Status:     types.CreditsStatusActive,
 			}
-			if dErr = tx.Create(credits).Error; dErr != nil {
+			if dErr := tx.Create(credits).Error; dErr != nil {
 				return fmt.Errorf("failed to create credits: %w", dErr)
 			}
-			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", now.AddDate(0, 1, 0)).Error
+			return tx.Model(&types.UserKYC{}).Where("user_uid = ?", user.UserUID).Update("next_at", user.NextAt.AddDate(0, 1, 0)).Error
 		})
 		if err != nil {
 			logrus.Errorf("Failed to update %#+v credits: %v", user, err)
