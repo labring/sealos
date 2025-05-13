@@ -140,6 +140,9 @@ importers:
       decimal.js:
         specifier: ^10.4.3
         version: 10.4.3
+      disposable-email-domains-js:
+        specifier: ^1.11.0
+        version: 1.11.0
       eslint:
         specifier: 8.38.0
         version: 8.38.0
@@ -17308,6 +17311,10 @@ packages:
         integrity: sha512-9S6m9Sukh1cZNknO1CWAr2QAWsbKLafQiyM5gZ7VgXHeuaoUwffKN4q6NC4A/Mf9iiPlOXQEKW/Mv/mh9/3YFA==,
       }
     hasBin: true
+    dev: false
+
+  /disposable-email-domains-js@1.11.0:
+    resolution: {integrity: sha512-uLktJxoBV1xus1cCgjx6sPLH5aS9/AVtJ4FnDHY4Cvn/BDcCZdB/uKT0EMEYdAE1kMef/fzFDR8HHTCwLaiZJA==}
     dev: false
 
   /dlv@1.1.3:

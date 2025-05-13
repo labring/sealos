@@ -8,7 +8,7 @@ import {
   wechatOAuthEnvFilter,
   wechatOAuthGuard
 } from '@/services/backend/middleware/oauth';
-import { getGlobalTokenByWechatSvc } from '@/services/backend/svc/access';
+import { getGlobalTokenSvc } from '@/services/backend/svc/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -24,7 +24,16 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       )(res, async ({ id, name, avatar_url }) => {
         const persistUrl =
           (await persistImage(avatar_url, 'avatar/' + ProviderType.WECHAT + '/' + id)) || '';
-        await getGlobalTokenByWechatSvc(persistUrl, id, name, inviterId, semData, bdVid)(res);
+        // await getGlobalTokenByWechatSvc(persistUrl, id, name, inviterId, semData, bdVid)(res);
+        await getGlobalTokenSvc({
+          avatar_url: persistUrl || '',
+          providerId: id,
+          name,
+          inviterId,
+          semData,
+          bdVid,
+          providerType: 'WECHAT'
+        })(req, res);
       });
     });
   });

@@ -7,7 +7,7 @@ import {
   googleOAuthGuard,
   OauthCodeFilter
 } from '@/services/backend/middleware/oauth';
-import { getGlobalTokenByGoogleSvc } from '@/services/backend/svc/access';
+import { getGlobalTokenSvc } from '@/services/backend/svc/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,15 +25,25 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         )(res, async ({ id, name, avatar_url, email }) => {
           const presistAvatarUrl =
             (await persistImage(avatar_url, 'avatar/' + ProviderType.GOOGLE + '/' + id)) || '';
-          await getGlobalTokenByGoogleSvc(
-            presistAvatarUrl,
-            id,
+          // await getGlobalTokenByGoogleSvc(
+          //   presistAvatarUrl,
+          //   id,
+          //   name,
+          //   email,
+          //   inviterId,
+          //   semData,
+          //   bdVid
+          // )(res);
+          await getGlobalTokenSvc({
+            avatar_url: presistAvatarUrl || '',
+            providerId: id,
             name,
             email,
             inviterId,
             semData,
-            bdVid
-          )(res);
+            bdVid,
+            providerType: 'GOOGLE'
+          })(req, res);
         });
       })
   );

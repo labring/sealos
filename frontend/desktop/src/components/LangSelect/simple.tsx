@@ -35,8 +35,10 @@ export default function LangSelectSimple(props: FlexProps) {
   return (
     <Flex
       userSelect={'none'}
-      w="32px"
-      h="32px"
+      w="36px"
+      h="36px"
+      border={'1px solid '}
+      borderColor={'#0000000D'}
       borderRadius={'50%'}
       justifyContent={'center'}
       alignItems={'center'}

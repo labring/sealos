@@ -5,12 +5,12 @@ import { verifyAccessToken } from '@/services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const regionUser = await verifyAccessToken(req.headers);
-    if (!regionUser)
-      return jsonRes(res, {
-        code: 401,
-        message: 'invalid token'
-      });
+    // const regionUser = await verifyAccessToken(req.headers);
+    // if (!regionUser)
+    //   return jsonRes(res, {
+    //     code: 401,
+    //     message: 'invalid token'
+    //   });
 
     const regionList = await globalPrisma.region.findMany();
     return jsonRes(res, {

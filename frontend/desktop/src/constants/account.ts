@@ -9,3 +9,9 @@ export enum trackEventName {
   'dailyLoginFirst' = 'dailyLoginFirst',
   'signUp' = 'signUp'
 }
+
+export enum SwitchRegionType {
+  INIT = 'INIT',
+  SWITCH = 'SWITCH'
+  // VERIFYEMAIL = 'VERIFYEMAIL'
+}

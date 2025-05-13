@@ -11,6 +11,7 @@ import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
 import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
+import { HttpStatusCode } from 'axios';
 
 export default function Callback() {
   const router = useRouter();
@@ -70,6 +71,11 @@ export default function Callback() {
             if (data.code === 200 && data.data?.token) {
               const token = data.data?.token;
               setToken(token);
+              const needInit = data.data.needInit;
+              if (needInit) {
+                await router.push('/workspace');
+                return;
+              }
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
                 await sessionConfig(regionTokenRes.data);

@@ -12,7 +12,7 @@ import {
   User,
   UserStatus
 } from 'prisma/global/generated/client';
-import { enableSignUp, enableTracking } from '../enable';
+import { enableSignUp, enableTracking, getRegionUid } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
 import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
@@ -184,6 +184,12 @@ async function signUp({
               providerId: id,
               providerType: provider
             }
+          },
+          userInfo: {
+            create: {
+              signUpRegionUid: getRegionUid(),
+              isInited: false
+            }
           }
         }
       });
@@ -238,6 +244,12 @@ export async function signUpByPassword({
               providerId: id,
               providerType: ProviderType.PASSWORD,
               password: hashPassword(password)
+            }
+          },
+          userInfo: {
+            create: {
+              signUpRegionUid: getRegionUid(),
+              isInited: false
             }
           }
         }
@@ -443,13 +455,22 @@ export const getGlobalToken = async ({
     userUid: user.uid,
     userId: user.name
   });
-
+  const userInfo = await globalPrisma.userInfo.findUnique({
+    where: {
+      userUid: user.uid
+    },
+    select: {
+      isInited: true
+    }
+  });
+  let needInit = userInfo ? !userInfo.isInited : false;
   return {
     token,
     user: {
       name: user.nickname,
       avatar: user.avatarUri,
       userUid: user.uid
-    }
+    },
+    needInit
   };
 };

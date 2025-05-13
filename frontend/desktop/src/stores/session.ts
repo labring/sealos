@@ -20,7 +20,7 @@ type SessionState = {
   setFirstUse: (d: Date | null) => void;
   isUserLogin: () => boolean;
   /*
-			when proxy oauth2.0 ,the domainState need to be used 
+			when proxy oauth2.0 ,the domainState need to be used
 	*/
   generateState: (action?: OauthAction, domainState?: string) => string;
   compareState: (state: string) => {
@@ -28,9 +28,10 @@ type SessionState = {
     action: string;
     statePayload: string[];
   };
-
+  lastSigninProvier?: string;
+  setLastSigninProvider: (provider?: string) => void;
   setProvider: (provider?: OauthProvider) => void;
-  setToken: (token: string) => void;
+  setToken: (token: string, rememberMe?: boolean) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
 };
@@ -40,6 +41,7 @@ const useSessionStore = create<SessionState>()(
     immer((set, get) => ({
       session: undefined,
       provider: undefined,
+      lastSigninProvier: undefined,
       firstUse: null,
       oauth_state: '',
       token: '',
@@ -48,6 +50,9 @@ const useSessionStore = create<SessionState>()(
         set({
           firstUse: d
         });
+      },
+      setLastSigninProvider(provider?: string) {
+        set({ lastSigninProvier: provider });
       },
       setSession: (ss: Session) => set({ session: ss }),
       setSessionProp: (key: keyof Session, value: any) => {
@@ -87,8 +92,17 @@ const useSessionStore = create<SessionState>()(
       setProvider: (provider?: OauthProvider) => {
         set({ provider });
       },
-      setToken: (token) => {
+      setToken: (token, rememberMe = false) => {
         set({ token });
+        if (typeof window !== 'undefined') {
+          if (rememberMe) {
+            localStorage.setItem('auth_token', token);
+            sessionStorage.removeItem('auth_token');
+          } else {
+            sessionStorage.setItem('auth_token', token);
+            localStorage.removeItem('auth_token');
+          }
+        }
       },
       setWorkSpaceId: (id) => {
         set({ lastWorkSpaceId: id });
