@@ -158,7 +158,7 @@ export default function WorkspaceToggle() {
                     cursor={'pointer'}
                   >
                     <Plus size={20} color="#71717A" />
-                    <Text fontSize="14px" fontWeight="500" color="#18181B">
+                    <Text fontSize="14px" fontWeight="400" color="#18181B">
                       {t('common:create_workspace')}
                     </Text>
                   </Flex>

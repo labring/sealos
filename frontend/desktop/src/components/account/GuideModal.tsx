@@ -248,7 +248,6 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
         </Flex>
         <Box
           borderTopRadius={'12px'}
-          bg={'#EFF3FF'}
           p={'20px 12px 0px 12px'}
           width={'390px'}
           height={'158px'}
@@ -256,6 +255,9 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
           opacity={isActive ? 1 : 0}
           transition="all 0.5s ease"
           ml={'auto'}
+          backgroundImage={'/images/onboarding/bg.png'}
+          backgroundSize={'cover'}
+          backgroundPosition={'center'}
         >
           <Image
             style={{
@@ -275,7 +277,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
       <ModalContent
         minW={'900px'}
         h={'510px'}
-        p={'4px'}
+        // p={'4px'}
         borderRadius={'20px'}
         background={'#FAFAFA'}
       >

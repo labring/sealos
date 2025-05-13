@@ -18,18 +18,32 @@ import {
   useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'next-i18next';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { i18n, useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
-import { Bell, Copy, CreditCard, FileCode, Gift, LogOut, Sparkles, User } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Bell,
+  Copy,
+  CreditCard,
+  FileCode,
+  Gift,
+  Globe,
+  LogOut,
+  Sparkles,
+  User
+} from 'lucide-react';
 import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import GuideModal from './GuideModal';
-import LangSelectSimple from '../LangSelect/simple';
 import AccountCenter from './AccountCenter';
+import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
+import { getAmount } from '@/api/auth';
+import Decimal from 'decimal.js';
+import { CurrencySymbol } from '@sealos/ui';
 
 const baseItemStyle = {
   minW: '36px',
@@ -47,7 +61,7 @@ export default function Account() {
   const [showId, setShowId] = useState(true);
   const router = useRouter();
   const { copyData } = useCopyData();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { delSession, session, setToken } = useSessionStore();
   const user = session?.user;
   const queryclient = useQueryClient();
@@ -58,7 +72,7 @@ export default function Account() {
   const { colorMode, toggleColorMode } = useColorMode();
   const guideDisclosure = useDisclosure();
   const { setInitGuide, initGuide } = useInitWorkspaceStore();
-
+  const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
@@ -94,6 +108,28 @@ export default function Account() {
       pathname: '/'
     });
   };
+
+  const openReferralApp = () => {
+    openDesktopApp({
+      appKey: 'system-invite',
+      pathname: '/'
+    });
+  };
+
+  const { data } = useQuery({
+    queryKey: ['getAmount', { userId: user?.userCrUid }],
+    queryFn: getAmount,
+    enabled: !!user,
+    staleTime: 60 * 1000
+  });
+
+  const balance = useMemo(() => {
+    let realBalance = new Decimal(data?.data?.balance || 0);
+    if (data?.data?.deductionBalance) {
+      realBalance = realBalance.minus(new Decimal(data.data.deductionBalance));
+    }
+    return realBalance.toNumber();
+  }, [data]);
 
   return (
     <Box position={'relative'} flex={1}>
@@ -149,22 +185,10 @@ export default function Account() {
               cursor={'pointer'}
               onClick={openCostCenterApp}
             >
-              <Sparkles color="#2563EB" width={'16px'} height={'16px'} />
-              {t('v2:double_first_deposit')}
-            </Center>
-          )}
-
-          {layoutConfig?.version === 'cn' && (
-            <Center
-              ml={'12px'}
-              cursor={'pointer'}
-              {...baseItemStyle}
-              px={'8px'}
-              borderRadius={'8px'}
-              border={'1px solid transparent'}
-              onClick={openWorkOrderApp}
-            >
-              {t('v2:support')}
+              {t('common:balance')}
+              <Divider orientation="vertical" />
+              <CurrencySymbol />
+              {balance}
             </Center>
           )}
 
@@ -194,6 +218,20 @@ export default function Account() {
               {t('common:doc')}
             </Center>
           )}
+
+          {layoutConfig?.version === 'cn' && (
+            <Center
+              ml={'12px'}
+              cursor={'pointer'}
+              {...baseItemStyle}
+              px={'8px'}
+              borderRadius={'8px'}
+              border={'1px solid transparent'}
+              onClick={openWorkOrderApp}
+            >
+              {t('v2:support')}
+            </Center>
+          )}
         </Flex>
 
         <Flex
@@ -204,7 +242,7 @@ export default function Account() {
           height={'100%'}
           alignItems={'center'}
         >
-          <LangSelectSimple />
+          {/* <LangSelectSimple /> */}
           {/* <CustomTooltip placement={'bottom'} label={t('common:language')}>
             <Center>
             </Center>
@@ -261,17 +299,18 @@ export default function Account() {
                 {layoutConfig?.common.accountSettingEnabled && (
                   <AccountCenter>
                     <MenuItem
+                      _focus={{ bg: 'transparent' }}
                       mt="0px"
                       py="6px"
                       px="8px"
                       borderRadius="8px"
-                      _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                      _hover={{ bg: '#F4F4F5' }}
                     >
                       <Flex alignItems="center" gap="8px">
                         <Center w="20px" h="20px">
                           <User size={16} color="#737373" />
                         </Center>
-                        <Text fontSize="14px" fontWeight="500">
+                        <Text fontSize="14px" fontWeight="400">
                           {t('common:account_settings')}
                         </Text>
                       </Flex>
@@ -283,7 +322,7 @@ export default function Account() {
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                  _hover={{ bg: '#F4F4F5' }}
                   onClick={() => {
                     openAccountCenterApp('plan');
                   }}
@@ -313,23 +352,24 @@ export default function Account() {
                         />
                       </svg>
                     </Center>
-                    <Text fontSize="14px" fontWeight="500">
+                    <Text fontSize="14px" fontWeight="400">
                       {t('common:plan')}
                     </Text>
                   </Flex>
                 </MenuItem> */}
                 <MenuItem
+                  _focus={{ bg: 'transparent' }}
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                  _hover={{ bg: '#F4F4F5' }}
                   onClick={openCostCenterApp}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
                       <CreditCard size={16} color="#737373" />
                     </Center>
-                    <Text fontSize="14px" fontWeight="500">
+                    <Text fontSize="14px" fontWeight="400">
                       {t('common:billing')}
                     </Text>
                   </Flex>
@@ -339,14 +379,14 @@ export default function Account() {
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-                  onClick={() => {}}
+                  _hover={{ bg: '#F4F4F5' }}
+                  onClick={openReferralApp}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
                       <Gift size={16} color="#737373" />
                     </Center>
-                    <Text fontSize="14px" fontWeight="500">
+                    <Text fontSize="14px" fontWeight="400">
                       {t('common:referral')}
                     </Text>
                   </Flex>
@@ -358,7 +398,7 @@ export default function Account() {
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                  _hover={{ bg: '#F4F4F5' }}
                   onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
                 >
                   <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
@@ -366,7 +406,7 @@ export default function Account() {
                       <Center w="20px" h="20px">
                         <Palette size={16} color="#737373" />
                       </Center>
-                      <Text fontSize="14px" fontWeight="500">
+                      <Text fontSize="14px" fontWeight="400">
                         {t('common:theme')}
                       </Text>
                     </Flex>
@@ -376,7 +416,7 @@ export default function Account() {
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                  _hover={{ bg: '#F4F4F5' }}
                   onClick={() => kubeconfig && download('kubeconfig.yaml', kubeconfig)}
                 >
                   <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
@@ -384,7 +424,7 @@ export default function Account() {
                       <Center w="20px" h="20px">
                         <FileCode size={16} color="#737373" />
                       </Center>
-                      <Text fontSize="14px" fontWeight="500">
+                      <Text fontSize="14px" fontWeight="400">
                         Kubeconfig
                       </Text>
                     </Flex>
@@ -400,6 +440,28 @@ export default function Account() {
                     </Box>
                   </Flex>
                 </MenuItem>
+
+                <MenuItem
+                  py="6px"
+                  px="8px"
+                  borderRadius="8px"
+                  _hover={{ bg: '#F4F4F5' }}
+                  onClick={toggleLanguage}
+                >
+                  <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
+                    <Flex alignItems="center" gap="8px">
+                      <Center w="20px" h="20px">
+                        <Globe size={16} color="#737373" />
+                      </Center>
+                      <Text fontSize="14px" fontWeight="400">
+                        {currentLanguage === 'zh' ? '中文' : 'English'}
+                      </Text>
+                    </Flex>
+                    <Box p="2px" cursor="pointer">
+                      <ArrowLeftRight size={16} color="#737373" />
+                    </Box>
+                  </Flex>
+                </MenuItem>
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p="8px">
@@ -407,7 +469,7 @@ export default function Account() {
                   py="6px"
                   px="8px"
                   borderRadius="8px"
-                  _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                  _hover={{ bg: '#F4F4F5' }}
                   onClick={logout}
                 >
                   <Flex alignItems="center" gap="8px" justifyContent="space-between" width="100%">
@@ -415,7 +477,7 @@ export default function Account() {
                       <Center w="20px" h="20px">
                         <LogOut size={16} color="#737373" />
                       </Center>
-                      <Text fontSize="14px" fontWeight="500">
+                      <Text fontSize="14px" fontWeight="400">
                         {t('common:log_out')}
                       </Text>
                     </Flex>

@@ -43,14 +43,14 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
           <Box>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Create Devbox
+                {t('v2:devbox_create_title')}
               </Text>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                 1/4
               </Text>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Enter DevBox to create a new development environment
+              {t('v2:devbox_create_desc')}
             </Text>
             <Center
               color={'#fff'}
@@ -142,14 +142,14 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
           <Box>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Create Launchpad
+                {t('v2:launchpad_create_title')}
               </Text>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                 1/4
               </Text>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Open App Launchpad to deploy a Docker image
+              {t('v2:launchpad_create_desc')}
             </Text>
             <Center
               color={'#fff'}
@@ -241,14 +241,14 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
           <Box>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Choose from template
+                {t('v2:template_create_title')}
               </Text>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                 1/3
               </Text>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Explore App Store to deploy an application from a template
+              {t('v2:template_create_desc')}
             </Text>
             <Center
               color={'#fff'}
@@ -339,14 +339,14 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
           <Box>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Access Database
+                {t('v2:database_create_title')}
               </Text>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                 1/3
               </Text>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Open database app to deploy a database
+              {t('v2:database_create_desc')}
             </Text>
             <Center
               color={'#fff'}

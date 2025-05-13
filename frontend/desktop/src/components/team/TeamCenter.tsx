@@ -155,10 +155,10 @@ export default function TeamCenter({
           h="550px"
           bgColor={'rgba(255, 255, 255, 0.9)'}
           backdropFilter="blur(150px)"
-          p={'4px'}
-          boxShadow={
-            '0px 20px 25px -5px rgba(0, 0, 0, 0.10), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)'
-          }
+          // p={'4px'}
+          // boxShadow={
+          //   '0px 20px 25px -5px rgba(0, 0, 0, 0.10), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          // }
         >
           <ModalCloseButton zIndex={'99'} />
           <ModalBody
@@ -167,7 +167,7 @@ export default function TeamCenter({
             w="100%"
             p="0"
             position={'relative'}
-            border={'1px solid #E4E4E7'}
+            // border={'1px solid #E4E4E7'}
             borderRadius={'16px'}
           >
             <Box position={'absolute'} bottom={'16px'} left="16px">

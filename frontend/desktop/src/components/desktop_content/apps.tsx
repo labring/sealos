@@ -22,7 +22,7 @@ import { ArrowRight, Volume2 } from 'lucide-react';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
-  const { installedApps, openApp } = useAppStore();
+  const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
   const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
 
@@ -41,10 +41,10 @@ export default function Apps() {
 
   // grid value
   const gridMX = 0;
-  const gridMT = 56;
+  const gridMT = 46;
   const gridSpacing = 48;
   const appWidth = 120;
-  const appHeight = 108;
+  const appHeight = 128;
   const pageButton = 12;
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -276,6 +276,34 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
+  const gradientIconStyle = {
+    '.gradient-icon': {
+      svg: {
+        stroke: 'url(#iconGradient)'
+      },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        width: '0',
+        height: '0'
+      }
+    }
+  };
+
+  // const openCostCenterApp = () => {
+  //   openDesktopApp({
+  //     appKey: 'system-costcenter',
+  //     pathname: '/'
+  //   });
+  // };
+
+  const openReferralApp = () => {
+    openDesktopApp({
+      appKey: 'system-invite',
+      pathname: '/'
+    });
+  };
+
   return (
     <Flex
       flexDirection={'column'}
@@ -287,7 +315,16 @@ export default function Apps() {
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDropOnDesktop}
       px={'100px'}
+      sx={gradientIconStyle}
     >
+      <svg width="0" height="0" style={{ position: 'absolute' }}>
+        <defs>
+          <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#636363" />
+            <stop offset="100%" stopColor="#000" />
+          </linearGradient>
+        </defs>
+      </svg>
       <Flex width={'full'} height={'full'} overflow={'auto'} flexDirection={'column'}>
         <Center>
           <Center
@@ -299,12 +336,16 @@ export default function Apps() {
             }
             gap={'8px'}
             p={'8px 12px'}
+            cursor={'pointer'}
+            onClick={openReferralApp}
           >
-            <Volume2 width={16} height={16} color={'#969696'} />
+            <Box position="relative" className="gradient-icon">
+              <Volume2 width={16} height={16} />
+            </Box>
             <Text
               fontSize={'14px'}
               fontWeight={'500'}
-              background={'linear-gradient(120deg, #969696 0%, #000 100%)'}
+              background={'linear-gradient(120deg, #636363 0%, #000 100%)'}
               backgroundClip={'text'}
               sx={{
                 WebkitBackgroundClip: 'text',
@@ -313,7 +354,9 @@ export default function Apps() {
             >
               {t('v2:invite_friend')}
             </Text>
-            <ArrowRight width={16} height={16} color={'#000'} />
+            <Box position="relative" className="gradient-icon">
+              <ArrowRight width={16} height={16} />
+            </Box>
           </Center>
         </Center>
 
@@ -331,6 +374,7 @@ export default function Apps() {
             <Flex
               draggable
               flexDirection={'column'}
+              justifyContent={'center'}
               alignItems={'center'}
               key={index}
               userSelect="none"
