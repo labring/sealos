@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 // OS = object storage, OSU = object storage user
@@ -60,16 +61,18 @@ type ObjectStorageUserReconciler struct {
 }
 
 const (
-	UserNormalGroup       = "userNormal"
-	UserDenyWriteGroup    = "userDenyWrite"
-	AccessKey             = "CONSOLE_ACCESS_KEY"
-	SecretKey             = "CONSOLE_SECRET_KEY"
-	OSUDetectionCycleEnv  = "OSUDetectionCycleSeconds"
-	OSInternalEndpointEnv = "OSInternalEndpoint"
-	OSExternalEndpointEnv = "OSExternalEndpoint"
-	OSNamespace           = "OSNamespace"
-	OSAdminSecret         = "OSAdminSecret"
-	QuotaEnabled          = "QuotaEnabled"
+	UserNormalGroup         = "userNormal"
+	UserDenyWriteGroup      = "userDenyWrite"
+	AccessKey               = "CONSOLE_ACCESS_KEY"
+	SecretKey               = "CONSOLE_SECRET_KEY"
+	OSUDetectionCycleEnv    = "OSUDetectionCycleSeconds"
+	OSInternalEndpointEnv   = "OSInternalEndpoint"
+	OSExternalEndpointEnv   = "OSExternalEndpoint"
+	OSNamespace             = "OSNamespace"
+	OSAdminSecret           = "OSAdminSecret"
+	QuotaEnabled            = "QuotaEnabled"
+	MaxConcurrentReconciles = "MaxConcurrentReconciles"
+	ReconcileRequeue        = "ReconcileRequeue"
 
 	OSKeySecret          = "object-storage-key"
 	OSKeySecretAccessKey = "accessKey"
@@ -464,7 +467,7 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("object-storage-user-controller")
 	r.Logger.V(1).Info("starting object storage user controller")
 
-	oSUDetectionCycleSecond := env.GetInt64EnvWithDefault(OSUDetectionCycleEnv, 180)
+	oSUDetectionCycleSecond := env.GetInt64EnvWithDefault(OSUDetectionCycleEnv, 3600)
 	r.OSUDetectionCycle = time.Duration(oSUDetectionCycleSecond) * time.Second
 
 	internalEndpoint := env.GetEnvWithDefault(OSInternalEndpointEnv, "")
@@ -479,6 +482,8 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	oSAdminSecret := env.GetEnvWithDefault(OSAdminSecret, "")
 	r.OSAdminSecret = oSAdminSecret
 
+	maxConcurrentReconciles := env.GetIntEnvWithDefault(MaxConcurrentReconciles, 1)
+
 	if internalEndpoint == "" || externalEndpoint == "" || oSNamespace == "" || oSAdminSecret == "" {
 		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
@@ -488,5 +493,8 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&objectstoragev1.ObjectStorageUser{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: maxConcurrentReconciles,
+		}).
 		Complete(r)
 }
