@@ -34,6 +34,7 @@ export default function LangSelectSimple(props: FlexProps) {
 
   return (
     <Flex
+      flexShrink={0}
       userSelect={'none'}
       w="36px"
       h="36px"
@@ -43,9 +44,13 @@ export default function LangSelectSimple(props: FlexProps) {
       justifyContent={'center'}
       alignItems={'center'}
       backgroundColor={'#FFF'}
-      color={'#152539'}
+      color={'primary'}
       cursor={'pointer'}
       fontWeight={500}
+      fontSize={'14px'}
+      _hover={{
+        background: 'secondary'
+      }}
       {...props}
       onClick={
         layoutConfig?.forcedLanguage

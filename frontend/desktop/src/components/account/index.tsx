@@ -21,7 +21,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
@@ -29,6 +29,7 @@ import { Bell, Copy, CreditCard, FileCode, Gift, LogOut, Sparkles, User } from '
 import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import GuideModal from './GuideModal';
 import LangSelectSimple from '../LangSelect/simple';
+import AccountCenter from './AccountCenter';
 
 const baseItemStyle = {
   minW: '36px',
@@ -68,30 +69,28 @@ export default function Account() {
     setToken('');
   };
 
-  console.log(layoutConfig, 'layoutConfig');
-
   const openWorkOrderApp = () => {
     const workorder = installedApps.find((t) => t.key === 'system-workorder');
     if (!workorder) return;
     openApp(workorder);
   };
 
-  const openAccountCenterApp = (page?: string) => {
-    openDesktopApp({
-      appKey: 'system-account-center',
-      query: {
-        page: page || 'plan'
-      },
-      messageData: {
-        page: page || 'plan'
-      },
-      pathname: '/redirect'
-    });
-  };
+  // const openAccountCenterApp = (page?: string) => {
+  //   openDesktopApp({
+  //     appKey: 'system-account-center',
+  //     query: {
+  //       page: page || 'plan'
+  //     },
+  //     messageData: {
+  //       page: page || 'plan'
+  //     },
+  //     pathname: '/redirect'
+  //   });
+  // };
 
   const openCostCenterApp = () => {
     openDesktopApp({
-      appKey: 'system-cost-center',
+      appKey: 'system-costcenter',
       pathname: '/'
     });
   };
@@ -134,35 +133,36 @@ export default function Account() {
         </Flex>
 
         <Flex gap={'4px'} ml={'auto'}>
-          <Center
-            borderRadius={'8px'}
-            bg={
-              'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-            }
-            px={'12px'}
-            py={'8px'}
-            gap={'12px'}
-            color="#2563EB"
-            fontSize={'14px'}
-            fontWeight={'500'}
-            cursor={'pointer'}
-          >
-            <Sparkles color="#2563EB" width={'16px'} height={'16px'} />
-            {t('v2:upgrade_plan')}
-          </Center>
+          {layoutConfig?.version === 'cn' && (
+            <Center
+              borderRadius={'8px'}
+              bg={
+                'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+              }
+              h={'36px'}
+              px={'12px'}
+              py={'8px'}
+              gap={'12px'}
+              color="#2563EB"
+              fontSize={'14px'}
+              fontWeight={'500'}
+              cursor={'pointer'}
+              onClick={openCostCenterApp}
+            >
+              <Sparkles color="#2563EB" width={'16px'} height={'16px'} />
+              {t('v2:double_first_deposit')}
+            </Center>
+          )}
 
           {layoutConfig?.version === 'cn' && (
             <Center
-              className="guide-button"
+              ml={'12px'}
               cursor={'pointer'}
               {...baseItemStyle}
               px={'8px'}
               borderRadius={'8px'}
               border={'1px solid transparent'}
-              onClick={() => {
-                guideDisclosure.onOpen();
-                setInitGuide(false);
-              }}
+              onClick={openWorkOrderApp}
             >
               {t('v2:support')}
             </Center>
@@ -204,7 +204,7 @@ export default function Account() {
           height={'100%'}
           alignItems={'center'}
         >
-          <LangSelectSimple {...baseItemStyle} />
+          <LangSelectSimple />
           {/* <CustomTooltip placement={'bottom'} label={t('common:language')}>
             <Center>
             </Center>
@@ -259,26 +259,26 @@ export default function Account() {
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>
                 {layoutConfig?.common.accountSettingEnabled && (
-                  <MenuItem
-                    mt="0px"
-                    py="6px"
-                    px="8px"
-                    borderRadius="8px"
-                    _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-                    // onClick={() => {
-                    //   openAccountCenterApp('setting');
-                    // }}
-                  >
-                    <Flex alignItems="center" gap="8px">
-                      <Center w="20px" h="20px">
-                        <User size={16} color="#737373" />
-                      </Center>
-                      <Text fontSize="14px" fontWeight="500">
-                        {t('common:account_settings')}
-                      </Text>
-                    </Flex>
-                  </MenuItem>
+                  <AccountCenter>
+                    <MenuItem
+                      mt="0px"
+                      py="6px"
+                      px="8px"
+                      borderRadius="8px"
+                      _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
+                    >
+                      <Flex alignItems="center" gap="8px">
+                        <Center w="20px" h="20px">
+                          <User size={16} color="#737373" />
+                        </Center>
+                        <Text fontSize="14px" fontWeight="500">
+                          {t('common:account_settings')}
+                        </Text>
+                      </Flex>
+                    </MenuItem>
+                  </AccountCenter>
                 )}
+
                 {/* <MenuItem
                   py="6px"
                   px="8px"
@@ -340,9 +340,7 @@ export default function Account() {
                   px="8px"
                   borderRadius="8px"
                   _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
-                  onClick={() => {
-                    openAccountCenterApp('referral');
-                  }}
+                  onClick={() => {}}
                 >
                   <Flex alignItems="center" gap="8px">
                     <Center w="20px" h="20px">
@@ -429,22 +427,6 @@ export default function Account() {
         </Flex>
 
         {/*
-        {layoutConfig?.common.accountSettingEnabled && (
-          <Flex
-            borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}
-            color={'white'}
-            fontSize={'base'}
-            fontWeight={'bold'}
-            justifyContent={'space-between'}
-            alignItems={'center'}
-            py={'12px'}
-            px={'16px'}
-          >
-            <Text>{t('common:account_settings')}</Text>
-            <AccountCenter variant={'white-bg-icon'} p="4px" />
-          </Flex>
-        )}
-
         {layoutConfig?.common.workorderEnabled && (
           <Flex
             borderBottom={'1px solid rgba(255, 255, 255, 0.05)'}

@@ -44,6 +44,10 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   const { workspaceInviteCode, setWorkspaceInviteCode } = useCallbackStore();
   const { setCanShowGuide } = useDesktopConfigStore();
 
+  useEffect(() => {
+    colorMode === 'dark' ? toggleColorMode() : null;
+  }, [colorMode, toggleColorMode]);
+
   const [showMoreApps, setShowMoreApps] = useState(false);
   const queryClient = useQueryClient();
   const swtichWorksapceMutation = useMutation({

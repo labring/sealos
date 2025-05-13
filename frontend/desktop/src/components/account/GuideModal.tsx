@@ -99,27 +99,22 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
       description: t('v2:devbox_desc'),
       steps: [
         {
-          title: 'Access DevBox',
-          description: 'Enter the DevBox page and create a new development environment.',
+          title: t('v2:devbox_step_1'),
+          description: t('v2:devbox_step_1_desc'),
           image: '/images/onboarding/devbox-1.png'
         },
         {
-          title: 'Configure Your DevBox',
-          description: 'Set up your development environment with your preferred settings.',
+          title: t('v2:devbox_step_2'),
+          description: t('v2:devbox_step_2_desc'),
           image: '/images/onboarding/devbox-2.png'
         },
         {
-          title: 'Start Coding in Your IDE',
-          description: 'Begin coding in your preferred IDE with all configurations set.',
+          title: t('v2:devbox_step_3'),
+          description: t('v2:devbox_step_3_desc'),
           image: '/images/onboarding/devbox-3.png'
-        },
-        {
-          title: 'Manage and Deploy',
-          description: 'Manage your development environment and deploy your application.',
-          image: '/images/onboarding/devbox-4.png'
         }
       ],
-      stepNumbers: 4
+      stepNumbers: 3
     },
     {
       key: 'system-applaunchpad',
@@ -128,19 +123,19 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
       description: t('v2:launchpad_desc'),
       steps: [
         {
-          title: 'Create App Launchpad',
-          description: 'Open App Launchpad to deploy a Docker image',
-          image: '/images/onboarding/launchpad-1.png'
+          title: t('v2:launchpad_step_1'),
+          description: t('v2:launchpad_step_1_desc'),
+          image: '/images/onboarding/app-launchpad-1.png'
         },
         {
-          title: 'Configure Launchpad',
-          description: 'Define image settings, and adjust CPU & memory as needed',
-          image: '/images/onboarding/launchpad-2.png'
+          title: t('v2:launchpad_step_2'),
+          description: t('v2:launchpad_step_2_desc'),
+          image: '/images/onboarding/app-launchpad-2.png'
         },
         {
-          title: 'Access Application',
-          description: 'Copy the Private or Public Address for access',
-          image: '/images/onboarding/launchpad-3.png'
+          title: t('v2:launchpad_step_3'),
+          description: t('v2:launchpad_step_3_desc'),
+          image: '/images/onboarding/app-launchpad-3.png'
         }
       ],
       stepNumbers: 4
@@ -152,13 +147,13 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
       description: t('v2:template_desc'),
       steps: [
         {
-          title: 'Choose from template',
-          description: 'Explore App Store to deploy an application from a template',
+          title: t('v2:template_step_1'),
+          description: t('v2:template_step_1_desc'),
           image: '/images/onboarding/appstore-1.png'
         },
         {
-          title: 'Access Application',
-          description: 'Get the private or public address from App Launchpad',
+          title: t('v2:template_step_2'),
+          description: t('v2:template_step_2_desc'),
           image: '/images/onboarding/appstore-2.png'
         }
       ],
@@ -171,18 +166,18 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
       description: t('v2:database_desc'),
       steps: [
         {
-          title: 'Access Database',
-          description: 'Open database app to deploy a database',
+          title: t('v2:database_step_1'),
+          description: t('v2:database_step_1_desc'),
           image: '/images/onboarding/database-1.png'
         },
         {
-          title: 'Deploy a New Database',
-          description: 'Choose a database type, and adjust CPU & memory as needed',
+          title: t('v2:database_step_2'),
+          description: t('v2:database_step_2_desc'),
           image: '/images/onboarding/database-2.png'
         },
         {
-          title: 'Manage & Connect to the Database',
-          description: 'Retrieve connection details and manage the database',
+          title: t('v2:database_step_3'),
+          description: t('v2:database_step_3_desc'),
           image: '/images/onboarding/database-3.png'
         }
       ],
@@ -282,8 +277,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
         h={'510px'}
         p={'4px'}
         borderRadius={'20px'}
-        background={'rgba(255, 255, 255, 0.80)'}
-        boxShadow={'0px 10px 15px -3px rgba(0, 0, 0, 0.10), 0px 4px 6px -2px rgba(0, 0, 0, 0.05)'}
+        background={'#FAFAFA'}
       >
         <Flex
           flexDirection="column"
@@ -291,8 +285,6 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
           w={'100%'}
           h={'100%'}
           borderRadius={'16px'}
-          border={'1px solid #B0CBFF'}
-          boxShadow={'0px 1px 2px 0px rgba(0, 0, 0, 0.05)'}
           px={'40px'}
         >
           {selectedGuide !== null ? (
@@ -328,13 +320,13 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
 
                     switch (cur.key) {
                       case 'system-applaunchpad':
-                        return startDriver(appLaunchpadDriverObj(openDesktopApp));
+                        return startDriver(appLaunchpadDriverObj(openDesktopApp, t));
                       case 'system-template':
-                        return startDriver(templateDriverObj(openDesktopApp));
+                        return startDriver(templateDriverObj(openDesktopApp, t));
                       case 'system-dbprovider':
-                        return startDriver(databaseDriverObj(openDesktopApp));
+                        return startDriver(databaseDriverObj(openDesktopApp, t));
                       case 'system-devbox':
-                        return startDriver(devboxDriverObj(openDesktopApp));
+                        return startDriver(devboxDriverObj(openDesktopApp, t));
                       default:
                         return;
                     }
@@ -404,7 +396,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                 <Text fontSize={'24px'} fontWeight={600} color={'#000'} lineHeight={'24px'}>
                   {initGuide
                     ? t('v2:guide_title', { name: infoData.data?.nickname || '' })
-                    : 'Quickstart guide'}
+                    : t('v2:quickstart_guide')}
                 </Text>
                 <Text
                   mt={'8px'}
@@ -435,16 +427,16 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                     cursor={'pointer'}
                     gap={'16px'}
                   >
-                    <Center
-                      flexShrink={0}
-                      width={'40px'}
-                      height={'40px'}
-                      borderRadius={'7px'}
-                      border={'0.5px solid #E4E4E7'}
-                      background={'rgba(255, 255, 255, 0.90)'}
-                      boxShadow={'0px 0.455px 1.818px 0px rgba(0, 0, 0, 0.12)'}
-                    >
-                      <Image width={'24px'} height={'24px'} src={item.icon} alt="guide" />
+                    <Center flexShrink={0} width={'40px'} height={'40px'} borderRadius={'12px'}>
+                      <Image
+                        boxShadow={'0px 2.889px 4.334px -0.867px rgba(0, 0, 0, 0.05)'}
+                        border={'0.5px solid rgba(0, 0, 0, 0.05)'}
+                        borderRadius={'12px'}
+                        width={'40px'}
+                        height={'40px'}
+                        src={item.icon}
+                        alt="guide"
+                      />
                     </Center>
                     <Box>
                       <Text
@@ -483,7 +475,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                 onClick={() => {
                   setInitGuide(false);
                   onClose();
-                  startDriver(quitGuideDriverObj);
+                  startDriver(quitGuideDriverObj(t));
                 }}
               >
                 {t('v2:step_title')}

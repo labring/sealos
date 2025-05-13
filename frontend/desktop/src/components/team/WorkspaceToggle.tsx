@@ -13,6 +13,7 @@ import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { ChevronDown, Plus } from 'lucide-react';
 import CreateTeam from './CreateTeam';
+import BoringAvatar from 'boring-avatars';
 
 export default function WorkspaceToggle() {
   const disclosure = useDisclosure();
@@ -70,6 +71,15 @@ export default function WorkspaceToggle() {
         pr={'8px'}
         bg={disclosure.isOpen ? 'secondary' : ''}
       >
+        {namespace?.id && (
+          <Box boxSize={'24px'}>
+            <BoringAvatar
+              size={24}
+              name={namespace?.id}
+              colors={['#ff9e9e', '#b4f8cc', '#4294ff', '#ffe5f0', '#03e2db']}
+            />
+          </Box>
+        )}
         <Text color={'primary'} fontSize={'14px'} fontWeight={'500'} textTransform={'capitalize'}>
           {namespace?.teamName}
           {/* {namespace?.nstype === NSType.Private ? t('common:default_team') : namespace?.teamName} */}

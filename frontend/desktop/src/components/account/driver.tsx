@@ -2,11 +2,11 @@ import { Flex, Text, Box, Center } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { X } from 'lucide-react';
-import { i18n } from 'next-i18next';
+import { TFunction } from 'next-i18next';
 
 let currentDriver: any = null;
 
-export function startDriver(config: Config, openDesktopApp?: any) {
+export function startDriver(config: Config) {
   if (currentDriver) {
     currentDriver.destroy();
     currentDriver = null;
@@ -21,7 +21,7 @@ export function startDriver(config: Config, openDesktopApp?: any) {
   return driverObj;
 }
 
-export const devboxDriverObj = (openDesktopApp?: any): Config => ({
+export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -64,10 +64,10 @@ export const devboxDriverObj = (openDesktopApp?: any): Config => ({
               h={'32px'}
               p={'8px'}
               onClick={() => {
-                startDriver(quitGuideDriverObj);
+                startDriver(quitGuideDriverObj(t));
               }}
             >
-              Quit Guide
+              {t('v2:quit_guide')}
             </Center>
           </Box>
         )
@@ -119,7 +119,7 @@ export const devboxDriverObj = (openDesktopApp?: any): Config => ({
   onDestroyed: () => {}
 });
 
-export const appLaunchpadDriverObj = (openDesktopApp?: any): Config => ({
+export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -163,10 +163,10 @@ export const appLaunchpadDriverObj = (openDesktopApp?: any): Config => ({
               h={'32px'}
               p={'8px'}
               onClick={() => {
-                startDriver(quitGuideDriverObj);
+                startDriver(quitGuideDriverObj(t));
               }}
             >
-              Quit Guide
+              {t('v2:quit_guide')}
             </Center>
           </Box>
         )
@@ -219,7 +219,7 @@ export const appLaunchpadDriverObj = (openDesktopApp?: any): Config => ({
   onDestroyed: () => {}
 });
 
-export const templateDriverObj = (openDesktopApp?: any): Config => ({
+export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -262,10 +262,10 @@ export const templateDriverObj = (openDesktopApp?: any): Config => ({
               h={'32px'}
               p={'8px'}
               onClick={() => {
-                startDriver(quitGuideDriverObj);
+                startDriver(quitGuideDriverObj(t));
               }}
             >
-              Quit Guide
+              {t('v2:quit_guide')}
             </Center>
           </Box>
         )
@@ -317,7 +317,7 @@ export const templateDriverObj = (openDesktopApp?: any): Config => ({
   onDestroyed: () => {}
 });
 
-export const databaseDriverObj = (openDesktopApp?: any): Config => ({
+export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: false,
@@ -360,10 +360,10 @@ export const databaseDriverObj = (openDesktopApp?: any): Config => ({
               h={'32px'}
               p={'8px'}
               onClick={() => {
-                startDriver(quitGuideDriverObj);
+                startDriver(quitGuideDriverObj(t));
               }}
             >
-              Quit Guide
+              {t('v2:quit_guide')}
             </Center>
           </Box>
         )
@@ -415,7 +415,7 @@ export const databaseDriverObj = (openDesktopApp?: any): Config => ({
   onDestroyed: () => {}
 });
 
-export const quitGuideDriverObj: Config = {
+export const quitGuideDriverObj = (t: TFunction): Config => ({
   showProgress: false,
   allowClose: false,
   allowClickMaskNextStep: true,
@@ -448,7 +448,7 @@ export const quitGuideDriverObj: Config = {
                   strokeLinejoin="round"
                 />
               </svg>
-              <Text>{i18n?.t('v2:guide')}</Text>
+              <Text>{t('v2:guide')}</Text>
               <Box
                 cursor={'pointer'}
                 ml={'auto'}
@@ -462,7 +462,7 @@ export const quitGuideDriverObj: Config = {
             </Flex>
 
             <Flex flexDirection={'column'} mt={'8px'} fontSize={'14px'} fontWeight={'400'}>
-              {i18n?.t('v2:quit_guide_description')}
+              {t('v2:quit_guide_description')}
             </Flex>
             <Center
               cursor={'pointer'}
@@ -478,7 +478,7 @@ export const quitGuideDriverObj: Config = {
                 currentDriver = null;
               }}
             >
-              {i18n?.t('v2:got_it')}
+              {t('v2:got_it')}
             </Center>
           </Box>
         )
@@ -505,4 +505,4 @@ export const quitGuideDriverObj: Config = {
   onDestroyed: () => {
     console.log('onDestroyed');
   }
-};
+});

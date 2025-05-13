@@ -18,6 +18,7 @@ import { useTranslation } from 'next-i18next';
 import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import styles from './index.module.scss';
+import { ArrowRight, Volume2 } from 'lucide-react';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
@@ -40,7 +41,7 @@ export default function Apps() {
 
   // grid value
   const gridMX = 0;
-  const gridMT = 32;
+  const gridMT = 56;
   const gridSpacing = 48;
   const appWidth = 120;
   const appHeight = 108;
@@ -287,12 +288,40 @@ export default function Apps() {
       onDrop={handleDropOnDesktop}
       px={'100px'}
     >
-      <Flex width={'full'} height={'full'} id="apps-container" overflow={'auto'}>
+      <Flex width={'full'} height={'full'} overflow={'auto'} flexDirection={'column'}>
+        <Center>
+          <Center
+            width={'fit-content'}
+            borderRadius={'54px'}
+            border={'1px solid rgba(228, 228, 231, 0.50)'}
+            bg={
+              'linear-gradient(90deg, rgba(245, 245, 245, 0.20) 0%, rgba(212, 212, 212, 0.20) 100%)'
+            }
+            gap={'8px'}
+            p={'8px 12px'}
+          >
+            <Volume2 width={16} height={16} color={'#969696'} />
+            <Text
+              fontSize={'14px'}
+              fontWeight={'500'}
+              background={'linear-gradient(120deg, #969696 0%, #000 100%)'}
+              backgroundClip={'text'}
+              sx={{
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}
+            >
+              {t('v2:invite_friend')}
+            </Text>
+            <ArrowRight width={16} height={16} color={'#000'} />
+          </Center>
+        </Center>
+
         <Grid
           overflow={'hidden'}
           flex={1}
-          pt={`${gridMT}px`}
-          px={`${gridMX}px`}
+          mt={`${gridMT}px`}
+          mx={`${gridMX}px`}
           gap={`${gridSpacing}px`}
           templateColumns={`repeat(auto-fill, minmax(${appWidth}px, 1fr))`}
           templateRows={`repeat(auto-fit, ${appHeight}px)`}
