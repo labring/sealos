@@ -22,6 +22,9 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/utils/ptr"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
+
 	"github.com/labring/sealos/controllers/account/controllers/utils"
 
 	"github.com/labring/sealos/controllers/pkg/utils/env"
@@ -116,6 +119,9 @@ func main() {
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
+		Controller: ctrlconfig.Controller{
+			UsePriorityQueue: ptr.To(true),
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

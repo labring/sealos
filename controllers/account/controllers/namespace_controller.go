@@ -249,10 +249,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 	clusterList, err := r.dynamicClient.Resource(clusterGVR).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("No KubeBlocks clusters found in namespace")
 			return nil
 		}
-		logger.Error(err, "Failed to list KubeBlocks clusters")
 		return fmt.Errorf("failed to list clusters in namespace %s: %w", namespace, err)
 	}
 
@@ -297,7 +295,6 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 			"ttlSecondsBeforeAbort":  int64(60 * 60),
 		}
 		if err := unstructured.SetNestedField(opsRequest.Object, opsSpec, "spec"); err != nil {
-			logger.Error(err, "Failed to set spec for OpsRequest", "OpsRequest", opsName)
 			return fmt.Errorf("failed to set spec for OpsRequest %s in namespace %s: %w", opsName, namespace, err)
 		}
 
@@ -307,8 +304,6 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		}
 		if errors.IsAlreadyExists(err) {
 			logger.V(1).Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
-		} else {
-			logger.Info("Successfully created OpsRequest", "OpsRequest", opsName)
 		}
 	}
 	return nil
@@ -513,63 +508,21 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.OSNamespace = os.Getenv(OSNamespace)
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to load in-cluster config: %v", err))
+		return fmt.Errorf("failed to load in-cluster config: %v", err)
 	}
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create dynamic client: %v", err))
+		return fmt.Errorf("failed to create dynamic client: %v", err)
 	}
 	r.dynamicClient = dynamicClient
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
-	//queue := &PriorityQueue{
-	//	RateLimitingInterface: workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
-	//}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
 		WithEventFilter(&AnnotationChangedPredicate{}).
-		//WithOptions(controller.Options{
-		//	WorkQueue: queue,
-		//}).
 		Complete(r)
 }
-
-//type PriorityQueue struct {
-//	workqueue.RateLimitingInterface
-//	mgr ctrl.Manager
-//}
-//
-//func (q *PriorityQueue) Add(item interface{}) {
-//	req, ok := item.(ctrl.Request)
-//	if !ok {
-//		q.RateLimitingInterface.Add(item)
-//		return
-//	}
-//
-//	ns := corev1.Namespace{}
-//	if err := q.mgr.GetClient().Get(context.Background(), req.NamespacedName, &ns); err != nil {
-//		q.RateLimitingInterface.Add(item)
-//		return
-//	}
-//	// Assign priority based on debtStatus
-//	priority := 0
-//	if debtStatus, ok := ns.Annotations[v1.DebtNamespaceAnnoStatusKey]; ok {
-//		switch debtStatus {
-//		case v1.ResumeDebtNamespaceAnnoStatus:
-//			priority = 100 // Highest priority for Resume
-//		case v1.SuspendDebtNamespaceAnnoStatus, v1.TerminateSuspendDebtNamespaceAnnoStatus:
-//			priority = 50 // Medium priority for Suspend
-//		case v1.FinalDeletionDebtNamespaceAnnoStatus:
-//			priority = 10 // Lowest priority for FinalDeletion
-//		default:
-//			priority = 0 // Default priority for others
-//		}
-//	}
-//
-//	// Add item with a delay inversely proportional to priority
-//	q.RateLimitingInterface.AddAfter(item, time.Duration(1000-priority)*time.Millisecond)
-//}
 
 type AnnotationChangedPredicate struct {
 	predicate.Funcs
