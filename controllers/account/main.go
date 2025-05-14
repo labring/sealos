@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/labring/sealos/controllers/account/controllers/utils"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"github.com/labring/sealos/controllers/pkg/utils/maps"
@@ -33,10 +35,8 @@ import (
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
-	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -65,7 +65,7 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
-	utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
+	//utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -76,7 +76,7 @@ func main() {
 		probeAddr            string
 		concurrent           int
 		development          bool
-		rateLimiterOptions   rate.LimiterOptions
+		rateLimiterOptions   utils.LimiterOptions
 		leaseDuration        time.Duration
 		renewDeadline        time.Duration
 		retryPeriod          time.Duration
@@ -131,7 +131,7 @@ func main() {
 	}
 	rateOpts := controller.Options{
 		MaxConcurrentReconciles: concurrent,
-		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
+		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
 	dbCtx := context.Background()
 	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))

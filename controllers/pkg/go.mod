@@ -1,8 +1,8 @@
 module github.com/labring/sealos/controllers/pkg
 
-go 1.22
+go 1.24.0
 
-toolchain go1.22.4
+toolchain go1.24.3
 
 replace (
 	k8s.io/api => k8s.io/api v0.28.3
@@ -20,6 +20,7 @@ replace (
 
 require (
 	github.com/containers/storage v1.50.2
+	github.com/go-gomail/gomail v0.0.0-20160411212932-81ebce5c23df
 	github.com/go-logr/logr v1.4.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
@@ -31,7 +32,9 @@ require (
 	github.com/prometheus/client_model v0.5.0
 	github.com/prometheus/common v0.48.0
 	github.com/prometheus/prom2json v1.3.3
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.9.0
 	github.com/stripe/stripe-go/v74 v74.30.0
 	github.com/wechatpay-apiv3/wechatpay-go v0.2.17
 	go.mongodb.org/mongo-driver v1.12.1
@@ -85,10 +88,9 @@ require (
 	github.com/opencontainers/runc v1.1.9 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
@@ -106,6 +108,8 @@ require (
 	golang.org/x/text v0.15.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
