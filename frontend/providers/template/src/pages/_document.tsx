@@ -1,4 +1,5 @@
 import { Html, Head, Main, NextScript } from 'next/document';
+import Script, { ScriptProps } from 'next/script';
 
 export default function Document() {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
@@ -14,6 +15,9 @@ export default function Document() {
         <meta name="apple-mobile-web-app-title" content={brandName} />
         <meta name="description" content={`${brandName} cloud`} />
         <meta name="format-detection" content="telephone=no" />
+        {scripts.map((script, i) => (
+          <Script key={i} {...script} />
+        ))}
       </Head>
       <body>
         <Main />
