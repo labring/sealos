@@ -41,7 +41,6 @@ func (f *Finalizer) AddFinalizer(ctx context.Context, obj client.Object) (bool, 
 		if err := f.updateFinalizers(ctx, client.ObjectKeyFromObject(obj), obj, obj.GetFinalizers()); err != nil {
 			return notDelete, err
 		}
-
 	}
 	return notDelete, nil
 }

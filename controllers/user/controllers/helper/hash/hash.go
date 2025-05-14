@@ -48,7 +48,6 @@ func HashToString(obj interface{}) string {
 	hasher := md5.New()
 	DeepHashObject(hasher, obj)
 	return hex.EncodeToString(hasher.Sum(nil)[0:])
-
 }
 
 func Hash(data interface{}) string {
