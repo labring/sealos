@@ -36,7 +36,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const defaultArr = (await getRawAppList(getMeta()))
       .map<TAppConfig>((item) => {
-        return { key: `system-${item.metadata.name}`, ...item.spec };
+        return {
+          key: `system-${item.metadata.name}`,
+          ...item.spec,
+          creationTimestamp: item.metadata.creationTimestamp
+        };
       })
       .sort((a, b) => {
         if (a.displayType === 'more' && b.displayType !== 'more') {
@@ -44,12 +48,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else if (a.displayType !== 'more' && b.displayType === 'more') {
           return -1;
         } else {
-          return 0;
+          const timeA = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
+          const timeB = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
+          return timeB - timeA;
         }
       });
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
-      return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
+      return {
+        key: `user-${item.metadata.name}`,
+        ...item.spec,
+        displayType: 'normal',
+        creationTimestamp: item.metadata.creationTimestamp
+      };
     });
 
     let apps = [...defaultArr, ...userArr].filter((item) => item.displayType !== 'hidden');

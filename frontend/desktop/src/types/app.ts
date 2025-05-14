@@ -54,6 +54,7 @@ export type TAppConfig = {
     };
   };
   displayType: displayType;
+  creationTimestamp: string;
 };
 
 export type TApp = TAppConfig & TAppFront & { pid: number };
