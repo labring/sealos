@@ -45,6 +45,7 @@ func DeepHashObject(hasher hash.Hash, objectToWrite interface{}) {
 
 // HashToString gen hash string base on actual values of the nested objects.
 func HashToString(obj interface{}) string {
+	// nosemgrep: go.lang.security.audit.crypto.use_of_weak_crypto.use-of-md5
 	hasher := md5.New()
 	DeepHashObject(hasher, obj)
 	return hex.EncodeToString(hasher.Sum(nil)[0:])
