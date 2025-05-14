@@ -181,8 +181,14 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
 		"job", "app",
 	}
+	errChan := make(chan error, len(deleteResources))
 	for _, rs := range deleteResources {
-		if err := deleteResource(r.dynamicClient, rs, namespace); err != nil {
+		go func(resource string) {
+			errChan <- deleteResource(r.dynamicClient, resource, namespace)
+		}(rs)
+	}
+	for range deleteResources {
+		if err := <-errChan; err != nil {
 			return err
 		}
 	}
@@ -517,27 +523,70 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
 		r.Log.V(1).Info("failed to get the endpoint or namespace or admin secret env of object storage")
 	}
+	//queue := &PriorityQueue{
+	//	RateLimitingInterface: workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter()),
+	//}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
+		WithEventFilter(&AnnotationChangedPredicate{}).
+		//WithOptions(controller.Options{
+		//	WorkQueue: queue,
+		//}).
 		Complete(r)
 }
+
+//type PriorityQueue struct {
+//	workqueue.RateLimitingInterface
+//	mgr ctrl.Manager
+//}
+//
+//func (q *PriorityQueue) Add(item interface{}) {
+//	req, ok := item.(ctrl.Request)
+//	if !ok {
+//		q.RateLimitingInterface.Add(item)
+//		return
+//	}
+//
+//	ns := corev1.Namespace{}
+//	if err := q.mgr.GetClient().Get(context.Background(), req.NamespacedName, &ns); err != nil {
+//		q.RateLimitingInterface.Add(item)
+//		return
+//	}
+//	// Assign priority based on debtStatus
+//	priority := 0
+//	if debtStatus, ok := ns.Annotations[v1.DebtNamespaceAnnoStatusKey]; ok {
+//		switch debtStatus {
+//		case v1.ResumeDebtNamespaceAnnoStatus:
+//			priority = 100 // Highest priority for Resume
+//		case v1.SuspendDebtNamespaceAnnoStatus, v1.TerminateSuspendDebtNamespaceAnnoStatus:
+//			priority = 50 // Medium priority for Suspend
+//		case v1.FinalDeletionDebtNamespaceAnnoStatus:
+//			priority = 10 // Lowest priority for FinalDeletion
+//		default:
+//			priority = 0 // Default priority for others
+//		}
+//	}
+//
+//	// Add item with a delay inversely proportional to priority
+//	q.RateLimitingInterface.AddAfter(item, time.Duration(1000-priority)*time.Millisecond)
+//}
 
 type AnnotationChangedPredicate struct {
 	predicate.Funcs
 }
 
 func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
-	oldObj, _ok1 := e.ObjectOld.(*corev1.Namespace)
-	newObj, _ok2 := e.ObjectNew.(*corev1.Namespace)
-	if !_ok1 || !_ok2 || newObj.Annotations == nil {
+	oldObj, ok1 := e.ObjectOld.(*corev1.Namespace)
+	newObj, ok2 := e.ObjectNew.(*corev1.Namespace)
+	if !ok1 || !ok2 || newObj.Annotations == nil {
 		return false
 	}
-	oldStatus := ""
-	if oldAno := oldObj.Annotations; oldAno != nil {
-		oldStatus = oldAno[v1.DebtNamespaceAnnoStatusKey]
-	}
-	newStatus, ok := newObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
-	return ok && oldStatus != newStatus
+	oldStatus := oldObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
+	newStatus := newObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
+	return oldStatus != newStatus && newStatus != v1.SuspendCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.FinalDeletionCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.ResumeCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.TerminateSuspendCompletedDebtNamespaceAnnoStatus
 }
 
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {
