@@ -372,7 +372,14 @@ export default function Apps() {
         >
           {renderApps.map((item: TApp, index) => (
             <Flex
-              draggable
+              draggable={
+                ![
+                  'system-devbox',
+                  'system-applaunchpad',
+                  'system-template',
+                  'system-dbprovider'
+                ].includes(item.key)
+              }
               flexDirection={'column'}
               justifyContent={'center'}
               alignItems={'center'}
