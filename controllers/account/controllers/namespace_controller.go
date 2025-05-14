@@ -25,7 +25,7 @@ import (
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
-	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
+	//kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	"github.com/go-logr/logr"
 	v1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/minio/madmin-go/v3"
@@ -43,7 +43,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -158,7 +157,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		r.suspendKBCluster,
+		//r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
@@ -228,32 +227,113 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 	return &quota
 }
 
+/*
 func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
-	kbClusterList := kbv1alpha1.ClusterList{}
-	if err := r.Client.List(ctx, &kbClusterList, client.InNamespace(namespace)); err != nil {
-		return err
+	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendKBCluster")
+
+	// Define the GroupVersionResource for KubeBlocks clusters
+	clusterGVR := schema.GroupVersionResource{
+		Group:    "apps.kubeblocks.io",
+		Version:  "v1alpha1",
+		Resource: "clusters",
 	}
-	for _, kbCluster := range kbClusterList.Items {
-		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase == kbv1alpha1.StoppingClusterPhase {
-			continue
-		}
-		ops := kbv1alpha1.OpsRequest{}
-		ops.Namespace = kbCluster.Namespace
-		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("2006-01-02-15")
-		ops.Spec.TTLSecondsAfterSucceed = 1
-		abort := int32(60 * 60)
-		ops.Spec.TTLSecondsBeforeAbort = &abort
-		ops.Spec.ClusterRef = kbCluster.Name
-		ops.Spec.Type = "Stop"
-		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ops, func() error {
+
+	// List all clusters in the namespace
+	clusterList, err := r.dynamicClient.Resource(clusterGVR).Namespace(namespace).List(ctx, v12.ListOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Info("No KubeBlocks clusters found in namespace")
 			return nil
+		}
+		logger.Error(err, "Failed to list KubeBlocks clusters")
+		return fmt.Errorf("failed to list clusters in namespace %s: %w", namespace, err)
+	}
+
+	// Define the GroupVersionResource for OpsRequests
+	opsGVR := schema.GroupVersionResource{
+		Group:    "apps.kubeblocks.io",
+		Version:  "v1alpha1",
+		Resource: "opsrequests",
+	}
+
+	// Iterate through each cluster
+	for _, cluster := range clusterList.Items {
+		clusterName := cluster.GetName()
+		logger.V(1).Info("Processing cluster", "Cluster", clusterName)
+
+		// Check if the cluster is already stopped or stopping
+		status, exists := cluster.Object["status"]
+		if exists && status != nil {
+			phase, _ := status.(map[string]interface{})["phase"].(string)
+			if phase == "Stopped" || phase == "Stopping" {
+				logger.V(1).Info("Cluster already stopped or stopping, skipping", "Cluster", clusterName)
+				continue
+			}
+		}
+
+		// Create OpsRequest resource
+		opsName := fmt.Sprintf("stop-%s-%s", clusterName, time.Now().Format("2006-01-02-15"))
+		opsRequest := &unstructured.Unstructured{}
+		opsRequest.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   "apps.kubeblocks.io",
+			Version: "v1alpha1",
+			Kind:    "OpsRequest",
 		})
-		if err != nil {
-			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
+		opsRequest.SetNamespace(namespace)
+		opsRequest.SetName(opsName)
+
+		// Set OpsRequest spec
+		opsSpec := map[string]interface{}{
+			"clusterRef":             clusterName,
+			"type":                   "Stop",
+			"ttlSecondsAfterSucceed": int64(1),
+			"ttlSecondsBeforeAbort":  int64(60 * 60),
+		}
+		if err := unstructured.SetNestedField(opsRequest.Object, opsSpec, "spec"); err != nil {
+			logger.Error(err, "Failed to set spec for OpsRequest", "OpsRequest", opsName)
+			return fmt.Errorf("failed to set spec for OpsRequest %s in namespace %s: %w", opsName, namespace, err)
+		}
+
+		_, err = r.dynamicClient.Resource(opsGVR).Namespace(namespace).Create(ctx, opsRequest, v12.CreateOptions{})
+		if err != nil && !errors.IsAlreadyExists(err) {
+			return fmt.Errorf("failed to create OpsRequest %s in namespace %s: %w", opsName, namespace, err)
+		}
+		if errors.IsAlreadyExists(err) {
+			logger.V(1).Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
+		} else {
+			logger.Info("Successfully created OpsRequest", "OpsRequest", opsName)
 		}
 	}
 	return nil
 }
+*/
+
+//func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
+//	kbClusterList := kbv1alpha1.ClusterList{}
+//	if err := r.Client.List(ctx, &kbClusterList, client.InNamespace(namespace)); err != nil {
+//		return err
+//	}
+//	for _, kbCluster := range kbClusterList.Items {
+//		if kbCluster.Status.Phase == kbv1alpha1.StoppedClusterPhase || kbCluster.Status.Phase == kbv1alpha1.StoppingClusterPhase {
+//			continue
+//		}
+//		ops := kbv1alpha1.OpsRequest{}
+//		ops.Namespace = kbCluster.Namespace
+//		ops.ObjectMeta.Name = "stop-" + kbCluster.Name + "-" + time.Now().Format("2006-01-02-15")
+//		ops.Spec.TTLSecondsAfterSucceed = 1
+//		abort := int32(60 * 60)
+//		ops.Spec.TTLSecondsBeforeAbort = &abort
+//		ops.Spec.ClusterRef = kbCluster.Name
+//		ops.Spec.Type = "Stop"
+//		_, err := controllerutil.CreateOrUpdate(ctx, r.Client, &ops, func() error {
+//			return nil
+//		})
+//		if err != nil {
+//			r.Log.Error(err, "create ops request failed", "ops", ops.Name, "namespace", ops.Namespace)
+//		}
+//	}
+//	return nil
+//}
 
 func (r *NamespaceReconciler) suspendOrphanPod(ctx context.Context, namespace string) error {
 	podList := corev1.PodList{}

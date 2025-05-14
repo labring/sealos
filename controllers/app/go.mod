@@ -1,16 +1,13 @@
 module github.com/labring/sealos/controllers/app
 
-go 1.21
-
-toolchain go1.22.4
+go 1.24.0
 
 replace (
-	k8s.io/api => k8s.io/api v0.28.3
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.28.3
-	k8s.io/apimachinery => k8s.io/apimachinery v0.28.3
-	k8s.io/client-go => k8s.io/client-go v0.28.3
-	k8s.io/component-base => k8s.io/component-base v0.28.3
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.17.2
+	k8s.io/api => k8s.io/api v0.32.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
+	k8s.io/client-go => k8s.io/client-go v0.32.1
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (

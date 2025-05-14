@@ -1,11 +1,16 @@
 module github.com/labring/sealos/service/account
 
-go 1.22
+go 1.24.0
 
 replace (
 	github.com/labring/sealos/controllers/pkg => ../../controllers/pkg/
 	github.com/labring/sealos/service => ../../service
 	github.com/labring/sealos/service/account => ../account
+	k8s.io/api => k8s.io/api v0.32.3
+    k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
+    k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
+    k8s.io/client-go => k8s.io/client-go v0.32.1
+    sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (

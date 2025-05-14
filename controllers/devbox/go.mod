@@ -2,8 +2,6 @@ module github.com/labring/sealos/controllers/devbox
 
 go 1.24.0
 
-toolchain go1.24.1
-
 require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/onsi/ginkgo/v2 v2.22.0

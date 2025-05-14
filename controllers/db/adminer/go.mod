@@ -1,8 +1,6 @@
 module github.com/labring/sealos/controllers/db/adminer
 
-go 1.22
-
-toolchain go1.22.4
+go 1.24.0
 
 require (
 	github.com/labring/sealos/controllers/pkg v0.0.0-00010101000000-000000000000
