@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
 	//kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
@@ -157,7 +159,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		//r.suspendKBCluster,
+		r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
@@ -227,7 +229,6 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 	return &quota
 }
 
-/*
 func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
 	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendKBCluster")
 
@@ -306,7 +307,6 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 	}
 	return nil
 }
-*/
 
 //func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
 //	kbClusterList := kbv1alpha1.ClusterList{}
