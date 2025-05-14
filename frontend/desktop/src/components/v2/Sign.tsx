@@ -81,8 +81,6 @@ export default function SigninComponent() {
       service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
       private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
-  const { Protocol, isAgree, setIsInvalid } = useProtocol(protocol_data!);
-
   const handleSubmit = (type: 'signin' | 'signup') => {
     // if (type === 'signin') {
     return handleSigninSubmit(onSignin)();
@@ -90,7 +88,7 @@ export default function SigninComponent() {
     //   return handleSignupSubmit(onSignup)();
     // }
   };
-  const { remainTime, setRemainTime, setPhoneNumber } = useSmsStateStore();
+  const { setPhoneNumber } = useSmsStateStore();
   const onSignin = async (data: ILoginParams) => {
     try {
       setIsLoading(true);
@@ -297,104 +295,108 @@ export default function SigninComponent() {
         <Text fontSize={'24px'} fontWeight={600} mb={'16px'} mx="auto">
           {t('v2:workspace_welcome')}
         </Text>
-        {needPhone ? (
-          <>
-            <InputGroup width={'full'}>
-              <InputLeftElement color={'#71717A'} left={'12px'} h={'40px'}>
-                <Text
-                  pl="10px"
-                  pr="8px"
-                  height={'20px'}
-                  borderRight={'1px'}
+
+        {conf.layoutConfig?.version === 'cn' ? (
+          needPhone && (
+            <>
+              <InputGroup width={'full'}>
+                <InputLeftElement color={'#71717A'} left={'12px'} h={'40px'}>
+                  <Text
+                    pl="10px"
+                    pr="8px"
+                    height={'20px'}
+                    borderRight={'1px'}
+                    fontSize={'14px'}
+                    borderColor={'#E4E4E7'}
+                  >
+                    +86
+                  </Text>
+                </InputLeftElement>
+                <Input
+                  height="40px"
+                  w="full"
                   fontSize={'14px'}
-                  borderColor={'#E4E4E7'}
-                >
-                  +86
-                </Text>
-              </InputLeftElement>
+                  background="#FFFFFF"
+                  border="1px solid #E4E4E7"
+                  borderRadius="8px"
+                  placeholder={t('phone')}
+                  py="10px"
+                  pr={'12px'}
+                  pl={'60px'}
+                  color={'#71717A'}
+                  value={signupData?.providerId || ''}
+                  onChange={(e) => {
+                    if (!!e.target.value) {
+                      setSignupData({
+                        providerId: e.target.value,
+                        providerType: 'PHONE'
+                      });
+                    }
+                  }}
+                />
+              </InputGroup>
+              <Button
+                variant={'solid'}
+                px={'0'}
+                borderRadius={'8px'}
+                onClick={() => {
+                  console.log(signupData?.providerId);
+                  if (signupData?.providerId) {
+                    setPhoneNumber(signupData.providerId);
+                    router.push('/phoneCheck');
+                  }
+                }}
+                bgColor={'#0A0A0A'}
+                rightIcon={<ArrowRight size={'14px'}></ArrowRight>}
+              >
+                {t('v2:sign_in')}
+              </Button>
+            </>
+          )
+        ) : conf.layoutConfig?.version === 'en' ? (
+          needEmail && (
+            <>
               <Input
+                boxSize="border-box"
+                display="flex"
+                flexDirection="row"
+                alignItems="center"
+                padding="8px 12px"
+                gap="4px"
                 height="40px"
-                w="full"
-                fontSize={'14px'}
                 background="#FFFFFF"
                 border="1px solid #E4E4E7"
                 borderRadius="8px"
-                placeholder={t('phone')}
-                py="10px"
-                pr={'12px'}
-                pl={'60px'}
-                color={'#71717A'}
-                value={signupData?.providerId || ''}
+                flex="none"
+                order="0"
+                placeholder={t('v2:email')}
+                alignSelf="stretch"
+                flexGrow="0"
                 onChange={(e) => {
-                  console.log(e.target);
-                  if (!!e.target.value) {
+                  if (!e.target.value) {
                     setSignupData({
                       providerId: e.target.value,
-                      providerType: 'PHONE'
+                      providerType: 'EMAIL'
                     });
                   }
                 }}
               />
-            </InputGroup>
-            <Button
-              variant={'solid'}
-              px={'0'}
-              borderRadius={'8px'}
-              onClick={() => {
-                console.log(signupData?.providerId);
-                if (signupData?.providerId) {
-                  setPhoneNumber(signupData.providerId);
-                  router.push('/phoneCheck');
-                }
-              }}
-              bgColor={'#0A0A0A'}
-              rightIcon={<ArrowRight size={'14px'}></ArrowRight>}
-            >
-              {t('v2:sign_in')}
-            </Button>
-          </>
-        ) : needEmail ? (
-          <>
-            <Input
-              boxSize="border-box"
-              display="flex"
-              flexDirection="row"
-              alignItems="center"
-              padding="8px 12px"
-              gap="4px"
-              height="40px"
-              background="#FFFFFF"
-              border="1px solid #E4E4E7"
-              borderRadius="8px"
-              flex="none"
-              order="0"
-              placeholder={t('v2:email')}
-              alignSelf="stretch"
-              flexGrow="0"
-              onChange={(e) => {
-                if (!e.target.value) {
-                  setSignupData({
-                    providerId: e.target.value,
-                    providerType: 'EMAIL'
-                  });
-                }
-              }}
-            />
-            <Button
-              onClick={() => {
-                if (signupData?.providerId) {
-                  router.push('/emailCheck');
-                }
-              }}
-              bgColor={'#0A0A0A'}
-              borderRadius={'8px'}
-              variant={'solid'}
-              px={'0'}
-              rightIcon={<ArrowRight size={'16px'}></ArrowRight>}
-            >
-              {t('v2:email_sign_in')}
-            </Button>
-          </>
+              <Button
+                onClick={() => {
+                  if (signupData?.providerId) {
+                    router.push('/emailCheck');
+                  }
+                }}
+                bgColor={'#0A0A0A'}
+                borderRadius={'8px'}
+                variant={'solid'}
+                px={'0'}
+                rightIcon={<ArrowRight size={'16px'}></ArrowRight>}
+              >
+                {t('v2:email_sign_in')}
+              </Button>
+            </>
+          )
         ) : (
           <></>
         )}

@@ -38,6 +38,7 @@ import { useConfigStore } from '@/stores/config';
 import force from '@/pages/api/auth/delete/force';
 import useCustomError from '../signin/auth/useCustomError';
 import useSmsStateStore from '@/stores/captcha';
+import useScriptStore from '@/stores/script';
 
 export default function PhoneCheckComponent() {
   const router = useRouter();
@@ -47,14 +48,8 @@ export default function PhoneCheckComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const { signupData, clearSignupData } = useSignupStore();
   const { setToken } = useSessionStore();
-  useEffect(() => {
-    if (!signupData) {
-      router.push('/signin');
-    }
-  }, [signupData, router]);
 
   const [canResend, setCanResend] = useState(false);
-  // const [countdown, setCountdown] = useState(60);
   const { remainTime, setRemainTime, setPhoneNumber } = useSmsStateStore();
   useEffect(() => {
     if (remainTime <= 0) {
@@ -90,17 +85,13 @@ export default function PhoneCheckComponent() {
       }
     }
   });
+  const { captchaIsLoaded } = useScriptStore();
 
   const sendCodeMutation = useMutation(({ id }: { id: string }) =>
     request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
       id
     })
   );
-  // mutation.mutateAsync({
-  //   providerId: signupData.providerId,
-  //   code: data.verificationCode,
-  //   providerType: signupData.providerType
-  // });
   const captchaRef = useRef<TCaptchaInstance>(null);
   const onSubmit = async (force = false) => {
     if ((!canResend || isLoading) && !force) return;
@@ -111,7 +102,11 @@ export default function PhoneCheckComponent() {
         throw new Error('No signup data found');
       }
       if (conf.authConfig?.captcha.enabled) {
-        captchaRef.current?.invoke();
+        if (!captchaRef.current) {
+          setIsLoading(false);
+          return;
+        }
+        captchaRef.current.invoke();
       } else {
         const result = await sendCodeMutation.mutateAsync({
           id: signupData.providerId
@@ -132,7 +127,7 @@ export default function PhoneCheckComponent() {
     } catch (error) {
       console.error('Failed to send verification phone:', error);
       toast({
-        title: t('v2:sign_up_failed'),
+        title: t('common:get_code_failed'),
         description: (error as Error)?.message || t('v2:unknown_error'),
         status: 'error',
         duration: 3000,
@@ -144,15 +139,17 @@ export default function PhoneCheckComponent() {
     }
   };
   useEffect(() => {
-    onSubmit(true);
-  }, []);
+    if (captchaIsLoaded) {
+      onSubmit(true);
+    }
+  }, [captchaIsLoaded]);
   const handleBack = () => {
     router.back();
   };
   const bg = useColorModeValue('white', 'gray.700');
   const { ErrorComponent, showError } = useCustomError();
-  if (!signupData) {
-    router.back();
+  if (!signupData || signupData.providerType !== 'PHONE') {
+    router.push('/signin');
     return null;
   }
   return (
