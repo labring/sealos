@@ -45,30 +45,51 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('v2:devbox_create_title')}
               </Text>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/4
-              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('v2:devbox_create_desc')}
             </Text>
-            <Center
-              color={'#fff'}
-              fontSize={'14px'}
-              fontWeight={500}
-              cursor={'pointer'}
-              mt={'16px'}
-              borderRadius={'8px'}
-              background={'rgba(255, 255, 255, 0.20)'}
-              w={'fit-content'}
-              h={'32px'}
-              p={'8px'}
-              onClick={() => {
-                startDriver(quitGuideDriverObj(t));
-              }}
-            >
-              {t('v2:quit_guide')}
-            </Center>
+            <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                1/3
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  openDesktopApp({
+                    appKey: 'system-devbox',
+                    pathname: '/',
+                    query: {
+                      action: 'guide'
+                    },
+                    messageData: {},
+                    appSize: 'maximize'
+                  });
+                }}
+              >
+                {t('v2:next')}
+              </Center>
+            </Flex>
           </Box>
         )
       }
@@ -144,30 +165,51 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('v2:launchpad_create_title')}
               </Text>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/4
-              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('v2:launchpad_create_desc')}
             </Text>
-            <Center
-              color={'#fff'}
-              fontSize={'14px'}
-              fontWeight={500}
-              cursor={'pointer'}
-              mt={'16px'}
-              borderRadius={'8px'}
-              background={'rgba(255, 255, 255, 0.20)'}
-              w={'fit-content'}
-              h={'32px'}
-              p={'8px'}
-              onClick={() => {
-                startDriver(quitGuideDriverObj(t));
-              }}
-            >
-              {t('v2:quit_guide')}
-            </Center>
+            <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                1/3
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  openDesktopApp({
+                    appKey: 'system-applaunchpad',
+                    pathname: '/redirect',
+                    query: {
+                      action: 'guide'
+                    },
+                    messageData: {},
+                    appSize: 'maximize'
+                  });
+                }}
+              >
+                {t('v2:next')}
+              </Center>
+            </Flex>
           </Box>
         )
       }
@@ -243,30 +285,51 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('v2:template_create_title')}
               </Text>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/3
-              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('v2:template_create_desc')}
             </Text>
-            <Center
-              color={'#fff'}
-              fontSize={'14px'}
-              fontWeight={500}
-              cursor={'pointer'}
-              mt={'16px'}
-              borderRadius={'8px'}
-              background={'rgba(255, 255, 255, 0.20)'}
-              w={'fit-content'}
-              h={'32px'}
-              p={'8px'}
-              onClick={() => {
-                startDriver(quitGuideDriverObj(t));
-              }}
-            >
-              {t('v2:quit_guide')}
-            </Center>
+            <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                1/2
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  openDesktopApp({
+                    appKey: 'system-template',
+                    pathname: '/',
+                    query: {
+                      action: 'guide'
+                    },
+                    messageData: {},
+                    appSize: 'maximize'
+                  });
+                }}
+              >
+                {t('v2:next')}
+              </Center>
+            </Flex>
           </Box>
         )
       }
@@ -341,30 +404,51 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('v2:database_create_title')}
               </Text>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/3
-              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('v2:database_create_desc')}
             </Text>
-            <Center
-              color={'#fff'}
-              fontSize={'14px'}
-              fontWeight={500}
-              cursor={'pointer'}
-              mt={'16px'}
-              borderRadius={'8px'}
-              background={'rgba(255, 255, 255, 0.20)'}
-              w={'fit-content'}
-              h={'32px'}
-              p={'8px'}
-              onClick={() => {
-                startDriver(quitGuideDriverObj(t));
-              }}
-            >
-              {t('v2:quit_guide')}
-            </Center>
+            <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                1/3
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  currentDriver.destroy();
+                  currentDriver = null;
+                  openDesktopApp({
+                    appKey: 'system-dbprovider',
+                    pathname: '/redirect',
+                    query: {
+                      action: 'guide'
+                    },
+                    messageData: {},
+                    appSize: 'maximize'
+                  });
+                }}
+              >
+                {t('v2:next')}
+              </Center>
+            </Flex>
           </Box>
         )
       }

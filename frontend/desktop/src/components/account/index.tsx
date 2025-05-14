@@ -171,6 +171,7 @@ export default function Account() {
         <Flex gap={'4px'} ml={'auto'}>
           {layoutConfig?.version === 'cn' && (
             <Center
+              mr={'12px'}
               borderRadius={'8px'}
               bg={
                 'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
@@ -221,7 +222,6 @@ export default function Account() {
 
           {layoutConfig?.version === 'cn' && (
             <Center
-              ml={'12px'}
               cursor={'pointer'}
               {...baseItemStyle}
               px={'8px'}

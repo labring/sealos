@@ -84,3 +84,46 @@ div {
   background: rgba(28, 46, 245, 0.9);
   color: #fff;
 }
+
+.driver-popover-arrow {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-width: 8px;
+  border-style: solid;
+  display: block !important;
+  border-color: transparent;
+}
+
+/* 为左侧箭头设置颜色 */
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-left-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+/* 为右侧箭头设置颜色 */
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+/* 为顶部箭头设置颜色 */
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-top-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+/* 为底部箭头设置颜色 */
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: rgba(28, 46, 245, 0.9) !important;
+}

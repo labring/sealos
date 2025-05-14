@@ -157,7 +157,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
           image: '/images/onboarding/appstore-2.png'
         }
       ],
-      stepNumbers: 4
+      stepNumbers: 2
     },
     {
       key: 'system-dbprovider',
@@ -181,7 +181,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
           image: '/images/onboarding/database-3.png'
         }
       ],
-      stepNumbers: 4
+      stepNumbers: 3
     }
   ];
 
@@ -334,7 +334,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                     }
                   }}
                 >
-                  Show me
+                  {t('v2:show_me')}
                 </Button>
               </Flex>
 
