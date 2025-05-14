@@ -210,6 +210,12 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 			if err = r.ResumeBalance(userUID); err != nil {
 				return fmt.Errorf("failed to resume balance: %w", err)
 			}
+			if !skipSendMsg {
+				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
+					return NewErrSendMsg(err, userUID)
+				}
+			}
+			break
 		}
 		if types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
 			//TODO send sms
@@ -226,10 +232,9 @@ func (r *DebtReconciler) refreshDebtStatus(userUID uuid.UUID, skipSendMsg bool) 
 			}
 		}
 		if currentStatus != types.FinalDeletionPeriod {
-			// TODO send sms
-			if !skipSendMsg && account.Balance > 0 {
+			if !skipSendMsg && types.StatusMap[currentStatus] > types.StatusMap[lastStatus] {
 				if err := r.SendUserDebtMsg(userUID, oweamount, currentStatus, isBasicUser); err != nil {
-					return fmt.Errorf("failed to send user debt message: %w", err)
+					return NewErrSendMsg(err, userUID)
 				}
 			}
 		}
