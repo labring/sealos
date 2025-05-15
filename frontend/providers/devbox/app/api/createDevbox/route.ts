@@ -55,10 +55,11 @@ export async function POST(req: NextRequest) {
         error: 'Template not found'
       });
     }
-    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE } = process.env;
+    const { INGRESS_SECRET, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE, HTTPS_ENABLE } = process.env;
+
     const devbox = json2DevboxV2(devboxForm, DEVBOX_AFFINITY_ENABLE, SQUASH_ENABLE);
     const service = json2Service(devboxForm);
-    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string);
+    const ingress = json2Ingress(devboxForm, INGRESS_SECRET as string, HTTPS_ENABLE === 'true');
     await applyYamlList([devbox, service, ingress], 'create');
 
     return jsonRes({
