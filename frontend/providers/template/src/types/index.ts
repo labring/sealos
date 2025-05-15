@@ -30,4 +30,5 @@ export type EnvResponse = {
   SHOW_AUTHOR: string;
   DESKTOP_DOMAIN: string;
   CURRENCY_SYMBOL: 'shellCoin' | 'cny' | 'usd';
+  HTTPS_ENABLE: boolean;
 };
