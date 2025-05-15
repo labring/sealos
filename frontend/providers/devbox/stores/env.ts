@@ -15,7 +15,8 @@ export const defaultEnv: Env = {
   privacyUrl: '',
   rootRuntimeNamespace: 'devbox-system',
   ingressDomain: 'sealosusw.site',
-  currencySymbol: 'shellCoin'
+  currencySymbol: 'shellCoin',
+  httpsEnable: true
 };
 
 type State = {
