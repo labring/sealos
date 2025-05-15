@@ -17,11 +17,6 @@ package rate
 import (
 	"flag"
 	"time"
-
-	"golang.org/x/time/rate"
-
-	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 )
 
 const (
@@ -52,10 +47,10 @@ func (o *LimiterOptions) BindFlags(fs *flag.FlagSet) {
 	fs.IntVar(&o.Burst, flagBurst, defaultBurst, "The maximum number of batches to allow in a short period of time.")
 }
 
-func GetRateLimiter(opts LimiterOptions) ratelimiter.RateLimiter {
-	return workqueue.NewMaxOfRateLimiter(
-		workqueue.NewItemExponentialFailureRateLimiter(opts.MinRetryDelay, opts.MaxRetryDelay),
-		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
-		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst)},
-	)
-}
+//func GetRateLimiter(opts LimiterOptions) ratelimiter.RateLimiter {
+//	return workqueue.NewMaxOfRateLimiter(
+//		workqueue.NewItemExponentialFailureRateLimiter(opts.MinRetryDelay, opts.MaxRetryDelay),
+//		// 10 qps, 100 bucket size.  This is only for retry speed and its only the overall factor (not per item)
+//		&workqueue.BucketRateLimiter{Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst)},
+//	)
+//}

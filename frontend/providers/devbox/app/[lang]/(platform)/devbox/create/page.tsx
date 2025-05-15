@@ -186,26 +186,27 @@ const DevboxCreatePage = () => {
         }
       }
       // quote check
-      const quoteCheckRes = checkQuotaAllow(
-        { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
-          nodeports: number;
-        },
-        {
-          ...oldDevboxEditData.current,
-          nodeports: devboxList.length
-        } as DevboxEditType & {
-          nodeports: number;
-        }
-      );
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(
+      //   { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
+      //     nodeports: number;
+      //   },
+      //   {
+      //     ...oldDevboxEditData.current,
+      //     nodeports: devboxList.length
+      //   } as DevboxEditType & {
+      //     nodeports: number;
+      //   }
+      // );
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
+
       // update
       if (isEdit) {
         const yamlList = generateYamlList(formData, env);

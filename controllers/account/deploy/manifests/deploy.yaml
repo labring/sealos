@@ -425,6 +425,7 @@ rules:
   - batch
   resources:
   - cronjobs
+  - jobs
   verbs:
   - create
   - delete
@@ -566,6 +567,39 @@ rules:
   - get
   - list
   - watch
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims", "services"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "statefulsets"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs","jobs"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["autoscaling"]
+  resources: ["horizontalpodautoscalers"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["cert-manager.io"]
+  resources: ["issuers", "certificates"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["dataprotection.kubeblocks.io"]
+  resources: ["backups", "backupschedules"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["apps.kubeblocks.io"]
+  resources: ["clusters"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["objectstorage.sealos.io"]
+  resources: ["objectstorageusers"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["app.sealos.io"]
+  resources: ["instances", "apps"]
+  verbs: ["delete", "deletecollection"]
+- apiGroups: ["devbox.sealos.io"]
+  resources: ["devboxes", "devboxreleases"]
+  verbs: ["delete", "deletecollection"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

@@ -1,10 +1,7 @@
-import { getInvitationIno } from '@/api/account';
-import useSessionStore from '@/store/session';
-import { serviceSideProps } from '@/utils/i18n';
-import { formatMoney, useCopyData } from '@/utils/tools';
+import type React from 'react';
+
 import {
   Box,
-  BoxProps,
   Button,
   Flex,
   Grid,
@@ -17,14 +14,30 @@ import {
   Th,
   Thead,
   Tr,
-  useTheme
+  Skeleton,
+  Center,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Divider,
+  FlexProps,
+  Image
 } from '@chakra-ui/react';
+import { useState } from 'react';
+import { CheckCheck, ClockIcon, CopyIcon, DownloadIcon, GiftIcon, UserIcon } from 'lucide-react';
+import { formatTime, useCopyData } from '@/utils/tools';
+import useSessionStore from '@/store/session';
+import { useTranslation } from 'next-i18next';
 import { useQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-import { useTranslation, Trans } from 'next-i18next';
-import { useCallback } from 'react';
+import { getInvitationIno } from '@/api/account';
+import { serviceSideProps } from '@/utils/i18n';
+import ExcelJS from 'exceljs';
 
-export default function Index({
+export default function InvitationPage({
   SEALOS_DOMAIN,
   GIFT_RATIO,
   INVITER_REWARD
@@ -33,176 +46,464 @@ export default function Index({
   GIFT_RATIO: string;
   INVITER_REWARD: string;
 }) {
-  const theme = useTheme();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { copyData } = useCopyData();
   const userInfo = useSessionStore((state) => state?.session?.user);
-
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data, isLoading } = useQuery(
-    ['getPromotionInitData', userInfo?.id],
-    () => getInvitationIno({ inviterId: userInfo?.id || '' }),
+    ['getPromotionInitData', userInfo?.id, page, pageSize],
+    () =>
+      getInvitationIno({
+        inviterId: userInfo?.id || '',
+        page: page.toString(),
+        pageSize: pageSize.toString()
+      }),
     {
-      refetchInterval: 5 * 60 * 1000
+      refetchInterval: 5 * 60 * 1000,
+      keepPreviousData: true
     }
   );
 
-  const statisticsStyles: BoxProps = {
-    p: [4, 5],
-    border: theme.borders.base,
-    textAlign: 'center',
-    fontSize: ['md', 'xl'],
-    borderRadius: 'md'
-  };
-  const titleStyles: BoxProps = {
-    mt: 2,
-    fontSize: ['lg', '28px'],
-    fontWeight: 'bold'
+  const invitationData = data || {
+    totalPeople: 0,
+    totalAmount: 0,
+    completedUsers: 0,
+    pendingUsers: 0,
+    rewardList: [],
+    pagination: {
+      total: 0,
+      currentPage: 1,
+      pageSize: 10,
+      totalPages: 0
+    }
   };
 
-  const copyInviteLink = useCallback(() => {
-    const userId = userInfo?.id;
-    const str = `https://${SEALOS_DOMAIN}/?uid=${userId}`;
-    copyData(str);
-  }, [SEALOS_DOMAIN, copyData, userInfo?.id]);
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+
+      const data = await getInvitationIno({
+        inviterId: userInfo?.id || '',
+        page: '1',
+        pageSize: '5000'
+      });
+
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(`邀请记录`);
+
+      worksheet.columns = [
+        { header: '序号', key: 'serial', width: 10 },
+        { header: 'ID', key: 'invitee', width: 20 },
+        { header: '注册时间', key: 'registerTime', width: 20 },
+        { header: '奖励状态', key: 'status', width: 15 },
+        { header: '完成时间', key: 'arrival_time', width: 20 },
+        { header: '金额', key: 'amount', width: 10 }
+      ];
+
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).alignment = { horizontal: 'center' };
+
+      data.rewardList.forEach((item, index) => {
+        worksheet.addRow({
+          serial: index + 1,
+          invitee: item.invitee,
+          registerTime: formatTime(item.registerTime),
+          status: item.status === 'completed' ? '已完成' : '进行中',
+          arrival_time: item.arrival_time ? formatTime(item.arrival_time) : '--',
+          amount: `+${item.amount}`
+        });
+      });
+
+      worksheet.getColumn(1).alignment = { horizontal: 'center' };
+      worksheet.getColumn(4).alignment = { horizontal: 'center' };
+      worksheet.getColumn(6).alignment = { horizontal: 'right' };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `邀请记录_${formatTime(new Date(), 'YYYYMMDD')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('export excel failed:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // useEffect(() => {
+  //   i18n.changeLanguage('zh');
+  // }, []);
 
   return (
-    <Flex flexDirection={'column'} p={10} h={'100%'} position={'relative'}>
-      <Grid gridTemplateColumns={['1fr 1fr', 'repeat(2,1fr)', 'repeat(4,1fr)']} gridGap={5}>
-        <Box {...statisticsStyles}>
-          <Box>{t('Cumulative number of invitees')}</Box>
-          <Box {...titleStyles}>{data?.totalPeople || 0}</Box>
+    <Flex
+      flexDirection="column"
+      py={'40px'}
+      px={'56px'}
+      position="relative"
+      overflowY={'auto'}
+      bg={'linear-gradient(180deg, #FAFAFA 0%, #FAFAFA 100%)'}
+      h={'100vh'}
+    >
+      <Flex justifyContent="space-between" alignItems="center">
+        <Box>
+          <Text fontSize="24px" fontWeight="600">
+            {t('invite_friends_title')}
+          </Text>
+          <Text mt={1} fontSize={'18px'} fontWeight={'400'} color={'#52525B'}>
+            <span
+              dangerouslySetInnerHTML={{
+                __html: t('friend_certification_text', { amount: INVITER_REWARD })
+              }}
+            />
+            {t('balance_reward')}
+          </Text>
         </Box>
-        <Box {...statisticsStyles}>
-          <Box>{t('Earnings')}</Box>
-          <Box {...titleStyles}>{formatMoney(data?.totalAmount || 0)}</Box>
+        <Center
+          fontSize={'14px'}
+          fontWeight={'500'}
+          height="40px"
+          padding="8px 16px"
+          display="flex"
+          gap="8px"
+          borderRadius="8px"
+          bg="#FFF"
+          boxShadow="0px 1px 2px 0px rgba(0, 0, 0, 0.05)"
+          border={'1px solid #E4E4E7'}
+          cursor={'pointer'}
+          onClick={onOpen}
+        >
+          <Icon as={GiftIcon} boxSize={4} color={'#2563EB'} />
+          {t('activity_subsidy')}
+        </Center>
+      </Flex>
+
+      <Flex py={'36px'} gap={'46px'} alignItems={'center'}>
+        <Box fontSize={'16px'} fontWeight={400}>
+          <Text color={'#71717A'}>{t('total_earnings')}</Text>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'} lineHeight={'20px'}>
+            <Image src="/sealos.svg" alt="icon" w={'18px'} h={'18px'} />
+            <Text>{isLoading ? t('loading') : invitationData.totalAmount.toString()}</Text>
+          </Center>
         </Box>
-        <Box {...statisticsStyles}>
-          <Flex alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-            <Box mb="4px">{t('Cashback Ratio')}</Box>
-            <Text fontSize={'12px'}>
-              <Trans
-                i18nKey="cashback_first_rule"
-                values={{
-                  amount: INVITER_REWARD
-                }}
-              />
-            </Text>
-            <Text fontSize={'12px'}>
-              <Trans
-                i18nKey="every_time_a_friend_recharges"
-                values={{
-                  amount: `${parseFloat(GIFT_RATIO) * 100}%`
-                }}
-              />
-            </Text>
-          </Flex>
+        <Divider h={'40px'} orientation="vertical" borderColor={'#E4E4E7'} />
+        <Box fontSize={'16px'} fontWeight={400}>
+          <Text color={'#71717A'}>{t('invitation_code')}</Text>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'4px'} lineHeight={'20px'}>
+            <Text>{userInfo?.id || ''}</Text>
+            <Icon
+              size={'20px'}
+              color={'#737373'}
+              as={CopyIcon}
+              boxSize={5}
+              cursor="pointer"
+              onClick={() => copyData(userInfo?.id || '')}
+            />
+          </Center>
         </Box>
-        <Box {...statisticsStyles}>
-          <Flex alignItems={'center'} justifyContent={'center'}>
-            <Text>{t('Invitation link')}</Text>
-          </Flex>
-          <Button mt={4} fontSize={'sm'} onClick={copyInviteLink}>
-            {t('Copy link')}
-          </Button>
+        <Divider h={'40px'} orientation="vertical" borderColor={'#E4E4E7'} />
+        <Box fontSize={'16px'} fontWeight={400}>
+          <Text color={'#71717A'}>{t('Invitation link')}</Text>
+          <Center mt={'10px'} color={'#18181B'} fontSize={'20px'} gap={'8px'} lineHeight={'20px'}>
+            <Text>{`https://${SEALOS_DOMAIN}/?uid=${userInfo?.id || ''}`}</Text>
+            <Icon
+              size={'20px'}
+              color={'#737373'}
+              as={CopyIcon}
+              boxSize={5}
+              cursor="pointer"
+              onClick={() => copyData(`https://${SEALOS_DOMAIN}/?uid=${userInfo?.id || ''}`)}
+            />
+          </Center>
         </Box>
+      </Flex>
+
+      <Grid templateColumns={['1fr', 'repeat(3,1fr)']} gap={5}>
+        <UserStatBox
+          title={t('Cumulative number of invitees')}
+          count={isLoading ? 0 : invitationData.totalPeople}
+          icon={<UserIcon size={20} color="#2563EB" />}
+          iconBoxProps={{ bg: '#EFF6FF', border: '1px solid #BFDBFE' }}
+        />
+        <UserStatBox
+          title={t('completed_users')}
+          count={isLoading ? 0 : invitationData.completedUsers}
+          icon={<CheckCheck size={20} color="#059669" />}
+          iconBoxProps={{ bg: '#ECFDF5', border: '1px solid #A7F3D0' }}
+        />
+        <UserStatBox
+          title={t('pending_users')}
+          count={isLoading ? 0 : invitationData.pendingUsers}
+          icon={<ClockIcon size={20} color="#CA8A04" />}
+          iconBoxProps={{ bg: '#FEFCE8', border: '1px solid #FEF08A' }}
+        />
       </Grid>
-      <Box mt={5}>
-        <TableContainer position={'relative'} overflow={'hidden'} minH={'100px'}>
-          <Table>
-            <Thead>
+
+      {/* User List */}
+      <Box mt={'16px'} p={'24px'} border="1px solid #E4E4E7" borderRadius="16px" bg={'#FFF'}>
+        <Flex justifyContent="space-between" alignItems="center" mb={4}>
+          <Text fontWeight="500" fontSize={'18px'}>
+            {t('user_list')}
+          </Text>
+          <Button
+            rightIcon={<DownloadIcon color="#737373" size={16} />}
+            variant="outline"
+            border={'1px solid #E4E4E7'}
+            borderRadius={'8px'}
+            fontSize={'14px'}
+            color={'#18181B'}
+            onClick={handleExportExcel}
+            isLoading={isExporting}
+          >
+            {t('export_excel')}
+          </Button>
+        </Flex>
+
+        <TableContainer position="relative" overflow="hidden" minH="100px">
+          <Table variant="unstyled">
+            <Thead bg="#FAFAFA">
               <Tr>
-                <Th>{t('Time')}</Th>
+                <Th>{t('serial_number')}</Th>
+                <Th>ID</Th>
+                <Th>{t('registration_time')}</Th>
                 <Th>
-                  <Flex gap={'4px'}>
-                    <Text>{t('Amount')}</Text>
-                    <Icon
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12px"
-                      height="12px"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                    >
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="9.66"
-                        fill="#E8E8E8"
-                        stroke="#37383A"
-                        strokeWidth="0.68"
-                      />
-                      <circle cx="9.99995" cy="10" r="8.7366" fill="#CFCFCF" />
-                      <path
-                        d="M10.0001 18.7366C14.8252 18.7366 18.7367 14.8251 18.7367 10C18.7367 8.01946 18.0776 6.19283 16.9669 4.72746C16.4078 4.64858 15.8365 4.60779 15.2557 4.60779C8.98439 4.60779 3.82381 9.36328 3.18328 15.4649C4.78448 17.4596 7.24314 18.7366 10.0001 18.7366Z"
-                        fill="#BEBEBE"
-                      />
-                      <circle cx="10.0001" cy="9.99998" r="6.77549" fill="#828386" />
-                      <path
-                        d="M7.20815 9.69376C7.77022 10.5156 8.93312 10.4426 8.93312 10.4426C8.6424 10.1606 8.45342 9.90286 8.43404 9.16859C8.41466 8.43431 7.99795 8.23981 7.99795 8.23981C8.74415 7.76812 8.47765 7.25754 8.45342 6.6886C8.43889 6.33362 8.64724 6.07103 8.81199 5.92029C7.86377 6.06283 7.00696 6.56717 6.4202 7.32816C5.83343 8.08915 5.56198 9.04805 5.66245 10.005C5.73028 9.81533 6.68968 8.93517 7.20815 9.69376Z"
-                        fill="#E8E8E8"
-                      />
-                      <path
-                        d="M14.0936 8.23012C14.0685 8.1502 14.0378 8.07219 14.0015 7.99671V7.99184C13.8324 7.64657 13.552 7.36876 13.2059 7.20348C12.8597 7.03819 12.468 6.99513 12.0944 7.08126C11.7208 7.1674 11.3871 7.37769 11.1475 7.67803C10.9079 7.97836 10.7765 8.35112 10.7745 8.73584C10.7745 8.85683 10.7875 8.97747 10.8132 9.09568C10.8133 9.0973 10.8133 9.09892 10.8132 9.10054C10.8229 9.14917 10.8374 9.1978 10.852 9.24642C10.9385 9.58898 10.9553 9.9455 10.9015 10.2947C10.8476 10.6439 10.7242 10.9787 10.5387 11.279C10.3531 11.5793 10.1091 11.8391 9.82133 12.0427C9.53354 12.2463 9.20783 12.3896 8.86362 12.4641C8.51942 12.5386 8.16378 12.5428 7.81795 12.4763C7.47211 12.4099 7.14315 12.2742 6.85072 12.0774C6.55828 11.8805 6.30836 11.6266 6.11587 11.3307C5.92338 11.0348 5.79226 10.703 5.73035 10.3551C5.8179 10.9581 6.03066 11.536 6.35486 12.0512C6.67905 12.5665 7.10745 13.0077 7.61233 13.3462C8.1172 13.6848 8.68729 13.9132 9.28569 14.0166C9.88409 14.12 10.4975 14.0962 11.0861 13.9466C11.6747 13.797 12.2255 13.5251 12.7028 13.1483C13.18 12.7716 13.5732 12.2985 13.8567 11.7596C14.1402 11.2207 14.3078 10.6281 14.3486 10.0201C14.3894 9.41211 14.3025 8.80228 14.0936 8.23012Z"
-                        fill="#E8E8E8"
-                      />
-                      <path
-                        d="M13.3715 9.40197C13.3715 11.5209 11.6599 13.2387 9.54846 13.2387C8.42782 13.2387 7.41979 12.7548 6.72052 11.9838C6.76288 12.0163 6.80636 12.0475 6.85072 12.0774C7.14315 12.2742 7.47211 12.4099 7.81795 12.4763C8.16378 12.5428 8.51942 12.5386 8.86362 12.4641C9.20783 12.3896 9.53354 12.2463 9.82133 12.0427C10.1091 11.8391 10.3531 11.5793 10.5387 11.279C10.7242 10.9787 10.8476 10.6439 10.9015 10.2947C10.9553 9.9455 10.9385 9.58898 10.852 9.24642C10.8374 9.1978 10.8229 9.14917 10.8132 9.10054C10.8133 9.09892 10.8133 9.0973 10.8132 9.09568C10.7875 8.97747 10.7745 8.85683 10.7745 8.73584C10.7765 8.35112 10.9079 7.97836 11.1475 7.67803C11.3871 7.37769 11.7208 7.1674 12.0944 7.08126C12.2485 7.04573 12.4056 7.03213 12.5614 7.04008C13.069 7.69125 13.3715 8.51116 13.3715 9.40197Z"
-                        fill="#E8E8E8"
-                      />
-                      <path
-                        d="M13.5419 3.49261L13.9409 4.20878L14.6571 4.60778L13.9409 5.00678L13.5419 5.72294L13.1429 5.00678L12.4268 4.60778L13.1429 4.20878L13.5419 3.49261Z"
-                        fill="#F0F0F0"
-                      />
-                    </Icon>
+                  <Flex gap="4px" alignItems="center">
+                    <Text>{t('reward_status')}</Text>
                   </Flex>
                 </Th>
+                <Th>{t('completion_time')}</Th>
+                <Th>{t('Amount')}</Th>
               </Tr>
             </Thead>
-            <Tbody fontSize={'sm'}>
-              {data?.rewardList?.map((item, i) => (
-                <Tr key={item?.invitee + i}>
-                  <Td>
-                    {item?.arrival_time
-                      ? dayjs(item?.arrival_time).format('YYYY/MM/DD HH:mm:ss')
-                      : '-'}
-                  </Td>
-                  <Td>{formatMoney(item?.amount || 0)}</Td>
-                </Tr>
-              ))}
+            <Tbody fontSize="sm">
+              {isLoading
+                ? Array(5)
+                    .fill(0)
+                    .map((_, index) => (
+                      <Tr key={index}>
+                        <Td>
+                          <Skeleton height="20px" width="20px" />
+                        </Td>
+                        <Td>
+                          <Skeleton height="20px" width="80px" />
+                        </Td>
+                        <Td>
+                          <Skeleton height="20px" width="100px" />
+                        </Td>
+                        <Td>
+                          <Skeleton height="20px" width="80px" />
+                        </Td>
+                        <Td>
+                          <Skeleton height="20px" width="100px" />
+                        </Td>
+                        <Td>
+                          <Skeleton height="20px" width="40px" />
+                        </Td>
+                      </Tr>
+                    ))
+                : invitationData.rewardList.map((item, index) => {
+                    const offset = (page - 1) * pageSize;
+                    return (
+                      <Tr key={index} borderBottom={'1px solid #F1F1F3'}>
+                        <Td>{offset + index + 1}</Td>
+                        <Td color={'#52525B'}>{item.invitee}</Td>
+                        <Td color={'#52525B'}>
+                          {formatTime(item.registerTime, 'YYYY-MM-DD HH:mm')}
+                        </Td>
+                        <Td>
+                          {item.status === 'completed' ? (
+                            <Flex
+                              alignItems="center"
+                              color={'#10B981'}
+                              fontSize={'14px'}
+                              fontWeight={500}
+                            >
+                              <Box w={'8px'} h={'8px'} borderRadius="2px" bg="#10B981" mr={2} />
+                              <Text>{t('completed')}</Text>
+                            </Flex>
+                          ) : (
+                            <Flex
+                              alignItems="center"
+                              color={'#EAB308'}
+                              fontSize={'14px'}
+                              fontWeight={500}
+                            >
+                              <Box w={'8px'} h={'8px'} borderRadius="2px" bg="#EAB308" mr={2} />
+                              <Text>{t('in_progress')}</Text>
+                            </Flex>
+                          )}
+                        </Td>
+                        <Td color={'#52525B'}>
+                          {item.arrival_time
+                            ? formatTime(item.arrival_time, 'YYYY-MM-DD HH:mm')
+                            : '--'}
+                        </Td>
+                        <Td color="#2563EB">+{item.amount}</Td>
+                      </Tr>
+                    );
+                  })}
             </Tbody>
           </Table>
+
+          {invitationData.pagination && (
+            <Flex justifyContent="flex-end" m={4}>
+              <Flex>
+                <Button
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  isDisabled={page <= 1 || isLoading}
+                  mr={2}
+                >
+                  {t('previous_page')}
+                </Button>
+                <Text alignSelf="center" mx={2}>
+                  {page} / {invitationData.pagination.totalPages || 1}
+                </Text>
+                <Button
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  isDisabled={page >= (invitationData.pagination.totalPages || 1) || isLoading}
+                  ml={2}
+                >
+                  {t('next_page')}
+                </Button>
+              </Flex>
+            </Flex>
+          )}
         </TableContainer>
-        {!isLoading && data?.rewardList?.length === 0 && (
-          <Flex mt={'10vh'} flexDirection={'column'} alignItems={'center'}>
-            <Icon
-              w="28px"
-              h="48px"
-              viewBox="0 0 80 80"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle cx="40" cy="40" r="39.5" stroke="#9CA2A8" strokeDasharray="4 4" />
-              <path
-                d="M23.6876 55.8387L23.6407 55.8376C23.3701 55.8288 21.9635 55.7385 21.0265 54.8601C20.0656 53.959 19.9509 52.6633 19.9377 52.4125C19.9364 52.389 19.9358 52.3653 19.9359 52.3417V45.2852C19.9219 44.9945 19.9031 44.0125 20.2321 42.922C20.5474 41.8763 20.9369 41.1898 21.0484 41.0045L24.591 34.7371C24.6087 34.7056 24.6275 34.6752 24.6476 34.6457C24.758 34.4818 25.3518 33.6383 26.166 33.1317C27.0227 32.5982 28.0597 32.557 28.3572 32.557H50.7351C50.7639 32.557 50.7924 32.5578 50.8219 32.5596C51.0443 32.5739 52.1994 32.6714 53.0933 33.1828C53.9469 33.6716 54.634 34.5259 54.763 34.6919C54.7891 34.7259 54.8137 34.7611 54.8367 34.7974L59.0442 41.4646C59.0622 41.4939 59.0804 41.5246 59.0968 41.556C59.1774 41.7109 59.5933 42.529 59.8039 43.3247C60.0119 44.1119 60.0621 44.9819 60.0698 45.1481L60.0708 45.2048V52.2624C60.0756 52.6356 60.0069 53.9162 58.9446 54.8678C57.9386 55.7684 56.5842 55.8381 56.1931 55.8381H23.6876V55.8387ZM23.3271 42.4347C23.2497 42.5723 23.0089 43.0277 22.8065 43.6986C22.5927 44.4079 22.6181 45.0709 22.6215 45.1444C22.6234 45.1761 22.6245 45.208 22.625 45.2398V52.2952L22.6276 52.3147C22.6443 52.4416 22.7217 52.749 22.8551 52.8876L22.8731 52.9067L22.8943 52.9223C23.0811 53.06 23.5441 53.139 23.7058 53.1487L56.1952 53.1493C56.4648 53.1461 56.936 53.0563 57.1495 52.8649C57.3405 52.6937 57.3833 52.3998 57.3833 52.3528L57.3807 52.2712V45.2461C57.3662 44.9721 57.3131 44.4259 57.2031 44.0121C57.0786 43.5393 56.8001 42.973 56.7454 42.8646L56.7303 42.8382L52.6013 36.2947L52.5884 36.2791C52.4319 36.0906 52.0567 35.6879 51.757 35.5161C51.4975 35.3676 50.969 35.2725 50.6968 35.2471L50.6686 35.2458H28.362C28.1532 35.2476 27.7653 35.3029 27.5861 35.4149C27.3338 35.5722 27.0349 35.9316 26.912 36.0994L26.9014 36.1139L23.381 42.3419L23.3429 42.4059L23.3435 42.4043C23.3424 42.4074 23.3271 42.4347 23.3271 42.4347ZM39.8749 30.5851C39.5184 30.5847 39.1766 30.443 38.9245 30.1909C38.6724 29.9388 38.5306 29.5971 38.5301 29.2406V21.5056C38.5306 21.1492 38.6723 20.8075 38.9243 20.5555C39.1763 20.3034 39.518 20.1616 39.8744 20.1611C40.2309 20.1615 40.5728 20.3032 40.8249 20.5553C41.0771 20.8073 41.2189 21.1491 41.2194 21.5056V29.2405C41.2191 29.5969 41.0773 29.9387 40.8252 30.1908C40.5732 30.4429 40.2314 30.5846 39.8749 30.585V30.5851ZM48.8898 30.5341C48.5333 30.5336 48.1916 30.3917 47.9395 30.1396C47.6875 29.8875 47.5457 29.5458 47.5453 29.1893C47.5456 28.8809 47.6516 28.5819 47.8457 28.3423L50.9194 24.5515C51.0453 24.3956 51.2047 24.27 51.3856 24.1838C51.5666 24.0977 51.7646 24.0532 51.965 24.0537C52.2757 24.0537 52.5683 24.1575 52.8103 24.3539C52.948 24.4646 53.0623 24.6017 53.1465 24.757C53.2308 24.9123 53.2833 25.0829 53.3011 25.2587C53.32 25.4343 53.304 25.6119 53.2537 25.7813C53.2035 25.9506 53.1202 26.1083 53.0085 26.2452L49.935 30.036C49.8095 30.1918 49.6507 30.3175 49.4701 30.4036C49.2896 30.4898 49.092 30.5343 48.8919 30.5338H48.8898V30.5341ZM31.0112 30.4313C30.8092 30.4318 30.6097 30.3865 30.4278 30.2988C30.2458 30.2111 30.0861 30.0833 29.9607 29.925L26.9392 26.1344C26.7173 25.8554 26.6151 25.4998 26.6551 25.1455C26.695 24.7912 26.8739 24.4673 27.1525 24.2447C27.3898 24.0541 27.6853 23.9505 27.9897 23.9514C28.4019 23.9514 28.7853 24.1361 29.0419 24.458L32.0637 28.2485C32.2857 28.5274 32.388 28.883 32.3481 29.2372C32.3083 29.5914 32.1295 29.9154 31.851 30.138C31.6128 30.3274 31.3177 30.4307 31.0133 30.4313H31.0112Z"
-                fill="#7B838B"
-              />
-              <path
-                d="M39.9264 50.3068C36.9308 50.3068 34.3281 48.2985 33.5976 45.4236L33.5388 45.1918L21.5977 45.1847C21.2412 45.1839 20.8995 45.0419 20.6475 44.7897C20.3954 44.5375 20.2537 44.1957 20.2532 43.8391C20.2537 43.4827 20.3956 43.1411 20.6476 42.8892C20.8997 42.6373 21.2413 42.4955 21.5977 42.4951L34.7466 42.5035C35.103 42.5044 35.4444 42.6465 35.6963 42.8986C35.9481 43.1506 36.0899 43.4922 36.0904 43.8486C36.0904 45.9621 37.7753 47.6174 39.9264 47.6174C42.0698 47.6174 43.7489 45.9622 43.7489 43.8486C43.7496 43.4922 43.8915 43.1506 44.1435 42.8985C44.3954 42.6465 44.737 42.5044 45.0934 42.5035L58.1206 42.4953C58.8623 42.4953 59.4651 43.0976 59.4656 43.8388C59.4661 44.58 58.8634 45.1839 58.1221 45.185L46.3019 45.1921L46.243 45.4238C45.5134 48.2987 42.9162 50.3068 39.9264 50.3068Z"
-                fill="#7B838B"
-              />
-            </Icon>
-            <Box mt={2} color={'myGray.500'}>
-              {t('No invitation records')}
-            </Box>
-          </Flex>
-        )}
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent maxW="500px">
+          <ModalHeader display="flex" alignItems="center" h={'24px'}>
+            <Icon as={GiftIcon} boxSize={5} color="#2563EB" mr={2} />
+            <Text fontSize={'14px'}>{t('activity_subsidy')}</Text>
+          </ModalHeader>
+          <Divider />
+          <ModalCloseButton />
+
+          <ModalBody py={'24px'} px={'36px'}>
+            <Text fontWeight="600" color={'#18181B'} fontSize="14px" mb={'16px'}>
+              {t('activity_subsidy_text')}
+            </Text>
+
+            <Flex mb={2} p={'16px'}>
+              <Box flex="1" color={'#18181B'} fontSize={'14px'} fontWeight={400}>
+                {t('invite_number')}
+              </Box>
+              <Box flex="1" color={'#18181B'} fontSize={'14px'} fontWeight={400}>
+                {t('invite_number_text')}
+              </Box>
+            </Flex>
+            <Divider />
+
+            <Flex p={'16px'}>
+              <Box flex="1">{t('invite_number_text_1')}</Box>
+              <Box flex="1">{t('invite_number_text_2')}</Box>
+            </Flex>
+            <Divider />
+
+            <Flex p={'16px'}>
+              <Box flex="1">{t('invite_number_text_3')}</Box>
+              <Box flex="1">{t('invite_number_text_4')}</Box>
+            </Flex>
+            <Divider />
+
+            <Flex p={'16px'}>
+              <Box flex="1">{t('invite_number_text_5')}</Box>
+              <Box flex="1">{t('invite_number_text_6')}</Box>
+            </Flex>
+
+            <Text fontWeight="600" fontSize="14px" mt={'32px'} mb={'12px'} color={'#18181B'}>
+              {t('balance_reward')}
+            </Text>
+            <Text fontSize="14px" mb={'12px'} color={'#000'}>
+              {t('balance_reward_text')}
+            </Text>
+            <Text fontSize="14px" color={'#71717A'} mb={'12px'}>
+              {t('invite_example')}
+            </Text>
+
+            <Button
+              width="100%"
+              variant="outline"
+              mt={'20px'}
+              height="45px"
+              borderRadius="8px"
+              border={'1px solid #E4E4E7'}
+              color={'#18181B'}
+              fontSize={'14px'}
+              fontWeight={'500'}
+              onClick={() =>
+                window.open(
+                  'https://fael3z0zfze.feishu.cn/share/base/form/shrcnUYQoGd0kO79MtcSiyI2eVc',
+                  '_blank'
+                )
+              }
+            >
+              {t('apply_now')}
+            </Button>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 }
 
+// User Statistics Box Component
+function UserStatBox({
+  title,
+  count,
+  icon,
+  iconBoxProps
+}: {
+  title: string;
+  count: number;
+  icon: React.ReactNode;
+  iconBoxProps?: FlexProps;
+}) {
+  return (
+    <Box p={'24px'} border="1px solid #E4E4E7" borderRadius="16px" bg={'#FFF'}>
+      <Text color="#71717A" mb={'8px'}>
+        {title}
+      </Text>
+      <Flex justifyContent="space-between" alignItems="center" h={'30px'}>
+        <Text fontSize="30px" fontWeight="600">
+          {count} {title.includes('invitees') ? '' : '个'}
+        </Text>
+        <Flex
+          w="40px"
+          h="40px"
+          borderRadius="8px"
+          alignItems="center"
+          justifyContent="center"
+          {...iconBoxProps}
+        >
+          {icon}
+        </Flex>
+      </Flex>
+    </Box>
+  );
+}
+
 export async function getServerSideProps(content: any) {
-  const SEALOS_DOMAIN = process.env.SEALOS_DOMAIN || 'cloud.sealos.io';
+  const SEALOS_DOMAIN = process.env.SEALOS_DOMAIN || 'cloud.sealos.run';
   const GIFT_RATIO = process.env.GIFT_RATIO || '0.1';
   const INVITER_REWARD = process.env.NEXT_PUBLIC_INVITER_REWARD || '5';
 

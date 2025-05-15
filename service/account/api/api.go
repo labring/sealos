@@ -9,6 +9,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
+
+	"github.com/google/uuid"
+
+	"github.com/labring/sealos/controllers/pkg/utils"
 
 	"gorm.io/gorm"
 
@@ -109,10 +114,13 @@ func GetConsumptionAmount(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
 		return
 	}
-	amount, err := dao.DBClient.GetConsumptionAmount(*req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
-		return
+	var amount int64
+	if req.Owner != "" {
+		amount, err = dao.DBClient.GetConsumptionAmount(*req)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get consumption amount : %v", err)})
+			return
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"amount": amount,
@@ -175,7 +183,7 @@ func GetAllRegionConsumptionAmount(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to create request: %v", err)})
 			return
 		}
-		token, err := dao.JwtMgr.GenerateToken(helper.JwtUser{
+		token, err := dao.JwtMgr.GenerateToken(utils.JwtUser{
 			UserID: req.GetAuth().UserID,
 		})
 		if err != nil {
@@ -535,6 +543,46 @@ func GetAPPCosts(c *gin.Context) {
 	})
 }
 
+// GetAppTypeCosts
+// @Summary Get app type costs
+// @Description Get app type costs within a specified time range
+// @Tags AppTypeCosts
+// @Accept json
+// @Produce json
+// @Param request body helper.AppCostsReq true "App type costs request"
+// @Success 200 {object} map[string]interface{} "successfully retrieved app type costs"
+// @Failure 400 {object} map[string]interface{} "failed to parse get app type cost request"
+// @Failure 401 {object} map[string]interface{} "authenticate error"
+// @Failure 500 {object} map[string]interface{} "failed to get app type cost"
+// @Router /account/v1alpha1/costs/app-type [post]
+func GetAppTypeCosts(c *gin.Context) {
+	req, err := helper.ParseAppCostsReq(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("failed to parse get app type cost request: %v", err)})
+		return
+	}
+	if err := authenticateRequest(c, req); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	costs, err := dao.DBClient.GetAppResourceCosts(req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("failed to get app type cost : %v", err)})
+		return
+	}
+	appCosts := common.AppCosts{}
+	for _type, resourceUsage := range costs.ResourcesByType {
+		appCosts.Costs = append(appCosts.Costs, common.AppCost{
+			AppType:    int32(resources.AppType[_type]),
+			Used:       resourceUsage.Used,
+			UsedAmount: resourceUsage.UsedAmount,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"app_costs": appCosts,
+	})
+}
+
 // CheckPermission
 // @Summary Check permission
 // @Description Check permission
@@ -718,12 +766,17 @@ func GetAppCostTimeRange(c *gin.Context) {
 }
 
 func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
-	user, err := dao.JwtMgr.ParseUser(c)
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		return nil, fmt.Errorf("null auth found")
+	}
+	token := strings.TrimPrefix(tokenString, "Bearer ")
+	user, err := dao.JwtMgr.ParseUser(token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse user: %v", err)
 	}
-	if user.UserID == "" {
-		return nil, fmt.Errorf("invalid user: %v", user)
+	if user.UserID == "" && user.UserUID == uuid.Nil {
+		return nil, fmt.Errorf("invalid user: %v", *user)
 	}
 	auth = &helper.Auth{
 		Owner:   user.UserCrName,
@@ -731,8 +784,8 @@ func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 		UserUID: user.UserUID,
 	}
 	// if the user is not in the local region, get the user cr name from db
-	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID {
-		auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: user.UserID})
+	if dao.DBClient.GetLocalRegion().UID.String() != user.RegionUID || auth.Owner == "" {
+		auth.Owner, err = dao.DBClient.GetUserCrName(types.UserQueryOpts{ID: user.UserID, UID: user.UserUID})
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				fmt.Printf("failed to get user cr name: %v\n", err)

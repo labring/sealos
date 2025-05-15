@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -158,7 +159,12 @@ func AdminGetUserRealNameInfo(c *gin.Context) {
 const AdminUserName = "sealos-admin"
 
 func authenticateAdminRequest(c *gin.Context) error {
-	user, err := dao.JwtMgr.ParseUser(c)
+	tokenString := c.GetHeader("Authorization")
+	if tokenString == "" {
+		return fmt.Errorf("null auth found")
+	}
+	token := strings.TrimPrefix(tokenString, "Bearer ")
+	user, err := dao.JwtMgr.ParseUser(token)
 	if err != nil {
 		return fmt.Errorf("failed to parse user: %v", err)
 	}

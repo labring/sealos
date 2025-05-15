@@ -28,10 +28,9 @@ import (
 
 	"github.com/go-logr/logr"
 
-	util "github.com/labring/operator-sdk/controller"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper/config"
+	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -62,7 +61,7 @@ type OperationReqReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts util.RateLimiterOptions, expTime time.Duration, retTime time.Duration) error {
+func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.RateLimiterOptions, expTime time.Duration, retTime time.Duration) error {
 	const controllerName = "operationrequest_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -79,8 +78,8 @@ func (r *OperationReqReconciler) SetupWithManager(mgr ctrl.Manager, opts util.Ra
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Operationrequest{}, builder.WithPredicates(namespaceOnlyPredicate(config.GetUserSystemNamespace()))).
 		WithOptions(controller.Options{
-			MaxConcurrentReconciles: util.GetConcurrent(opts),
-			RateLimiter:             util.GetRateLimiter(opts),
+			MaxConcurrentReconciles: ratelimiter.GetConcurrent(opts),
+			RateLimiter:             ratelimiter.GetRateLimiter(opts),
 		}).
 		Complete(r)
 }
