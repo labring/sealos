@@ -169,8 +169,6 @@
   content: '';
   position: absolute;
   border: 5px solid #fff;
-  /* 取消 Arrow */
-  display: none;
 }
 
 .driver-popover-arrow-side-over {

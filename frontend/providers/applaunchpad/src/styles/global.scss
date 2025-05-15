@@ -43,9 +43,41 @@
 }
 
 #driver-popover-content {
-  padding: 14px;
-  max-width: 600px;
-  border: 1px solid #94b5ff;
+  border: none;
+  padding: 0px;
+  border-radius: 20px;
+  max-width: fit-content;
+  // position: absolute;
+  // top: 0px;
+  // left: 0px;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-left-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-top-color: rgba(28, 46, 245, 0.9) !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: rgba(28, 46, 245, 0.9) !important;
 }
 
 // date picker

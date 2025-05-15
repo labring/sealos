@@ -1,13 +1,29 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { Button, Box } from '@chakra-ui/react';
 import styles from './empty.module.scss';
 import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
+import { useGuideStore } from '@/store/guide';
+import { applistDriverObj, startDriver } from '@/hooks/driver';
 
 const Empty = () => {
   const router = useRouter();
   const { t } = useTranslation();
+
+  const { listCompleted } = useGuideStore();
+  console.log('listCompleted', listCompleted);
+
+  useEffect(() => {
+    if (!listCompleted) {
+      startDriver(
+        applistDriverObj(t, () => {
+          router.push('/app/edit');
+        })
+      );
+    }
+  }, [listCompleted, t]);
+
   return (
     <Box
       className={styles.empty}
@@ -20,6 +36,7 @@ const Empty = () => {
       <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
       <Box py={8}>{t("You haven't created any application yet")}</Box>
       <Button
+        className="create-app-btn"
         w={155}
         mt={5}
         onClick={() => router.push('/app/edit')}

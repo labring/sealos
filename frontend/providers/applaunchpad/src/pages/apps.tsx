@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { RequestController, isElementInViewport } from '@/utils/tools';
 import AppList from '@/components/apps/appList';
 import Empty from '@/components/apps/empty';
+import { useGuideStore } from '@/store/guide';
 
 const Home = () => {
   const router = useRouter();
@@ -122,6 +123,14 @@ const Home = () => {
       requestController.current?.stop();
     };
   }, [router]);
+
+  const { resetGuideState } = useGuideStore();
+  useEffect(() => {
+    if (router.isReady) {
+      const { action } = router.query as { action?: string };
+      resetGuideState(!(action === 'guide'));
+    }
+  }, [resetGuideState, router]);
 
   return (
     <>
