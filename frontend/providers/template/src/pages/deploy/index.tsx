@@ -299,8 +299,6 @@ export default function EditApp({
     }
   }, [setInsideCloud, t, templateName, toast]);
 
-  // console.log(local, 123);
-
   const getPageTitle = (
     title: string,
     language?: string,
