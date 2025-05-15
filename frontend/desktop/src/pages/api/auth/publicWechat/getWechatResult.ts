@@ -44,14 +44,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       avatar_url,
       name: userInfo?.nickname
     });
+
+    if (_data?.isRestricted) {
+      return jsonRes(res, {
+        code: 401,
+        message: 'Account banned'
+      });
+    }
+
     if (!_data)
       return jsonRes(res, {
         code: 401,
         message: 'Unauthorized'
       });
+
     const data = await getRegionToken({
-      userUid: _data.user.userUid,
-      userId: _data.user.name
+      userUid: _data.user!.userUid,
+      userId: _data.user!.name
     });
     return jsonRes(res, {
       code: 200,
