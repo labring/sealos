@@ -37,6 +37,7 @@ request.interceptors.response.use(
     const { status, data } = response;
     if (data.code === 401) {
       console.log('鉴权失败');
+      console.log(data.message);
       useSessionStore.getState().delSession();
       useSessionStore.getState().setToken('');
       return window.location.replace('/signin');

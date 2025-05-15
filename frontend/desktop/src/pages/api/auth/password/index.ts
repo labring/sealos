@@ -27,6 +27,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       semData,
       bdVid
     });
+
+    if (data?.isRestricted) {
+      return jsonRes(res, {
+        code: 401,
+        message: 'Account banned'
+      });
+    }
+
     if (!data)
       return jsonRes(res, {
         code: 401,

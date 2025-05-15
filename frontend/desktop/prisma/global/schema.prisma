@@ -40,6 +40,7 @@ model Account {
   encryptDeductionBalance String
   created_at              DateTime @default(now()) @db.Timestamptz(3)
   create_region_id        String
+  updated_at              DateTime @default(now()) @db.Timestamptz(3)
   balance                 BigInt?
   deduction_balance       BigInt?
 }

@@ -200,7 +200,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           where: { userUid: inviterUser.uid },
           data: {
             activityBonus: inviterActivityBonus + realnameInviteReward,
-            balance: inviterAccount.balance + realnameInviteReward
+            balance: inviterAccount.balance + realnameInviteReward,
+            updated_at: new Date()
           }
         });
 
@@ -243,7 +244,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           where: { userUid: userUid },
           data: {
             activityBonus: userActivityBonus + totalUserReward,
-            balance: currentUserBalance
+            balance: currentUserBalance,
+            updated_at: new Date()
           }
         });
       }

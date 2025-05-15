@@ -320,6 +320,20 @@ export const getGlobalToken = async ({
     }
   });
 
+  if (_user) {
+    const find = await globalPrisma.restrictedUser.findFirst({
+      where: {
+        userUid: _user.userUid
+      }
+    });
+    if (find) {
+      return {
+        token: null,
+        isRestricted: true
+      };
+    }
+  }
+
   if (provider === ProviderType.PASSWORD) {
     if (!password) {
       return null;
