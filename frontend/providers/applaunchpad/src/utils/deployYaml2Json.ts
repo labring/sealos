@@ -7,7 +7,7 @@ import {
   minReplicasKey,
   publicDomainKey
 } from '@/constants/app';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
+import { SEALOS_USER_DOMAINS, HTTPS_ENABLE } from '@/store/static';
 import type { AppEditType } from '@/types/app';
 import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
@@ -319,6 +319,8 @@ export const json2Ingress = (data: AppEditType) => {
         ? network.customDomain
         : `${network.publicDomain}.${network.domain}`;
 
+      const httpsEnabled = HTTPS_ENABLE || network.customDomain;
+
       const secretName = network.customDomain
         ? network.networkName
         : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
@@ -361,14 +363,19 @@ export const json2Ingress = (data: AppEditType) => {
               }
             }
           ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
-          ]
+          ...(httpsEnabled
+            ? {
+                tls: [
+                  {
+                    hosts: [host],
+                    secretName
+                  }
+                ]
+              }
+            : {})
         }
       };
+
       const issuer = {
         apiVersion: 'cert-manager.io/v1',
         kind: 'Issuer',
