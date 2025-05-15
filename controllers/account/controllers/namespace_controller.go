@@ -23,6 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
 
 	//kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
@@ -90,6 +94,10 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.Client.Get(ctx, req.NamespacedName, &ns); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	if ns.Status.Phase == corev1.NamespaceTerminating {
+		logger.V(1).Info("namespace is terminating")
+		return ctrl.Result{}, nil
+	}
 
 	debtStatus, ok := ns.Annotations[v1.DebtNamespaceAnnoStatusKey]
 	if !ok {
@@ -125,7 +133,10 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	case v1.FinalDeletionDebtNamespaceAnnoStatus:
 		if err := r.DeleteUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "delete namespace resources failed")
-			return ctrl.Result{}, err
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 10 * time.Minute,
+			}, err
 		}
 		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.FinalDeletionCompletedDebtNamespaceAnnoStatus
 		if err := r.Client.Update(ctx, &ns); err != nil {
@@ -157,7 +168,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 func (r *NamespaceReconciler) SuspendUserResource(ctx context.Context, namespace string) error {
 	pipelines := []func(context.Context, string) error{
-		//r.suspendKBCluster,
+		r.suspendKBCluster,
 		r.suspendOrphanPod,
 		r.limitResourceQuotaCreate,
 		r.deleteControlledPod,
@@ -179,8 +190,14 @@ func (r *NamespaceReconciler) DeleteUserResource(_ context.Context, namespace st
 		"Issuer", "Certificate", "HorizontalPodAutoscaler", "instance",
 		"job", "app",
 	}
+	errChan := make(chan error, len(deleteResources))
 	for _, rs := range deleteResources {
-		if err := deleteResource(r.dynamicClient, rs, namespace); err != nil {
+		go func(resource string) {
+			errChan <- deleteResource(r.dynamicClient, resource, namespace)
+		}(rs)
+	}
+	for range deleteResources {
+		if err := <-errChan; err != nil {
 			return err
 		}
 	}
@@ -227,7 +244,6 @@ func GetLimit0ResourceQuota(namespace string) *corev1.ResourceQuota {
 	return &quota
 }
 
-/*
 func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
 	logger := r.Log.WithValues("Namespace", namespace, "Function", "suspendKBCluster")
 
@@ -242,10 +258,8 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 	clusterList, err := r.dynamicClient.Resource(clusterGVR).Namespace(namespace).List(ctx, v12.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Info("No KubeBlocks clusters found in namespace")
 			return nil
 		}
-		logger.Error(err, "Failed to list KubeBlocks clusters")
 		return fmt.Errorf("failed to list clusters in namespace %s: %w", namespace, err)
 	}
 
@@ -290,7 +304,6 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 			"ttlSecondsBeforeAbort":  int64(60 * 60),
 		}
 		if err := unstructured.SetNestedField(opsRequest.Object, opsSpec, "spec"); err != nil {
-			logger.Error(err, "Failed to set spec for OpsRequest", "OpsRequest", opsName)
 			return fmt.Errorf("failed to set spec for OpsRequest %s in namespace %s: %w", opsName, namespace, err)
 		}
 
@@ -300,13 +313,10 @@ func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace st
 		}
 		if errors.IsAlreadyExists(err) {
 			logger.V(1).Info("OpsRequest already exists, skipping creation", "OpsRequest", opsName)
-		} else {
-			logger.Info("Successfully created OpsRequest", "OpsRequest", opsName)
 		}
 	}
 	return nil
 }
-*/
 
 //func (r *NamespaceReconciler) suspendKBCluster(ctx context.Context, namespace string) error {
 //	kbClusterList := kbv1alpha1.ClusterList{}
@@ -500,18 +510,18 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 	return nil
 }
 
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controller.Options) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
 	r.OSNamespace = os.Getenv(OSNamespace)
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to load in-cluster config: %v", err))
+		return fmt.Errorf("failed to load in-cluster config: %v", err)
 	}
 	dynamicClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create dynamic client: %v", err))
+		return fmt.Errorf("failed to create dynamic client: %v", err)
 	}
 	r.dynamicClient = dynamicClient
 	if r.OSAdminSecret == "" || r.InternalEndpoint == "" || r.OSNamespace == "" {
@@ -519,6 +529,8 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
+		WithEventFilter(&AnnotationChangedPredicate{}).
+		WithOptions(limitOps).
 		Complete(r)
 }
 
@@ -527,17 +539,17 @@ type AnnotationChangedPredicate struct {
 }
 
 func (AnnotationChangedPredicate) Update(e event.UpdateEvent) bool {
-	oldObj, _ok1 := e.ObjectOld.(*corev1.Namespace)
-	newObj, _ok2 := e.ObjectNew.(*corev1.Namespace)
-	if !_ok1 || !_ok2 || newObj.Annotations == nil {
+	oldObj, ok1 := e.ObjectOld.(*corev1.Namespace)
+	newObj, ok2 := e.ObjectNew.(*corev1.Namespace)
+	if !ok1 || !ok2 || newObj.Annotations == nil {
 		return false
 	}
-	oldStatus := ""
-	if oldAno := oldObj.Annotations; oldAno != nil {
-		oldStatus = oldAno[v1.DebtNamespaceAnnoStatusKey]
-	}
-	newStatus, ok := newObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
-	return ok && oldStatus != newStatus
+	oldStatus := oldObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
+	newStatus := newObj.Annotations[v1.DebtNamespaceAnnoStatusKey]
+	return oldStatus != newStatus && newStatus != v1.SuspendCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.FinalDeletionCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.ResumeCompletedDebtNamespaceAnnoStatus &&
+		newStatus != v1.TerminateSuspendCompletedDebtNamespaceAnnoStatus
 }
 
 func (AnnotationChangedPredicate) Create(e event.CreateEvent) bool {

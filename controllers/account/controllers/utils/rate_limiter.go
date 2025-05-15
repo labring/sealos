@@ -38,7 +38,7 @@ func (o *LimiterOptions) BindFlags(fs *flag.FlagSet) {
 	fs.IntVar(&o.Burst, flagBurst, defaultBurst, "The maximum number of batches to allow in a short period of time.")
 }
 
-func GetRateLimiter(opts LimiterOptions) workqueue.TypedRateLimiter[reconcile.Request] {
+func GetRateLimiter(opts *LimiterOptions) workqueue.TypedRateLimiter[reconcile.Request] {
 	return workqueue.NewTypedMaxOfRateLimiter[reconcile.Request](
 		workqueue.NewTypedItemExponentialFailureRateLimiter[reconcile.Request](opts.MinRetryDelay, opts.MaxRetryDelay),
 		&workqueue.TypedBucketRateLimiter[reconcile.Request]{Limiter: rate.NewLimiter(rate.Limit(opts.QPS), opts.Burst)},
