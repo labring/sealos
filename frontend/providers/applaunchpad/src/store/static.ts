@@ -52,5 +52,6 @@ export const serverLoadInitData = () => {
     DOMAIN_PORT = global.AppConfig.cloud.port || '';
     SHOW_EVENT_ANALYZE = global.AppConfig.launchpad.eventAnalyze.enabled;
     SEALOS_USER_DOMAINS = global.AppConfig.cloud.userDomains;
+    HTTPS_ENABLE = global.AppConfig.common.httpsEnabled;
   } catch (error) {}
 };

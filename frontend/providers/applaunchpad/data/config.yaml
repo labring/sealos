@@ -9,7 +9,7 @@ common:
   guideEnabled: false
   apiEnabled: false
   gpuEnabled: false
-  enableHTTPS: true
+  httpsEnabled: true
 launchpad:
   meta:
     title: 'Sealos AppLaunchpad'

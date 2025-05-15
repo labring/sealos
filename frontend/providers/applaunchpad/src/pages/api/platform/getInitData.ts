@@ -38,7 +38,7 @@ export const defaultAppConfig: AppConfigType = {
     guideEnabled: false,
     apiEnabled: false,
     gpuEnabled: false,
-    enableHTTPS: true
+    httpsEnabled: true
   },
   launchpad: {
     meta: {
@@ -113,7 +113,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain,
         PVC_STORAGE_MAX: global.AppConfig.launchpad.pvcStorageMax || 20,
         GPU_ENABLED: global.AppConfig.common.gpuEnabled,
-        HTTPS_ENABLE: global.AppConfig.common.enableHTTPS
+        HTTPS_ENABLE: global.AppConfig.common.httpsEnabled
       }
     });
   } catch (error) {
