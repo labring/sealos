@@ -19,6 +19,7 @@ export type Response = {
   DESKTOP_DOMAIN: string;
   PVC_STORAGE_MAX: number;
   GPU_ENABLED: boolean;
+  HTTPS_ENABLE: boolean;
 };
 
 export const defaultAppConfig: AppConfigType = {
@@ -36,7 +37,8 @@ export const defaultAppConfig: AppConfigType = {
   common: {
     guideEnabled: false,
     apiEnabled: false,
-    gpuEnabled: false
+    gpuEnabled: false,
+    enableHTTPS: true
   },
   launchpad: {
     meta: {
@@ -110,7 +112,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
         DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain,
         PVC_STORAGE_MAX: global.AppConfig.launchpad.pvcStorageMax || 20,
-        GPU_ENABLED: global.AppConfig.common.gpuEnabled
+        GPU_ENABLED: global.AppConfig.common.gpuEnabled,
+        HTTPS_ENABLE: global.AppConfig.common.enableHTTPS
       }
     });
   } catch (error) {
