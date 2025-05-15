@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
@@ -92,6 +94,10 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if err := r.Client.Get(ctx, req.NamespacedName, &ns); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	if ns.Status.Phase == corev1.NamespaceTerminating {
+		logger.V(1).Info("namespace is terminating")
+		return ctrl.Result{}, nil
+	}
 
 	debtStatus, ok := ns.Annotations[v1.DebtNamespaceAnnoStatusKey]
 	if !ok {
@@ -127,7 +133,10 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	case v1.FinalDeletionDebtNamespaceAnnoStatus:
 		if err := r.DeleteUserResource(ctx, req.NamespacedName.Name); err != nil {
 			logger.Error(err, "delete namespace resources failed")
-			return ctrl.Result{}, err
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 10 * time.Minute,
+			}, err
 		}
 		ns.Annotations[v1.DebtNamespaceAnnoStatusKey] = v1.FinalDeletionCompletedDebtNamespaceAnnoStatus
 		if err := r.Client.Update(ctx, &ns); err != nil {
@@ -501,7 +510,7 @@ func (r *NamespaceReconciler) setOSUserStatus(ctx context.Context, user string, 
 	return nil
 }
 
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager, limitOps controller.Options) error {
 	r.Log = ctrl.Log.WithName("controllers").WithName("Namespace")
 	r.OSAdminSecret = os.Getenv(OSAdminSecret)
 	r.InternalEndpoint = os.Getenv(OSInternalEndpointEnv)
@@ -521,6 +530,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}, builder.WithPredicates(AnnotationChangedPredicate{})).
 		WithEventFilter(&AnnotationChangedPredicate{}).
+		WithOptions(limitOps).
 		Complete(r)
 }
 
