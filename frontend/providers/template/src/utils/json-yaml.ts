@@ -54,7 +54,7 @@ export const developGenerateYamlList = (value: string, labelName: string): YamlI
 export const parseTemplateString = (
   sourceString: string,
   dataSource: {
-    [key: string]: string | Record<string, string>;
+    [key: string]: string | Record<string, string> | boolean;
   }
 ): string => {
   sourceString = parseYamlIfEndif(sourceString, dataSource);
@@ -207,7 +207,7 @@ export function evaluateExpression(
 export function parseYamlIfEndif(
   yamlStr: string,
   data: {
-    [key: string]: string | Record<string, string>;
+    [key: string]: string | Record<string, string> | boolean;
   }
 ): string {
   return __parseYamlIfEndif(yamlStr, (exp) => {

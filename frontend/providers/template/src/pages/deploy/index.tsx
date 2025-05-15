@@ -34,7 +34,8 @@ export default function EditApp({
   metaData,
   brandName,
   readmeContent,
-  readUrl
+  readUrl,
+  local
 }: {
   appName?: string;
   metaData: {
@@ -45,6 +46,7 @@ export default function EditApp({
   brandName?: string;
   readmeContent: string;
   readUrl: string;
+  local: string;
 }) {
   const { t, i18n } = useTranslation();
   const { message: toast } = useMessage();
@@ -297,6 +299,22 @@ export default function EditApp({
     }
   }, [setInsideCloud, t, templateName, toast]);
 
+  // console.log(local, 123);
+
+  const getPageTitle = (
+    title: string,
+    language?: string,
+    local?: string,
+    brandName?: string
+  ): string => {
+    const suffix =
+      language === 'en' || local === 'en'
+        ? `Deployment and installation tutorial - ${brandName}`
+        : `部署和安装教程 - ${brandName}`;
+
+    return `${title} ${suffix}`;
+  };
+
   return (
     <Box
       flexDirection={'column'}
@@ -307,11 +325,7 @@ export default function EditApp({
       background={'linear-gradient(180deg, #FFF 0%, rgba(255, 255, 255, 0.70) 100%)'}
     >
       <Head>
-        <title>{`${metaData.title} ${
-          i18n.language === 'en'
-            ? `Deployment and installation tutorial - ${brandName}`
-            : `部署和安装教程 - ${brandName}`
-        }`}</title>
+        <title>{getPageTitle(metaData.title, i18n.language, local, brandName)}</title>
         <meta name="keywords" content={metaData.keywords} />
         <meta name="description" content={metaData.description} />
       </Head>
@@ -446,8 +460,10 @@ async function fetchReadmeContent(url: string): Promise<string> {
 }
 
 export async function getServerSideProps(content: any) {
+  const forcedLanguage = process.env.FORCED_LANGUAGE;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
   const local =
+    forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
   const appName = content?.query?.templateName || '';
@@ -494,6 +510,7 @@ export async function getServerSideProps(content: any) {
         brandName,
         readmeContent: '',
         readUrl: '',
+        local,
         ...(await serviceSideProps(content))
       }
     };

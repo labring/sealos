@@ -17,6 +17,12 @@ const ReadMe = ({ readUrl, readmeContent }: { readUrl: string; readmeContent: st
       node.properties.referrerPolicy = 'no-referrer';
       node.properties.src = `${baseUrl}${imgSrc}`;
     }
+
+    // fix vAlign attribute
+    if (node.properties && node.properties.vAlign) {
+      node.properties.valign = node.properties.vAlign;
+      delete node.properties.vAlign;
+    }
   };
 
   return (

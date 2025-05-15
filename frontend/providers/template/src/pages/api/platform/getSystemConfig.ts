@@ -23,7 +23,10 @@ export async function getSystemConfig(): Promise<SystemConfigType> {
     const res = JSON.parse(readFileSync(filename, 'utf-8')) as SystemConfigType;
     return res;
   } catch (error) {
-    console.log('-getSystemConfig-\n', error);
+    console.log(
+      '-getSystemConfig-\n',
+      'getSystemConfig error data/config.local.json or /app/data/config.json'
+    );
     return defaultConfig;
   }
 }
