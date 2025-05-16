@@ -58,12 +58,16 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.processWithTimeRange(&types.Account{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
-			users := getUniqueUsers(db, &types.Account{}, "updated_at", start, end)
+		r.processWithTimeRange(&types.Account{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) error {
+			users, err := getUniqueUsers(db, &types.Account{}, "updated_at", start, end)
+			if err != nil {
+				return fmt.Errorf("failed to get unique users: %w", err)
+			}
 			if len(users) > 0 {
 				r.Logger.Info("processed account updates", "count", len(users), "start", start, "end", end)
 				r.processUsersInParallel(users)
 			}
+			return nil
 		})
 	}()
 
@@ -122,12 +126,16 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.processWithTimeRange(&types.Subscription{}, "update_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
-			users := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
+		r.processWithTimeRange(&types.Subscription{}, "update_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) error {
+			users, err := getUniqueUsers(db, &types.Subscription{}, "update_at", start, end)
+			if err != nil {
+				return fmt.Errorf("failed to get unique users: %w", err)
+			}
 			if len(users) > 0 {
 				r.processUsersInParallel(users)
 				r.Logger.Info("processed subscription changes", "count", len(users), "users", users, "start", start, "end", end)
 			}
+			return nil
 		})
 	}()
 
@@ -135,12 +143,16 @@ func (r *DebtReconciler) start() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		r.processWithTimeRange(&types.Credits{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) {
-			users := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
+		r.processWithTimeRange(&types.Credits{}, "updated_at", 1*time.Minute, 24*time.Hour, func(db *gorm.DB, start, end time.Time) error {
+			users, err := getUniqueUsers(db, &types.Credits{}, "updated_at", start, end)
+			if err != nil {
+				return fmt.Errorf("failed to get unique users: %w", err)
+			}
 			if len(users) > 0 {
 				r.processUsersInParallel(users)
 				r.Logger.Info("processed credits refresh", "count", len(users), "users", users, "start", start, "end", end)
 			}
+			return nil
 		})
 	}()
 
@@ -489,23 +501,21 @@ func (r *DebtReconciler) sendFlushDebtResourceStatusRequest(quotaReq AdminFlushR
 }
 
 // 获取时间范围内的不重复用户 UUID
-func getUniqueUsers(db *gorm.DB, table interface{}, timeField string, startTime, endTime time.Time) []uuid.UUID {
+func getUniqueUsers(db *gorm.DB, table interface{}, timeField string, startTime, endTime time.Time) ([]uuid.UUID, error) {
 	var users []uuid.UUID
 	switch table.(type) {
 	case *types.AccountTransaction, *types.Payment, *types.Account:
 		if err := db.Model(table).Where(fmt.Sprintf("%s BETWEEN ? AND ?", timeField), startTime, endTime).
 			Distinct(`"userUid"`).Pluck(`"userUid"`, &users).Error; err != nil {
-			log.Printf("failed to query unique users: %v", err)
-			return nil
+			return nil, fmt.Errorf("failed to query unique users: %v", err)
 		}
 	default:
 		if err := db.Model(table).Where(fmt.Sprintf("%s BETWEEN ? AND ?", timeField), startTime, endTime).
 			Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
-			log.Printf("failed to query unique users: %v", err)
-			return nil
+			return nil, fmt.Errorf("failed to query unique users: %v", err)
 		}
 	}
-	return users
+	return users, nil
 }
 
 func (r *DebtReconciler) retryFailedUsers() {
@@ -573,13 +583,18 @@ func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 }
 
 // 时间区间轮询处理
-func (r *DebtReconciler) processWithTimeRange(table interface{}, timeField string, interval time.Duration, initialDuration time.Duration, processFunc func(*gorm.DB, time.Time, time.Time)) {
+func (r *DebtReconciler) processWithTimeRange(table interface{}, timeField string, interval time.Duration, initialDuration time.Duration, processFunc func(*gorm.DB, time.Time, time.Time) error) {
 	// 首次处理
 	startTime := time.Now().Add(-initialDuration)
 	endTime := time.Now().Add(-2 * time.Minute)
-	users := getUniqueUsers(r.AccountV2.GetGlobalDB(), table, timeField, startTime, endTime)
-	r.processUsersInParallel(users)
-	r.Logger.Info("processed table updates", "table", fmt.Sprintf("%T", table), "count", len(users), "start", startTime, "end", endTime)
+	users, err := getUniqueUsers(r.AccountV2.GetGlobalDB(), table, timeField, startTime, endTime)
+	if err != nil {
+		r.Logger.Error(err, "failed to get unique users", "table", fmt.Sprintf("%T", table), "start", startTime, "end", endTime)
+		endTime = startTime
+	} else if len(users) > 0 {
+		r.processUsersInParallel(users)
+		r.Logger.Info("processed table updates", "table", fmt.Sprintf("%T", table), "count", len(users), "start", startTime, "end", endTime)
+	}
 
 	// 后续按时间区间轮询
 	lastEndTime := endTime
@@ -587,7 +602,11 @@ func (r *DebtReconciler) processWithTimeRange(table interface{}, timeField strin
 	for range ticker.C {
 		startTime = lastEndTime
 		endTime = time.Now().Add(-interval)
-		processFunc(r.AccountV2.GetGlobalDB(), startTime, endTime)
+		// if error occurs, the start time of the next execution is the start time of the last one
+		if err := processFunc(r.AccountV2.GetGlobalDB(), startTime, endTime); err != nil {
+			r.Logger.Error(err, "failed to process time range", "start", startTime, "end", endTime, "table", fmt.Sprintf("%T", table))
+			continue
+		}
 		lastEndTime = endTime
 	}
 }

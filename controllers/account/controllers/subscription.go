@@ -496,7 +496,7 @@ func (sp *SubscriptionProcessor) checkDowngradeConditions(_ context.Context, sub
 					return false, fmt.Errorf("failed to unmarshal response: %w", err)
 				}
 				if response.Code != 200 {
-					return false, fmt.Errorf("response code is not 200: %d", response.Code)
+					return false, fmt.Errorf("response code is not 200: %v", response)
 				}
 				return response.Data.AllWorkspaceReady && response.Data.SeatReady, nil
 			} else if resp.StatusCode >= 500 {
