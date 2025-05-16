@@ -105,7 +105,7 @@ kind: Config
 metadata:
   name: calico
 spec:
-  path: charts/calico/values.yaml
+  path: charts/calico.values.yaml
   strategy: merge
   data: |
     installation:
