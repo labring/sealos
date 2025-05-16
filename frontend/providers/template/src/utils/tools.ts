@@ -4,6 +4,7 @@ import { useTranslation } from 'next-i18next';
 import { cloneDeep, forEach, isNumber, isBoolean, isObject, has } from 'lodash';
 import { templateDeployKey } from '@/constants/keys';
 import { EnvResponse } from '@/types';
+import { useSystemConfigStore } from '@/store/config';
 
 /**
  * copy text data
@@ -208,7 +209,14 @@ export const parseGithubUrl = (url: string) => {
 };
 
 export const processEnvValue = (obj: any, labelName: string) => {
+  const { envs } = useSystemConfigStore.getState();
   const newDeployment = cloneDeep(obj);
+
+  if (newDeployment?.kind === 'Ingress' && envs?.HTTPS_ENABLE === false) {
+    if (newDeployment?.spec?.tls) {
+      delete newDeployment.spec.tls;
+    }
+  }
 
   forEach(newDeployment?.spec?.template?.spec?.containers, (container) => {
     forEach(container?.env, (env) => {
@@ -277,7 +285,8 @@ export function getTemplateEnvs(namespace?: string): EnvResponse {
     SHOW_AUTHOR: process.env.SHOW_AUTHOR || 'false',
     DESKTOP_DOMAIN: process.env.DESKTOP_DOMAIN || 'cloud.sealos.io',
     CURRENCY_SYMBOL: (process.env.CURRENCY_SYMBOL as 'shellCoin' | 'cny' | 'usd') || 'shellCoin',
-    FORCED_LANGUAGE: process.env.FORCED_LANGUAGE || 'zh-CN'
+    FORCED_LANGUAGE: process.env.FORCED_LANGUAGE || 'zh-CN',
+    HTTPS_ENABLE: process.env.HTTPS_ENABLE === 'true'
   };
   return TemplateEnvs;
 }
