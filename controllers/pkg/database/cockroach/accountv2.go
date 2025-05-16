@@ -736,7 +736,7 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 		}
 		var updateCredits []types.Credits
 		var updateCreditsIDs []string
-		var creditTransactions []types.CreditsTransaction
+		//var creditTransactions []types.CreditsTransaction
 		var creditUsedAmountAll int64
 		for i := range credits {
 			creditAmt := credits[i].Amount - credits[i].UsedAmount
@@ -752,16 +752,16 @@ func (c *Cockroach) AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, ded
 				}
 				creditUsedAmountAll += usedAmount
 				deductionAmount -= usedAmount
-				creditTransactions = append(creditTransactions, types.CreditsTransaction{
-					ID:                   uuid.New(),
-					UserUID:              userUID,
-					RegionUID:            c.LocalRegion.UID,
-					AccountTransactionID: &accountTransactionID,
-					CreditsID:            credits[i].ID,
-					UsedAmount:           usedAmount,
-					CreatedAt:            now,
-					Reason:               types.CreditsRecordReasonResourceAccountTransaction,
-				})
+				//creditTransactions = append(creditTransactions, types.CreditsTransaction{
+				//	ID:                   uuid.New(),
+				//	UserUID:              userUID,
+				//	RegionUID:            c.LocalRegion.UID,
+				//	AccountTransactionID: &accountTransactionID,
+				//	CreditsID:            credits[i].ID,
+				//	UsedAmount:           usedAmount,
+				//	CreatedAt:            now,
+				//	Reason:               types.CreditsRecordReasonResourceAccountTransaction,
+				//})
 				credits[i].UpdatedAt = now
 				updateCredits = append(updateCredits, credits[i])
 				updateCreditsIDs = append(updateCreditsIDs, credits[i].ID.String())
