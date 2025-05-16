@@ -32,6 +32,7 @@
     "decimal.js": "^10.4.3",
     "dns": "^0.2.2",
     "echarts": "^5.4.3",
+    "lucide-react": "^0.476.0",
     "fast-json-patch": "^3.1.1",
     "formidable": "^3.5.1",
     "framer-motion": "^10.16.4",

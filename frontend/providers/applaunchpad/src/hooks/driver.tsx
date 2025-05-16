@@ -2,6 +2,7 @@ import { useGuideStore } from '@/store/guide';
 import { Flex, Text, Box, Center, Image } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
+import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 
 let currentDriver: any = null;
@@ -48,11 +49,20 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
           >
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Create Launchpad
+                {t('driver.create_launchpad')}
               </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Define your application settings and start deployment
+              {t('driver.define_settings')}
             </Text>
             <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
@@ -74,7 +84,7 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
                   nextStep();
                 }}
               >
-                Next
+                {t('driver.next')}
               </Center>
             </Flex>
           </Box>
@@ -149,17 +159,17 @@ export const detailDriverObj = (t: TFunction): Config => ({
           >
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                Access Application
+                {t('driver.access_application')}
               </Text>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
                 4/4
               </Text>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Copy the private or public address for access
+              {t('driver.copy_address')}
             </Text>
             <Text color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              Click anywhere to finish the tutorial.
+              {t('driver.click_anywhere')}
             </Text>
             <Center
               color={'#fff'}
@@ -176,7 +186,7 @@ export const detailDriverObj = (t: TFunction): Config => ({
                 startDriver(quitGuideDriverObj(t));
               }}
             >
-              Quit Guide
+              {t('driver.quit_guide')}
             </Center>
           </Box>
         )
@@ -233,24 +243,14 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
         side: 'bottom',
         align: 'end',
         PopoverBody: (
-          <Box
-            color={'black'}
-            borderRadius={'20px'}
-            bg={'#FFF'}
-            boxShadow={
-              '0px 16px 48px -5px rgba(0, 0, 0, 0.12), 0px 8px 12px -5px rgba(0, 0, 0, 0.08)'
-            }
-            p={'4px'}
-            w={'460px'}
-          >
-            <Box w={'100%'} border={'1px solid #B0CBFF'} borderRadius={'16px'}>
+          <Box color={'black'} borderRadius={'20px'} bg={'#FFF'} w={'460px'}>
+            <Box w={'100%'} borderRadius={'16px'} border={'1px solid #E4E4E7'}>
               <Box px={'24px'}>
                 <Text mt={'32px'} color={'#000'} fontSize={'20px'} fontWeight={600}>
-                  We're still here!
+                  {t('driver.still_here')}
                 </Text>
                 <Text mt={'8px'} color={'#404040'} fontSize={'14px'} fontWeight={400}>
-                  You can always find your way back to this guide in the top navigation bar. Happy
-                  exploring!
+                  {t('driver.find_guide_tip')}
                 </Text>
                 <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
               </Box>
