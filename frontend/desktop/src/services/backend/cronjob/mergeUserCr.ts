@@ -108,44 +108,40 @@ export class MergeUserCrJob implements CronJobStatus {
       // modify role
       await Promise.all(
         mergeUserWorkspaceList.map(async ({ role: mergeUserRole, workspaceUid, workspace }) => {
-          try {
-            const userWorkspace = userWorkspaceList.find((r) => r.workspaceUid === workspaceUid);
-            await globalPrisma.eventLog.create({
-              data: {
-                eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
-                mainId: userUid,
-                data: JSON.stringify({
-                  mergeUserCrName: mergeUserCr.crName,
-                  userCrName: userCr.crName,
-                  workspaceId: workspace.id,
-                  userUid,
-                  mergeUserUid,
-                  mergeUserRole,
-                  regionUid: getRegionUid(),
-                  userRole: userWorkspace?.role,
-                  message: `merge workspace`
-                })
-              }
-            });
-            // modify k8s resource, the handle is idempotent
-            await mergeUserWorkspaceRole({
-              mergeUserRole,
-              userRole: userWorkspace?.role,
-              workspaceId: workspace.id,
-              mergeUserCrName: mergeUserCr.crName,
-              userCrName: userCr.crName
-            });
-            // modify db resource
-            await mergeUserModifyBinding({
-              mergeUserCrUid: mergeUserCr.uid,
-              mergeUserRole,
-              userCrUid: userCr.uid,
-              workspaceUid,
-              userRole: userWorkspace?.role
-            });
-          } catch (err: any) {
-            console.error(err);
-          }
+          const userWorkspace = userWorkspaceList.find((r) => r.workspaceUid === workspaceUid);
+          await globalPrisma.eventLog.create({
+            data: {
+              eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
+              mainId: userUid,
+              data: JSON.stringify({
+                mergeUserCrName: mergeUserCr.crName,
+                userCrName: userCr.crName,
+                workspaceId: workspace.id,
+                userUid,
+                mergeUserUid,
+                mergeUserRole,
+                regionUid: getRegionUid(),
+                userRole: userWorkspace?.role,
+                message: `merge workspace`
+              })
+            }
+          });
+          // modify k8s resource, the handle is idempotent
+          await mergeUserWorkspaceRole({
+            mergeUserRole,
+            userRole: userWorkspace?.role,
+            workspaceId: workspace.id,
+            mergeUserCrName: mergeUserCr.crName,
+            userCrName: userCr.crName
+          });
+          // modify db resource
+          await mergeUserModifyBinding({
+            mergeUserCrUid: mergeUserCr.uid,
+            mergeUserRole,
+            userCrUid: userCr.uid,
+            workspaceUid,
+            userRole: userWorkspace?.role
+          });
         })
       );
     }
@@ -247,7 +243,7 @@ export class MergeUserCrJob implements CronJobStatus {
             userUid,
             mergeUserUid,
             regionUid: getRegionUid(),
-            message: `from ${mergeUser.id} to ${user.id}, 
+            message: `from ${mergeUser.id} to ${user.id},
 							merge workorder, cloud vm and balance success`
           })
         }
