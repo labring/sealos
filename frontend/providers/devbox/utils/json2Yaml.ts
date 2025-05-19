@@ -196,9 +196,11 @@ export const json2DevboxRelease = (data: {
 
 export const json2Ingress = (
   data: Pick<DevboxEditTypeV2, 'name' | 'networks'>,
-  ingressSecret: string
+  ingressSecret: string,
+  httpsEnable: boolean
 ) => {
   // different protocol annotations
+
   const map = {
     HTTP: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
@@ -265,12 +267,16 @@ export const json2Ingress = (
               }
             }
           ],
-          tls: [
-            {
-              hosts: [host],
-              secretName
-            }
-          ]
+          ...(httpsEnable || network.customDomain
+            ? {
+                tls: [
+                  {
+                    hosts: [host],
+                    secretName
+                  }
+                ]
+              }
+            : {})
         }
       };
       const issuer = {
@@ -376,6 +382,7 @@ export const generateYamlList = (
     devboxAffinityEnable?: string;
     squashEnable?: string;
     ingressSecret: string;
+    httpsEnable: boolean;
   }
 ) => {
   return [
@@ -395,7 +402,7 @@ export const generateYamlList = (
       ? [
           {
             filename: 'ingress.yaml',
-            value: json2Ingress(data, env.ingressSecret)
+            value: json2Ingress(data, env.ingressSecret, env.httpsEnable)
           }
         ]
       : [])
