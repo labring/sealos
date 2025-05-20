@@ -81,6 +81,15 @@ declare global {
 }
 
 export type EnvResponse = {
-  domain: string;
+  SEALOS_DOMAIN: string;
+  DOMAIN_PORT: string;
+  SHOW_EVENT_ANALYZE: boolean;
+  FORM_SLIDER_LIST_CONFIG: FormSliderListType;
+  CURRENCY: Coin;
   guideEnabled: boolean;
+  fileMangerConfig: FileMangerType;
+  SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
+  DESKTOP_DOMAIN: string;
+  PVC_STORAGE_MAX: number;
+  GPU_ENABLED: boolean;
 };

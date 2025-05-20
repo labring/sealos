@@ -17,9 +17,9 @@ interface GuideState {
 export const useGuideStore = create<GuideState>()(
   persist(
     (set) => ({
+      listCompleted: true,
       createCompleted: true,
       detailCompleted: true,
-      listCompleted: true,
       appName: '',
       setCreateCompleted: (completed) => set({ createCompleted: completed }),
       setDetailCompleted: (completed) => set({ detailCompleted: completed }),

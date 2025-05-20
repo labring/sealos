@@ -24,9 +24,12 @@ import {
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
+import { useGuideStore } from '@/store/guide';
+import { applistDriverObj, startDriver } from '@/hooks/driver';
+import LangSelect from '../LangSelect';
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 
@@ -340,8 +343,20 @@ const AppList = ({
     [handlePauseApp, handleRestartApp, handleStartApp, onOpenPause, router, t, userSourcePrice?.gpu]
   );
 
+  const { listCompleted } = useGuideStore();
+
+  useEffect(() => {
+    if (!listCompleted) {
+      startDriver(
+        applistDriverObj(t, () => {
+          router.push('/app/edit');
+        })
+      );
+    }
+  }, [listCompleted, t]);
+
   return (
-    <Box backgroundColor={'grayModern.100'} px={'32px'} pb={5} minH={'100%'}>
+    <Box backgroundColor={'grayModern.100'} px={'30px'} pb={5} minH={'100%'}>
       <Flex h={'88px'} alignItems={'center'}>
         <Center
           w="46px"
@@ -362,6 +377,8 @@ const AppList = ({
         </Box>
         <Box flex={1}></Box>
         <Button
+          mr={'4px'}
+          className="create-app-btn"
           h={'40px'}
           w={'156px'}
           flex={'0 0 auto'}

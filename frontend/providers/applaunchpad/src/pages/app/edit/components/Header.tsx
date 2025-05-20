@@ -7,7 +7,7 @@ import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import { Info } from 'lucide-react';
+import { Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useCallback } from 'react';
@@ -30,8 +30,6 @@ const Header = ({
   const { lastRoute } = useGlobalStore();
   const isClientSide = useClientSideValue(true);
 
-  console.log('isClientSide', isClientSide);
-
   const handleExportYaml = useCallback(async () => {
     const exportYamlString = yamlList.map((i) => i.value).join('---\n');
     if (!exportYamlString) return;
@@ -42,7 +40,7 @@ const Header = ({
     );
   }, [appName, yamlList]);
 
-  const { createCompleted } = useGuideStore();
+  const { createCompleted, setCreateCompleted } = useGuideStore();
 
   return (
     <Flex flexDirection={'column'} w={'100%'}>
@@ -114,9 +112,16 @@ const Header = ({
                 <Text fontSize={'14px'} fontWeight={600}>
                   {t('driver.configure_launchpad')}
                 </Text>
-                <Text fontSize={'13px'} fontWeight={500}>
-                  3/4
-                </Text>
+                <Box
+                  cursor={'pointer'}
+                  ml={'auto'}
+                  onClick={() => {
+                    setCreateCompleted(true);
+                    startDriver(quitGuideDriverObj(t));
+                  }}
+                >
+                  <X width={'16px'} height={'16px'} />
+                </Box>
               </Flex>
               <Text
                 textAlign={'start'}
@@ -128,23 +133,27 @@ const Header = ({
               >
                 {t('driver.define_image_settings')}
               </Text>
-              <Center
-                w={'86px'}
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                mt={'16px'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                h={'32px'}
-                p={'px'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                {t('driver.quit_guide')}
-              </Center>
+              <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
+                <Text fontSize={'13px'} fontWeight={500}>
+                  3/4
+                </Text>
+                <Center
+                  w={'86px'}
+                  color={'#fff'}
+                  fontSize={'14px'}
+                  fontWeight={500}
+                  cursor={'pointer'}
+                  borderRadius={'8px'}
+                  background={'rgba(255, 255, 255, 0.20)'}
+                  h={'32px'}
+                  p={'px'}
+                  onClick={() => {
+                    applyCb();
+                  }}
+                >
+                  {t('driver.next')}
+                </Center>
+              </Flex>
               <Box
                 position={'absolute'}
                 top={'-10px'}

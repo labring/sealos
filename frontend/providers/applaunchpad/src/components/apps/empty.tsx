@@ -12,7 +12,6 @@ const Empty = () => {
   const { t } = useTranslation();
 
   const { listCompleted } = useGuideStore();
-  console.log('listCompleted', listCompleted);
 
   useEffect(() => {
     if (!listCompleted) {

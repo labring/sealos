@@ -339,6 +339,7 @@
     "find_guide_tip": "你可以随时在顶部导航栏重新打开本指南，祝你探索愉快！",
     "create_launchpad_header": "请随意探索。本演示指南不会保存任何更改，也不会收取任何费用。",
     "configure_launchpad": "配置启动台",
-    "define_image_settings": "定义镜像设置，并按需调整 CPU 和内存"
+    "define_image_settings": "定义镜像设置，并按需调整 CPU 和内存",
+    "got_it": "明白"
   }
 }

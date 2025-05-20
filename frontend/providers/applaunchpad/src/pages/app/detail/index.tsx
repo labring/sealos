@@ -1,14 +1,12 @@
-import useDetailDriver from '@/hooks/useDetailDriver';
 import { useLoading } from '@/hooks/useLoading';
 import { useToast } from '@/hooks/useToast';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
-import { useGlobalStore } from '@/store/global';
 import { serviceSideProps } from '@/utils/i18n';
-import { Box, Flex, useTheme } from '@chakra-ui/react';
+import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import React, { useMemo } from 'react';
+import React from 'react';
 import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
 import Pods from '@/components/app/detail/index/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
@@ -19,28 +17,8 @@ const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainI
 });
 
 const AppDetail = ({ appName }: { appName: string }) => {
-  const { startGuide } = useDetailDriver();
-  const theme = useTheme();
-  const { toast } = useToast();
   const { Loading } = useLoading();
-  const { screenWidth } = useGlobalStore();
-  const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const {
-    appDetail = MOCK_APP_DETAIL,
-    setAppDetail,
-    appDetailPods,
-    intervalLoadPods,
-    loadDetailMonitorData
-  } = useAppStore();
-
-  const { refetch, isSuccess } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
-    onError(err) {
-      toast({
-        title: String(err),
-        status: 'error'
-      });
-    }
-  });
+  const { appDetail = MOCK_APP_DETAIL, appDetailPods, loadDetailMonitorData } = useAppStore();
 
   useQuery(
     ['loadDetailMonitorData', appName, appDetail?.isPause],

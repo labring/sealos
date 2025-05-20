@@ -2,7 +2,7 @@ import { useGuideStore } from '@/store/guide';
 import { Flex, Text, Box, Center, Image } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
-import { X } from 'lucide-react';
+import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
 
 let currentDriver: any = null;
@@ -120,7 +120,7 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
       const el = element as any;
       el.style.borderRadius = el._originalBorderRadius || '';
       el.style.border = el._originalBorder || '';
-      el.style.outline = el._originalOutline || '';
+      el.style.outline = '';
       el.style.outlineOffset = '';
     }
   },
@@ -161,9 +161,15 @@ export const detailDriverObj = (t: TFunction): Config => ({
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.access_application')}
               </Text>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
-              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
             </Flex>
             <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('driver.copy_address')}
@@ -171,23 +177,27 @@ export const detailDriverObj = (t: TFunction): Config => ({
             <Text color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
               {t('driver.click_anywhere')}
             </Text>
-            <Center
-              color={'#fff'}
-              fontSize={'14px'}
-              fontWeight={500}
-              cursor={'pointer'}
-              mt={'16px'}
-              borderRadius={'8px'}
-              background={'rgba(255, 255, 255, 0.20)'}
-              w={'fit-content'}
-              h={'32px'}
-              p={'8px'}
-              onClick={() => {
-                startDriver(quitGuideDriverObj(t));
-              }}
-            >
-              {t('driver.quit_guide')}
-            </Center>
+            <Flex alignItems={'center'} justifyContent={'space-between'} mt={'16px'}>
+              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
+                4/4
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                {t('driver.next')}
+              </Center>
+            </Flex>
           </Box>
         )
       }
@@ -222,16 +232,17 @@ export const detailDriverObj = (t: TFunction): Config => ({
       el.style.border = '';
     }
   },
-  onDestroyed: () => {
+  onDestroyed: (element?: Element) => {
+    console.log('onDestroyed detailDriverObj');
     useGuideStore.getState().setDetailCompleted(true);
     startDriver(quitGuideDriverObj(t));
   }
 });
 
-export const quitGuideDriverObj = (t: TFunction): Config => ({
+export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config => ({
   showProgress: false,
   allowClose: false,
-  allowClickMaskNextStep: true,
+  allowClickMaskNextStep: false,
   isShowButtons: false,
   allowKeyboardControl: false,
   disableActiveInteraction: true,
@@ -243,10 +254,13 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
         side: 'bottom',
         align: 'end',
         PopoverBody: (
-          <Box color={'black'} borderRadius={'20px'} bg={'#FFF'} w={'460px'}>
-            <Box w={'100%'} borderRadius={'16px'} border={'1px solid #E4E4E7'}>
-              <Box px={'24px'}>
-                <Text mt={'32px'} color={'#000'} fontSize={'20px'} fontWeight={600}>
+          <Box color={'black'} borderRadius={'16px'} w={'460px'}>
+            <Box w={'100%'} borderRadius={'16px'} px={'24px'}>
+              <Box>
+                <Box mt={'32px'}>
+                  <CircleCheckBig size={32} color="#2563EB" />
+                </Box>
+                <Text my={'8px'} color={'#000'} fontSize={'20px'} fontWeight={600}>
                   {t('driver.still_here')}
                 </Text>
                 <Text mt={'8px'} color={'#404040'} fontSize={'14px'} fontWeight={400}>
@@ -254,11 +268,14 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
                 </Text>
                 <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
               </Box>
-
               <Center
+                mb={'20px'}
+                h={'40px'}
+                borderRadius={'8px'}
+                border={'1px solid #E4E4E7'}
+                background={'#FFF'}
                 cursor={'pointer'}
                 mt={'20px'}
-                borderTop={'1px solid #E4E4E7'}
                 py={'20px'}
                 px={'24px'}
                 onClick={() => {
@@ -268,7 +285,7 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
                   }
                 }}
               >
-                Got it
+                {t('driver.got_it')}
               </Center>
             </Box>
           </Box>
@@ -295,5 +312,7 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
   onDestroyed: () => {
     console.log('onDestroyed quitGuideDriverObj');
     useGuideStore.getState().resetGuideState(true);
+    nextStep && nextStep();
+    window.location.replace('/');
   }
 });
