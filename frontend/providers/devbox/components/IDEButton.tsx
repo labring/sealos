@@ -121,7 +121,11 @@ const IDEButton = ({
           base64PrivateKey
         )}&sshHostLabel=${encodeURIComponent(
           `${env.sealosDomain}_${env.namespace}_${devboxName}`
-        )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`;
+        )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(
+          token
+        )}&desktopToken=${encodeURIComponent(
+          JSON.parse(sessionStorage.getItem('session') || '{}').token || ''
+        )}`;
         window.location.href = fullUri;
       } catch (error: any) {
         console.error(error, '==');
