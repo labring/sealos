@@ -333,6 +333,14 @@ export const defaultDBDetail: DBDetailType = {
   totalStorage: 0
 };
 
+export const MockDBSecret = {
+  username: 'postgres',
+  password: '9v7cvkwl',
+  host: 'test-db-postgresql.namespace.svc',
+  port: '5432',
+  connection: 'postgresql://postgres:9v7cvkwl@test-db-postgresql.namespace.svc:5432'
+};
+
 export const defaultPod: PodDetailType = {
   podName: '',
   status: [],

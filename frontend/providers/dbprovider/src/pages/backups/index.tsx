@@ -68,7 +68,7 @@ export default function Backups() {
   const loadDBDetail = useCallback(
     async (dbName: string) => {
       try {
-        const res = await getDBByName(dbName);
+        const res = await getDBByName({ name: dbName });
         setDb(res);
       } catch (err) {
         toast({

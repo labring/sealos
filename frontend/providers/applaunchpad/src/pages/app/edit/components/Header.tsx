@@ -40,7 +40,7 @@ const Header = ({
     );
   }, [appName, yamlList]);
 
-  const { createCompleted, setCreateCompleted } = useGuideStore();
+  const { createCompleted } = useGuideStore();
 
   return (
     <Flex flexDirection={'column'} w={'100%'}>
@@ -116,7 +116,6 @@ const Header = ({
                   cursor={'pointer'}
                   ml={'auto'}
                   onClick={() => {
-                    setCreateCompleted(true);
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >

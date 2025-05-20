@@ -5,12 +5,19 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail } from '@/utils/adapt';
+import { defaultDBDetail } from '@/constants/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { name } = req.query as { name: string };
+    const { name, mock } = req.query as { name: string; mock?: string };
     if (!name) {
       throw new Error('name is empty');
+    }
+
+    if (mock === 'true') {
+      return jsonRes(res, {
+        data: defaultDBDetail
+      });
     }
 
     const body = await getCluster(req, name);
