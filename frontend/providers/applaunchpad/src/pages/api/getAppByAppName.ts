@@ -17,11 +17,10 @@ export const config = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { appName, mock } = req.query as { appName: string; mock: string };
+    const { appName, mock } = req.query as { appName: string; mock?: string };
     if (!appName) {
       throw new Error('appName is empty');
     }
-    console.log(appName, mock, 'appName, mock');
 
     if (mock === 'true') {
       return jsonRes(res, {
