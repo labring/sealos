@@ -1579,6 +1579,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lucide-react:
+        specifier: ^0.476.0
+        version: 0.476.0(react@18.2.0)
       nanoid:
         specifier: ^4.0.2
         version: 4.0.2
