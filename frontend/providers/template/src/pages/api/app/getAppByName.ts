@@ -4,14 +4,20 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { templateDeployKey } from '@/constants/keys';
+import { adaptAppListItem } from '@/utils/adapt';
+import { MockAppList } from '@/constants/mock';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { instanceName } = req.query as { instanceName: string };
+    const { instanceName, mock = 'false' } = req.query as { instanceName: string; mock: string };
 
     const { k8sApp, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
+
+    if (mock === 'true') {
+      return jsonRes(res, { data: MockAppList });
+    }
 
     const labelSelectorKey = `${templateDeployKey}=${instanceName}`;
 
@@ -40,7 +46,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .filter((item) => item)
       .flat();
 
-    jsonRes(res, { data: apps });
+    const data = apps.map(adaptAppListItem);
+
+    jsonRes(res, { data });
   } catch (err: any) {
     jsonRes(res, {
       code: 500,

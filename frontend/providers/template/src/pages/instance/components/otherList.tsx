@@ -24,7 +24,8 @@ export default function OtherList({ instanceName }: { instanceName: string }) {
       refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         appendResource(data);
-      }
+      },
+      enabled: !!instanceName
     }
   );
 

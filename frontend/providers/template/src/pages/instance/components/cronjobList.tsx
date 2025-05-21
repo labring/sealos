@@ -32,7 +32,8 @@ export default function CronJobList({ instanceName }: { instanceName: string }) 
             return { id: item.id, name: item.name, kind: 'CronJob' };
           })
         );
-      }
+      },
+      enabled: !!instanceName
     }
   );
   const handleToDetailPage = useCallback((name: string) => {

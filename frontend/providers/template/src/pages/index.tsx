@@ -14,7 +14,6 @@ import {
   Center,
   Flex,
   Grid,
-  Icon,
   Image,
   Spinner,
   Tag,
@@ -28,6 +27,7 @@ import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { ShareIcon } from '@/components/icons';
+import { useGuideStore } from '@/store/guide';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
@@ -97,6 +97,12 @@ export default function AppList({
       });
     }
   }, [router, setInsideCloud]);
+
+  useEffect(() => {
+    if (router.query?.action === 'guide') {
+      useGuideStore.getState().resetGuideState(false);
+    }
+  }, [router.query?.action]);
 
   return (
     <Box
