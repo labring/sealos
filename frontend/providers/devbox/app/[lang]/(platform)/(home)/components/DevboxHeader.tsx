@@ -1,6 +1,8 @@
 import MyIcon from '@/components/Icon';
 import { TemplateState } from '@/constants/template';
+import { startDriver, startGuide2 } from '@/hooks/driver';
 import { usePathname, useRouter } from '@/i18n';
+import { useGuideStore } from '@/stores/guide';
 import { useTemplateStore } from '@/stores/template';
 import { Box, Button, Center, Flex, Text, useTheme } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
@@ -27,6 +29,18 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
       });
     }
   }, []);
+
+  const { guide2 } = useGuideStore();
+  useEffect(() => {
+    if (!guide2 && listLength === 0) {
+      startDriver(
+        startGuide2(t, () => {
+          router.push('/devbox/create');
+        })
+      );
+    }
+  }, [guide2, listLength, t]);
+
   return (
     <Flex h={'90px'} alignItems={'center'}>
       <Center
@@ -81,6 +95,8 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
         </Text>
       </Flex>
       <Button
+        mr={'4px'}
+        className="list-create-app-button"
         minW={'156px'}
         h={'40px'}
         variant={'solid'}

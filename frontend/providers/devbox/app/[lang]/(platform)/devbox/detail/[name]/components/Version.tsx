@@ -24,7 +24,6 @@ import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate
 import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal';
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
 import AppSelectModal from '@/components/modals/AppSelectModal';
-import useReleaseDriver from '@/hooks/useReleaseDriver';
 import { useDevboxStore } from '@/stores/devbox';
 import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
@@ -34,7 +33,6 @@ import MyIcon from '@/components/Icon';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 const Version = () => {
-  const { startReleaseGuide } = useReleaseDriver();
   const t = useTranslations();
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
@@ -78,12 +76,6 @@ const Version = () => {
       enabled: !!devbox
     }
   );
-
-  useEffect(() => {
-    if (devboxVersionList?.length && devboxVersionList.length > 0) {
-      startReleaseGuide();
-    }
-  }, [devboxVersionList.length]);
 
   const listPrivateTemplateRepositoryQuery = useQuery(
     ['template-repository-list', 'template-repository-private'],

@@ -9,7 +9,6 @@ const Empty = () => {
   const t = useTranslations();
   return (
     <Flex
-      // className={styles.empty}
       w={'full'}
       flex={1}
       flexDirection="column"
