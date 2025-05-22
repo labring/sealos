@@ -426,6 +426,7 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err err
 	if uid == uuid.Nil && !ops.IgnoreEmpty {
 		return uuid.Nil, fmt.Errorf("failed to get userUID: record not found")
 	}
+	ops.UID = uid
 	return uid, nil
 }
 
