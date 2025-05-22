@@ -181,8 +181,6 @@ export const quitGuideDriverObj = (t: TFunction): Config => {
                       pathname: '/',
                       messageData: { type: 'InternalAppCall', action: 'quitGuide' }
                     });
-                    // maybe dont need this
-                    window.location.href = '/';
                   }}
                 >
                   {t('driver.quit_guide')}

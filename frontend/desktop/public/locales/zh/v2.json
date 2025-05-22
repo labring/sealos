@@ -1,6 +1,7 @@
 {
   "account_settings": "账户设置",
   "add_workspace": "创建工作空间",
+  "aiproxy_tips": "AI Proxy 重大更新！",
   "alert": "告警",
   "back": "返回",
   "can_request_new_link": "{{countdown}}s 后可重新发送验证码",

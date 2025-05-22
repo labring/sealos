@@ -25,7 +25,7 @@ export default function Apps() {
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
   const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
-
+  const { layoutConfig, authConfig } = useConfigStore();
   const [draggedApp, setDraggedApp] = useState<TApp | null>(null);
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
   const [moreAppsFolder, setMoreAppsFolder] = useState<TApp[]>([]);
@@ -157,8 +157,6 @@ export default function Apps() {
     app: TApp,
     source: 'desktop' | 'folder'
   ) => {
-    console.log('handleDragStart');
-
     e.dataTransfer.setData('application/json', JSON.stringify({ app, source }));
     setDraggedApp(app);
 
@@ -337,7 +335,7 @@ export default function Apps() {
             gap={'8px'}
             p={'8px 12px'}
             cursor={'pointer'}
-            onClick={openReferralApp}
+            onClick={layoutConfig?.version === 'cn' ? openReferralApp : () => {}}
           >
             <Box position="relative" className="gradient-icon">
               <Volume2 width={16} height={16} />
@@ -352,7 +350,7 @@ export default function Apps() {
                 WebkitTextFillColor: 'transparent'
               }}
             >
-              {t('v2:invite_friend')}
+              {layoutConfig?.version === 'cn' ? t('v2:invite_friend') : t('v2:aiproxy_tips')}
             </Text>
             <Box position="relative" className="gradient-icon">
               <ArrowRight width={16} height={16} />

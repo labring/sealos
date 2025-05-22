@@ -33,7 +33,7 @@ import { useGuideModalStore } from '@/stores/guideModal';
 const GuideModal = () => {
   const { t } = useTranslation();
   const { session } = useSessionStore((s) => s);
-  const { installedApps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const { installedApps, runningInfo, openApp, setToHighestLayerById, closeAppAll } = useAppStore();
   const {
     isOpen,
     selectedGuide,
@@ -312,6 +312,7 @@ const GuideModal = () => {
                   borderRadius="8px"
                   _hover={{ bg: 'gray.800' }}
                   onClick={() => {
+                    closeAppAll();
                     closeGuideModal();
                     setInitGuide(false);
                     const cur = guideLinks[selectedGuide];

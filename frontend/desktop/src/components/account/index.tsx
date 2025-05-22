@@ -355,23 +355,25 @@ export default function Account() {
                     </Text>
                   </Flex>
                 </MenuItem>
-                <MenuItem
-                  mt="0px"
-                  py="6px"
-                  px="8px"
-                  borderRadius="8px"
-                  _hover={{ bg: '#F4F4F5' }}
-                  onClick={openReferralApp}
-                >
-                  <Flex alignItems="center" gap="8px">
-                    <Center w="20px" h="20px">
-                      <Gift size={16} color="#737373" />
-                    </Center>
-                    <Text fontSize="14px" fontWeight="400">
-                      {t('common:referral')}
-                    </Text>
-                  </Flex>
-                </MenuItem>
+                {layoutConfig?.version === 'cn' && (
+                  <MenuItem
+                    mt="0px"
+                    py="6px"
+                    px="8px"
+                    borderRadius="8px"
+                    _hover={{ bg: '#F4F4F5' }}
+                    onClick={openReferralApp}
+                  >
+                    <Flex alignItems="center" gap="8px">
+                      <Center w="20px" h="20px">
+                        <Gift size={16} color="#737373" />
+                      </Center>
+                      <Text fontSize="14px" fontWeight="400">
+                        {t('common:referral')}
+                      </Text>
+                    </Flex>
+                  </MenuItem>
+                )}
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>
@@ -446,6 +448,7 @@ export default function Account() {
                   </MenuItem>
                 )}
               </Box>
+
               <Divider bg={'#E4E4E7'} />
               <Box p="8px">
                 <MenuItem
