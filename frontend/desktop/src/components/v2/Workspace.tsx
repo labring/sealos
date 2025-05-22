@@ -70,17 +70,15 @@ export default function Workspace() {
   });
   const handleStartDeploying = async () => {
     try {
-      if (!selectedRegionUid || !workspaceName || mutation.isLoading) {
+      if (!selectedRegion || !workspaceName || mutation.isLoading) {
         toast({
           status: 'error',
           title: t('v2:please_select_region_and_workspace_name')
         });
         return;
       }
-      if (selectedRegionUid !== cloudConfig?.regionUID) {
-        const region = regionList.find((r) => r.uid === selectedRegionUid);
-        if (!region) return;
-        const target = new URL(`https://${region.domain}/switchRegion`);
+      if (selectedRegion.uid !== cloudConfig?.regionUID) {
+        const target = new URL(`https://${selectedRegion.domain}/switchRegion`);
         if (!token) throw Error('No token found');
         target.searchParams.append('token', token);
         target.searchParams.append('workspaceName', encodeURIComponent(workspaceName));
@@ -90,7 +88,7 @@ export default function Workspace() {
         return;
       }
       const initRegionTokenResult = await mutation.mutateAsync({
-        regionUid: selectedRegionUid,
+        regionUid: selectedRegion.uid,
         workspaceName: workspaceName
       });
       if (!initRegionTokenResult.data) {
