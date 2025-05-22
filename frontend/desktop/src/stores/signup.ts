@@ -12,6 +12,8 @@ interface SignupState {
   // setPersonalData: (data: IPersonalInfo) => void;
   clearSignupData: () => void;
   // clearPersonalData: () => void;
+  startTime: number;
+  updateStartTime: () => void;
 }
 
 export const useSignupStore = create<SignupState>((set) => ({
@@ -19,8 +21,14 @@ export const useSignupStore = create<SignupState>((set) => ({
   // personalData: {
   //   p
   // },
+  startTime: new Date().getTime() - 61_000,
   setSignupData: (data) => set({ signupData: data }),
   // setPersonalData: (data) => set({ personalData: data }),
-  clearSignupData: () => set({ signupData: null })
+  clearSignupData: () => set({ signupData: null }),
+  updateStartTime() {
+    set({
+      startTime: new Date().getTime()
+    });
+  }
   // clearPersonalData: () => set({ personalData: null })
 }));

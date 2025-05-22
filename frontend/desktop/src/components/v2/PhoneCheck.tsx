@@ -1,33 +1,24 @@
 import {
   Box,
   Button,
-  Checkbox,
   Flex,
   FormControl,
   FormLabel,
-  FormErrorMessage,
-  Heading,
-  Input,
   Stack,
   Text,
   useToast,
   useColorModeValue,
-  Link,
-  Image,
   PinInput,
   PinInputField,
-  Icon,
   Center
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { ArrowLeft, MailCheck, OctagonAlertIcon } from 'lucide-react';
-import { useForm, useFormContext, Controller } from 'react-hook-form';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'next-i18next';
-import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useSignupStore } from '@/stores/signup';
-import { ccEmailSignUp, getRegionToken, initRegionToken } from '@/api/auth';
+import { getRegionToken } from '@/api/auth';
 import useSessionStore from '@/stores/session';
 import { useMutation } from '@tanstack/react-query';
 import request from '@/services/request';
@@ -35,9 +26,7 @@ import { ApiResp } from '@/types';
 import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { HiddenCaptchaComponent, TCaptchaInstance } from '../signin/Captcha';
 import { useConfigStore } from '@/stores/config';
-import force from '@/pages/api/auth/delete/force';
 import useCustomError from '../signin/auth/useCustomError';
-import useSmsStateStore from '@/stores/captcha';
 import useScriptStore from '@/stores/script';
 
 export default function PhoneCheckComponent() {
@@ -46,21 +35,28 @@ export default function PhoneCheckComponent() {
   const toast = useToast();
   const conf = useConfigStore();
   const [isLoading, setIsLoading] = useState(false);
-  const { signupData, clearSignupData } = useSignupStore();
+  const { signupData, clearSignupData, startTime, updateStartTime } = useSignupStore();
   const { setToken } = useSessionStore();
 
-  const [canResend, setCanResend] = useState(false);
-  const { remainTime, setRemainTime, setPhoneNumber } = useSmsStateStore();
+  const getRemainTime = () => 60000 - new Date().getTime() + startTime;
+
+  const [canResend, setCanResend] = useState(getRemainTime() < 0);
+
+  const [remainTime, setRemainTime] = useState(getRemainTime());
+
   useEffect(() => {
-    if (remainTime <= 0) {
-      setCanResend(true);
-      return;
-    }
     const interval = setInterval(() => {
-      setRemainTime(remainTime - 1);
+      const newRemainTime = getRemainTime();
+
+      if (newRemainTime <= 0) {
+        setCanResend(true);
+        clearInterval(interval);
+      }
+      setRemainTime(newRemainTime);
     }, 1000);
+
     return () => clearInterval(interval);
-  }, [remainTime]);
+  }, [startTime]);
   const verifyMutation = useMutation({
     mutationFn: (data: { id: string; code: string }) =>
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/phone/verify', {
@@ -102,6 +98,7 @@ export default function PhoneCheckComponent() {
         throw new Error('No signup data found');
       }
       if (conf.authConfig?.captcha.enabled) {
+        console.log('onsubmit', captchaRef.current);
         if (!captchaRef.current) {
           setIsLoading(false);
           return;
@@ -123,7 +120,7 @@ export default function PhoneCheckComponent() {
       // }
       // Start countdown
       setCanResend(false);
-      setRemainTime(60);
+      updateStartTime();
     } catch (error) {
       console.error('Failed to send verification phone:', error);
       toast({
@@ -139,19 +136,21 @@ export default function PhoneCheckComponent() {
     }
   };
   useEffect(() => {
-    if (captchaIsLoaded) {
-      onSubmit(true);
+    if (captchaIsLoaded && startTime + 60_000 <= new Date().getTime()) {
+      setTimeout(() => onSubmit(true), 2000);
     }
   }, [captchaIsLoaded]);
+
   const handleBack = () => {
     router.back();
   };
   const bg = useColorModeValue('white', 'gray.700');
   const { ErrorComponent, showError } = useCustomError();
-  if (!signupData || signupData.providerType !== 'PHONE') {
-    router.push('/signin');
-    return null;
-  }
+  useEffect(() => {
+    if (!signupData || signupData.providerType !== 'PHONE') {
+      router.push('/');
+    }
+  }, []);
   return (
     <Flex minH="100vh" align="center" justify="center" bg={bg} w={'50%'} direction={'column'}>
       <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
@@ -162,9 +161,11 @@ export default function PhoneCheckComponent() {
           <Text fontWeight="600" fontSize="24px" lineHeight="31px" color="#000000" mt={'8px'}>
             {t('v2:check_your_phone')}
           </Text>
-          <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
-            {t('v2:phone_verification_message', { phone: signupData.providerId })}
-          </Text>
+          {remainTime > 0 && (
+            <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
+              {t('v2:phone_verification_message', { phone: signupData?.providerId || '' })}
+            </Text>
+          )}
           <FormControl id="verificationCode">
             <FormLabel></FormLabel>
             <PinInput
@@ -173,9 +174,7 @@ export default function PhoneCheckComponent() {
               autoFocus
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
-                // 处理验证码输入完成后的逻辑
-                console.log('Verification code:', value);
-                verifyMutation.mutate({ code: value, id: signupData.providerId });
+                verifyMutation.mutate({ code: value, id: signupData?.providerId || '' });
               }}
             >
               {Array.from({ length: 6 }, (_, index) => (
@@ -229,7 +228,7 @@ export default function PhoneCheckComponent() {
                   >
                     {t('v2:request_new_link')}
                   </Text>
-                ) : (
+                ) : remainTime > 0 ? (
                   <Text
                     fontWeight="400"
                     fontSize="14px"
@@ -239,8 +238,10 @@ export default function PhoneCheckComponent() {
                     alignSelf="stretch"
                     flexGrow={0}
                   >
-                    {t('v2:can_request_new_link', { countdown: remainTime })}
+                    {t('v2:can_request_new_link', { countdown: Math.floor(remainTime / 1000) })}
                   </Text>
+                ) : (
+                  <></>
                 )}
               </Box>
             </Flex>

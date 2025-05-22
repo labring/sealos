@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import Script from 'next/script';
 import useScriptStore from '@/stores/script';
 import bgimage from 'public/images/signin_bg.png';
-import bgimageZh from 'public/images/signin_bg.png';
+import bgimageZh from 'public/images/signin_bg_zh.png';
 import LangSelectSimple from '../LangSelect/simple';
 import InviterPop from './InviterPop';
 import { useTranslation } from 'next-i18next';
@@ -49,7 +49,7 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
 
         <VStack w={'50%'} position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
-            <InviterPop></InviterPop>
+            {layoutConfig?.version === 'cn' && <InviterPop />}
             <LangSelectSimple />
           </Flex>
           {children}

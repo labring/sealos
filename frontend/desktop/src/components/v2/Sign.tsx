@@ -46,6 +46,7 @@ import Link from 'next/link';
 import { WechatIcon } from '@sealos/ui';
 import useSmsStateStore from '@/stores/captcha';
 import { z } from 'zod';
+import { status } from 'nprogress';
 
 export default function SigninComponent() {
   const { t, i18n } = useTranslation();
@@ -55,10 +56,8 @@ export default function SigninComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
-  const needPhone = true;
-  // conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
-  const needEmail = false;
-  // conf.authConfig?.idp.email.enabled;
+  const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
+  const needEmail = conf.authConfig?.idp.email.enabled;
   const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
   const { generateState, setProvider, setToken } = useSessionStore();
@@ -81,14 +80,6 @@ export default function SigninComponent() {
       service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
       private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
-  const handleSubmit = (type: 'signin' | 'signup') => {
-    // if (type === 'signin') {
-    return handleSigninSubmit(onSignin)();
-    // } else {
-    //   return handleSignupSubmit(onSignup)();
-    // }
-  };
-  const { setPhoneNumber } = useSmsStateStore();
   const onSignin = async (data: ILoginParams) => {
     try {
       setIsLoading(true);
@@ -342,7 +333,6 @@ export default function SigninComponent() {
                 onClick={() => {
                   console.log(signupData?.providerId);
                   if (signupData?.providerId) {
-                    setPhoneNumber(signupData.providerId);
                     router.push('/phoneCheck');
                   }
                 }}
@@ -372,8 +362,11 @@ export default function SigninComponent() {
                 placeholder={t('v2:email')}
                 alignSelf="stretch"
                 flexGrow="0"
+                value={signupData?.providerId || ''}
                 onChange={(e) => {
-                  if (!e.target.value) {
+                  console.log(e.target);
+
+                  if (!!e.target.value) {
                     setSignupData({
                       providerId: e.target.value,
                       providerType: 'EMAIL'
@@ -383,6 +376,18 @@ export default function SigninComponent() {
               />
               <Button
                 onClick={() => {
+                  const result = z
+                    .string()
+                    .email({ message: 'Invalid email format' })
+                    .safeParse(signupData?.providerId);
+                  console.log(result);
+                  if (result.error) {
+                    toast({
+                      title: result.error.errors[0].message,
+                      status: 'error'
+                    });
+                    return;
+                  }
                   if (signupData?.providerId) {
                     router.push('/emailCheck');
                   }

@@ -12,6 +12,7 @@ import useCustomError from '../auth/useCustomError';
 import { useTranslation } from 'next-i18next';
 import { I18nCommonKey } from '@/types/i18next';
 import { jsonRes } from '@/services/backend/response';
+import { useSignupStore } from '@/stores/signup';
 export type TCaptchaInstance = {
   invoke: () => void;
 };
@@ -38,7 +39,7 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
     },
     []
   );
-  const { captchaIsLoaded } = useScriptStore();
+  const { captchaIsLoaded, captchaIsInited, setCaptchaIsInited } = useScriptStore();
   const [buttonId] = useState('captcha_button_pop');
   const [captchaId] = useState('captcha_' + v4().slice(0, 8));
   const { i18n, t } = useTranslation();
@@ -56,9 +57,22 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
       element: '#' + captchaId,
       button: '#' + buttonId,
       async captchaVerifyCallback(captchaVerifyParam: string) {
+        console.log('cvc');
         try {
-          const state = useSmsStateStore.getState();
-          const id = state.phoneNumber;
+          const state = useSignupStore.getState();
+          if (60_000 + state.startTime < new Date().getTime()) {
+            return {
+              captchaResult: false,
+              bizResult: false
+            };
+          }
+          const signupData = state.signupData;
+          if (!signupData || signupData.providerType !== 'PHONE')
+            return {
+              captchaResult: false,
+              bizResult: false
+            };
+          const id = signupData.providerId;
           const res = await request.post<
             any,
             ApiResp<
@@ -72,7 +86,6 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
             id,
             captchaVerifyParam
           });
-          console.log(res);
           if (res.code === 200) {
             if (res.message !== 'successfully') {
               return {
@@ -110,13 +123,12 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
               bizResult: false
             };
           }
-          return;
         }
       },
       onBizResultCallback(bizResult: boolean) {
         if (bizResult) {
-          const state = useSmsStateStore.getState();
-          state.setRemainTime(60);
+          const state = useSignupStore.getState();
+          state.updateStartTime();
         } else {
           const message = i18n.t('common:get_code_failed') || 'Get code failed';
           showError(message);
@@ -134,9 +146,12 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
 
     // @ts-ignore
     window.initAliyunCaptcha(initAliyunCaptchaOptions);
-
+    // console.log('inited success', captchaIsInited);
+    // setCaptchaIsInited(true);
+    // console.log('inited success2', captchaIsInited);
     return () => {
       captchaInstanceRef.current = null;
+      // setCaptchaIsInited(false);
     };
   }, [captchaIsLoaded, t, i18n.language]);
   return (

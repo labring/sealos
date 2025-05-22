@@ -12,7 +12,7 @@ import {
   User,
   UserStatus
 } from 'prisma/global/generated/client';
-import { enableSignUp, enableTracking, getRegionUid } from '../enable';
+import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enable';
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
 import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
@@ -215,7 +215,72 @@ async function signUp({
     return null;
   }
 }
+async function signUpWithEmail({
+  provider,
+  id,
+  name: nickname,
+  avatar_url,
+  semData,
+  email
+}: {
+  provider: ProviderType;
+  id: string;
+  name: string;
+  avatar_url: string;
+  semData?: SemData;
+  email: string;
+}) {
+  const name = nanoid(10);
+  try {
+    const user = await globalPrisma.$transaction(async (tx) => {
+      const user: User = await tx.user.create({
+        data: {
+          name: name,
+          id: name,
+          nickname: nickname,
+          avatarUri: avatar_url,
+          oauthProvider: {
+            create: {
+              providerId: email,
+              providerType: 'EMAIL'
+            }
+          },
+          userInfo: {
+            create: {
+              signUpRegionUid: getRegionUid(),
+              isInited: false
+            }
+          }
+        }
+      });
+      await tx.oauthProvider.create({
+        data: {
+          providerId: id,
+          providerType: provider,
+          userUid: user.uid
+        }
+      });
+      if (semData?.channel) {
+        await tx.userSemChannel.create({
+          data: {
+            userUid: user.uid,
+            channel: semData.channel,
+            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+          }
+        });
+      }
 
+      await createNewUserTasks(tx, user.uid);
+
+      return user;
+    });
+
+    return { user };
+  } catch (error) {
+    console.error('globalAuth: Error during sign up:', error);
+    return null;
+  }
+}
 export async function signUpByPassword({
   id,
   name: nickname,
@@ -299,7 +364,8 @@ export async function findUser({ userUid }: { userUid: string }) {
     }
   });
 }
-
+const forceBindEmail = (provider: ProviderType) =>
+  getVersion() === 'en' && (provider === ProviderType.GOOGLE || provider === ProviderType.GITHUB);
 export const getGlobalToken = async ({
   provider,
   providerId,
@@ -386,20 +452,50 @@ export const getGlobalToken = async ({
     }
   } else {
     if (!_user) {
+      // sign up
       if (!enableSignUp()) throw new Error('Failed to signUp user');
-      const result = await signUp({
-        provider,
-        id: providerId,
-        name,
-        avatar_url,
-        semData
-      });
-      if (result) {
+      let signUpResult;
+      if (forceBindEmail(provider)) {
+        // check email
+        if (!email) {
+          return null;
+        }
+        const emailUser = await globalPrisma.oauthProvider.findUnique({
+          where: {
+            providerId_providerType: {
+              providerType: ProviderType.EMAIL,
+              providerId: email
+            }
+          }
+        });
+        if (!!emailUser) {
+          return null;
+        }
+        signUpResult = await signUpWithEmail({
+          provider,
+          id: providerId,
+          name,
+          avatar_url,
+          semData,
+          email
+        });
+      } else {
+        signUpResult = await signUp({
+          provider,
+          id: providerId,
+          name,
+          avatar_url,
+          semData
+        });
+      }
+
+      if (signUpResult) {
+        const result = signUpResult;
         user = result.user;
         if (inviterId) {
           inviteHandler({
             inviterId: inviterId,
-            inviteeId: result?.user.name,
+            inviteeId: result.user.name,
             signResult: result
           });
         }
@@ -420,6 +516,7 @@ export const getGlobalToken = async ({
         }
       }
     } else {
+      //signin
       const result = await signIn({
         provider,
         id: providerId
@@ -429,7 +526,7 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new Error('Failed to edit db');
 
-  if (email) {
+  if (!forceBindEmail && email) {
     try {
       const emailProvider = await globalPrisma.oauthProvider.findFirst({
         where: {

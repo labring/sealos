@@ -163,6 +163,13 @@ export type AuthConfigType = {
       accessKeySecret?: string;
     };
   };
+  turnstile?: {
+    enabled: boolean;
+    cloudflare?: {
+      siteKey: string;
+      secretKey: string;
+    };
+  };
 };
 
 export type AuthClientConfigType = {
@@ -199,7 +206,9 @@ export type AuthClientConfigType = {
       //captcha
       'captcha.ali.accessKeyID',
       'captcha.ali.accessKeySecret',
-      'captcha.ali.endpoint'
+      'captcha.ali.endpoint',
+      // turnstile
+      'turnstile.cloudflare.secretKey'
     ]
   >
 >;
@@ -303,6 +312,12 @@ export const DefaultAuthClientConfig: AuthClientConfigType = {
   hasBaiduToken: false,
   invite: {
     enabled: false
+  },
+  turnstile: {
+    enabled: false,
+    cloudflare: {
+      siteKey: ''
+    }
   },
   callbackURL: 'https://cloud.sealos.io/callback',
   idp: {

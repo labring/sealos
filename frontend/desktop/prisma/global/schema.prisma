@@ -65,7 +65,7 @@ model UserInfo {
   userUid         String  @unique @map("user_uid") @db.Uuid
   signUpRegionUid String  @map("sign_up_region_uid") @db.Uuid
   isInited        Boolean @default(false) @map("is_inited")
-  // verify_email       Boolean @default(false)
+  // verify_email    Boolean @default(false)
   config          Json?
   user            User    @relation(fields: [userUid], references: [uid])
 
