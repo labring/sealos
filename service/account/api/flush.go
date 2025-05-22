@@ -290,7 +290,12 @@ func AdminFlushSubscriptionQuota(c *gin.Context) {
 	}
 	for _, ns := range nsList {
 		quota := getDefaultResourceQuota(ns, "quota-"+ns, rs)
-		if err = dao.K8sManager.GetClient().Update(context.Background(), quota); err != nil {
+		hard := quota.Spec.Hard.DeepCopy()
+		_, err = controllerutil.CreateOrUpdate(context.Background(), dao.K8sManager.GetClient(), quota, func() error {
+			quota.Spec.Hard = hard
+			return nil
+		})
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("update resource quota failed: %v", err)})
 			return
 		}

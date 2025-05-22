@@ -238,7 +238,12 @@ func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID, planID uuid.UUID
 					lastErr = nil
 					break
 				}
-				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+				} else {
+					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+				}
 			}
 
 			// 进行重试

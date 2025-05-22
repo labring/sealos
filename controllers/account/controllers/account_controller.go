@@ -101,6 +101,8 @@ const (
 	EnvSubscriptionEnabled = "SUBSCRIPTION_ENABLED"
 	EnvJwtSecret           = "ACCOUNT_API_JWT_SECRET"
 	EnvDesktopJwtSecret    = "DESKTOP_API_JWT_SECRET"
+
+	InitAccountTimeAnnotation = "user.sealos.io/init-account-time"
 )
 
 var SubscriptionEnabled = false
@@ -144,12 +146,19 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if owner = user.Annotations[userv1.UserAnnotationOwnerKey]; owner == "" {
 			return ctrl.Result{}, fmt.Errorf("user owner is empty")
 		}
+		if user.Annotations[InitAccountTimeAnnotation] != "" {
+			return ctrl.Result{}, nil
+		}
 		// This is only used to monitor and initialize user resource creation data,
 		// determine the resource quota created by the owner user and the resource quota initialized by the account user,
 		// and only the resource quota created by the team user
 		_, err = r.syncAccount(ctx, owner, "ns-"+user.Name)
 		if errors.Is(err, gorm.ErrRecordNotFound) && user.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
 			return ctrl.Result{}, nil
+		}
+		if err == nil {
+			user.Annotations[InitAccountTimeAnnotation] = time.Now().Format(time.RFC3339)
+			return ctrl.Result{}, r.Update(ctx, user)
 		}
 		return ctrl.Result{}, err
 	} else if client.IgnoreNotFound(err) != nil {
@@ -181,7 +190,8 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, owner string, userN
 		}
 	}
 	if err = r.SyncNSQuotaFunc(ctx, owner, userNamespace); err != nil {
-		r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
+		//r.Logger.Error(err, "sync resource resourceQuota and limitRange failed")
+		return nil, fmt.Errorf("sync resource resourceQuota and limitRange failed: %v", err)
 	}
 	return
 }
