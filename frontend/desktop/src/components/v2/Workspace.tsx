@@ -34,14 +34,17 @@ import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import { SwitchRegionType } from '@/constants/account';
 import { I18nCloudProvidersKey } from '@/types/i18next';
 import { CheckIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import { useGuideModalStore } from '@/stores/guideModal';
+
 export default function Workspace() {
   const { t } = useTranslation();
   const router = useRouter();
   const { toast } = useCustomToast();
   const bg = useColorModeValue('white', 'gray.700');
   const provider = useSessionStore((s) => s.lastSigninProvier);
-  const { workspaceName, setWorkspaceName, setSelectedRegionUid, selectedRegionUid, setInitGuide } =
+  const { workspaceName, setWorkspaceName, setSelectedRegionUid, selectedRegionUid } =
     useInitWorkspaceStore();
+  const { setInitGuide } = useGuideModalStore();
   const { cloudConfig } = useConfigStore();
   const { token } = useSessionStore();
   const regionListQuery = useQuery({

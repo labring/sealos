@@ -51,6 +51,7 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
                 onClick={() => {
                   currentDriver.destroy();
                   currentDriver = null;
+                  startDriver(quitGuideDriverObj(t));
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -171,6 +172,7 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
                 onClick={() => {
                   currentDriver.destroy();
                   currentDriver = null;
+                  startDriver(quitGuideDriverObj(t));
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -291,6 +293,7 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
                 onClick={() => {
                   currentDriver.destroy();
                   currentDriver = null;
+                  startDriver(quitGuideDriverObj(t));
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -410,6 +413,7 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
                 onClick={() => {
                   currentDriver.destroy();
                   currentDriver = null;
+                  startDriver(quitGuideDriverObj(t));
                 }}
               >
                 <X width={'16px'} height={'16px'} />
@@ -572,21 +576,22 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
   onHighlightStarted: (element) => {
     const el = element as any;
     if (el) {
-      el._originalBorderRadius = el.style.borderRadius;
-      el._originalBorder = el.style.border;
-
       el.style.borderRadius = '8px';
-      el.style.border = '1.5px solid #1C4EF5';
+      el.style.border = '1px solid #1C4EF5';
     }
   },
   onDeselected: (element?: Element) => {
     if (element) {
       const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
+      el.style.borderRadius = '';
+      el.style.border = '';
     }
   },
-  onDestroyed: () => {
-    console.log('onDestroyed');
+  onDestroyed: (element?: Element) => {
+    if (element) {
+      const el = element as any;
+      el.style.borderRadius = '';
+      el.style.border = '';
+    }
   }
 });

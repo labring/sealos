@@ -28,20 +28,22 @@ import {
 } from './driver';
 import { WindowSize } from '@/types';
 import { Image } from '@chakra-ui/react';
-import { useInitWorkspaceStore } from '@/stores/initWorkspace';
+import { useGuideModalStore } from '@/stores/guideModal';
 
-interface GuideModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
+const GuideModal = () => {
   const { t } = useTranslation();
   const { session } = useSessionStore((s) => s);
-  const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
-  const [activeStep, setActiveStep] = useState(0);
   const { installedApps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
-  const { initGuide, setInitGuide } = useInitWorkspaceStore();
+  const {
+    isOpen,
+    selectedGuide,
+    activeStep,
+    initGuide: guideModalInitGuide,
+    closeGuideModal,
+    setSelectedGuide,
+    setActiveStep,
+    setInitGuide
+  } = useGuideModalStore();
 
   const infoData = useQuery({
     queryFn: UserInfo,
@@ -272,15 +274,9 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered closeOnOverlayClick={false}>
+    <Modal isOpen={isOpen} onClose={closeGuideModal} isCentered closeOnOverlayClick={false}>
       <ModalOverlay />
-      <ModalContent
-        minW={'900px'}
-        h={'510px'}
-        // p={'4px'}
-        borderRadius={'20px'}
-        background={'#FAFAFA'}
-      >
+      <ModalContent minW={'900px'} h={'510px'} borderRadius={'20px'} background={'#FAFAFA'}>
         <Flex
           flexDirection="column"
           bg={'#fff'}
@@ -316,9 +312,10 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                   borderRadius="8px"
                   _hover={{ bg: 'gray.800' }}
                   onClick={() => {
-                    onClose();
+                    closeGuideModal();
                     setInitGuide(false);
                     const cur = guideLinks[selectedGuide];
+                    console.log(111);
 
                     switch (cur.key) {
                       case 'system-applaunchpad':
@@ -396,7 +393,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
             <>
               <Center mt={'40px'} flexDirection={'column'}>
                 <Text fontSize={'24px'} fontWeight={600} color={'#000'} lineHeight={'24px'}>
-                  {initGuide
+                  {guideModalInitGuide
                     ? t('v2:guide_title', { name: infoData.data?.nickname || '' })
                     : t('v2:quickstart_guide')}
                 </Text>
@@ -476,7 +473,7 @@ const GuideModal = ({ isOpen, onClose }: GuideModalProps) => {
                 textAlign={'center'}
                 onClick={() => {
                   setInitGuide(false);
-                  onClose();
+                  closeGuideModal();
                   startDriver(quitGuideDriverObj(t));
                 }}
               >

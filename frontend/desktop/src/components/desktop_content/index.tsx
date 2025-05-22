@@ -1,6 +1,5 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-import useDriver from '@/components/task/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
@@ -30,6 +29,8 @@ import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
+import { useGuideModalStore } from '@/stores/guideModal';
+import GuideModal from '../account/GuideModal';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
@@ -46,7 +47,13 @@ export const blurBackgroundStyles = {
 export default function Desktop(props: any) {
   const { i18n } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
-  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const {
+    installedApps: apps,
+    runningInfo,
+    openApp,
+    setToHighestLayerById,
+    closeAppById
+  } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
   const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
   const { message } = useMessage();
@@ -57,6 +64,7 @@ export default function Desktop(props: any) {
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
+  const guideModal = useGuideModalStore();
 
   useEffect(() => {
     setIsClient(true);
@@ -122,8 +130,25 @@ export default function Desktop(props: any) {
     [apps, openApp, runningInfo, setToHighestLayerById]
   );
 
+  const closeDesktopApp = useCallback(
+    ({ appKey }: { appKey: string }) => {
+      const app = apps.find((item) => item.key === appKey);
+      const runningApp = runningInfo.find((item) => item.key === appKey);
+      if (!app || !runningApp) return;
+      closeAppById(runningApp.pid);
+    },
+    [apps, runningInfo, closeAppById]
+  );
+
+  const quitGuide = useCallback(
+    ({ appKey }: { appKey: string }) => {
+      closeDesktopApp({ appKey });
+      guideModal.openGuideModal();
+    },
+    [closeDesktopApp, guideModal]
+  );
+
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-  const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
     const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
@@ -134,6 +159,16 @@ export default function Desktop(props: any) {
     const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
     return cleanup;
   }, [openDesktopApp]);
+
+  useEffect(() => {
+    const cleanup = masterApp?.addEventListen('closeDesktopApp', closeDesktopApp);
+    return cleanup;
+  }, [closeDesktopApp]);
+
+  useEffect(() => {
+    const cleanup = masterApp?.addEventListen('quitGuide', quitGuide);
+    return cleanup;
+  }, [quitGuide]);
 
   useEffect(() => {
     if (infoData.isSuccess && commonConfig?.realNameAuthEnabled && account?.data?.balance) {
@@ -333,6 +368,8 @@ export default function Desktop(props: any) {
       </Flex>
 
       {isAppBar ? <AppDock /> : <FloatButton />}
+
+      <GuideModal />
 
       {/* opened apps */}
       {runningInfo.map((process) => {

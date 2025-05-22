@@ -572,7 +572,7 @@ export const quitGuideDriverObj = (t: any, nextStep?: () => void): Config => ({
                     currentDriver.destroy();
                     currentDriver = null;
                   }
-                  sealosApp.runEvents('closeDesktopApp', {
+                  sealosApp.runEvents('quitGuide', {
                     appKey: 'system-applaunchpad',
                     pathname: '/',
                     messageData: { type: 'InternalAppCall', action: 'quitGuide' }

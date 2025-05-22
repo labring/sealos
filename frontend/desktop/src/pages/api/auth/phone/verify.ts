@@ -17,7 +17,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         await verifySmsCodeGuard(
           phoneNumbers,
           code,
-          'phone_unbind'
+          'phone_login'
         )(res, async ({ smsInfo: phoneInfo }) => {
           // await getGlobalTokenByPhoneSvc(phoneInfo.id, inviterId, semData, bdVid)(res);
           await getGlobalTokenSvc({

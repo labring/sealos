@@ -5,7 +5,6 @@ import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
 import {
   Box,
-  Button,
   Center,
   Divider,
   Flex,
@@ -19,9 +18,9 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { i18n, useTranslation } from 'next-i18next';
+import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
@@ -34,16 +33,14 @@ import {
   Gift,
   Globe,
   LogOut,
-  Sparkles,
   User
 } from 'lucide-react';
-import { useInitWorkspaceStore } from '@/stores/initWorkspace';
-import GuideModal from './GuideModal';
 import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
 import { CurrencySymbol } from '@sealos/ui';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 const baseItemStyle = {
   minW: '36px',
@@ -58,7 +55,6 @@ const baseItemStyle = {
 
 export default function Account() {
   const { layoutConfig } = useConfigStore();
-  const [showId, setShowId] = useState(true);
   const router = useRouter();
   const { copyData } = useCopyData();
   const { t, i18n } = useTranslation();
@@ -70,8 +66,7 @@ export default function Account() {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { colorMode, toggleColorMode } = useColorMode();
-  const guideDisclosure = useDisclosure();
-  const { setInitGuide, initGuide } = useInitWorkspaceStore();
+  const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
@@ -88,19 +83,6 @@ export default function Account() {
     if (!workorder) return;
     openApp(workorder);
   };
-
-  // const openAccountCenterApp = (page?: string) => {
-  //   openDesktopApp({
-  //     appKey: 'system-account-center',
-  //     query: {
-  //       page: page || 'plan'
-  //     },
-  //     messageData: {
-  //       page: page || 'plan'
-  //     },
-  //     pathname: '/redirect'
-  //   });
-  // };
 
   const openCostCenterApp = () => {
     openDesktopApp({
@@ -199,9 +181,8 @@ export default function Account() {
             {...baseItemStyle}
             px={'8px'}
             borderRadius={'8px'}
-            border={'1px solid transparent'}
             onClick={() => {
-              guideDisclosure.onOpen();
+              openGuideModal();
               setInitGuide(false);
             }}
           >
@@ -548,8 +529,6 @@ export default function Account() {
           </Flex>
         </Flex> */}
       </Flex>
-
-      <GuideModal isOpen={guideDisclosure.isOpen} onClose={guideDisclosure.onClose} />
     </Box>
   );
 }

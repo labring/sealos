@@ -5,8 +5,6 @@ interface SignupState {
   selectedRegionUid: string;
   setSelectedRegionUid: (uid: string) => void;
   setWorkspaceName: (n: string) => void;
-  initGuide: boolean;
-  setInitGuide: (initGuide: boolean) => void;
 }
 
 export const useInitWorkspaceStore = create<SignupState>((set) => ({
@@ -17,9 +15,5 @@ export const useInitWorkspaceStore = create<SignupState>((set) => ({
   },
   setWorkspaceName(workspaceName: string) {
     set({ workspaceName });
-  },
-  initGuide: false,
-  setInitGuide(initGuide: boolean) {
-    set({ initGuide });
   }
 }));
