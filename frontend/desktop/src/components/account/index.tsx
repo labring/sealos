@@ -20,7 +20,7 @@ import {
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
@@ -66,7 +66,7 @@ export default function Account() {
   const [notificationAmount, setNotificationAmount] = useState(0);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { colorMode, toggleColorMode } = useColorMode();
-  const { openGuideModal, setInitGuide } = useGuideModalStore();
+  const { openGuideModal, setInitGuide, initGuide } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
 
@@ -112,6 +112,12 @@ export default function Account() {
     }
     return realBalance.toNumber();
   }, [data]);
+
+  useEffect(() => {
+    if (initGuide) {
+      openGuideModal();
+    }
+  }, [initGuide, openGuideModal]);
 
   return (
     <Box position={'relative'} flex={1}>
