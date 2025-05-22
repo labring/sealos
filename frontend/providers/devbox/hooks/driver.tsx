@@ -3,6 +3,7 @@ import { Flex, Text, Box, Center, Image } from '@chakra-ui/react';
 import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { X, CircleCheckBig } from 'lucide-react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 let currentDriver: any = null;
 
@@ -65,7 +66,7 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
             </Text>
             <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                2/4
+                2/5
               </Text>
               <Center
                 color={'#fff'}
@@ -106,8 +107,8 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
   onDeselected: (element?: Element) => {
     if (element) {
       const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
+      el.style.borderRadius = '';
+      el.style.border = '';
       el.style.outline = '';
       el.style.outlineOffset = '';
     }
@@ -123,13 +124,13 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
 });
 
 export const startguideIDE = (t: any, nextStep?: () => void): Config => ({
-  showProgress: true,
+  showProgress: false,
   allowClose: false,
-  allowClickMaskNextStep: false,
+  allowClickMaskNextStep: true,
   isShowButtons: false,
   allowKeyboardControl: false,
   disableActiveInteraction: false,
-  overlayColor: 'transparent',
+  // overlayColor: 'transparent',
 
   steps: [
     {
@@ -165,7 +166,7 @@ export const startguideIDE = (t: any, nextStep?: () => void): Config => ({
             </Text>
             <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
+                4/5
               </Text>
               <Center
                 color={'#fff'}
@@ -189,163 +190,21 @@ export const startguideIDE = (t: any, nextStep?: () => void): Config => ({
       }
     }
   ],
-  onHighlightStarted: (element) => {
-    const el = element as any;
-    if (el) {
-      el._originalBorderRadius = el.style.borderRadius;
-      el._originalBorder = el.style.border;
-      el._originalOutline = el.style.outline;
-
-      el.style.borderRadius = '8px';
-      el.style.outline = '2px solid #1C4EF5';
-      el.style.outlineOffset = '2px';
-
-      el.addEventListener(
-        'click',
-        () => {
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
-    }
-  },
-  onDeselected: (element?: Element) => {
-    if (element) {
-      const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
-      el.style.outline = '';
-      el.style.outlineOffset = '';
-    }
-  },
-  onHighlighted: (element?: Element) => {
-    const event = new Event('resize');
-    window.dispatchEvent(event);
-  },
+  onHighlightStarted: (element) => {},
+  onDeselected: (element?: Element) => {},
+  onHighlighted: (element?: Element) => {},
   onDestroyed: () => {
     useGuideStore.getState().setguideIDE(true);
   }
 });
 
-export const startGuide5 = (t: any, nextStep?: () => void): Config => ({
+export const startManageAndDeploy = (t: any, nextStep?: () => void): Config => ({
   showProgress: true,
   allowClose: false,
-  allowClickMaskNextStep: false,
+  allowClickMaskNextStep: true,
   isShowButtons: false,
   allowKeyboardControl: false,
-  disableActiveInteraction: false,
-  overlayColor: 'transparent',
-
-  steps: [
-    {
-      element: '#guide-list',
-      popover: {
-        side: 'bottom',
-        align: 'start',
-        borderRadius: '12px 12px 12px 12px',
-
-        PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                {t('driver.manage_deploy')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.view_details')}
-            </Text>
-            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                {t('driver.quit_guide')}
-              </Center>
-            </Flex>
-          </Box>
-        )
-      }
-    }
-  ],
-  onHighlightStarted: (element) => {
-    const el = element as any;
-    if (el) {
-      el._originalBorderRadius = el.style.borderRadius;
-      el._originalBorder = el.style.border;
-      el._originalOutline = el.style.outline;
-
-      el.style.borderRadius = '8px';
-      el.style.outline = '2px solid #1C4EF5';
-      el.style.outlineOffset = '2px';
-
-      el.addEventListener(
-        'click',
-        () => {
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
-    }
-  },
-  onHighlighted: (element?: Element) => {
-    const event = new Event('resize');
-    window.dispatchEvent(event);
-  },
-  onDeselected: (element?: Element) => {
-    if (element) {
-      const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
-      el.style.outline = '';
-      el.style.outlineOffset = '';
-    }
-  },
-  onDestroyed: () => {
-    useGuideStore.getState().setGuide5(true);
-  }
-});
-
-export const startGuide6 = (t: any, nextStep?: () => void): Config => ({
-  showProgress: true,
-  allowClose: false,
-  allowClickMaskNextStep: false,
-  isShowButtons: false,
-  allowKeyboardControl: false,
-  disableActiveInteraction: false,
+  disableActiveInteraction: true,
   overlayColor: 'transparent',
 
   steps: [
@@ -382,7 +241,7 @@ export const startGuide6 = (t: any, nextStep?: () => void): Config => ({
             </Text>
             <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
+                5/5
               </Text>
               <Center
                 color={'#fff'}
@@ -416,36 +275,25 @@ export const startGuide6 = (t: any, nextStep?: () => void): Config => ({
       el.style.borderRadius = '8px';
       el.style.outline = '2px solid #1C4EF5';
       el.style.outlineOffset = '2px';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
     }
   },
-  onHighlighted: (element) => {
-    window.dispatchEvent(new Event('resize'));
-  },
+  onHighlighted: (element) => {},
   onDeselected: (element?: Element) => {
     if (element) {
       const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
+      el.style.borderRadius = '';
+      el.style.border = '';
       el.style.outline = '';
       el.style.outlineOffset = '';
     }
   },
   onDestroyed: () => {
-    useGuideStore.getState().setGuide6(true);
+    useGuideStore.getState().setManageAndDeploy(true);
+    startDriver(quitGuideDriverObj(t));
   }
 });
 
+// delete
 export const startGuide7 = (t: any, nextStep?: () => void): Config => ({
   showProgress: true,
   allowClose: false,
@@ -691,13 +539,12 @@ export const quitGuideDriverObj = (t: any, nextStep?: () => void): Config => ({
                 <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
               </Box>
               <Center
-                mb={'20px'}
+                mt={'20px'}
                 h={'40px'}
                 borderRadius={'8px'}
                 border={'1px solid #E4E4E7'}
                 background={'#FFF'}
                 cursor={'pointer'}
-                mt={'20px'}
                 py={'20px'}
                 px={'24px'}
                 onClick={() => {
@@ -705,9 +552,36 @@ export const quitGuideDriverObj = (t: any, nextStep?: () => void): Config => ({
                     currentDriver.destroy();
                     currentDriver = null;
                   }
+                  window.location.href = '/';
                 }}
               >
-                {t('driver.got_it')}
+                {t('driver.create_devbox')}
+              </Center>
+              <Center
+                mt={'12px'}
+                mb={'20px'}
+                h={'40px'}
+                borderRadius={'8px'}
+                border={'1px solid #E4E4E7'}
+                background={'#FFF'}
+                cursor={'pointer'}
+                py={'20px'}
+                px={'24px'}
+                onClick={() => {
+                  if (currentDriver) {
+                    currentDriver.destroy();
+                    currentDriver = null;
+                  }
+                  sealosApp.runEvents('closeDesktopApp', {
+                    appKey: 'system-applaunchpad',
+                    pathname: '/',
+                    messageData: { type: 'InternalAppCall', action: 'quitGuide' }
+                  });
+                  // maybe dont need this
+                  window.location.href = '/';
+                }}
+              >
+                {t('driver.quit_guide')}
               </Center>
             </Box>
           </Box>

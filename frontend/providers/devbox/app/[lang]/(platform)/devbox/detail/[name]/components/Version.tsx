@@ -336,7 +336,7 @@ const Version = () => {
       h={'full'}
       position={'relative'}
     >
-      <Flex alignItems="center" justifyContent={'space-between'} mb={5}>
+      <Flex alignItems="center" justifyContent={'space-between'} mb={5} py={'4px'} pr={'2px'}>
         <Flex alignItems={'center'}>
           <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
           <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>

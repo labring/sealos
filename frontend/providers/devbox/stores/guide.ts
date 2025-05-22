@@ -5,7 +5,7 @@ interface GuideState {
   guide2: boolean;
   guideConfigDevbox: boolean;
   guideIDE: boolean;
-  guide5: boolean;
+  manageAndDeploy: boolean;
   guide6: boolean;
   guide7: boolean;
   guideRelease: boolean;
@@ -14,7 +14,7 @@ interface GuideState {
   setGuide2: (completed: boolean) => void;
   setguideConfigDevbox: (completed: boolean) => void;
   setguideIDE: (completed: boolean) => void;
-  setGuide5: (completed: boolean) => void;
+  setManageAndDeploy: (completed: boolean) => void;
   setGuide6: (completed: boolean) => void;
   setGuide7: (completed: boolean) => void;
   setguideRelease: (completed: boolean) => void;
@@ -29,7 +29,7 @@ export const useGuideStore = create<GuideState>()(
       guide2: true,
       guideConfigDevbox: true,
       guideIDE: true,
-      guide5: true,
+      manageAndDeploy: true,
       guide6: true,
       guide7: true,
       guideRelease: true,
@@ -39,7 +39,7 @@ export const useGuideStore = create<GuideState>()(
       setGuide2: (completed: boolean) => set({ guide2: completed }),
       setguideConfigDevbox: (completed: boolean) => set({ guideConfigDevbox: completed }),
       setguideIDE: (completed: boolean) => set({ guideIDE: completed }),
-      setGuide5: (completed: boolean) => set({ guide5: completed }),
+      setManageAndDeploy: (completed: boolean) => set({ manageAndDeploy: completed }),
       setGuide6: (completed: boolean) => set({ guide6: completed }),
       setGuide7: (completed: boolean) => set({ guide7: completed }),
       setguideRelease: (completed: boolean) => set({ guideRelease: completed }),
@@ -50,7 +50,7 @@ export const useGuideStore = create<GuideState>()(
           guide2: completed,
           guideConfigDevbox: completed,
           guideIDE: completed,
-          guide5: completed,
+          manageAndDeploy: completed,
           guide6: completed,
           guide7: completed,
           guideRelease: completed

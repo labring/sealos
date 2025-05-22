@@ -6,6 +6,7 @@ import { devboxDB } from '@/services/db/init';
 import { ProtocolType } from '@/types/devbox';
 import { PortInfos } from '@/types/ingress';
 import { KBDevboxTypeV2 } from '@/types/k8s';
+import { adaptDevboxDetailV2 } from '@/utils/adapt';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
+    const mock = searchParams.get('mock') === 'true';
 
     if (!devboxName) {
       return jsonRes({
@@ -96,8 +98,10 @@ export async function GET(req: NextRequest) {
           customDomain: ingressInfo?.customDomain
         };
       }) || [];
-    const resp = [devboxBody, portInfos, template] as const;
-    return jsonRes({ data: resp });
+
+    const data = adaptDevboxDetailV2([devboxBody, portInfos, template]);
+
+    return jsonRes({ data });
   } catch (err: any) {
     return jsonRes({
       code: 500,

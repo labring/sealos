@@ -32,14 +32,14 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
 
   const { guide2 } = useGuideStore();
   useEffect(() => {
-    if (!guide2 && listLength === 0) {
+    if (!guide2) {
       startDriver(
         startGuide2(t, () => {
           router.push('/devbox/create');
         })
       );
     }
-  }, [guide2, listLength, t]);
+  }, [guide2, router, t]);
 
   return (
     <Flex h={'90px'} alignItems={'center'}>

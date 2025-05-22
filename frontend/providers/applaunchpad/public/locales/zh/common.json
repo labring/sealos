@@ -328,7 +328,7 @@
   "add_credit": "充值",
   "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
   "driver": {
-    "create_launchpad": "创建启动台",
+    "create_launchpad": "创建应用",
     "define_settings": "定义您的应用设置并开始部署",
     "next": "下一步",
     "access_application": "访问应用",

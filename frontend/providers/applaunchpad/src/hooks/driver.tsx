@@ -4,6 +4,7 @@ import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { CircleCheckBig, X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 let currentDriver: any = null;
 
@@ -269,13 +270,12 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
                 <Image mt={'20px'} src={'/guide-image.png'} alt="guide" />
               </Box>
               <Center
-                mb={'20px'}
+                mt={'20px'}
                 h={'40px'}
                 borderRadius={'8px'}
                 border={'1px solid #E4E4E7'}
                 background={'#FFF'}
                 cursor={'pointer'}
-                mt={'20px'}
                 py={'20px'}
                 px={'24px'}
                 onClick={() => {
@@ -283,9 +283,36 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
                     currentDriver.destroy();
                     currentDriver = null;
                   }
+                  window.location.href = '/';
                 }}
               >
-                {t('driver.got_it')}
+                {t('driver.create_launchpad')}
+              </Center>
+              <Center
+                mt={'12px'}
+                mb={'20px'}
+                h={'40px'}
+                borderRadius={'8px'}
+                border={'1px solid #E4E4E7'}
+                background={'#FFF'}
+                cursor={'pointer'}
+                py={'20px'}
+                px={'24px'}
+                onClick={() => {
+                  if (currentDriver) {
+                    currentDriver.destroy();
+                    currentDriver = null;
+                  }
+                  sealosApp.runEvents('closeDesktopApp', {
+                    appKey: 'system-applaunchpad',
+                    pathname: '/',
+                    messageData: { type: 'InternalAppCall', action: 'quitGuide' }
+                  });
+                  // maybe dont need this
+                  window.location.href = '/';
+                }}
+              >
+                {t('driver.quit_guide')}
               </Center>
             </Box>
           </Box>
@@ -310,7 +337,6 @@ export const quitGuideDriverObj = (t: TFunction, nextStep?: () => void): Config 
     }
   },
   onDestroyed: () => {
-    console.log('onDestroyed quitGuideDriverObj');
     useGuideStore.getState().resetGuideState(true);
     nextStep && nextStep();
     window.location.replace('/');
