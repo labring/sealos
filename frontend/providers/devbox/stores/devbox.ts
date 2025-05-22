@@ -116,6 +116,11 @@ export const useDevboxStore = create<State>()(
       devboxDetail: undefined,
       setDevboxDetail: async (devboxName: string, sealosDomain: string, mock?: boolean) => {
         const detail = await getDevboxByName(devboxName, mock);
+        if (mock) {
+          set((state) => {
+            state.devboxDetail = detail;
+          });
+        }
 
         // SSH configuration should be obtained regardless of whether it is running on or not
         const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({

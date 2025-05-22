@@ -177,7 +177,7 @@ export const quitGuideDriverObj = (t: TFunction): Config => {
                       currentDriver = null;
                     }
                     sealosApp.runEvents('quitGuide', {
-                      appKey: 'system-applaunchpad',
+                      appKey: 'system-template',
                       pathname: '/',
                       messageData: { type: 'InternalAppCall', action: 'quitGuide' }
                     });

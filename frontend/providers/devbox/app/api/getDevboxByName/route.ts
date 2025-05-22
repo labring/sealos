@@ -1,4 +1,5 @@
 import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
+import { MockDevboxDetail } from '@/constants/mock';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
@@ -18,6 +19,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
     const mock = searchParams.get('mock') === 'true';
+
+    if (mock) {
+      return jsonRes({
+        data: MockDevboxDetail
+      });
+    }
 
     if (!devboxName) {
       return jsonRes({

@@ -350,7 +350,7 @@ export default function Apps() {
                 WebkitTextFillColor: 'transparent'
               }}
             >
-              {layoutConfig?.version === 'cn' ? t('v2:invite_friend') : t('v2:aiproxy_tips')}
+              {layoutConfig?.version === 'cn' ? t('v2:invite_friend') : t('v2:onboard_guide')}
             </Text>
             <Box position="relative" className="gradient-icon">
               <ArrowRight width={16} height={16} />

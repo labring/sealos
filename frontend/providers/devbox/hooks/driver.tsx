@@ -573,7 +573,7 @@ export const quitGuideDriverObj = (t: any, nextStep?: () => void): Config => ({
                     currentDriver = null;
                   }
                   sealosApp.runEvents('quitGuide', {
-                    appKey: 'system-applaunchpad',
+                    appKey: 'system-devbox',
                     pathname: '/',
                     messageData: { type: 'InternalAppCall', action: 'quitGuide' }
                   });
