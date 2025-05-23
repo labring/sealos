@@ -6,17 +6,19 @@ import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
 import { startDriver, applistDriverObj } from '@/hooks/driver';
 import { useGuideStore } from '@/store/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 const Empty = () => {
   const { t } = useTranslation();
   const router = useRouter();
+  const isClientSide = useClientSideValue(true);
 
   const { applistCompleted } = useGuideStore();
   useEffect(() => {
-    if (!applistCompleted) {
+    if (!applistCompleted && isClientSide) {
       startDriver(applistDriverObj(t, () => router.push('/db/edit')));
     }
-  }, [applistCompleted, t, router]);
+  }, [applistCompleted, t, router, isClientSide]);
 
   return (
     <Box

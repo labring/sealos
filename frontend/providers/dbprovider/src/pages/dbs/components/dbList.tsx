@@ -4,10 +4,13 @@ import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
+import { applistDriverObj, startDriver } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useConfirm } from '@/hooks/useConfirm';
 import UpdateModal from '@/pages/db/detail/components/UpdateModal';
 import useEnvStore from '@/store/env';
 import { useGlobalStore } from '@/store/global';
+import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
 import { Box, Button, Center, Flex, Image, useDisclosure, useTheme } from '@chakra-ui/react';
@@ -21,7 +24,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -307,6 +310,14 @@ const DBList = ({
     getFilteredRowModel: getFilteredRowModel()
   });
 
+  const isClientSide = useClientSideValue(true);
+  const { applistCompleted } = useGuideStore();
+  useEffect(() => {
+    if (!applistCompleted && isClientSide) {
+      startDriver(applistDriverObj(t, () => router.push('/db/edit')));
+    }
+  }, [applistCompleted, t, router, isClientSide]);
+
   return (
     <Box
       backgroundColor={'white'}
@@ -338,6 +349,7 @@ const DBList = ({
         </Center>
         <Box flex={1}></Box>
         <Button
+          className="create-app-btn"
           minW={'95px'}
           h={'full'}
           variant={'solid'}

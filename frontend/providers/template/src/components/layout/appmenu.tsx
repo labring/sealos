@@ -20,6 +20,7 @@ import { ApplicationType } from '@/types/app';
 import { useGuideStore } from '@/store/guide';
 import { X } from 'lucide-react';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();
@@ -36,6 +37,7 @@ export default function AppMenu() {
       setLangStore(newLang);
     }
   };
+  const isClientSide = useClientSideValue(true);
   const { listCompleted, setListCompleted, createCompleted } = useGuideStore();
 
   return (
@@ -133,7 +135,7 @@ export default function AppMenu() {
         </Center>
       )}
 
-      {!listCompleted && (
+      {!listCompleted && isClientSide && (
         <Box
           position="absolute"
           zIndex={1000}

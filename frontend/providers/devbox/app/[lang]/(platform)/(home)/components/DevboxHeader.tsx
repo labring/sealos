@@ -1,6 +1,7 @@
 import MyIcon from '@/components/Icon';
 import { TemplateState } from '@/constants/template';
 import { startDriver, startGuide2 } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname, useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
 import { useTemplateStore } from '@/stores/template';
@@ -31,15 +32,16 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
   }, []);
 
   const { guide2 } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
   useEffect(() => {
-    if (!guide2) {
+    if (!guide2 && isClientSide) {
       startDriver(
         startGuide2(t, () => {
           router.push('/devbox/create');
         })
       );
     }
-  }, [guide2, router, t]);
+  }, [guide2, router, t, isClientSide]);
 
   return (
     <Flex h={'90px'} alignItems={'center'}>

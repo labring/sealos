@@ -3,21 +3,26 @@ import { driver } from '@sealos/driver';
 import { Config } from '@sealos/driver/src/config';
 import { X } from 'lucide-react';
 import { TFunction } from 'next-i18next';
+import { useGuideModalStore } from '@/stores/guideModal';
 
-let currentDriver: any = null;
+export let currentDriver: any = null;
+
+export function destroyDriver() {
+  if (currentDriver) {
+    currentDriver.destroy();
+    currentDriver = null;
+  }
+}
 
 export function startDriver(config: Config) {
   if (currentDriver) {
     currentDriver.destroy();
     currentDriver = null;
   }
-
   const driverObj = driver(config);
-
   currentDriver = driverObj;
-
+  useGuideModalStore.getState().setIsDriverActive(true);
   driverObj.drive();
-
   return driverObj;
 }
 
@@ -113,7 +118,9 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
       el.style.border = el._originalBorder || '';
     }
   },
-  onDestroyed: () => {}
+  onDestroyed: () => {
+    useGuideModalStore.getState().setIsDriverActive(false);
+  }
 });
 
 export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
@@ -209,7 +216,9 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
       el.style.border = el._originalBorder || '';
     }
   },
-  onDestroyed: () => {}
+  onDestroyed: () => {
+    useGuideModalStore.getState().setIsDriverActive(false);
+  }
 });
 
 export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
@@ -304,7 +313,9 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
       el.style.border = el._originalBorder || '';
     }
   },
-  onDestroyed: () => {}
+  onDestroyed: () => {
+    useGuideModalStore.getState().setIsDriverActive(false);
+  }
 });
 
 export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
@@ -399,7 +410,9 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
       el.style.border = el._originalBorder || '';
     }
   },
-  onDestroyed: () => {}
+  onDestroyed: () => {
+    useGuideModalStore.getState().setIsDriverActive(false);
+  }
 });
 
 export const quitGuideDriverObj = (t: TFunction): Config => ({
@@ -487,6 +500,7 @@ export const quitGuideDriverObj = (t: TFunction): Config => ({
     }
   },
   onDestroyed: (element?: Element) => {
+    useGuideModalStore.getState().setIsDriverActive(false);
     if (element) {
       const el = element as any;
       el.style.borderRadius = '';

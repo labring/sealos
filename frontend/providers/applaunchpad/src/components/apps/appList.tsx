@@ -30,6 +30,7 @@ import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import LangSelect from '../LangSelect';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 
@@ -344,16 +345,17 @@ const AppList = ({
   );
 
   const { listCompleted } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
 
   useEffect(() => {
-    if (!listCompleted) {
+    if (!listCompleted && isClientSide) {
       startDriver(
         applistDriverObj(t, () => {
           router.push('/app/edit');
         })
       );
     }
-  }, [listCompleted, router, t]);
+  }, [listCompleted, router, t, isClientSide]);
 
   return (
     <Box backgroundColor={'grayModern.100'} px={'30px'} pb={5} minH={'100%'}>

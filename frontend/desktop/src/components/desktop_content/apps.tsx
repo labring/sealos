@@ -20,6 +20,7 @@ import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import styles from './index.module.scss';
 import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { currentDriver, destroyDriver } from '../account/driver';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
@@ -118,7 +119,39 @@ export default function Apps() {
     return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
+  const { isDriverActive } = useGuideModalStore();
+
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
+    console.log(item, 'item', isDriverActive);
+    if (isDriverActive) {
+      const guidedElements = [
+        'system-devbox',
+        'system-applaunchpad',
+        'system-template',
+        'system-dbprovider'
+      ];
+      if (guidedElements.includes(item.key)) {
+        if (openDesktopApp) {
+          openDesktopApp({
+            appKey: item.key,
+            pathname:
+              item.key === 'system-applaunchpad' || item.key === 'system-dbprovider'
+                ? '/redirect'
+                : '/',
+            query: {
+              action: 'guide'
+            },
+            messageData: {},
+            appSize: 'maximize'
+          });
+        }
+        if (currentDriver) {
+          destroyDriver();
+        }
+        return;
+      }
+    }
+
     e.preventDefault();
     closeFolder();
     if (item?.name) {
