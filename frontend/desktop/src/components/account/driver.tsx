@@ -62,7 +62,7 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
             </Text>
             <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/3
+                1/5
               </Text>
               <Center
                 color={'#fff'}
@@ -183,7 +183,7 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
             </Text>
             <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/3
+                1/4
               </Text>
               <Center
                 color={'#fff'}
@@ -232,7 +232,6 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
           e.stopPropagation();
 
           if (openDesktopApp) {
-            console.log('openApp');
             openDesktopApp({
               appKey: 'system-applaunchpad',
               pathname: '/redirect',
@@ -304,7 +303,7 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
             </Text>
             <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/2
+                1/4
               </Text>
               <Center
                 color={'#fff'}
@@ -424,7 +423,7 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
             </Text>
             <Flex justifyContent={'space-between'} mt={'16px'} alignItems={'center'}>
               <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                1/3
+                1/4
               </Text>
               <Center
                 color={'#fff'}

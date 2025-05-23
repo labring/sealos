@@ -103,7 +103,7 @@ const Header = ({
               left={'-180px'}
               bottom={'-170px'}
               width={'250px'}
-              bg={'rgba(28, 46, 245, 0.9)'}
+              bg={'#2563EB'}
               p={'16px'}
               borderRadius={'12px'}
               color={'#fff'}
@@ -161,7 +161,7 @@ const Header = ({
                 height={0}
                 borderLeft={'8px solid transparent'}
                 borderRight={'8px solid transparent'}
-                borderTop={'10px solid rgba(28, 46, 245, 0.9)'}
+                borderTop={'10px solid #2563EB'}
                 transform={'rotate(180deg)'}
               />
             </Box>

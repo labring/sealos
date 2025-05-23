@@ -50,6 +50,7 @@ const RedirectPage = () => {
     const handleUrlParams = () => {
       const { formData, action } = router.query as { formData?: string; action?: string };
       if (action === 'guide') {
+        console.log('launchpad redirect', action);
         resetGuideState(false);
         router.replace('/apps?action=guide');
         return;

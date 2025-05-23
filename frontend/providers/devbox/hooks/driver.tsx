@@ -36,17 +36,11 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
     {
       element: '.list-create-app-button',
       popover: {
-        side: 'left',
-        align: 'start',
+        side: 'bottom',
+        align: 'end',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
+          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.create_devbox')}
@@ -123,81 +117,6 @@ export const startGuide2 = (t: any, nextStep?: () => void): Config => ({
   }
 });
 
-export const startguideIDE = (t: any, nextStep?: () => void): Config => ({
-  showProgress: false,
-  allowClose: false,
-  allowClickMaskNextStep: true,
-  isShowButtons: false,
-  allowKeyboardControl: false,
-  disableActiveInteraction: false,
-  // overlayColor: 'transparent',
-
-  steps: [
-    {
-      element: '.guide-ide',
-      popover: {
-        side: 'left',
-        align: 'start',
-        borderRadius: '12px 12px 12px 12px',
-        PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                {t('driver.code_in_ide')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.choose_ide')}
-            </Text>
-            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/5
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                {t('driver.quit_guide')}
-              </Center>
-            </Flex>
-          </Box>
-        )
-      }
-    }
-  ],
-  onHighlightStarted: (element) => {},
-  onDeselected: (element?: Element) => {},
-  onHighlighted: (element?: Element) => {},
-  onDestroyed: () => {
-    useGuideStore.getState().setguideIDE(true);
-  }
-});
-
 export const startManageAndDeploy = (t: any, nextStep?: () => void): Config => ({
   showProgress: true,
   allowClose: false,
@@ -215,13 +134,7 @@ export const startManageAndDeploy = (t: any, nextStep?: () => void): Config => (
         align: 'start',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
+          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.manage_deploy')}
@@ -257,7 +170,7 @@ export const startManageAndDeploy = (t: any, nextStep?: () => void): Config => (
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
-                {t('driver.quit_guide')}
+                {t('driver.next')}
               </Center>
             </Flex>
           </Box>
@@ -293,114 +206,6 @@ export const startManageAndDeploy = (t: any, nextStep?: () => void): Config => (
   }
 });
 
-// delete
-export const startGuide7 = (t: any, nextStep?: () => void): Config => ({
-  showProgress: true,
-  allowClose: false,
-  allowClickMaskNextStep: false,
-  isShowButtons: false,
-  allowKeyboardControl: false,
-  disableActiveInteraction: false,
-  overlayColor: 'transparent',
-
-  steps: [
-    {
-      element: '#release-button',
-      popover: {
-        side: 'top',
-        align: 'start',
-        borderRadius: '12px 12px 12px 12px',
-        PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                {t('driver.manage_deploy')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.click_release')}
-            </Text>
-            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-              <Text color={'grayModern.900'} fontSize={'13px'} fontWeight={500}>
-                4/4
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
-                onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
-                }}
-              >
-                {t('driver.quit_guide')}
-              </Center>
-            </Flex>
-          </Box>
-        )
-      }
-    }
-  ],
-  onHighlightStarted: (element) => {
-    const el = element as any;
-    if (el) {
-      el._originalBorderRadius = el.style.borderRadius;
-      el._originalBorder = el.style.border;
-      el._originalOutline = el.style.outline;
-
-      el.style.borderRadius = '8px';
-      el.style.outline = '2px solid #1C4EF5';
-      el.style.outlineOffset = '2px';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
-    }
-  },
-  onDeselected: (element?: Element) => {
-    if (element) {
-      const el = element as any;
-      el.style.borderRadius = el._originalBorderRadius || '';
-      el.style.border = el._originalBorder || '';
-      el.style.outline = '';
-      el.style.outlineOffset = '';
-    }
-  },
-  onHighlighted: (element) => {
-    window.dispatchEvent(new Event('resize'));
-  },
-  onDestroyed: () => {
-    useGuideStore.getState().setGuide7(true);
-  }
-});
-
 export const startguideRelease = (t: any, nextStep?: () => void): Config => ({
   showProgress: true,
   allowClose: false,
@@ -418,13 +223,7 @@ export const startguideRelease = (t: any, nextStep?: () => void): Config => ({
         align: 'start',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
+          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.manage_deploy')}
@@ -525,7 +324,7 @@ export const quitGuideDriverObj = (t: any, nextStep?: () => void): Config => ({
         align: 'end',
         PopoverBody: (
           <Box color={'black'} borderRadius={'16px'} w={'460px'}>
-            <Box w={'100%'} borderRadius={'16px'} px={'24px'}>
+            <Box w={'100%'} borderRadius={'16px'} px={'24px'} position={'relative'}>
               <Box>
                 <Box mt={'32px'}>
                   <CircleCheckBig size={32} color="#2563EB" />

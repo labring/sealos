@@ -16,7 +16,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { UserInfo } from '@/api/auth';
 import useSessionStore from '@/stores/session';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import useAppStore from '@/stores/app';
 import {
   devboxDriverObj,

@@ -138,7 +138,7 @@ export default function AppMenu() {
           position="absolute"
           zIndex={1000}
           width="250px"
-          bg="rgba(28, 46, 245, 0.9)"
+          bg="#2563EB"
           p="16px"
           borderRadius="12px"
           color="#fff"
@@ -196,7 +196,7 @@ export default function AppMenu() {
             borderTop={'8px solid transparent'}
             borderLeft={'8px solid transparent'}
             borderBottom={'8px solid transparent'}
-            borderRight={'10px solid rgba(28, 46, 245, 0.9)'}
+            borderRight={'10px solid #2563EB'}
           />
         </Box>
       )}

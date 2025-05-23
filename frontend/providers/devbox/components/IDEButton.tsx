@@ -27,12 +27,7 @@ import { getSSHConnectionInfo } from '@/api/devbox';
 import ToolboxModal from './modals/ToolboxModal';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
 import { useGuideStore } from '@/stores/guide';
-import {
-  quitGuideDriverObj,
-  startDriver,
-  startguideIDE,
-  startManageAndDeploy
-} from '@/hooks/driver';
+import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
 import { X } from 'lucide-react';
 
 interface Props {
@@ -342,7 +337,7 @@ const IDEButton = ({
       {!guideIDE && isGuide && (
         <Center
           borderRadius={'12px'}
-          zIndex={98}
+          zIndex={99}
           border={'1px solid #2563EB'}
           position={'absolute'}
           top={'-6px'}
@@ -355,7 +350,7 @@ const IDEButton = ({
             top={'50%'}
             left={'105%'}
             width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
+            bg={'#2563EB'}
             p={'12px'}
             borderRadius={'12px'}
             color={'#fff'}
@@ -392,10 +387,11 @@ const IDEButton = ({
                 h={'32px'}
                 p={'8px'}
                 onClick={() => {
-                  startDriver(quitGuideDriverObj(t));
+                  setguideIDE(true);
+                  startDriver(startManageAndDeploy(t));
                 }}
               >
-                {t('driver.quit_guide')}
+                {t('driver.next')}
               </Center>
             </Flex>
             <Box
@@ -407,7 +403,7 @@ const IDEButton = ({
               borderTop={'8px solid transparent'}
               borderLeft={'8px solid transparent'}
               borderBottom={'8px solid transparent'}
-              borderRight={'10px solid rgba(28, 46, 245, 0.9)'}
+              borderRight={'10px solid #2563EB'}
             />
           </Box>
         </Center>
@@ -421,7 +417,7 @@ const IDEButton = ({
             left={0}
             right={0}
             bottom={0}
-            zIndex={99}
+            zIndex={98}
             onClick={() => {
               setguideIDE(true);
               startDriver(startManageAndDeploy(t));

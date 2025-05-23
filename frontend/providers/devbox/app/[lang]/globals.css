@@ -159,28 +159,28 @@ div {
   border-right-color: transparent !important;
   border-bottom-color: transparent !important;
   border-top-color: transparent !important;
-  border-left-color: rgba(28, 46, 245, 0.9) !important;
+  border-left-color: #2563eb !important;
 }
 
 .driver-popover-arrow-side-right {
   border-left-color: transparent !important;
   border-bottom-color: transparent !important;
   border-top-color: transparent !important;
-  border-right-color: rgba(28, 46, 245, 0.9) !important;
+  border-right-color: #2563eb !important;
 }
 
 .driver-popover-arrow-side-top {
   border-right-color: transparent !important;
   border-bottom-color: transparent !important;
   border-left-color: transparent !important;
-  border-top-color: rgba(28, 46, 245, 0.9) !important;
+  border-top-color: #2563eb !important;
 }
 
 .driver-popover-arrow-side-bottom {
   border-left-color: transparent !important;
   border-top-color: transparent !important;
   border-right-color: transparent !important;
-  border-bottom-color: rgba(28, 46, 245, 0.9) !important;
+  border-bottom-color: #2563eb !important;
 }
 
 .chakra-radio__control {

@@ -41,13 +41,7 @@ export const applistDriverObj = (t: TFunction, nextStep: () => void): Config => 
         borderRadius: '12px 12px 12px 12px',
 
         PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
+          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.create_launchpad')}
@@ -151,13 +145,7 @@ export const detailDriverObj = (t: TFunction): Config => ({
         align: 'center',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
-          <Box
-            width={'250px'}
-            bg={'rgba(28, 46, 245, 0.9)'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
+          <Box width={'250px'} bg={'#2563EB'} p={'12px'} borderRadius={'12px'} color={'#fff'}>
             <Flex alignItems={'center'} justifyContent={'space-between'}>
               <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
                 {t('driver.access_application')}
