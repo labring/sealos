@@ -21,7 +21,7 @@ const Empty = () => {
         })
       );
     }
-  }, [listCompleted, t]);
+  }, [listCompleted, router, t]);
 
   return (
     <Box

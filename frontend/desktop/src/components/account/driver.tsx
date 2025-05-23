@@ -104,31 +104,6 @@ export const devboxDriverObj = (openDesktopApp: any, t: TFunction): Config => ({
 
       el.style.borderRadius = '8px';
       el.style.border = '1.5px solid #1C4EF5';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          e.stopPropagation();
-
-          if (openDesktopApp) {
-            openDesktopApp({
-              appKey: 'system-devbox',
-              pathname: '/',
-              query: {
-                action: 'guide'
-              },
-              messageData: {},
-              appSize: 'maximize'
-            });
-          }
-
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
     }
   },
   onDeselected: (element?: Element) => {
@@ -225,31 +200,6 @@ export const appLaunchpadDriverObj = (openDesktopApp: any, t: TFunction): Config
 
       el.style.borderRadius = '8px';
       el.style.border = '1.5px solid #1C4EF5';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          e.stopPropagation();
-
-          if (openDesktopApp) {
-            openDesktopApp({
-              appKey: 'system-applaunchpad',
-              pathname: '/redirect',
-              query: {
-                action: 'guide'
-              },
-              messageData: {},
-              appSize: 'maximize'
-            });
-          }
-
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
     }
   },
   onDeselected: (element?: Element) => {
@@ -345,31 +295,6 @@ export const templateDriverObj = (openDesktopApp: any, t: TFunction): Config => 
 
       el.style.borderRadius = '8px';
       el.style.border = '1.5px solid #1C4EF5';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          e.stopPropagation();
-
-          if (openDesktopApp) {
-            openDesktopApp({
-              appKey: 'system-template',
-              pathname: '/',
-              query: {
-                action: 'guide'
-              },
-              messageData: {},
-              appSize: 'maximize'
-            });
-          }
-
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
     }
   },
   onDeselected: (element?: Element) => {
@@ -465,31 +390,6 @@ export const databaseDriverObj = (openDesktopApp: any, t: TFunction): Config => 
 
       el.style.borderRadius = '8px';
       el.style.border = '1.5px solid #1C4EF5';
-
-      el.addEventListener(
-        'click',
-        (e: any) => {
-          e.stopPropagation();
-
-          if (openDesktopApp) {
-            openDesktopApp({
-              appKey: 'system-dbprovider',
-              pathname: '/redirect',
-              query: {
-                action: 'guide'
-              },
-              messageData: {},
-              appSize: 'maximize'
-            });
-          }
-
-          if (currentDriver) {
-            currentDriver.destroy();
-            currentDriver = null;
-          }
-        },
-        { once: true }
-      );
     }
   },
   onDeselected: (element?: Element) => {

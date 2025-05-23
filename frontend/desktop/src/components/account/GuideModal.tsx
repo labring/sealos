@@ -316,7 +316,6 @@ const GuideModal = () => {
                     closeGuideModal();
                     setInitGuide(false);
                     const cur = guideLinks[selectedGuide];
-                    console.log(111);
 
                     switch (cur.key) {
                       case 'system-applaunchpad':

@@ -353,7 +353,7 @@ const AppList = ({
         })
       );
     }
-  }, [listCompleted, t]);
+  }, [listCompleted, router, t]);
 
   return (
     <Box backgroundColor={'grayModern.100'} px={'30px'} pb={5} minH={'100%'}>
