@@ -33,7 +33,8 @@ export default function EmailCheckComponent() {
   const { commonConfig, authConfig } = useConfigStore();
   const toast = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { signupData, clearSignupData, startTime, updateStartTime } = useSignupStore();
+  const { signupData, clearSignupData, startTime, updateStartTime, setStartTime } =
+    useSignupStore();
   const { setToken } = useSessionStore();
   useEffect(() => {
     if (!signupData) {
@@ -96,6 +97,9 @@ export default function EmailCheckComponent() {
     if ((!canResend || isLoading) && !force) return;
 
     setIsLoading(true);
+    const oldTime = startTime;
+    updateStartTime();
+    setCanResend(false);
     try {
       if (!signupData || signupData.providerType !== 'EMAIL') {
         throw new Error('No signup data found');
@@ -103,12 +107,11 @@ export default function EmailCheckComponent() {
       let cfToken;
       const turnstileConfig = authConfig?.turnstile;
       if (!!turnstileConfig?.enabled && turnstileConfig.cloudflare.siteKey) {
-        console.log('sitekey', authConfig?.turnstile.cloudflare.siteKey);
+        // console.log('sitekey', authConfig?.turnstile.cloudflare.siteKey);
         cfToken = await turnstileRef.current?.getResponsePromise();
-        console.log('onsubmit cfToken', cfToken);
+        // console.log('onsubmit cfToken', cfToken);
         if (!cfToken) {
-          setIsLoading(false);
-          return;
+          throw Error('get token error');
         }
       }
       const result = await sendCodeMutation.mutateAsync({
@@ -118,11 +121,12 @@ export default function EmailCheckComponent() {
       if (result.code !== 200) {
         throw Error(result.message);
       }
-
       // Start countdown
-      setCanResend(false);
-      updateStartTime();
+      // updateStartTime();
     } catch (error) {
+      // rollout
+      setStartTime(oldTime);
+      setCanResend(true);
       console.error('Failed to send verification phone:', error);
       toast({
         title: t('common:get_code_failed'),
@@ -133,6 +137,7 @@ export default function EmailCheckComponent() {
         position: 'top'
       });
     } finally {
+      turnstileRef.current?.reset();
       setIsLoading(false);
     }
   };
