@@ -71,7 +71,8 @@ export async function getRegionToken({
     let curRegionWorkspaceUsage = userResult.WorkspaceUsage.filter(
       (u) => u.regionUid == region.uid
     );
-    if (!userResult.userInfo) {
+    const needFlush = !userResult.userInfo;
+    if (needFlush) {
       // flush user workspace
       const result = await prisma.userCr.findUnique({
         where: {
@@ -94,24 +95,31 @@ export async function getRegionToken({
       });
       const ownerWorkspace = result?.userWorkspace.filter((w) => w.status === 'IN_WORKSPACE') || [];
       if (curRegionWorkspaceUsage.length === 0 && ownerWorkspace.length > 0)
-        globalPrisma.$transaction(async (tx) => {
+        await globalPrisma.$transaction(async (tx) => {
           for await (const r of ownerWorkspace) {
             await tx.workspaceUsage.create({
               data: {
                 userUid: userUid,
                 workspaceUid: r.workspace.uid,
                 seat: r.workspace.userWorkspace.filter(
-                  (predicate) => predicate.status === 'INVITED'
+                  (predicate) => predicate.status === 'IN_WORKSPACE'
                 ).length,
                 regionUid: region.uid
               }
             });
           }
         });
-    } else if (!userResult.userInfo.isInited) {
+    } else if (userResult.userInfo && !userResult.userInfo.isInited) {
       return null;
     }
-
+    if (needFlush) {
+      const afterFlushResult = await globalPrisma.workspaceUsage.findMany({
+        where: {
+          userUid: userUid
+        }
+      });
+      curRegionWorkspaceUsage = afterFlushResult.filter((u) => u.regionUid == region.uid);
+    }
     let needCreating = curRegionWorkspaceUsage.length === 0;
     // 先处理全局状态
     if (!needCreating) {
@@ -149,7 +157,12 @@ export async function getRegionToken({
         const privateRelation = relations.find((r) => r.isPrivate);
         if (privateRelation?.workspaceUid !== workspaceUid) {
           // 不匹配的未知错误
-          console.error('workspaceUid not match, workspaceUid:', workspaceUid);
+          console.error(
+            'workspaceUid not match, workspaceUid:',
+            workspaceUid,
+            'privateRelation.workspaceUid',
+            privateRelation?.workspaceUid
+          );
           return null;
         }
         return {
