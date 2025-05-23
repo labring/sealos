@@ -95,20 +95,18 @@ export async function getRegionToken({
       const ownerWorkspace = result?.userWorkspace.filter((w) => w.status === 'IN_WORKSPACE') || [];
       if (curRegionWorkspaceUsage.length === 0 && ownerWorkspace.length > 0)
         globalPrisma.$transaction(async (tx) => {
-          Promise.all(
-            ownerWorkspace.map(async (r) => {
-              await tx.workspaceUsage.create({
-                data: {
-                  userUid: userUid,
-                  workspaceUid: r.workspace.uid,
-                  seat: r.workspace.userWorkspace.filter(
-                    (predicate) => predicate.status === 'INVITED'
-                  ).length,
-                  regionUid: region.uid
-                }
-              });
-            })
-          );
+          for await (const r of ownerWorkspace) {
+            await tx.workspaceUsage.create({
+              data: {
+                userUid: userUid,
+                workspaceUid: r.workspace.uid,
+                seat: r.workspace.userWorkspace.filter(
+                  (predicate) => predicate.status === 'INVITED'
+                ).length,
+                regionUid: region.uid
+              }
+            });
+          }
         });
     } else if (!userResult.userInfo.isInited) {
       return null;
