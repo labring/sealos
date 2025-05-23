@@ -20,7 +20,7 @@ const AppMenu = dynamic(() => import('./appmenu'), {
 export default function Layout({ children }: { children: JSX.Element }) {
   const router = useRouter();
   const firstColumnWidth = useBreakpointValue({ base: '230px', xl: '270px' });
-  const { listCompleted } = useGuideStore();
+  const { listCompleted, createCompleted } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   const { t } = useTranslation();
 
@@ -28,7 +28,7 @@ export default function Layout({ children }: { children: JSX.Element }) {
     <>
       {ShowLayoutRoute[router.pathname] ? (
         <>
-          {!listCompleted && isClientSide && (
+          {(!listCompleted || !createCompleted) && isClientSide && (
             <Center
               borderTop={'1px solid #BFDBFE'}
               borderBottom={'1px solid #BFDBFE'}

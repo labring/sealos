@@ -101,6 +101,7 @@ export const detailDriverObj = (t: TFunction, nextStep?: () => void): Config => 
     }
   },
   onDestroyed: () => {
+    useGuideStore.getState().setListCompleted(true);
     startDriver(quitGuideDriverObj(t));
   }
 });

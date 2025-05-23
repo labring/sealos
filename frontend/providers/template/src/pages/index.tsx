@@ -28,6 +28,7 @@ import { MouseEvent, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { ShareIcon } from '@/components/icons';
 import { useGuideStore } from '@/store/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
@@ -98,11 +99,14 @@ export default function AppList({
     }
   }, [router, setInsideCloud]);
 
+  const isClientSide = useClientSideValue(true);
   useEffect(() => {
-    if (router.query?.action === 'guide') {
+    if (router.query?.action === 'guide' && isClientSide) {
       useGuideStore.getState().resetGuideState(false);
+    } else {
+      useGuideStore.getState().resetGuideState(true);
     }
-  }, [router.query?.action]);
+  }, [router.query?.action, isClientSide]);
 
   return (
     <Box

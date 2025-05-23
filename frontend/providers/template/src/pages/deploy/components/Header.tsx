@@ -335,8 +335,8 @@ const Header = ({
           <Box
             zIndex={1000}
             position={'absolute'}
-            left={'-180px'}
-            bottom={'-170px'}
+            top={'54px'}
+            left={'-100%'}
             width={'250px'}
             bg={'#2563EB'}
             p={'16px'}
