@@ -80,94 +80,6 @@ export default function SigninComponent() {
       service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
       private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
-  const onSignin = async (data: ILoginParams) => {
-    try {
-      setIsLoading(true);
-      const result = await ccEmailSignIn(data);
-
-      const token = result.data?.token;
-      if (!token) throw Error('get token error');
-
-      setToken(token, rememberMe);
-
-      if (result.data?.needInit) {
-        // toast({
-        //   title: t('success'),
-        //   status: 'success',
-        //   duration: 3000,
-        //   isClosable: true,
-        //   position: 'top'
-        // });
-        await router.push('/unlockcard');
-      } else {
-        const regionTokenRes = await getRegionToken();
-        if (regionTokenRes?.data) {
-          await sessionConfig(regionTokenRes.data);
-          // toast({
-          //   title: t('cc:sign_in_success'),
-          //   status: 'success',
-          //   duration: 3000,
-          //   isClosable: true,
-          //   position: 'top'
-          // });
-          await router.replace('/');
-        }
-      }
-    } catch (error) {
-      console.error('Sign in error:', error);
-      // @ts-ignore
-      if (error.code === 403) {
-        // 提示英文的密码/用户错误
-        // toast({
-        //   title: t('sign_in_failed'),
-        //   description: 'Please check your username and password and try again.',
-        //   status: 'error',
-        //   duration: 3000,
-        //   isClosable: true,
-        //   position: 'top'
-        // });
-        return;
-      }
-
-      // toast({
-      //   title: t('cc:sign_in_failed'),
-      //   description: (error as Error)?.message || t('unknown_error'),
-      //   status: 'error',
-      //   duration: 3000,
-      //   isClosable: true,
-      //   position: 'top'
-      // });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // const onSignup = async (data: IRegisterParamsWithoutName) => {
-  //   try {
-  //     setIsLoading(true);
-  //     // const result = await ccEmailSignUpCheck({ email: data.providerId });
-  //     if (result.code !== 201) {
-  //       // toast({
-  //       //   title: t('cc:sign_up_failed'),
-  //       //   description: result.message || t('unknown_error'),
-  //       //   status: 'error',
-  //       //   duration: 3000,
-  //       //   isClosable: true,
-  //       //   position: 'top'
-  //       // });
-  //     }
-  //     setSignupData({
-  //       email: data.email,
-  //       password: data.password
-  //     });
-
-  //     router.push('/personalinfo');
-  //   } catch (error) {
-  //     console.error('Sign up error:', error);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
 
   const handleSocialLogin = async (provider: OauthProvider) => {
     if (!authConfig) {
@@ -317,12 +229,10 @@ export default function SigninComponent() {
                   color={'#71717A'}
                   value={signupData?.providerId || ''}
                   onChange={(e) => {
-                    if (!!e.target.value) {
-                      setSignupData({
-                        providerId: e.target.value,
-                        providerType: 'PHONE'
-                      });
-                    }
+                    setSignupData({
+                      providerId: e.target.value,
+                      providerType: 'PHONE'
+                    });
                   }}
                 />
               </InputGroup>
@@ -331,7 +241,6 @@ export default function SigninComponent() {
                 px={'0'}
                 borderRadius={'8px'}
                 onClick={() => {
-                  console.log(signupData?.providerId);
                   if (signupData?.providerId) {
                     router.push('/phoneCheck');
                   }
@@ -364,14 +273,10 @@ export default function SigninComponent() {
                 flexGrow="0"
                 value={signupData?.providerId || ''}
                 onChange={(e) => {
-                  console.log(e.target);
-
-                  if (!!e.target.value) {
-                    setSignupData({
-                      providerId: e.target.value,
-                      providerType: 'EMAIL'
-                    });
-                  }
+                  setSignupData({
+                    providerId: e.target.value,
+                    providerType: 'EMAIL'
+                  });
                 }}
               />
               <Button
