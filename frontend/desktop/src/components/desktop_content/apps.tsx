@@ -19,6 +19,7 @@ import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'r
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import styles from './index.module.scss';
 import { ArrowRight, Volume2 } from 'lucide-react';
+import { useGuideModalStore } from '@/stores/guideModal';
 
 export default function Apps() {
   const { t, i18n } = useTranslation();
@@ -33,7 +34,7 @@ export default function Apps() {
   const [folderPosition, setFolderPosition] = useState({ top: 0, left: 0 });
 
   const [isDraggingOutside, setIsDraggingOutside] = useState(false);
-
+  const { openGuideModal } = useGuideModalStore();
   const desktopRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLDivElement>(null);
   const folderIconRef = useRef<HTMLDivElement>(null);
@@ -335,7 +336,7 @@ export default function Apps() {
             gap={'8px'}
             p={'8px 12px'}
             cursor={'pointer'}
-            onClick={layoutConfig?.version === 'cn' ? openReferralApp : () => {}}
+            onClick={layoutConfig?.version === 'cn' ? openReferralApp : () => openGuideModal()}
           >
             <Box position="relative" className="gradient-icon">
               <Volume2 width={16} height={16} />

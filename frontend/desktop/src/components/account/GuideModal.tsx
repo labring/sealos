@@ -119,49 +119,6 @@ const GuideModal = () => {
       stepNumbers: 3
     },
     {
-      key: 'system-applaunchpad',
-      icon: installedApps.find((app) => app.key === 'system-applaunchpad')?.icon || '',
-      title: t('v2:launchpad_title'),
-      description: t('v2:launchpad_desc'),
-      steps: [
-        {
-          title: t('v2:launchpad_step_1'),
-          description: t('v2:launchpad_step_1_desc'),
-          image: '/images/onboarding/app-launchpad-1.png'
-        },
-        {
-          title: t('v2:launchpad_step_2'),
-          description: t('v2:launchpad_step_2_desc'),
-          image: '/images/onboarding/app-launchpad-2.png'
-        },
-        {
-          title: t('v2:launchpad_step_3'),
-          description: t('v2:launchpad_step_3_desc'),
-          image: '/images/onboarding/app-launchpad-3.png'
-        }
-      ],
-      stepNumbers: 4
-    },
-    {
-      key: 'system-template',
-      icon: installedApps.find((app) => app.key === 'system-template')?.icon || '',
-      title: t('v2:template_title'),
-      description: t('v2:template_desc'),
-      steps: [
-        {
-          title: t('v2:template_step_1'),
-          description: t('v2:template_step_1_desc'),
-          image: '/images/onboarding/appstore-1.png'
-        },
-        {
-          title: t('v2:template_step_2'),
-          description: t('v2:template_step_2_desc'),
-          image: '/images/onboarding/appstore-2.png'
-        }
-      ],
-      stepNumbers: 2
-    },
-    {
       key: 'system-dbprovider',
       icon: installedApps.find((app) => app.key === 'system-dbprovider')?.icon || '',
       title: t('v2:database_title'),
@@ -184,6 +141,49 @@ const GuideModal = () => {
         }
       ],
       stepNumbers: 3
+    },
+    {
+      key: 'system-applaunchpad',
+      icon: installedApps.find((app) => app.key === 'system-applaunchpad')?.icon || '',
+      title: t('v2:launchpad_title'),
+      description: t('v2:launchpad_desc'),
+      steps: [
+        {
+          title: t('v2:launchpad_step_1'),
+          description: t('v2:launchpad_step_1_desc'),
+          image: '/images/onboarding/app-launchpad-1.png'
+        },
+        {
+          title: t('v2:launchpad_step_2'),
+          description: t('v2:launchpad_step_2_desc'),
+          image: '/images/onboarding/app-launchpad-2.png'
+        },
+        {
+          title: t('v2:launchpad_step_3'),
+          description: t('v2:launchpad_step_3_desc'),
+          image: '/images/onboarding/app-launchpad-3.png'
+        }
+      ],
+      stepNumbers: 3
+    },
+    {
+      key: 'system-template',
+      icon: installedApps.find((app) => app.key === 'system-template')?.icon || '',
+      title: t('v2:template_title'),
+      description: t('v2:template_desc'),
+      steps: [
+        {
+          title: t('v2:template_step_1'),
+          description: t('v2:template_step_1_desc'),
+          image: '/images/onboarding/appstore-1.png'
+        },
+        {
+          title: t('v2:template_step_2'),
+          description: t('v2:template_step_2_desc'),
+          image: '/images/onboarding/appstore-2.png'
+        }
+      ],
+      stepNumbers: 2
     }
   ];
 

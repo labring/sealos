@@ -124,6 +124,7 @@ export default function Account() {
       <Flex alignItems={'center'} height={'100%'} zIndex={3}>
         <Flex alignItems={'center'}>
           <Center
+            draggable={false}
             mr={'12px'}
             boxSize={'36px'}
             borderRadius={'10px'}
@@ -133,7 +134,7 @@ export default function Account() {
               '0px -1px 3px 0px rgba(191, 202, 219, 0.05), 0px 4.5px 4px 0px rgba(191, 202, 219, 0.35)'
             }
           >
-            <Image src={'/logo.svg'} alt="Logo" width="28px" height="28px" />
+            <Image draggable={false} src={'/logo.svg'} alt="Logo" width="28px" height="28px" />
           </Center>
           <RegionToggle />
           <Center mx={'3px'}>
