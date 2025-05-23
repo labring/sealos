@@ -21,7 +21,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 function genResAuthClientConfig(conf: AuthConfigType) {
   const captcha = conf.captcha;
   const turnstile = conf.turnstile;
-  console.log('turnstile', turnstile);
   const authClientConfig: AuthClientConfigType = {
     callbackURL: conf.callbackURL || '',
     invite: {
