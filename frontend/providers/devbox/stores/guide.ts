@@ -6,6 +6,7 @@ interface GuideState {
   guideConfigDevbox: boolean;
   guideIDE: boolean;
   manageAndDeploy: boolean;
+  // deleted
   guide6: boolean;
   guide7: boolean;
   guideRelease: boolean;

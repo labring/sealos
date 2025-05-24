@@ -13,6 +13,7 @@ import DevboxList from './DevboxList';
 import Empty from './Empty';
 import { useSearchParams } from 'next/navigation';
 import { useGuideStore } from '@/stores/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 function useDevboxList() {
   const router = useRouter();
@@ -129,12 +130,14 @@ export default function DevboxListContainer({ ...props }: FlexProps) {
   const { list, isLoading, refetchList } = useDevboxList();
   const searchParams = useSearchParams();
   const action = searchParams.get('action');
+  const { resetGuideState } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
 
   useEffect(() => {
-    if (action === 'guide') {
-      useGuideStore.getState().resetGuideState(false);
+    if (isClientSide) {
+      resetGuideState(!(action === 'guide'));
     }
-  }, [action]);
+  }, [action, isClientSide, resetGuideState]);
 
   return (
     <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" {...props}>
