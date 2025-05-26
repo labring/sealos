@@ -120,7 +120,8 @@ def export_app_helper(yaml_content, images, appname, namespace):
 
     print('exportApp, appname:', appname, 'namespace:', namespace, flush=True)
 
-    workdir = os.path.join(SAVE_PATH, namespace, appname)
+    temp_uuid = str(int(time.time() * 1000))
+    workdir = os.path.join(SAVE_PATH, namespace, appname + '-' + temp_uuid)
     
     if os.path.exists(workdir):
         os.system('rm -rf ' + workdir)
@@ -174,7 +175,7 @@ def export_app_helper(yaml_content, images, appname, namespace):
         file.write(json.dumps(metadata))
     
     # 返回成功响应
-    return jsonify({'message': 'Application exported successfully', 'path': workdir, 'url': 'http://' + CLUSTER_DOMAIN + ':5002/api/downloadApp?appname=' + appname + '&namespace=' + namespace}), 200
+    return jsonify({'message': 'Application exported successfully', 'path': workdir, 'url': 'http://' + CLUSTER_DOMAIN + ':5002/api/downloadApp?appname=' + appname + '&namespace=' + namespace + '&uuid=' + temp_uuid}), 200
 
 # API端点：打包并下载应用程序
 @app.route('/api/downloadApp', methods=['GET'])
@@ -186,12 +187,16 @@ def download_app():
     namespace = request.args.get('namespace')
     if not namespace:
         return jsonify({'error': 'Namespace is required'}), 400
+    
+    uuid = request.args.get('uuid')
+    if not uuid:
+        return jsonify({'error': 'UUID is required'}), 400
 
-    print('downloadApp, appname:', appname, 'namespace:', namespace, flush=True)
+    print('downloadApp, appname:', appname, 'namespace:', namespace, 'uuid:', uuid, flush=True)
 
     # 打包应用程序为zip文件
-    workdir = os.path.join(SAVE_PATH, namespace, appname)
-    zip_path = os.path.join(SAVE_PATH, namespace, appname + '.zip')
+    workdir = os.path.join(SAVE_PATH, namespace, appname + '-' + uuid)
+    zip_path = os.path.join(SAVE_PATH, namespace, appname + '-' + uuid + '.zip')
     shutil.make_archive(base_name=os.path.splitext(zip_path)[0], format='zip', root_dir=workdir)
 
     # 以流的形式返回文件
