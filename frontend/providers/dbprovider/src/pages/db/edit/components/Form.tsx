@@ -113,17 +113,6 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                 {dbName}
                 {t('has_comps', { count: compNum })}:&emsp;
               </Text>
-              {/* <Text>
-                {Object.keys(resources)
-                  .sort()
-                  .map((item) => {
-                    return item.split('-').at(-1);
-                  })
-                  .join(', ')}
-              </Text>
-              <Text mx={2} color="#C4CBD7">
-                |
-              </Text> */}
               <Text>{descriptionMap.get(data.dbType)}</Text>
             </Box>
             <AccordionIcon />
