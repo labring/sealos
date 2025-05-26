@@ -14,6 +14,13 @@
 
 package mongo
 
+import (
+	"context"
+	"strings"
+	"testing"
+	"time"
+)
+
 //import (
 //	"context"
 //	"os"
@@ -44,3 +51,33 @@ package mongo
 //	}
 //	t.Logf("bytes = %v", bytes)
 //}
+
+func Test_mongoDB_GetNamespaceTraffic(t *testing.T) {
+	dbCTX := context.Background()
+
+	m, err := NewMongoInterface(dbCTX, "")
+	if err != nil {
+		t.Errorf("failed to connect mongo: error = %v", err)
+	}
+	defer func() {
+		if err = m.Disconnect(dbCTX); err != nil {
+			t.Errorf("failed to disconnect mongo: error = %v", err)
+		}
+	}()
+	now := time.Now().UTC()
+	trafficMap, err := m.GetNamespaceTraffic(dbCTX, now.Add(-1*time.Minute), now)
+	if err != nil {
+		t.Errorf("failed to get namespace traffic: error = %v", err)
+	}
+	for namespace, totalBytes := range trafficMap {
+		t.Logf("Namespace: %s, Total Bytes: %d", namespace, totalBytes)
+		if totalBytes <= 0 {
+			t.Errorf("Total bytes for namespace %s is negative: %d", namespace, totalBytes)
+		}
+		if !strings.HasPrefix(namespace, "ns-") {
+			t.Logf("Namespace %s is not prefixed with ns-", namespace)
+		}
+	}
+	execTime := time.Now().UTC()
+	t.Logf("Execution time: %v, Traffic Map: %d", execTime, len(trafficMap))
+}
