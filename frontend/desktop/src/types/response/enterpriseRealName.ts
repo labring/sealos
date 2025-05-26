@@ -26,4 +26,5 @@ export interface AdditionalInfo {
   contactInfo: string;
   transAmt: string;
   authTimes: number;
+  isRestrictedUser?: boolean;
 }

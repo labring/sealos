@@ -13,6 +13,7 @@ export type CommonConfigType = {
   enterpriseRealNameAuthEnabled: boolean;
   realNameAuthEnabled: boolean;
   realNameReward: number;
+  realNameCallbackUrl?: string;
   guideEnabled: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
@@ -26,7 +27,12 @@ export type CommonConfigType = {
 export type CommonClientConfigType = DeepRequired<
   Omit<
     CommonConfigType,
-    'apiEnabled' | 'objectstorageUrl' | 'applaunchpadUrl' | 'dbproviderUrl' | 'templateUrl'
+    | 'apiEnabled'
+    | 'objectstorageUrl'
+    | 'applaunchpadUrl'
+    | 'dbproviderUrl'
+    | 'templateUrl'
+    | 'realNameCallbackUrl'
   >
 >;
 export type DatabaseConfigType = {
