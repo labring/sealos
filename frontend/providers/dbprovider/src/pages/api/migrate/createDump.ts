@@ -64,7 +64,7 @@ export const json2DumpCR = async (
   const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
 
   const commands = new Command();
-  commands.add('wget https://objectstorageapi.gzg.sealos.run/7nl57qi8-test/mc -O mc');
+  commands.add('wget https://objectstorageapi.hzh.sealos.run/4frsoxw8-share/mc -O mc');
   commands.add('chmod +x mc');
   // Configure MinIO
   commands.add(`./mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);

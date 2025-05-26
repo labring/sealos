@@ -380,9 +380,10 @@
   "edit_password_failed": "Failed to edit password",
   "edit_password_tip": "Editing the password will cause the database to restart",
   "comp_name": "Component Name",
-  "has_comps": "has {number} components",
-  "each": "{perc} each",
-  "occupy": "occupies {num}",
+  "has_comps_one": " has {{count}} component",
+  "has_comps_other": " has {{count}} components",
+  "each": " each occupy {{perc}}",
+  "occupy": "{{comp}} occupies {{num}}",
   "ha_desc": "Sentinel nodes take up extra resources",
   "pod_completed": "Pod has ended, cannot view logs"
 }
