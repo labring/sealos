@@ -79,19 +79,7 @@ async function fetchDashboardData(
       throw new Error(result.message || 'API request failed')
     }
 
-    return {
-      chart_data: result.data?.chart_data || [],
-      token_names: result.data?.token_names || [],
-      models: result.data?.models || [],
-      total_count: result.data?.total_count || 0,
-      exception_count: result.data?.exception_count || 0,
-      used_amount: result.data?.used_amount || 0,
-      rpm: result.data?.rpm || 0,
-      tpm: result.data?.tpm || 0,
-      input_tokens: result.data?.input_tokens || 0,
-      output_tokens: result.data?.output_tokens || 0,
-      total_tokens: result.data?.total_tokens || 0
-    }
+    return result.data!
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
     throw error

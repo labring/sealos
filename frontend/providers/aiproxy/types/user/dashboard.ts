@@ -5,6 +5,10 @@ export interface ChartDataItem {
   request_count: number
   used_amount: number
   exception_count: number
+  max_tpm: number
+  max_rpm: number
+  max_rps: number
+  max_tps: number
 }
 export interface DashboardData {
   chart_data: ChartDataItem[]
@@ -15,6 +19,10 @@ export interface DashboardData {
   used_amount: number
   rpm: number
   tpm: number
+  max_tpm: number
+  max_rpm: number
+  max_rps: number
+  max_tps: number
   input_tokens: number
   output_tokens: number
   total_tokens: number
