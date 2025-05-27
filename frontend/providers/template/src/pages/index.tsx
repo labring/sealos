@@ -313,7 +313,7 @@ export async function getServerSideProps(content: any) {
       ...(await serviceSideProps(content)),
       showCarousel: data.showCarousel,
       brandName,
-      seoData: seoData[local],
+      seoData: seoData[local] || seoData.en,
       canonicalUrl: process.env.NEXT_PUBLIC_CANONICAL_URL || `https://template.cloud.sealos.io`
     }
   };

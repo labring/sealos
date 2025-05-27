@@ -28,6 +28,7 @@ import BreadCrumbHeader from './components/BreadCrumbHeader';
 import Form from './components/Form';
 import YamlList from './components/YamlList';
 import Editor from './components/Editor';
+import { useCachedStore } from '@/store/cached';
 
 export default function Develop() {
   const { t } = useTranslation();
@@ -38,9 +39,14 @@ export default function Develop() {
   const [errorMessage, setErrorMessage] = useState('');
   const { applySuccess, applyError } = editModeMap(false);
   const SuccessfulDryRun = useRef(false);
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv) as {
-    data: EnvResponse;
-  };
+  const { insideCloud, setInsideCloud } = useCachedStore();
+  const { data: platformEnvs } = useQuery(
+    ['getPlatformEnvs'],
+    () => getPlatformEnv({ insideCloud }),
+    {
+      retry: 3
+    }
+  );
 
   const generateYamlData = useCallback(
     (yamlSource: TemplateSourceType, inputs: Record<string, string> = {}): YamlItemType[] => {
@@ -265,7 +271,7 @@ export default function Develop() {
               <Text fontWeight={'500'} fontSize={'18px'} color={'#24282C'}>
                 {t('develop.Configure Form')}
               </Text>
-              <Form formSource={templateSource!} formHook={formHook} platformEnvs={platformEnvs} />
+              <Form formSource={templateSource!} formHook={formHook} platformEnvs={platformEnvs!} />
             </Flex>
             <Flex flex={1} pl="42px" pt="26px" flexDirection={'column'} position={'relative'}>
               <Flex alignItems={'center'} justifyContent={'space-between'}>

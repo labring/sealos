@@ -74,7 +74,13 @@ export default function EditApp({
     return usage;
   }, [yamlList]);
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv);
+  const { data: platformEnvs } = useQuery(
+    ['getPlatformEnvs'],
+    () => getPlatformEnv({ insideCloud }),
+    {
+      retry: 3
+    }
+  );
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: insideCloud ? 'Confirm Deploy Application?' : 'Heading to sealos soon'
