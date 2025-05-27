@@ -124,7 +124,10 @@
     "modelToolChoice": "工具调用",
     "response": "输出",
     "fixedPrice": "固定价格",
-    "perRequest": "/次"
+    "perRequest": "/次",
+    "imageInputPrice": "图片输入价格",
+    "thinkingModeOutputPrice": "思考模式输出价格",
+    "thinkingMode": "深度思考"
   },
   "createKey2": "新建 Key",
   "dashboard": {

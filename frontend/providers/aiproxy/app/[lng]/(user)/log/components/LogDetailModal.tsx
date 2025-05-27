@@ -556,17 +556,6 @@ export default function LogDetailModal({
                       {t('price.fixedPrice')}
                     </Text>
                     <CurrencySymbol type={currencySymbol} />
-                    <Text
-                      color="grayModern.500"
-                      fontFamily="PingFang SC"
-                      fontSize="12px"
-                      fontWeight={500}
-                      lineHeight="16px"
-                      letterSpacing="0.5px"
-                      textTransform="lowercase"
-                      whiteSpace="nowrap">
-                      /{t('price.per1kTokens').toLowerCase()}
-                    </Text>
                   </Flex>,
                   rowData?.price?.per_request_price || 0,
                   undefined,

@@ -124,6 +124,9 @@
     "modelToolChoice": "Tool Chocice",
     "response": "Output",
     "fixedPrice": "Fixed price",
+    "imageInputPrice": "Image input price",
+    "thinkingModeOutputPrice": "Thinking model output price",
+    "thinkingMode": "Deep thinking",
     "perRequest": "/request"
   },
   "createKey2": "Create Key",

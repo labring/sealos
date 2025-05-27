@@ -128,6 +128,39 @@ const getApiDocContent = (
   }
 }`
       }
+    case 5:
+      return {
+        title: t('modeType.5'),
+        endpoint: '/images/generations',
+        method: 'POST',
+        responseFormat: 'json',
+        requestExample: `curl --request POST \\
+--url ${apiEndpoint}/v1/embeddings \\
+--header "Authorization: Bearer $token" \\
+--header 'Content-Type: application/json' \\
+--data '{
+  "model": "${modelConfig.model}",
+  "prompt": "What is Sealos",
+  "size": "1024x1024"
+}'`,
+        responseExample: `{
+  "created": 1729672480,
+  "data": [
+    {
+      "b64_json": "iVBORw0KGgo...UhEUMQmCC
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "output_tokens": 1056,
+    "total_tokens": 1066,
+    "input_tokens_details": {
+      "text_tokens": 10,
+      "image_tokens": 1056
+    }
+  }
+}`
+      }
     case 7:
       return {
         title: t('modeType.7'),

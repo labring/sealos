@@ -166,25 +166,49 @@ export function PriceTable({
         </Text>
       )
     }),
-    columnHelper.accessor(
-      (row) => row.price.input_price ?? row.price.output_price ?? row.price.per_request_price ?? 0,
-      {
-        id: 'input_price',
-        header: () => (
-          <Text
-            color="grayModern.600"
-            fontFamily="PingFang SC"
-            fontSize="12px"
-            fontWeight={500}
-            lineHeight="16px"
-            mr={'4px'}
-            letterSpacing="0.5px">
-            {t('pricing')}
-          </Text>
-        ),
-        cell: (info) => {
-          if (info.row.original.price.per_request_price) {
-            return (
+    columnHelper.accessor((row) => row.price ?? 0, {
+      id: 'input_price',
+      header: () => (
+        <Text
+          color="grayModern.600"
+          fontFamily="PingFang SC"
+          fontSize="12px"
+          fontWeight={500}
+          lineHeight="16px"
+          mr={'4px'}
+          letterSpacing="0.5px">
+          {t('pricing')}
+        </Text>
+      ),
+      cell: (info) => {
+        if (info.row.original.price.per_request_price) {
+          return (
+            <Flex alignItems="center">
+              <Text
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+                mr="4px">
+                {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
+              </Text>
+              <CurrencySymbol
+                type={currencySymbol}
+                color="grayModern.600"
+                fontFamily="PingFang SC"
+                fontSize="12px"
+                fontWeight={500}
+                lineHeight="16px"
+                letterSpacing="0.5px"
+              />
+            </Flex>
+          )
+        }
+        return (
+          <Flex direction="column" gap="8px">
+            {info.row.original.price.input_price && (
               <Flex alignItems="center">
                 <Text
                   color="grayModern.600"
@@ -194,7 +218,7 @@ export function PriceTable({
                   lineHeight="16px"
                   letterSpacing="0.5px"
                   mr="4px">
-                  {t('price.fixedPrice')}: {info.row.original.price.per_request_price}
+                  {t('key.inputPrice')}: {info.row.original.price.input_price}
                 </Text>
                 <CurrencySymbol
                   type={currencySymbol}
@@ -216,81 +240,111 @@ export function PriceTable({
                   /{t('price.per1kTokens').toLowerCase()}
                 </Text>
               </Flex>
-            )
-          }
-          return (
-            <Flex direction="column" gap="8px">
-              {info.row.original.price.input_price && (
-                <Flex alignItems="center">
-                  <Text
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    mr="4px">
-                    {t('key.inputPrice')}: {info.row.original.price.input_price}
-                  </Text>
-                  <CurrencySymbol
-                    type={currencySymbol}
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                  />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
-                </Flex>
-              )}
-              {info.row.original.price.output_price && (
-                <Flex alignItems="center">
-                  <Text
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    mr="4px">
-                    {t('key.outputPrice')}: {info.row.original.price.output_price}
-                  </Text>
-                  <CurrencySymbol
-                    type={currencySymbol}
-                    color="grayModern.600"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                  />
-                  <Text
-                    color="grayModern.500"
-                    fontFamily="PingFang SC"
-                    fontSize="12px"
-                    fontWeight={500}
-                    lineHeight="16px"
-                    letterSpacing="0.5px"
-                    textTransform="lowercase">
-                    /{t('price.per1kTokens').toLowerCase()}
-                  </Text>
-                </Flex>
-              )}
-            </Flex>
-          )
-        }
+            )}
+            {info.row.original.price.output_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px">
+                  {t('key.outputPrice')}: {info.row.original.price.output_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase">
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+            {info.row.original.price.image_input_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px">
+                  {t('price.imageInputPrice')}: {info.row.original.price.image_input_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase">
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+            {info.row.original.price.thinking_mode_output_price && (
+              <Flex alignItems="center">
+                <Text
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  mr="4px">
+                  {t('price.thinkingModeOutputPrice')}:{' '}
+                  {info.row.original.price.thinking_mode_output_price}
+                </Text>
+                <CurrencySymbol
+                  type={currencySymbol}
+                  color="grayModern.600"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                />
+                <Text
+                  color="grayModern.500"
+                  fontFamily="PingFang SC"
+                  fontSize="12px"
+                  fontWeight={500}
+                  lineHeight="16px"
+                  letterSpacing="0.5px"
+                  textTransform="lowercase">
+                  /{t('price.per1kTokens').toLowerCase()}
+                </Text>
+              </Flex>
+            )}
+          </Flex>
+        )
       }
-    ),
+    }),
     columnHelper.display({
       header: () => (
         <Text
