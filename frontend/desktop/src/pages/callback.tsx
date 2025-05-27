@@ -11,7 +11,7 @@ import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
 import { BIND_STATUS } from '@/types/response/bind';
 import { MERGE_USER_READY } from '@/types/response/utils';
-import { HttpStatusCode } from 'axios';
+import { AxiosError, HttpStatusCode } from 'axios';
 
 export default function Callback() {
   const router = useRouter();
@@ -85,25 +85,37 @@ export default function Callback() {
               throw new Error();
             }
           } else if (action === 'BIND') {
-            const response = await bindRequest(provider)({ code });
-            if (response.message === BIND_STATUS.RESULT_SUCCESS) {
-              setProvider();
-              await router.replace('/');
-            } else if (response.message === MERGE_USER_READY.MERGE_USER_CONTINUE) {
-              const code = response.data?.code;
-              if (!code) return;
-              setMergeUserData({
-                providerType: provider as ProviderType,
-                code
-              });
-              setMergeUserStatus(MergeUserStatus.CANMERGE);
-              setProvider();
-              await router.replace('/');
-            } else if (response.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
-              setMergeUserData();
-              setMergeUserStatus(MergeUserStatus.CONFLICT);
-              setProvider();
-              await router.replace('/');
+            try {
+              const response = await bindRequest(provider)({ code });
+              if (response.message === BIND_STATUS.RESULT_SUCCESS) {
+                setProvider();
+                await router.replace('/');
+              } else if (response.message === MERGE_USER_READY.MERGE_USER_CONTINUE) {
+                const code = response.data?.code;
+                if (!code) return;
+                setMergeUserData({
+                  providerType: provider as ProviderType,
+                  code
+                });
+                setMergeUserStatus(MergeUserStatus.CANMERGE);
+                setProvider();
+                await router.replace('/');
+              } else if (response.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
+                setMergeUserData();
+                setMergeUserStatus(MergeUserStatus.CONFLICT);
+                setProvider();
+                await router.replace('/');
+              }
+            } catch (bindError) {
+              if ((bindError as any)?.message === MERGE_USER_READY.MERGE_USER_PROVIDER_CONFLICT) {
+                setMergeUserData();
+                setMergeUserStatus(MergeUserStatus.CONFLICT);
+                setProvider();
+                await router.replace('/');
+              } else {
+                console.log('unkownerror', bindError);
+                throw Error();
+              }
             }
           } else if (action === 'UNBIND') {
             await unBindRequest(provider)({ code });

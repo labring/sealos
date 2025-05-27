@@ -458,6 +458,7 @@ export const getGlobalToken = async ({
       if (forceBindEmail(provider)) {
         // check email
         if (!email) {
+          console.log('Email is required');
           return null;
         }
         const emailUser = await globalPrisma.oauthProvider.findUnique({
@@ -526,7 +527,7 @@ export const getGlobalToken = async ({
   }
   if (!user) throw new Error('Failed to edit db');
 
-  if (!forceBindEmail && email) {
+  if (!forceBindEmail(provider) && email) {
     try {
       const emailProvider = await globalPrisma.oauthProvider.findFirst({
         where: {

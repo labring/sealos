@@ -67,7 +67,7 @@ export async function getRegionToken({
     if (!userResult) {
       return null;
     }
-    let workspaceUid = v4();
+    let workspaceUid: string | undefined;
     let curRegionWorkspaceUsage = userResult.WorkspaceUsage.filter(
       (u) => u.regionUid == region.uid
     );
@@ -88,12 +88,26 @@ export async function getRegionToken({
                   userWorkspace: true
                 }
               },
-              status: true
+              role: true,
+              status: true,
+              isPrivate: true
             }
           }
         }
       });
-      const ownerWorkspace = result?.userWorkspace.filter((w) => w.status === 'IN_WORKSPACE') || [];
+      const ownerWorkspace =
+        result?.userWorkspace.filter(
+          ({ status, role }) => status === 'IN_WORKSPACE' && role === 'OWNER'
+        ) || [];
+      ownerWorkspace.sort((a, b) => {
+        if (a.isPrivate && !b.isPrivate) {
+          return -1;
+        } else if (!a.isPrivate && b.isPrivate) {
+          return 1;
+        }
+        return 0;
+      });
+
       if (curRegionWorkspaceUsage.length === 0 && ownerWorkspace.length > 0)
         await globalPrisma.$transaction(async (tx) => {
           for await (const r of ownerWorkspace) {
@@ -116,6 +130,9 @@ export async function getRegionToken({
       const afterFlushResult = await globalPrisma.workspaceUsage.findMany({
         where: {
           userUid: userUid
+        },
+        orderBy: {
+          createdAt: 'asc'
         }
       });
       curRegionWorkspaceUsage = afterFlushResult.filter((u) => u.regionUid == region.uid);
@@ -123,11 +140,29 @@ export async function getRegionToken({
     let needCreating = curRegionWorkspaceUsage.length === 0;
     // 先处理全局状态
     if (!needCreating) {
-      // 找最早的工作空间 = privaite
-      curRegionWorkspaceUsage.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      // 当前可用区初始化中，用幂等逻辑
-      workspaceUid = curRegionWorkspaceUsage[0].workspaceUid;
+      // find out private workspace
+      const result = await prisma.userCr.findUnique({
+        where: {
+          userUid: userUid
+        },
+        select: {
+          userWorkspace: {
+            select: {
+              role: true,
+              status: true,
+              isPrivate: true,
+              workspaceUid: true
+            }
+          }
+        }
+      });
+      const privateWorkspace = (result?.userWorkspace || []).find(
+        ({ isPrivate, role, workspaceUid, status }) =>
+          isPrivate && role === 'OWNER' && status === 'IN_WORKSPACE'
+      );
+      workspaceUid = privateWorkspace?.workspaceUid;
     } else {
+      workspaceUid = v4();
       await globalPrisma.workspaceUsage.create({
         data: {
           workspaceUid,
@@ -233,6 +268,17 @@ export async function getRegionToken({
       }
     });
     if (!payload) {
+      if (needCreating && workspaceUid)
+        // rollout
+        await globalPrisma.workspaceUsage.delete({
+          where: {
+            regionUid_userUid_workspaceUid: {
+              workspaceUid,
+              userUid,
+              regionUid: region.uid
+            }
+          }
+        });
       throw new Error('Failed to get user from db');
     }
     const kubeconfig = await getUserKubeconfig(payload.userCrUid, payload.userCrName);

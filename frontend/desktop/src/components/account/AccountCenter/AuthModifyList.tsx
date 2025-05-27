@@ -98,7 +98,7 @@ export function AuthModifyList({
         actionCb(action: Exclude<OauthAction, 'LOGIN'>) {
           const googleConf = conf.idp.google;
           const scope = encodeURIComponent(
-            `https://www.googleapis.com/auth/userinfo.profile openid`
+            `https://www.googleapis.com/auth/userinfo.profile openid email`
           );
           return actionCbGen({
             provider: 'GOOGLE',
