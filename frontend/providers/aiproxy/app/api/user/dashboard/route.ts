@@ -12,22 +12,10 @@ export interface DashboardQueryParams {
   type: 'day' | 'week' | 'two_week' | 'month'
   model?: string
   token_name?: string
-}
-
-// 验证查询参数
-function validateParams(params: DashboardQueryParams): string | null {
-  if (!params.type) {
-    return 'Type parameter is required'
-  }
-  if (
-    params.type !== 'day' &&
-    params.type !== 'week' &&
-    params.type !== 'two_week' &&
-    params.type !== 'month'
-  ) {
-    return 'Invalid type parameter. Must be one of: day, week, two_week, month'
-  }
-  return null
+  start_timestamp?: string
+  end_timestamp?: string
+  timezone?: string
+  timespan?: 'day' | 'hour'
 }
 
 // 获取仪表盘数据
@@ -41,7 +29,26 @@ async function fetchDashboardData(
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
-    url.searchParams.append('type', params.type)
+    if (params.type) {
+      url.searchParams.append('type', params.type)
+    }
+
+    if (params.start_timestamp) {
+      url.searchParams.append('start_timestamp', params.start_timestamp)
+    }
+
+    if (params.end_timestamp) {
+      url.searchParams.append('end_timestamp', params.end_timestamp)
+    }
+
+    if (params.timezone) {
+      url.searchParams.append('timezone', params.timezone)
+    }
+
+    if (params.timespan) {
+      url.searchParams.append('timespan', params.timespan)
+    }
+
     if (params.model) {
       url.searchParams.append('model', params.model)
     }
@@ -97,21 +104,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<DashboardR
     const searchParams = request.nextUrl.searchParams
 
     const queryParams: DashboardQueryParams = {
-      type: (searchParams.get('type') as 'day' | 'week' | 'two_week' | 'month') || 'week',
+      type: (searchParams.get('type') as 'day' | 'week' | 'two_week' | 'month') || undefined,
       model: searchParams.get('model') || undefined,
+      start_timestamp: searchParams.get('start_timestamp') || undefined,
+      end_timestamp: searchParams.get('end_timestamp') || undefined,
+      timezone: searchParams.get('timezone') || undefined,
+      timespan: (searchParams.get('timespan') as 'day' | 'hour') || undefined,
       token_name: searchParams.get('token_name') || undefined
-    }
-
-    const validationError = validateParams(queryParams)
-    if (validationError) {
-      return NextResponse.json(
-        {
-          code: 400,
-          message: validationError,
-          error: validationError
-        },
-        { status: 400 }
-      )
     }
 
     const dashboardData = await fetchDashboardData(queryParams, group)
