@@ -1496,27 +1496,6 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 		}
 		ops.UID = userUID
 	}
-	freePlan, err := c.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get free plan: %w", err)
-	}
-	userInfo := &types.UserInfo{}
-	err = c.DB.Model(&types.UserInfo{}).Where(`"userUid" = ?`, ops.UID).Find(userInfo).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-	githubDetection := true
-	if userInfo.Config != nil {
-		if userInfo.Config.Github.CreatedAt != "" {
-			createdAt, err := time.Parse(time.RFC3339, userInfo.Config.Github.CreatedAt)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse github created at: %w", err)
-			}
-			if time.Since(createdAt) < 7*24*time.Hour {
-				githubDetection = false
-			}
-		}
-	}
 	now := time.Now().UTC()
 	account := &types.Account{
 		UserUID:                 ops.UID,
@@ -1530,9 +1509,34 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 	// 1. create credits
 	// 2. create account
 	// 3. create subscription
-	err = c.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where(&types.Account{UserUID: ops.UID}).FirstOrCreate(account).Error; err != nil {
+	err := c.DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Where(&types.Account{UserUID: ops.UID}).FirstOrCreate(account)
+		if err := result.Error; err != nil {
 			return fmt.Errorf("failed to create account: %w", err)
+		}
+		if result.RowsAffected == 0 {
+			return nil
+		}
+		freePlan, err := c.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
+		if err != nil {
+			return fmt.Errorf("failed to get free plan: %w", err)
+		}
+		userInfo := &types.UserInfo{}
+		err = c.DB.Model(&types.UserInfo{}).Where(`"userUid" = ?`, ops.UID).Find(userInfo).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("failed to get user info: %w", err)
+		}
+		githubDetection := true
+		if userInfo.Config != nil {
+			if userInfo.Config.Github.CreatedAt != "" {
+				createdAt, err := time.Parse(time.RFC3339, userInfo.Config.Github.CreatedAt)
+				if err != nil {
+					return fmt.Errorf("failed to parse github created at: %w", err)
+				}
+				if time.Since(createdAt) < 7*24*time.Hour {
+					githubDetection = false
+				}
+			}
 		}
 		if freePlan.GiftAmount > 0 && githubDetection {
 			credits := &types.Credits{
