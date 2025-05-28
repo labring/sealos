@@ -46,6 +46,8 @@ export type TemplateSourceType = {
   source: SourceType;
   appYaml: string;
   templateYaml: TemplateType;
+  readmeContent: string;
+  readUrl: string;
 };
 
 export type SourceType = {
