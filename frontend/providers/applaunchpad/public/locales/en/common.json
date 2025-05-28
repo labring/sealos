@@ -322,5 +322,7 @@
   "Ready": "Preparing",
   "Accessible": "Accessible",
   "network_not_ready": "The internal gateway requires 2 to 5 minutes to prepare. Please be patient.",
-  "pending_to_allocated": "To be allocated"
+  "pending_to_allocated": "To be allocated",
+  "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
+  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions."
 }

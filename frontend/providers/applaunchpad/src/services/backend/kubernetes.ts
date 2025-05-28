@@ -84,7 +84,7 @@ export async function CreateYaml(
       }
     }
     // console.error(error, '<=create error')
-    return Promise.reject(error);
+    return Promise.reject(error?.body || error);
   }
   return created;
 }
@@ -127,10 +127,10 @@ export async function replaceYaml(
           succeed.push(response.body);
         } catch (error: any) {
           // console.error(error, '<=create error')
-          return Promise.reject(error);
+          return Promise.reject(error?.body || error);
         }
       } else {
-        return Promise.reject(e);
+        return Promise.reject(e?.body || e);
       }
     }
   }
