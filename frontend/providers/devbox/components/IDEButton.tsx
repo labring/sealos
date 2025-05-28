@@ -149,7 +149,7 @@ const IDEButton = ({
   }, [guideIDE, isGuide, t]);
 
   return (
-    <Flex {...props} position={'relative'}>
+    <Flex {...props} position={isGuide ? 'relative' : 'static'}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
