@@ -194,9 +194,8 @@ async function fetchReadmeContentWithRetry(url: string): Promise<string> {
       return await response.text();
     } catch (err) {
       retryCount++;
-      console.warn(`Attempt ${retryCount} failed for README ${url}:`, err);
       if (retryCount === maxRetries) {
-        console.error(`Failed to fetch README from ${url} after ${maxRetries} attempts`);
+        console.log(`Failed to fetch README from ${url} after ${maxRetries} attempts`);
         return '';
       }
       await new Promise((resolve) => setTimeout(resolve, retryCount * 1000));
