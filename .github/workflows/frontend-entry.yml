@@ -18,7 +18,18 @@ on:
       - "frontend/providers/**"
       - "!**/*.md"
       - "!**/*.yaml"
-
+  workflow_dispatch:
+    inputs:
+      dispatch_push_image:
+        description: "Push image"
+        required: false
+        type: boolean
+        default: false
+      dispatch_push_image_tag:
+        description: "Push image tag"
+        default: "latest"
+        required: false
+        type: string
 jobs:
   fetch-sealos:
     permissions: {}
@@ -71,7 +82,9 @@ jobs:
     with:
       module_name: "${{ matrix.frontend }}"
       module_path: "providers/${{ matrix.frontend }}"
-      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' || inputs.dispatch_push_image }}
+      custom: ${{ inputs.dispatch_push_image }}
+      custom_tag: ${{ inputs.dispatch_push_image_tag }}
   # TODO: move desktop to providers/
   desktop-entry:
     needs: [detect-desktop, fetch-sealos]
@@ -83,4 +96,6 @@ jobs:
     with:
       module_name: "desktop"
       module_path: "desktop"
-      push: ${{ github.event_name == 'push' || github.event_name == 'create' }}
+      push: ${{ github.event_name == 'push' || github.event_name == 'create' || inputs.dispatch_push_image}}
+      custom: ${{ inputs.dispatch_push_image }}
+      custom_tag: ${{ inputs.dispatch_push_image_tag }}
