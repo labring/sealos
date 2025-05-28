@@ -1,6 +1,6 @@
 import { K8sApiDefault } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import { TemplateType } from '@/types/app';
 import { exec } from 'child_process';
 import fs from 'fs';
@@ -64,7 +64,7 @@ export async function GetTemplateStatic() {
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
     const originalPath = process.cwd();

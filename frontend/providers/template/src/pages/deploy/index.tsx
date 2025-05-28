@@ -25,6 +25,7 @@ import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/templa
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
+import { ResponseCode } from '@/types/response';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -54,6 +55,7 @@ export default function EditApp({
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setAppType } = useSearchStore();
@@ -186,8 +188,16 @@ export default function EditApp({
       } else {
         await handleInside();
       }
-    } catch (error) {
-      setErrorMessage(JSON.stringify(error));
+    } catch (error: any) {
+      if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+        setErrorMessage(t('user_balance_not_enough'));
+        setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+      } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+        setErrorMessage(t('forbidden_create_app'));
+        setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+      } else {
+        setErrorMessage(JSON.stringify(error));
+      }
     }
     setIsLoading(false);
   };
@@ -415,7 +425,12 @@ export default function EditApp({
       <ConfirmChild2 />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={applyError}
+          content={errorMessage}
+          errorCode={errorCode}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </Box>
   );

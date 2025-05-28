@@ -2,12 +2,12 @@ import { templateDeployKey } from '@/constants/keys';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import { ObjectStorageCR } from '@/types/objectStorage';
 import { adaptObjectStorageItem } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { instanceName } = req.query as { instanceName: string };
     const { namespace, k8sCustomObjects } = await getK8s({

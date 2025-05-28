@@ -1,7 +1,6 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
 import {
   getTemplateDataSource,
@@ -16,7 +15,7 @@ import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const {
       templateName,

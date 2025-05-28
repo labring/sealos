@@ -13,7 +13,6 @@
   "Application Name": "应用名称",
   "Application Type": "应用类型",
   "Applications": "应用列表",
-  "delete_app_tip.": "如果确认要删除这个应用吗？如果执行此操作，将删除该项目的所有数据。",
   "Auto scaling": "弹性伸缩",
   "Basic Information": "基本信息",
   "Button Effect": "按钮效果",
@@ -194,6 +193,7 @@
   "cronjob": "定时任务",
   "database": "数据库",
   "delete message": "您确定要删除此应用程序吗？\n如果继续，该项目的所有数据都将被删除。",
+  "delete_app_tip.": "如果确认要删除这个应用吗？如果执行此操作，将删除该项目的所有数据。",
   "develop": {
     "Configure Form": "配置表单",
     "Debugging Template": "在线调试模板",
@@ -210,6 +210,7 @@
   "file value": "文件值",
   "filename": "文件名",
   "first_charge": "首充优惠",
+  "forbidden_create_app": "抱歉，您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 owner (所有者) 为您授权。",
   "gift": "赠",
   "go_to_recharge": "去充值",
   "gpu": "GPU",
@@ -237,6 +238,7 @@
   "success": "成功",
   "target_value": "目标值",
   "total_price_tip": "预估费用不包括流量费用,以实际使用为准",
+  "user_balance_not_enough": "快完成了！您需要额外积分才能完成此部署。",
   "users installed the app": "已有 {{count}} 名用户安装该应用",
   "websocket": "WebSocket",
   "you_have_successfully_deployed_app": "您已成功部署一个应用！"

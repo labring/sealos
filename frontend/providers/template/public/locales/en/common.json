@@ -13,7 +13,6 @@
   "Application Name": "App Name",
   "Application Type": "Type",
   "Applications": "Applications",
-  "delete_app_tip.": "Are you sure you want to delete this app? All project data will be permanently removed.",
   "Auto scaling": "Scaling",
   "Basic Information": "Basic",
   "Button Effect": "Button Appearance",
@@ -194,6 +193,7 @@
   "cronjob": "CronJob",
   "database": "DataBase",
   "delete message": "Are you sure you want to delete this app? If you proceed, all project data will be permanently deleted.",
+  "delete_app_tip.": "Are you sure you want to delete this app? All project data will be permanently removed.",
   "develop": {
     "Configure Form": "Configure Form",
     "Debugging Template": "Debugging",
@@ -210,6 +210,7 @@
   "file value": "File Content",
   "filename": "Filename",
   "first_charge": "First recharge discount",
+  "forbidden_create_app": "Sorry, you do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to authorize you.",
   "gift": "gift",
   "go_to_recharge": "Go to recharge",
   "gpu": "GPU",
@@ -237,6 +238,7 @@
   "success": "success",
   "target_value": "Target Value",
   "total_price_tip": "The estimated cost does not include traffic fees, and is subject to actual usage.",
+  "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "users installed the app": "{{count}} users have installed this app",
   "websocket": "WebSocket",
   "you_have_successfully_deployed_app": "You have successfully deployed an application!"

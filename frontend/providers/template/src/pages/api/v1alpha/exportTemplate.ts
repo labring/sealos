@@ -1,5 +1,5 @@
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { GetTemplateByName } from '../getTemplateSource';
 import { authSession } from '@/services/backend/auth';
@@ -8,7 +8,7 @@ import { parseTemplateString, generateYamlList } from '@/utils/json-yaml';
 import { mapValues, reduce } from 'lodash';
 import JsYaml from 'js-yaml';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { templateName, templateForm } = req.body as {
       templateName: string;

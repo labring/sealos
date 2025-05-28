@@ -1,11 +1,11 @@
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import { TemplateType } from '@/types/app';
 import fs from 'fs';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import path from 'path';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const originalPath = process.cwd();
   const jsonPath = path.resolve(originalPath, 'templates.json');
 

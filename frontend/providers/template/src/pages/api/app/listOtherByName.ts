@@ -2,11 +2,11 @@ import { dbProviderKey, deployManagerKey, templateDeployKey } from '@/constants/
 import { authSession } from '@/services/backend/auth';
 import { CRDMeta, getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import { IncomingMessage } from 'http';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { instanceName } = req.query as { instanceName: string };
     const { namespace, k8sCore, k8sCustomObjects, k8sBatch, k8sAuth } = await getK8s({
