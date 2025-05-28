@@ -210,7 +210,7 @@
   "file value": "File Content",
   "filename": "Filename",
   "first_charge": "First recharge discount",
-  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to authorize you.",
+  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
   "gift": "gift",
   "go_to_recharge": "Go to recharge",
   "gpu": "GPU",
