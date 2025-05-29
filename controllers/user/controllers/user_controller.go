@@ -648,16 +648,31 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 		}
 	}()
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		// TODO: sync cilium network policy
+		// Initialize EndpointSelector with proper LabelSelector
 		networkPolicy := &ciliumv2.CiliumNetworkPolicy{}
+		networkPolicy.APIVersion = "cilium.io/v2"
+		networkPolicy.Kind = "CiliumNetworkPolicy"
 		networkPolicy.Name = userNetworkPolicyName
 		networkPolicy.Namespace = config.GetUsersNamespace(user.Name)
 		networkPolicy.Labels = map[string]string{}
-		if err := r.Get(ctx, client.ObjectKeyFromObject(networkPolicy), networkPolicy); !apierrors.IsNotFound(err) {
+		networkPolicy.Spec = &ciliumv2api.Rule{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(networkPolicy), networkPolicy); err != nil && !apierrors.IsNotFound(err) {
 			return err
 		}
 		if _, err2 := controllerutil.CreateOrUpdate(ctx, r.Client, networkPolicy, func() error {
-			networkPolicy.Spec.EndpointSelector = ciliumv2api.EndpointSelector{}
+			// Initialize EndpointSelector with proper LabelSelector
+			networkPolicy.Spec.EndpointSelector = ciliumv2api.EndpointSelector{
+				LabelSelector: &slim_metav1.LabelSelector{
+					MatchExpressions: []slim_metav1.LabelSelectorRequirement{
+						{
+							Key:      "io.kubernetes.pod.namespace",
+							Operator: "In",
+							Values:   []string{networkPolicy.Namespace},
+						},
+					},
+				},
+			}
+			// Initialize Ingress rules
 			networkPolicy.Spec.Ingress = []ciliumv2api.IngressRule{
 				{
 					IngressCommonRule: ciliumv2api.IngressCommonRule{
@@ -680,7 +695,7 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 								LabelSelector: &slim_metav1.LabelSelector{
 									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
 										{
-											Key:      "k8s:io.kubernetes.pod.namespace",
+											Key:      "io.kubernetes.pod.namespace",
 											Operator: "In",
 											Values:   []string{networkPolicy.Namespace},
 										},
@@ -691,6 +706,7 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 					},
 				},
 			}
+			// Initialize Egress rules
 			networkPolicy.Spec.Egress = []ciliumv2api.EgressRule{
 				{
 					EgressCommonRule: ciliumv2api.EgressCommonRule{
@@ -751,7 +767,7 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 								LabelSelector: &slim_metav1.LabelSelector{
 									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
 										{
-											Key:      "k8s:io.kubernetes.pod.namespace",
+											Key:      "io.kubernetes.pod.namespace",
 											Operator: "In",
 											Values:   []string{networkPolicy.Namespace},
 										},
@@ -762,11 +778,20 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 					},
 				},
 			}
+
+			// Add owner reference
+			if err := controllerutil.SetControllerReference(user, networkPolicy, r.Scheme); err != nil {
+				return fmt.Errorf("unable to set controller reference: %w", err)
+			}
+
 			return nil
 		}); err2 != nil {
 			return fmt.Errorf("unable to create namespace network policy by User: %w", err2)
 		}
-		r.Logger.V(1).Info("create or update namespace network policy by User")
+		r.Logger.V(1).Info("create or update namespace network policy by User",
+			"name", networkPolicy.Name,
+			"namespace", networkPolicy.Namespace,
+			"resourceVersion", networkPolicy.ResourceVersion)
 		networkPolicyCondition.Message = fmt.Sprintf("sync namespace network policy %s/%s successfully", networkPolicy.Name, networkPolicy.ResourceVersion)
 		return nil
 	}); err != nil {
