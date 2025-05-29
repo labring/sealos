@@ -43,9 +43,9 @@ type NetworkReconciler struct {
 
 const (
 	NetworkStatusAnnoKey   = "network.sealos.io/status"
-	NetworkSuspended       = "suspend"
-	NetworkResume          = "resume"
-	NetworkResumeCompleted = "resume-completed"
+	NetworkSuspend         = "Suspend"
+	NetworkResume          = "Resume"
+	NetworkResumeCompleted = "ResumeCompleted"
 	NodePortLabelKey       = "network.sealos.io/original-nodeport"
 	IngressClassKey        = "kubernetes.io/ingress.class"
 
@@ -93,7 +93,7 @@ func (r *NetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	switch networkStatus {
-	case NetworkSuspended:
+	case NetworkSuspend:
 		// If NamespacedName.Namespace is empty, then req is the namespace itself, and req.namespacedname.name is the Name of the namespace
 		if req.NamespacedName.Namespace == "" {
 			// Handle namespace suspension
@@ -122,13 +122,13 @@ func (r *NetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if ns.Annotations == nil {
 			ns.Annotations = make(map[string]string)
 		}
-		ns.Annotations[NetworkStatusAnnoKey] = "resume-completed"
+		ns.Annotations[NetworkStatusAnnoKey] = NetworkResumeCompleted
 		if err := r.Client.Update(ctx, &ns); err != nil {
-			logger.Error(err, "failed to update namespace network status to resume-completed")
+			logger.Error(err, "failed to update namespace network status to ResumeCompleted")
 			return ctrl.Result{}, err
 		}
 	default:
-		logger.Error(fmt.Errorf("unknown network status"), "status", networkStatus)
+		logger.Error(fmt.Errorf("unknown network status"), "", "status", networkStatus)
 	}
 
 	return ctrl.Result{}, nil
@@ -137,7 +137,7 @@ func (r *NetworkReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *NetworkReconciler) handleResource(ctx context.Context, key client.ObjectKey, ns corev1.Namespace) error {
 	// Only process resources in suspended namespaces
 	networkStatus, ok := ns.Annotations[NetworkStatusAnnoKey]
-	if !ok || networkStatus != NetworkSuspended {
+	if !ok || networkStatus != NetworkSuspend {
 		return nil
 	}
 
@@ -279,7 +279,7 @@ func (e *SuspendedNamespaceHandler) Create(ctx context.Context, evt event.TypedC
 	}
 
 	networkStatus, ok := ns.Annotations[NetworkStatusAnnoKey]
-	if !ok || networkStatus != NetworkSuspended {
+	if !ok || networkStatus != NetworkSuspend {
 		return
 	}
 
@@ -299,7 +299,7 @@ func (e *SuspendedNamespaceHandler) Update(ctx context.Context, evt event.TypedU
 		}
 
 		networkStatus, ok := ns.Annotations[NetworkStatusAnnoKey]
-		if !ok || networkStatus != NetworkSuspended {
+		if !ok || networkStatus != NetworkSuspend {
 			return
 		}
 
@@ -316,7 +316,7 @@ func (e *SuspendedNamespaceHandler) Update(ctx context.Context, evt event.TypedU
 		}
 
 		networkStatus, ok := ns.Annotations[NetworkStatusAnnoKey]
-		if !ok || networkStatus != NetworkSuspended {
+		if !ok || networkStatus != NetworkSuspend {
 			return
 		}
 
