@@ -154,6 +154,10 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 		r.finalizer = finalizer.NewFinalizer(r.Client, "sealos.io/user.finalizers")
 	}
 	r.Scheme = mgr.GetScheme()
+	// Register CiliumNetworkPolicy to scheme
+	if err := ciliumv2.AddToScheme(r.Scheme); err != nil {
+		return fmt.Errorf("unable to add cilium scheme: %w", err)
+	}
 	r.cache = mgr.GetCache()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
