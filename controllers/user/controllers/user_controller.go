@@ -32,6 +32,10 @@ import (
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
 	"github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
 
+	ciliumv2 "github.com/cilium/cilium/pkg/k8s/apis/cilium.io/v2"
+	slim_metav1 "github.com/cilium/cilium/pkg/k8s/slim/k8s/apis/meta/v1"
+	ciliumv2api "github.com/cilium/cilium/pkg/policy/api"
+
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -62,6 +66,7 @@ const (
 	userAnnotationCreatorKey = userv1.UserAnnotationCreatorKey
 	userAnnotationOwnerKey   = userv1.UserAnnotationOwnerKey
 	userLabelOwnerKey        = userv1.UserLabelOwnerKey
+	userNetworkPolicyName    = "user-default-network-policy"
 )
 
 // UserReconciler reconciles a User object
@@ -72,9 +77,10 @@ type UserReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
-	finalizer          *finalizer.Finalizer
-	minRequeueDuration time.Duration
-	maxRequeueDuration time.Duration
+	finalizer            *finalizer.Finalizer
+	minRequeueDuration   time.Duration
+	maxRequeueDuration   time.Duration
+	networkPolicyEnabled bool
 }
 
 type ctxKey string
@@ -135,7 +141,7 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.RateLimiterOptions,
-	minRequeueDuration time.Duration, maxRequeueDuration time.Duration, restartPredicateDuration time.Duration) error {
+	minRequeueDuration time.Duration, maxRequeueDuration time.Duration, restartPredicateDuration time.Duration, networkPolicyEnabled bool) error {
 	const controllerName = "user_controller"
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
@@ -153,6 +159,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager, opts ratelimiter.Rat
 	r.Logger.V(1).Info("init reconcile controller user")
 	r.minRequeueDuration = minRequeueDuration
 	r.maxRequeueDuration = maxRequeueDuration
+	r.networkPolicyEnabled = networkPolicyEnabled
 
 	ownerEventHandler := handler.EnqueueRequestForOwner(r.Scheme, r.Client.RESTMapper(), &userv1.User{}, handler.OnlyControllerOwner())
 
@@ -192,6 +199,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 		r.syncRole,
 		r.syncRoleBinding,
 		r.syncFinalStatus,
+		r.syncNetworkPolicy,
 	}
 
 	for _, fn := range pipelines {
@@ -612,6 +620,154 @@ func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User)
 		user.Status.Phase = userv1.UserUnknown
 	} else {
 		user.Status.Phase = userv1.UserActive
+	}
+	return ctx
+}
+
+func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.User) context.Context {
+	if !r.networkPolicyEnabled {
+		return ctx
+	}
+	networkPolicyConditionType := userv1.ConditionType("NetworkPolicySyncReady")
+	networkPolicyCondition := &userv1.Condition{
+		Type:               networkPolicyConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync network policy successfully",
+	}
+	condition := helper.GetCondition(user.Status.Conditions, networkPolicyCondition)
+	defer func() {
+		if helper.DiffCondition(condition, networkPolicyCondition) {
+			r.saveCondition(user, networkPolicyCondition.DeepCopy())
+		}
+	}()
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// TODO: sync cilium network policy
+		networkPolicy := &ciliumv2.CiliumNetworkPolicy{}
+		networkPolicy.Name = userNetworkPolicyName
+		networkPolicy.Namespace = config.GetUsersNamespace(user.Name)
+		networkPolicy.Labels = map[string]string{}
+		if err := r.Get(ctx, client.ObjectKeyFromObject(networkPolicy), networkPolicy); !apierrors.IsNotFound(err) {
+			return err
+		}
+		if _, err2 := controllerutil.CreateOrUpdate(ctx, r.Client, networkPolicy, func() error {
+			networkPolicy.Spec.EndpointSelector = ciliumv2api.EndpointSelector{}
+			networkPolicy.Spec.Ingress = []ciliumv2api.IngressRule{
+				{
+					IngressCommonRule: ciliumv2api.IngressCommonRule{
+						FromEntities: []ciliumv2api.Entity{
+							ciliumv2api.EntityHost,
+						},
+					},
+				},
+				{
+					IngressCommonRule: ciliumv2api.IngressCommonRule{
+						FromEntities: []ciliumv2api.Entity{
+							ciliumv2api.EntityRemoteNode,
+						},
+					},
+				},
+				{
+					IngressCommonRule: ciliumv2api.IngressCommonRule{
+						FromEndpoints: []ciliumv2api.EndpointSelector{
+							{
+								LabelSelector: &slim_metav1.LabelSelector{
+									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
+										{
+											Key:      "k8s:io.kubernetes.pod.namespace",
+											Operator: "In",
+											Values:   []string{networkPolicy.Namespace},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			networkPolicy.Spec.Egress = []ciliumv2api.EgressRule{
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToEndpoints: []ciliumv2api.EndpointSelector{
+							{
+								LabelSelector: &slim_metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										"io.kubernetes.pod.namespace": "kube-system",
+										"k8s-app":                     "kube-dns",
+									},
+								},
+							},
+						},
+					},
+					ToPorts: []ciliumv2api.PortRule{
+						{
+							Ports: []ciliumv2api.PortProtocol{
+								{
+									Port:     "53",
+									Protocol: "UDP",
+								},
+							},
+							Rules: &ciliumv2api.L7Rules{
+								DNS: []ciliumv2api.PortRuleDNS{
+									{
+										MatchPattern: "*",
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToEntities: []ciliumv2api.Entity{
+							ciliumv2api.EntityHost,
+						},
+					},
+				},
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToEntities: []ciliumv2api.Entity{
+							ciliumv2api.EntityRemoteNode,
+						},
+					},
+				},
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToCIDR: ciliumv2api.CIDRSlice{
+							"0.0.0.0/0",
+						},
+					},
+				},
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToEndpoints: []ciliumv2api.EndpointSelector{
+							{
+								LabelSelector: &slim_metav1.LabelSelector{
+									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
+										{
+											Key:      "k8s:io.kubernetes.pod.namespace",
+											Operator: "In",
+											Values:   []string{networkPolicy.Namespace},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+			return nil
+		}); err2 != nil {
+			return fmt.Errorf("unable to create namespace network policy by User: %w", err2)
+		}
+		r.Logger.V(1).Info("create or update namespace network policy by User")
+		networkPolicyCondition.Message = fmt.Sprintf("sync namespace network policy %s/%s successfully", networkPolicy.Name, networkPolicy.ResourceVersion)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(networkPolicyCondition, "SyncUserError", err)
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncUserNetworkPolicy", "Sync User namespace network policy %s is error: %v", user.Name, err)
 	}
 	return ctx
 }
