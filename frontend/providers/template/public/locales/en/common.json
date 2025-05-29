@@ -176,6 +176,7 @@
   "Username for the image registry": "Image Registry Username",
   "YAML File": "YAML",
   "You haven't created any application yet.": "You don't have any apps yet.",
+  "add_credit": "Add Credit",
   "app": {
     "Resource Quota": "Resource Quota",
     "The applied CPU exceeds the quota": "Requested CPU exceeds your quota. Please contact admin.",

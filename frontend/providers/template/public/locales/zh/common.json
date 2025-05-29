@@ -176,6 +176,7 @@
   "Username for the image registry": "镜像仓库的用户名",
   "YAML File": "YAML 文件",
   "You haven't created any application yet.": "您还没有新建应用。",
+  "add_credit": "充值",
   "app": {
     "Resource Quota": "资源配额",
     "The applied CPU exceeds the quota": "申请的 CPU 超出配额限制，请联系管理员",

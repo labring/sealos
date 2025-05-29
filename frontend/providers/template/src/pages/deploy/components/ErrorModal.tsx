@@ -69,7 +69,7 @@ const ErrorModal = ({
               onClose();
             }}
           >
-            {t('Confirm')}
+            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('Confirm')}
           </Button>
         </ModalFooter>
       </ModalContent>
