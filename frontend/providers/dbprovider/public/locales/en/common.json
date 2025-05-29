@@ -386,5 +386,6 @@
   "each": "{perc} each",
   "occupy": "occupies {num}",
   "ha_desc": "Sentinel nodes take up extra resources",
-  "pod_completed": "Pod has ended, cannot view logs"
+  "pod_completed": "Pod has ended, cannot view logs",
+  "app_already_exists": "App name already exists. Please use a different name or check your app list."
 }

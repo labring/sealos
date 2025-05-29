@@ -242,5 +242,6 @@
   "user_balance_not_enough": "快完成了！您需要额外积分才能完成此部署。",
   "users installed the app": "已有 {{count}} 名用户安装该应用",
   "websocket": "WebSocket",
-  "you_have_successfully_deployed_app": "您已成功部署一个应用！"
+  "you_have_successfully_deployed_app": "您已成功部署一个应用！",
+  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用"
 }

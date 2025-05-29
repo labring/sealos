@@ -31,6 +31,12 @@ export const handleK8sError = (err: any): Partial<ApiResponse> => {
         message: ResponseMessages[ResponseCode.FORBIDDEN_CREATE_APP]
       };
     }
+    if (k8sApiErr.code === 409 && k8sApiErr.message?.includes('already exists')) {
+      return {
+        code: ResponseCode.APP_ALREADY_EXISTS,
+        message: ResponseMessages[ResponseCode.APP_ALREADY_EXISTS]
+      };
+    }
   }
 
   return {

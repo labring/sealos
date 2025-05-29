@@ -7,7 +7,8 @@ export enum ResponseCode {
   SERVER_ERROR = 500,
 
   BALANCE_NOT_ENOUGH = 40001,
-  FORBIDDEN_CREATE_APP = 40003
+  FORBIDDEN_CREATE_APP = 40003,
+  APP_ALREADY_EXISTS = 40009
 }
 
 export const ResponseMessages: Record<ResponseCode | number, string> = {
@@ -20,7 +21,9 @@ export const ResponseMessages: Record<ResponseCode | number, string> = {
   [ResponseCode.BALANCE_NOT_ENOUGH]:
     'Almost there! You need additional credits for this deployment.',
   [ResponseCode.FORBIDDEN_CREATE_APP]:
-    'You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.'
+    'You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.',
+  [ResponseCode.APP_ALREADY_EXISTS]:
+    'App name already exists. Please use a different name or check your app list.'
 };
 
 export interface ApiResponse<T = any> {

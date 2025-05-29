@@ -325,5 +325,6 @@
   "pending_to_allocated": "To be allocated",
   "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
-  "add_credit": "Add Credit"
+  "add_credit": "Add Credit",
+  "app_already_exists": "App name already exists. Please use a different name or check your app list."
 }

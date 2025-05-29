@@ -194,6 +194,9 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
           setErrorMessage(t('forbidden_create_app'));
           setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+        } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
+          setErrorMessage(t('app_already_exists'));
+          setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
         } else {
           setErrorMessage(JSON.stringify(error));
         }

@@ -242,5 +242,6 @@
   "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "users installed the app": "{{count}} users have installed this app",
   "websocket": "WebSocket",
-  "you_have_successfully_deployed_app": "You have successfully deployed an application!"
+  "you_have_successfully_deployed_app": "You have successfully deployed an application!",
+  "app_already_exists": "App name already exists. Please use a different name or check your app list."
 }
