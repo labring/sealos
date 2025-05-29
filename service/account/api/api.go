@@ -791,6 +791,7 @@ func ParseAuthTokenUser(c *gin.Context) (auth *helper.Auth, err error) {
 				fmt.Printf("failed to get user cr name: %v\n", err)
 				return auth, nil
 			}
+			return nil, fmt.Errorf("failed to get user cr name: %v", err)
 		}
 	}
 	return

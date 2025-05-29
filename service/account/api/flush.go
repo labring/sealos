@@ -84,7 +84,7 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 			//if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
-			if err := updateNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		}
@@ -100,7 +100,7 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 			if err := readNotice(context.Background(), clt, namespaces, getAllGtStatus(req.CurrentDebtStatus)...); err != nil {
 				return fmt.Errorf("read notice error: %w", err)
 			}
-			if err := updateNamespaceStatus(context.Background(), clt, ResumeDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(context.Background(), clt, ResumeDebtNamespaceAnnoStatus, namespaces); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 			break
@@ -116,14 +116,14 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 			if err := SendDesktopNotice(context.Background(), clt, req, namespaces); err != nil {
 				return fmt.Errorf("send desktop notice error: %w", err)
 			}
-			if err := updateNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(context.Background(), clt, SuspendDebtNamespaceAnnoStatus, namespaces); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		} else {
 			//if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
 			//	return err
 			//}
-			if err := updateNamespaceStatus(context.Background(), clt, FinalDeletionDebtNamespaceAnnoStatus, namespaces); err != nil {
+			if err := updateDebtNamespaceStatus(context.Background(), clt, FinalDeletionDebtNamespaceAnnoStatus, namespaces); err != nil {
 				return fmt.Errorf("update namespace status error: %w", err)
 			}
 		}
@@ -131,18 +131,26 @@ func flushUserDebtResourceStatus(req *helper.AdminFlushDebtResourceStatusReq, cl
 	return nil
 }
 
-func updateNamespaceStatus(ctx context.Context, clt client.Client, status string, namespaces []string) error {
+func updateDebtNamespaceStatus(ctx context.Context, clt client.Client, status string, namespaces []string) error {
+	return updateNamespaceStatus(ctx, clt, DebtNamespaceAnnoStatusKey, status, namespaces)
+}
+
+func updateNetworkNamespaceStatus(ctx context.Context, clt client.Client, status string, namespaces []string) error {
+	return updateNamespaceStatus(ctx, clt, NetworkStatusAnnoKey, status, namespaces)
+}
+
+func updateNamespaceStatus(ctx context.Context, clt client.Client, annoKey, status string, namespaces []string) error {
 	for i := range namespaces {
 		ns := &corev1.Namespace{}
 		if err := clt.Get(ctx, types2.NamespacedName{Name: namespaces[i]}, ns); err != nil {
 			return err
 		}
-		if ns.Annotations[DebtNamespaceAnnoStatusKey] == status {
+		if ns.Annotations[annoKey] == status {
 			continue
 		}
 
 		original := ns.DeepCopy()
-		ns.Annotations[DebtNamespaceAnnoStatusKey] = status
+		ns.Annotations[annoKey] = status
 
 		if err := clt.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch namespace annotation failed: %w", err)
@@ -164,9 +172,13 @@ const (
 	falseStatus     = "false"
 	trueStatus      = "true"
 )
-const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
-
 const (
+	DebtNamespaceAnnoStatusKey = "debt.sealos/status"
+	NetworkStatusAnnoKey       = "network.sealos.io/status"
+
+	SuspendNetworkNamespaceAnnoStatus = "Suspend"
+	ResumeNetworkNamespaceAnnoStatus  = "Resume"
+
 	NormalDebtNamespaceAnnoStatus           = "Normal"
 	SuspendDebtNamespaceAnnoStatus          = "Suspend"
 	FinalDeletionDebtNamespaceAnnoStatus    = "FinalDeletion"
