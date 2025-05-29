@@ -13,6 +13,37 @@ import { parseTemplateConfig } from '@/utils/tools';
 
 export const dynamic = 'force-dynamic';
 
+// sleep util
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// wait for devbox status util
+async function waitForDevboxStatus(
+  k8sCustomObjects: any,
+  namespace: string,
+  devboxName: string,
+  maxRetries = 10,
+  interval = 1000
+): Promise<KBDevboxTypeV2> {
+  let retries = 0;
+  while (retries < maxRetries) {
+    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
+      'devbox.sealos.io',
+      'v1alpha1',
+      namespace,
+      'devboxes',
+      devboxName
+    )) as { body: KBDevboxTypeV2 };
+    if (devboxBody.status) {
+      return devboxBody;
+    }
+    await sleep(interval);
+    retries++;
+  }
+  throw new Error('Timeout waiting for devbox status');
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -128,15 +159,10 @@ export async function POST(req: NextRequest) {
     await applyYamlList([devbox], 'create');
 
     // return devbox detail
-    const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
-      'devbox.sealos.io',
-      'v1alpha1',
-      namespace,
-      'devboxes',
-      devboxForm.name
-    )) as { body: KBDevboxTypeV2 };
+    const devboxBody = await waitForDevboxStatus(k8sCustomObjects, namespace, devboxForm.name);
 
     const resp = [devboxBody, [], template] as [KBDevboxTypeV2, [], typeof template];
+
     const adaptedData = adaptDevboxDetailV2(resp);
 
     // get ssh info
