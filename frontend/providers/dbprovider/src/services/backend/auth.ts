@@ -1,17 +1,17 @@
 import type { NextApiRequest } from 'next';
-import { ERROR_ENUM } from '../error';
 import { IncomingHttpHeaders } from 'http';
+import { ResponseCode } from '@/types/response';
 
 export const authSession = async (req: NextApiRequest) => {
-  if (!req.headers) return Promise.reject(ERROR_ENUM.unAuthorization);
+  if (!req.headers) return Promise.reject(ResponseCode.UNAUTHORIZED);
   const { authorization } = req.headers;
-  if (!authorization) return Promise.reject(ERROR_ENUM.unAuthorization);
+  if (!authorization) return Promise.reject(ResponseCode.UNAUTHORIZED);
 
   try {
     const kubeConfig = decodeURIComponent(authorization);
     return Promise.resolve(kubeConfig);
   } catch (err) {
-    return Promise.reject(ERROR_ENUM.unAuthorization);
+    return Promise.reject(ResponseCode.UNAUTHORIZED);
   }
 };
 

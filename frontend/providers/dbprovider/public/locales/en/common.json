@@ -206,6 +206,8 @@
     "search_content": "Search Log Content",
     "slow_query": "Slow Log"
   },
+  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
+  "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "event_analyze": "Intelligent Analytics",
   "event_analyze_error": "Intelligent analytics error",
   "external_address": "Public Domain",
