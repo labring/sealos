@@ -194,8 +194,12 @@ type AdminFlushSubscriptionQuotaReq struct {
 
 // 延迟过高
 func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID, planID uuid.UUID, planName string) error {
-	for _, domain := range sp.allRegionDomain {
-		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
+	return sendFlushQuotaRequest(sp.allRegionDomain, sp.jwtManager, userUID, planID, planName)
+}
+
+func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, userUID, planID uuid.UUID, planName string) error {
+	for _, domain := range allRegion {
+		token, err := jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
 		})
 		if err != nil {
