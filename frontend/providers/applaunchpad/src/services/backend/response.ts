@@ -4,14 +4,15 @@ import { V1Status } from '@kubernetes/client-node';
 
 export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiResponse<T>> = {}) => {
   const { code = ResponseCode.SUCCESS, message, data, error } = options;
-
   const response: ApiResponse<T> = {
     code,
-    message: message || ResponseMessages[code] || '未知错误',
+    message: message || ResponseMessages[code] || 'Unknown error',
     data,
     error
   };
-
+  if (error) {
+    console.error('===jsonRes===\n', error?.body || error);
+  }
   return res.json(response);
 };
 

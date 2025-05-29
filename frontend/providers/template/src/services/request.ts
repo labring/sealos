@@ -5,7 +5,7 @@ import axios, {
   AxiosRequestConfig
 } from 'axios';
 import { getUserKubeConfig } from '@/utils/user';
-import { ApiResponse, ResponseCode, ResponseMessages } from '@/types/response';
+import { ApiResponse, ResponseCode } from '@/types/response';
 
 const request = axios.create({
   baseURL: '/',
@@ -33,7 +33,7 @@ request.interceptors.request.use(
   },
   (error: any) => {
     error.data = {};
-    error.data.msg = '服务器异常，请联系管理员！';
+    error.data.msg = 'Server abnormality, please contact the administrator!';
     return Promise.resolve(error);
   }
 );
@@ -45,7 +45,7 @@ request.interceptors.response.use(
     if (status < 200 || status >= 300) {
       return Promise.reject({
         code: status,
-        message: ResponseMessages[status] || `HTTP错误: ${status}`
+        message: `HTTP Error: ${status}`
       });
     }
 
@@ -59,7 +59,7 @@ request.interceptors.response.use(
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！';
+      error.errMessage = 'Server abnormality, please contact the administrator!';
     }
     return Promise.reject(error);
   }

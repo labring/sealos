@@ -7,10 +7,14 @@ export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiRespo
 
   const response: ApiResponse<T> = {
     code,
-    message: message || ResponseMessages[code] || '未知错误',
+    message: message || ResponseMessages[code] || 'Unknown error',
     data,
     error
   };
+
+  if (error) {
+    console.error('===jsonRes===\n', error?.body || error);
+  }
 
   return res.json(response);
 };
