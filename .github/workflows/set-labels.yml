@@ -1,0 +1,22 @@
+name: "Label pull request"
+on: 
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+  # This workflow uses `pull_reqeust_target` event to grant default r/w permission on pull requests.
+  # It's safe since this workflow only alters labels.
+  # PLEASE DO NOT USE THIS EVENT IN SCENARIOS OTHER THEN LABELING AND COMMENTING ON PULL REQUESTS!
+  # ref: https://docs.github.com/en/actions/writing-workflows/choosing-when-your-workflow-runs/events-that-trigger-workflows#pull_request_target
+
+jobs:
+  labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write # This is required now. See: https://github.com/googleapis/release-please-action/issues/1105#issuecomment-2780292262
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4 # Uploads repository content to the runner
+    - uses: actions/labeler@v5
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        sync-labels: true
