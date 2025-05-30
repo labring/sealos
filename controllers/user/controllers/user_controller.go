@@ -660,19 +660,11 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 			return err
 		}
 		if _, err2 := controllerutil.CreateOrUpdate(ctx, r.Client, networkPolicy, func() error {
-			// Initialize EndpointSelector with proper LabelSelector
-			networkPolicy.Spec.EndpointSelector = ciliumv2api.EndpointSelector{
-				LabelSelector: &slim_metav1.LabelSelector{
-					MatchExpressions: []slim_metav1.LabelSelectorRequirement{
-						{
-							Key:      "io.kubernetes.pod.namespace",
-							Operator: "In",
-							Values:   []string{networkPolicy.Namespace},
-						},
-					},
-				},
-			}
 			// Initialize Ingress rules
+			if networkPolicy.Spec == nil {
+				networkPolicy.Spec = &ciliumv2api.Rule{}
+			}
+			networkPolicy.Spec.EndpointSelector = ciliumv2api.WildcardEndpointSelector
 			networkPolicy.Spec.Ingress = []ciliumv2api.IngressRule{
 				{
 					IngressCommonRule: ciliumv2api.IngressCommonRule{
@@ -693,15 +685,18 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 						FromEndpoints: []ciliumv2api.EndpointSelector{
 							{
 								LabelSelector: &slim_metav1.LabelSelector{
-									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
-										{
-											Key:      "io.kubernetes.pod.namespace",
-											Operator: "In",
-											Values:   []string{networkPolicy.Namespace},
-										},
+									MatchLabels: map[string]string{
+										"io.kubernetes.pod.namespace": networkPolicy.Namespace,
 									},
 								},
 							},
+						},
+					},
+				},
+				{
+					IngressCommonRule: ciliumv2api.IngressCommonRule{
+						FromEndpoints: []ciliumv2api.EndpointSelector{
+							ciliumv2api.WildcardEndpointSelector,
 						},
 					},
 				},
@@ -765,15 +760,18 @@ func (r *UserReconciler) syncNetworkPolicy(ctx context.Context, user *userv1.Use
 						ToEndpoints: []ciliumv2api.EndpointSelector{
 							{
 								LabelSelector: &slim_metav1.LabelSelector{
-									MatchExpressions: []slim_metav1.LabelSelectorRequirement{
-										{
-											Key:      "io.kubernetes.pod.namespace",
-											Operator: "In",
-											Values:   []string{networkPolicy.Namespace},
-										},
+									MatchLabels: map[string]string{
+										"io.kubernetes.pod.namespace": networkPolicy.Namespace,
 									},
 								},
 							},
+						},
+					},
+				},
+				{
+					EgressCommonRule: ciliumv2api.EgressCommonRule{
+						ToEndpoints: []ciliumv2api.EndpointSelector{
+							ciliumv2api.WildcardEndpointSelector,
 						},
 					},
 				},
