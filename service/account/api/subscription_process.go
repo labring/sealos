@@ -164,7 +164,17 @@ func (p *SubscriptionProcessor) processExpiredSubscriptions() error {
 	// process each expired subscription
 	for _, subscription := range expiredSubscriptions {
 		logrus.Infof("Renewal subscription plan: %v", subscription)
-
+		var userStatus types.UserStatus
+		err = p.db.Model(&types.User{}).Where(&types.User{UID: subscription.UserUID}).Select("status").Scan(&userStatus).Error
+		if err != nil {
+			logrus.Errorf("Failed to get user status for subscription %s: %v", subscription.ID, err)
+			continue
+		}
+		if userStatus != types.UserStatusNormal {
+			logrus.Infof("User %s is not NORMAL_USER, skipping subscription %s", subscription.UserUID, subscription.ID)
+			p.db.Model(&types.Subscription{}).Where(&types.Subscription{ID: subscription.ID}).Update("status", userStatus)
+			continue
+		}
 		//TODO transaction operation:
 		// 1. Create a renewal subscription transaction for an expiring subscription
 		// 2. Automatically renew payment by binding cardID (create payment order, manage transaction PayID, initiate tied card payment, deduct payment by balance if card payment fails, and change payment information to ChargeSourceBalance)
@@ -283,32 +293,6 @@ func (p *SubscriptionProcessor) HandlerSubscriptionTransaction(subscription *typ
 		return fmt.Errorf("failed to update subscription status: %w", err)
 	}
 	return nil
-}
-
-func HasGithubOauthProvider(db *gorm.DB, userUID uuid.UUID) (bool, error) {
-	var provider types.OauthProvider
-	err := db.
-		Where(`"userUid" = ? AND "providerType" = ?`, userUID, types.OauthProviderTypeGithub).
-		Limit(1).
-		Find(&provider).Error
-
-	if err != nil {
-		return false, err
-	}
-	return provider.UID != uuid.Nil, nil
-}
-
-func GetGithubOauthProviderID(db *gorm.DB, userUID uuid.UUID) (string, error) {
-	var provider types.OauthProvider
-	err := db.
-		Where(`"userUid" = ? AND "providerType" = ?`, userUID, types.OauthProviderTypeGithub).
-		Limit(1).
-		Find(&provider).Error
-
-	if err != nil {
-		return "", err
-	}
-	return provider.ProviderID, nil
 }
 
 func InitSubscriptionProcessorTables(db *gorm.DB) error {
