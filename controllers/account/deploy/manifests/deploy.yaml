@@ -567,6 +567,8 @@ rules:
   - get
   - list
   - watch
+  - update
+  - patch
 - apiGroups: [""]
   resources: ["persistentvolumeclaims", "services"]
   verbs: ["delete", "deletecollection"]

@@ -245,7 +245,8 @@ func main() {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
-	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+	_true := "true"
+	if os.Getenv("DISABLE_WEBHOOKS") == _true {
 		setupLog.Info("disable all webhooks")
 	} else {
 		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
@@ -275,7 +276,7 @@ func main() {
 		setupLog.Error(err, "unable to add billing task runner")
 		os.Exit(1)
 	}
-	if env.GetEnvWithDefault("SUPPORT_DEBT", "true") == "true" {
+	if env.GetEnvWithDefault("SUPPORT_DEBT", _true) == _true {
 		if err := mgr.Add(debtController); err != nil {
 			setupLog.Error(err, "unable to add debt controller")
 			os.Exit(1)
@@ -302,6 +303,17 @@ func main() {
 		Scheme:      mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
+	}
+
+	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" && os.Getenv(database.TrafficMongoURI) != "" {
+		trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
+		if err != nil {
+			setupLog.Error(err, "unable to connect to traffic mongo")
+			os.Exit(1)
+		}
+		go controllers.NewUserTrafficController(accountReconciler, trafficDBClient).ProcessTrafficWithTimeRange()
+	} else {
+		setupLog.Info("skip user traffic controller")
 	}
 
 	//+kubebuilder:scaffold:builder

@@ -1695,7 +1695,8 @@ func (c *Cockroach) InitTables() error {
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
-		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{})
+		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
+		types.UserTimeRangeTraffic{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}

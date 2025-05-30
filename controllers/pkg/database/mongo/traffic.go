@@ -16,6 +16,8 @@ package mongo
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -128,4 +130,42 @@ func (m *mongoDB) getTrafficBytes(sent bool, startTime, endTime time.Time, names
 
 func (m *mongoDB) getTrafficCollection() *mongo.Collection {
 	return m.Client.Database(m.TrafficDB).Collection(m.TrafficConn)
+}
+
+func (m *mongoDB) GetNamespaceTraffic(ctx context.Context, startTime, endTime time.Time) (resultMap map[string]int64, err error) {
+	collection := m.getTrafficCollection()
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: bson.D{
+			{Key: "timestamp", Value: bson.D{{Key: "$gte", Value: startTime}, {Key: "$lt", Value: endTime}}},
+			{Key: "sent_bytes", Value: bson.D{{Key: "$gt", Value: 0}}},
+		}}},
+		{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: "$traffic_meta.pod_namespace"},
+			{Key: "total_sent_bytes", Value: bson.D{
+				{Key: "$sum", Value: "$sent_bytes"},
+			}},
+		}}},
+	}
+	cursor, err := collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute aggregation: %v", err)
+	}
+	defer cursor.Close(ctx)
+	resultMap = make(map[string]int64)
+	for cursor.Next(ctx) {
+		var result struct {
+			Namespace      string `bson:"_id"`
+			TotalSentBytes int64  `bson:"total_sent_bytes"`
+		}
+		if err := cursor.Decode(&result); err != nil {
+			return nil, fmt.Errorf("failed to decode result: %v", err)
+		}
+		if strings.HasPrefix(result.Namespace, "ns-") && result.TotalSentBytes > 0 {
+			resultMap[result.Namespace] = result.TotalSentBytes
+		}
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate cursor: %v", err)
+	}
+	return resultMap, nil
 }

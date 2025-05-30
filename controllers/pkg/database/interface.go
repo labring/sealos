@@ -91,6 +91,8 @@ type Traffic interface {
 
 	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+
+	GetNamespaceTraffic(ctx context.Context, startTime, endTime time.Time) (result map[string]int64, err error)
 }
 
 type AccountV2 interface {
