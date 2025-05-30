@@ -6,48 +6,72 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
-  Box
+  Box,
+  ModalFooter,
+  Button
 } from '@chakra-ui/react';
+import MyIcon from '@/components/Icon';
 import { useTranslation } from 'next-i18next';
-import { keyword } from '@/utils/i18n-client';
+import { ResponseCode } from '@/types/response';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 const ErrorModal = ({
   title,
   content,
-  onClose
+  onClose,
+  errorCode
 }: {
   title: string;
   content: string;
   onClose: () => void;
+  errorCode?: ResponseCode;
 }) => {
-  const regex = /^[a-z_]+$/;
-  if (regex.test(title) || regex.test(content)) {
-    const { t } = useTranslation();
-    if (regex.test(title)) {
-      title = t(title as keyword);
-    }
-    if (regex.test(content)) {
-      content = t(content as keyword);
-    }
-  }
+  const { t } = useTranslation();
+
+  const openCostCenterApp = () => {
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-costcenter',
+      query: {
+        openRecharge: 'true'
+      }
+    });
+  };
 
   return (
-    <Modal isOpen={true} onClose={onClose} lockFocusAcrossFrames={false}>
+    <Modal isOpen={true} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader
-          display={'flex'}
-          alignItems={'center'}
-          color={'grayModern.900'}
-          fontWeight={'bold'}
-          fontSize={'lg'}
-        >
-          <Box>{title}</Box>
+        <ModalHeader display={'flex'} alignItems={'center'} bg={'#fff'} borderBottom={'none'}>
+          <MyIcon color={'#CA8A04'} widths={'16px'} height={'16px'} name="warning"></MyIcon>
+          <Box ml={3} fontSize={'xl'}>
+            {title}
+          </Box>
         </ModalHeader>
-        <ModalCloseButton top={'10px'} right={'10px'} />
+        <ModalCloseButton fontSize={'16px'} />
         <ModalBody maxH={'50vh'} overflow={'auto'} whiteSpace={'pre-wrap'}>
           {content}
         </ModalBody>
+        <ModalFooter>
+          <Button
+            onClick={() => {
+              onClose();
+            }}
+            variant={'outline'}
+          >
+            {t('Cancel')}
+          </Button>
+          <Button
+            ml={'12px'}
+            onClick={() => {
+              if (errorCode === ResponseCode.BALANCE_NOT_ENOUGH) {
+                openCostCenterApp();
+              }
+              onClose();
+            }}
+          >
+            {errorCode === ResponseCode.BALANCE_NOT_ENOUGH ? t('add_credit') : t('confirm')}
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

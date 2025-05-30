@@ -12,7 +12,9 @@ export const getTemplates = (language?: string) =>
     language
   });
 
-export const getPlatformEnv = () => GET<EnvResponse>('/api/platform/getEnv');
+export const getPlatformEnv = (
+  { insideCloud }: { insideCloud: boolean } = { insideCloud: false }
+) => GET<EnvResponse>('/api/platform/getEnv', { insideCloud });
 
 export const getSystemConfig = () => {
   return GET<SystemConfigType>('/api/platform/getSystemConfig');

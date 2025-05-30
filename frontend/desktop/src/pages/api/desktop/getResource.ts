@@ -43,8 +43,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           memory: string;
           ['nvidia.com/gpu']?: string;
         };
-        totalCpuLimits += parseResourceValue(limits.cpu);
-        totalMemoryLimits += parseResourceValue(limits.memory);
+        totalCpuLimits += parseResourceValue(limits.cpu, 'cpu');
+        totalMemoryLimits += parseResourceValue(limits.memory, 'memory');
 
         totalGpuCount += Number(limits['nvidia.com/gpu'] || 0);
       }
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             .makeApiClient(k8s.CoreV1Api)
             .readNamespacedPersistentVolumeClaim(pvcName, namespace);
           const storage = pvc?.body?.spec?.resources?.requests?.storage || '0';
-          totalStorageRequests += parseResourceValue(storage);
+          totalStorageRequests += parseResourceValue(storage, 'storage');
         } catch (error) {}
       }
     }
@@ -79,21 +79,34 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
-function parseResourceValue(value: string) {
+function parseResourceValue(value: string, resourceType: 'cpu' | 'memory' | 'storage') {
+  if (!value) return 0;
+
   const unit = value.match(/[a-zA-Z]+$/);
   const number = parseFloat(value);
+
   if (!unit) return number;
 
-  switch (unit[0]) {
+  const unitStr = unit[0];
+
+  switch (unitStr) {
     case 'm':
-      return number / 1000; // For CPU millicores to cores
+      if (resourceType === 'cpu') {
+        // CPU millicores to cores
+        return number / 1000;
+      } else {
+        // Memory/Storage: millibytes to Gi
+        return number / (1000 * 1024 * 1024 * 1024);
+      }
     case 'Ki':
-      return number / (1024 * 1024); // For Ki to Gi
+      return number / (1024 * 1024); // Ki to Gi
     case 'Mi':
-      return number / 1024; // For Mi to Gi
+      return number / 1024; // Mi to Gi
     case 'Gi':
       return number; // Already in Gi
+    case 'Ti':
+      return number * 1024; // Ti to Gi
     default:
-      return number; // Assume raw number if no unit
+      return number; // Assume raw number
   }
 }

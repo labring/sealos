@@ -25,6 +25,7 @@ import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
 import useDriver from '@/hooks/useDriver';
+import { ResponseCode } from '@/types/response';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -39,6 +40,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const router = useRouter();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [forceUpdate, setForceUpdate] = useState(false);
   const [allocatedStorage, setAllocatedStorage] = useState(1);
   const { message: toast } = useMessage();
@@ -137,9 +139,19 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         status: 'success'
       });
       router.replace(`/db/detail?name=${formData.dbName}&dbType=${formData.dbType}`);
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(typeof error === 'string' ? error : JSON.stringify(error));
+    } catch (error: any) {
+      if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+        setErrorMessage(t('user_balance_not_enough'));
+        setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+      } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+        setErrorMessage(t('forbidden_create_app'));
+        setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+      } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
+        setErrorMessage(t('app_already_exists'));
+        setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+      } else {
+        setErrorMessage(JSON.stringify(error));
+      }
     }
     setIsLoading(false);
   };
@@ -236,6 +248,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
         <ErrorModal
           title={t(applyError)}
           content={errorMessage}
+          errorCode={errorCode}
           onClose={() => setErrorMessage('')}
         />
       )}

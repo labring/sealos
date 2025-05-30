@@ -1,10 +1,9 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { yamlList } = req.body as {
     yamlList: string[];
   };

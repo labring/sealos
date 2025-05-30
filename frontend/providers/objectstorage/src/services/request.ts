@@ -39,7 +39,7 @@ request.interceptors.request.use(
   },
   (error: any) => {
     error.data = {};
-    error.data.msg = '服务器异常，请联系管理员！';
+    error.data.msg = 'Server abnormality, please contact the administrator!';
     return Promise.resolve(error);
   }
 );
@@ -65,7 +65,7 @@ request.interceptors.response.use(
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！';
+      error.errMessage = 'Server abnormality, please contact the administrator!';
     }
     return Promise.reject(error);
   }

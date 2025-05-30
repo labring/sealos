@@ -1,10 +1,9 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+import { handleK8sError, jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { yamlList, type = 'create' } = req.body as {
     yamlList: string[];
     type: 'create' | 'replace' | 'dryrun';
@@ -26,9 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: applyRes.map((item) => item.kind) });
   } catch (err: any) {
-    jsonRes(res, {
-      code: 500,
-      error: err
-    });
+    return jsonRes(res, handleK8sError(err));
   }
 }
