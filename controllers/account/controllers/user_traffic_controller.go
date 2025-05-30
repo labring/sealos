@@ -229,6 +229,14 @@ func (c *UserTrafficController) ProcessTrafficWithTimeRange() {
 }
 
 func (c *UserTrafficController) sendSuspendUserTrafficRequest(userUID uuid.UUID) error {
+	return c.sendUserTrafficRequest(userUID, "suspend")
+}
+
+func (c *UserTrafficController) sendResumeUserTrafficRequest(userUID uuid.UUID) error {
+	return c.sendUserTrafficRequest(userUID, "resume")
+}
+
+func (c *UserTrafficController) sendUserTrafficRequest(userUID uuid.UUID, operator string) error {
 	for _, domain := range c.allRegionDomain {
 		token, err := c.jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
@@ -237,7 +245,7 @@ func (c *UserTrafficController) sendSuspendUserTrafficRequest(userUID uuid.UUID)
 			return fmt.Errorf("failed to generate token: %w", err)
 		}
 
-		url := fmt.Sprintf("https://account-api.%s/admin/v1alpha1/suspend-user-traffic?userUID=%s", domain, userUID.String())
+		url := fmt.Sprintf("https://account-api.%s/admin/v1alpha1/%s-user-traffic?userUID=%s", domain, operator, userUID.String())
 
 		var lastErr error
 		backoffTime := time.Second
@@ -288,7 +296,7 @@ func (c *UserTrafficController) sendSuspendUserTrafficRequest(userUID uuid.UUID)
 const (
 	ProcessingBatchSize = 1000
 	WorkerPoolSize      = 50
-	CheckInterval       = 30 * time.Second
+	CheckInterval       = 1 * time.Minute
 	FreeTrafficLimit    = 10 * 1024 * 1024 * 1024
 )
 
@@ -298,7 +306,9 @@ type UserTrafficMonitor struct {
 	userTrafficController *UserTrafficController
 	subscriptionCache     *utils2.SubscriptionCache
 	processingUsers       sync.Map // Ongoing processing users: map[uuid.UUID]bool
+	resumingUsers         sync.Map
 	suspendQueue          chan uuid.UUID
+	resumeQueue           chan uuid.UUID // Queue for users to suspend or resume
 	workerPool            chan struct{}
 	ctx                   context.Context
 	cancel                context.CancelFunc
@@ -309,6 +319,7 @@ type UserTrafficMonitor struct {
 type ProcessingUser struct {
 	UserUID   uuid.UUID
 	SentBytes int64
+	UpdatedAt time.Time
 }
 
 // NewUserTrafficMonitor creates a new user traffic monitor
@@ -327,6 +338,7 @@ func NewUserTrafficMonitor(controller *UserTrafficController) (*UserTrafficMonit
 		userTrafficController: controller,
 		subscriptionCache:     cache,
 		suspendQueue:          make(chan uuid.UUID, 10000), // Large capacity queue
+		resumeQueue:           make(chan uuid.UUID, 10000),
 		workerPool:            make(chan struct{}, WorkerPoolSize),
 		ctx:                   ctx,
 		cancel:                cancel,
@@ -348,9 +360,15 @@ func (m *UserTrafficMonitor) Start() {
 	m.wg.Add(1)
 	go m.asyncSuspendProcessor()
 
+	m.wg.Add(1)
+	go m.asyncResumeProcessor()
+
 	// Start periodic checker
 	m.wg.Add(1)
 	go m.periodicChecker()
+
+	m.wg.Add(1)
+	go m.ResumeUsers()
 }
 
 // Stop shuts down the monitoring system
@@ -398,6 +416,7 @@ func (m *UserTrafficMonitor) checkAndProcessUsers() int {
 		if len(users) == 0 {
 			break
 		}
+		log.Printf("Processing users len: %d", len(users))
 		// Process this batch of users
 		processedBatch := m.processUsersBatch(users)
 		processed += processedBatch
@@ -418,16 +437,17 @@ func (m *UserTrafficMonitor) getProcessingUsers(offset, limit int, since time.Ti
 
 	// Optimized query without subscription join
 	query := `
-		SELECT DISTINCT 
-			user_uid,
-			sent_bytes
-		FROM "UserTimeRangeTraffic"
-		WHERE status = ?
-		AND updated_at > ?
-		AND sent_bytes > ?
-		ORDER BY updated_at DESC
-		LIMIT ? OFFSET ?
-	`
+	SELECT DISTINCT 
+		user_uid,
+		sent_bytes,
+		updated_at
+	FROM "UserTimeRangeTraffic"
+	WHERE status = ?
+	AND updated_at > ?
+	AND sent_bytes > ?
+	ORDER BY updated_at DESC
+	LIMIT ? OFFSET ?
+`
 
 	err := m.db.Raw(query, types.UserTimeRangeTrafficStatusProcessing, since, FreeTrafficLimit, limit, offset).Scan(&results).Error
 	if err != nil {
@@ -503,7 +523,7 @@ func (m *UserTrafficMonitor) handleUserSuspension(userUID uuid.UUID) {
 	}
 
 	// Update status to UsedUp
-	err = m.updateUserTrafficStatus(userUID, types.UserTimeRangeTrafficStatusUsedUp)
+	err = m.updateUserTrafficStatusUsedUp(userUID)
 	if err != nil {
 		log.Printf("Failed to update user status %s: %v", userUID, err)
 		return
@@ -512,21 +532,250 @@ func (m *UserTrafficMonitor) handleUserSuspension(userUID uuid.UUID) {
 	log.Printf("Successfully suspended user traffic: %s", userUID)
 }
 
-// updateUserTrafficStatus updates the traffic status for a user
-func (m *UserTrafficMonitor) updateUserTrafficStatus(userUID uuid.UUID, status types.UserTimeRangeTrafficStatus) error {
+func (m *UserTrafficMonitor) updateUserTrafficStatusUsedUp(userUID uuid.UUID) error {
 	result := m.db.Model(&types.UserTimeRangeTraffic{}).
-		Where("user_uid = ? AND status = ?", userUID, types.UserTimeRangeTrafficStatusProcessing).
-		Update("status", status)
+		Where("user_uid = ?", userUID).
+		Update("status", types.UserTimeRangeTrafficStatusUsedUp)
+	if result.Error != nil {
+		return fmt.Errorf("failed to update status: %w", result.Error)
+	}
+	return nil
+}
+
+func (m *UserTrafficMonitor) updateUserTrafficStatusClean(userUID uuid.UUID) error {
+	result := m.db.Model(&types.UserTimeRangeTraffic{}).
+		Where("user_uid = ?", userUID).
+		Update("status", types.UserTimeRangeTrafficStatusProcessing).
+		Update("sent_bytes", 0).
+		Update("next_clean_time", time.Now().UTC().AddDate(0, 1, 0))
 
 	if result.Error != nil {
 		return fmt.Errorf("failed to update status: %w", result.Error)
 	}
-
 	if result.RowsAffected == 0 {
 		return fmt.Errorf("no records found to update")
 	}
-
 	return nil
+}
+
+func (m *UserTrafficMonitor) ResumeUsers() {
+	defer m.wg.Done()
+	log.Println("Starting user traffic resume process...")
+
+	ticker := time.NewTicker(CheckInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-m.ctx.Done():
+			log.Println("Stopping user traffic resume process...")
+			return
+		case <-ticker.C:
+			start := time.Now()
+			processed := m.processResumeUsers()
+			duration := time.Since(start)
+			log.Printf("Processed %d users for resume in %v", processed, duration)
+		}
+	}
+}
+
+// processResumeUsers handles the resumption logic for eligible users
+func (m *UserTrafficMonitor) processResumeUsers() int {
+	processed := 0
+	offset := 0
+	batchSize := ProcessingBatchSize
+
+	// Get all non-Free plan users with Normal status from cache
+	eligibleUsers := m.getEligibleUsersFromCache()
+
+	for {
+		users, err := m.getUsedUpUsers(offset, batchSize)
+		if err != nil {
+			log.Printf("Failed to get used_up users: %v", err)
+			break
+		}
+		if len(users) == 0 {
+			break
+		}
+
+		processedBatch := m.processResumeBatch(users, eligibleUsers)
+		processed += processedBatch
+
+		offset += batchSize
+		if len(users) < batchSize {
+			break
+		}
+	}
+
+	// Process users approaching NextCleanTime
+	processed += m.processNextCleanTimeUsers()
+
+	return processed
+}
+
+// getEligibleUsersFromCache retrieves users with non-Free plans and Normal status
+func (m *UserTrafficMonitor) getEligibleUsersFromCache() map[uuid.UUID]struct{} {
+	eligibleUsers := make(map[uuid.UUID]struct{})
+	entries := m.subscriptionCache.GetAllEntries()
+	for _, entry := range entries {
+		if entry.PlanName != types.FreeSubscriptionPlanName && entry.Status == types.SubscriptionStatusNormal {
+			eligibleUsers[entry.UserUID] = struct{}{}
+		}
+	}
+	return eligibleUsers
+}
+
+// getUsedUpUsers fetches users with used_up status
+func (m *UserTrafficMonitor) getUsedUpUsers(offset, limit int) ([]ProcessingUser, error) {
+	var results []ProcessingUser
+	query := `
+		SELECT 
+			user_uid,
+			sent_bytes,
+			updated_at
+		FROM "UserTimeRangeTraffic"
+		WHERE status = ?
+		ORDER BY updated_at DESC
+		LIMIT ? OFFSET ?
+	`
+	err := m.db.Raw(query, types.UserTimeRangeTrafficStatusUsedUp, limit, offset).Scan(&results).Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to query used_up users: %w", err)
+	}
+	return results, nil
+}
+
+// processResumeBatch processes a batch of users for resumption
+func (m *UserTrafficMonitor) processResumeBatch(users []ProcessingUser, eligibleUsers map[uuid.UUID]struct{}) int {
+	processed := 0
+
+	for _, user := range users {
+		// Check if user is already being processed
+		if _, exists := m.resumingUsers.LoadOrStore(user.UserUID, true); exists {
+			continue
+		}
+
+		// Check if user is eligible for resumption (non-Free plan and Normal status)
+		if _, exists := eligibleUsers[user.UserUID]; !exists {
+			m.resumingUsers.Delete(user.UserUID)
+			continue
+		}
+
+		// Submit to suspend queue for async processing
+		select {
+		case m.resumeQueue <- user.UserUID:
+			processed++
+		default:
+			m.resumingUsers.Delete(user.UserUID)
+			log.Printf("Resume queue full, skipping user: %s", user.UserUID)
+		}
+	}
+
+	return processed
+}
+
+// processNextCleanTimeUsers handles users approaching NextCleanTime
+func (m *UserTrafficMonitor) processNextCleanTimeUsers() int {
+	processed := 0
+	offset := 0
+	batchSize := ProcessingBatchSize
+	threshold := time.Now().Add(time.Hour)
+
+	for {
+		var users []struct {
+			UserUID       uuid.UUID
+			NextCleanTime time.Time
+		}
+		query := `
+			SELECT 
+				user_uid,
+				next_clean_time
+			FROM "UserTimeRangeTraffic"
+			WHERE next_clean_time <= ?
+			ORDER BY next_clean_time DESC
+			LIMIT ? OFFSET ?
+		`
+		err := m.db.Raw(query, threshold, batchSize, offset).Scan(&users).Error
+		if err != nil {
+			log.Printf("Failed to query NextCleanTime users: %v", err)
+			break
+		}
+		if len(users) == 0 {
+			break
+		}
+
+		for _, user := range users {
+			if _, exists := m.resumingUsers.LoadOrStore(user.UserUID, true); exists {
+				continue
+			}
+
+			select {
+			case m.resumeQueue <- user.UserUID:
+				processed++
+			default:
+				m.resumingUsers.Delete(user.UserUID)
+				log.Printf("Resume queue full, skipping user: %s", user.UserUID)
+			}
+		}
+
+		offset += batchSize
+		if len(users) < batchSize {
+			break
+		}
+	}
+
+	return processed
+}
+
+// StartResumeProcessor starts the async resume processor
+func (m *UserTrafficMonitor) StartResumeProcessor() {
+	m.wg.Add(1)
+	go m.asyncResumeProcessor()
+}
+
+// asyncResumeProcessor handles resume requests asynchronously
+func (m *UserTrafficMonitor) asyncResumeProcessor() {
+	defer m.wg.Done()
+	for {
+		select {
+		case <-m.ctx.Done():
+			return
+		case userUID, ok := <-m.resumeQueue:
+			if !ok {
+				return
+			}
+			<-m.workerPool
+
+			go func(uid uuid.UUID) {
+				defer func() {
+					m.workerPool <- struct{}{}
+					m.resumingUsers.Delete(uid)
+				}()
+				m.handleUserResumption(uid)
+			}(userUID)
+		}
+	}
+}
+
+// handleUserResumption processes a user resumption
+func (m *UserTrafficMonitor) handleUserResumption(userUID uuid.UUID) {
+	log.Printf("Starting user resumption processing: %s", userUID)
+
+	// Call resume API
+	err := m.userTrafficController.sendResumeUserTrafficRequest(userUID)
+	if err != nil {
+		log.Printf("Failed to resume user traffic %s: %v", userUID, err)
+		return
+	}
+
+	// Update status to Processing
+	err = m.updateUserTrafficStatusClean(userUID)
+	if err != nil {
+		log.Printf("Failed to update user status %s: %v", userUID, err)
+		return
+	}
+
+	log.Printf("Successfully resumed user traffic: %s", userUID)
 }
 
 // MonitorStats holds monitoring statistics
