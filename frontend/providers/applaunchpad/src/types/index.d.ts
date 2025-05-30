@@ -38,6 +38,7 @@ export type AppConfigType = {
     guideEnabled: boolean;
     apiEnabled: boolean;
     gpuEnabled: boolean;
+    httpsEnabled: boolean;
   };
   launchpad: {
     meta: {
