@@ -189,12 +189,24 @@ export function evaluateExpression(
   try {
     // console.log("expression: ", expression, " data: ", data)
     // const result = new Function('data', `with(data) { return ${expression}; }`)(data);
+    const processedExpression = expression.replace(
+      /(\w+)\.([a-zA-Z_$][\w\-]*)/g,
+      (match, obj, prop) => {
+        if (prop.includes('-')) {
+          return `${obj}['${prop}']`;
+        }
+        return match;
+      }
+    );
     const initInterpreterFunc = (interpreter: any, ctx: any) => {
       interpreter.setProperty(ctx, 'data', interpreter.nativeToPseudo(data));
       interpreter.setProperty(ctx, 'random', interpreter.createNativeFunction(nanoid));
       interpreter.setProperty(ctx, 'base64', interpreter.createNativeFunction(base64));
     };
-    const interpreter = new Interpreter(`with(data) { ${expression} }`, initInterpreterFunc);
+    const interpreter = new Interpreter(
+      `with(data) { ${processedExpression} }`,
+      initInterpreterFunc
+    );
     interpreter.run();
     // console.log('resoult: ', interpreter.value)
     return interpreter.value;
