@@ -1,9 +1,8 @@
-import { createBackup, updateBackupPolicy } from '@/api/backup';
+import { createBackup, getBackupPolicyByCluster, updateBackupPolicy } from '@/api/backup';
 import Tip from '@/components/Tip';
 import { DBBackupMethodNameMap, DBTypeEnum, SelectTimeList, WeekSelectList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { AutoBackupFormType, AutoBackupType } from '@/types/backup';
-import { I18nCommonKey } from '@/types/i18next';
 import { convertCronTime, getErrText } from '@/utils/tools';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
@@ -17,14 +16,13 @@ import {
   ModalCloseButton,
   ModalContent,
   ModalOverlay,
-  Switch,
-  useTheme
+  Switch
 } from '@chakra-ui/react';
 import { MySelect, Tabs, useMessage } from '@sealos/ui';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { customAlphabet } from 'nanoid';
 import { useTranslation } from 'next-i18next';
-import { MutableRefObject, useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz1234567890', 6);
 
@@ -34,21 +32,28 @@ enum NavEnum {
 }
 
 const BackupModal = ({
-  defaultVal,
   dbName,
   dbType,
-  onClose,
-  refetchPolicy
+  onClose
 }: {
-  defaultVal: AutoBackupFormType;
   dbName: string;
   dbType: `${DBTypeEnum}`;
   onClose: () => void;
-  refetchPolicy: () => void;
 }) => {
   const { t } = useTranslation();
-  const theme = useTheme();
   const { message: toast } = useMessage();
+
+  const { data: defaultVal, refetch: refetchPolicy } = useQuery(
+    ['initpolicy', dbName, dbType],
+    () =>
+      getBackupPolicyByCluster({
+        dbName,
+        dbType
+      }),
+    {
+      refetchOnMount: true
+    }
+  );
 
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'confirm',
@@ -78,9 +83,18 @@ const BackupModal = ({
     register: autoRegister,
     handleSubmit: handleSubmitAuto,
     getValues: getAutoValues,
-    setValue: setAutoValue
+    setValue: setAutoValue,
+    reset: resetAutoForm
   } = useForm<AutoBackupFormType>({
-    defaultValues: defaultVal
+    defaultValues: {
+      start: false,
+      type: 'day',
+      week: [],
+      hour: '18',
+      minute: '00',
+      saveTime: 7,
+      saveType: 'd'
+    }
   });
 
   const navStyle = useCallback(
@@ -196,6 +210,13 @@ const BackupModal = ({
     }
   });
 
+  useEffect(() => {
+    if (defaultVal) {
+      resetAutoForm(defaultVal);
+    }
+    setRefresh((state) => !state);
+  }, [defaultVal, resetAutoForm]);
+
   return (
     <>
       <Modal isOpen onClose={onClose} isCentered lockFocusAcrossFrames={false}>
@@ -221,7 +242,7 @@ const BackupModal = ({
                   variant={'deepLight'}
                   isChecked={getAutoValues('start')}
                   onChange={(e) => {
-                    if (defaultVal.start) {
+                    if (defaultVal?.start) {
                       CloseAutoBackup(onclickCloseAutoBackup)();
                       return;
                     }
