@@ -66,7 +66,7 @@ model Credits {
   used_amount BigInt?
   from_id String?   @db.Uuid
   from_type String?
-  expires_at DateTime?
+  expire_at DateTime?
   created_at DateTime? @default(now()) @db.Timestamptz(3)
   updated_at DateTime? @default(now()) @db.Timestamptz(3)
   start_at DateTime? @default(now()) @db.Timestamptz(3)
