@@ -59,6 +59,20 @@ model AccountTransaction {
   billing_id               String   @db.Uuid
 }
 
+model Credits {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_uid     String?   @db.Uuid
+  amount   BigInt?
+  used_amount BigInt?
+  from_id String?   @db.Uuid
+  from_type String?
+  expires_at DateTime?
+  created_at DateTime? @default(now()) @db.Timestamptz(3)
+  updated_at DateTime? @default(now()) @db.Timestamptz(3)
+  start_at DateTime? @default(now()) @db.Timestamptz(3)
+  status String?
+}
+
 model ErrorPaymentCreate {
   userUid         String   @db.Uuid
   regionUid       String   @db.Uuid

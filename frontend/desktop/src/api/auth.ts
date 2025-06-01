@@ -211,6 +211,8 @@ export const _enterpriseRealNameAuthCancelRequest = (request: AxiosInstance) => 
 
 export const _getAmount = (request: AxiosInstance) => () =>
   request<never, ApiResp<{ balance: number; deductionBalance: number }>>('/api/account/getAmount');
+export const _getCredit = (request: AxiosInstance) => () =>
+  request<never, ApiResp<{ amount: number; usedAmount: number }>>('/api/account/getCredit');
 export const _verifyToken = (request: AxiosInstance) => () =>
   request<never, ApiResp<null>>('/api/auth/verify');
 export const passwordExistRequest = _passwordExistRequest(request);
@@ -249,3 +251,4 @@ export const refreshRealNameQRecodeUriRequest = _refreshRealNameQRecodeUriReques
 export const getFaceAuthStatusRequest = _getFaceAuthStatusRequest(request);
 
 export const getAmount = _getAmount(request);
+export const getCredit = _getCredit(request);

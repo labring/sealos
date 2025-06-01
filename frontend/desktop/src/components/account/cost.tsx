@@ -1,4 +1,4 @@
-import { getAmount } from '@/api/auth';
+import { getAmount, getCredit } from '@/api/auth';
 import { getUserBilling } from '@/api/platform';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
@@ -45,6 +45,13 @@ export default function Cost() {
     staleTime: 60 * 1000
   });
 
+  const { data : creditData } = useQuery({
+    queryKey: ['getCredit', { userId: user?.userCrUid }],
+    queryFn: getCredit,
+    enabled: !!user,
+    staleTime: 60 * 1000
+  });
+
   const { data: billing, isSuccess } = useQuery(['getUserBilling'], () => getUserBilling(), {
     cacheTime: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
@@ -58,6 +65,14 @@ export default function Cost() {
     }
     return realBalance.toNumber();
   }, [data]);
+
+  const credit = useMemo(() => {
+    let realAmount = new Decimal(creditData?.data?.amount || 0);
+    if (creditData?.data?.usedAmount) {
+      realAmount = realAmount.minus(new Decimal(creditData.data.usedAmount));
+    }
+    return realAmount.toNumber();
+  }, [creditData]);
 
   const calculations = useMemo(() => {
     const prevDayAmount = new Decimal(billing?.data?.prevDayTime || 0);
@@ -114,7 +129,7 @@ export default function Cost() {
             </Text>
             <Flex alignItems={'center'} gap={'8px'}>
               <Text fontSize={'20px'} color={'#7CE7FF'}>
-                {formatMoney(balance).toFixed(2)}
+                {formatMoney(balance).toFixed(2)}+{formatMoney(balance).toFixed(2)}
               </Text>
               <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'16px'} />
             </Flex>
