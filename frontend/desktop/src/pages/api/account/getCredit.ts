@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const payload = await verifyAccessToken(req.headers);
     if (!payload) return jsonRes(res, { code: 401, message: 'token is invaild' });
-    const status = await globalPrisma.credits.findUnique({
+    const status = await globalPrisma.credits.findFirst({
       where: {
         user_uid: payload.userUid,
         status: 'active'

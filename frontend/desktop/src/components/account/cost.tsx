@@ -129,7 +129,7 @@ export default function Cost() {
             </Text>
             <Flex alignItems={'center'} gap={'8px'}>
               <Text fontSize={'20px'} color={'#7CE7FF'}>
-                {formatMoney(balance).toFixed(2)}+{formatMoney(balance).toFixed(2)}
+                {formatMoney(balance).toFixed(2)}+{formatMoney(credit).toFixed(2)}
               </Text>
               <CurrencySymbol type={currencySymbol} color={'white'} fontSize={'16px'} />
             </Flex>
