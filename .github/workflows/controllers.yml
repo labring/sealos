@@ -97,6 +97,7 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
+          - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: job-heartbeat, path: job/heartbeat }
@@ -178,6 +179,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -218,6 +220,7 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
+          - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: job-heartbeat, path: job/heartbeat }
