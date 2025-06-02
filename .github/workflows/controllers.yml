@@ -6,46 +6,46 @@ on:
   workflow_call:
     inputs:
       push_image:
-        description: "Push image"
+        description: 'Push image'
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: "Push image tag"
-        default: "latest"
+        description: 'Push image tag'
+        default: 'latest'
         required: false
         type: string
   workflow_dispatch:
     inputs:
       push_image:
-        description: "Push image"
+        description: 'Push image'
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: "Push image tag"
-        default: "latest"
+        description: 'Push image tag'
+        default: 'latest'
         required: false
         type: string
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
-      - "controllers/**"
-      - ".github/workflows/controllers.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'controllers/**'
+      - '.github/workflows/controllers.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
   pull_request:
-    branches: [ "*" ]
+    branches: ['*']
     paths:
-      - "controllers/**"
-      - ".github/workflows/controllers.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'controllers/**'
+      - '.github/workflows/controllers.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
 
 env:
   # Common versions
-  GO_VERSION: "1.24"
-  DEFAULT_OWNER: "labring"
+  GO_VERSION: '1.24'
+  DEFAULT_OWNER: 'labring'
   CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
   LICENSE_KEY: ${{ secrets.LICENSE_KEY }}
 jobs:
@@ -63,7 +63,7 @@ jobs:
 
   golangci-lint:
     if: ${{ github.event_name }} == 'push' || ${{ github.event_name }} == 'pull_request'
-    needs: [ resolve-modules ]
+    needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -83,7 +83,7 @@ jobs:
         with:
           version: v1.64.5
           working-directory: ${{ matrix.workdir }}
-          args: "--out-${NO_FUTURE}format colored-line-number"
+          args: '--out-${NO_FUTURE}format colored-line-number'
 
   image-build:
     runs-on: ubuntu-24.04
@@ -97,13 +97,12 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
-          - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: job-heartbeat, path: job/heartbeat }
           - { name: resources, path: resources }
           - { name: node, path: node }
-          - { name: devbox, path: devbox}
+          - { name: devbox, path: devbox }
           - { name: objectstorage, path: objectstorage }
     steps:
       - name: Checkout
@@ -219,7 +218,6 @@ jobs:
           - { name: terminal, path: terminal }
           - { name: account, path: account }
           - { name: app, path: app }
-          - { name: db-adminer, path: db/adminer }
           - { name: license, path: license }
           - { name: job-init, path: job/init }
           - { name: job-heartbeat, path: job/heartbeat }
@@ -320,14 +318,14 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          SEALOS_TYPE: 'issue_renew'
+          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
+          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
+          SEALOS_ISSUE_LABEL: 'dayly-report'
+          SEALOS_ISSUE_TYPE: 'day'
+          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
+          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.cluster_image }}'
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
         uses: labring/gh-rebot@v0.0.6
@@ -335,11 +333,11 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"
+          GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          SEALOS_TYPE: 'issue_renew'
+          SEALOS_ISSUE_TITLE: '[DaylyReport] Auto build for sealos'
+          SEALOS_ISSUE_BODYFILE: 'scripts/ISSUE_RENEW.md'
+          SEALOS_ISSUE_LABEL: 'dayly-report'
+          SEALOS_ISSUE_TYPE: 'day'
+          SEALOS_ISSUE_REPO: 'labring-actions/cluster-image'
+          SEALOS_COMMENT_BODY: '/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}'
