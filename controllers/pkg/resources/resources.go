@@ -476,7 +476,7 @@ func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[str
 					rl[corev1.ResourceLimitsMemory] = _v
 				case "storage":
 					rl[corev1.ResourceRequestsStorage] = _v
-					rl[coreev1.ResourceLimitsEphemeralStorage] = _v
+					rl[corev1.ResourceLimitsEphemeralStorage] = _v
 				case "nodeports":
 					rl[corev1.ResourceServicesNodePorts] = _v
 				case ResourceObjectStorageSize.String():
