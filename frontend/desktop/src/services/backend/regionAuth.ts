@@ -189,7 +189,9 @@ export async function getRegionToken({
       if (userCrResult) {
         // get a exist user
         const relations = userCrResult.userWorkspace!;
-        const privateRelation = relations.find((r) => r.isPrivate);
+        const privateRelation = relations.find(
+          (r) => r.isPrivate && r.role === 'OWNER' && r.status === 'IN_WORKSPACE'
+        );
         if (privateRelation?.workspaceUid !== workspaceUid) {
           // 不匹配的未知错误
           console.error(
@@ -360,6 +362,17 @@ export async function initRegionToken({
         // 其他可用区正在初始化
         console.log('other region is initializing');
         console.log(`user  already initialized userUid:${userUid}`);
+        if (workspaceUsage.createdAt.getTime() < new Date().getTime() - 1000 * 60 * 15) {
+          // 如果创建时间大于15分钟，则认为初始化失败，重新初始化
+          await globalPrisma.workspaceUsage.delete({
+            where: {
+              id: workspaceUsage.id
+            }
+          });
+          throw new Error(
+            `workspaceUsage createdAt is too old, re-initializing, regionUid:${region.uid}, userUid:${userUid}, workspaceUid:${workspaceUsage.workspaceUid}`
+          );
+        }
 
         return null;
       } else {
@@ -398,7 +411,9 @@ export async function initRegionToken({
         // userCrResult 隐含了最新的 isInitalizing 状态，停机导致异常也能包含在内
         if (userCrResult) {
           const relations = userCrResult.userWorkspace!;
-          const privateRelation = relations.find((r) => r.isPrivate);
+          const privateRelation = relations.find(
+            (r) => r.isPrivate && r.role === 'OWNER' && r.status === 'IN_WORKSPACE'
+          );
           if (privateRelation?.workspaceUid !== workspaceUid) {
             // 和workspaceUsage 记录的不一致, 未知错误
             console.error('workspaceUid not match, workspaceUid:', workspaceUid);
