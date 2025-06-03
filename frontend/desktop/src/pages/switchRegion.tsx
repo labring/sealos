@@ -1,6 +1,9 @@
-import { getRegionToken } from '@/api/auth';
+import { getRegionToken, initRegionToken } from '@/api/auth';
 import { nsListRequest, switchRequest } from '@/api/namespace';
+import { SwitchRegionType } from '@/constants/account';
 import useAppStore from '@/stores/app';
+import { useGuideModalStore } from '@/stores/guideModal';
+import { useInitWorkspaceStore } from '@/stores/initWorkspace';
 import useSessionStore from '@/stores/session';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
@@ -21,7 +24,7 @@ const Callback: NextPage = () => {
   const { token: curToken, session } = useSessionStore((s) => s);
   const { lastWorkSpaceId } = useSessionStore();
   const { setAutoLaunch } = useAppStore();
-
+  const { setInitGuide } = useGuideModalStore();
   const mutation = useMutation({
     mutationFn: switchRequest,
     async onSuccess(data) {
@@ -36,49 +39,134 @@ const Callback: NextPage = () => {
       }
     }
   });
-
+  const initMutation = useMutation({
+    mutationFn(data: { workspaceName: string }) {
+      return initRegionToken(data);
+    },
+    onSuccess(data) {
+      setInitGuide(true);
+    }
+  });
+  // useEffect(() => {
+  //   if (!router.isReady) return;
+  //   const { query } = router;
+  //   const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
+  //   let workspaceUid: string | undefined;
+  //   if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
+  //   if (appkey && typeof appQuery === 'string') {
+  //     setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
+  //   }
+  //   (async () => {
+  //     try {
+  //       if (!!curToken) {
+  //         delSession();
+  //         setToken('');
+  //       }
+  //       const globalToken = router.query.token;
+  //       if (!isString(globalToken)) throw new Error('failed to get globalToken');
+  //       setToken(globalToken);
+  //       const regionTokenRes = await getRegionToken();
+  //       if (regionTokenRes?.data) {
+  //         await sessionConfig(regionTokenRes.data);
+  //         const session = useSessionStore.getState().session;
+  //         if (session?.token && session?.user?.ns_uid) {
+  //           const nsList = await nsListRequest();
+  //           const namespaces = nsList?.data?.namespaces || [];
+  //           const existNamespace = namespaces.find((x) => x.uid === lastWorkSpaceId);
+  //           if (existNamespace && existNamespace.uid !== session.user.ns_uid) {
+  //             await mutation.mutateAsync(existNamespace.uid);
+  //           }
+  //         }
+  //         await router.replace('/');
+  //         return;
+  //       } else {
+  //         throw new Error();
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //       setToken('');
+  //       await router.replace('/signin');
+  //       return;
+  //     }
+  //   })();
+  // }, [router]);
   useEffect(() => {
     if (!router.isReady) return;
     const { query } = router;
     const { appkey, appQuery } = parseOpenappQuery((query?.openapp as string) || '');
     let workspaceUid: string | undefined;
-    if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
-    if (appkey && typeof appQuery === 'string') {
-      setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
-    }
-    (async () => {
-      try {
-        if (!!curToken) {
-          delSession();
-          setToken('');
-        }
-        const globalToken = router.query.token;
-        if (!isString(globalToken)) throw new Error('failed to get globalToken');
-        setToken(globalToken);
-        const regionTokenRes = await getRegionToken();
-        if (regionTokenRes?.data) {
-          await sessionConfig(regionTokenRes.data);
-          const session = useSessionStore.getState().session;
-          if (session?.token && session?.user?.ns_uid) {
-            const nsList = await nsListRequest();
-            const namespaces = nsList?.data?.namespaces || [];
-            const existNamespace = namespaces.find((x) => x.uid === lastWorkSpaceId);
-            if (existNamespace && existNamespace.uid !== session.user.ns_uid) {
-              await mutation.mutateAsync(existNamespace.uid);
-            }
+
+    const switchRegionType = query.switchRegionType;
+    const globalToken = router.query.token;
+    if (!isString(globalToken)) throw new Error('failed to get globalToken');
+    if (switchRegionType === SwitchRegionType.INIT) {
+      (async () => {
+        try {
+          let workspaceName: string | undefined;
+          if (!isString(query?.workspaceName)) throw Error('workspace not found');
+          workspaceName = query.workspaceName;
+          // const regionUid = query.regionUid as unknown as string;
+          if (!!curToken) {
+            delSession();
+            setToken('');
           }
+          // console.log(query, globalToken);
+          setToken(globalToken);
+          // await router.replace('/workspace');
+          const initRegionTokenResult = await initMutation.mutateAsync({
+            // regionUid: regionUid ,
+            workspaceName
+          });
+          if (!initRegionTokenResult.data) {
+            throw new Error('No result data');
+          }
+          await sessionConfig(initRegionTokenResult.data);
           await router.replace('/');
           return;
-        } else {
-          throw new Error();
+        } catch (error) {
+          console.error(error);
+          setToken('');
+          await router.replace('/signin');
+          return;
         }
-      } catch (error) {
-        console.error(error);
-        setToken('');
-        await router.replace('/signin');
-        return;
+      })();
+    } else {
+      if (isString(query?.workspaceUid)) workspaceUid = query.workspaceUid;
+      if (appkey && typeof appQuery === 'string') {
+        setAutoLaunch(appkey, { raw: appQuery }, workspaceUid);
       }
-    })();
+      (async () => {
+        try {
+          if (!!curToken) {
+            delSession();
+            setToken('');
+          }
+          setToken(globalToken);
+          const regionTokenRes = await getRegionToken();
+          if (regionTokenRes?.data) {
+            await sessionConfig(regionTokenRes.data);
+            const session = useSessionStore.getState().session;
+            if (session?.token && session?.user?.ns_uid) {
+              const nsList = await nsListRequest();
+              const namespaces = nsList?.data?.namespaces || [];
+              const existNamespace = namespaces.find((x) => x.uid === lastWorkSpaceId);
+              if (existNamespace && existNamespace.uid !== session.user.ns_uid) {
+                await mutation.mutateAsync(existNamespace.uid);
+              }
+            }
+            await router.replace('/');
+            return;
+          } else {
+            throw new Error();
+          }
+        } catch (error) {
+          console.error(error);
+          setToken('');
+          await router.replace('/signin');
+          return;
+        }
+      })();
+    }
   }, [router]);
   return (
     <Flex w={'full'} h={'full'} justify={'center'} align={'center'}>
