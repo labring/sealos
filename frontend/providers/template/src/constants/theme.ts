@@ -7,11 +7,47 @@ import {
 } from '@chakra-ui/react';
 import { theme as sealosTheme } from '@sealos/ui';
 // @ts-ignore
-import { selectAnatomy, switchAnatomy } from '@chakra-ui/anatomy';
+import { modalAnatomy, selectAnatomy, switchAnatomy } from '@chakra-ui/anatomy';
 const { definePartsStyle: selectPart, defineMultiStyleConfig: selectMultiStyle } =
   createMultiStyleConfigHelpers(selectAnatomy.keys);
 const { definePartsStyle: switchPart, defineMultiStyleConfig: switchMultiStyle } =
   createMultiStyleConfigHelpers(switchAnatomy.keys);
+
+const ModalHelper = createMultiStyleConfigHelpers(modalAnatomy.keys);
+
+export const Modal = ModalHelper.defineMultiStyleConfig({
+  baseStyle: {
+    header: {
+      bg: '#fff',
+      borderTopRadius: '16px',
+      fontSize: '16px',
+      borderBottom: 'none',
+      color: 'grayModern.900',
+      fontWeight: '500',
+      py: '11.5px',
+      lineHeight: '24px'
+    },
+    closeButton: {
+      fill: '#111824',
+      svg: {
+        width: '12px',
+        height: '12px'
+      }
+    },
+    dialog: {
+      borderRadius: '16px'
+    },
+    body: {
+      px: '36px',
+      py: '24px'
+    },
+    footer: {
+      px: '36px',
+      pb: '24px',
+      pt: '0px'
+    }
+  }
+});
 
 const Button = defineStyleConfig({
   baseStyle: {

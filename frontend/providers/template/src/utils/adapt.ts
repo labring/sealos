@@ -51,7 +51,10 @@ export function adaptInstanceListItem(item: TemplateInstanceType): InstanceListI
     title: item.spec?.title,
     url: item.spec?.url,
     yamlCR: item,
-    displayName: item.metadata?.labels?.[templateDisplayNameKey]
+    // Compatible with old versions
+    displayName:
+      item.metadata?.annotations?.[templateDisplayNameKey] ??
+      item.metadata?.labels?.[templateDisplayNameKey]
   };
 }
 
