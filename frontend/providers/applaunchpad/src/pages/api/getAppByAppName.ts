@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
       .filter((item) => item)
       .flat();
+    console.log('responseData', responseData);
 
     const data = adaptAppDetail(responseData as DeployKindsType[], getServerEnv(global.AppConfig));
 

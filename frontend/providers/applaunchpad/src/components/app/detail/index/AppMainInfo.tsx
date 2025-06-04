@@ -209,7 +209,7 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
                               _hover={{ textDecoration: 'underline' }}
                               onClick={() => copyData(network.inline)}
                             >
-                              {network.inline}
+                              {network.inline.replace('.svc.cluster.local', '')}
                             </Box>
                           </MyTooltip>
                         </Flex>

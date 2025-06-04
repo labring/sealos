@@ -690,6 +690,9 @@ importers:
       immer:
         specifier: ^9.0.21
         version: 9.0.21
+      js-base64:
+        specifier: ^3.7.7
+        version: 3.7.7
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
@@ -18334,6 +18337,10 @@ packages:
 
   /jquery@3.7.1:
     resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
+    dev: false
+
+  /js-base64@3.7.7:
+    resolution: {integrity: sha512-7rCnleh0z2CkXhH67J8K1Ytz0b2Y+yxTPL+/KOJoa20hfnVQ/3/T6W/KflYI4bRHRagNeXeU2bkNGI3v1oS/lw==}
     dev: false
 
   /js-cookie@2.2.1:
