@@ -438,8 +438,8 @@ func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
 		return "", fmt.Errorf("empty query opts")
 	}
 	if ops.Owner != "" {
-		id, err = c.getUserIDByOwner(ops.Owner)
-		if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
+		id, err = c.getUserIDByOwner(ops.Owner, !ops.WithOutCache)
+		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
 		}
 		return id, err
@@ -481,6 +481,15 @@ func (c *Cockroach) getUserUIDByOwnerWithCache(owner string) (uuid.UUID, error) 
 	if v, ok := c.ownerUsrUIDMap.Load(owner); ok {
 		return v.(uuid.UUID), nil
 	}
+	userUID, err := c.getUserUIDByOwner(owner)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	c.ownerUsrUIDMap.Store(owner, userUID)
+	return userUID, nil
+}
+
+func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
 	var user struct {
 		UID uuid.UUID `gorm:"column:userUid;type:uuid"`
 	}
@@ -491,15 +500,24 @@ func (c *Cockroach) getUserUIDByOwnerWithCache(owner string) (uuid.UUID, error) 
 		}
 		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
 	}
-	c.ownerUsrUIDMap.Store(owner, user.UID)
 	return user.UID, nil
 }
 
-func (c *Cockroach) getUserIDByOwner(owner string) (string, error) {
-	if v, ok := c.ownerUsrIDMap.Load(owner); ok {
-		return v.(string), nil
+func (c *Cockroach) getUserIDByOwner(owner string, withCache bool) (string, error) {
+	if withCache {
+		if v, ok := c.ownerUsrIDMap.Load(owner); ok {
+			return v.(string), nil
+		}
 	}
-	userUID, err := c.getUserUIDByOwnerWithCache(owner)
+	var (
+		userUID uuid.UUID
+		err     error
+	)
+	if withCache {
+		userUID, err = c.getUserUIDByOwnerWithCache(owner)
+	} else {
+		userUID, err = c.getUserUIDByOwner(owner)
+	}
 	if err != nil {
 		return "", err
 	}
