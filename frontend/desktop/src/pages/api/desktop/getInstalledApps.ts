@@ -24,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
     const realKc = switchKubeconfigNamespace(_kc, payload.workspaceId);
     const kc = K8sApi(realKc);
+
     const getMeta = (namespace = 'app-system') => ({
       group: 'app.sealos.io',
       version: 'v1',

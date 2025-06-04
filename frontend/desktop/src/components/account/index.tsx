@@ -39,8 +39,9 @@ import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { getAmount } from '@/api/auth';
 import Decimal from 'decimal.js';
-import { CurrencySymbol } from '@sealos/ui';
+import { CopyIcon, CurrencySymbol } from '@sealos/ui';
 import { useGuideModalStore } from '@/stores/guideModal';
+import { formatMoney } from '@/utils/format';
 
 const baseItemStyle = {
   minW: '36px',
@@ -69,6 +70,7 @@ export default function Account() {
   const { openGuideModal, setInitGuide, initGuide } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
+  const [showNsId, setShowNsId] = useState(false);
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -178,7 +180,7 @@ export default function Account() {
               {t('common:balance')}
               <Divider orientation="vertical" />
               <CurrencySymbol />
-              {balance}
+              {formatMoney(balance).toFixed(2)}
             </Center>
           )}
 
@@ -278,9 +280,25 @@ export default function Account() {
                 <Text color={'primary'} fontSize="16px" fontWeight="500" mb="4px">
                   {user?.name}
                 </Text>
-                <Text color={'muted-foreground'} fontSize="14px" lineHeight={'14px'}>
-                  ID: {user?.userId}
-                </Text>
+                <Flex alignItems={'center'} gap={'4px'}>
+                  <Text
+                    color={'muted-foreground'}
+                    fontSize="14px"
+                    lineHeight={'14px'}
+                    cursor="pointer"
+                    onClick={() => setShowNsId((s) => !s)}
+                  >
+                    {showNsId ? `NS: ${user?.nsid}` : `ID: ${user?.userId}`}
+                  </Text>
+                  <Copy
+                    cursor={'pointer'}
+                    onClick={() => {
+                      if (user?.userId && user.nsid) copyData(showNsId ? user?.nsid : user?.userId);
+                    }}
+                    size={12}
+                    color={'#71717A'}
+                  />
+                </Flex>
               </Box>
               <Divider bg={'#E4E4E7'} />
               <Box p={'8px'}>
