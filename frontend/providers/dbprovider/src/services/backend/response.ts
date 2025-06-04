@@ -17,6 +17,9 @@ export const jsonRes = <T = any>(res: NextApiResponse, options: Partial<ApiRespo
 };
 
 export const handleK8sError = (err: any): Partial<ApiResponse> => {
+  if (!!err?.body) {
+    err = err.body;
+  }
   if (err?.kind === 'Status' && err?.apiVersion === 'v1' && err?.status) {
     const k8sApiErr = err as V1Status;
     if (k8sApiErr.code === 403) {
@@ -24,6 +27,12 @@ export const handleK8sError = (err: any): Partial<ApiResponse> => {
         return {
           code: ResponseCode.BALANCE_NOT_ENOUGH,
           message: ResponseMessages[ResponseCode.BALANCE_NOT_ENOUGH]
+        };
+      }
+      if (k8sApiErr?.reason === 'Forbidden') {
+        return {
+          code: ResponseCode.FORBIDDEN,
+          message: k8sApiErr.message
         };
       }
       return {

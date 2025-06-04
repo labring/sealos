@@ -135,6 +135,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: 'success create db'
     });
   } catch (err: any) {
+    console.log('error create db', err);
     jsonRes(res, handleK8sError(err));
   }
 }
