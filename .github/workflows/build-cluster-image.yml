@@ -1,0 +1,77 @@
+
+name: Build general cluster image
+
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+      module_path:
+        required: true
+        type: string
+      workdir:
+        type: string
+        default: "controllers"
+      sealos_artifact:
+        type: string
+        default: "sealos"
+      cur_cluster_repo:
+        type: string
+        required: true
+      orig_docker_repo:
+        type: string
+        required: true
+      cur_docker_repo:
+        type: string
+        required: true
+      tag_name:
+        type: string
+        required: true
+jobs:
+  build-cluster-image:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download sealos
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.sealos_artifact }}
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u "${{ github.repository_owner }}" -p "${{ secrets.GITHUB_TOKEN }}" --debug ghcr.io
+      - name: Build image for ${{ inputs.cur_cluster_repo }}
+        working-directory: ${{ inputs.workdir }}/${{ inputs.module_path }}/deploy
+        env:
+          OLD_DOCKER_IMAGE: "${{ inputs.orig_docker_repo }}:latest"
+          NEW_DOCKER_IMAGE: "${{ inputs.cur_docker_repo }}:${{ inputs.tag_name }}"
+          CLUSTER_IMAGE: "${{ inputs.cur_cluster_repo }}:${{ inputs.tag_name }}"
+          LATEST_CLUSTER_IMAGE: "${{ inputs.cur_cluster_repo }}:latest"
+        run: |
+          sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+          sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+          # delete old registry cache
+          sudo rm -rf registry
+          sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
+        env:
+          OWNER: ${{ github.repository_owner }}
+          CLUSTER_IMAGE: "${{ inputs.cur_cluster_repo }}:${{ inputs.tag_name }}"
+          LATEST_CLUSTER_IMAGE: "${{ inputs.cur_cluster_repo }}:latest"
+        run: |
+          sudo sealos images
+          bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
+          bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"

@@ -1,0 +1,35 @@
+license:
+- 'frontend/providers/license/**'
+
+cronjob:
+- 'frontend/providers/cronjob/**'
+
+template:
+- 'frontend/providers/template/**'
+
+adminer:
+- 'frontend/providers/adminer/**'
+
+applaunchpad:
+- 'frontend/providers/applaunchpad/**'
+
+terminal:
+- 'frontend/providers/terminal/**'
+
+dbprovider:
+- 'frontend/providers/dbprovider/**'
+
+costcenter:
+- 'frontend/providers/costcenter/**'
+
+objectstorage:
+- 'frontend/providers/objectstorage/**'
+
+kubepanel:
+- 'frontend/providers/kubepanel/**'
+
+workorder:
+- 'frontend/providers/workorder/**'
+
+devbox:
+- 'frontend/providers/devbox/**'

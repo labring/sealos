@@ -1,0 +1,26 @@
+user:
+- 'controllers/user/**'
+
+account:
+- 'controllers/account/**'
+
+app:
+- 'controllers/app/**'
+
+devbox:
+- 'controllers/devbox/**'
+
+license:
+- 'controllers/license/**'
+
+node:
+- 'controllers/node/**'
+
+objectstorage:
+- 'controllers/objectstorage/**'
+
+resources:
+- 'controllers/resources/**'
+
+terminal:
+- 'controllers/terminal/**'
