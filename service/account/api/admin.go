@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -175,4 +176,53 @@ func authenticateAdminRequest(c *gin.Context) error {
 		return fmt.Errorf("user is not admin")
 	}
 	return nil
+}
+
+func AdminSuspendUserTraffic(c *gin.Context) {
+	adminUserTrafficOperator(c, SuspendNetworkNamespaceAnnoStatus)
+}
+
+func AdminResumeUserTraffic(c *gin.Context) {
+	adminUserTrafficOperator(c, ResumeNetworkNamespaceAnnoStatus)
+}
+
+func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
+	err := authenticateAdminRequest(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{Error: fmt.Sprintf("authenticate error : %v", err)})
+		return
+	}
+	userUIDStr, exist := c.GetQuery("userUID")
+	if !exist || userUIDStr == "" {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: "empty userUID"})
+		return
+	}
+	userUID, err := uuid.Parse(userUIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{Error: fmt.Sprintf("invalid userUID format: %v", err)})
+		return
+	}
+	owner, err := dao.DBClient.GetUserCrName(types.UserQueryOpts{UID: userUID})
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to get user cr name: %v", err)})
+		return
+	}
+	if owner == "" {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+		return
+	}
+	namespaces, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), owner)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
+		return
+	}
+	if len(namespaces) == 0 {
+		c.JSON(http.StatusOK, gin.H{"success": true})
+		return
+	}
+	if err = updateNetworkNamespaceStatus(context.Background(), dao.K8sManager.GetClient(), networkStatus, namespaces); err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }

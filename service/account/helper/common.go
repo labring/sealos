@@ -41,6 +41,8 @@ const (
 	AdminGetUserRealNameInfo     = "/real-name-info"
 	AdminFlushSubQuota           = "/flush-sub-quota"
 	AdminFlushDebtResourceStatus = "/flush-debt-resource-status"
+	AdminSuspendUserTraffic      = "/suspend-user-traffic"
+	AdminResumeUserTraffic       = "/resume-user-traffic"
 )
 
 const (
