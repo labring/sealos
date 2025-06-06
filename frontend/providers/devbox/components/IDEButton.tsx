@@ -338,7 +338,7 @@ const IDEButton = ({
         <Center
           borderRadius={'12px'}
           zIndex={99}
-          border={'1px solid #2563EB'}
+          border={'2px solid #2563EB'}
           position={'absolute'}
           top={'-6px'}
           left={'-104px'}
