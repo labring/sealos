@@ -179,3 +179,8 @@ div {
 .emp {
   color: #f79009;
 }
+
+/* Disable the scrolling of parent element if it has an active element*/
+:not(body):has(> .driver-active-element) {
+  overflow: visible !important;
+}
