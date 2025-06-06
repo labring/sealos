@@ -16,6 +16,7 @@ export const AdvancedTable = ({ columns, data, itemClass = '' }: Props) => {
   return (
     <>
       <Grid
+        flexShrink={0}
         templateColumns={`repeat(${columns.length},1fr)`}
         overflowX={'auto'}
         borderRadius={'md'}

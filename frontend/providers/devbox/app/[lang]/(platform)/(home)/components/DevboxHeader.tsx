@@ -44,7 +44,7 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
   }, [guide2, router, t, isClientSide]);
 
   return (
-    <Flex h={'90px'} alignItems={'center'}>
+    <Flex h={'90px'} alignItems={'center'} flexShrink={0}>
       <Center
         mr={'16px'}
         width={'46px'}
