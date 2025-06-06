@@ -12,7 +12,7 @@ import {
   Button
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, CircleAlert, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { UserInfo } from '@/api/auth';
 import useSessionStore from '@/stores/session';
@@ -211,13 +211,14 @@ const GuideModal = () => {
         mb={'8px'}
         borderRadius="xl"
         border="1px solid"
-        borderColor={isActive ? 'blue.200' : 'gray.200'}
+        borderColor={isActive ? '#A1A1AA' : '#E4E4E7'}
         bg="white"
         transition="all 0.5s ease"
         onClick={onClick}
         height={isActive ? 'auto' : '56px'}
         overflow="hidden"
         position={'relative'}
+        boxShadow={isActive ? '0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)' : 'none'}
       >
         <Flex alignSelf={'start'}>
           <Center
@@ -273,21 +274,33 @@ const GuideModal = () => {
     );
   };
 
+  const handleCloseGuideModal = () => {
+    setInitGuide(false);
+    closeGuideModal();
+    startDriver(quitGuideDriverObj(t));
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={closeGuideModal} isCentered closeOnOverlayClick={false}>
       <ModalOverlay />
       <ModalContent minW={'900px'} h={'510px'} borderRadius={'20px'} background={'#FAFAFA'}>
-        <Flex
-          flexDirection="column"
-          bg={'#fff'}
-          w={'100%'}
-          h={'100%'}
-          borderRadius={'16px'}
-          px={'40px'}
-        >
+        <Flex flexDirection="column" bg={'#FAFAFA'} w={'100%'} h={'100%'} borderRadius={'16px'}>
           {selectedGuide !== null ? (
             <Box>
-              <Flex justify="space-between" align="center" mt={'32px'}>
+              <Flex
+                alignItems={'center'}
+                px={'40px'}
+                py={'20px'}
+                bg={'#F4F4F5'}
+                borderTopRadius={'16px'}
+                borderBottom={'1px solid #E4E4E7'}
+              >
+                <CircleAlert size={16} color="#18181B" />
+                <Text color={'#18181B'} fontWeight={500} fontSize={'16px'} ml={'12px'}>
+                  {t('v2:guide_info_text')}
+                </Text>
+              </Flex>
+              <Flex justify="space-between" align="center" mt={'32px'} px={'40px'}>
                 <Flex align="center" gap={4}>
                   <Icon
                     as={ArrowLeft}
@@ -335,7 +348,7 @@ const GuideModal = () => {
                 </Button>
               </Flex>
 
-              <Box maxH="330px" overflowY="auto" pt={'20px'} pr={2}>
+              <Box maxH="330px" overflowY="auto" pt={'20px'} pr={2} px={'40px'}>
                 {guideLinks[selectedGuide].steps.map((step, index) => (
                   <StepCard
                     key={index}
@@ -346,7 +359,7 @@ const GuideModal = () => {
                   />
                 ))}
               </Box>
-              <Center gap={2} mt={'12px'} mb={2}>
+              {/* <Center gap={2} mt={'12px'} mb={2}>
                 <Flex
                   w="40px"
                   h="40px"
@@ -387,11 +400,20 @@ const GuideModal = () => {
                 >
                   <ChevronRight size={18} color="#737373" />
                 </Flex>
-              </Center>
+              </Center> */}
             </Box>
           ) : (
-            <>
-              <Center mt={'40px'} flexDirection={'column'}>
+            <Box px={'40px'} position={'relative'}>
+              <Center
+                position={'absolute'}
+                top={'20px'}
+                right={'24px'}
+                cursor={'pointer'}
+                onClick={handleCloseGuideModal}
+              >
+                <X size={24} color="#18181B" />
+              </Center>
+              <Center mt={'56px'} flexDirection={'column'}>
                 <Text fontSize={'24px'} fontWeight={600} color={'#000'} lineHeight={'24px'}>
                   {guideModalInitGuide
                     ? t('v2:guide_title', { name: infoData.data?.nickname || '' })
@@ -408,7 +430,7 @@ const GuideModal = () => {
                 </Text>
               </Center>
 
-              <Grid templateColumns="repeat(2, 1fr)" gap={'16px'} mt={'40px'} flex={1}>
+              <Grid templateColumns="repeat(2, 1fr)" gap={'16px'} mt={'32px'} flex={1}>
                 {guideLinks.map((item, index) => (
                   <Flex
                     key={index}
@@ -463,23 +485,20 @@ const GuideModal = () => {
                   </Flex>
                 ))}
               </Grid>
-              <Divider my={'20px'} borderColor={'#E4E4E7'} />
+
               <Text
+                mt={'32px'}
                 cursor={'pointer'}
                 fontSize={'14px'}
                 fontWeight={'500'}
                 color={'#1C4EF5'}
                 mb={'20px'}
                 textAlign={'center'}
-                onClick={() => {
-                  setInitGuide(false);
-                  closeGuideModal();
-                  startDriver(quitGuideDriverObj(t));
-                }}
+                onClick={handleCloseGuideModal}
               >
                 {t('v2:step_title')}
               </Text>
-            </>
+            </Box>
           )}
         </Flex>
       </ModalContent>

@@ -7,6 +7,13 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 
 let currentDriver: any = null;
 
+export const destroyDriver = () => {
+  if (currentDriver) {
+    currentDriver?.destroy();
+    currentDriver = null;
+  }
+};
+
 export function startDriver(config: Config, openDesktopApp?: any) {
   if (currentDriver) {
     currentDriver.destroy();

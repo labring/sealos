@@ -175,6 +175,7 @@ const Form = ({
         height={'100%'}
         position={'relative'}
         overflowY={'scroll'}
+        pb={'50px'}
       >
         {/* base info */}
         <BasicConfiguration

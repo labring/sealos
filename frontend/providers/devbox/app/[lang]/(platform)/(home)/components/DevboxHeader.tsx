@@ -1,6 +1,6 @@
 import MyIcon from '@/components/Icon';
 import { TemplateState } from '@/constants/template';
-import { startDriver, startGuide2 } from '@/hooks/driver';
+import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname, useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
@@ -31,7 +31,7 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
     }
   }, []);
 
-  const { guide2 } = useGuideStore();
+  const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   useEffect(() => {
     if (!guide2 && isClientSide) {
@@ -103,7 +103,11 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
         h={'40px'}
         variant={'solid'}
         leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#ffffff'} />}
-        onClick={() => router.push('/devbox/create')}
+        onClick={() => {
+          setGuide2(true);
+          destroyDriver();
+          router.push('/devbox/create');
+        }}
       >
         {t('create_devbox')}
       </Button>

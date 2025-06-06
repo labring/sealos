@@ -44,6 +44,7 @@
   "get_started_from_recommended": "Get Started from recommended scenarios below",
   "got_it": "got it",
   "guide": "Guide",
+  "guide_info_text": "Try a guided demo - no charges, no real deployments. Click “Show Me” to begin.",
   "guide_steps": "{{count}} steps",
   "guide_title": "Hi, {{name}}. Welcome to your free plan.",
   "includes_credits": "Includes ${{credits}} credits",

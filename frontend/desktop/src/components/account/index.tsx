@@ -170,17 +170,16 @@ export default function Account() {
               h={'36px'}
               px={'12px'}
               py={'8px'}
-              gap={'12px'}
               color="#2563EB"
               fontSize={'14px'}
               fontWeight={'500'}
               cursor={'pointer'}
               onClick={openCostCenterApp}
             >
-              {t('common:balance')}
-              <Divider orientation="vertical" />
+              <Text>{t('common:balance')}</Text>
+              <Divider orientation="vertical" mx={'12px'} />
               <CurrencySymbol />
-              {formatMoney(balance).toFixed(2)}
+              <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
             </Center>
           )}
 

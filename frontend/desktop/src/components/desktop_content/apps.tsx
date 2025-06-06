@@ -308,6 +308,8 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
+  console.log(renderApps, 'renderApps');
+
   const gradientIconStyle = {
     '.gradient-icon': {
       svg: {
@@ -423,7 +425,7 @@ export default function Apps() {
               onDragStart={(e) => handleDragStart(e, item, 'desktop')}
               onDragEnd={handleDragEnd}
             >
-              <Box
+              <Center
                 w="78px"
                 h="78px"
                 borderRadius={'24px'}
@@ -434,14 +436,14 @@ export default function Apps() {
                 _hover={{ transform: 'scale(1.05)' }}
               >
                 <Image
-                  w={'100%'}
-                  h={'100%'}
+                  w={item.key.startsWith('user-') ? '60px' : '100%'}
+                  h={item.key.startsWith('user-') ? '60px' : '100%'}
                   src={item?.icon}
                   fallbackSrc={logo}
                   draggable={false}
                   alt="app logo"
                 />
-              </Box>
+              </Center>
               <Text
                 mt="12px"
                 color={'primary'}
@@ -578,8 +580,9 @@ export default function Apps() {
                   onDragEnd={handleDragEnd}
                   onClick={(e) => handleDoubleClick(e, app)}
                   cursor="pointer"
+                  className={app.key}
                 >
-                  <Box
+                  <Center
                     w="78px"
                     h="78px"
                     borderRadius="24px"
@@ -590,13 +593,13 @@ export default function Apps() {
                     _hover={{ transform: 'scale(1.05)' }}
                   >
                     <Image
-                      width="100%"
-                      height="100%"
+                      w={app.key.startsWith('user-') ? '60px' : '78px'}
+                      h={app.key.startsWith('user-') ? '60px' : '78px'}
                       src={app?.icon}
                       fallbackSrc={logo}
                       alt="app logo"
                     />
-                  </Box>
+                  </Center>
                   <Text
                     mt="12px"
                     color="primary"
