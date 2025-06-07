@@ -101,8 +101,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     };
 
     const adminkc = getLocalAdminKubeConfig();
-    console.log('kubeconfig');
-    console.log(adminkc);
+    // console.log('kubeconfig');
+    // console.log(adminkc);
 
     const result: MonitorDataResult = await monitorFetch(
       {

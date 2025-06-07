@@ -1,4 +1,4 @@
-import { exportApp, exportApps, getAppByName, postDeployApp, putApp } from '@/api/app';
+import { exportApp, exportApps, getAppByName, getConfigMapName, postDeployApp, putApp } from '@/api/app';
 import { updateDesktopGuide } from '@/api/platform';
 import { noGpuSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
@@ -21,7 +21,7 @@ import {
   json2Service
 } from '@/utils/deployYaml2Json';
 import { serviceSideProps } from '@/utils/i18n';
-import { getErrText, patchYamlList } from '@/utils/tools';
+import { addConfigMapToYamlList, getErrText, patchYamlList } from '@/utils/tools';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -169,11 +169,14 @@ const EditApp = ({
     async (yamlList: YamlItemType[]) => {
       setIsLoading(true);
       try {
+        let data = await getConfigMapName();
+        let configMapName = data?.configmapName || '';
+        let mountPath = data?.mountPath || '';
         const yamls = yamlList.map((item) => item.value);
         if (appName) {
           const patch = patchYamlList({
             formOldYamlList: formOldYamls.current.map((item) => item.value),
-            newYamlList: yamls,
+            newYamlList: addConfigMapToYamlList(yamls, configMapName, mountPath),
             crYamlList: crOldYamls.current
           });
           console.log('patch:', currentNamespace, appName, patch);

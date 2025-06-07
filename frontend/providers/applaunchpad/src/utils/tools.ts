@@ -221,6 +221,60 @@ export function downLoadBold(content: BlobPart, type: string, fileName: string) 
   link.click();
 }
 
+export const addConfigMapToYamlList = (yamlList: string[], configMapName: string, mountPath: string) => {
+  
+  let new_yamlList: any[] = [];
+
+  if (mountPath && configMapName) {
+
+    yamlList.forEach((yamlstr: any) => {
+      const yamlobj: any = yaml.load(yamlstr);
+      if (yamlobj.kind === 'Deployment' || yamlobj.kind === 'StatefulSet') {
+        // Ensure volumes array exists
+        if (!yamlobj.spec.template.spec.volumes) {
+          yamlobj.spec.template.spec.volumes = [];
+        }
+
+        // check if the volume already exists
+        if (yamlobj.spec.template.spec.volumes.find((v: any) => v.name === configMapName)) {
+        } else {
+    
+          // Add the ConfigMap volume
+          yamlobj.spec.template.spec.volumes.push({
+            name: configMapName,
+            configMap: {
+              name: configMapName,
+            },
+          });
+        }
+    
+        // Ensure containers array exists
+        if (yamlobj.spec.template.spec.containers) {
+          yamlobj.spec.template.spec.containers.forEach((container: any) => {
+            // Ensure volumeMounts array exists
+            if (!container.volumeMounts) {
+              container.volumeMounts = [];
+            }
+
+            // check if the volumeMount already exists
+            if (container.volumeMounts.find((vm: any) => vm.name === configMapName)) {
+            } else {
+              
+              // Add the volumeMount
+              container.volumeMounts.push({
+                name: configMapName,
+                mountPath: mountPath,
+              });
+            }
+          });
+        }
+      }
+      new_yamlList.push(yaml.dump(yamlobj));
+    });
+  }
+  return new_yamlList;
+}
+
 /**
  * patch yamlList and get action
  */

@@ -68,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
   }
 
-  console.log(new_yamlList);
+  // console.log(new_yamlList);
 
   if (!new_yamlList?.length) {
     jsonRes(res, {

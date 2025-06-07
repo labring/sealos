@@ -16,6 +16,7 @@ import { UploadAppPayload } from '@/pages/api/uploadApp';
 import { ImageHubItem } from '@/pages/api/imagehub/get';
 
 export const getNamespaces = () => GET('/api/getNamespaces');
+export const getConfigMapName = () => GET('/api/getConfigMapName');
 
 export const getResourceQuotas = () => GET('/api/getResourceQuotas');
 

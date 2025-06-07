@@ -12,11 +12,11 @@ export const getUserKubeConfig = () => {
 
 export const getLocalAdminKubeConfig = () => {
   const config: string | undefined = process.env.ADMINTOKEN;
-  console.log('base64 config:', config);
+  // console.log('base64 config:', config);
   if (!config) {
     throw new Error('KUBECONFIG environment variable is not defined');
   }
-  console.log('config:', Base64.decode(config));
+  // console.log('config:', Base64.decode(config));
   return Base64.decode(config);
 };
 
