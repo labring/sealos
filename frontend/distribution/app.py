@@ -127,6 +127,13 @@ def export_app_helper(yaml_content, images, appname, namespace):
         os.system('rm -rf ' + workdir)
     os.makedirs(workdir)
 
+    new_yaml_content = []
+    for single_yaml in yaml.safe_load_all(yaml_content):
+        if single_yaml.get('kind') == 'Deployment' or single_yaml.get('kind') == 'StatefulSet':
+            # 去除指定节点的信息
+            if 'nodeName' in single_yaml.get('spec', {}).get('template', {}).get('spec', {}):
+                del single_yaml['spec']['template']['spec']['nodeName']
+
     # 保存yaml文件至本地
     print('write yaml file to:', os.path.join(workdir, 'app.yaml'), flush=True)
     with open(os.path.join(workdir, 'app.yaml'), 'w') as file:

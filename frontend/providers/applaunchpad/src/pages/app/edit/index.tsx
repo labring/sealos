@@ -174,9 +174,10 @@ const EditApp = ({
         let mountPath = data?.mountPath || '';
         const yamls = yamlList.map((item) => item.value);
         if (appName) {
+          let newYamlList = addConfigMapToYamlList(yamls, configMapName, mountPath);
           const patch = patchYamlList({
             formOldYamlList: formOldYamls.current.map((item) => item.value),
-            newYamlList: addConfigMapToYamlList(yamls, configMapName, mountPath),
+            newYamlList: newYamlList,
             crYamlList: crOldYamls.current
           });
           console.log('patch:', currentNamespace, appName, patch);

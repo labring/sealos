@@ -349,11 +349,23 @@ export const patchYamlList = ({
             // @ts-ignore
             crOldYamlJson.spec.template.spec.volumes = oldFormJson.spec.template.spec.volumes;
             // @ts-ignore
-            crOldYamlJson.spec.template.spec.containers[0].volumeMounts =
+            let containers = crOldYamlJson.spec.template.spec.containers;
+            for (let ii = 0; ii < containers.length; ii++) {
               // @ts-ignore
-              oldFormJson.spec.template.spec.containers[0].volumeMounts;
-            // @ts-ignore
-            crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
+              for (const container of oldFormJson.spec.template.spec.containers) {
+                if (
+                  containers[ii].name === container.name
+                ) {
+                  // @ts-ignore
+                  containers[ii].volumeMounts =
+                    container.volumeMounts;
+                }
+              }
+            }
+            if ("spec" in oldFormJson && oldFormJson.spec && "volumeClaimTemplates" in oldFormJson.spec &&
+              "spec" in crOldYamlJson && crOldYamlJson.spec && "volumeClaimTemplates" in crOldYamlJson.spec) {
+                crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
+            }
           }
 
           /* generate new json */
@@ -398,11 +410,19 @@ export const patchYamlList = ({
         actionsJson.kind === YamlKindEnum.StatefulSet
       ) {
         // @ts-ignore
-        const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
-        if (ports.length > 1 && !ports[0]?.name) {
-          // @ts-ignore
-          actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        let containers = actionsJson.spec.template.spec.containers;
+        for (let ii = 0; ii < containers.length; ii++) {
+          const ports = containers[ii].ports || [];
+          if (ports.length > 1 && !ports[0]?.name) {
+            // @ts-ignore
+            containers[ii].ports[0].name = 'adaptport';
+          }
         }
+        // const ports = actionsJson?.spec.template.spec.containers[0].ports || [];
+        // if (ports.length > 1 && !ports[0]?.name) {
+        //   // @ts-ignore
+        //   actionsJson.spec.template.spec.containers[0].ports[0].name = 'adaptport';
+        // }
       }
       if (actionsJson.kind === YamlKindEnum.Service) {
         // @ts-ignore
