@@ -84,9 +84,15 @@ export const generateAccessToken = (props: AccessTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '7d' });
 export const generateAppToken = (props: AccessTokenPayload) =>
   sign(props, internalJwtSecret(), { expiresIn: '7d' });
-export const generateAuthenticationToken = (props: AuthenticationTokenPayload) =>
-  sign(props, grobalJwtSecret(), { expiresIn: '60000' });
-
+export const generateAuthenticationToken = (
+  props: AuthenticationTokenPayload,
+  expiresIn?: string
+) => {
+  if (expiresIn) {
+    return sign(props, grobalJwtSecret(), { expiresIn: expiresIn });
+  }
+  return sign(props, grobalJwtSecret(), { expiresIn: '60000' });
+};
 export const generateOnceToken = (props: OnceTokenPayload) =>
   sign(props, regionalJwtSecret(), { expiresIn: '1800000' });
 
