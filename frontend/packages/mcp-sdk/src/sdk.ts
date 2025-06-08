@@ -13,7 +13,7 @@ export function McpHandler(path: string, url: string) {
     (server) => {
       tools.forEach((tool, id) => {
         const zodProperties = convertToZodProperties(tool.inputSchema);
-        server.tool(tool.name, tool.description, zodProperties, async (params) => {
+        server.tool(tool.name, tool.description, zodProperties, async (params: any) => {
           const context = requestContextStorage.getStore();
           // @ts-ignore
           const headers = context ? context.headers : {};
