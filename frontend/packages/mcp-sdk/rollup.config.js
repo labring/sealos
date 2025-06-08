@@ -50,7 +50,6 @@ export default [
     }
   ]),
 
-  // 主模块类型定义
   createDtsConfig('src/index.ts', {
     file: 'dist/index.d.ts',
     format: 'es'
