@@ -1,6 +1,6 @@
 {
   "name": "sealos-mcp-sdk",
-  "version": "0.1.14",
+  "version": "0.1.1",
   "description": "sealos mcp sdk for OpenAPI integration with MCP",
   "type": "module",
   "scripts": {
@@ -33,7 +33,6 @@
   "license": "ISC",
   "devDependencies": {
     "@rollup/plugin-typescript": "^11.1.4",
-    "@types/async_hooks": "^3.4.5",
     "@types/node": "^20.7.1",
     "rollup": "2.79.1",
     "rollup-plugin-copy": "^3.5.0",
@@ -42,7 +41,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@vercel/mcp-adapter": "^1.0.0",
+    "@vercel/mcp-adapter": "^0.9.1",
     "axios": "^1.5.1",
     "https": "^1.0.0",
     "openapi-types": "^12.1.3",
