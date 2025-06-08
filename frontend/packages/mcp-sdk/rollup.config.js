@@ -23,7 +23,11 @@ const createConfig = (input, output, plugins = []) => ({
     nodeResolve(),
     commonjs(),
     typescript({
-      tsconfig: './tsconfig.json'
+      tsconfig: './tsconfig.json',
+      compilerOptions: {
+        declaration: false,
+        declarationMap: false
+      }
     }),
     ...plugins
   ]
