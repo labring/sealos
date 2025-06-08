@@ -49,7 +49,10 @@ export function McpHandler(path: string, url: string) {
 
   return async function (request: Request): Promise<Response> {
     // Extract request headers
-    const headersObj = Object.fromEntries(request.headers.entries());
+    const headersObj: Record<string, string> = {};
+    request.headers.forEach((value, key) => {
+      headersObj[key] = value;
+    });
     console.log('Received request, headers:', headersObj);
 
     // Create request context
