@@ -21,7 +21,10 @@ export class OpenAPIToolsParser {
     const tools = new Map<string, Tool>();
     let spec: OpenAPIV3.Document;
     try {
-      const resolvedPath = path.resolve(process.cwd(), config.openApiSpec);
+      const resolvedPath =
+        typeof config.openApiSpec === 'string'
+          ? path.resolve(process.cwd(), config.openApiSpec)
+          : process.cwd();
       const content = fs.readFileSync(resolvedPath, 'utf-8');
       spec = JSON.parse(content);
     } catch (error) {
