@@ -1,6 +1,6 @@
 import { createMcpHandler } from '@vercel/mcp-adapter';
-import { OpenAPIToolsParser } from './openapi.ts';
-import { executeHttpRequest, convertToZodProperties } from './httprequest.ts';
+import { OpenAPIToolsParser } from './openapi';
+import { executeHttpRequest, convertToZodProperties } from './httprequest';
 
 import { AsyncLocalStorage } from 'async_hooks';
 
@@ -15,6 +15,7 @@ export function McpHandler(path: string, url: string) {
         const zodProperties = convertToZodProperties(tool.inputSchema);
         server.tool(tool.name, tool.description, zodProperties, async (params) => {
           const context = requestContextStorage.getStore();
+          // @ts-ignore
           const headers = context ? context.headers : {};
           console.log(`Request headers when executing tool ${tool.name}:`, headers);
           const createUserResult = await executeHttpRequest(id, tool.name, params, url, headers);
