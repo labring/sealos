@@ -26,7 +26,8 @@ const createConfig = (input, output, plugins = []) => ({
       tsconfig: './tsconfig.json',
       compilerOptions: {
         declaration: false,
-        declarationMap: false
+        declarationMap: false,
+        noImplicitAny: false
       }
     }),
     ...plugins
