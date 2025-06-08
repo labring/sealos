@@ -17,7 +17,7 @@ export interface Tool {
 export class OpenAPIToolsParser {
   public static loadAndParseOpenAPISpec(config: {
     openApiSpec: string | OpenAPIV3.Document;
-  }): Promise<Map<string, Tool>> {
+  }): Map<string, Tool> {
     const tools = new Map<string, Tool>();
     let spec: OpenAPIV3.Document;
     try {
