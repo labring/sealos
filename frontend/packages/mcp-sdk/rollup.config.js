@@ -28,7 +28,8 @@ const createConfig = (input, output, plugins = []) => ({
         declaration: false,
         declarationMap: false,
         noImplicitAny: false
-      }
+      },
+      noEmitOnError: false
     }),
     ...plugins
   ]
