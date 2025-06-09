@@ -62,6 +62,7 @@
   "Week": "Week",
   "aborted_connections": "Dropped Connections",
   "active_connections": "Active Connections",
+  "add_credit": "Add Credit",
   "advanced_configuration": "Advanced Settings",
   "age": "Runtime",
   "anticipated_price": "Projected Cost",
@@ -71,6 +72,7 @@
     "resource_quota": "Resource Limits",
     "storage_exceeds_quota": "Storage requested exceeds quota. Contact admin."
   },
+  "app_already_exists": "App name already exists. Please use a different name or check your app list.",
   "app_store": "App Store",
   "application_source": "Source",
   "are_you_sure_to_perform_database_migration": "Confirm database migration?",
@@ -234,8 +236,6 @@
     "search_content": "Search Log Content",
     "slow_query": "Slow Log"
   },
-  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
-  "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "event_analyze": "Intelligent Analytics",
   "event_analyze_error": "Intelligent analytics error",
   "external_address": "Public Domain",
@@ -247,6 +247,7 @@
   },
   "file_upload_failed": "File upload failed",
   "first_charge": "First deposit benefits",
+  "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
   "gift": "gift",
   "go_to_recharge": "Go to recharge",
   "guide_deploy_button": "Complete creation and get it now",
@@ -394,6 +395,7 @@
   "update_time": "Update Time",
   "upload_dump_file": "Upload File",
   "use_docs": "Documentation",
+  "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "version": "Version",
   "view_resources_distribution": "View resource distribution details",
   "wipeout_backup_with_db": "Discard Backups",
@@ -402,6 +404,5 @@
   "within_1_hour": "Within 1 hour",
   "within_5_minutes": "Within 5 minutes",
   "yaml_file": "YAML",
-  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!",
-  "app_already_exists": "App name already exists. Please use a different name or check your app list."
+  "you_have_successfully_deployed_database": "You have successfully deployed and created a database!"
 }

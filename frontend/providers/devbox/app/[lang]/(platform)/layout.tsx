@@ -42,6 +42,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const [init, setInit] = useState(false);
   // init session
   useEffect(() => {
+    const response = createSealosApp();
     (async () => {
       try {
         const newSession = JSON.stringify(await sealosApp.getSession());
@@ -68,7 +69,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
         }
       }
     })();
-    return createSealosApp();
+    return response;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

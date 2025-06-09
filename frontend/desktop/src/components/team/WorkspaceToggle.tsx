@@ -110,8 +110,8 @@ export default function WorkspaceToggle() {
               right={0}
               left={0}
               cursor={'initial'}
-              maxH={'300px'}
-              overflow={'auto'}
+              // maxH={'300px'}
+              // overflow={'auto'}
               borderRadius={'12px'}
               py={'8px'}
               border={'0.5px solid #E4E4E7'}
@@ -127,7 +127,7 @@ export default function WorkspaceToggle() {
               <Text px={'12px'} py={'6px'} color={'#71717A'} fontSize={'12px'} fontWeight={'500'}>
                 {t('common:workspace')}
               </Text>
-              <VStack gap={0} alignItems={'stretch'}>
+              <VStack gap={0} alignItems={'stretch'} maxH={'260px'} overflow={'scroll'}>
                 {namespaces.map((ns) => {
                   return (
                     <NsListItem
@@ -148,24 +148,24 @@ export default function WorkspaceToggle() {
                     />
                   );
                 })}
-                <CreateTeam>
-                  <Flex
-                    alignItems={'center'}
-                    gap={'8px'}
-                    px={'16px'}
-                    py={'6px'}
-                    height={'40px'}
-                    cursor={'pointer'}
-                  >
-                    <Plus size={20} color="#71717A" />
-                    <Text fontSize="14px" fontWeight="400" color="#18181B">
-                      {t('common:create_workspace')}
-                    </Text>
-                  </Flex>
-                </CreateTeam>
-                <Divider my={'4px'} borderColor={'#F4F4F5'} />
-                <TeamCenter closeWorkspaceToggle={closeWorkspaceToggle} />
               </VStack>
+              <CreateTeam>
+                <Flex
+                  alignItems={'center'}
+                  gap={'8px'}
+                  px={'16px'}
+                  py={'6px'}
+                  height={'40px'}
+                  cursor={'pointer'}
+                >
+                  <Plus size={20} color="#71717A" />
+                  <Text fontSize="14px" fontWeight="400" color="#18181B">
+                    {t('common:create_workspace')}
+                  </Text>
+                </Flex>
+              </CreateTeam>
+              <Divider my={'4px'} borderColor={'#F4F4F5'} />
+              <TeamCenter closeWorkspaceToggle={closeWorkspaceToggle} />
             </Box>
           </Box>
         </Box>

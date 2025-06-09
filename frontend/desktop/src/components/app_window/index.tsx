@@ -116,6 +116,7 @@ export default function AppWindow(props: {
               alt={wnapp?.name}
               width={'20px'}
               height={'20px'}
+              borderRadius={'6px'}
             />
             <Box ml="8px" fontSize={'12px'} fontWeight={400}>
               {wnapp?.i18n?.[i18n?.language]?.name
