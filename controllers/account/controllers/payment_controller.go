@@ -295,7 +295,7 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 			return fmt.Errorf("user ID is empty")
 		}
 		payment.Spec.UserCR = payment.Spec.UserID
-		id, err := r.Account.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR})
+		id, err := r.Account.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: payment.Spec.UserCR, WithOutCache: true})
 		if err != nil {
 			return fmt.Errorf("get user ID failed: %w", err)
 		}

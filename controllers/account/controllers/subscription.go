@@ -194,8 +194,12 @@ type AdminFlushSubscriptionQuotaReq struct {
 
 // 延迟过高
 func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID, planID uuid.UUID, planName string) error {
-	for _, domain := range sp.allRegionDomain {
-		token, err := sp.jwtManager.GenerateToken(utils.JwtUser{
+	return sendFlushQuotaRequest(sp.allRegionDomain, sp.jwtManager, userUID, planID, planName)
+}
+
+func sendFlushQuotaRequest(allRegion []string, jwtManager *utils.JWTManager, userUID, planID uuid.UUID, planName string) error {
+	for _, domain := range allRegion {
+		token, err := jwtManager.GenerateToken(utils.JwtUser{
 			Requester: AdminUserName,
 		})
 		if err != nil {
@@ -238,7 +242,12 @@ func (sp *SubscriptionProcessor) sendFlushQuotaRequest(userUID, planID uuid.UUID
 					lastErr = nil
 					break
 				}
-				lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+				body, err := io.ReadAll(resp.Body)
+				if err != nil {
+					lastErr = fmt.Errorf("unexpected status code: %d, failed to read response body: %w", resp.StatusCode, err)
+				} else {
+					lastErr = fmt.Errorf("unexpected status code: %d, response body: %s", resp.StatusCode, string(body))
+				}
 			}
 
 			// 进行重试

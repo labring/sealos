@@ -24,8 +24,9 @@ type Subscription struct {
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusNormal SubscriptionStatus = "NORMAL"
-	SubscriptionStatusDebt   SubscriptionStatus = "DEBT"
+	SubscriptionStatusNormal   SubscriptionStatus = "NORMAL"
+	SubscriptionStatusDebt     SubscriptionStatus = "DEBT"
+	SubscriptionStatusLockUser SubscriptionStatus = "LOCK_USER"
 )
 
 // 订阅变更记录表

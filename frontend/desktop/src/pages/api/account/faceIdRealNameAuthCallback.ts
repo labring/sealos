@@ -1,4 +1,4 @@
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAuthenticationToken } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
@@ -39,6 +39,7 @@ type AdditionalInfo =
         };
       };
       userMaterials?: string[];
+      isRestrictedUser?: boolean;
     }
   | any;
 
@@ -53,14 +54,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const bizToken = req.query?.BizToken as string;
   const extraQuery = req.query?.Extra as string;
 
-  const regionToken = extraQuery?.split('regionToken=')[1];
-  if (!regionToken) {
+  const globalToken = extraQuery?.split('globalToken=')[1];
+  if (!globalToken) {
     return jsonRes(res, { code: 400, message: 'Token is required' });
   }
 
-  req.headers['authorization'] = regionToken;
+  req.headers['authorization'] = globalToken;
 
-  const payload = await verifyAccessToken(req.headers);
+  const payload = await verifyAuthenticationToken(req.headers);
   if (!payload) return jsonRes(res, { code: 401, message: 'Token is invaild' });
 
   if (!realNameOSS) {
@@ -203,8 +204,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    if (realnameInfo && (realnameInfo?.additionalInfo as AdditionalInfo)?.isRestrictedUser) {
+      await globalPrisma.userRealNameInfo.update({
+        where: { userUid: userUid },
+        data: {
+          isVerified: false,
+          idVerifyFailedTimes: { increment: 1 },
+          additionalInfo: additionalInfo
+        }
+      });
+
+      res.setHeader('Content-Type', 'text/html');
+      return res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Real Name Authentication</title>
+          <style>
+            body, html {
+              height: 100%;
+              margin: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+            }
+            h1 {
+              text-align: center;
+              color: #ff0000; /* Red color for error message */
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Restricted User Can't Real Name Authentication</h1>
+        </body>
+        </html>
+      `);
+    }
+
+    let duplicateRealNameUser = false;
+
     if (realnameInfo) {
-      realNameAuthReward = 0;
+      duplicateRealNameUser = true;
     }
 
     await globalPrisma.$transaction(async (globalPrisma) => {
@@ -241,6 +283,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           completedAt: new Date()
         }
       });
+
+      if (duplicateRealNameUser) {
+        return;
+      }
 
       const userAccount = await globalPrisma.account.findUniqueOrThrow({
         where: { userUid: userUid }

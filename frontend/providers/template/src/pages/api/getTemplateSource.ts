@@ -1,7 +1,6 @@
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
 import {
   getTemplateDataSource,
@@ -16,9 +15,17 @@ import path from 'path';
 import { replaceRawWithCDN } from './listTemplate';
 import { getTemplateEnvs } from '@/utils/tools';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { templateName } = req.query as { templateName: string };
+    const {
+      templateName,
+      locale = 'en',
+      includeReadme = 'true'
+    } = req.query as {
+      templateName: string;
+      locale: string;
+      includeReadme: string;
+    };
 
     let user_namespace = '';
 
@@ -29,11 +36,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       user_namespace = namespace;
     } catch (error) {}
 
-    const { code, message, dataSource, templateYaml, TemplateEnvs, appYaml } =
-      await GetTemplateByName({
-        namespace: user_namespace,
-        templateName: templateName
-      });
+    const {
+      code,
+      message,
+      dataSource,
+      templateYaml,
+      TemplateEnvs,
+      appYaml,
+      readmeContent,
+      readUrl
+    } = await GetTemplateByName({
+      namespace: user_namespace,
+      templateName: templateName,
+      locale,
+      includeReadme
+    });
 
     if (code !== 20000) {
       return jsonRes(res, { code, message });
@@ -47,7 +64,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
           ...TemplateEnvs
         },
         appYaml,
-        templateYaml
+        templateYaml,
+        readmeContent,
+        readUrl
       }
     });
   } catch (err: any) {
@@ -61,10 +80,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
 export async function GetTemplateByName({
   namespace,
-  templateName
+  templateName,
+  locale = 'en',
+  includeReadme = 'true'
 }: {
   namespace: string;
   templateName: string;
+  locale?: string;
+  includeReadme?: string;
 }) {
   const cdnUrl = process.env.CDN_URL;
   const targetFolder = process.env.TEMPLATE_REPO_FOLDER || 'template';
@@ -119,12 +142,64 @@ export async function GetTemplateByName({
   const instanceYaml = handleTemplateToInstanceYaml(templateYaml, instanceName);
   appYaml = `${JsYaml.dump(instanceYaml)}\n---\n${appYaml}`;
 
+  let readmeContent = '';
+  let readUrl = '';
+
+  if (includeReadme) {
+    readUrl = templateYaml?.spec?.i18n?.[locale]?.readme || templateYaml?.spec?.readme || '';
+    if (readUrl) {
+      try {
+        readmeContent = await fetchReadmeContentWithRetry(readUrl);
+      } catch (error) {
+        readmeContent = '';
+      }
+    }
+  }
+
   return {
     code: 20000,
     message: 'success',
     dataSource,
     TemplateEnvs,
     appYaml,
-    templateYaml
+    templateYaml,
+    readmeContent,
+    readUrl
   };
+}
+
+async function fetchReadmeContentWithRetry(url: string): Promise<string> {
+  if (!url) return '';
+
+  let retryCount = 0;
+  const maxRetries = 3;
+
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'text/markdown,text/plain,*/*',
+          'Content-Type': 'text/markdown; charset=UTF-8',
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+          'User-Agent': 'Mozilla/5.0'
+        },
+        credentials: 'omit'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.text();
+    } catch (err) {
+      retryCount++;
+      if (retryCount === maxRetries) {
+        console.log(`Failed to fetch README from ${url} after ${maxRetries} attempts`);
+        return '';
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryCount * 1000));
+    }
+  }
+  return '';
 }

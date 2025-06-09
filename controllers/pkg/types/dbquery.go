@@ -21,11 +21,12 @@ import (
 )
 
 type UserQueryOpts struct {
-	UID         uuid.UUID
-	ID          string
-	Namespace   string
-	Owner       string
-	IgnoreEmpty bool
+	UID          uuid.UUID
+	WithOutCache bool
+	ID           string
+	Namespace    string
+	Owner        string
+	IgnoreEmpty  bool
 }
 
 type GetTransfersReq struct {

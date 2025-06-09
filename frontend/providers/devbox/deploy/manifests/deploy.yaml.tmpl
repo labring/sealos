@@ -34,6 +34,16 @@ spec:
       labels:
         app: devbox-frontend
     spec:
+      initContainers:
+        - name: devbox-frontend-init
+          image: ghcr.io/labring/sealos-devbox-frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: REGION_UID
+              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
+            - name: DATABASE_URL
+              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
+          command: ["/bin/bash", "-c", "/app/providers/devbox/init-database.sh"]
       containers:
         - name: devbox-frontend
           env:
@@ -54,7 +64,7 @@ spec:
             - name: ROOT_RUNTIME_NAMESPACE
               value: devbox-system
             - name: INGRESS_DOMAIN
-              value: sealosusw.site
+              value: {{ .cloudDomain }}
             - name: CURRENCY_SYMBOL
               value: usd #  'shellCoin' | 'cny' | 'usd'
             - name: GPU_ENABLE
@@ -68,8 +78,7 @@ spec:
             - name: REGION_UID
               value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
-              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global
-
+              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001

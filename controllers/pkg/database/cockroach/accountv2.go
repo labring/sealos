@@ -426,6 +426,7 @@ func (c *Cockroach) GetUserUID(ops *types.UserQueryOpts) (uid uuid.UUID, err err
 	if uid == uuid.Nil && !ops.IgnoreEmpty {
 		return uuid.Nil, fmt.Errorf("failed to get userUID: record not found")
 	}
+	ops.UID = uid
 	return uid, nil
 }
 
@@ -437,8 +438,8 @@ func (c *Cockroach) GetUserID(ops *types.UserQueryOpts) (id string, err error) {
 		return "", fmt.Errorf("empty query opts")
 	}
 	if ops.Owner != "" {
-		id, err = c.getUserIDByOwner(ops.Owner)
-		if ops.IgnoreEmpty && err == gorm.ErrRecordNotFound {
+		id, err = c.getUserIDByOwner(ops.Owner, !ops.WithOutCache)
+		if ops.IgnoreEmpty && errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", nil
 		}
 		return id, err
@@ -480,6 +481,15 @@ func (c *Cockroach) getUserUIDByOwnerWithCache(owner string) (uuid.UUID, error) 
 	if v, ok := c.ownerUsrUIDMap.Load(owner); ok {
 		return v.(uuid.UUID), nil
 	}
+	userUID, err := c.getUserUIDByOwner(owner)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	c.ownerUsrUIDMap.Store(owner, userUID)
+	return userUID, nil
+}
+
+func (c *Cockroach) getUserUIDByOwner(owner string) (uuid.UUID, error) {
 	var user struct {
 		UID uuid.UUID `gorm:"column:userUid;type:uuid"`
 	}
@@ -490,15 +500,24 @@ func (c *Cockroach) getUserUIDByOwnerWithCache(owner string) (uuid.UUID, error) 
 		}
 		return uuid.Nil, fmt.Errorf("failed to get userUID: %v", err)
 	}
-	c.ownerUsrUIDMap.Store(owner, user.UID)
 	return user.UID, nil
 }
 
-func (c *Cockroach) getUserIDByOwner(owner string) (string, error) {
-	if v, ok := c.ownerUsrIDMap.Load(owner); ok {
-		return v.(string), nil
+func (c *Cockroach) getUserIDByOwner(owner string, withCache bool) (string, error) {
+	if withCache {
+		if v, ok := c.ownerUsrIDMap.Load(owner); ok {
+			return v.(string), nil
+		}
 	}
-	userUID, err := c.getUserUIDByOwnerWithCache(owner)
+	var (
+		userUID uuid.UUID
+		err     error
+	)
+	if withCache {
+		userUID, err = c.getUserUIDByOwnerWithCache(owner)
+	} else {
+		userUID, err = c.getUserUIDByOwner(owner)
+	}
 	if err != nil {
 		return "", err
 	}
@@ -1495,27 +1514,6 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 		}
 		ops.UID = userUID
 	}
-	freePlan, err := c.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get free plan: %w", err)
-	}
-	userInfo := &types.UserInfo{}
-	err = c.DB.Model(&types.UserInfo{}).Where(`"userUid" = ?`, ops.UID).Find(userInfo).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-	githubDetection := true
-	if userInfo.Config != nil {
-		if userInfo.Config.Github.CreatedAt != "" {
-			createdAt, err := time.Parse(time.RFC3339, userInfo.Config.Github.CreatedAt)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse github created at: %w", err)
-			}
-			if time.Since(createdAt) < 7*24*time.Hour {
-				githubDetection = false
-			}
-		}
-	}
 	now := time.Now().UTC()
 	account := &types.Account{
 		UserUID:                 ops.UID,
@@ -1529,9 +1527,34 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 	// 1. create credits
 	// 2. create account
 	// 3. create subscription
-	err = c.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where(&types.Account{UserUID: ops.UID}).FirstOrCreate(account).Error; err != nil {
+	err := c.DB.Transaction(func(tx *gorm.DB) error {
+		result := tx.Where(&types.Account{UserUID: ops.UID}).FirstOrCreate(account)
+		if err := result.Error; err != nil {
 			return fmt.Errorf("failed to create account: %w", err)
+		}
+		if result.RowsAffected == 0 {
+			return nil
+		}
+		freePlan, err := c.GetSubscriptionPlan(types.FreeSubscriptionPlanName)
+		if err != nil {
+			return fmt.Errorf("failed to get free plan: %w", err)
+		}
+		userInfo := &types.UserInfo{}
+		err = c.DB.Model(&types.UserInfo{}).Where(`"userUid" = ?`, ops.UID).Find(userInfo).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return fmt.Errorf("failed to get user info: %w", err)
+		}
+		githubDetection := true
+		if userInfo.Config != nil {
+			if userInfo.Config.Github.CreatedAt != "" {
+				createdAt, err := time.Parse(time.RFC3339, userInfo.Config.Github.CreatedAt)
+				if err != nil {
+					return fmt.Errorf("failed to parse github created at: %w", err)
+				}
+				if time.Since(createdAt) < 7*24*time.Hour {
+					githubDetection = false
+				}
+			}
 		}
 		if freePlan.GiftAmount > 0 && githubDetection {
 			credits := &types.Credits{
@@ -1690,7 +1713,8 @@ func (c *Cockroach) InitTables() error {
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
-		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{})
+		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
+		types.UserTimeRangeTraffic{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}

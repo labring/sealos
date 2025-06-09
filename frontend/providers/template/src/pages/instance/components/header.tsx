@@ -14,6 +14,7 @@ import {
   Modal,
   ModalCloseButton,
   ModalContent,
+  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Text,
@@ -61,9 +62,9 @@ export default function Header({ instanceName }: { instanceName: string }) {
   const handleDisplayName = async () => {
     try {
       if (yamlCR.current) {
-        yamlCR.current.metadata.labels = yamlCR.current.metadata.labels ?? {};
+        yamlCR.current.metadata.annotations = yamlCR.current.metadata.annotations ?? {};
         if (displayName) {
-          yamlCR.current.metadata.labels[templateDisplayNameKey] = displayName;
+          yamlCR.current.metadata.annotations[templateDisplayNameKey] = displayName;
         }
         const yaml = JsYaml.dump(yamlCR.current);
         await postDeployApp([yaml], 'replace');
@@ -174,16 +175,33 @@ export default function Header({ instanceName }: { instanceName: string }) {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>{t('Edit App Name')}</ModalHeader>
+          <ModalHeader bg={'#fff'} borderBottom={'none'}>
+            {t('set_app_remark')}
+          </ModalHeader>
           <ModalCloseButton />
-          <Flex flexDirection={'column'} p="24px 36px">
+          <Flex flexDirection={'column'} p="16px 24px">
             <Text fontSize={'14px'} fontWeight={500} color={'#24282C'}>
               {t('App Name')}
             </Text>
-            <Input mt="8px" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-            <Button mt="24px" alignSelf={'end'} variant={'primary'} onClick={handleDisplayName}>
-              {t('Confirm')}
-            </Button>
+            <Input
+              w="100%"
+              mt="8px"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+            />
+            <ModalFooter p={'0px'} gap={'12px'} mt="16px">
+              <Button
+                variant={'outline'}
+                onClick={() => {
+                  onClose();
+                }}
+              >
+                {t('Cancel')}
+              </Button>
+              <Button variant={'primary'} onClick={handleDisplayName}>
+                {t('Confirm')}
+              </Button>
+            </ModalFooter>
           </Flex>
         </ModalContent>
       </Modal>

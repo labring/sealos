@@ -1,12 +1,12 @@
 import { authSession } from '@/services/backend/auth';
 import { CRDMeta, getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
+
 import { TemplateInstanceType } from '@/types/app';
 import { adaptInstanceListItem } from '@/utils/adapt';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { instanceName } = req.query as { instanceName: string };
     const { k8sCustomObjects, namespace } = await getK8s({

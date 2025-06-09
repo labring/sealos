@@ -107,8 +107,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     });
 
+    if (enterprise && (enterprise?.additionalInfo as unknown as AdditionalInfo)?.isRestrictedUser) {
+      return jsonRes(res, {
+        code: 400,
+        message: "Restricted User Can't Enterprise Real Name Authentication"
+      });
+    }
+
+    let duplicateRealNameUser = false;
+
     if (enterprise) {
-      realNameAuthReward = 0;
+      duplicateRealNameUser = true;
     }
 
     await globalPrisma.$transaction(async (globalPrisma) => {
@@ -146,6 +155,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           completedAt: new Date()
         }
       });
+
+      if (duplicateRealNameUser) {
+        return;
+      }
 
       const userAccount = await globalPrisma.account.findUniqueOrThrow({
         where: { userUid: userUid }

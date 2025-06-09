@@ -46,6 +46,8 @@ export type TemplateSourceType = {
   source: SourceType;
   appYaml: string;
   templateYaml: TemplateType;
+  readmeContent?: string;
+  readUrl?: string;
 };
 
 export type SourceType = {
@@ -100,6 +102,7 @@ export type TemplateInstanceType = {
     name: string;
     creationTimestamp?: string;
     labels?: Record<string, string>;
+    annotations?: Record<string, string>;
   };
   spec: {
     categories: string[];

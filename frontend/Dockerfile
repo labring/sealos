@@ -28,7 +28,7 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   [ -f pnpm-lock.yaml ] && pnpm fetch || \
-  (echo "Lockfile not found." && exit 1) 
+  (echo "Lockfile not found." && exit 1)
 COPY ./tsconfig.json ./tsconfig.json
 COPY ./tsconfig.deps.json ./tsconfig.deps.json
 COPY ./tsconfig.base.json ./tsconfig.base.json
@@ -37,7 +37,7 @@ COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 pnpm -r --offline --filter=./packages/* install \
-&& pnpm -r --filter=./packages/* run build 
+&& pnpm -r --filter=./packages/* run build
 
 FROM deps AS builder
 
