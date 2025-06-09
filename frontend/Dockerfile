@@ -94,7 +94,15 @@ RUN if ["$name" = "objectstorage" ]; then \
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/providers/devbox/app/api/mcp/devbox.json ./providers/devbox/app/api/mcp/devbox.json
+
+RUN if [ -f /app/providers/devbox/app/api/mcp/devbox.json ]; then \
+    mkdir -p ./providers/devbox/app/api/mcp/ && \
+    cp /app/providers/devbox/app/api/mcp/devbox.json ./providers/devbox/app/api/mcp/devbox.json && \
+    chown nextjs:nodejs ./providers/devbox/app/api/mcp/devbox.json; \
+    else \
+    echo "devbox.json not found, skipping copy"; \
+    fi
+
 EXPOSE 3000
 
 ENV PORT=3000
