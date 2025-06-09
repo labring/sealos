@@ -413,6 +413,6 @@
   "each": "各占用{{perc}}",
   "occupy": "{{comp}}占用{{num}}",
   "ha_desc": "哨兵节点额外占用资源",
-  "pod_completed": "Pod已经结束，无法查看日志"
+  "pod_completed": "Pod已经结束，无法查看日志",
   "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用"
 }
