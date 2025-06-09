@@ -26,8 +26,8 @@
         "tags": [
           "Lifecycle"
         ],
-        "summary": "创建devbox",
-        "description": "创建devbox",
+        "summary": "创建Devbox",
+        "description": "创建一个新的Devbox，即Create",
         "requestBody": {
           "content": {
             "application/json": {
@@ -40,7 +40,7 @@
                       "name": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "Devbox 名称"
+                        "description": "Devbox名称"
                       },
                       "runtimeName": {
                         "type": "string",
@@ -56,7 +56,7 @@
                           "C",
                           "PHP"
                         ],
-                        "description": "devbox 类型，有以下可选项：Debian，C++，Rust，Java，Go，Python，Node.js，.Net，C，PHP"
+                        "description": "Devbox类型，有以下可选项：Debian，C++，Rust，Java，Go，Python，Node.js，.Net，C，PHP"
                       },
                       "cpu": {
                         "type": "number",
@@ -91,8 +91,8 @@
         "tags": [
           "ReleaseAndDeploy"
         ],
-        "summary": "Devbox 发版",
-        "description": "Devbox 发版",
+        "summary": "Devbox发版",
+        "description": "Devbox发版，release，为现有的Devbox发布一个新的版本",
         "requestBody": {
           "content": {
             "application/json": {
@@ -105,17 +105,17 @@
                       "devboxName": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "Devbox 名称"
+                        "description": "Devbox名称"
                       },
                       "tag": {
                         "type": "string",
                         "minLength": 1,
-                        "description": "版本号"
+                        "description": "新版本的版本号"
                       },
                       "releaseDes": {
                         "type": "string",
                         "default": "",
-                        "description": "版本描述"
+                        "description": "新版本的描述"
                       }
                     },
                     "required": [
@@ -139,16 +139,16 @@
           "ReleaseAndDeploy"
         ],
         "summary": "获取Devbox版本历史",
-        "description": "获取Devbox版本历史",
+        "description": "获取单个Devbox的所有历史版本",
         "parameters": [
           {
             "in": "query",
             "name": "devboxName",
-            "description": "Devbox 名称",
+            "description": "Devbox名称",
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "Devbox 名称"
+              "description": "Devbox名称"
             },
             "required": true
           }
@@ -160,8 +160,8 @@
         "tags": [
           "Lifecycle"
         ],
-        "summary": "操作devbox",
-        "description": "操作devbox，主要包含开机，关机，重启，冷关机",
+        "summary": "操作Devbox",
+        "description": "操作Devbox，Devbox生命周期管理，主要包含开机，关机，重启，冷关机，这些操作都通过这个工具完成",
         "requestBody": {
           "content": {
             "application/json": {
@@ -192,81 +192,13 @@
             }
           }
         },
-        "/api/releaseAndDeployDevbox": {
-          "post": {
-            "tags": [
-              "ReleaseAndDeploy"
-            ],
-            "summary": "ReleaseAndDeploy and deploy a devbox",
-            "description": "Create a new release for a devbox and deploy it with specific resource configuration,you need to shutdown the devbox before releasing it",
-            "requestBody": {
-              "content": {
-                "application/json": {
-                  "schema": {
-                    "type": "object",
-                    "properties": {
-                      "devboxName": {
-                        "type": "string",
-                        "description": "Devbox name"
-                      },
-                      "tag": {
-                        "type": "string",
-                        "description": "Release tag"
-                      },
-                      "releaseDes": {
-                        "type": "string",
-                        "description": "Release description"
-                      },
-                      "devboxUid": {
-                        "type": "string",
-                        "description": "Devbox UID"
-                      },
-                      "cpu": {
-                        "type": "number",
-                        "default": 2000,
-                        "description": "CPU cores, it is recommended to use options like 1000, 2000, 4000, 8000, 16000, representing 1Core, 2Core, 4Core, 8Core, 16Core"
-                      },
-                      "memory": {
-                        "type": "number",
-                        "default": 4096,
-                        "description": "Memory in MB"
-                      }
-                    },
-                    "required": [
-                      "devboxName",
-                      "tag",
-                      "releaseDes",
-                      "devboxUid"
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        },
         "/api/v1/getDevboxListEasyResponse": {
           "get": {
             "tags": [
               "Query"
             ],
-            "summary": "Get devbox list",
-            "description": "Get all devboxes in the current namespace"
-          }
-        }
-      },
-      "components": {
-        "securitySchemes": {
-          "kubeconfigAuth": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization",
-            "description": "Kubeconfig for authentication"
-          },
-          "jwtAuth": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization-Bearer",
-            "description": "JWT token for authentication"
+            "summary": "获取所有Devbox",
+            "description": "获取所有Devbox，得到Devbox的列表，可以知道当前有哪些Devbox"
           }
         }
       }
@@ -276,8 +208,8 @@
         "tags": [
           "Port"
         ],
-        "summary": "创建devbox端口",
-        "description": "创建devbox端口",
+        "summary": "创建Devbox端口",
+        "description": "创建Devbox端口，为现有的Devbox创建一个新的端口",
         "requestBody": {
           "content": {
             "application/json": {
@@ -287,13 +219,13 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Devbox 名称"
+                    "description": "Devbox名称"
                   },
                   "port": {
                     "type": "number",
                     "minimum": 1,
                     "maximum": 65535,
-                    "description": "端口号"
+                    "description": "新创建端口的端口号"
                   },
                   "protocol": {
                     "type": "string",
@@ -303,7 +235,7 @@
                       "WS"
                     ],
                     "default": "HTTP",
-                    "description": "通信方式：HTTP，GRPC，WS"
+                    "description": "这个端口的通信方式，有三种通信方式可选：HTTP，GRPC，WS"
                   }
                 },
                 "required": [
@@ -314,15 +246,6 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/getDevboxListEasyResponse": {
-      "get": {
-        "tags": [
-          "Query"
-        ],
-        "summary": "获取devbox列表",
-        "description": "获取当前namespace中所有的devbox"
       }
     },
     "/api/deployDevbox": {
@@ -341,7 +264,7 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Devbox 名称"
+                    "description": "Devbox名称"
                   },
                   "port": {
                     "type": "number",
@@ -352,7 +275,7 @@
                   "tag": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Devbox 标签"
+                    "description": "Devbox版本号，即Devbox发布版本时所使用的版本号"
                   },
                   "cpu": {
                     "type": "number",
