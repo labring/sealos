@@ -201,13 +201,6 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
     backupProcessing
   }));
 
-  const { data, refetch: refetchPolicy } = useQuery(['initpolicy', db.dbName, db.dbType], () =>
-    getBackupPolicyByCluster({
-      dbName: db.dbName,
-      dbType: db.dbType
-    })
-  );
-
   return (
     <Flex flexDirection={'column'} h="100%" position={'relative'}>
       <Flex justifyContent={'space-between'} alignItems={'center'} mb={'16px'}>
@@ -284,14 +277,8 @@ const BackupTable = ({ db }: { db?: DBDetailType }, ref: ForwardedRef<ComponentR
       )}
       <Loading loading={isInitialLoading} fixed={false} />
       <RestartConfirmDelChild />
-      {isOpenBackupModal && data && (
-        <BackupModal
-          dbName={db.dbName}
-          dbType={db.dbType}
-          defaultVal={data}
-          onClose={onCloseBackupModal}
-          refetchPolicy={refetchPolicy}
-        />
+      {isOpenBackupModal && (
+        <BackupModal dbName={db.dbName} dbType={db.dbType} onClose={onCloseBackupModal} />
       )}
       {!!backupInfo?.name && (
         <RestoreModal db={db} backupInfo={backupInfo} onClose={() => setBackupInfo(undefined)} />

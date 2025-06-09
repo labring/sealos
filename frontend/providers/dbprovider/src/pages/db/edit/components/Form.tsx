@@ -19,7 +19,6 @@ import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { distributeResources } from '@/utils/database';
-import { tWithParams } from '@/utils/i18n-client';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -59,18 +58,24 @@ import { UseFormReturn } from 'react-hook-form';
 
 function ResourcesDistributeTable({ data }: { data: Parameters<typeof distributeResources>[0] }) {
   const resources = distributeResources(data);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const compNum = Object.keys(resources).length;
-  const dbName = DBTypeList.findLast((item) => item.id === data.dbType)!.label;
+  const dbName = DBTypeList.find((item) => item.id === data.dbType)?.label ?? '';
 
   const descriptionMap: Map<DBType, string> = new Map([
-    [DBTypeEnum.postgresql, tWithParams('occupy', { num: '100%' })],
-    [DBTypeEnum.mongodb, tWithParams('occupy', { num: '100%' })],
-    [DBTypeEnum.mysql, tWithParams('occupy', { num: '100%' })],
-    [DBTypeEnum.redis, `redis ${tWithParams('occupy', { num: '100%' })}, ${t('ha_desc')}`],
-    [DBTypeEnum.kafka, tWithParams('each', { perc: '25%' })],
-    [DBTypeEnum.milvus, tWithParams('each', { perc: '30%, 40%, 30%' })]
+    [DBTypeEnum.postgresql, t('occupy', { comp: 'PostgreSQL', num: '100%' })],
+    [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
+    [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
+    [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
+    [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
+    [
+      DBTypeEnum.milvus,
+      `${t('occupy', { comp: 'Etcd', num: '30%' })}, ${t('occupy', {
+        comp: 'milvus',
+        num: '40%'
+      })}, ${t('occupy', { comp: 'minio', num: '30%' })}`
+    ]
   ]);
 
   return (
@@ -106,18 +111,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
               <MyIcon name="warningInfo" w={'16px'} h={'16px'} mr={2} />
               <Text fontWeight="500">
                 {dbName}
-                {tWithParams('has_comps', { number: compNum })}:&emsp;
-              </Text>
-              <Text>
-                {Object.keys(resources)
-                  .sort()
-                  .map((item) => {
-                    return item.split('-').at(-1);
-                  })
-                  .join(', ')}
-              </Text>
-              <Text mx={2} color="#C4CBD7">
-                |
+                {t('has_comps', { count: compNum })}:&emsp;
               </Text>
               <Text>{descriptionMap.get(data.dbType)}</Text>
             </Box>

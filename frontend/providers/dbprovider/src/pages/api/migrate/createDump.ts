@@ -64,11 +64,9 @@ export const json2DumpCR = async (
   const time = formatTime(new Date(), 'YYYYMMDDHHmmss');
 
   const commands = new Command();
-  commands.add('wget https://objectstorageapi.gzg.sealos.run/7nl57qi8-test/mc -O mc');
-  commands.add('chmod +x mc');
   // Configure MinIO
-  commands.add(`./mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);
-  commands.add(`./mc cp migrationTask/$BUCKET/${data.fileName} /root`);
+  commands.add(`mc alias set migrationTask $MINIO_URL $MINIO_AK $MINIO_SK`);
+  commands.add(`mc cp migrationTask/$BUCKET/${data.fileName} /root`);
 
   const secretMysql = `--host=$HOST --port=$PORT --user=$USERNAME --password=$PASSWORD`;
   const secretPg = `--host=$HOST --port=$PORT --user=$USERNAME -w`;
