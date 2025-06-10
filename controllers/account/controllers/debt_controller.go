@@ -20,21 +20,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"os"
 	"reflect"
 	runtime2 "runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/alibabacloud-go/tea/tea"
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
+	"gorm.io/gorm"
+
+	"github.com/google/uuid"
 
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
 
-	"gorm.io/gorm"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -83,6 +86,7 @@ const (
 	SMTPHostEnv           = "SMTP_HOST"
 	SMTPPortEnv           = "SMTP_PORT"
 	SMTPFromEnv           = "SMTP_FROM"
+	SMTPUserEnv           = "SMTP_USER"
 	SMTPPasswordEnv       = "SMTP_PASSWORD"
 	SMTPTitleEnv          = "SMTP_TITLE"
 )
@@ -90,26 +94,35 @@ const (
 // DebtReconciler reconciles a Debt object
 type DebtReconciler struct {
 	client.Client
-	AccountV2          database.AccountV2
-	Scheme             *runtime.Scheme
-	DebtDetectionCycle time.Duration
-	LocalRegionID      string
+	*AccountReconciler
+	AccountV2           database.AccountV2
+	InitUserAccountFunc func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
+	Scheme              *runtime.Scheme
+	DebtDetectionCycle  time.Duration
+	LocalRegionID       string
 	logr.Logger
 	accountSystemNamespace string
 	SmsConfig              *SmsConfig
 	VmsConfig              *VmsConfig
 	smtpConfig             *utils.SMTPConfig
+	DebtUserMap            *maps.ConcurrentMap
+	// TODO need init
+	userLocks                   *sync.Map
+	failedUserLocks             *sync.Map
+	processID                   string
+	SkipExpiredUserTimeDuration time.Duration
+	SendDebtStatusEmailBody     map[accountv1.DebtStatusType]string
 }
 
 type VmsConfig struct {
-	TemplateCode map[int]string
+	TemplateCode map[string]string
 	NumberPoll   string
 }
 
 type SmsConfig struct {
 	Client      *client2.Client
 	SmsSignName string
-	SmsCode     map[int]string
+	SmsCode     map[string]string
 }
 
 var DebtConfig = accountv1.DefaultDebtConfig
@@ -138,26 +151,18 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, fmt.Errorf("failed to get payment %s: %v", req.Name, err)
 	} else {
-		cr, err := r.AccountV2.GetUserCr(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name})
+		userID, err := r.AccountV2.GetUserID(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, IgnoreEmpty: true})
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				r.Logger.Info("user cr not exist, skip", "user", req.NamespacedName.Name)
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user cr %s: %v", req.NamespacedName.Name, err)
+			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user id %s: %v", req.NamespacedName.Name, err)
 		}
-		user, err := r.AccountV2.GetUser(&pkgtypes.UserQueryOpts{Owner: req.NamespacedName.Name, UID: cr.UserUID})
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				r.Logger.Info("user not exist, skip", "user", req.NamespacedName.Name)
-				return ctrl.Result{}, nil
-			}
-			return ctrl.Result{RequeueAfter: 10 * time.Minute}, fmt.Errorf("failed to get user %s: %v", req.NamespacedName.Name, err)
+		if userID == "" {
+			r.Logger.Info("user id not exist, skip", "user", req.NamespacedName.Name)
+			return ctrl.Result{}, nil
 		}
-		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, user.ID)
+		reconcileErr = r.reconcile(ctx, req.NamespacedName.Name, userID)
 	}
 	if reconcileErr != nil {
-		if reconcileErr == ErrAccountNotExist {
+		if reconcileErr == ErrAccountNotExist || reconcileErr == ErrDebtNotExist {
 			return ctrl.Result{RequeueAfter: 10 * time.Minute}, nil
 		}
 		r.Logger.Error(reconcileErr, "reconcile debt error")
@@ -166,52 +171,39 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	return ctrl.Result{RequeueAfter: r.DebtDetectionCycle}, nil
 }
 
-//func (r *DebtReconciler) getNamespaceOwner(namespace string) (string, error) {
-//	ns := &corev1.Namespace{}
-//	if err := r.Get(context.Background(), client.ObjectKey{Name: namespace}, ns); err != nil {
-//		return "", fmt.Errorf("failed to get namespace %s: %v", namespace, err)
-//	}
-//	if ns.Labels == nil {
-//		return "", fmt.Errorf("namespace %s labels is nil", namespace)
-//	}
-//	owner, ok := ns.Labels[userv1.UserAnnotationOwnerKey]
-//	if !ok {
-//		return "", fmt.Errorf("namespace %s owner is not exist", namespace)
-//	}
-//	return owner, nil
-//}
-
 func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) error {
 	debt := &accountv1.Debt{}
-	userQueryOpts := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID}
-	account, err := r.AccountV2.GetAccount(userQueryOpts)
+	ops := &pkgtypes.UserQueryOpts{Owner: userCr, ID: userID, IgnoreEmpty: true}
+	userUID, err := r.AccountV2.GetUserUID(&pkgtypes.UserQueryOpts{Owner: userCr, IgnoreEmpty: true})
+	if err != nil {
+		return fmt.Errorf("failed to get user uid %s: %v", userCr, err)
+	}
+	if userUID == uuid.Nil {
+		r.Logger.Info("user uid not exist, skip", "user", userCr)
+		return nil
+	}
+	ops.UID = userUID
+	account, err := r.AccountV2.GetAccountWithCredits(userUID)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("failed to get account %s: %v", userCr, err)
+	}
+	// if account not exist, create account
 	if account == nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			_, err = r.AccountV2.NewAccount(userQueryOpts)
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return fmt.Errorf("failed to create account %v: %v", userQueryOpts, err)
-			}
-			userOwner := &userv1.User{}
-			if err := r.Get(ctx, types.NamespacedName{Name: userCr, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
-				// if user not exist, skip
-				if client.IgnoreNotFound(err) == nil {
-					return nil
-				}
-				return fmt.Errorf("failed to get usercr %s: %v", userCr, err)
-			}
+		userOwner := &userv1.User{}
+		if err := r.Get(ctx, types.NamespacedName{Name: userCr, Namespace: r.accountSystemNamespace}, userOwner); err != nil {
 			// if user not exist, skip
-			if userOwner.CreationTimestamp.Add(20 * 24 * time.Hour).Before(time.Now()) {
+			if client.IgnoreNotFound(err) == nil {
 				return nil
 			}
+			return fmt.Errorf("failed to get usercr %s: %v", userCr, err)
 		}
+		// if user not exist, skip
+		if userOwner.CreationTimestamp.Add(r.SkipExpiredUserTimeDuration).Before(time.Now()) {
+			return nil
+		}
+		_, err = r.InitUserAccountFunc(ops)
 		if err != nil {
-			r.Logger.Error(fmt.Errorf("account %v not exist", userQueryOpts), err.Error())
-		}
-		return ErrAccountNotExist
-	}
-	if account.CreateRegionID == "" {
-		if err = r.AccountV2.SetAccountCreateLocalRegion(account, r.LocalRegionID); err != nil {
-			return fmt.Errorf("failed to set account %v create region: %v", userQueryOpts, err)
+			return fmt.Errorf("failed to create account %s: %v", userCr, err)
 		}
 	}
 	// In a multi-region scenario, select the region where the account is created for SMS notification
@@ -224,6 +216,7 @@ func (r *DebtReconciler) reconcile(ctx context.Context, userCr, userID string) e
 		if err := r.syncDebt(ctx, userCr, userID, debt); err != nil {
 			return err
 		}
+		return ErrDebtNotExist
 		//r.Logger.Info("create or update debt success", "debt", debt)
 	}
 	// backward compatibility
@@ -260,6 +253,26 @@ func getOwnNsList(clt client.Client, user string) ([]string, error) {
 
 var ErrAccountNotExist = errors.New("account not exist")
 
+var ErrDebtNotExist = errors.New("debt not exist")
+
+const (
+	NormalPeriod = iota
+	LowBalancePeriod
+	CriticalBalancePeriod
+	DebtPeriod
+	DebtDeletionPeriod
+	FinalDeletionPeriod
+)
+
+var statusMap = map[accountv1.DebtStatusType]int{
+	accountv1.NormalPeriod:          NormalPeriod,
+	accountv1.LowBalancePeriod:      LowBalancePeriod,
+	accountv1.CriticalBalancePeriod: CriticalBalancePeriod,
+	accountv1.DebtPeriod:            DebtPeriod,
+	accountv1.DebtDeletionPeriod:    DebtDeletionPeriod,
+	accountv1.FinalDeletionPeriod:   FinalDeletionPeriod,
+}
+
 /*
 NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePeriod -> FinalDeletePeriod
 正常期：账户余额大于等于0
@@ -270,135 +283,86 @@ NormalPeriod -> WarningPeriod -> ApproachingDeletionPeriod -> ImmediateDeletePer
 
 欠费后到完全删除的总周期=WarningPeriodSeconds+ApproachingDeletionPeriodSeconds+ImmediateDeletePeriodSeconds+FinalDeletePeriodSeconds
 */
-func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *pkgtypes.Account, userNamespaceList []string, smsEnable bool) error {
-	oweamount := account.Balance - account.DeductionBalance
+func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *pkgtypes.UsableBalanceWithCredits, userNamespaceList []string, smsEnable bool) error {
+	// Basic users should avoid alarm notification affecting experience
+	isBasicUser := account.Balance <= 10*BaseUnit
+	oweamount := account.Balance - account.DeductionBalance + account.UsableCredits
 	//更新间隔秒钟数
 	updateIntervalSeconds := time.Now().UTC().Unix() - debt.Status.LastUpdateTimestamp
-	lastStatus := debt.Status
-	//userNamespace := GetUserNamespace(account.Name)
+	lastStatus := debt.Status.AccountDebtStatus
 	update := false
-
+	if lastStatus == "" {
+		lastStatus = accountv1.NormalPeriod
+		update = true
+	}
+	currentStatus, err := r.DetermineCurrentStatus(oweamount, account.UserUID, updateIntervalSeconds, lastStatus)
+	if err != nil {
+		return fmt.Errorf("failed to determine current status: %w", err)
+	}
+	r.updateDebtUserMap(debt.Spec.UserName, currentStatus)
+	if lastStatus == currentStatus && !update {
+		return nil
+	}
+	update = update || SetDebtStatus(debt, lastStatus, currentStatus)
+	nonDebtStates := []accountv1.DebtStatusType{accountv1.NormalPeriod, accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod}
+	debtStates := []accountv1.DebtStatusType{accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod}
 	// 判断上次状态到当前的状态
-	switch lastStatus.AccountDebtStatus {
-	case accountv1.NormalPeriod:
-		/*
-			余额大于等于0:
-			  正常期 -> 正常期: 无操作返回
-			余额小于0:
-			  正常期 -> 警告期: 更新status 状态warning事件及更新事件，并发送警告消息通知
-		*/
-		if oweamount >= 0 {
-			return nil
-		}
-		update = SetDebtStatus(debt, accountv1.NormalPeriod, accountv1.WarningPeriod)
-		if err := r.sendWarningNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
-			r.Logger.Error(err, "send warning notice error")
-		}
-	case accountv1.WarningPeriod:
-		/*
-			余额大于等于0：
-			  警告期 -> 正常期：更新status 状态normal事件及更新时间，撤销warning消息通知
-			余额小于0：
-			上次更新时间小于临近删除时间, 且欠费小于总金额的一半：
-			  警告期 -> 警告期：无操作返回
-			else：
-			  警告期 -> 临近删除期： 更新status 状态approachingDeletion事件及更新时间，发送临近删除消息通知
-		*/
-		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.NormalPeriod)
-			if err := r.readNotice(ctx, userNamespaceList, WarningNotice); err != nil {
-				r.Logger.Error(err, "readNotice WarningNotice error")
+	switch lastStatus {
+	case accountv1.NormalPeriod, accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod:
+		if statusMap[currentStatus] > statusMap[lastStatus] {
+			if err := r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser); err != nil {
+				r.Logger.Error(err, fmt.Sprintf("send %s notice error", currentStatus))
 			}
-			break
-		}
-		//上次更新时间小于临近删除时间
-		if updateIntervalSeconds < DebtConfig[accountv1.ApproachingDeletionPeriod] && (account.Balance/2)+oweamount > 0 {
-			return nil
-		}
-		update = SetDebtStatus(debt, accountv1.WarningPeriod, accountv1.ApproachingDeletionPeriod)
-		if err := r.sendApproachingDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
-			r.Logger.Error(err, "sendApproachingDeletionNotice error")
-		}
-
-	case accountv1.ApproachingDeletionPeriod:
-		/*
-			余额大于0：
-			  临近删除期 -> 正常期：更新status 状态normal事件及更新时间，撤销临近删除消息通知
-			余额大于0：
-			上次更新时间小于最终删除时间，且欠费不大于总金额：
-			  临近删除期 -> 临近删除期：无操作返回
-			else：
-			  临近删除期 -> 即刻删除期： 执行暂停用户资源，更新status 状态imminentDeletionPeriod事件及更新时间，发送最终删除消息通知
-		*/
-		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.NormalPeriod)
-			if err := r.readNotice(ctx, userNamespaceList, ApproachingDeletionNotice, WarningNotice); err != nil {
-				r.Logger.Error(err, "readNotice ApproachingDeletionNotice error")
+		} else {
+			if err := r.readNotice(ctx, userNamespaceList, lastStatus); err != nil {
+				r.Logger.Error(err, "read low balance notice error")
 			}
-			break
 		}
-		if updateIntervalSeconds < DebtConfig[accountv1.ImminentDeletionPeriod] && account.Balance+oweamount > 0 {
-			return nil
-		}
-		update = SetDebtStatus(debt, accountv1.ApproachingDeletionPeriod, accountv1.ImminentDeletionPeriod)
-		if err := r.sendImminentDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
-			r.Logger.Error(err, "sendImminentDeletionNotice error")
-		}
-		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
-			return err
-		}
-	case accountv1.ImminentDeletionPeriod:
-		/*
-			余额大于0：
-			  即刻删除期 -> 正常期：恢复用户资源，更新status 状态normal事件及更新时间，撤销最终删除消息通知
-			上次更新时间小于最终删除时间：
-			  即刻删除期 -> 即刻删除期：无操作返回
-			else：
-			  即刻删除期 -> 最终删除期： 删除用户全部资源，更新status 状态finalDeletionPeriod事件及更新时间。发生最终删除消息通知
-		*/
-		if oweamount >= 0 {
-			update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.NormalPeriod)
-			// 恢复用户资源
-			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
+		if contains(debtStates, currentStatus) {
+			if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
 				return err
 			}
-			if err := r.readNotice(ctx, userNamespaceList, ImminentDeletionNotice, ApproachingDeletionNotice, WarningNotice); err != nil {
-				r.Logger.Error(err, "readNotice ImminentDeletionNotice error")
+		}
+		//TODO update debt status
+		//if lastStatus == accountv1.FinalDeletionPeriod {
+		//	err = r.AccountV2.GetGlobalDB().Save(&pkgtypes.UserDebt{
+		//		UserID: debt.Spec.UserID,
+		//		//Status: pkgtypes.DebtStatusNormal,
+		//	}).Error
+		//	if err != nil {
+		//		return fmt.Errorf("failed to save user debt: %w", err)
+		//	}
+		//}
+	case accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod: // The current status may be: (Normal, LowBalance, CriticalBalance) Period [Service needs to be restored], DebtDeletionPeriod [Service suspended]
+		if contains(nonDebtStates, currentStatus) {
+			if err := r.readNotice(ctx, userNamespaceList, debtStates...); err != nil {
+				r.Logger.Error(err, "read low balance notice error")
 			}
-			break
-		}
-		//上次更新时间小于最终删除时间, 且欠费不大于总金额的两倍
-		if updateIntervalSeconds < DebtConfig[accountv1.FinalDeletionPeriod] {
-			return nil
-		}
-		// TODO 暂时只暂停资源，后续会添加真正删除全部资源逻辑, 或直接删除namespace
-		update = SetDebtStatus(debt, accountv1.ImminentDeletionPeriod, accountv1.FinalDeletionPeriod)
-		if err := r.sendFinalDeletionNotice(ctx, debt.Spec.UserName, oweamount, userNamespaceList, smsEnable); err != nil {
-			r.Error(err, "sendFinalDeletionNotice error")
-		}
-		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
-			return err
-		}
-	case accountv1.FinalDeletionPeriod:
-		/*
-			余额大于0：
-			  最终删除期 -> 正常期：更新status 状态normal事件及更新时间
-		*/
-		if oweamount >= 0 {
-			if err := r.readNotice(ctx, userNamespaceList, FinalDeletionNotice, ImminentDeletionNotice, ApproachingDeletionNotice, WarningNotice); err != nil {
-				r.Logger.Error(err, "readNotice FinalDeletionNotice error")
-			}
-			//TODO 用户从欠费到正常，是否需要发送消息通知
-			update = SetDebtStatus(debt, accountv1.FinalDeletionPeriod, accountv1.NormalPeriod)
-
-			// TODO 暂时非真正完全删除，仍可恢复用户资源，后续会添加真正删除全部资源逻辑，不在执行恢复逻辑
 			if err := r.ResumeUserResource(ctx, userNamespaceList); err != nil {
 				return err
 			}
 			break
 		}
-		if err := r.SuspendUserResource(ctx, userNamespaceList); err != nil {
-			return err
+		if currentStatus != accountv1.FinalDeletionPeriod {
+			err = r.sendDesktopNoticeAndSms(ctx, debt.Spec.UserName, oweamount, currentStatus, userNamespaceList, smsEnable, isBasicUser)
+			if err != nil {
+				r.Logger.Error(err, fmt.Sprintf("send %s notice error", currentStatus))
+			}
+			if err = r.SuspendUserResource(ctx, userNamespaceList); err != nil {
+				return err
+			}
+		} else {
+			// TODO DELETE
+			//err = r.AccountV2.GetGlobalDB().Save(&pkgtypes.UserDebt{
+			//	UserID: debt.Spec.UserID,
+			//	Status: pkgtypes.DebtStatusDeletionPeriod,
+			//}).Error
+			//if err != nil {
+			//	return fmt.Errorf("failed to save user debt: %w", err)
+			//}
+			if err = r.DeleteUserResource(ctx, userNamespaceList); err != nil {
+				return err
+			}
 		}
 	//兼容老版本
 	default:
@@ -412,6 +376,96 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		return r.Status().Update(ctx, debt)
 	}
 	return nil
+}
+
+func contains(statuses []accountv1.DebtStatusType, status accountv1.DebtStatusType) bool {
+	for _, s := range statuses {
+		if s == status {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *DebtReconciler) updateDebtUserMap(username string, currentStatus accountv1.DebtStatusType) {
+	isDebtState := currentStatus == accountv1.DebtPeriod || currentStatus == accountv1.DebtDeletionPeriod || currentStatus == accountv1.FinalDeletionPeriod
+	_, exists := r.DebtUserMap.Get(username)
+
+	if isDebtState && !exists {
+		r.DebtUserMap.Set(username, struct{}{})
+	} else if !isDebtState && exists {
+		r.DebtUserMap.Delete(username)
+	}
+}
+
+func newStatusConversion(debt *accountv1.Debt) bool {
+	switch debt.Status.AccountDebtStatus {
+	case accountv1.NormalPeriod, accountv1.FinalDeletionPeriod:
+		return false
+	case accountv1.WarningPeriod:
+		debt.Status.AccountDebtStatus = accountv1.DebtPeriod
+	case accountv1.ApproachingDeletionPeriod:
+		debt.Status.AccountDebtStatus = accountv1.DebtDeletionPeriod
+	case accountv1.ImminentDeletionPeriod:
+		debt.Status.AccountDebtStatus = accountv1.DebtDeletionPeriod
+	default:
+		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
+	}
+	return true
+}
+
+func determineCurrentStatus(oweamount int64, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) accountv1.DebtStatusType {
+	if oweamount > 0 {
+		if oweamount > 10*BaseUnit {
+			return accountv1.NormalPeriod
+		} else if oweamount > 5*BaseUnit {
+			return accountv1.LowBalancePeriod
+		}
+		return accountv1.CriticalBalancePeriod
+	}
+	if lastStatus == accountv1.NormalPeriod || lastStatus == accountv1.LowBalancePeriod || lastStatus == accountv1.CriticalBalancePeriod {
+		return accountv1.DebtPeriod
+	}
+	if lastStatus == accountv1.DebtPeriod && updateIntervalSeconds >= DebtConfig[accountv1.DebtDeletionPeriod] {
+		return accountv1.DebtDeletionPeriod
+	}
+	if lastStatus == accountv1.DebtDeletionPeriod && updateIntervalSeconds >= DebtConfig[accountv1.FinalDeletionPeriod] {
+		return accountv1.FinalDeletionPeriod
+	}
+	return lastStatus // Maintain current debt state if no transition
+}
+
+func (r *DebtReconciler) determineCurrentStatusWithSubscription(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+	userSubscription, err := r.AccountV2.GetSubscription(&pkgtypes.UserQueryOpts{UID: userUID})
+	if err != nil {
+		return accountv1.NormalPeriod, fmt.Errorf("failed to get user subscription: %w", err)
+	}
+
+	if oweamount > 0 && userSubscription.Status == pkgtypes.SubscriptionStatusNormal {
+		if oweamount >= 5*BaseUnit {
+			return accountv1.NormalPeriod, nil
+		} else if oweamount > 1*BaseUnit {
+			return accountv1.LowBalancePeriod, nil
+		}
+		return accountv1.CriticalBalancePeriod, nil
+	}
+	if lastStatus == accountv1.NormalPeriod || lastStatus == accountv1.LowBalancePeriod || lastStatus == accountv1.CriticalBalancePeriod {
+		return accountv1.DebtPeriod, nil
+	}
+	if lastStatus == accountv1.DebtPeriod && updateIntervalSeconds >= DebtConfig[accountv1.DebtDeletionPeriod] {
+		return accountv1.DebtDeletionPeriod, nil
+	}
+	if lastStatus == accountv1.DebtDeletionPeriod && updateIntervalSeconds >= DebtConfig[accountv1.FinalDeletionPeriod] {
+		return accountv1.FinalDeletionPeriod, nil
+	}
+	return lastStatus, nil // Maintain current debt state if no transition
+}
+
+func (r *DebtReconciler) DetermineCurrentStatus(oweamount int64, userUID uuid.UUID, updateIntervalSeconds int64, lastStatus accountv1.DebtStatusType) (accountv1.DebtStatusType, error) {
+	if SubscriptionEnabled {
+		return r.determineCurrentStatusWithSubscription(oweamount, userUID, updateIntervalSeconds, lastStatus)
+	}
+	return determineCurrentStatus(oweamount, updateIntervalSeconds, lastStatus), nil
 }
 
 func (r *DebtReconciler) syncDebt(ctx context.Context, owner, userID string, debt *accountv1.Debt) error {
@@ -430,6 +484,9 @@ func (r *DebtReconciler) syncDebt(ctx context.Context, owner, userID string, deb
 var MaxDebtHistoryStatusLength = env.GetIntEnvWithDefault("MAX_DEBT_HISTORY_STATUS_LENGTH", 10)
 
 func SetDebtStatus(debt *accountv1.Debt, lastStatus, currentStatus accountv1.DebtStatusType) bool {
+	if lastStatus == currentStatus {
+		return false
+	}
 	debt.Status.AccountDebtStatus = currentStatus
 	now := time.Now().UTC()
 	debt.Status.LastUpdateTimestamp = now.Unix()
@@ -448,34 +505,9 @@ func SetDebtStatus(debt *accountv1.Debt, lastStatus, currentStatus accountv1.Deb
 	return true
 }
 
-func newStatusConversion(debt *accountv1.Debt) bool {
-	switch debt.Status.AccountDebtStatus {
-	case accountv1.PreWarningPeriod:
-		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
-	case accountv1.SuspendPeriod:
-		debt.Status.AccountDebtStatus = accountv1.ImminentDeletionPeriod
-	case accountv1.RemovedPeriod:
-		debt.Status.AccountDebtStatus = accountv1.FinalDeletionPeriod
-	default:
-		debt.Status.AccountDebtStatus = accountv1.NormalPeriod
-	}
-	return true
-}
-
 func GetDebtName(AccountName string) string {
 	return fmt.Sprintf("%s%s", accountv1.DebtPrefix, AccountName)
 }
-
-func GetUserNamespace(AccountName string) string {
-	return "ns-" + AccountName
-}
-
-const (
-	WarningNotice = iota
-	ApproachingDeletionNotice
-	ImminentDeletionNotice
-	FinalDeletionNotice
-)
 
 const (
 	fromEn = "Debt-System"
@@ -489,25 +521,24 @@ const (
 )
 
 var (
-	TitleTemplateZH = map[int]string{
-		WarningNotice:             "欠费告警",
-		ApproachingDeletionNotice: "资源暂停告警",
-		ImminentDeletionNotice:    "资源释放告警",
-		FinalDeletionNotice:       "资源已释放告警",
+	TitleTemplateZHMap = map[accountv1.DebtStatusType]string{
+		accountv1.LowBalancePeriod:      "余额不足",
+		accountv1.CriticalBalancePeriod: "余额即将耗尽",
+		accountv1.DebtPeriod:            "余额耗尽",
+		accountv1.DebtDeletionPeriod:    "即将资源释放",
+		accountv1.FinalDeletionPeriod:   "彻底资源释放",
 	}
-	TitleTemplateEN = map[int]string{
-		WarningNotice:             "Debt Warning",
-		ApproachingDeletionNotice: "Resource Suspension Warning",
-		ImminentDeletionNotice:    "Resource Release Warning",
-		FinalDeletionNotice:       "Resource Release Warning",
+	TitleTemplateENMap = map[accountv1.DebtStatusType]string{
+		accountv1.LowBalancePeriod:      "Low Balance",
+		accountv1.CriticalBalancePeriod: "Critical Balance",
+		accountv1.DebtPeriod:            "Debt",
+		accountv1.DebtDeletionPeriod:    "Imminent Resource Release",
+		accountv1.FinalDeletionPeriod:   "Radical resource release",
 	}
-)
-
-var (
-	EmailTemplateEN  map[int]string
-	EmailTemplateZH  map[int]string
-	NoticeTemplateEN map[int]string
-	NoticeTemplateZH map[int]string
+	NoticeTemplateENMap map[accountv1.DebtStatusType]string
+	NoticeTemplateZHMap map[accountv1.DebtStatusType]string
+	EmailTemplateENMap  map[accountv1.DebtStatusType]string
+	EmailTemplateZHMap  map[accountv1.DebtStatusType]string
 )
 
 var (
@@ -515,7 +546,7 @@ var (
 	UTCPlus8    = time.FixedZone("UTC+8", 8*3600)
 )
 
-func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType int) error {
+func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType accountv1.DebtStatusType) error {
 	if r.SmsConfig == nil && r.VmsConfig == nil && r.smtpConfig == nil {
 		return nil
 	}
@@ -539,29 +570,30 @@ func (r *DebtReconciler) sendSMSNotice(user string, oweAmount int64, noticeType 
 			email = outh[i].ProviderID
 		}
 	}
-	if phone != "" {
-		if r.SmsConfig != nil && r.SmsConfig.SmsCode[noticeType] != "" {
-			oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
-			err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
-				PhoneNumbers: tea.String(phone),
-				SignName:     tea.String(r.SmsConfig.SmsSignName),
-				TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
-				// ｜ownAmount/1_000_000｜
-				TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
-			})
-			if err != nil {
-				return fmt.Errorf("failed to send sms notice: %w", err)
-			}
-		}
-		if r.VmsConfig != nil && noticeType == WarningNotice && r.VmsConfig.TemplateCode[noticeType] != "" {
-			err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
-			if err != nil {
-				return fmt.Errorf("failed to send vms notice: %w", err)
-			}
-		}
-	}
+	fmt.Printf("user: %s, phone: %s, email: %s\n", user, phone, email)
+	//if phone != "" {
+	//	if r.SmsConfig != nil && r.SmsConfig.SmsCode[noticeType] != "" {
+	//		oweamount := strconv.FormatInt(int64(math.Abs(math.Ceil(float64(oweAmount)/1_000_000))), 10)
+	//		err = utils.SendSms(r.SmsConfig.Client, &client2.SendSmsRequest{
+	//			PhoneNumbers: tea.String(phone),
+	//			SignName:     tea.String(r.SmsConfig.SmsSignName),
+	//			TemplateCode: tea.String(r.SmsConfig.SmsCode[noticeType]),
+	//			// ｜ownAmount/1_000_000｜
+	//			TemplateParam: tea.String("{\"user_id\":\"" + user + "\",\"oweamount\":\"" + oweamount + "\"}"),
+	//		})
+	//		if err != nil {
+	//			return fmt.Errorf("failed to send sms notice: %w", err)
+	//		}
+	//	}
+	//	if r.VmsConfig != nil && noticeType == WarningNotice && r.VmsConfig.TemplateCode[noticeType] != "" {
+	//		err = utils.SendVms(phone, r.VmsConfig.TemplateCode[noticeType], r.VmsConfig.NumberPoll, GetSendVmsTimeInUTCPlus8(time.Now()), forbidTimes)
+	//		if err != nil {
+	//			return fmt.Errorf("failed to send vms notice: %w", err)
+	//		}
+	//	}
+	//}
 	if r.smtpConfig != nil && email != "" {
-		if err = r.smtpConfig.SendEmail(EmailTemplateZH[noticeType]+"\n"+EmailTemplateEN[noticeType], email); err != nil {
+		if err = r.smtpConfig.SendEmail(r.SendDebtStatusEmailBody[noticeType], email); err != nil {
 			return fmt.Errorf("failed to send email notice: %w", err)
 		}
 	}
@@ -584,11 +616,11 @@ func GetSendVmsTimeInUTCPlus8(t time.Time) time.Time {
 	return next10AM.In(time.Local)
 }
 
-func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...int) error {
+func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, noticeTypes ...accountv1.DebtStatusType) error {
 	for i := range namespaces {
-		for j := range noticeTypes {
+		for _, noticeStatus := range noticeTypes {
 			ntf := &v1.Notification{}
-			if err := r.Get(ctx, types.NamespacedName{Name: debtChoicePrefix + strconv.Itoa(noticeTypes[j]), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(err) != nil {
+			if err := r.Get(ctx, types.NamespacedName{Name: debtChoicePrefix + strings.ToLower(string(noticeStatus)), Namespace: namespaces[i]}, ntf); client.IgnoreNotFound(err) != nil {
 				return err
 			} else if err != nil {
 				continue
@@ -607,25 +639,38 @@ func (r *DebtReconciler) readNotice(ctx context.Context, namespaces []string, no
 	return nil
 }
 
-func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount int64, noticeType int, namespaces []string, smsEnable bool) error {
+func (r *DebtReconciler) sendDesktopNoticeAndSms(ctx context.Context, user string, oweAmount int64, noticeType accountv1.DebtStatusType, namespaces []string, smsEnable, isBasicUser bool) error {
+	if isBasicUser && noticeType != accountv1.DebtPeriod && noticeType != accountv1.DebtDeletionPeriod && noticeType != accountv1.FinalDeletionPeriod && noticeType != accountv1.CriticalBalancePeriod {
+		return nil
+	}
+	if err := r.sendDesktopNotice(ctx, noticeType, namespaces); err != nil {
+		return fmt.Errorf("send notice error: %w", err)
+	}
+	if !smsEnable || (isBasicUser && noticeType == accountv1.CriticalBalancePeriod) {
+		return nil
+	}
+	return r.sendSMSNotice(user, oweAmount, noticeType)
+}
+
+func (r *DebtReconciler) sendDesktopNotice(ctx context.Context, noticeType accountv1.DebtStatusType, namespaces []string) error {
 	now := time.Now().UTC().Unix()
 	ntfTmp := &v1.Notification{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: debtChoicePrefix + strconv.Itoa(noticeType),
+			Name: debtChoicePrefix + strings.ToLower(string(noticeType)),
 		},
 	}
 	ntfTmpSpc := v1.NotificationSpec{
-		Title:        TitleTemplateEN[noticeType],
-		Message:      NoticeTemplateEN[noticeType],
+		Title:        TitleTemplateENMap[noticeType],
+		Message:      NoticeTemplateENMap[noticeType],
 		From:         fromEn,
 		Importance:   v1.High,
 		DesktopPopup: true,
 		Timestamp:    now,
 		I18n: map[string]v1.I18n{
 			languageZh: {
-				Title:   TitleTemplateZH[noticeType],
+				Title:   TitleTemplateZHMap[noticeType],
 				From:    fromZh,
-				Message: NoticeTemplateZH[noticeType],
+				Message: NoticeTemplateZHMap[noticeType],
 			},
 		},
 	}
@@ -644,30 +689,15 @@ func (r *DebtReconciler) sendNotice(ctx context.Context, user string, oweAmount 
 			return err
 		}
 	}
-	if smsEnable && (noticeType == WarningNotice || noticeType == ImminentDeletionNotice) {
-		return r.sendSMSNotice(user, oweAmount, noticeType)
-	}
 	return nil
-}
-
-func (r *DebtReconciler) sendWarningNotice(ctx context.Context, user string, oweAmount int64, namespaces []string, smsEnable bool) error {
-	return r.sendNotice(ctx, user, oweAmount, WarningNotice, namespaces, smsEnable)
-}
-
-func (r *DebtReconciler) sendApproachingDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string, smsEnable bool) error {
-	return r.sendNotice(ctx, user, oweAmount, ApproachingDeletionNotice, namespaces, smsEnable)
-}
-
-func (r *DebtReconciler) sendImminentDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string, smsEnable bool) error {
-	return r.sendNotice(ctx, user, oweAmount, ImminentDeletionNotice, namespaces, smsEnable)
-}
-
-func (r *DebtReconciler) sendFinalDeletionNotice(ctx context.Context, user string, oweAmount int64, namespaces []string, smsEnable bool) error {
-	return r.sendNotice(ctx, user, oweAmount, FinalDeletionNotice, namespaces, smsEnable)
 }
 
 func (r *DebtReconciler) SuspendUserResource(ctx context.Context, namespaces []string) error {
 	return r.updateNamespaceStatus(ctx, accountv1.SuspendDebtNamespaceAnnoStatus, namespaces)
+}
+
+func (r *DebtReconciler) DeleteUserResource(ctx context.Context, namespace []string) error {
+	return r.updateNamespaceStatus(ctx, accountv1.FinalDeletionDebtNamespaceAnnoStatus, namespace)
 }
 
 func (r *DebtReconciler) ResumeUserResource(ctx context.Context, namespaces []string) error {
@@ -680,6 +710,9 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status strin
 		if err := r.Get(ctx, types.NamespacedName{Name: namespaces[i], Namespace: r.accountSystemNamespace}, ns); err != nil {
 			return err
 		}
+		if ns.Annotations[accountv1.DebtNamespaceAnnoStatusKey] == status {
+			continue
+		}
 		// 交给namespace controller处理
 		ns.Annotations[accountv1.DebtNamespaceAnnoStatusKey] = status
 		if err := r.Client.Update(ctx, ns); err != nil {
@@ -690,18 +723,14 @@ func (r *DebtReconciler) updateNamespaceStatus(ctx context.Context, status strin
 }
 
 // convert "1:code1,2:code2" to map[int]string
-func splitSmsCodeMap(codeStr string) (map[int]string, error) {
-	codeMap := make(map[int]string)
+func splitSmsCodeMap(codeStr string) (map[string]string, error) {
+	codeMap := make(map[string]string)
 	for _, code := range strings.Split(codeStr, ",") {
 		split := strings.SplitN(code, ":", 2)
 		if len(split) != 2 {
 			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
 		}
-		codeInt, err := strconv.Atoi(split[0])
-		if err != nil {
-			return nil, fmt.Errorf("invalid sms code map: %s", codeStr)
-		}
-		codeMap[codeInt] = split[1]
+		codeMap[split[0]] = split[1]
 	}
 	return codeMap, nil
 }
@@ -715,7 +744,12 @@ func (r *DebtReconciler) setupSmsConfig() error {
 	if err != nil {
 		return fmt.Errorf("split sms code map error: %w", err)
 	}
-
+	for key := range smsCodeMap {
+		if _, ok := pkgtypes.StatusMap[pkgtypes.DebtStatusType(key)]; !ok {
+			return fmt.Errorf("invalid sms code map key: %s", key)
+		}
+	}
+	r.Logger.Info("set sms code map", "smsCodeMap", smsCodeMap, "smsSignName", os.Getenv(SMSSignNameEnv))
 	smsClient, err := utils.CreateSMSClient(os.Getenv(SMSAccessKeyIDEnv), os.Getenv(SMSAccessKeySecretEnv), os.Getenv(SMSEndpointEnv))
 	if err != nil {
 		return fmt.Errorf("create sms client error: %w", err)
@@ -739,6 +773,12 @@ func (r *DebtReconciler) setupVmsConfig() error {
 	if err != nil {
 		return fmt.Errorf("split vms code map error: %w", err)
 	}
+	for key := range vmsCodeMap {
+		if _, ok := pkgtypes.StatusMap[pkgtypes.DebtStatusType(key)]; !ok {
+			return fmt.Errorf("invalid sms code map key: %s", key)
+		}
+	}
+	r.Logger.Info("set vms code map", "vmsCodeMap", vmsCodeMap)
 	r.VmsConfig = &VmsConfig{
 		TemplateCode: vmsCodeMap,
 		NumberPoll:   os.Getenv(VmsNumberPollEnv),
@@ -747,16 +787,17 @@ func (r *DebtReconciler) setupVmsConfig() error {
 }
 
 func (r *DebtReconciler) setupSMTPConfig() error {
-	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPPortEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
+	if err := env.CheckEnvSetting([]string{SMTPHostEnv, SMTPFromEnv, SMTPPasswordEnv, SMTPTitleEnv}); err != nil {
 		return fmt.Errorf("check env setting error: %w", err)
 	}
-	serverPort, err := strconv.Atoi(os.Getenv(SMTPPortEnv))
+	serverPort, err := strconv.Atoi(env.GetEnvWithDefault(SMTPPortEnv, "465"))
 	if err != nil {
 		return fmt.Errorf("invalid smtp port: %w", err)
 	}
 	r.smtpConfig = &utils.SMTPConfig{
 		ServerHost: os.Getenv(SMTPHostEnv),
 		ServerPort: serverPort,
+		Username:   env.GetEnvWithDefault(SMTPUserEnv, os.Getenv(SMTPFromEnv)),
 		FromEmail:  os.Getenv(SMTPFromEnv),
 		Passwd:     os.Getenv(SMTPPasswordEnv),
 		EmailTitle: os.Getenv(SMTPTitleEnv),
@@ -766,23 +807,7 @@ func (r *DebtReconciler) setupSMTPConfig() error {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.Options) error {
-	r.Logger = ctrl.Log.WithName("DebtController")
-	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
-	r.LocalRegionID = os.Getenv(cockroach.EnvLocalRegion)
-	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
-	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
-
-	setupList := []func() error{
-		r.setupSmsConfig,
-		r.setupVmsConfig,
-		r.setupSMTPConfig,
-	}
-	for i := range setupList {
-		if err := setupList[i](); err != nil {
-			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
-		}
-	}
-
+	r.Init()
 	/*
 		{"DebtConfig":{
 		"ApproachingDeletionPeriod":345600,
@@ -801,34 +826,62 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controller.
 		Complete(r)
 }
 
+func (r *DebtReconciler) Init() {
+	r.Logger = ctrl.Log.WithName("DebtController")
+	r.accountSystemNamespace = env.GetEnvWithDefault(accountv1.AccountSystemNamespaceEnv, "account-system")
+	r.LocalRegionID = os.Getenv(cockroach.EnvLocalRegion)
+	debtDetectionCycleSecond := env.GetInt64EnvWithDefault(DebtDetectionCycleEnv, 1800)
+	r.DebtDetectionCycle = time.Duration(debtDetectionCycleSecond) * time.Second
+	r.userLocks = &sync.Map{}
+	r.failedUserLocks = &sync.Map{}
+	r.processID = uuid.NewString()
+
+	setupList := []func() error{
+		r.setupSmsConfig,
+		r.setupVmsConfig,
+		r.setupSMTPConfig,
+	}
+	for i := range setupList {
+		if err := setupList[i](); err != nil {
+			r.Logger.Error(err, fmt.Sprintf("failed to set up %s", runtime2.FuncForPC(reflect.ValueOf(setupList[i]).Pointer()).Name()))
+		}
+	}
+	setDefaultDebtPeriodWaitSecond()
+	r.SendDebtStatusEmailBody = make(map[accountv1.DebtStatusType]string)
+	for _, status := range []accountv1.DebtStatusType{accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod, accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod} {
+		email := os.Getenv(string(status) + "EmailBody")
+		if email == "" {
+			email = EmailTemplateZHMap[status] + "\n" + EmailTemplateENMap[status]
+		} else {
+			r.Logger.Info("set email body", "status", status, "body", email)
+		}
+		r.SendDebtStatusEmailBody[status] = email
+	}
+	r.Logger.Info("debt config", "DebtConfig", DebtConfig, "DebtDetectionCycle", r.DebtDetectionCycle)
+}
+
 func setDefaultDebtPeriodWaitSecond() {
-	/*
-		WarningPeriod:             WarnPeriodWaitSecond,
-		ApproachingDeletionPeriod: ApproachingDeletionPeriodWaitSecond,
-		ImminentDeletionPeriod:    IminentDeletionPeriodWaitSecond,
-		FinalDeletionPeriod:       FinalDeletionPeriodWaitSecond,
-	*/
-	DebtConfig[accountv1.WarningPeriod] = env.GetInt64EnvWithDefault(string(accountv1.WarningPeriod), 0*accountv1.DaySecond)
-	DebtConfig[accountv1.ApproachingDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ApproachingDeletionPeriod), 4*accountv1.DaySecond)
-	DebtConfig[accountv1.ImminentDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.ImminentDeletionPeriod), 3*accountv1.DaySecond)
+	DebtConfig[accountv1.DebtDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.DebtDeletionPeriod), 7*accountv1.DaySecond)
 	DebtConfig[accountv1.FinalDeletionPeriod] = env.GetInt64EnvWithDefault(string(accountv1.FinalDeletionPeriod), 7*accountv1.DaySecond)
-	NoticeTemplateZH = map[int]string{
-		WarningNotice:             "当前工作空间所属账户余额不足，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
-		ApproachingDeletionNotice: fmt.Sprintf("当前工作空间所属账户余额不足，系统将在%2.f小时后或欠费超过充值金额后释放当前空间的资源，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
-		ImminentDeletionNotice:    fmt.Sprintf("当前工作空间容器实例资源已被暂停，系统将在%2.f小时后彻底释放资源，无法恢复，请及时充值，以免影响您的正常使用。", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
-		FinalDeletionNotice:       "系统将随时彻底释放当前工作空间所属账户下的所有资源，请及时充值，以免影响您的正常使用。",
-	}
-	NoticeTemplateEN = map[int]string{
-		WarningNotice:             "Your account balance is not enough to pay this month's bill, and services will be suspended for you. Please recharge in time to avoid affecting your normal use.",
-		ApproachingDeletionNotice: fmt.Sprintf("Your account balance is not enough to pay this month's bill, and your resources will be released after %2.f hours or when the arrears exceed the recharge amount. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.ImminentDeletionPeriod])/3600)),
-		ImminentDeletionNotice:    fmt.Sprintf("Your container instance resources have been suspended, and the system will completely release the resources after %2.f hours, which cannot be recovered. Please recharge in time to avoid affecting your normal use.", math.Ceil(float64(DebtConfig[accountv1.FinalDeletionPeriod])/3600)),
-		FinalDeletionNotice:       "The system will completely release all your resources at any time. Please recharge in time to avoid affecting your normal use.",
-	}
 	domain := os.Getenv("DOMAIN")
-	EmailTemplateEN, EmailTemplateZH = make(map[int]string), make(map[int]string)
-	for _, i := range []int{WarningNotice, ApproachingDeletionNotice, ImminentDeletionNotice, FinalDeletionNotice} {
-		EmailTemplateEN[i] = TitleTemplateEN[i] + "：" + NoticeTemplateEN[i] + "(" + domain + ")"
-		EmailTemplateZH[i] = TitleTemplateZH[i] + "：" + NoticeTemplateZH[i] + "(" + domain + ")"
+	NoticeTemplateZHMap = map[accountv1.DebtStatusType]string{
+		accountv1.LowBalancePeriod:      "当前工作空间所属账户余额过低，请及时充值，以免影响您的正常使用。",
+		accountv1.CriticalBalancePeriod: "当前工作空间所属账户余额即将耗尽，请及时充值，以免影响您的正常使用。",
+		accountv1.DebtPeriod:            "当前工作空间所属账户余额已耗尽，系统将为您暂停服务，请及时充值，以免影响您的正常使用。",
+		accountv1.DebtDeletionPeriod:    "系统即将释放当前空间的资源，请及时充值，以免影响您的正常使用。",
+		accountv1.FinalDeletionPeriod:   "系统将随时彻底释放当前工作空间所属账户下的所有资源，请及时充值，以免影响您的正常使用。",
+	}
+	NoticeTemplateENMap = map[accountv1.DebtStatusType]string{
+		accountv1.LowBalancePeriod:      "Your account balance is too low, please recharge in time to avoid affecting your normal use.",
+		accountv1.CriticalBalancePeriod: "Your account balance is about to run out, please recharge in time to avoid affecting your normal use.",
+		accountv1.DebtPeriod:            "Your account balance has been exhausted, and services will be suspended for you. Please recharge in time to avoid affecting your normal use.",
+		accountv1.DebtDeletionPeriod:    "The system will release the resources of the current space soon. Please recharge in time to avoid affecting your normal use.",
+		accountv1.FinalDeletionPeriod:   "The system will completely release all resources under the current account at any time. Please recharge in time to avoid affecting your normal use.",
+	}
+	EmailTemplateZHMap, EmailTemplateENMap = make(map[accountv1.DebtStatusType]string), make(map[accountv1.DebtStatusType]string)
+	for _, i := range []accountv1.DebtStatusType{accountv1.LowBalancePeriod, accountv1.CriticalBalancePeriod, accountv1.DebtPeriod, accountv1.DebtDeletionPeriod, accountv1.FinalDeletionPeriod} {
+		EmailTemplateENMap[i] = TitleTemplateENMap[i] + "：" + NoticeTemplateENMap[i] + "(" + domain + ")"
+		EmailTemplateZHMap[i] = TitleTemplateZHMap[i] + "：" + NoticeTemplateZHMap[i] + "(" + domain + ")"
 	}
 }
 
@@ -855,8 +908,4 @@ func (OnlyCreatePredicate) Update(_ event.UpdateEvent) bool {
 
 func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
 	return true
-}
-
-func init() {
-	setDefaultDebtPeriodWaitSecond()
 }

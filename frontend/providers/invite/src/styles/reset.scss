@@ -137,3 +137,18 @@ div {
     }
   }
 }
+
+.chakra-table thead tr th,
+.chakra-table th,
+table tr th {
+  font-size: 14px;
+  font-weight: 400;
+  color: #18181b;
+}
+
+.chakra-table tbody tr td,
+.chakra-table td,
+table tr td {
+  font-size: 14px;
+  font-weight: 400;
+}

@@ -16,7 +16,12 @@ package database
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"gorm.io/gorm"
 
@@ -86,13 +91,21 @@ type Traffic interface {
 
 	GetPodTrafficSentBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
 	GetPodTrafficRecvBytes(startTime, endTime time.Time, namespace string, name string) (int64, error)
+
+	GetNamespaceTraffic(ctx context.Context, startTime, endTime time.Time) (result map[string]int64, err error)
 }
 
 type AccountV2 interface {
 	Close() error
+	GetGlobalDB() *gorm.DB
+	GetLocalDB() *gorm.DB
 	GetUserCr(user *types.UserQueryOpts) (*types.RegionUserCr, error)
 	GetUser(ops *types.UserQueryOpts) (*types.User, error)
+	GetUserUID(ops *types.UserQueryOpts) (uuid.UUID, error)
+	GetUserID(ops *types.UserQueryOpts) (string, error)
 	GetAccount(user *types.UserQueryOpts) (*types.Account, error)
+	GetAccountWithCredits(userUID uuid.UUID) (*types.UsableBalanceWithCredits, error)
+	GetAvailableCredits(ops *types.UserQueryOpts) ([]types.Credits, error)
 	GetAccountConfig() (types.AccountConfig, error)
 	InsertAccountConfig(config *types.AccountConfig) error
 	GetRegions() ([]types.Region, error)
@@ -103,12 +116,28 @@ type AccountV2 interface {
 	SetAccountCreateLocalRegion(account *types.Account, region string) error
 	CreateUser(oAuth *types.OauthProvider, regionUserCr *types.RegionUserCr, user *types.User, workspace *types.Workspace, userWorkspace *types.UserWorkspace) error
 	AddBalance(user *types.UserQueryOpts, balance int64) error
+	AddDeductionBalanceWithCredits(ops *types.UserQueryOpts, amount int64, orderIDs []string) error
 	ReduceBalance(ops *types.UserQueryOpts, amount int64) error
 	ReduceDeductionBalance(ops *types.UserQueryOpts, amount int64) error
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
+	NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts) (*types.Account, error)
+	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	Payment(payment *types.Payment) error
+	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
+	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 	SavePayment(payment *types.Payment) error
-	GetUnInvoicedPaymentListWithIds(ids []string) ([]types.Payment, error)
+	GetUnInvoicedPaymentListWithIDs(ids []string) ([]types.Payment, error)
+	CreatePaymentOrder(order *types.PaymentOrder) error
+	CreateSubscription(subscription *types.Subscription) error
+	SetCardInfo(info *types.CardInfo) (uuid.UUID, error)
+	GetCardInfo(cardID, userUID uuid.UUID) (*types.CardInfo, error)
+	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
+	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	SetSubscriptionPlanList(plans []types.SubscriptionPlan) error
+	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
+	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error
+	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
 	CreateAccount(ops *types.UserQueryOpts, account *types.Account) (*types.Account, error)
 	TransferAccount(from, to *types.UserQueryOpts, amount int64) error
 	TransferAccountAll(from, to *types.UserQueryOpts) error
@@ -136,4 +165,28 @@ var _ = AccountV2(&cockroach.Cockroach{})
 
 func NewAccountV2(globalURI, localURI string) (AccountV2, error) {
 	return cockroach.NewCockRoach(globalURI, localURI)
+}
+
+func InitRegionEnv(db *gorm.DB, localDomain string) error {
+	var regionENV []types.RegionConfig
+	if err := db.Model(&types.RegionConfig{}).Find(&regionENV).Error; err != nil && err != gorm.ErrRecordNotFound {
+		return fmt.Errorf("failed to get region env: %v", err)
+	}
+	// set global env
+	for _, envCfg := range regionENV {
+		if strings.ToUpper(envCfg.Region) == "GLOBAL" {
+			if err := os.Setenv(envCfg.Key, envCfg.Value); err != nil {
+				return fmt.Errorf("set global env error: %v", err)
+			}
+		}
+	}
+	// region env Cover
+	for _, envCfg := range regionENV {
+		if envCfg.Region == localDomain {
+			if err := os.Setenv(envCfg.Key, envCfg.Value); err != nil {
+				return fmt.Errorf("set region env error: %v", err)
+			}
+		}
+	}
+	return nil
 }

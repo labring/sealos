@@ -14,7 +14,11 @@
 
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ObjectStorageTraffic struct {
 	Time   time.Time `json:"time" bson:"time"`
@@ -26,3 +30,26 @@ type ObjectStorageTraffic struct {
 	//The sent traffic since the last time
 	Sent int64 `json:"sent" bson:"sent"`
 }
+
+type UserTimeRangeTraffic struct {
+	CreatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	UpdatedAt     time.Time                  `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
+	NextCleanTime time.Time                  `gorm:"type:timestamp(3) with time zone"`
+	UserUID       uuid.UUID                  `gorm:"type:uuid;primaryKey" json:"user_uid" bson:"user_uid"`
+	SentBytes     int64                      `gorm:"type:bigint;default:0" json:"sent_bytes" bson:"sent_bytes"`
+	Status        UserTimeRangeTrafficStatus `gorm:"type:varchar(20);default:'processing'" json:"status" bson:"status"`
+}
+
+func (UserTimeRangeTraffic) TableName() string {
+	return "UserTimeRangeTraffic"
+}
+
+type UserTimeRangeTrafficStatus string
+
+const (
+	UserTimeRangeTrafficStatusUsedUp     UserTimeRangeTrafficStatus = "used_up"
+	UserTimeRangeTrafficStatusProcessing UserTimeRangeTrafficStatus = "processing"
+	UserTimeRangeTrafficStatusSkip       UserTimeRangeTrafficStatus = "skip"
+
+	UserTimeRangeTrafficStatusRecovering UserTimeRangeTrafficStatus = "recovering"
+)

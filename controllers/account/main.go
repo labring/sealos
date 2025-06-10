@@ -22,6 +22,15 @@ import (
 	"os"
 	"time"
 
+	"k8s.io/utils/ptr"
+	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/config"
+
+	"github.com/labring/sealos/controllers/account/controllers/utils"
+
+	"github.com/labring/sealos/controllers/pkg/utils/env"
+
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"github.com/labring/sealos/controllers/pkg/database"
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
@@ -29,10 +38,8 @@ import (
 	notificationv1 "github.com/labring/sealos/controllers/pkg/notification/api/v1"
 	"github.com/labring/sealos/controllers/pkg/resources"
 	"github.com/labring/sealos/controllers/pkg/types"
-	rate "github.com/labring/sealos/controllers/pkg/utils/rate"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
-	kbv1alpha1 "github.com/apecloud/kubeblocks/apis/apps/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -61,7 +68,7 @@ func init() {
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
 	utilruntime.Must(notificationv1.AddToScheme(scheme))
-	utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
+	//utilruntime.Must(kbv1alpha1.SchemeBuilder.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -72,7 +79,7 @@ func main() {
 		probeAddr            string
 		concurrent           int
 		development          bool
-		rateLimiterOptions   rate.LimiterOptions
+		rateLimiterOptions   = &utils.LimiterOptions{}
 		leaseDuration        time.Duration
 		renewDeadline        time.Duration
 		retryPeriod          time.Duration
@@ -83,7 +90,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", true,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.IntVar(&concurrent, "concurrent", 5, "The number of concurrent cluster reconciles.")
+	flag.IntVar(&concurrent, "concurrent", 10, "The number of concurrent cluster reconciles.")
 	flag.DurationVar(&leaseDuration, "leader-elect-lease-duration", 60*time.Second, "Duration that non-leader candidates will wait to force acquire leadership.")
 	flag.DurationVar(&renewDeadline, "leader-elect-renew-deadline", 40*time.Second, "Duration the acting master will retry refreshing leadership before giving up.")
 	flag.DurationVar(&retryPeriod, "leader-elect-retry-period", 5*time.Second, "Duration the LeaderElector clients should wait between tries of actions.")
@@ -112,6 +119,9 @@ func main() {
 		LeaseDuration:          &leaseDuration,
 		RenewDeadline:          &renewDeadline,
 		RetryPeriod:            &retryPeriod,
+		Controller: ctrlconfig.Controller{
+			UsePriorityQueue: ptr.To(true),
+		},
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
@@ -127,7 +137,7 @@ func main() {
 	}
 	rateOpts := controller.Options{
 		MaxConcurrentReconciles: concurrent,
-		RateLimiter:             rate.GetRateLimiter(rateLimiterOptions),
+		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
 	dbCtx := context.Background()
 	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
@@ -169,12 +179,26 @@ func main() {
 			setupLog.Error(err, "unable to disconnect from cockroach")
 		}
 	}()
+	if err = database.InitRegionEnv(v2Account.GetGlobalDB(), v2Account.GetLocalRegion().Domain); err != nil {
+		setupLog.Error(err, "unable to init region env")
+		os.Exit(1)
+	}
+	skipExpiredUserTimeDuration := time.Hour * 24 * 2
+	if os.Getenv("SKIP_EXPIRED_USER_TIME") != "" {
+		skipExpiredUserTimeDuration, err = time.ParseDuration(os.Getenv("SKIP_EXPIRED_USER_TIME"))
+		if err != nil {
+			setupLog.Error(err, "unable to parse skip expired user time")
+			os.Exit(1)
+		}
+	}
+	setupLog.Info("skip expired user time", "duration", skipExpiredUserTimeDuration)
 	accountReconciler := &controllers.AccountReconciler{
-		Client:      mgr.GetClient(),
-		Scheme:      mgr.GetScheme(),
-		DBClient:    dbClient,
-		AccountV2:   v2Account,
-		CVMDBClient: cvmDBClient,
+		Client:                      mgr.GetClient(),
+		Scheme:                      mgr.GetScheme(),
+		DBClient:                    dbClient,
+		AccountV2:                   v2Account,
+		CVMDBClient:                 cvmDBClient,
+		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
 	activities, discountSteps, discountRatios, err := controllers.RawParseRechargeConfig()
 	if err != nil {
@@ -194,22 +218,38 @@ func main() {
 	if err = (accountReconciler).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Account")
 	}
-	if err = (&controllers.DebtReconciler{
-		Client:    mgr.GetClient(),
-		Scheme:    mgr.GetScheme(),
-		AccountV2: v2Account,
-	}).SetupWithManager(mgr, rateOpts); err != nil {
-		setupManagerError(err, "Debt")
+	debtUserMap := maps.NewConcurrentMap()
+	debtController := &controllers.DebtReconciler{
+		AccountReconciler:           accountReconciler,
+		Client:                      mgr.GetClient(),
+		Scheme:                      mgr.GetScheme(),
+		AccountV2:                   v2Account,
+		DebtUserMap:                 debtUserMap,
+		InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
+		SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
 	}
+	debtController.Init()
+	//if err = (&controllers.DebtReconciler{
+	//	AccountReconciler:           accountReconciler,
+	//	Client:                      mgr.GetClient(),
+	//	Scheme:                      mgr.GetScheme(),
+	//	AccountV2:                   v2Account,
+	//	DebtUserMap:                 debtUserMap,
+	//	InitUserAccountFunc:         accountReconciler.InitUserAccountFunc,
+	//	SkipExpiredUserTimeDuration: skipExpiredUserTimeDuration,
+	//}).SetupWithManager(mgr, rateOpts); err != nil {
+	//	setupManagerError(err, "Debt")
+	//}
 
 	if err = cache.SetupCache(mgr); err != nil {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
-	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+	_true := "true"
+	if os.Getenv("DISABLE_WEBHOOKS") == _true {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account}})
+		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient(), AccountV2: v2Account, TTLUserMap: maps.New[*types.UsableBalanceWithCredits](env.GetIntEnvWithDefault("DEBT_WEBHOOK_CACHE_USER_TTL", 15))}})
 	}
 
 	err = dbClient.InitDefaultPropertyTypeLS()
@@ -218,11 +258,12 @@ func main() {
 		os.Exit(1)
 	}
 	billingReconciler := controllers.BillingReconciler{
-		DBClient:   dbClient,
-		Properties: resources.DefaultPropertyTypeLS,
-		Client:     mgr.GetClient(),
-		Scheme:     mgr.GetScheme(),
-		AccountV2:  v2Account,
+		DBClient:    dbClient,
+		Properties:  resources.DefaultPropertyTypeLS,
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
+		AccountV2:   v2Account,
+		DebtUserMap: debtUserMap,
 	}
 	if err = billingReconciler.Init(); err != nil {
 		setupLog.Error(err, "unable to init billing reconciler")
@@ -235,6 +276,12 @@ func main() {
 		setupLog.Error(err, "unable to add billing task runner")
 		os.Exit(1)
 	}
+	if env.GetEnvWithDefault("SUPPORT_DEBT", _true) == _true {
+		if err := mgr.Add(debtController); err != nil {
+			setupLog.Error(err, "unable to add debt controller")
+			os.Exit(1)
+		}
+	}
 
 	if err = (&controllers.PodReconciler{
 		Client: mgr.GetClient(),
@@ -245,7 +292,7 @@ func main() {
 	if err = (&controllers.NamespaceReconciler{
 		Client: watchClient,
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	}).SetupWithManager(mgr, rateOpts); err != nil {
 		setupManagerError(err, "Namespace")
 	}
 
@@ -257,6 +304,32 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}
+
+	var userTrafficMonitor *controllers.UserTrafficMonitor
+	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" && os.Getenv(database.TrafficMongoURI) != "" {
+		trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
+		if err != nil {
+			setupLog.Error(err, "unable to connect to traffic mongo")
+			os.Exit(1)
+		}
+		userTrafficCtrl := controllers.NewUserTrafficController(accountReconciler, trafficDBClient)
+		go userTrafficCtrl.ProcessTrafficWithTimeRange()
+		if env.GetEnvWithDefault("SUPPORT_MONITOR_USER_TRAFFIC", "false") == _true {
+			userTrafficMonitor, err = controllers.NewUserTrafficMonitor(userTrafficCtrl)
+			if err != nil {
+				setupLog.Error(err, "unable to create user traffic monitor")
+				os.Exit(1)
+			}
+			userTrafficMonitor.Start()
+		}
+	} else {
+		setupLog.Info("skip user traffic controller")
+	}
+	defer func() {
+		if userTrafficMonitor != nil {
+			userTrafficMonitor.Stop()
+		}
+	}()
 
 	//+kubebuilder:scaffold:builder
 

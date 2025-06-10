@@ -6,12 +6,14 @@ export type CloudConfigType = {
   regionUID: string;
   certSecretName: string;
   proxyDomain: string;
+  allowedOrigins: string[];
 };
 
 export type CommonConfigType = {
   enterpriseRealNameAuthEnabled: boolean;
   realNameAuthEnabled: boolean;
   realNameReward: number;
+  realNameCallbackUrl?: string;
   guideEnabled: boolean;
   apiEnabled: boolean;
   rechargeEnabled: boolean;
@@ -25,7 +27,12 @@ export type CommonConfigType = {
 export type CommonClientConfigType = DeepRequired<
   Omit<
     CommonConfigType,
-    'apiEnabled' | 'objectstorageUrl' | 'applaunchpadUrl' | 'dbproviderUrl' | 'templateUrl'
+    | 'apiEnabled'
+    | 'objectstorageUrl'
+    | 'applaunchpadUrl'
+    | 'dbproviderUrl'
+    | 'templateUrl'
+    | 'realNameCallbackUrl'
   >
 >;
 export type DatabaseConfigType = {
@@ -72,6 +79,7 @@ export type LayoutConfigType = {
     accountSettingEnabled: boolean;
     docsUrl?: string;
     aiAssistantEnabled: boolean;
+    bannerEnabled: boolean;
   };
 };
 
@@ -256,7 +264,8 @@ export const DefaultCloudConfig: CloudConfigType = {
   port: '443',
   regionUID: 'sealos-cloud',
   certSecretName: 'wildcard-cert',
-  proxyDomain: 'cloud.sealos.io'
+  proxyDomain: 'cloud.sealos.io',
+  allowedOrigins: ['cloud.sealos.io']
 };
 
 export const DefaultLayoutConfig: LayoutConfigType = {
@@ -283,7 +292,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     githubStarEnabled: false,
     workorderEnabled: false,
     accountSettingEnabled: false,
-    aiAssistantEnabled: false
+    aiAssistantEnabled: false,
+    bannerEnabled: false
   }
 };
 

@@ -17,15 +17,15 @@ import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import Form from './components/Form';
 import ReadMe from './components/ReadMe';
 import { getTemplateInputDefaultValues, getTemplateValues } from '@/utils/template';
-import { useUserStore } from '@/store/user';
 import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
+import { ResponseCode } from '@/types/response';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -34,8 +34,7 @@ export default function EditApp({
   appName,
   metaData,
   brandName,
-  readmeContent,
-  readUrl
+  initTemplateData
 }: {
   appName?: string;
   metaData: {
@@ -44,8 +43,7 @@ export default function EditApp({
     description: string;
   };
   brandName?: string;
-  readmeContent: string;
-  readUrl: string;
+  initTemplateData: TemplateSourceType;
 }) {
   const { t, i18n } = useTranslation();
   const { message: toast } = useMessage();
@@ -57,13 +55,14 @@ export default function EditApp({
   const [templateSource, setTemplateSource] = useState<TemplateSourceType>();
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
   const { setAppType } = useSearchStore();
-  const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
-  useEffect(() => {
-    loadUserQuota();
-  }, []);
+  // const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
+  // useEffect(() => {
+  //   loadUserQuota();
+  // }, []);
 
   const detailName = useMemo(
     () => templateSource?.source?.defaults?.app_name?.value || '',
@@ -75,9 +74,13 @@ export default function EditApp({
     return usage;
   }, [yamlList]);
 
-  const { data: platformEnvs } = useQuery(['getPlatformEnvs'], getPlatformEnv, {
-    staleTime: 5 * 60 * 1000
-  });
+  const { data: platformEnvs } = useQuery(
+    ['getPlatformEnvs'],
+    () => getPlatformEnv({ insideCloud }),
+    {
+      retry: 3
+    }
+  );
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: insideCloud ? 'Confirm Deploy Application?' : 'Heading to sealos soon'
@@ -115,18 +118,27 @@ export default function EditApp({
     [platformEnvs]
   );
 
-  const formOnchangeDebounce = useCallback(
-    debounce((inputs: Record<string, string>) => {
+  const debouncedFnRef = useRef<any>(null);
+  useEffect(() => {
+    debouncedFnRef.current = debounce((inputValues: Record<string, string>) => {
       try {
         if (!templateSource) return;
-        const list = generateYamlData(templateSource, inputs);
+        const list = generateYamlData(templateSource, inputValues);
         setYamlList(list);
       } catch (error) {
         console.log(error);
       }
-    }, 500),
-    [templateSource, generateYamlData]
-  );
+    }, 500);
+    return () => {
+      debouncedFnRef.current = null;
+    };
+  }, [templateSource, generateYamlData]);
+
+  const formOnchangeDebounce = useCallback((inputs: Record<string, string>) => {
+    if (debouncedFnRef.current) {
+      debouncedFnRef.current(inputs);
+    }
+  }, []);
 
   const getCachedValue = ():
     | {
@@ -154,20 +166,20 @@ export default function EditApp({
   }, [formHook, formOnchangeDebounce]);
 
   const submitSuccess = async () => {
-    const quoteCheckRes = checkQuotaAllow({
-      cpu: usage.cpu.max,
-      memory: usage.memory.max,
-      storage: usage.storage.max
-    });
+    // const quoteCheckRes = checkQuotaAllow({
+    //   cpu: usage.cpu.max,
+    //   memory: usage.memory.max,
+    //   storage: usage.storage.max
+    // });
+    // if (quoteCheckRes) {
+    //   return toast({
+    //     status: 'warning',
+    //     title: t(quoteCheckRes),
+    //     duration: 5000,
+    //     isClosable: true
+    //   });
+    // }
 
-    if (quoteCheckRes) {
-      return toast({
-        status: 'warning',
-        title: t(quoteCheckRes),
-        duration: 5000,
-        isClosable: true
-      });
-    }
     setIsLoading(true);
 
     try {
@@ -176,8 +188,19 @@ export default function EditApp({
       } else {
         await handleInside();
       }
-    } catch (error) {
-      setErrorMessage(JSON.stringify(error));
+    } catch (error: any) {
+      if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+        setErrorMessage(t('user_balance_not_enough'));
+        setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+      } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+        setErrorMessage(t('forbidden_create_app'));
+        setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+      } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
+        setErrorMessage(t('app_already_exists'));
+        setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+      } else {
+        setErrorMessage(JSON.stringify(error));
+      }
     }
     setIsLoading(false);
   };
@@ -257,6 +280,8 @@ export default function EditApp({
     ['getTemplateSource', templateName],
     () => getTemplateSource(templateName),
     {
+      initialData: initTemplateData,
+      enabled: !!initTemplateData,
       onSuccess(data) {
         parseTemplate(data);
       },
@@ -391,7 +416,11 @@ export default function EditApp({
               platformEnvs={platformEnvs!}
             />
             {/* <Yaml yamlList={yamlList} pxVal={pxVal}></Yaml> */}
-            <ReadMe key={readUrl} readUrl={readUrl} readmeContent={readmeContent} />
+            <ReadMe
+              key={templateSource?.readUrl || 'readme_url'}
+              readUrl={templateSource?.readUrl || ''}
+              readmeContent={templateSource?.readmeContent || ''}
+            />
           </Flex>
         </Flex>
       </Flex>
@@ -399,49 +428,20 @@ export default function EditApp({
       <ConfirmChild2 />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={applyError}
+          content={errorMessage}
+          errorCode={errorCode}
+          onClose={() => setErrorMessage('')}
+        />
       )}
     </Box>
   );
 }
 
-async function fetchReadmeContent(url: string): Promise<string> {
-  let retryCount = 0;
-  const maxRetries = 3;
-
-  while (retryCount < maxRetries) {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          Accept: 'text/markdown,text/plain,*/*',
-          'Content-Type': 'text/markdown; charset=UTF-8',
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache',
-          'User-Agent': 'Mozilla/5.0'
-        },
-        credentials: 'omit'
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.text();
-    } catch (err) {
-      retryCount++;
-
-      if (retryCount === maxRetries) {
-        return '';
-      }
-      await new Promise((resolve) => setTimeout(resolve, retryCount * 1000));
-    }
-  }
-  return '';
-}
-
 export async function getServerSideProps(content: any) {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
-  const local =
+  const locale =
     content?.req?.cookies?.NEXT_LOCALE ||
     compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
   const appName = content?.query?.templateName || '';
@@ -449,12 +449,14 @@ export async function getServerSideProps(content: any) {
 
   content?.res.setHeader(
     'Set-Cookie',
-    `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
+    `NEXT_LOCALE=${locale}; Max-Age=2592000; Secure; SameSite=None`
   );
 
   try {
     const { data: templateSource } = await (
-      await fetch(`${baseurl}/api/getTemplateSource?templateName=${appName}`)
+      await fetch(
+        `${baseurl}/api/getTemplateSource?templateName=${appName}&locale=${locale}&includeReadme=true`
+      )
     ).json();
 
     const templateDetail = templateSource?.templateYaml;
@@ -464,17 +466,12 @@ export async function getServerSideProps(content: any) {
       description: templateDetail?.spec?.description || ''
     };
 
-    const readUrl =
-      templateDetail?.spec?.i18n?.[local]?.readme || templateDetail?.spec?.readme || '';
-    const readmeContent = readUrl ? await fetchReadmeContent(readUrl) : '';
-
     return {
       props: {
+        initTemplateData: templateSource,
         appName,
         metaData,
         brandName,
-        readmeContent,
-        readUrl,
         ...(await serviceSideProps(content))
       }
     };
@@ -483,11 +480,10 @@ export async function getServerSideProps(content: any) {
 
     return {
       props: {
+        initTemplateData: null,
         appName,
         metaData: { title: appName, keywords: '', description: '' },
         brandName,
-        readmeContent: '',
-        readUrl: '',
         ...(await serviceSideProps(content))
       }
     };

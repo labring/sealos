@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/controllers/pkg/utils/maps"
+
 	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 
 	account2 "github.com/labring/sealos/controllers/pkg/account"
@@ -58,8 +60,9 @@ var logger = logf.Log.WithName("debt-resource")
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
-	Client    client.Client
-	AccountV2 *cockroach.Cockroach
+	Client     client.Client
+	AccountV2  *cockroach.Cockroach
+	TTLUserMap *maps.TTLMap[*pkgtype.UsableBalanceWithCredits]
 }
 
 var kubeSystemGroup string
@@ -148,26 +151,47 @@ func (d *DebtValidate) checkOption(ctx context.Context, logger logr.Logger, c cl
 	// Check if it is a user namespace
 	user, ok := ns.Labels[userv1.UserLabelOwnerKey]
 	if !ok {
-		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
+		return admission.ValidationResponse(false, fmt.Sprintf("this namespace is not user namespace %s, or have not created", ns.Name))
 	}
 	logger.V(1).Info("check user namespace", "ns", ns.Name, "user", user)
-	account, err := d.AccountV2.GetAccount(&pkgtype.UserQueryOpts{Owner: user})
+
+	// Check cache first
+	cacheKey := fmt.Sprintf("account:%s", user)
+	if cachedAccount, ok := d.TTLUserMap.Get(cacheKey); ok {
+		logger.Info("cache hit for user", "user", user)
+		if cachedAccount.Balance+cachedAccount.UsableCredits <= cachedAccount.DeductionBalance {
+			return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(cachedAccount), user)))
+		}
+		return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s (from cache)", user, ns.Name))
+	}
+
+	// Cache miss, query database
+	userUID, err := d.AccountV2.GetUserUID(&pkgtype.UserQueryOpts{Owner: user})
+	if err != nil {
+		logger.Error(err, "get user error", "user", user)
+		return admission.ValidationResponse(true, err.Error())
+	}
+	account, err := d.AccountV2.GetAccountWithCredits(userUID)
 	if err != nil {
 		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}
-	if account.Balance < account.DeductionBalance {
-		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0,now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(*account), user)))
+	// Store in cache
+	d.TTLUserMap.Put(cacheKey, account)
+	logger.V(1).Info("cached account for user", "user", user)
+
+	if account.Balance+account.UsableCredits <= account.DeductionBalance {
+		return admission.ValidationResponse(false, fmt.Sprintf(code.MessageFormat, code.InsufficientBalance, fmt.Sprintf("account balance less than 0, now account is %.2f¥. Please recharge the user %s.", GetAccountDebtBalance(account), user)))
 	}
-	return admission.Allowed(fmt.Sprintf("pass user %s , namespace %s", user, ns.Name))
+	return admission.Allowed(fmt.Sprintf("pass user %s, namespace %s", user, ns.Name))
 }
 
 func isDefaultQuotaName(name string) bool {
 	return strings.HasPrefix(name, "quota-") || name == debtLimit0QuotaName
 }
 
-func GetAccountDebtBalance(account pkgtype.Account) float64 {
-	return account2.GetCurrencyBalance(account.Balance - account.DeductionBalance)
+func GetAccountDebtBalance(account *pkgtype.UsableBalanceWithCredits) float64 {
+	return account2.GetCurrencyBalance(account.Balance + account.UsableCredits - account.DeductionBalance)
 }
 
 const debtLimit0QuotaName = "debt-limit0"

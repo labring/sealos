@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { getUserKubeconfigNotPatch } from '@/services/backend/kubernetes/admin';
-import { verifyAccessToken } from '@/services/backend/auth';
+import { verifyAccessToken, verifyAppToken } from '@/services/backend/auth';
 
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const regionUser = await verifyAccessToken(req.headers);
+    const regionUser =
+      (await verifyAccessToken(req.headers)) || (await verifyAppToken(req.headers));
     if (!regionUser)
       return jsonRes(res, {
         code: 401,

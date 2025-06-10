@@ -4,30 +4,26 @@ import axios, {
   AxiosResponse,
   AxiosRequestConfig
 } from 'axios';
-import type { ApiResp } from './kubernet';
-import { isApiResp } from './kubernet';
 import { getUserKubeConfig } from '@/utils/user';
+import { ApiResponse, ResponseCode } from '@/types/response';
 
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 2 * 60 * 1000
+  timeout: 60000
 });
 
 // request interceptor
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // auto append service prefix
     if (config.url && !config.url?.startsWith('/api/')) {
       config.url = '' + config.url;
     }
     let _headers: AxiosHeaders = config.headers;
 
-    //获取token，并将其添加至请求头中
     _headers['Authorization'] = config.headers.Authorization
       ? config.headers.Authorization
       : encodeURIComponent(getUserKubeConfig());
-
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
@@ -37,32 +33,33 @@ request.interceptors.request.use(
   },
   (error: any) => {
     error.data = {};
-    error.data.msg = '服务器异常，请联系管理员！';
+    error.data.msg = 'Server abnormality, please contact the administrator!';
     return Promise.resolve(error);
   }
 );
 
 // response interceptor
 request.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: AxiosResponse<ApiResponse>) => {
     const { status, data } = response;
-    if (status < 200 || status >= 300 || !isApiResp(data)) {
+    if (status < 200 || status >= 300) {
+      return Promise.reject({
+        code: status,
+        message: `HTTP Error: ${status}`
+      });
+    }
+
+    if (data.code !== ResponseCode.SUCCESS) {
       return Promise.reject(data);
     }
 
-    const apiResp = data as ApiResp;
-    if (apiResp.code < 200 || apiResp.code >= 400) {
-      return Promise.reject(apiResp);
-    }
-
-    response.data = apiResp.data;
-    return response.data;
+    return data.data;
   },
   (error: any) => {
     if (axios.isCancel(error)) {
       return Promise.reject('cancel request' + String(error));
     } else {
-      error.errMessage = '请求超时或服务器异常，请检查网络或联系管理员！';
+      error.errMessage = 'Server abnormality, please contact the administrator!';
     }
     return Promise.reject(error);
   }
@@ -78,6 +75,7 @@ export function GET<T = any>(
     ...config
   });
 }
+
 export function POST<T = any>(
   url: string,
   data?: { [key: string]: any },
@@ -85,6 +83,7 @@ export function POST<T = any>(
 ): Promise<T> {
   return request.post(url, data, config);
 }
+
 export function DELETE<T = any>(
   url: string,
   data?: { [key: string]: any },

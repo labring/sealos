@@ -105,6 +105,7 @@ export async function POST(req: NextRequest) {
       data: 'success start devbox'
     });
   } catch (err: any) {
+    console.log('error', err);
     return jsonRes({
       code: 500,
       message: err?.message || 'Internal server error',

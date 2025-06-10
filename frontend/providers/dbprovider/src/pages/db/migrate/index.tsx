@@ -113,16 +113,16 @@ const EditApp = ({
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
       // quote check
-      const quoteCheckRes = checkQuotaAllow(formData);
-      if (quoteCheckRes) {
-        setIsLoading(false);
-        return toast({
-          status: 'warning',
-          title: t(quoteCheckRes),
-          duration: 5000,
-          isClosable: true
-        });
-      }
+      // const quoteCheckRes = checkQuotaAllow(formData);
+      // if (quoteCheckRes) {
+      //   setIsLoading(false);
+      //   return toast({
+      //     status: 'warning',
+      //     title: t(quoteCheckRes),
+      //     duration: 5000,
+      //     isClosable: true
+      //   });
+      // }
       await applyYamlList(yamlList, 'create');
       toast({
         title: t('migration_task_created_successfully'),

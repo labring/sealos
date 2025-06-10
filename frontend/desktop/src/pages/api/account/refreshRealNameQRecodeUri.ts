@@ -2,7 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import { enableRealNameAuth } from '@/services/enable';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import * as tcsdk from 'tencentcloud-sdk-nodejs';
-import { verifyAccessToken } from '@/services/backend/auth';
+import { generateAuthenticationToken, verifyAccessToken } from '@/services/backend/auth';
 import { globalPrisma } from '@/services/backend/db/init';
 
 type TencentCloudFaceAuthConfig = {
@@ -117,11 +117,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const currentTime = new Date().getTime();
 
-    const redirectUrl = `https://${global.AppConfig?.cloud.domain}/api/account/faceIdRealNameAuthCallback`;
-    const regionToken = req.headers['authorization'] as string;
+    const redirectUrl =
+      global.AppConfig?.common.realNameCallbackUrl ||
+      `https://${global.AppConfig?.cloud.domain}/api/account/faceIdRealNameAuthCallback`;
+
+    const globalToken = generateAuthenticationToken({
+      userUid: payload.userUid,
+      userId: payload.userId
+    });
+
     const urlResult: QRCodeUrlResult = await generateRealNameQRcodeUri(
       redirectUrl,
-      regionToken,
+      globalToken,
       config as TencentCloudFaceAuthConfig
     );
 
@@ -161,7 +168,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 async function generateRealNameQRcodeUri(
   redirectUrl: string,
-  regionToken: string,
+  globalToken: string,
   config: TencentCloudFaceAuthConfig
 ): Promise<QRCodeUrlResult> {
   const FaceClient = tcsdk.faceid.v20180301.Client;
@@ -184,7 +191,7 @@ async function generateRealNameQRcodeUri(
   const params = {
     RuleId: config.ruleId,
     RedirectUrl: redirectUrl,
-    Extra: `regionToken=${regionToken}`
+    Extra: `globalToken=${globalToken}`
   };
 
   const data = await client.DetectAuth(params);

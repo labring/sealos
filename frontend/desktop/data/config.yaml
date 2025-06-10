@@ -3,6 +3,14 @@ cloud:
   port: ""
   regionUID: "thisiaregionuid"
   certSecretName: "wildcard-cert"
+  allowedOrigins:
+    - "https://applaunchpad.127.0.0.1.nip.io"
+    - "https://dbprovider.127.0.0.1.nip.io"
+    - "https://costcenter.127.0.0.1.nip.io"
+    - "https://cronjob.127.0.0.1.nip.io"
+    - "https://objectstorage.127.0.0.1.nip.io"
+    - "https://template.127.0.0.1.nip.io"
+    - "https://terminal.127.0.0.1.nip.io"
 common:
   enterpriseSupportingMaterials: ""
   enterpriseRealNameAuthEnabled: false
@@ -31,6 +39,7 @@ desktop:
       accountSettingEnabled: true
       docsUrl: "https://sealos.run/docs/Intro/"
       aiAssistantEnabled: false
+      bannerEnabled: false
   auth:
     proxyAddress: ""
     callbackURL: "https://127.0.0.1.nip.io/callback"

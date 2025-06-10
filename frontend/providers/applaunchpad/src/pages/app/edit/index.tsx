@@ -33,6 +33,7 @@ import Header from './components/Header';
 import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
+import { ResponseCode } from '@/types/response';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -105,6 +106,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const { title, applyBtnText, applyMessage, applySuccess, applyError } = editModeMap(!!appName);
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
+  const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
@@ -185,10 +187,19 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (userSourcePrice?.gpu) {
           refetchPrice();
         }
-      } catch (error) {
-        console.error(error);
-        const msg = getErrText(error);
-        setErrorMessage(msg || JSON.stringify(error));
+      } catch (error: any) {
+        if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
+          setErrorMessage(t('user_balance_not_enough'));
+          setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+        } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
+          setErrorMessage(t('forbidden_create_app'));
+          setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+        } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
+          setErrorMessage(t('app_already_exists'));
+          setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+        } else {
+          setErrorMessage(JSON.stringify(error));
+        }
       }
       setIsLoading(false);
     },
@@ -357,15 +368,16 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
               // quote check
-              const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
-              if (quoteCheckRes) {
-                return toast({
-                  status: 'warning',
-                  title: t(quoteCheckRes),
-                  duration: 5000,
-                  isClosable: true
-                });
-              }
+              // const quoteCheckRes = checkQuotaAllow(data, oldAppEditData.current);
+              // if (quoteCheckRes) {
+              //   return toast({
+              //     status: 'warning',
+              //     title: t(quoteCheckRes),
+              //     duration: 5000,
+              //     isClosable: true
+              //   });
+              // }
+
               // check network port
               if (!checkNetworkPorts(data.networks)) {
                 return toast({
@@ -418,7 +430,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       <ConfirmChild />
       <Loading />
       {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
+        <ErrorModal
+          title={applyError}
+          content={errorMessage}
+          onClose={() => setErrorMessage('')}
+          errorCode={errorCode}
+        />
       )}
     </>
   );

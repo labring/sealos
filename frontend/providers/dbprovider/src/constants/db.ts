@@ -279,7 +279,7 @@ export const DBBackupMethodNameMap = {
 
 export const defaultDBEditValue: DBEditType = {
   dbType: DBTypeEnum.postgresql,
-  dbVersion: '',
+  dbVersion: 'postgresql-14.8.0',
   dbName: 'test-db',
   replicas: 1,
   cpu: CpuSlideMarkList[1].value,

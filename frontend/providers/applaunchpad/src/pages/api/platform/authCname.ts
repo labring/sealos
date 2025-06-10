@@ -2,7 +2,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import dns from 'dns';
 import type { AuthCnamePrams } from '@/api/params';
-import { getErrText } from '@/utils/tools';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

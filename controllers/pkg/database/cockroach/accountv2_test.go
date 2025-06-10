@@ -64,3 +64,54 @@ func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
 	}
 	t.Logf("account: %+v", account)
 }
+
+func TestCockroach_InitTables(t *testing.T) {
+	os.Setenv("LOCAL_REGION", "")
+	ck, err := NewCockRoach("", "")
+	if err != nil {
+		t.Errorf("NewCockRoach() error = %v", err)
+		return
+	}
+	defer ck.Close()
+
+	//uid, err := uuid.Parse("9477dc81-de9a-48b0-b88e-5b3ec6c33a54")
+	//if err != nil {
+	//	t.Fatalf("uuid.Parse() error = %v", err)
+	//}
+	//-2.77
+	ops := &types.UserQueryOpts{
+		//UID: uid,
+		//ID: "9F5NY4_lbS",
+		Owner:       "6it2bra2",
+		IgnoreEmpty: true,
+	}
+
+	userUID, err := ck.GetUser(ops)
+	if err != nil {
+		t.Fatalf("GetUserUID() error = %v", err)
+	}
+	t.Logf("userUID: %+v", userUID)
+
+	//err = ck.InitTables()
+	//if err != nil {
+	//	t.Errorf("InitTables() error = %v", err)
+	//	return
+	//}
+	//
+	//
+	//err = ck.CreateCredits(&types.Credits{
+	//	UserUID:  uid,
+	//	Amount:   100000000,
+	//	ExpireAt: time.Now().UTC().Add(10 * 365 * 24 * time.Hour),
+	//	StartAt:  time.Now().UTC(),
+	//	Status:   types.CreditsStatusActive,
+	//})
+	//if err != nil {
+	//	t.Fatalf("CreateCredits() error = %v", err)
+	//}
+	//
+	//err = ck.AddDeductionBalanceWithCredits(ops, 10_000000, []string{"order1", "order2"})
+	//if err != nil {
+	//	t.Fatalf("AddDeductionBalanceWithCredits() error = %v", err)
+	//}
+}

@@ -182,12 +182,12 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
 
   return (
     <>
-      <Head>
-        <title>{config.launchpad.meta.title}</title>
-        <meta name="description" content={config.launchpad.meta.description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      {config?.launchpad?.meta?.title && (
+        <Head>
+          <title>{config?.launchpad?.meta?.title}</title>
+          <meta name="description" content={config?.launchpad?.meta?.description} />
+        </Head>
+      )}
       <QueryClientProvider client={queryClient}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />
@@ -195,7 +195,7 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
           <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
-      {config.launchpad.meta.scripts.map((script, i) => (
+      {config?.launchpad?.meta?.scripts?.map((script, i) => (
         <Script key={i} {...script} />
       ))}
     </>

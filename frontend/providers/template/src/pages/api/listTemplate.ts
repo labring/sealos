@@ -1,5 +1,4 @@
 import { jsonRes } from '@/services/backend/response';
-import { ApiResp } from '@/services/kubernet';
 import { TemplateType } from '@/types/app';
 import { findTopKeyWords } from '@/utils/template';
 import { parseGithubUrl } from '@/utils/tools';
@@ -57,7 +56,7 @@ export const readTemplates = (
   return templates;
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const language = req.query.language as string;
 
   const originalPath = process.cwd();
