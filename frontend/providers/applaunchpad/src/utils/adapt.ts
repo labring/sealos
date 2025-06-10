@@ -402,7 +402,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
       : [],
     volumeMounts: getFilteredVolumeMounts(),
     // keep original non-configMap type volumes
-    volumes: appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => !volume.configMap) || [],
+    volumes: appDeploy?.spec?.template?.spec?.volumes || [],
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
     source: getAppSource(appDeploy)
   };

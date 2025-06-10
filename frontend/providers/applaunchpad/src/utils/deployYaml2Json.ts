@@ -115,6 +115,27 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     }
   }));
 
+  const deduplicateVolumes = () => {
+    const existingVolumes = data.volumes || [];
+    const formVolumeNames = new Set(
+      data.configMapList.map((item) => pathToNameFormat(item.mountPath))
+    );
+    const preservedVolumes = existingVolumes.filter(
+      (volume) => !(volume.configMap && formVolumeNames.has(volume.name))
+    );
+    return [...preservedVolumes, ...configMapVolumes];
+  };
+
+  const deduplicateVolumeMounts = () => {
+    const existingMounts = data.volumeMounts || [];
+    const formMountNames = new Set(configMapVolumeMounts.map((m) => m.name));
+    const preservedMounts = existingMounts.filter((mount) => !formMountNames.has(mount.name));
+    return [...preservedMounts, ...configMapVolumeMounts];
+  };
+
+  const finalVolumes = deduplicateVolumes();
+  const finalVolumeMounts = deduplicateVolumeMounts();
+
   // pvc settings
   const storageTemplates = data.storeList.map((store) => ({
     metadata: {
@@ -167,11 +188,11 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
             containers: [
               {
                 ...commonContainer,
-                volumeMounts: [...(data?.volumeMounts || []), ...configMapVolumeMounts]
+                volumeMounts: finalVolumeMounts
               }
             ],
             ...gpuMap,
-            volumes: [...(data?.volumes || []), ...configMapVolumes]
+            volumes: finalVolumes
           }
         }
       }
@@ -200,8 +221,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               {
                 ...commonContainer,
                 volumeMounts: [
-                  ...(data?.volumeMounts || []),
-                  ...configMapVolumeMounts,
+                  ...finalVolumeMounts,
                   ...data.storeList.map((item) => ({
                     name: item.name,
                     mountPath: item.path
@@ -210,7 +230,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
               }
             ],
             ...gpuMap,
-            volumes: [...(data?.volumes || []), ...configMapVolumes]
+            volumes: finalVolumes
           }
         },
         volumeClaimTemplates: storageTemplates
