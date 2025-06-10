@@ -551,7 +551,7 @@ export default function Apps() {
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
           <ModalBody
-            py={'120px'}
+            py={'100px'}
             px={{
               base: '80px',
               xl: '150px'
