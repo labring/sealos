@@ -1,79 +1,51 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import {
-  RequestSchema as CreateDevboxRequestSchema,
-  SuccessResponseSchema as CreateDevboxSuccessResponseSchema
-} from './createDevbox/schema';
-import { SuccessResponseSchema as ListOfficialSuccessResponseSchema } from './v1/getOfficialRuntimeList/schema';
-import {
-  RequestSchema as ListTemplatesRequestSchema,
-  SuccessResponseSchema as ListTemplatesSuccessResponseSchema
-} from './templateRepository/template/list/schema';
-import {
   RequestSchema as DelDevboxRequestSchema,
   SuccessResponseSchema as DelDevboxSuccessResponseSchema,
   ErrorResponseSchema as DelDevboxErrorResponseSchema
-} from './delDevbox/schema';
-import {
-  RequestSchema as StartDevboxRequestSchema,
-  SuccessResponseSchema as StartDevboxSuccessResponseSchema,
-  ErrorResponseSchema as StartDevboxErrorResponseSchema
-} from './startDevbox/schema';
-import {
-  RequestSchema as ShutdownDevboxRequestSchema,
-  SuccessResponseSchema as ShutdownDevboxSuccessResponseSchema,
-  ErrorResponseSchema as ShutdownDevboxErrorResponseSchema
-} from './shutdownDevbox/schema';
-import {
-  RequestSchema as RestartDevboxRequestSchema,
-  SuccessResponseSchema as RestartDevboxSuccessResponseSchema,
-  ErrorResponseSchema as RestartDevboxErrorResponseSchema
-} from './restartDevbox/schema';
+} from './v1/DevBox/delete/schema';
 
 import {
   RequestSchema as CreateDevboxPortRequestSchema,
   SuccessResponseSchema as CreateDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as CreateDevboxPortErrorResponseSchema
-} from './v1/createDevboxPort/schema';
+} from './v1/DevBox/ports/create/schema';
 import {
   RequestSchema as ReleaseDevboxRequestSchema,
   SuccessResponseSchema as ReleaseDevboxSuccessResponseSchema,
   ErrorResponseSchema as ReleaseDevboxErrorResponseSchema
-} from './v1/releaseDevboxDefault/schema';
+} from './v1/DevBox/release/schema';
 import {
   RequestSchema as GetDevboxVersionListRequestSchema,
   SuccessResponseSchema as GetDevboxVersionListSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxVersionListErrorResponseSchema
-} from './v1/getDevboxReleaseListDefault/schema';
+} from './v1/DevBox/releases/schema';
 import {
   DeployDevboxRequestSchema,
   DeployDevboxSuccessResponseSchema,
   DeployDevboxErrorResponseSchema
 } from './deployDevbox/schema';
 import {
-  ReleaseAndDeployDevboxRequestSchema,
-  ReleaseAndDeployDevboxResponseSchema
-} from './releaseAndDeployDevbox/schema';
-import {
   RequestSchema as GetDevboxByNameRequestSchema,
   SuccessResponseSchema as GetDevboxByNameSuccessResponseSchema,
   ErrorResponseSchema as GetDevboxByNameErrorResponseSchema
-} from './v1/getDevboxByNameEasyResponse/schema';
-import { ResponseSchema as GetDevboxListResponseSchema } from './v1/getDevboxListEasyResponse/schema';
+} from './v1/DevBox/get/schema';
+import { ResponseSchema as GetDevboxListResponseSchema } from './v1/DevBox/list/schema';
 import {
   RequestSchema as RemoveDevboxPortRequestSchema,
   SuccessResponseSchema as RemoveDevboxPortSuccessResponseSchema,
   ErrorResponseSchema as RemoveDevboxPortErrorResponseSchema
-} from './v1/removeDevboxPort/schema';
+} from './v1/DevBox/ports/remove/schema';
 import {
   RequestSchema as CreateSimpleDevboxRequestSchema,
   SuccessResponseSchema as CreateSimpleDevboxSuccessResponseSchema
-} from './v1/createSimpleDevbox/schema';
+} from './v1/DevBox/create/schema';
 import {
   RequestSchema as LifecycleDevboxRequestSchema,
   SuccessResponseSchema as LifecycleDevboxSuccessResponseSchema,
   ErrorResponseSchema as LifecycleDevboxErrorResponseSchema
-} from './v1/lifecycleDevbox/schema';
+} from './v1/DevBox/lifecycle/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
@@ -173,7 +145,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/createSimpleDevbox': {
+      '/api/v1/DevBox/create': {
         post: {
           tags: ['Lifecycle'],
           summary: 'Create a new devbox with a simple runtime',
@@ -230,7 +202,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/lifecycleDevbox': {
+      '/api/v1/DevBox/lifecycle': {
         post: {
           tags: ['Lifecycle'],
           summary: 'Lifecycle a devbox',
@@ -262,7 +234,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/releaseDevboxDefault': {
+      '/api/v1/DevBox/release': {
         post: {
           tags: ['Release'],
           summary: 'Release a devbox version',
@@ -311,7 +283,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/delDevbox': {
+      '/api/v1/DevBox/delete': {
         delete: {
           tags: ['Lifecycle'],
           summary: 'Delete a devbox',
@@ -347,7 +319,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/createDevboxPort': {
+      '/api/v1/DevBox/ports/create': {
         post: {
           tags: ['Port'],
           summary: 'Create a new devbox port',
@@ -388,7 +360,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/removeDevboxPort': {
+      '/api/v1/DevBox/ports/remove': {
         post: {
           tags: ['Port'],
           summary: 'Remove a devbox port',
@@ -436,7 +408,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/getDevboxReleaseListDefault': {
+      '/api/v1/DevBox/releases': {
         get: {
           tags: ['Release'],
           summary: 'Get devbox release list',
@@ -473,7 +445,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/getDevboxByNameEasyResponse': {
+      '/api/v1/DevBox/get': {
         get: {
           tags: ['Query'],
           summary: 'Get devbox by name',
@@ -509,7 +481,7 @@ const tmpOpenApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/getDevboxListEasyResponse': {
+      '/api/v1/DevBox/list': {
         get: {
           tags: ['Query'],
           summary: 'Get devbox list',
