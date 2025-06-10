@@ -27,6 +27,7 @@ import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
+import { useSystemConfigStore } from '@/store/config';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -59,6 +60,7 @@ export default function EditApp({
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
+  const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
   // const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
   // useEffect(() => {
@@ -79,6 +81,9 @@ export default function EditApp({
     ['getPlatformEnvs'],
     () => getPlatformEnv({ insideCloud }),
     {
+      onSuccess(data) {
+        setEnvs(data);
+      },
       retry: 3
     }
   );

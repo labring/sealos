@@ -9,7 +9,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   let user_namespace = '';
 
-  const { insideCloud = false } = req.query;
+  const { insideCloud = 'false' } = req.query as { insideCloud: string };
   try {
     const { namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (error) {
     console.log(error, 'errpr-');
   }
-  if (insideCloud && !user_namespace) {
+  if (insideCloud === 'true' && !user_namespace) {
     return jsonRes(res, {
       code: 500,
       message: 'Namespace not found'

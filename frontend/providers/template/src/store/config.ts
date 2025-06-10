@@ -13,6 +13,7 @@ type State = {
   initSystemConfig: (language?: string) => Promise<SystemConfigType>;
   initSystemEnvs: () => Promise<EnvResponse>;
   setSideBarMenu: (data: SideBarMenuType[]) => void;
+  setEnvs: (data: EnvResponse) => void;
 };
 
 export const useSystemConfigStore = create<State>()(
@@ -42,7 +43,6 @@ export const useSystemConfigStore = create<State>()(
             state.sideBarMenu = get().sideBarMenu.concat(menus);
           });
         }
-
         set((state) => {
           state.systemConfig = data;
         });
@@ -58,6 +58,11 @@ export const useSystemConfigStore = create<State>()(
       setSideBarMenu(data) {
         set((state) => {
           state.sideBarMenu = data;
+        });
+      },
+      setEnvs(data) {
+        set((state) => {
+          state.envs = data;
         });
       }
     }))
