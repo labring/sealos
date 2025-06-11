@@ -37,7 +37,7 @@ import {
   registerParamsWithoutNameSchema
 } from '@/schema/auth';
 import { useSignupStore } from '@/stores/signup';
-import { ccEmailSignIn, ccEmailSignUpCheck, getRegionToken } from '@/api/auth';
+import { EmailSignIn, EmailSignUpCheck, getRegionToken } from '@/api/auth';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';

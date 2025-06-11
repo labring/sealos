@@ -219,12 +219,12 @@ export const _getAmount = (request: AxiosInstance) => () =>
 export const _verifyToken = (request: AxiosInstance) => () =>
   request<never, ApiResp<null>>('/api/auth/verify');
 
-export const _ccEmailSignIn = (request: AxiosInstance) => (data: ILoginParams) =>
+export const _EmailSignIn = (request: AxiosInstance) => (data: ILoginParams) =>
   request.post<never, ApiResp<ILoginResult>>('/api/auth/email', data);
 
-export const _ccEmailSignUp = (request: AxiosInstance) => (data: IRegisterParams) =>
+export const _EmailSignUp = (request: AxiosInstance) => (data: IRegisterParams) =>
   request.post<typeof data, ApiResp<any>>('/api/auth/email/signUp', data);
-export const _ccEmailSignUpCheck = (request: AxiosInstance) => (data: IEmailCheckParams) =>
+export const _EmailSignUpCheck = (request: AxiosInstance) => (data: IEmailCheckParams) =>
   request.post<never, ApiResp<any>>('/api/auth/email/signUp/check', data);
 
 export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTokenParams) =>
@@ -233,9 +233,9 @@ export const _initRegionToken = (request: AxiosInstance) => (data: InitRegionTok
     data
   );
 
-export const ccEmailSignIn = _ccEmailSignIn(request);
-export const ccEmailSignUp = _ccEmailSignUp(request);
-export const ccEmailSignUpCheck = _ccEmailSignUpCheck(request);
+export const EmailSignIn = _EmailSignIn(request);
+export const EmailSignUp = _EmailSignUp(request);
+export const EmailSignUpCheck = _EmailSignUpCheck(request);
 export const initRegionToken = _initRegionToken(request);
 
 export const passwordExistRequest = _passwordExistRequest(request);
