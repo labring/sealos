@@ -37,7 +37,7 @@ export default function AppMenu() {
       setLangStore(newLang);
     }
   };
-  const isClientSide = useClientSideValue(true);
+  const isClientSide = useClientSideValue();
   const { listCompleted, setListCompleted, createCompleted } = useGuideStore();
 
   return (

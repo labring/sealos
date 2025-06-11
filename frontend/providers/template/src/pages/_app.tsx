@@ -46,7 +46,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
 
   useEffect(() => {
     initSystemConfig(i18n.language);

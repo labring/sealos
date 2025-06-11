@@ -1,8 +1,8 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import Script, { ScriptProps } from 'next/script';
+import Script from 'next/script';
 
 export default function Document() {
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
   const scripts: { [key: string]: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
 
   return (

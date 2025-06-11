@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 
-export function useClientSideValue(serverValue: boolean): boolean {
-  const [clientValue, setClientValue] = useState(false);
+export function useClientSideValue(): boolean {
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setClientValue(serverValue);
-  }, [serverValue]);
+    setIsClient(true);
+  }, []);
 
-  return clientValue;
+  return isClient;
 }

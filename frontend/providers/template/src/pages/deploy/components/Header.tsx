@@ -90,7 +90,7 @@ const Header = ({
   const HtmlPart = `<a href="https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
 
   const { createCompleted } = useGuideStore();
-  const isClientSide = useClientSideValue(true);
+  const isClientSide = useClientSideValue();
 
   const DeployCountComponent = useMemo(() => {
     return (

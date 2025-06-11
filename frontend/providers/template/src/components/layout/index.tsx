@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: JSX.Element }) {
   const router = useRouter();
   const firstColumnWidth = useBreakpointValue({ base: '230px', xl: '270px' });
   const { listCompleted, createCompleted } = useGuideStore();
-  const isClientSide = useClientSideValue(true);
+  const isClientSide = useClientSideValue();
   const { t } = useTranslation();
 
   return (

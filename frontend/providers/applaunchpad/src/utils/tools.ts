@@ -74,7 +74,7 @@ export const pathToNameFormat = (str: string) => {
   const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
   const replacedStr = withoutTrailingSlash.replace(/_/g, '-').replace(/[\/.]/g, 'vn-');
 
-  return endsWithSlash ? replacedStr : replacedStr.toLowerCase();
+  return replacedStr.toLowerCase();
 };
 
 /**
