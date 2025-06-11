@@ -247,6 +247,11 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get bucket traffic metrics: %w", err)
 	}
+
+	// Initialize a map to count the number of metrics per bucket for sent traffic
+	bucketSentCounts := make(map[string]int)
+	// Seed the random number generator
+
 	for _, bucketMetric := range bucketMetrics {
 		if !isUsageAndTrafficBytesTargetMetric(bucketMetric.Name) {
 			continue
@@ -279,7 +284,14 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 					metricData.Usage[bucket] += intValue
 				}
 				if bucketMetric.Name == "minio_bucket_traffic_sent_bytes" {
+					// Skip this data point to simulate loss
+					// if strings.HasPrefix(bucket, "961a5c2b") && rand.Intn(10) == 0 {
+					// 	fmt.Printf("Simulated data loss for bucket %s, value %d\n", bucket, intValue)
+					// 	continue
+					// }
 					metricData.Sent[bucket] += intValue
+					// Increment the counter for this bucket
+					bucketSentCounts[bucket]++
 				}
 				if bucketMetric.Name == "minio_bucket_traffic_received_bytes" {
 					metricData.Received[bucket] += intValue
@@ -287,6 +299,22 @@ func QueryUserUsageAndTraffic(client *MetricsClient) (Metrics, error) {
 				obMetrics[user] = metricData
 			}
 		}
+	}
+
+	// After processing all metrics, check the counts for sent traffic
+	for user, metricData := range obMetrics {
+		for bucket, count := range bucketSentCounts {
+			if _, ok := metricData.Sent[bucket]; ok {
+				if count < 4 {
+					// Zero out if less than 4 metrics were added
+					metricData.Sent[bucket] = -1
+				}
+				// if strings.HasPrefix(bucket, "961a5c2b") {
+				// 	fmt.Println("bucket:", bucket, ", sent:", sent)
+				// }
+			}
+		}
+		obMetrics[user] = metricData
 	}
 
 	return obMetrics, err

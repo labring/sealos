@@ -602,9 +602,14 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 			sent := int64(0)
 			if r.lastObjectMetrics != nil && r.lastObjectMetrics[user].Sent != nil {
 				if _, ok := r.lastObjectMetrics[user].Sent[bucket]; ok {
-					ss := m - r.lastObjectMetrics[user].Sent[bucket]
-					if ss > 0 {
-						sent = ss
+					if m == -1 {
+						r.currentObjectMetrics[user].Sent[bucket] = r.lastObjectMetrics[user].Sent[bucket]
+						m = r.lastObjectMetrics[user].Sent[bucket]
+					} else {
+						ss := m - r.lastObjectMetrics[user].Sent[bucket]
+						if ss > 0 {
+							sent = ss
+						}
 					}
 				}
 			}
