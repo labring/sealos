@@ -227,7 +227,7 @@ export const verifyCodeUidGuard =
     await deleteByUid({ uid: oldSmsInfo.uid });
   };
 
-export const verifySmsCodeGuard =
+export const verifyCodeGuard =
   (id: string, code: string, smsType: SmsType) =>
   async (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) => {
     const smsInfo = await checkCode({ id, smsType, code });
@@ -240,8 +240,8 @@ export const verifySmsCodeGuard =
     return await Promise.resolve(next({ smsInfo }));
   };
 
-// export const verifyPhoneCodeGuard = verifySmsCodeGuard('phone');
-// export const verifyEmailCodeGuard = verifySmsCodeGuard('email');
+// export const verifyPhoneCodeGuard = verifyCodeGuard('phone');
+// export const verifyEmailCodeGuard = verifyCodeGuard('email');
 
 export const sendSmsCodeGuard = createMiddleware<{ id: string; smsType: SmsType }>(
   async ({ req, res, ctx, next }) => {

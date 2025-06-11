@@ -5,7 +5,7 @@ import {
   filterCodeUid,
   filterPhoneVerifyParams,
   verifyCodeUidGuard,
-  verifySmsCodeGuard
+  verifyCodeGuard
 } from '@/services/backend/middleware/sms';
 import { cnVersionMiddleware } from '@/services/backend/middleware/version';
 import { changePhoneBindingSvc } from '@/services/backend/svc/bindProvider';
@@ -30,7 +30,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
               res,
               async ({ uid }) =>
                 await verifyCodeUidGuard(uid)(res, async ({ smsInfo: oldPhoneInfo }) => {
-                  await verifySmsCodeGuard(
+                  await verifyCodeGuard(
                     phoneNumbers,
                     code,
                     'phone_change_new'

@@ -1,7 +1,7 @@
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { unbindPhoneGuard } from '@/services/backend/middleware/oauth';
-import { filterPhoneVerifyParams, verifySmsCodeGuard } from '@/services/backend/middleware/sms';
+import { filterPhoneVerifyParams, verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { cnVersionMiddleware } from '@/services/backend/middleware/version';
 import { jsonRes } from '@/services/backend/response';
 import { enablePhoneSms } from '@/services/enable';
@@ -18,7 +18,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       async ({ userUid }) =>
         await filterPhoneVerifyParams(req, res, async ({ phoneNumbers, code }) => {
           await unbindPhoneGuard(phoneNumbers, userUid)(res, async () => {
-            await verifySmsCodeGuard(
+            await verifyCodeGuard(
               phoneNumbers,
               code,
               'phone_change_old'

@@ -1,7 +1,7 @@
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { bindEmailGuard } from '@/services/backend/middleware/oauth';
-import { filterEmailVerifyParams, verifySmsCodeGuard } from '@/services/backend/middleware/sms';
+import { filterEmailVerifyParams, verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { cnVersionMiddleware, enVersionMiddleware } from '@/services/backend/middleware/version';
 import { getGlobalTokenSvc } from '@/services/backend/svc/access';
 import { bindEmailSvc } from '@/services/backend/svc/bindProvider';
@@ -14,7 +14,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
       throw new Error('SMS is not enabled');
     }
     await filterEmailVerifyParams(req, res, async ({ email, code }) => {
-      await verifySmsCodeGuard(
+      await verifyCodeGuard(
         email,
         code,
         'email_login'
