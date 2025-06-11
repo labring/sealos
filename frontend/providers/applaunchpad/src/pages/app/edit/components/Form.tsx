@@ -1026,7 +1026,7 @@ const Form = ({
           {/* settings */}
           {already && (
             <Accordion
-              pb={'50px'}
+              pb={'100px'}
               id={'settings'}
               allowToggle
               index={isAdvancedOpen || navList[2].isSetting ? 0 : undefined}

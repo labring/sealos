@@ -431,7 +431,7 @@ const Form = ({
           height={'100%'}
           position={'relative'}
           overflowY={'scroll'}
-          pb={'50px'}
+          pb={'100px'}
         >
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
