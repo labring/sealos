@@ -79,7 +79,7 @@ export const json2Devbox = (
   return yaml.dump(json);
 };
 export const json2DevboxV2 = (
-  data: json2DevboxV2Data,
+  data: Omit<json2DevboxV2Data, 'templateRepositoryUid'>,
   devboxAffinityEnable: string = 'true',
   squashEnable: string = 'false'
 ) => {

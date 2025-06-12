@@ -4,13 +4,24 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import { devboxKey } from '@/constants/devbox';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { devboxName } = (await req.json()) as { devboxName: string };
+    const body = await req.json();
+    const validationResult = RequestSchema.safeParse(body);
 
+    if (!validationResult.success) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request body',
+        error: validationResult.error.errors
+      });
+    }
+
+    const { devboxName } = validationResult.data;
     const headerList = req.headers;
 
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
@@ -97,6 +108,7 @@ export async function POST(req: NextRequest) {
     console.log('error', err);
     return jsonRes({
       code: 500,
+      message: err?.message || 'Internal server error',
       error: err
     });
   }

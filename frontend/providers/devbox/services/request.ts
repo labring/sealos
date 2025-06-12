@@ -71,6 +71,7 @@ request.interceptors.request.use(
     let _headers: AxiosHeaders = config.headers;
     const session = getDesktopSessionFromSessionStorage();
     const devboxToken = getSessionFromSessionStorage();
+
     _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
     _headers['Authorization-Bearer'] = encodeURIComponent(devboxToken || session?.token || '');
     if (!config.headers || config.headers['Content-Type'] === '') {

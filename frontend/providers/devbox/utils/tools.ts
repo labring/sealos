@@ -285,19 +285,15 @@ export const formatPodTime = (createTimeStamp: Date = new Date()) => {
 
   let timeDiff = Math.floor(dayjs().diff(podStartTimeStamp) / 1000);
 
-  // 计算天数
   const days = Math.floor(timeDiff / (24 * 60 * 60));
   timeDiff -= days * 24 * 60 * 60;
 
-  // 计算小时数
   const hours = Math.floor(timeDiff / (60 * 60));
   timeDiff -= hours * 60 * 60;
 
-  // 计算分钟数
   const minutes = Math.floor(timeDiff / 60);
   timeDiff -= minutes * 60;
 
-  // 计算秒数
   const seconds = timeDiff;
 
   if (days > 0) {

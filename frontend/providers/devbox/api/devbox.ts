@@ -1,7 +1,6 @@
 import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
 import { DELETE, GET, POST } from '@/services/request';
-import { GetDevboxByNameReturn } from '@/types/adapt';
 import {
   DevboxDetailTypeV2,
   DevboxEditTypeV2,
@@ -13,7 +12,6 @@ import {
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import {
   adaptAppListItem,
-  adaptDevboxDetailV2,
   adaptDevboxListItemV2,
   adaptDevboxVersionListItem,
   adaptPod
@@ -43,8 +41,7 @@ export const getDevboxByName = (devboxName: string, mock = false) =>
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });
 
-export const createDevbox = (payload: { devboxForm: DevboxEditTypeV2 }) =>
-  POST(`/api/createDevbox`, payload);
+export const createDevbox = (payload: DevboxEditTypeV2) => POST(`/api/createDevbox`, payload);
 
 export const updateDevbox = (payload: { patch: DevboxPatchPropsType; devboxName: string }) =>
   POST(`/api/updateDevbox`, payload);

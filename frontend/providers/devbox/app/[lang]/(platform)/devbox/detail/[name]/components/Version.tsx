@@ -120,7 +120,7 @@ const Version = () => {
                 {
                   port: 80,
                   protocol: 'TCP',
-                  appProtocol: 'http',
+                  appProtocol: 'HTTP',
                   openPublicDomain: false,
                   domain: env.ingressDomain
                 }

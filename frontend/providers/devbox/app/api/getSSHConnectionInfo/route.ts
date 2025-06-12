@@ -6,13 +6,31 @@ import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { KBDevboxTypeV2 } from '@/types/k8s';
 import { parseTemplateConfig } from '@/utils/tools';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const devboxName = searchParams.get('devboxName') as string;
+    const devboxName = searchParams.get('devboxName');
+
+    if (!devboxName) {
+      return jsonRes({
+        code: 400,
+        message: 'Devbox name is required'
+      });
+    }
+
+    const validationResult = RequestSchema.safeParse({ devboxName });
+
+    if (!validationResult.success) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request parameters',
+        error: validationResult.error.errors
+      });
+    }
 
     const headerList = req.headers;
 
@@ -24,6 +42,13 @@ export async function GET(req: NextRequest) {
 
     const base64PublicKey = response.body.data?.['SEALOS_DEVBOX_PUBLIC_KEY'] as string;
     const base64PrivateKey = response.body.data?.['SEALOS_DEVBOX_PRIVATE_KEY'] as string;
+
+    if (!base64PublicKey || !base64PrivateKey) {
+      return jsonRes({
+        code: 404,
+        message: 'SSH keys not found'
+      });
+    }
 
     const jwtSecret = Buffer.from(
       response.body.data?.['SEALOS_DEVBOX_JWT_SECRET'] as string,
@@ -58,6 +83,7 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     return jsonRes({
       code: 500,
+      message: err?.message || 'Internal server error',
       error: err
     });
   }

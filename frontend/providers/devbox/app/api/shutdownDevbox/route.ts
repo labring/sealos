@@ -1,22 +1,27 @@
 import { NextRequest } from 'next/server';
 
 import { devboxKey } from '@/constants/devbox';
-import { ShutdownModeType } from '@/types/devbox';
 import { jsonRes } from '@/services/backend/response';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
+import { RequestSchema } from './schema';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { devboxName, shutdownMode } = (await req.json()) as {
-      devboxName: string;
-      shutdownMode: ShutdownModeType;
-    };
+    const body = await req.json();
+    const validationResult = RequestSchema.safeParse(body);
 
-    console.log('shutdownMode', shutdownMode);
+    if (!validationResult.success) {
+      return jsonRes({
+        code: 400,
+        message: 'Invalid request body',
+        error: validationResult.error.errors
+      });
+    }
 
+    const { devboxName, shutdownMode } = validationResult.data;
     const headerList = req.headers;
 
     const { k8sCustomObjects, namespace, k8sNetworkingApp } = await getK8s({
@@ -102,6 +107,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     return jsonRes({
       code: 500,
+      message: err?.message || 'Internal server error',
       error: err
     });
   }
