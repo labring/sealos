@@ -178,7 +178,7 @@ export default function SigninComponent() {
         }
       }
     } catch (error) {
-      console.error(`${provider} login error:`, error);
+      // console.error(`${provider} login error:`, error);
       // toast({
       //   title: t('cc:sign_in_failed'),
       //   description: error instanceof Error ? error.message : t('cc:unknown_error'),
