@@ -244,7 +244,7 @@ const DevboxCreatePage = () => {
           devboxName: formData.name
         });
       } else {
-        await createDevbox({ devboxForm: formData });
+        await createDevbox(formData);
       }
       addDevboxIDE('vscode', formData.name);
       toast({
