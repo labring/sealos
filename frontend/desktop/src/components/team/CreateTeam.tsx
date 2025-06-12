@@ -1,8 +1,6 @@
 import {
   Button,
-  Flex,
   IconButton,
-  Image,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -10,19 +8,25 @@ import {
   ModalHeader,
   ModalOverlay,
   Spinner,
-  useDisclosure,
-  useToast
+  useDisclosure
 } from '@chakra-ui/react';
 import CustomInput from './Input';
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import useSessionStore from '@/stores/session';
 import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
-import { AddIcon, GroupAddIcon } from '@sealos/ui';
-export default function CreateTeam({ textButton = false }: { textButton?: boolean }) {
+import { AddIcon } from '@sealos/ui';
+
+export default function CreateTeam({
+  textButton = false,
+  children
+}: {
+  textButton?: boolean;
+  children?: ReactNode;
+}) {
   const { onOpen, isOpen, onClose } = useDisclosure();
   const { t } = useTranslation();
   const [teamName, setTeamName] = useState('');
@@ -46,14 +50,19 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
     //!todo
     mutation.mutate({ teamName });
   };
+
+  const handleOpen = () => {
+    onOpen();
+    setTeamName('');
+  };
+
   return (
     <>
-      {textButton ? (
+      {children ? (
+        <span onClick={handleOpen}>{children}</span>
+      ) : textButton ? (
         <Button
-          onClick={() => {
-            onOpen();
-            setTeamName('');
-          }}
+          onClick={handleOpen}
           variant={'primary'}
           leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}
           iconSpacing={'8px'}
@@ -62,10 +71,7 @@ export default function CreateTeam({ textButton = false }: { textButton?: boolea
         </Button>
       ) : (
         <IconButton
-          onClick={() => {
-            onOpen();
-            setTeamName('');
-          }}
+          onClick={handleOpen}
           variant={'white-bg-icon'}
           mr="4px"
           p="4px"

@@ -2,7 +2,7 @@
 
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useLoading } from '@/hooks/useLoading';
 import BasicInfo from './components/BasicInfo';
@@ -13,12 +13,12 @@ import Version from './components/Version';
 import { useDevboxStore } from '@/stores/devbox';
 import { useEnvStore } from '@/stores/env';
 import { useGlobalStore } from '@/stores/global';
-import useDetailDriver from '@/hooks/useDetailDriver';
+import { useGuideStore } from '@/stores/guide';
+import IDEButton from '@/components/IDEButton';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
   const { Loading } = useLoading();
-  const { handleUserGuide } = useDetailDriver();
 
   const { env } = useEnvStore();
   const { screenWidth } = useGlobalStore();
@@ -28,16 +28,14 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const [showSlider, setShowSlider] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
+  const { guideIDE } = useGuideStore();
 
   const { refetch, data } = useQuery(
     ['initDevboxDetail'],
-    () => setDevboxDetail(devboxName, env.sealosDomain),
+    () => setDevboxDetail(devboxName, env.sealosDomain, !guideIDE),
     {
       onSettled() {
         setInitialized(true);
-      },
-      onSuccess: () => {
-        handleUserGuide();
       }
     }
   );
@@ -66,6 +64,15 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       refetchInterval: 2 * 60 * 1000
     }
   );
+
+  useEffect(() => {
+    if (!IDEButton) {
+      setInitialized(true);
+    }
+  }, []);
+
+  console.log(devboxDetail, initialized);
+
   return (
     <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
       <Loading loading={!initialized} />

@@ -53,10 +53,9 @@ export default function Callback({ appConfig }: { appConfig: AppClientConfigType
             url: `https://open.weixin.qq.com/connect/qrconnect?appid=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=snsapi_login&#wechat_redirect`
           });
         } else if (oauthProvider === 'GOOGLE') {
-          // const scope = encodeURIComponent(
-          //   `https://www.googleapis.com/auth/userinfo.profile openid`
-          // );
-          const scope = encodeURIComponent(`profile email openid`);
+          const scope = encodeURIComponent(
+            `https://www.googleapis.com/auth/userinfo.profile openid email`
+          );
           oauthLogin({
             provider: 'GOOGLE',
             url: `https://accounts.google.com/o/oauth2/v2/auth?client_id=${oauthClientId}&redirect_uri=${callback_url}&response_type=code&state=${state}&scope=${scope}&include_granted_scopes=true`

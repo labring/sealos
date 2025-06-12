@@ -242,17 +242,22 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   volumes: [],
   volumeMounts: [],
   crYamlList: [],
-  id: '4bd50c41-149e-4da5-89d5-0308b9dd75c6',
-  createTime: '2022/1/22',
+  id: '44c550d5-549c-4cca-bd67-d24ad6f38c96',
+  createTime: '2025-05-19 10:50',
   status: appStatusMap.waiting,
   isPause: false,
-  appName: 'appName',
+  appName: 'hello-world',
   imageName: 'nginx',
   runCMD: '',
   cmdParam: '',
-  replicas: 5,
-  cpu: 0,
-  memory: 0,
+  replicas: 1,
+  cpu: 200,
+  memory: 256,
+  gpu: {
+    type: '',
+    amount: 1,
+    manufacturers: 'nvidia'
+  },
   usedCpu: {
     name: '',
     xData: new Array(30).fill(0),
@@ -265,16 +270,16 @@ export const MOCK_APP_DETAIL: AppDetailType = {
   },
   networks: [
     {
-      networkName: '',
-      portName: nanoid(),
+      networkName: 'network-qrnrclezfupe',
+      portName: 'dqrgmsrxqhte',
       port: 80,
+      openNodePort: false,
       protocol: 'TCP',
-      openPublicDomain: false,
-      publicDomain: '',
-      customDomain: '',
-      domain: '',
       appProtocol: 'HTTP',
-      openNodePort: false
+      openPublicDomain: true,
+      publicDomain: 'alpemulkxamb',
+      customDomain: '',
+      domain: 'gzg.sealos.run'
     }
   ],
   envs: [],
@@ -283,17 +288,20 @@ export const MOCK_APP_DETAIL: AppDetailType = {
     target: 'cpu',
     value: 50,
     minReplicas: 1,
-    maxReplicas: 1
+    maxReplicas: 5
   },
   configMapList: [],
   secret: {
     use: false,
     username: '',
     password: '',
-    serverAddress: ''
+    serverAddress: 'docker.io'
   },
   storeList: [],
-  labels: {},
+  labels: {
+    app: 'hello-world',
+    'cloud.sealos.io/app-deploy-manager': 'hello-world'
+  },
   source: {
     hasSource: false,
     sourceName: '',

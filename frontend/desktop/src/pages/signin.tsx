@@ -1,7 +1,7 @@
-import SigninComponent from '@/components/signin';
+// import SigninComponent from '@/components/signin';
 import { useConfigStore } from '@/stores/config';
 import { compareFirstLanguages } from '@/utils/tools';
-import { Box } from '@chakra-ui/react';
+import { Box, Stack, VStack } from '@chakra-ui/react';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import Head from 'next/head';
@@ -9,6 +9,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'next-i18next';
 import Script from 'next/script';
 import useScriptStore from '@/stores/script';
+import SignLayout from '@/components/v2/SignLayout';
+import LangSelectSimple from '@/components/LangSelect/simple';
+import SigninComponent from '@/components/v2/Sign';
 
 export default function SigninPage() {
   const { layoutConfig, authConfig } = useConfigStore();
@@ -42,7 +45,9 @@ export default function SigninPage() {
         return <Script key={i} {...item} />;
       })}
 
-      <SigninComponent />
+      <SignLayout>
+        <SigninComponent />
+      </SignLayout>
     </Box>
   );
 }

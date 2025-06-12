@@ -3,6 +3,8 @@ import MyIcon from '@/components/Icon';
 import { AppLaunchpadIcon } from '@/components/icons/Application';
 import StatusTag from '@/components/StatusTag';
 import MyTable from '@/components/Table';
+import { startDriver, detailDriverObj } from '@/hooks/driver';
+import { useGuideStore } from '@/store/guide';
 import { useResourceStore } from '@/store/resource';
 import useSessionStore from '@/store/session';
 import { AppListItemType } from '@/types/launchpad';
@@ -10,7 +12,7 @@ import { printMemory } from '@/utils/tools';
 import { Box, Button, Center, Flex, Icon, Text } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 export const EmptyBoxHeight = '60px';
@@ -20,10 +22,11 @@ export default function AppList({ instanceName }: { instanceName: string }) {
   const { t } = useTranslation();
   const { appendResource } = useResourceStore();
   const { session } = useSessionStore();
+  const { detailCompleted } = useGuideStore();
 
-  const { data, isLoading } = useQuery(
+  const { data, isSuccess } = useQuery(
     ['getAppLaunchpadByName', instanceName, session?.kubeconfig],
-    () => getAppLaunchpadByName(instanceName),
+    () => getAppLaunchpadByName(instanceName, !detailCompleted),
     {
       refetchInterval: refetchIntervalTime,
       onSuccess(data) {
@@ -32,9 +35,18 @@ export default function AppList({ instanceName }: { instanceName: string }) {
             return { id: item.id, name: item.name, kind: 'AppLaunchpad' };
           })
         );
-      }
+      },
+      enabled: !!instanceName
     }
   );
+
+  useEffect(() => {
+    if (!detailCompleted && isSuccess) {
+      setTimeout(() => {
+        startDriver(detailDriverObj(t));
+      }, 1000);
+    }
+  }, [detailCompleted, t, isSuccess]);
 
   const handleToDetailPage = useCallback((name: string) => {
     sealosApp.runEvents('openDesktopApp', {

@@ -11,7 +11,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import DevboxHeader from './DevboxHeader';
 import DevboxList from './DevboxList';
 import Empty from './Empty';
-import useListDriver from '@/hooks/useListDriver';
+import { useSearchParams } from 'next/navigation';
+import { useGuideStore } from '@/stores/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 function useDevboxList() {
   const router = useRouter();
@@ -126,16 +128,26 @@ function useDevboxList() {
 
 export default function DevboxListContainer({ ...props }: FlexProps) {
   const { list, isLoading, refetchList } = useDevboxList();
-  const { handleUserGuide } = useListDriver();
+  const searchParams = useSearchParams();
+  const action = searchParams.get('action');
+  const { resetGuideState } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
 
   useEffect(() => {
-    if (list.length > 0) {
-      handleUserGuide();
+    if (isClientSide) {
+      resetGuideState(!(action === 'guide'));
     }
-  }, [list.length]);
+  }, [action, isClientSide, resetGuideState]);
 
   return (
-    <Flex flexDir={'column'} backgroundColor={'grayModern.100'} px={'32px'} h="100vh" {...props}>
+    <Flex
+      flexDir={'column'}
+      backgroundColor={'grayModern.100'}
+      px={'32px'}
+      h="100vh"
+      mb={'40px'}
+      {...props}
+    >
       <DevboxHeader listLength={list.length} />
       {list.length === 0 && !isLoading ? (
         <Empty />

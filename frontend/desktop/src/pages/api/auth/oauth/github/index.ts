@@ -7,7 +7,7 @@ import {
   githubOAuthEnvFilter,
   githubOAuthGuard
 } from '@/services/backend/middleware/oauth';
-import { getGlobalTokenByGithubSvc } from '@/services/backend/svc/access';
+import { getGlobalTokenSvc } from '@/services/backend/svc/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,15 +25,25 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
           avatar_url,
           'avatar/' + ProviderType.GITHUB + '/' + id
         );
-        await getGlobalTokenByGithubSvc(
-          persistUrl || '',
-          id,
+        // await getGlobalTokenByGithubSvc(
+        //   persistUrl || '',
+        //   id,
+        //   name,
+        //   email,
+        //   inviterId,
+        //   semData,
+        //   bdVid
+        // )(res);
+        await getGlobalTokenSvc({
+          avatar_url: persistUrl || '',
+          providerId: id,
           name,
           email,
           inviterId,
           semData,
-          bdVid
-        )(res);
+          bdVid,
+          providerType: 'GITHUB'
+        })(req, res);
       });
     });
   });

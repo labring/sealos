@@ -7,7 +7,9 @@ import { getResourceUsage } from '@/utils/usage';
 import {
   Avatar,
   AvatarGroup,
+  Box,
   Button,
+  Center,
   Divider,
   Flex,
   FlexProps,
@@ -27,6 +29,10 @@ import { MouseEvent, useCallback, useMemo } from 'react';
 import PriceBox, { usePriceCalculation } from './PriceBox';
 import { CurrencySymbol } from '@sealos/ui';
 import { useSystemConfigStore } from '@/store/config';
+import { useGuideStore } from '@/store/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { X } from 'lucide-react';
+import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
 
 const Header = ({
   appName,
@@ -82,6 +88,9 @@ const Header = ({
   const MdPart = `[![](https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg)](https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName})`;
 
   const HtmlPart = `<a href="https://${cloudDomain}/?openapp=system-template%3FtemplateName%3D${appName}"><img src="https://raw.githubusercontent.com/labring-actions/templates/main/Deploy-on-Sealos.svg" alt="Deploy on Sealos"/></a>`;
+
+  const { createCompleted } = useGuideStore();
+  const isClientSide = useClientSideValue();
 
   const DeployCountComponent = useMemo(() => {
     return (
@@ -309,9 +318,90 @@ const Header = ({
       >
         {t('Export')} Yaml
       </Button>
-      <Button px={4} minW={'120px'} h={'40px'} variant={'solid'} onClick={applyCb}>
-        {t(applyBtnText)}
-      </Button>
+      <Box position={'relative'}>
+        <Button
+          px={4}
+          className="driver-deploy-button"
+          minW={'140px'}
+          h={'40px'}
+          onClick={applyCb}
+          _focusVisible={{ boxShadow: '' }}
+          outline={isClientSide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
+          outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
+        >
+          {t(applyBtnText)}
+        </Button>
+        {isClientSide && !createCompleted && (
+          <Box
+            zIndex={1000}
+            position={'absolute'}
+            top={'54px'}
+            left={'-100%'}
+            width={'250px'}
+            bg={'#2563EB'}
+            p={'16px'}
+            borderRadius={'12px'}
+            color={'#fff'}
+          >
+            <Flex alignItems={'center'} justifyContent={'space-between'}>
+              <Text fontSize={'14px'} fontWeight={600}>
+                {t('driver.configure_template')}
+              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
+            </Flex>
+            <Text
+              textAlign={'start'}
+              whiteSpace={'wrap'}
+              mt={'8px'}
+              color={'#FFFFFFCC'}
+              fontSize={'14px'}
+              fontWeight={400}
+            >
+              {t('driver.define_template_settings')}
+            </Text>
+            <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
+              <Text fontSize={'13px'} fontWeight={500}>
+                3/4
+              </Text>
+              <Center
+                w={'86px'}
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                h={'32px'}
+                p={'px'}
+                onClick={() => {
+                  applyCb();
+                }}
+              >
+                {t('driver.next')}
+              </Center>
+            </Flex>
+            <Box
+              position={'absolute'}
+              top={'-10px'}
+              right={'16px'}
+              width={0}
+              height={0}
+              borderLeft={'8px solid transparent'}
+              borderRight={'8px solid transparent'}
+              borderTop={'10px solid #2563EB'}
+              transform={'rotate(180deg)'}
+            />
+          </Box>
+        )}
+      </Box>
     </Flex>
   );
 };

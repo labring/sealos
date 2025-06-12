@@ -1,13 +1,7 @@
 import { GET, POST, DELETE } from '@/services/request';
-import type { V1Deployment, V1Pod, SinglePodMetrics, V1StatefulSet } from '@kubernetes/client-node';
-import {
-  adaptAppListItem,
-  adaptPod,
-  adaptAppDetail,
-  adaptMetrics,
-  adaptEvents
-} from '@/utils/adapt';
-import type { AppPatchPropsType, PodDetailType } from '@/types/app';
+import type { V1Deployment, SinglePodMetrics, V1StatefulSet } from '@kubernetes/client-node';
+import { adaptAppListItem, adaptMetrics, adaptEvents } from '@/utils/adapt';
+import type { AppDetailType, AppPatchPropsType, PodDetailType } from '@/types/app';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
@@ -25,8 +19,8 @@ export const getMyApps = () =>
 
 export const delAppByName = (name: string) => DELETE('/api/delApp', { name });
 
-export const getAppByName = (name: string) =>
-  GET(`/api/getAppByAppName?appName=${name}`).then(adaptAppDetail);
+export const getAppByName = (name: string, mock = false) =>
+  GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`);
 
 export const getAppPodsByAppName = (name: string) =>
   GET<PodDetailType[]>('/api/getAppPodsByAppName', { name });

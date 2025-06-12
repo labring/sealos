@@ -1,6 +1,18 @@
 import { v4 } from 'uuid';
 import { connectToDatabase } from './mongodb';
-export type SmsType = 'phone' | 'email';
+export type SmsType =
+  | 'phone'
+  | 'phone_login'
+  | 'phone_bind'
+  | 'phone_change_old'
+  | 'phone_change_new'
+  | 'phone_unbind'
+  | 'email'
+  | 'email_login'
+  | 'email_bind'
+  | 'email_unbind'
+  | 'email_change_old'
+  | 'email_change_new';
 export type TVerification_Codes = {
   id: string;
   smsType: SmsType;

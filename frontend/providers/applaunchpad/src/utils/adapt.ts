@@ -11,7 +11,6 @@ import type {
   V2HorizontalPodAutoscaler
 } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
-import yaml from 'js-yaml';
 import type {
   AppListItemType,
   PodDetailType,
@@ -20,9 +19,10 @@ import type {
   PodEvent,
   HpaTarget,
   ApplicationProtocolType,
-  TAppSource,
   TAppSourceType,
-  TransportProtocolType
+  TransportProtocolType,
+  DeployKindsType,
+  AppEditType
 } from '@/types/app';
 import {
   appStatusMap,
@@ -37,11 +37,10 @@ import {
   AppSourceConfigs
 } from '@/constants/app';
 import { cpuFormatToM, memoryFormatToMi, formatPodTime, atobSecretYaml } from '@/utils/tools';
-import type { DeployKindsType, AppEditType } from '@/types/app';
 import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
-import { getInitData } from '@/api/platform';
 import { has } from 'lodash';
+import type { EnvResponse } from '@/types';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -222,9 +221,8 @@ export enum YamlKindEnum {
   PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
-export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDetailType> => {
-  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = await getInitData();
-
+// adaptAppDetail function has been moved to server side API call
+export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): AppDetailType => {
   const allServicePorts = configs.flatMap((item) => {
     if (item.kind === YamlKindEnum.Service) {
       const temp = item as V1Service;
@@ -340,8 +338,8 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
         const isCustomDomain =
-          !domain.endsWith(SEALOS_DOMAIN) &&
-          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
+          !domain.endsWith(envs.SEALOS_DOMAIN) &&
+          !envs.SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
         return {
           networkName: ingress?.metadata?.name || '',
@@ -357,10 +355,10 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
             : domain.split('.')[0],
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
-            ? SEALOS_DOMAIN
+            ? envs.SEALOS_DOMAIN
             : item?.nodePort // 如果有 nodePort，则使用域名
             ? domain
-            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
+            : domain.split('.').slice(1).join('.') || envs.SEALOS_DOMAIN
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
@@ -404,7 +402,7 @@ export const adaptAppDetail = async (configs: DeployKindsType[]): Promise<AppDet
       : [],
     volumeMounts: getFilteredVolumeMounts(),
     // keep original non-configMap type volumes
-    volumes: appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => !volume.configMap) || [],
+    volumes: appDeploy?.spec?.template?.spec?.volumes || [],
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
     source: getAppSource(appDeploy)
   };

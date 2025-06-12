@@ -7,7 +7,8 @@ import {
   enableGoogle,
   enablePassword,
   enablePhoneSms,
-  enableWechat
+  enableWechat,
+  getVersion
 } from '@/services/enable';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { ProviderType } from 'prisma/global/generated/client';
@@ -84,13 +85,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           } else if (o.providerType === ProviderType.GITHUB) {
             return enableGithub();
           } else if (o.providerType === ProviderType.PHONE) {
-            return enablePhoneSms();
+            return enablePhoneSms() && getVersion() === 'cn';
           } else if (o.providerType === ProviderType.EMAIL) {
-            return enableEmailSms();
+            return enableEmailSms() && getVersion() === 'en';
           } else if (o.providerType === ProviderType.PASSWORD) {
             return enablePassword();
           } else if (o.providerType === ProviderType.WECHAT) {
-            return enableWechat();
+            return enableWechat() && getVersion() === 'cn';
           }
           return true;
         })

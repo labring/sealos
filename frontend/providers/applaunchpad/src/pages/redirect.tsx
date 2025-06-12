@@ -1,5 +1,6 @@
 import { getAppByName } from '@/api/app';
 import { useGlobalStore } from '@/store/global';
+import { useGuideStore } from '@/store/guide';
 import { AppEditSyncedFields } from '@/types/app';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
@@ -7,6 +8,7 @@ import { useEffect } from 'react';
 const RedirectPage = () => {
   const router = useRouter();
   const { setLastRoute } = useGlobalStore();
+  const { resetGuideState } = useGuideStore();
 
   useEffect(() => {
     const handleRedirect = (formData?: string) => {
@@ -46,14 +48,20 @@ const RedirectPage = () => {
     };
 
     const handleUrlParams = () => {
-      const { formData } = router.query as { formData?: string };
+      const { formData, action } = router.query as { formData?: string; action?: string };
+      if (action === 'guide') {
+        console.log('launchpad redirect', action);
+        resetGuideState(false);
+        router.replace('/apps?action=guide');
+        return;
+      }
       handleRedirect(formData);
     };
 
     if (router.isReady) {
       handleUrlParams();
     }
-  }, [router, router.isReady, router.query]);
+  }, [resetGuideState, router, router.isReady, router.query, setLastRoute]);
 
   return null;
 };

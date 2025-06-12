@@ -25,12 +25,13 @@ model OauthProvider {
 }
 
 model Region {
-  uid         String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  displayName String
-  location    String
-  domain      String
-  description String?
-  txDetail    TransactionDetail[]
+  uid            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  displayName    String
+  location       String
+  domain         String
+  description    String?
+  txDetail       TransactionDetail[]
+  WorkspaceUsage WorkspaceUsage[]
 }
 
 model Account {
@@ -57,6 +58,34 @@ model AccountTransaction {
   created_at               DateTime @default(now()) @db.Timestamptz(3)
   updated_at               DateTime @default(now()) @db.Timestamptz(3)
   billing_id               String   @db.Uuid
+}
+
+model UserInfo {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid         String  @unique @map("user_uid") @db.Uuid
+  signUpRegionUid String  @map("sign_up_region_uid") @db.Uuid
+  isInited        Boolean @default(false) @map("is_inited")
+  // verify_email    Boolean @default(false)
+  config          Json?
+  user            User    @relation(fields: [userUid], references: [uid])
+
+  @@map("user_info")
+}
+
+model WorkspaceUsage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String   @map("user_uid") @db.Uuid
+  workspaceUid String   @map("workspace_uid") @db.Uuid
+  regionUid    String   @map("region_uid") @db.Uuid
+  seat         Int
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  region       Region   @relation(fields: [regionUid], references: [uid])
+  user         User     @relation(fields: [userUid], references: [uid])
+
+  @@unique([regionUid, userUid, workspaceUid])
+  @@index([userUid])
+  @@map("workspace_usage")
 }
 
 model ErrorPaymentCreate {
@@ -106,6 +135,8 @@ model User {
   DeleteUserTransactionInfo   DeleteUserTransactionInfo?
   deleteUserLog               DeleteUserLog?
   userTasks                   UserTask[]
+  userInfo                    UserInfo?
+  WorkspaceUsage              WorkspaceUsage[]
 }
 
 model Transfer {
@@ -219,7 +250,7 @@ model EventLog {
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   mainId    String
   eventName String
-  // json 
+  // json
   data      String
 }
 

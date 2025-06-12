@@ -11,6 +11,7 @@ import { v4 } from 'uuid';
 import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
+import axios from 'axios';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
@@ -156,64 +157,74 @@ export const githubOAuthGuard =
     res: NextApiResponse,
     next: (data: { id: string; name: string; avatar_url: string; email: string }) => void
   ) => {
-    const url = ` https://github.com/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`;
-    const __data = (await (
-      await fetch(url, { method: 'POST', headers: { Accept: 'application/json' } })
-    ).json()) as TgithubToken;
+    const apiClient = axios.create({
+      baseURL: 'https://api.github.com',
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    const accessClient = axios.create({
+      baseURL: 'https://github.com',
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    // console.log('get access token');
+    const result1 = await accessClient.post<TgithubToken>(
+      `/login/oauth/access_token?client_id=${clientId}&client_secret=${clientSecret}&code=${code}`
+    );
+    // console.log('get access token success');
+    const __data = result1.data;
     const access_token = __data.access_token;
     if (!access_token) {
       return jsonRes(res, {
-        message: 'Failed to authenticate with GitHub',
-        code: 500,
-        data: 'access_token is null'
+        message: 'Failed to authenticate with GitHub, access_token is null',
+        code: 401
       });
     }
-    const userUrl = `https://api.github.com/user`;
-    const response = await fetch(userUrl, {
+    // console.log('get userinfo ');
+    const userResult = await apiClient.get<TgithubUser>('/user', {
       headers: {
         Authorization: `Bearer ${access_token}`
       }
     });
-    if (!response.ok)
-      return jsonRes(res, {
-        code: 401,
-        message: 'Unauthorized'
+    // console.log('get userinfo end');
+    const id = userResult.data?.id;
+    if (!isNumber(id)) {
+      jsonRes(res, {
+        message: 'Failed to authenticate with GitHub, id is null',
+        code: 401
       });
-    const result = (await response.json()) as TgithubUser;
-    const id = result.id;
-    if (!isNumber(id)) throw Error();
-
+      return;
+    }
     let email = '';
     try {
-      const emailsUrl = `https://api.github.com/user/emails`;
-      const emailsResponse = await fetch(emailsUrl, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          Accept: 'application/json'
-        }
-      });
-
-      if (emailsResponse.ok) {
-        const emails = (await emailsResponse.json()) as Array<{
+      const emailResult = await apiClient.get<
+        {
           email: string;
           primary: boolean;
           verified: boolean;
           visibility: string | null;
-        }>;
-
-        const primaryEmail = emails.find((e) => e.primary && e.verified);
-        // prefer primary email
-        if (primaryEmail) {
-          email = primaryEmail.email;
-        } else {
-          // next verified email
-          const verifiedEmail = emails.find((e) => e.verified);
-          if (verifiedEmail) {
-            email = verifiedEmail.email;
-          } else if (emails.length > 0) {
-            // no verified email, use first email
-            email = emails[0].email;
-          }
+        }[]
+      >('/user/emails', {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      });
+      // console.log('get github email end');
+      const emails = emailResult.data;
+      const primaryEmail = emails.find((e) => e.primary && e.verified);
+      // prefer primary email
+      if (primaryEmail) {
+        email = primaryEmail.email;
+      } else {
+        // next verified email
+        const verifiedEmail = emails.find((e) => e.verified);
+        if (verifiedEmail) {
+          email = verifiedEmail.email;
+        } else if (emails.length > 0) {
+          // no verified email, use first email
+          email = emails[0].email;
         }
       }
     } catch (error) {
@@ -224,8 +235,8 @@ export const githubOAuthGuard =
     await Promise.resolve(
       next?.({
         id: id + '',
-        name: result.login,
-        avatar_url: result.avatar_url,
+        name: userResult.data.login,
+        avatar_url: userResult.data.avatar_url,
         email
       })
     );

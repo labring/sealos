@@ -212,7 +212,7 @@ const BonusBox = (props: {
           fontWeight="500"
           fontSize="12px"
         >
-          <Text mr="4px">{t('Bonus')}</Text>
+          <Text mr="4px">{/* {t('Bonus')} */}+</Text>
           <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
           <Text> {props.bouns}</Text>
         </Flex>
@@ -372,10 +372,12 @@ const RechargeModal = forwardRef(
     const getBonus = (amount: number) => {
       let ratio = 0;
       let specialIdx = specialBonus.findIndex(([k]) => +k === amount);
-      if (specialIdx >= 0) return Math.floor((amount * specialBonus[specialIdx][1]) / 100);
+      // if (specialIdx >= 0) return Math.floor((amount * specialBonus[specialIdx][1]) / 100);
+      if (specialIdx >= 0) return Math.floor(specialBonus[specialIdx][1]);
       const step = [...steps].reverse().findIndex((step) => amount >= step);
       if (ratios.length > step && step > -1) ratio = [...ratios].reverse()[step];
-      return Math.floor((amount * ratio) / 100);
+      // return Math.floor((amount * ratio) / 100);
+      return ratio;
     };
     const { stripeEnabled, wechatEnabled } = useEnvStore();
     useEffect(() => {
@@ -698,21 +700,27 @@ const RechargeModal = forwardRef(
                             ratios[idx]
                           ] as const
                       )
-                      .filter(([_, _2, ratio], idx) => {
-                        return ratio > 0;
+                      .filter(([step, _2, ratio], idx) => {
+                        return (
+                          ratio > 0 &&
+                          specialBonus.findIndex(([k, v]) => +k === step && v !== 0) === -1
+                        );
                       })
-
                       .map(([pre, next, ratio], idx) => (
                         <>
-                          <Text key={idx} pl={'24px'} color={'grayModern.900'}>
+                          {/* <Text key={idx} pl={'24px'} color={'grayModern.900'}>
                             {pre}
                             {' <= '}
                             {t('Recharge Amount')}
                             {next ? `< ${next}` : ''}
+                          </Text> */}
+                          <Text key={idx} pl={'24px'} color={'grayModern.900'}>
+                            {pre}
+                            {/* = {t('Recharge Amount')}{' '} */}
                           </Text>
                           <Text px={'24px'} color={'grayModern.900'}>
                             {t('Bonus')}
-                            {ratio.toFixed(2)}%
+                            {ratio.toFixed(2)}
                           </Text>
                         </>
                       ))}
@@ -720,10 +728,11 @@ const RechargeModal = forwardRef(
                     specialBonus.map(([k, v], i) => (
                       <>
                         <Text key={i} pl={'24px'} color={'grayModern.900'}>
-                          {k} = {t('Recharge Amount')}{' '}
+                          {k}
+                          {/* = {t('Recharge Amount')}{' '} */}
                         </Text>
                         <Text pl={'24px'} color={'grayModern.900'}>
-                          {t('Bonus')} {v} %
+                          {t('Bonus')} {v}
                         </Text>
                       </>
                     ))}

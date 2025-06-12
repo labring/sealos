@@ -1,7 +1,7 @@
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { unbindEmailGuard } from '@/services/backend/middleware/oauth';
-import { filterCf, filterEmailParams, sendEmailCodeGuard } from '@/services/backend/middleware/sms';
+import { filterCf, filterEmailParams, sendSmsCodeGuard } from '@/services/backend/middleware/sms';
 import { sendEmailCodeSvc } from '@/services/backend/svc/sms';
 import { enableEmailSms } from '@/services/enable';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -14,7 +14,10 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     filterCf(req, res, async () =>
       filterEmailParams(req, res, ({ email }) =>
         unbindEmailGuard(email, userUid)(res, () =>
-          sendEmailCodeGuard(email)(res, () => sendEmailCodeSvc(email)(res))
+          sendSmsCodeGuard({
+            id: email,
+            smsType: 'email_unbind'
+          })(req, res, () => sendEmailCodeSvc(email, 'email_unbind')(res))
         )
       )
     )

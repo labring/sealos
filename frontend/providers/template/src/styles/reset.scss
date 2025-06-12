@@ -143,7 +143,39 @@ html {
 }
 
 #driver-popover-content {
-  padding: 14px;
-  max-width: 600px;
-  border: 1px solid #94b5ff;
+  border: none;
+  padding: 0px;
+  border-radius: 20px;
+  max-width: fit-content;
+  // position: absolute;
+  // top: 0px;
+  // left: 0px;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-left-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-top-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: #2563eb !important;
 }

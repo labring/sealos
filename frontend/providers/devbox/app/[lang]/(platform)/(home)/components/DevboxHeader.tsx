@@ -1,6 +1,9 @@
 import MyIcon from '@/components/Icon';
 import { TemplateState } from '@/constants/template';
+import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname, useRouter } from '@/i18n';
+import { useGuideStore } from '@/stores/guide';
 import { useTemplateStore } from '@/stores/template';
 import { Box, Button, Center, Flex, Text, useTheme } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
@@ -27,8 +30,21 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
       });
     }
   }, []);
+
+  const { guide2, setGuide2 } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
+  useEffect(() => {
+    if (!guide2 && isClientSide) {
+      startDriver(
+        startGuide2(t, () => {
+          router.push('/devbox/create');
+        })
+      );
+    }
+  }, [guide2, router, t, isClientSide]);
+
   return (
-    <Flex h={'90px'} alignItems={'center'}>
+    <Flex h={'90px'} alignItems={'center'} flexShrink={0}>
       <Center
         mr={'16px'}
         width={'46px'}
@@ -81,11 +97,17 @@ export default function DevboxHeader({ listLength }: { listLength: number }) {
         </Text>
       </Flex>
       <Button
+        mr={'4px'}
+        className="list-create-app-button"
         minW={'156px'}
         h={'40px'}
         variant={'solid'}
         leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#ffffff'} />}
-        onClick={() => router.push('/devbox/create')}
+        onClick={() => {
+          setGuide2(true);
+          destroyDriver();
+          router.push('/devbox/create');
+        }}
       >
         {t('create_devbox')}
       </Button>

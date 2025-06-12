@@ -9,13 +9,13 @@ import DBList from './components/dbList';
 import Header from './components/header';
 import OtherList from './components/otherList';
 import ObjStorageList from './components/objStorageList';
-import useDetailDriver from '@/hooks/useDetailDriver';
-
+import { useGuideStore } from '@/store/guide';
+import { startDriver, detailDriverObj } from '@/hooks/driver';
+import { useTranslation } from 'next-i18next';
 export default function MyApp() {
-  useDetailDriver();
-
   const { setInstanceName, instanceName, resource } = useResourceStore();
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (router.query?.instanceName && typeof router.query?.instanceName === 'string') {
@@ -27,7 +27,9 @@ export default function MyApp() {
     <Flex flexDirection={'column'} height={'100%'} position={'relative'} background={'#F3F4F5'}>
       <Header instanceName={instanceName}></Header>
       <Box flex={1} px="32px" overflow={'auto'} pt="33px" py="40px">
-        <AppList instanceName={instanceName} />
+        <Box className="app-launchpad">
+          <AppList instanceName={instanceName} />
+        </Box>
         <DBList instanceName={instanceName} />
         <ObjStorageList instanceName={instanceName} />
         <CronJobList instanceName={instanceName} />

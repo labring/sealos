@@ -1,7 +1,7 @@
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
 import { bindEmailGuard } from '@/services/backend/middleware/oauth';
-import { filterEmailVerifyParams, verifyEmailCodeGuard } from '@/services/backend/middleware/sms';
+import { filterEmailVerifyParams, verifyCodeGuard } from '@/services/backend/middleware/sms';
 import { bindEmailSvc } from '@/services/backend/svc/bindProvider';
 import { enableEmailSms } from '@/services/enable';
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -15,9 +15,11 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     res,
     async ({ userUid }) =>
       await filterEmailVerifyParams(req, res, async ({ email, code }) => {
-        await verifyEmailCodeGuard(email, code)(res, () =>
-          bindEmailGuard(email, userUid)(res, () => bindEmailSvc(email, userUid)(res))
-        );
+        await verifyCodeGuard(
+          email,
+          code,
+          'email_bind'
+        )(res, () => bindEmailGuard(email, userUid)(res, () => bindEmailSvc(email, userUid)(res)));
       })
   );
 });

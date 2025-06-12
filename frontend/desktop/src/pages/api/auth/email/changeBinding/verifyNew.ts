@@ -5,7 +5,7 @@ import {
   filterCodeUid,
   filterEmailVerifyParams,
   verifyCodeUidGuard,
-  verifyEmailCodeGuard
+  verifyCodeGuard
 } from '@/services/backend/middleware/sms';
 import { changeEmailBindingSvc } from '@/services/backend/svc/bindProvider';
 import { enableEmailSms } from '@/services/enable';
@@ -19,7 +19,11 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     filterEmailVerifyParams(req, res, ({ email, code }) =>
       filterCodeUid(req, res, ({ uid }) =>
         verifyCodeUidGuard(uid)(res, ({ smsInfo: oldEmailInfo }) =>
-          verifyEmailCodeGuard(email, code)(res, ({ smsInfo: newEmailInfo }) =>
+          verifyCodeGuard(
+            email,
+            code,
+            'email_change_new'
+          )(res, ({ smsInfo: newEmailInfo }) =>
             unbindEmailGuard(oldEmailInfo.id, userUid)(res, () =>
               bindEmailGuard(newEmailInfo.id, userUid)(res, () =>
                 changeEmailBindingSvc(oldEmailInfo.id, newEmailInfo.id, userUid)(res)

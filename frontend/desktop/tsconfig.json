@@ -1,14 +1,25 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "prisma/*": ["prisma/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "prisma/*": [
+        "prisma/*"
+      ]
     },
     "isolatedModules": true,
-    "types": ["@types/jest"]
+    "types": [
+      "@types/jest"
+    ],
+    "noEmit": true
   },
   "include": [
     "next-env.d.ts",

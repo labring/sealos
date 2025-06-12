@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { enableEmailSms } from '@/services/enable';
 import { ErrorHandler } from '@/services/backend/middleware/error';
-import { filterCf, filterEmailParams, sendEmailCodeGuard } from '@/services/backend/middleware/sms';
+import { filterCf, filterEmailParams, sendSmsCodeGuard } from '@/services/backend/middleware/sms';
 import { sendEmailCodeSvc } from '@/services/backend/svc/sms';
 
 export default ErrorHandler(async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -12,7 +12,9 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   await filterCf(req, res, async () => {
     await filterAccessToken(req, res, () =>
       filterEmailParams(req, res, ({ email }) =>
-        sendEmailCodeGuard(email)(res, () => sendEmailCodeSvc(email)(res))
+        sendSmsCodeGuard({ id: email, smsType: 'email_bind' })(req, res, () =>
+          sendEmailCodeSvc(email, 'email_bind')(res)
+        )
       )
     );
   });

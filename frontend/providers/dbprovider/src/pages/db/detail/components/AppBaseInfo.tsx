@@ -9,7 +9,9 @@ import {
 import FormControl from '@/components/FormControl';
 import MyIcon from '@/components/Icon';
 import { DBTypeEnum, DBTypeSecretMap, defaultDBDetail } from '@/constants/db';
+import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
+import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
 import type { DBDetailType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
@@ -41,7 +43,8 @@ import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
-import { useCallback, useMemo, useState } from 'react';
+import { useRouter } from 'next/router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 const CopyBox = ({
@@ -102,6 +105,44 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { message: toast } = useMessage();
   const [scenario, setScenario] = useState<'externalNetwork' | 'editPassword'>('externalNetwork');
+  const router = useRouter();
+  const { detailCompleted, applistCompleted } = useGuideStore();
+
+  useEffect(() => {
+    if (!detailCompleted && applistCompleted) {
+      const checkAndStartGuide = () => {
+        const containerElement = document.getElementById('db-detail-container');
+        if (!containerElement) return false;
+
+        const guideListElement = containerElement.querySelector('#network-detail');
+        if (guideListElement) {
+          requestAnimationFrame(() => {
+            startDriver(detailDriverObj(t));
+          });
+          return true;
+        }
+
+        return false;
+      };
+
+      if (!checkAndStartGuide()) {
+        const observer = new MutationObserver((mutations, obs) => {
+          if (checkAndStartGuide()) {
+            obs.disconnect();
+          }
+        });
+
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+
+        return () => {
+          observer.disconnect();
+        };
+      }
+    }
+  }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
     return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus', 'kafka'].find(
@@ -120,7 +161,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
   const { data: secret, refetch: refetchSecret } = useQuery(
     ['getDBSecret', db.dbName, db.dbType],
-    () => (db.dbName ? getDBSecret({ dbName: db.dbName, dbType: db.dbType }) : null),
+    () =>
+      db.dbName
+        ? getDBSecret({
+            dbName: db.dbName,
+            dbType: db.dbType,
+            mock: router?.query?.guide === 'true'
+          })
+        : null,
     {
       enabled: supportConnectDB
     }
@@ -425,7 +473,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { mTitle, mContent } = useMemo(() => ModalDetail(scenario), [scenario, formState]);
 
   return (
-    <Flex position={'relative'} gap={'8px'}>
+    <Flex position={'relative'} gap={'8px'} id="db-detail-container">
       <Box flex={'0 1 37%'} bg={'white'} borderRadius={'8px'} px={'32px'} py={'28px'}>
         {appInfoTable.map((info, index) => (
           <Box key={info.name} fontSize={'md'}>
@@ -515,7 +563,14 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         ))}
       </Box>
       {secret ? (
-        <Box flex={'0 1 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+        <Box
+          id="network-detail"
+          flex={'0 1 63%'}
+          bg={'white'}
+          borderRadius={'8px'}
+          px={'24px'}
+          py={'16px'}
+        >
           <Flex fontSize={'base'} gap={'8px'} alignItems={'center'} color={'grayModern.600'}>
             <Box fontSize={'16px'} fontWeight={'bold'} color={'grayModern.900'}>
               {t('connection_info')}
@@ -673,7 +728,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
           </Modal>
         </Box>
       ) : (
-        <Stack flex={'1 0 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
+        <Stack flex={'0 1 63%'} bg={'white'} borderRadius={'8px'} px={'24px'} py={'16px'}>
           <Skeleton
             startColor="white"
             endColor="grayModern.200"

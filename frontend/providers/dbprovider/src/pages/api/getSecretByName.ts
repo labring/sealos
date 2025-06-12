@@ -5,6 +5,7 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
 import type { DBType } from '@/types/db';
 import { buildConnectionInfo, fetchDBSecret } from '@/utils/database';
+import { MockDBSecret } from '@/constants/db';
 
 export type SecretResponse = {
   username: string;
@@ -16,9 +17,23 @@ export type SecretResponse = {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
-    const { dbName, dbType } = req.query as { dbName: string; dbType: DBType };
+    const {
+      dbName,
+      dbType,
+      mock = 'false'
+    } = req.query as {
+      dbName: string;
+      dbType: DBType;
+      mock?: string;
+    };
     if (!dbName) {
       throw new Error('dbName is empty');
+    }
+
+    if (mock === 'true') {
+      return jsonRes(res, {
+        data: MockDBSecret
+      });
     }
 
     const { k8sCore, namespace } = await getK8s({

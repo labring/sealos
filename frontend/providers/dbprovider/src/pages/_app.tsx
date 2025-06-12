@@ -152,6 +152,15 @@ function App({ Component, pageProps }: AppProps) {
                 }
               });
             }
+
+            if (e.data?.action === 'guide') {
+              router.push({
+                pathname: '/redirect',
+                query: {
+                  action: e.data.action
+                }
+              });
+            }
           } catch (error) {
             console.log(error, 'error');
           }

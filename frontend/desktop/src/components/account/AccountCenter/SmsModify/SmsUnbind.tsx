@@ -149,7 +149,6 @@ const smsUnBindGen = (smsType: SmsType) =>
                         color={'brightBlue.600'}
                         marginY={'auto'}
                         fontSize={'11px'}
-                        w={'60px'}
                       >
                         {t('common:get_code')}
                       </Link>

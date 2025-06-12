@@ -29,6 +29,7 @@ import DelModal from './delDodal';
 import { useSearchStore } from '@/store/search';
 import { refetchIntervalTime } from './appList';
 import useSessionStore from '@/store/session';
+import { useGuideStore } from '@/store/guide';
 
 export default function Header({ instanceName }: { instanceName: string }) {
   const router = useRouter();
@@ -45,17 +46,18 @@ export default function Header({ instanceName }: { instanceName: string }) {
   const yamlCR = useRef<TemplateInstanceType>();
   const { setAppType } = useSearchStore();
   const { session } = useSessionStore();
-
+  const { detailCompleted } = useGuideStore();
   const { data, refetch } = useQuery(
     ['getInstanceByName', instanceName, session?.kubeconfig],
-    () => getInstanceByName(instanceName),
+    () => getInstanceByName(instanceName, !detailCompleted),
     {
       refetchInterval: refetchIntervalTime,
       onSuccess(data) {
         yamlCR.current = data.yamlCR;
         setDisplayName(data?.displayName || instanceName);
         appendResource([{ id: data.id, name: data.id, kind: 'Instance' }]);
-      }
+      },
+      enabled: !!instanceName
     }
   );
 

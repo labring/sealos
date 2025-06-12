@@ -1,25 +1,10 @@
 import { Coin } from '@/constants/app';
 import { jsonRes } from '@/services/backend/response';
-import type { AppConfigType, FileMangerType, FormSliderListType } from '@/types';
+import type { AppConfigType, EnvResponse } from '@/types';
 import { readFileSync } from 'fs';
 import * as yaml from 'js-yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getGpuNode } from './resourcePrice';
-
-// todo make response type to be more specific and clear.
-export type Response = {
-  SEALOS_DOMAIN: string;
-  DOMAIN_PORT: string;
-  SHOW_EVENT_ANALYZE: boolean;
-  FORM_SLIDER_LIST_CONFIG: FormSliderListType;
-  CURRENCY: Coin;
-  guideEnabled: boolean;
-  fileMangerConfig: FileMangerType;
-  SEALOS_USER_DOMAINS: { name: string; secretName: string }[];
-  DESKTOP_DOMAIN: string;
-  PVC_STORAGE_MAX: number;
-  GPU_ENABLED: boolean;
-};
 
 export const defaultAppConfig: AppConfigType = {
   cloud: {
@@ -98,20 +83,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       global.AppConfig.common.gpuEnabled = gpuNodes.length > 0;
     }
 
-    jsonRes<Response>(res, {
-      data: {
-        SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-        DOMAIN_PORT: global.AppConfig.cloud.port?.toString() || '',
-        SHOW_EVENT_ANALYZE: global.AppConfig.launchpad.eventAnalyze.enabled,
-        FORM_SLIDER_LIST_CONFIG: global.AppConfig.launchpad.appResourceFormSliderConfig,
-        guideEnabled: global.AppConfig.common.guideEnabled,
-        fileMangerConfig: global.AppConfig.launchpad.fileManger,
-        CURRENCY: global.AppConfig.launchpad.currencySymbol || Coin.shellCoin,
-        SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains || [],
-        DESKTOP_DOMAIN: global.AppConfig.cloud.desktopDomain,
-        PVC_STORAGE_MAX: global.AppConfig.launchpad.pvcStorageMax || 20,
-        GPU_ENABLED: global.AppConfig.common.gpuEnabled
-      }
+    jsonRes<EnvResponse>(res, {
+      data: getServerEnv(global.AppConfig)
     });
   } catch (error) {
     console.log('error: /api/platform/getInitData', error);
@@ -121,3 +94,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 }
+
+export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
+  return {
+    SEALOS_DOMAIN: AppConfig.cloud.domain,
+    DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
+    SHOW_EVENT_ANALYZE: AppConfig.launchpad.eventAnalyze.enabled,
+    FORM_SLIDER_LIST_CONFIG: AppConfig.launchpad.appResourceFormSliderConfig,
+    guideEnabled: AppConfig.common.guideEnabled,
+    fileMangerConfig: AppConfig.launchpad.fileManger,
+    CURRENCY: AppConfig.launchpad.currencySymbol || Coin.shellCoin,
+    SEALOS_USER_DOMAINS: AppConfig.cloud.userDomains || [],
+    DESKTOP_DOMAIN: AppConfig.cloud.desktopDomain,
+    PVC_STORAGE_MAX: AppConfig.launchpad.pvcStorageMax || 20,
+    GPU_ENABLED: AppConfig.common.gpuEnabled
+  };
+};

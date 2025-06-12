@@ -1,5 +1,4 @@
 import { getTemplateRepository, listOfficialTemplateRepository } from '@/api/template';
-import useDriver from '@/hooks/useDriver';
 import { TemplateRepositoryKind } from '@/prisma/generated/client';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
@@ -22,15 +21,13 @@ export default function TemplateRepositorySelector({ isEdit }: TemplateRepositor
   const { startedTemplate, setStartedTemplate } = useDevboxStore();
   const { setValue, getValues, watch } = useFormContext<DevboxEditTypeV2>();
   const t = useTranslations();
-  const { handleUserGuide } = useDriver();
+
   const searchParams = useSearchParams();
   const templateRepositoryQuery = useQuery(
     ['list-official-template-repository'],
     listOfficialTemplateRepository,
     {
-      onSuccess(res) {
-        handleUserGuide();
-      },
+      onSuccess(res) {},
       staleTime: Infinity,
       cacheTime: 1000 * 60 * 30
     }

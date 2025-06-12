@@ -3,6 +3,7 @@ import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 import { DELETE, GET, POST } from '@/services/request';
 import { GetDevboxByNameReturn } from '@/types/adapt';
 import {
+  DevboxDetailTypeV2,
   DevboxEditTypeV2,
   DevboxListItemTypeV2,
   DevboxPatchPropsType,
@@ -36,8 +37,8 @@ export const getMyDevboxList = () =>
       return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
     })
   );
-export const getDevboxByName = (devboxName: string) =>
-  GET<GetDevboxByNameReturn>('/api/getDevboxByName', { devboxName }).then(adaptDevboxDetailV2);
+export const getDevboxByName = (devboxName: string, mock = false) =>
+  GET<DevboxDetailTypeV2>('/api/getDevboxByName', { devboxName, mock });
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });

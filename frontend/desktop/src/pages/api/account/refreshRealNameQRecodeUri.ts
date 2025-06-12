@@ -121,10 +121,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       global.AppConfig?.common.realNameCallbackUrl ||
       `https://${global.AppConfig?.cloud.domain}/api/account/faceIdRealNameAuthCallback`;
 
-    const globalToken = generateAuthenticationToken({
-      userUid: payload.userUid,
-      userId: payload.userId
-    });
+    const globalToken = generateAuthenticationToken(
+      {
+        userUid: payload.userUid,
+        userId: payload.userId
+      },
+      '3h'
+    );
 
     const urlResult: QRCodeUrlResult = await generateRealNameQRcodeUri(
       redirectUrl,

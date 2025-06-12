@@ -47,6 +47,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   useEffect(() => {
     colorMode === 'dark' ? toggleColorMode() : null;
   }, [colorMode, toggleColorMode]);
+
   const [showMoreApps, setShowMoreApps] = useState(false);
   const queryClient = useQueryClient();
   const swtichWorksapceMutation = useMutation({
@@ -264,7 +265,7 @@ export async function getServerSideProps({ req, res, locales }: any) {
     props: {
       ...(await serverSideTranslations(
         local,
-        ['common', 'cloudProviders', 'error', 'applist'],
+        ['common', 'cloudProviders', 'error', 'applist', 'v2'],
         null,
         locales || []
       )),

@@ -24,6 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!_kc) return jsonRes(res, { code: 404, message: 'user is not found' });
     const realKc = switchKubeconfigNamespace(_kc, payload.workspaceId);
     const kc = K8sApi(realKc);
+
     const getMeta = (namespace = 'app-system') => ({
       group: 'app.sealos.io',
       version: 'v1',
@@ -36,7 +37,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const defaultArr = (await getRawAppList(getMeta()))
       .map<TAppConfig>((item) => {
-        return { key: `system-${item.metadata.name}`, ...item.spec };
+        return {
+          key: `system-${item.metadata.name}`,
+          ...item.spec,
+          creationTimestamp: item.metadata.creationTimestamp
+        };
       })
       .sort((a, b) => {
         if (a.displayType === 'more' && b.displayType !== 'more') {
@@ -44,12 +49,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         } else if (a.displayType !== 'more' && b.displayType === 'more') {
           return -1;
         } else {
-          return 0;
+          const timeA = a.creationTimestamp ? new Date(a.creationTimestamp).getTime() : 0;
+          const timeB = b.creationTimestamp ? new Date(b.creationTimestamp).getTime() : 0;
+          return timeB - timeA;
         }
       });
 
     const userArr = (await getRawAppList(getMeta(payload.workspaceId))).map<TAppConfig>((item) => {
-      return { key: `user-${item.metadata.name}`, ...item.spec, displayType: 'normal' };
+      return {
+        key: `user-${item.metadata.name}`,
+        ...item.spec,
+        displayType: 'normal',
+        creationTimestamp: item.metadata.creationTimestamp
+      };
     });
 
     let apps = [...defaultArr, ...userArr].filter((item) => item.displayType !== 'hidden');
