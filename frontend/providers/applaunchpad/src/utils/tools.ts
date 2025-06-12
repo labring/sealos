@@ -256,6 +256,8 @@ export const patchYamlList = ({
     .map((item) => yaml.loadAll(item))
     .flat() as DeployKindsType[];
 
+  console.log(oldFormJsonList, newFormJsonList, 123);
+
   const actions: AppPatchPropsType = [];
 
   // find delete
@@ -274,13 +276,20 @@ export const patchYamlList = ({
 
   // find create and patch
   newFormJsonList.forEach((newYamlJson) => {
-    const oldFormJson = oldFormJsonList.find(
-      (item) =>
-        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
-    );
+    const oldFormJson =
+      newYamlJson.kind === 'ConfigMap'
+        ? originalYamlList.find(
+            (item) =>
+              item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+          )
+        : oldFormJsonList.find(
+            (item) =>
+              item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+          );
 
     if (oldFormJson) {
       const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
+      console.log(oldFormJson, newYamlJson, patchRes, 'patchRes');
 
       if (patchRes.length === 0) return;
 
@@ -299,7 +308,7 @@ export const patchYamlList = ({
 
           if (!crOldYamlJson) return newYamlJson;
 
-          /* Fill in volumn */
+          /* Fill in volume - 处理 Deployment/StatefulSet */
           if (
             oldFormJson.kind === YamlKindEnum.Deployment ||
             oldFormJson.kind === YamlKindEnum.StatefulSet

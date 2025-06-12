@@ -299,8 +299,6 @@ export async function getServerSideProps(content: any) {
   const forcedLanguage = process.env.FORCED_LANGUAGE;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
 
-  console.log('content', content);
-
   const local: string =
     forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
@@ -325,8 +323,6 @@ export async function getServerSideProps(content: any) {
     }
   };
 
-  console.log('local', local);
-  console.log('seoData', seoData);
   return {
     props: {
       ...(await serviceSideProps(content)),
