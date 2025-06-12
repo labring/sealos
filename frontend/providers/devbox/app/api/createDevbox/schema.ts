@@ -47,7 +47,7 @@ const NetworkSchema = (devboxName: string) =>
     })
   });
 
-export const DevboxFormSchema = z
+export const RequestSchema = z
   .object({
     name: z.string().min(1).openapi({
       description: 'Devbox name'
@@ -82,10 +82,6 @@ export const DevboxFormSchema = z
       networks: data.networks.map((network: any) => NetworkSchema(data.name).parse(network))
     };
   });
-
-export const RequestSchema = z.object({
-  devboxForm: DevboxFormSchema
-});
 
 export const SuccessResponseSchema = z.object({
   data: z.string().default('success')

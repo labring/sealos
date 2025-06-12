@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { devboxForm } = validationResult.data;
+    const devboxForm = validationResult.data;
     const headerList = req.headers;
 
     const { applyYamlList, k8sCustomObjects, namespace } = await getK8s({

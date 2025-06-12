@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const devboxForm = validationResult.data;
+    const releaseForm = validationResult.data;
     const headerList = req.headers;
 
     const { applyYamlList, namespace, k8sCustomObjects } = await getK8s({
@@ -40,9 +40,9 @@ export async function POST(req: NextRequest) {
       releaseBody.items.some((item: any) => {
         return (
           item.spec &&
-          item.spec.devboxName === devboxForm.devboxName &&
-          item.metadata.ownerReferences[0].uid === devboxForm.devboxUid &&
-          item.spec.newTag === devboxForm.tag
+          item.spec.devboxName === releaseForm.devboxName &&
+          item.metadata.ownerReferences[0].uid === releaseForm.devboxUid &&
+          item.spec.newTag === releaseForm.tag
         );
       })
     ) {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const devbox = json2DevboxRelease(devboxForm);
+    const devbox = json2DevboxRelease(releaseForm);
     await applyYamlList([devbox], 'create');
 
     return jsonRes({

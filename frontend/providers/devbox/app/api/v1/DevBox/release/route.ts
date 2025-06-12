@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { devboxForm } = validationResult.data;
+    const releaseForm = validationResult.data;
     const headerList = req.headers;
 
     const { applyYamlList, namespace, k8sCustomObjects } = await getK8s({
@@ -44,15 +44,15 @@ export async function POST(req: NextRequest) {
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const devbox = devboxBody.items.find(
-      (item: any) => item.metadata.name === devboxForm.devboxName
+      (item: any) => item.metadata.name === releaseForm.devboxName
     );
 
     if (
       releaseBody.items.some((item: any) => {
         return (
           item.spec &&
-          item.spec.devboxName === devboxForm.devboxName &&
-          item.spec.newTag === devboxForm.tag
+          item.spec.devboxName === releaseForm.devboxName &&
+          item.spec.newTag === releaseForm.tag
         );
       })
     ) {
@@ -63,21 +63,21 @@ export async function POST(req: NextRequest) {
     }
 
     const devboxYaml = json2DevboxRelease({
-      ...devboxForm,
+      ...releaseForm,
       devboxUid: devbox?.metadata.uid || ''
     });
     await applyYamlList([devboxYaml], 'create');
 
     const { REGISTRY_ADDR } = process.env;
 
-    const imageName = `${REGISTRY_ADDR}/${namespace}/${devboxForm.devboxName}:${devboxForm.tag}`;
+    const imageName = `${REGISTRY_ADDR}/${namespace}/${releaseForm.devboxName}:${releaseForm.tag}`;
 
     return jsonRes({
       data: {
-        devboxName: devboxForm.devboxName,
-        tag: devboxForm.tag,
+        devboxName: releaseForm.devboxName,
+        tag: releaseForm.tag,
         image: imageName,
-        releaseDes: devboxForm.releaseDes || '',
+        releaseDes: releaseForm.releaseDes || '',
         createdAt: new Date().toISOString()
       }
     });
