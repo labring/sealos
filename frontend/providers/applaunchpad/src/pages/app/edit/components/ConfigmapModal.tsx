@@ -68,7 +68,6 @@ const ConfigmapModal = ({
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
-                {' '}
                 {t('filename')}
               </Box>
               <Input

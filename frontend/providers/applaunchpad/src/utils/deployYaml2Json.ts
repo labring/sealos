@@ -97,44 +97,28 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
     })),
     imagePullPolicy: 'Always'
   };
+
   const configMapVolumeMounts = data.configMapList.map((item) => ({
-    name: pathToNameFormat(item.mountPath),
+    name: `${data.appName}-cm`,
     mountPath: item.mountPath,
-    subPath: pathFormat(item.mountPath)
+    subPath: pathToNameFormat(item.mountPath)
   }));
-  const configMapVolumes = data.configMapList.map((item) => ({
-    name: pathToNameFormat(item.mountPath), // name === [development.***.volumeMounts[*].name]
-    configMap: {
-      name: data.appName, // name === configMap.yaml.meta.name
-      items: [
-        {
-          key: pathToNameFormat(item.mountPath),
-          path: pathFormat(item.mountPath) // path ===[development.***.volumeMounts[*].subPath]
+
+  const configMapVolumes =
+    data.configMapList.length > 0
+      ? {
+          name: `${data.appName}-cm`,
+          configMap: {
+            name: data.appName
+          }
         }
-      ]
-    }
-  }));
+      : null;
 
-  const deduplicateVolumes = () => {
-    const existingVolumes = data.volumes || [];
-    const formVolumeNames = new Set(
-      data.configMapList.map((item) => pathToNameFormat(item.mountPath))
-    );
-    const preservedVolumes = existingVolumes.filter(
-      (volume) => !(volume.configMap && formVolumeNames.has(volume.name))
-    );
-    return [...preservedVolumes, ...configMapVolumes];
-  };
+  const finalVolumes = configMapVolumes
+    ? [...(data.volumes || []), configMapVolumes]
+    : data.volumes || [];
 
-  const deduplicateVolumeMounts = () => {
-    const existingMounts = data.volumeMounts || [];
-    const formMountNames = new Set(configMapVolumeMounts.map((m) => m.name));
-    const preservedMounts = existingMounts.filter((mount) => !formMountNames.has(mount.name));
-    return [...preservedMounts, ...configMapVolumeMounts];
-  };
-
-  const finalVolumes = deduplicateVolumes();
-  const finalVolumeMounts = deduplicateVolumeMounts();
+  const finalVolumeMounts = [...(data.volumeMounts || []), ...configMapVolumeMounts];
 
   // pvc settings
   const storageTemplates = data.storeList.map((store) => ({
@@ -452,7 +436,7 @@ export const json2ConfigMap = (data: AppEditType) => {
 
   const configFile: { [key: string]: string } = {};
   data.configMapList.forEach((item) => {
-    configFile[pathToNameFormat(item.mountPath)] = item.value; // key ===  [development.***.volumes[*].configMap.items[0].key]
+    configFile[pathToNameFormat(item.mountPath)] = item.value;
   });
 
   const template = {

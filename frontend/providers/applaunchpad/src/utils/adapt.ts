@@ -8,7 +8,8 @@ import type {
   V1Pod,
   SinglePodMetrics,
   CoreV1EventList,
-  V2HorizontalPodAutoscaler
+  V2HorizontalPodAutoscaler,
+  V1VolumeMount
 } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import type {
@@ -235,7 +236,6 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
     [YamlKindEnum.Deployment]?: V1Deployment;
-    // [YamlKindEnum.Service]?: V1Service;
     [YamlKindEnum.ConfigMap]?: V1ConfigMap;
     [YamlKindEnum.HorizontalPodAutoscaler]?: V2HorizontalPodAutoscaler;
     [YamlKindEnum.Secret]?: V1Secret;
@@ -250,9 +250,95 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
 
   const appDeploy = deployKindsMap.Deployment || deployKindsMap.StatefulSet;
 
-  if (!appDeploy) {
+  if (!appDeploy || !appDeploy?.metadata?.name) {
     throw new Error('获取APP异常');
   }
+
+  const appName = appDeploy.metadata?.name;
+
+  const getConfigMapVolumeNames = (): string[] => {
+    if (!deployKindsMap.ConfigMap) return [];
+
+    const configMapName = deployKindsMap.ConfigMap.metadata?.name;
+    const configMapVolumes =
+      appDeploy?.spec?.template?.spec?.volumes?.filter(
+        (volume) => volume.configMap?.name === configMapName
+      ) || [];
+
+    return configMapVolumes.map((volume) => volume.name).filter(Boolean) as string[];
+  };
+
+  const configMapVolumeNames = getConfigMapVolumeNames();
+  console.log('🔍 ConfigMap volume names:', configMapVolumeNames);
+
+  const getConfigMapList = () => {
+    if (!deployKindsMap.ConfigMap?.data || configMapVolumeNames.length === 0 || !appDeploy) {
+      return [];
+    }
+
+    const allConfigMapVolumeMounts =
+      appDeploy.spec?.template?.spec?.containers?.[0]?.volumeMounts?.filter((mount) =>
+        configMapVolumeNames.includes(mount.name)
+      ) || [];
+
+    console.log(
+      'All ConfigMap volumeMounts:',
+      allConfigMapVolumeMounts.map((m) => ({
+        name: m.name,
+        mountPath: m.mountPath,
+        subPath: m.subPath
+      }))
+    );
+
+    return allConfigMapVolumeMounts
+      .map((mount) => {
+        let configMapKey: string;
+        let mountPath = mount.mountPath;
+
+        // 根据volumeMounts name找到对应的volume配置
+        const relatedVolume = appDeploy?.spec?.template?.spec?.volumes?.find(
+          (volume) => volume.name === mount.name
+        );
+
+        const configMapItems = relatedVolume?.configMap?.items || [];
+
+        console.log(`Processing mount ${mount.name}:`, {
+          mountPath,
+          subPath: mount.subPath,
+          hasItems: configMapItems.length > 0,
+          items: configMapItems
+        });
+
+        if (configMapItems.length > 0) {
+          // 老应用逻辑：通过items映射找到对应的key
+          const matchedItem = configMapItems.find((item) => item.path === mount.subPath);
+          if (matchedItem) {
+            configMapKey = matchedItem.key;
+          } else {
+            configMapKey = mount.subPath || '';
+          }
+        } else {
+          configMapKey = mount.subPath || '';
+        }
+
+        const value = deployKindsMap.ConfigMap?.data?.[configMapKey] || '';
+
+        console.log(`ConfigMap mapping result:`, {
+          volumeName: mount.name,
+          mountPath,
+          subPath: mount.subPath,
+          configMapKey,
+          hasValue: !!value,
+          valuePreview: value.substring(0, 50) + '...'
+        });
+
+        return {
+          mountPath,
+          value
+        };
+      })
+      .filter((item) => item.value);
+  };
 
   const useGpu = !!Number(
     appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.[gpuResourceKey]
@@ -261,14 +347,23 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
 
   const getFilteredVolumeMounts = () => {
     const volumeMounts = appDeploy?.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
-    const configMapKeys = Object.keys(deployKindsMap.ConfigMap?.data || {});
     const storeNames =
       deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates?.map(
         (template) => template.metadata?.name
       ) || [];
 
     return volumeMounts.filter(
-      (mount) => !configMapKeys.includes(mount.name) && !storeNames.includes(mount.name)
+      (mount) => !configMapVolumeNames.includes(mount.name) && !storeNames.includes(mount.name)
+    );
+  };
+
+  const getFilteredVolumes = () => {
+    return (
+      appDeploy?.spec?.template?.spec?.volumes?.filter((volume) => {
+        if (!deployKindsMap.ConfigMap) return true;
+        const configMapName = deployKindsMap.ConfigMap.metadata?.name;
+        return !(volume.configMap?.name === configMapName);
+      }) || []
     );
   };
 
@@ -276,7 +371,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
     labels: appDeploy?.metadata?.labels || {},
     crYamlList: configs,
     id: appDeploy.metadata?.uid || ``,
-    appName: appDeploy.metadata?.name || 'app Name',
+    appName: appName,
     createTime: dayjs(appDeploy.metadata?.creationTimestamp).format('YYYY-MM-DD HH:mm'),
     status: appStatusMap.waiting,
     isPause: !!appDeploy?.metadata?.annotations?.[pauseKey],
@@ -356,7 +451,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
             ? envs.SEALOS_DOMAIN
-            : item?.nodePort // 如果有 nodePort，则使用域名
+            : item?.nodePort
             ? domain
             : domain.split('.').slice(1).join('.') || envs.SEALOS_DOMAIN
         };
@@ -383,15 +478,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
           maxReplicas: deployKindsMap.HorizontalPodAutoscaler.spec.maxReplicas || 10
         }
       : defaultEditVal.hpa,
-    configMapList: deployKindsMap.ConfigMap?.data
-      ? Object.entries(deployKindsMap.ConfigMap.data).map(([key, value], i) => ({
-          mountPath:
-            appDeploy?.spec?.template.spec?.containers[0].volumeMounts?.find(
-              (item) => item.name === key
-            )?.mountPath || key,
-          value
-        }))
-      : [],
+    configMapList: getConfigMapList(),
     secret: atobSecretYaml(deployKindsMap?.Secret?.data?.['.dockerconfigjson']),
     storeList: deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates
       ? deployKindsMap.StatefulSet?.spec?.volumeClaimTemplates.map((item) => ({
@@ -401,8 +488,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
         }))
       : [],
     volumeMounts: getFilteredVolumeMounts(),
-    // keep original non-configMap type volumes
-    volumes: appDeploy?.spec?.template?.spec?.volumes || [],
+    volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
     source: getAppSource(appDeploy)
   };
