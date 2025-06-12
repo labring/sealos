@@ -47,7 +47,7 @@ export default function FloatingButton() {
   const AppMenuLists: AppInfo[] = [
     {
       name: 'home',
-      icon: '/icons/home.svg',
+      icon: '/icons/my-home.svg',
       zIndex: 99999,
       isShow: true,
       pid: -9,

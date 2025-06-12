@@ -1,17 +1,33 @@
 import { useCachedStore } from '@/store/cached';
 import { useSearchStore } from '@/store/search';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { Center, Flex, Icon, Input, InputGroup, InputLeftElement, Text } from '@chakra-ui/react';
+import {
+  Center,
+  Flex,
+  Icon,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Text,
+  Box,
+  Button,
+  useBreakpointValue
+} from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import SideBar from './sidebar';
 import { ApplicationType } from '@/types/app';
+import { useGuideStore } from '@/store/guide';
+import { X } from 'lucide-react';
+import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { setSearchValue, setAppType } = useSearchStore();
   const { insideCloud } = useCachedStore();
+  const firstColumnWidth = useBreakpointValue({ base: '240px', xl: '280px' });
 
   const changeI18n = () => {
     const lastLang = getLangStore();
@@ -21,9 +37,11 @@ export default function AppMenu() {
       setLangStore(newLang);
     }
   };
+  const isClientSide = useClientSideValue();
+  const { listCompleted, setListCompleted, createCompleted } = useGuideStore();
 
   return (
-    <Flex flexDirection={'column'} px="16px" position={'relative'}>
+    <Flex flexDirection={'column'} px="16px" position={'relative'} className="guide-appmenu">
       <InputGroup mt="16px" borderRadius={'4px'}>
         <InputLeftElement pointerEvents="none">
           <svg
@@ -58,7 +76,7 @@ export default function AppMenu() {
       <SideBar />
       {insideCloud ? (
         <Flex
-          cursor={'default'}
+          cursor={!listCompleted || !createCompleted ? 'not-allowed' : 'default'}
           p="8px 4px"
           mb="8px"
           h="48px"
@@ -69,6 +87,7 @@ export default function AppMenu() {
           }}
           alignItems={'center'}
           onClick={() => {
+            if (!listCompleted || !createCompleted) return;
             router.replace('/app');
             setAppType(ApplicationType.MyApp);
           }}
@@ -114,6 +133,74 @@ export default function AppMenu() {
         >
           {i18n?.language === 'en' ? 'En' : '中'}
         </Center>
+      )}
+
+      {!listCompleted && isClientSide && (
+        <Box
+          position="absolute"
+          zIndex={1000}
+          width="250px"
+          bg="#2563EB"
+          p="16px"
+          borderRadius="12px"
+          color="#fff"
+          pointerEvents="auto"
+          top={'200px'}
+          left={firstColumnWidth}
+        >
+          <Flex alignItems={'center'} justifyContent={'space-between'}>
+            <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
+              {t('driver.choose_from_template')}
+            </Text>
+            <Box
+              cursor={'pointer'}
+              ml={'auto'}
+              onClick={() => {
+                setListCompleted(true);
+                startDriver(quitGuideDriverObj(t));
+              }}
+            >
+              <X width={'16px'} height={'16px'} />
+            </Box>
+          </Flex>
+          <Text mt="8px" color="#FFFFFFCC" fontSize="14px">
+            {t('driver.choose_from_template_desc')}
+          </Text>
+          <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
+            <Text fontSize={'13px'} fontWeight={500}>
+              2/4
+            </Text>
+            <Center
+              color={'#fff'}
+              fontSize={'14px'}
+              fontWeight={500}
+              cursor={'pointer'}
+              borderRadius={'8px'}
+              background={'rgba(255, 255, 255, 0.20)'}
+              w={'fit-content'}
+              h={'32px'}
+              p={'8px'}
+              onClick={() => {
+                setListCompleted(true);
+                router.push('/deploy?templateName=fastgpt');
+              }}
+            >
+              {t('driver.next')}
+            </Center>
+          </Flex>
+
+          <Box
+            position={'absolute'}
+            top={'20px'}
+            left={'-18px'}
+            width={0}
+            height={0}
+            borderTop={'8px solid transparent'}
+            borderLeft={'8px solid transparent'}
+            borderBottom={'8px solid transparent'}
+            borderRight={'10px solid #2563EB'}
+          />
+        </Box>
       )}
     </Flex>
   );

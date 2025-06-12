@@ -3,10 +3,11 @@ import { modifyWorkspaceRole, unbindingRole } from '@/services/backend/team';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { roleToUserRole, vaildManage } from '@/utils/tools';
 import { validate } from 'uuid';
-import { prisma } from '@/services/backend/db/init';
+import { globalPrisma, prisma } from '@/services/backend/db/init';
 import { JoinStatus } from 'prisma/region/generated/client';
 import { verifyAccessToken } from '@/services/backend/auth';
 import { Role } from 'prisma/region/generated/client';
+import { getRegionUid } from '@/services/enable';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const payload = await verifyAccessToken(req.headers);
@@ -56,7 +57,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         workspaceUid: ns_uid
       });
     } else if (JoinStatus.IN_WORKSPACE === tItem.status) {
-      // modify role
+      const ownerResult = queryResults.find((qr) => qr.role === 'OWNER');
+      if (!ownerResult) {
+        throw new Error('no owner in workspace');
+      }
+
+      // try {
       await modifyWorkspaceRole({
         k8s_username: tItem.userCr.crName,
         role: roleToUserRole(tItem.role),
@@ -67,6 +73,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       unbinding_result = await unbindingRole({
         userCrUid: tItem.userCrUid,
         workspaceUid: ns_uid
+      });
+
+      // modify role
+      const regionUid = getRegionUid();
+      await globalPrisma.$transaction(async (tx) => {
+        const ownerStatus = await tx.workspaceUsage.findUnique({
+          where: {
+            regionUid_userUid_workspaceUid: {
+              regionUid,
+              userUid: ownerResult.userCr.userUid,
+              workspaceUid: ns_uid
+            }
+          }
+        });
+        if (!ownerStatus) {
+          // 被其他的操作删了workspace,本次更新白干
+          return;
+        }
+        // sync status, owner seat sub 1,
+        await tx.workspaceUsage.update({
+          where: {
+            regionUid_userUid_workspaceUid: {
+              userUid: ownerStatus.userUid,
+              workspaceUid: ns_uid,
+              regionUid
+            }
+          },
+          data: {
+            seat: ownerStatus.seat - 1 > 0 ? ownerStatus.seat - 1 : 1
+          }
+        });
       });
     } else {
       return jsonRes(res, { code: 404, message: 'target user is not in namespace' });

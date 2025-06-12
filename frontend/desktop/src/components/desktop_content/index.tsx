@@ -1,11 +1,10 @@
 import { getGlobalNotification } from '@/api/platform';
 import AppWindow from '@/components/app_window';
-import useDriver from '@/components/task/useDriver';
 import useAppStore from '@/stores/app';
 import { useConfigStore } from '@/stores/config';
 import { useDesktopConfigStore } from '@/stores/desktopConfig';
 import { WindowSize } from '@/types';
-import { Box, Center, Flex, Text } from '@chakra-ui/react';
+import { Box, Center, Flex, Image, Text } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
@@ -13,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createMasterAPP, masterApp } from 'sealos-desktop-sdk/master';
 import Cost from '../account/cost';
 import { ChakraIndicator } from './ChakraIndicator';
-import Apps from './apps';
+// import Apps from './apps';
 import Assistant from './assistant';
 import IframeWindow from './iframe_window';
 import styles from './index.module.scss';
@@ -29,11 +28,14 @@ import TaskModal from '../task/taskModal';
 import FloatingTaskButton from '../task/floatButton';
 import OnlineServiceButton from './serviceButton';
 import SaleBanner from '../banner';
+import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
+import { useGuideModalStore } from '@/stores/guideModal';
+import GuideModal from '../account/GuideModal';
 
 const AppDock = dynamic(() => import('../AppDock'), { ssr: false });
 const FloatButton = dynamic(() => import('@/components/floating_button'), { ssr: false });
 const Account = dynamic(() => import('../account'), { ssr: false });
-const TriggerAccountModule = dynamic(() => import('../account/trigger'), { ssr: false });
+const Apps = dynamic(() => import('./apps'), { ssr: false });
 
 export const blurBackgroundStyles = {
   bg: 'rgba(22, 30, 40, 0.35)',
@@ -45,8 +47,15 @@ export const blurBackgroundStyles = {
 export default function Desktop(props: any) {
   const { i18n } = useTranslation();
   const { isAppBar } = useDesktopConfigStore();
-  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
+  const {
+    installedApps: apps,
+    runningInfo,
+    openApp,
+    setToHighestLayerById,
+    closeAppById
+  } = useAppStore();
   const backgroundImage = useConfigStore().layoutConfig?.backgroundImage;
+  const { backgroundImage: desktopBackgroundImage } = useAppDisplayConfigStore();
   const { message } = useMessage();
   const { realNameAuthNotification } = useRealNameAuthNotification();
   const [showAccount, setShowAccount] = useState(false);
@@ -55,6 +64,7 @@ export default function Desktop(props: any) {
   const { commonConfig } = useConfigStore();
   const realNameAuthNotificationIdRef = useRef<string | number | undefined>();
   const [isClient, setIsClient] = useState(false);
+  const guideModal = useGuideModalStore();
 
   useEffect(() => {
     setIsClient(true);
@@ -120,8 +130,25 @@ export default function Desktop(props: any) {
     [apps, openApp, runningInfo, setToHighestLayerById]
   );
 
+  const closeDesktopApp = useCallback(
+    ({ appKey }: { appKey: string }) => {
+      const app = apps.find((item) => item.key === appKey);
+      const runningApp = runningInfo.find((item) => item.key === appKey);
+      if (!app || !runningApp) return;
+      closeAppById(runningApp.pid);
+    },
+    [apps, runningInfo, closeAppById]
+  );
+
+  const quitGuide = useCallback(
+    ({ appKey }: { appKey: string }) => {
+      closeDesktopApp({ appKey });
+      guideModal.openGuideModal();
+    },
+    [closeDesktopApp, guideModal]
+  );
+
   const { taskComponentState, setTaskComponentState } = useDesktopConfigStore();
-  const { UserGuide, tasks, desktopGuide, handleCloseTaskModal } = useDriver();
 
   useEffect(() => {
     const cleanup = createMasterAPP(cloudConfig?.allowedOrigins || ['*']);
@@ -132,6 +159,16 @@ export default function Desktop(props: any) {
     const cleanup = masterApp?.addEventListen('openDesktopApp', openDesktopApp);
     return cleanup;
   }, [openDesktopApp]);
+
+  useEffect(() => {
+    const cleanup = masterApp?.addEventListen('closeDesktopApp', closeDesktopApp);
+    return cleanup;
+  }, [closeDesktopApp]);
+
+  useEffect(() => {
+    const cleanup = masterApp?.addEventListen('quitGuide', quitGuide);
+    return cleanup;
+  }, [quitGuide]);
 
   useEffect(() => {
     if (infoData.isSuccess && commonConfig?.realNameAuthEnabled && account?.data?.balance) {
@@ -152,27 +189,32 @@ export default function Desktop(props: any) {
 
   useEffect(() => {
     const globalNotification = async () => {
-      const { data: notification } = await getGlobalNotification();
-      if (!notification) return;
-      const newID = notification?.uid;
-      const title = notification?.i18n[i18n?.language]?.title;
+      try {
+        const { data: notification } = await getGlobalNotification();
+        if (!notification) return;
+        const newID = notification?.uid;
+        const title = notification?.i18n[i18n?.language]?.title;
 
-      if (notification.licenseFrontend) {
-        message({
-          title: title,
-          status: 'info',
-          isClosable: true
-        });
-      } else {
-        if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
-        localStorage.setItem('GlobalNotification', newID);
-        message({
-          title: title,
-          status: 'info',
-          isClosable: true
-        });
+        if (notification.licenseFrontend) {
+          message({
+            title: title,
+            status: 'info',
+            isClosable: true
+          });
+        } else {
+          if (!newID || newID === localStorage.getItem('GlobalNotification')) return;
+          localStorage.setItem('GlobalNotification', newID);
+          message({
+            title: title,
+            status: 'info',
+            isClosable: true
+          });
+        }
+      } catch (error) {
+        console.log(error);
       }
     };
+
     globalNotification();
   }, []);
 
@@ -187,32 +229,38 @@ export default function Desktop(props: any) {
   }, []);
 
   return (
-    <Box
-      id="desktop"
-      className={styles.desktop}
-      backgroundImage={`url(${backgroundImage || '/images/bg-blue.svg'})`}
-      backgroundRepeat={'no-repeat'}
-      backgroundSize={'cover'}
-      position={'relative'}
-    >
+    <Box id="desktop" className={styles.desktop} position={'relative'}>
+      <Box position="absolute" top="0" left="0" right="0" bottom="0" zIndex={-10} overflow="hidden">
+        <Image
+          src={backgroundImage || desktopBackgroundImage || '/images/bg-light.svg'}
+          alt="background"
+          width="100%"
+          height="100vh"
+          objectFit="cover"
+          objectPosition="bottom"
+        />
+      </Box>
+
       {isClient && layoutConfig?.customerServiceURL && <OnlineServiceButton />}
       <ChakraIndicator />
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
+      <Flex height={'68px'} px="32px">
+        <Account />
+      </Flex>
+
       <Flex
-        gap={'8px'}
         width={'100%'}
         height={'calc(100% - 87px)'}
-        pt={isBannerVisible ? '10px' : '24px'}
-        px={'24px'}
+        pt={{ base: '20px', md: '80px', xl: '120px' }}
+        maxW={'1074px'}
+        pb={'84px'}
         mx={'auto'}
-        maxW={'1300px'}
-        maxH={'1000px'}
         position={'relative'}
       >
         {/* monitor  */}
-        <Flex
+        {/* <Flex
           flex={'0 0 250px'}
           flexDirection={'column'}
           display={{
@@ -224,22 +272,13 @@ export default function Desktop(props: any) {
           {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
           <Monitor />
           <Warn />
-        </Flex>
+        </Flex> */}
 
-        {/* apps */}
         <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
-          <Flex zIndex={2} flexShrink={0} height={{ base: '32px', sm: '48px' }} gap={'8px'}>
-            <Box display={{ base: 'block', xl: 'none' }}>
-              {layoutConfig?.common.aiAssistantEnabled && <Assistant />}
-            </Box>
-            <SearchBox />
-            <TriggerAccountModule showAccount={showAccount} setShowAccount={setShowAccount} />
-          </Flex>
           <Apps />
         </Flex>
 
-        {/* user account */}
-        <Box position={'relative'}>
+        {/* <Box position={'relative'}>
           {showAccount && (
             <Box
               position={'fixed'}
@@ -266,9 +305,10 @@ export default function Desktop(props: any) {
             <Account />
             <Cost />
           </Box>
-        </Box>
+        </Box> */}
 
-        {isClient && (
+        {/* onboarding  */}
+        {/* {isClient && (
           <Box>
             {desktopGuide && (
               <>
@@ -324,10 +364,12 @@ export default function Desktop(props: any) {
               />
             )}
           </Box>
-        )}
+        )} */}
       </Flex>
 
       {isAppBar ? <AppDock /> : <FloatButton />}
+
+      <GuideModal />
 
       {/* opened apps */}
       {runningInfo.map((process) => {

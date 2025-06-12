@@ -52,9 +52,9 @@ export const useDBStore = create<State>()(
         return res;
       },
       dbDetail: defaultDBDetail,
-      async loadDBDetail(name: string) {
+      async loadDBDetail(name: string, mock?: boolean) {
         try {
-          const res = await getDBByName(name);
+          const res = await getDBByName({ name, mock });
 
           if (res.status.value === 'Updating') {
             const isDiskOverflow = await getDiskOverflowStatus(res.dbName, res.dbType);

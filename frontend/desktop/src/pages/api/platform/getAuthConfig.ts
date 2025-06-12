@@ -20,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 // genResAuthConfig Return AuthConfigType with only necessary fields for response to client, to avoid exposing sensitive data
 function genResAuthClientConfig(conf: AuthConfigType) {
   const captcha = conf.captcha;
+  const turnstile = conf.turnstile;
   const authClientConfig: AuthClientConfigType = {
     callbackURL: conf.callbackURL || '',
     invite: {
@@ -69,6 +70,12 @@ function genResAuthClientConfig(conf: AuthConfigType) {
         enabled: !!captcha?.ali?.enabled,
         sceneId: captcha?.ali?.sceneId || '',
         prefix: captcha?.ali?.prefix || ''
+      }
+    },
+    turnstile: {
+      enabled: !!turnstile?.enabled,
+      cloudflare: {
+        siteKey: turnstile?.cloudflare?.siteKey || ''
       }
     },
     hasBaiduToken: !!conf.baiduToken,

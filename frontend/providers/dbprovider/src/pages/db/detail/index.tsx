@@ -17,7 +17,6 @@ import Monitor from './components/Monitor';
 import Pods from './components/Pods';
 import { I18nCommonKey } from '@/types/i18next';
 import ReconfigureTable from './components/Reconfigure/index';
-import useDetailDriver from '@/hooks/useDetailDriver';
 import ErrorLog from '@/pages/db/detail/components/ErrorLog';
 import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
@@ -46,7 +45,6 @@ const AppDetail = ({
   dbType: DBType;
   listType: `${TabEnum}`;
 }) => {
-  useDetailDriver();
   const BackupTableRef = useRef<ComponentRef>(null);
   const ReconfigureTableRef = useRef<ComponentRef>(null);
   const router = useRouter();
@@ -127,19 +125,23 @@ const AppDetail = ({
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { dbDetail, loadDBDetail, dbPods } = useDBStore();
+  const { dbDetail, loadDBDetail } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
 
-  useQuery(['loadDBDetail', 'intervalLoadPods', dbName], () => loadDBDetail(dbName), {
-    refetchInterval: 3000,
-    onError(err) {
-      router.replace('/dbs');
-      toast({
-        title: String(err),
-        status: 'error'
-      });
+  useQuery(
+    ['loadDBDetail', 'intervalLoadPods', dbName],
+    () => loadDBDetail(dbName, router?.query?.guide === 'true'),
+    {
+      refetchInterval: 3000,
+      onError(err) {
+        router.replace('/dbs');
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      }
     }
-  });
+  );
 
   return (
     <Flex

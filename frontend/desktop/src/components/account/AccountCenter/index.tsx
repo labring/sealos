@@ -25,7 +25,7 @@ import {
 import { CloseIcon, LeftArrowIcon, SettingIcon } from '@sealos/ui';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, ReactNode } from 'react';
 import { RealNameAuthForm } from '../RealNameModal';
 import { AuthModifyList } from './AuthModifyList';
 import { BINDING_STATE_MODIFY_BEHAVIOR, BindingModifyButton } from './BindingModifyButton';
@@ -34,6 +34,7 @@ import DeleteAccount from './DeleteAccountModal';
 import { EmailBind, PhoneBind } from './SmsModify/SmsBind';
 import { EmailChange, PhoneChange } from './SmsModify/SmsChange';
 import { EmailUnBind, PhoneUnBind } from './SmsModify/SmsUnbind';
+
 enum _PageState {
   INDEX = 0
   // WECHAT_BIND,
@@ -65,7 +66,12 @@ const PageState = Object.assign(
   RealNameState
 );
 
-export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
+interface AccountCenterProps extends Omit<IconButtonProps, 'aria-label'> {
+  children?: ReactNode;
+}
+
+export default function AccountCenter(props: AccountCenterProps) {
+  const { children, ...restProps } = props;
   const { commonConfig } = useConfigStore();
   const { session } = useSessionStore((s) => s);
   const conf = useConfigStore();
@@ -73,15 +79,17 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
   const logo = '/images/default-user.svg';
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [pageState, setPageState] = useState<ValueOf<typeof PageState>>(PageState.INDEX);
+
   const resetPageState = () => {
     setPageState(PageState.INDEX);
     infoData.refetch();
   };
+
   const modalTitle = useMemo(() => {
     if (pageState === PageState.INDEX) return t('common:account_settings');
     else if (pageState === PageState.PASSWORD) return t('common:changepassword');
     else if (Object.values(PhoneState).includes(pageState as PhoneState))
-      return t('common:changephone'); // bind or unbind
+      return t('common:changephone');
     else if (Object.values(EmailState).includes(pageState as EmailState))
       return t('common:changeemail');
     else if (pageState === PageState.REALNAME_AUTH) return t('common:realName_verification');
@@ -140,19 +148,30 @@ export default function Index(props: Omit<IconButtonProps, 'aria-label'>) {
 
   return (
     <>
-      <IconButton
-        aria-label={'setting'}
-        cursor={'pointer'}
-        borderRadius={'4px'}
-        boxSize={'24px'}
-        onClick={(e) => {
-          e.preventDefault();
-          return onOpen();
-        }}
-        {...props}
-        variant={'white-bg-icon'}
-        icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
-      />
+      {children ? (
+        <div
+          onClick={(e) => {
+            e.preventDefault();
+            onOpen();
+          }}
+        >
+          {children}
+        </div>
+      ) : (
+        <IconButton
+          aria-label={'setting'}
+          cursor={'pointer'}
+          borderRadius={'4px'}
+          boxSize={'24px'}
+          onClick={(e) => {
+            e.preventDefault();
+            return onOpen();
+          }}
+          {...restProps}
+          variant={'white-bg-icon'}
+          icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
+        />
+      )}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent

@@ -1,12 +1,12 @@
-import type { Response as InitDataType } from '@/pages/api/platform/getInitData';
 import { GET, POST } from '@/services/request';
 import type { UserQuotaItemType, UserTask, userPriceType } from '@/types/user';
 import { getUserSession } from '@/utils/user';
 import { AuthCnamePrams } from './params';
+import type { EnvResponse } from '@/types';
 
 export const getResourcePrice = () => GET<userPriceType>('/api/platform/resourcePrice');
 
-export const getInitData = () => GET<InitDataType>('/api/platform/getInitData');
+export const getInitData = () => GET<EnvResponse>('/api/platform/getInitData');
 
 export const getUserQuota = () =>
   GET<{

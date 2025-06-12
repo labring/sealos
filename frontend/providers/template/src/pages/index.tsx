@@ -1,4 +1,4 @@
-import { getTemplates } from '@/api/platform';
+import { getSystemConfig, getTemplates } from '@/api/platform';
 import Banner from '@/components/Banner';
 import MyIcon from '@/components/Icon';
 import { useCachedStore } from '@/store/cached';
@@ -14,7 +14,6 @@ import {
   Center,
   Flex,
   Grid,
-  Icon,
   Image,
   Spinner,
   Tag,
@@ -28,16 +27,16 @@ import { useRouter } from 'next/router';
 import { MouseEvent, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { ShareIcon } from '@/components/icons';
+import { useGuideStore } from '@/store/guide';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
 
 export default function AppList({
-  showCarousel,
   brandName,
   seoData,
   canonicalUrl
 }: {
-  showCarousel: boolean;
   brandName: string;
   seoData: { title: string; description: string; keywords: string };
   canonicalUrl: string;
@@ -51,6 +50,11 @@ export default function AppList({
   const { data } = useQuery(['listTemplate', i18n.language], () => getTemplates(i18n.language), {
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
+    retry: 3
+  });
+
+  const { data: systemConfig } = useQuery(['systemConfig'], getSystemConfig, {
+    staleTime: 10 * 60 * 1000,
     retry: 3
   });
 
@@ -98,6 +102,23 @@ export default function AppList({
     }
   }, [router, setInsideCloud]);
 
+  const isClientSide = useClientSideValue();
+  useEffect(() => {
+    if (router.query?.action === 'guide' && isClientSide) {
+      useGuideStore.getState().resetGuideState(false);
+    } else {
+      useGuideStore.getState().resetGuideState(true);
+    }
+  }, [router.query?.action, isClientSide]);
+
+  if (!data) {
+    return (
+      <Flex alignItems={'center'} justifyContent={'center'} w="full" h="100vh">
+        <Spinner size="xl" color="#219BF4" />
+      </Flex>
+    );
+  }
+
   return (
     <Box
       flexDirection={'column'}
@@ -131,7 +152,7 @@ export default function AppList({
 
       {!!data?.templates?.length ? (
         <>
-          {showCarousel && <Banner />}
+          {systemConfig?.showCarousel && <Banner />}
           {filterData?.length && filterData?.length > 0 ? (
             <Grid
               justifyContent={'center'}
@@ -274,25 +295,21 @@ export default function AppList({
   );
 }
 
-// https://nextjs.org/docs/pages/api-reference/functions/get-server-side-props#context-parameter
 export async function getServerSideProps(content: any) {
   const forcedLanguage = process.env.FORCED_LANGUAGE;
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
 
+  console.log('content', content);
+
   const local: string =
     forcedLanguage ||
     content?.req?.cookies?.NEXT_LOCALE ||
-    compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'zh');
+    compareFirstLanguages(content?.req?.headers?.['accept-language'] || 'en');
 
   content?.res.setHeader(
     'Set-Cookie',
     `NEXT_LOCALE=${local}; Max-Age=2592000; Secure; SameSite=None`
   );
-
-  const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const { data } = (await (await fetch(`${baseurl}/api/platform/getSystemConfig`)).json()) as {
-    data: SystemConfigType;
-  };
 
   const seoData: Record<string, { title: string; description: string; keywords: string }> = {
     en: {
@@ -308,10 +325,11 @@ export async function getServerSideProps(content: any) {
     }
   };
 
+  console.log('local', local);
+  console.log('seoData', seoData);
   return {
     props: {
       ...(await serviceSideProps(content)),
-      showCarousel: data.showCarousel,
       brandName,
       seoData: seoData[local] || seoData.en,
       canonicalUrl: process.env.NEXT_PUBLIC_CANONICAL_URL || `https://template.cloud.sealos.io`

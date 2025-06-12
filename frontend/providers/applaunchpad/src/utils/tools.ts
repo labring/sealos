@@ -8,6 +8,7 @@ import type { AppPatchPropsType } from '@/types/app';
 import { YamlKindEnum } from './adapt';
 import { useTranslation } from 'next-i18next';
 import * as jsonpatch from 'fast-json-patch';
+import { Base64 } from 'js-base64';
 
 export function formatSize(size: number, fixedNumber = 2) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
@@ -73,7 +74,7 @@ export const pathToNameFormat = (str: string) => {
   const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
   const replacedStr = withoutTrailingSlash.replace(/_/g, '-').replace(/[\/.]/g, 'vn-');
 
-  return endsWithSlash ? replacedStr : replacedStr.toLowerCase();
+  return replacedStr.toLowerCase();
 };
 
 /**
@@ -97,8 +98,7 @@ export const reactLocalFileContent = (file: File) => {
  */
 export const strToBase64 = (str: string) => {
   try {
-    const base64 = window.btoa(str);
-
+    const base64 = Base64.encode(str);
     return base64;
   } catch (error) {
     console.log(error);
@@ -111,7 +111,8 @@ export const strToBase64 = (str: string) => {
 export const atobSecretYaml = (secret?: string): AppEditType['secret'] => {
   if (!secret) return defaultEditVal.secret;
   try {
-    const secretData = JSON.parse(window.atob(secret)).auths;
+    const secretData = JSON.parse(Base64.decode(secret)).auths;
+    console.log('secretData', secretData);
     const serverAddress = Object.keys(secretData)[0];
 
     return {

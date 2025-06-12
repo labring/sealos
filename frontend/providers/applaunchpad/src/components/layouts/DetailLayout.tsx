@@ -8,6 +8,7 @@ import { Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useTranslation } from 'next-i18next';
 
 interface DetailLayoutProps {
   children: React.ReactNode;
@@ -19,24 +20,23 @@ export default function DetailLayout({ children, appName }: DetailLayoutProps) {
   const router = useRouter();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-
-  const {
-    appDetail = MOCK_APP_DETAIL,
-    setAppDetail,
-    intervalLoadPods,
-    loadDetailMonitorData
-  } = useAppStore();
+  const { t } = useTranslation();
+  const { appDetail = MOCK_APP_DETAIL, setAppDetail, intervalLoadPods } = useAppStore();
 
   const [showSlider, setShowSlider] = useState(false);
 
-  const { refetch } = useQuery(['setAppDetail'], () => setAppDetail(appName), {
-    onError(err) {
-      toast({
-        title: String(err),
-        status: 'error'
-      });
+  const { refetch } = useQuery(
+    ['setAppDetail'],
+    () => setAppDetail(appName, router?.query?.guide === 'true'),
+    {
+      onError(err) {
+        toast({
+          title: String(err),
+          status: 'error'
+        });
+      }
     }
-  });
+  );
 
   useQuery(
     ['app-detail-pod'],

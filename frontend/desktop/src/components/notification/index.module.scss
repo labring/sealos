@@ -10,54 +10,31 @@
 .container {
   width: 360px;
   height: 524px;
-  background: rgba(220, 220, 224, 0.05);
-  box-shadow: 0px 15px 20px 0px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(50px);
   border-radius: 12px;
-  padding: 24px;
+  border: 0.5px solid #e4e4e7;
   z-index: 999;
   position: absolute;
-  top: 48px;
-  right: 0;
+  top: 54px;
+  right: 60px;
+  color: #000000;
+
   &[data-show='true'] {
     display: block;
   }
   .title {
     font-weight: 500;
     font-size: 18px;
-    color: white;
-  }
-}
-
-.message {
-  cursor: pointer;
-  position: relative;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  padding: 12px 16px 7px 16px;
-  min-height: 80px;
-  .title {
-    font-weight: 500;
-    font-size: 12px;
-    color: #0d1a2d;
-    font-weight: 600;
-  }
-  .desc {
-    font-weight: 400;
-    font-size: 10px;
-    color: #717d8a;
-  }
-  .footer {
-    width: 100%;
-
-    border-top: 1px solid #eef1f4;
+    // color: white;
   }
 }
 
 .tab {
   font-weight: 400;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  // color: rgba(255, 255, 255, 0.6);
   border-bottom: 2px solid transparent;
   cursor: pointer;
 }
@@ -65,7 +42,7 @@
 .active {
   font-weight: 500;
   font-size: 12px;
-  color: white;
+  // color: white;
   border-bottom: 2px solid #1599e9;
 }
 

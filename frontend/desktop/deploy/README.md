@@ -6,14 +6,15 @@ sealos build -t docker.io/labring/sealos-cloud-desktop:latest -f Kubefile .
 
 ### Env
 
-| Name                       | Description                 | Default            |
-|----------------------------|-----------------------------|--------------------|
-| `cloudDomain`              | sealos cloud domain         | `127.0.0.1.nip.io` |
-| `wildcardCertSecretName`   | wildcard cert secret name   | `wildcard-cert`    |
+| Name                     | Description               | Default            |
+| ------------------------ | ------------------------- | ------------------ |
+| `cloudDomain`            | sealos cloud domain       | `127.0.0.1.nip.io` |
+| `wildcardCertSecretName` | wildcard cert secret name | `wildcard-cert`    |
 
 ### Config
 
 Here is a config file example:
+
 ```yaml
 # desktop-config.yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -49,7 +50,7 @@ spec:
           layout:
             title: "Sealos Cloud"
             logo: "/logo.png"
-            backgroundImage: "/images/bg-blue.svg"
+            backgroundImage: "/images/bg-light.svg"
             meta:
               title: "Sealos Cloud"
               description: "Sealos Cloud"
@@ -76,7 +77,6 @@ spec:
               password:
                 enabled: "true"
                 salt: "thisispasswordsalt"
-    
 ```
 
 ### How to run
@@ -86,5 +86,5 @@ sealos run \
     --env cloudDomain="127.0.0.1.nip.io" \
     --env wildcardCertSecretName="wildcard-cert" \
     docker.io/labring/sealos-cloud-desktop:latest \
-    --config-file desktop-config.yaml 
+    --config-file desktop-config.yaml
 ```

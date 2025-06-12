@@ -30,7 +30,8 @@ export default function ObjStorageList({ instanceName }: { instanceName: string 
             return { ...item, id: item.id, name: item.name };
           })
         );
-      }
+      },
+      enabled: !!instanceName
     }
   );
   const handleToDetailPage = useCallback((name: string) => {

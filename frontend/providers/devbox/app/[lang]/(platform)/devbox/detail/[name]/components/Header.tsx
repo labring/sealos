@@ -19,6 +19,7 @@ import { useQuery } from '@tanstack/react-query';
 import ShutdownModal from '@/components/modals/ShutdownModal';
 import { DevboxStatusEnum } from '@/constants/devbox';
 import { useUserStore } from '@/stores/user';
+import { useGuideStore } from '@/stores/guide';
 
 const Header = ({
   refetchDevboxDetail,
@@ -126,6 +127,8 @@ const Header = ({
     },
     [t, toast]
   );
+  const { guideIDE } = useGuideStore();
+
   if (!devboxDetail) return null;
   return (
     <Flex justify="space-between" align="center" pl={4} pt={2} flexWrap={'wrap'} gap={5}>
@@ -173,6 +176,7 @@ const Header = ({
       <Flex gap={5}>
         <Box>
           <IDEButton
+            isGuide={!guideIDE}
             runtimeType={devboxDetail.iconId}
             devboxName={devboxDetail.name}
             sshPort={devboxDetail.sshPort as number}

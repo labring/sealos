@@ -12,6 +12,9 @@ import { isEmail } from '@/utils/crypto';
 import { EMAIL_STATUS } from '@/types/response/email';
 import { SemData } from '@/types/sem';
 import { captchaReq } from '../sms';
+import { isDisposableEmail } from 'disposable-email-domains-js';
+import { createMiddleware } from '@/utils/factory';
+import { HttpStatusCode } from 'axios';
 
 export const filterPhoneParams = async (
   req: NextApiRequest,
@@ -32,7 +35,7 @@ export const filterEmailParams = async (
   next: (data: { email: string }) => void
 ) => {
   const { id: email } = req.body as { id?: string };
-  if (!email || !isEmail(email))
+  if (!email || !isEmail(email) || isDisposableEmail(email))
     return jsonRes(res, {
       message: EMAIL_STATUS.INVALID_PARAMS,
       code: 400
@@ -118,13 +121,15 @@ export const filterCodeUid = async (
 export const filterCf = async (req: NextApiRequest, res: NextApiResponse, next: () => void) => {
   const { cfToken } = req.body as { cfToken?: string };
   const verifyEndpoint = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-  const secret = process.env.CF_SECRET_KEY;
-  if (secret) {
+  const turnstileConfig = global.AppConfig.desktop.auth.turnstile;
+  const secret = turnstileConfig?.cloudflare?.secretKey;
+  if (!!turnstileConfig?.enabled && secret) {
     if (!cfToken)
       return jsonRes(res, {
         message: 'cfToken is invalid',
         code: 400
       });
+
     const verifyRes = await fetch(verifyEndpoint, {
       method: 'POST',
       body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(cfToken)}`,
@@ -139,7 +144,7 @@ export const filterCf = async (req: NextApiRequest, res: NextApiResponse, next: 
         code: 400
       });
   }
-  return await Promise.resolve(next());
+  await Promise.resolve(next());
 };
 export const filterCaptcha = async (
   req: NextApiRequest,
@@ -222,9 +227,8 @@ export const verifyCodeUidGuard =
     await deleteByUid({ uid: oldSmsInfo.uid });
   };
 
-export const verifySmsCodeGuard =
-  (smsType: SmsType) =>
-  (id: string, code: string) =>
+export const verifyCodeGuard =
+  (id: string, code: string, smsType: SmsType) =>
   async (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) => {
     const smsInfo = await checkCode({ id, smsType, code });
     if (!smsInfo) {
@@ -236,12 +240,12 @@ export const verifySmsCodeGuard =
     return await Promise.resolve(next({ smsInfo }));
   };
 
-export const verifyPhoneCodeGuard = verifySmsCodeGuard('phone');
-export const verifyEmailCodeGuard = verifySmsCodeGuard('email');
+// export const verifyPhoneCodeGuard = verifyCodeGuard('phone');
+// export const verifyEmailCodeGuard = verifyCodeGuard('email');
 
-// need to get queryParam from after filter
-export const sendSmsCodeGuard =
-  (smsType: SmsType) => (id: string) => async (res: NextApiResponse, next?: () => void) => {
+export const sendSmsCodeGuard = createMiddleware<{ id: string; smsType: SmsType }>(
+  async ({ req, res, ctx, next }) => {
+    const { id, smsType } = ctx;
     if (!(await checkSendable({ smsType, id }))) {
       return jsonRes(res, {
         message: 'code already sent',
@@ -249,23 +253,57 @@ export const sendSmsCodeGuard =
       });
     }
     await Promise.resolve(next?.());
-  };
-export const sendNewSmsCodeGuard =
-  (smsType: SmsType) =>
-  (codeUid: string, smsId: string) =>
-  (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) =>
-    sendSmsCodeGuard(smsType)(smsId)(res, async () => {
-      const oldSmsInfo = await getInfoByUid({ uid: codeUid });
-      if (!oldSmsInfo)
-        return jsonRes(res, {
-          message: 'uid is expired',
-          code: 409
-        });
-      await Promise.resolve(next({ smsInfo: oldSmsInfo }));
-    });
+  }
+);
+export const sendNewSmsCodeGuard = createMiddleware<
+  {
+    smsType: SmsType;
+    codeUid: string;
+    smsId: string;
+  },
+  { smsInfo: TVerification_Codes }
+>(async ({ res, req, next, ctx }) => {
+  const { smsType, smsId, codeUid } = ctx;
+  await sendSmsCodeGuard({ smsType, id: smsId })(req, res, async () => {
+    const oldSmsInfo = await getInfoByUid({ uid: codeUid });
+    if (!oldSmsInfo)
+      return jsonRes(res, {
+        message: 'uid is expired',
+        code: 409
+      });
+    await Promise.resolve(next({ smsInfo: oldSmsInfo }));
+  });
+});
+// need to get queryParam from after filter
+// export const sendSmsCodeGuard =
+//   (smsType: SmsType) => (id: string) => async (res: NextApiResponse, next?: () => void) => {
+//     if (!(await checkSendable({ smsType, id }))) {
+//       return jsonRes(res, {
+//         message: 'code already sent',
+//         code: 409
+//       });
+//     }
+//     await Promise.resolve(next?.());
+//   };
+// export const sendNewSmsCodeGuard =
+//   (smsType: SmsType) =>
+//   (codeUid: string, smsId: string) =>
+//   (res: NextApiResponse, next: (d: { smsInfo: TVerification_Codes }) => void) =>
+//     sendSmsCodeGuard(smsType)(smsId)(res, async () => {
+//       const oldSmsInfo = await getInfoByUid({ uid: codeUid });
+//       if (!oldSmsInfo)
+//         return jsonRes(res, {
+//           message: 'uid is expired',
+//           code: 409
+//         });
+//       await Promise.resolve(next({ smsInfo: oldSmsInfo }));
+//     });
 
-export const sendPhoneCodeGuard = sendSmsCodeGuard('phone');
-export const sendEmailCodeGuard = sendSmsCodeGuard('email');
+// export const sendPhoneCodeGuard = sendSmsCodeGuard('phone');
+// export const sendEmailCodeGuard = (email: string) => {
 
-export const sendNewPhoneCodeGuard = sendNewSmsCodeGuard('phone');
-export const sendNewEmailCodeGuard = sendNewSmsCodeGuard('email');
+//   return sendSmsCodeGuard('email')(email);
+// };
+
+// export const sendNewPhoneCodeGuard = sendNewSmsCodeGuard('phone_change_new');
+// export const sendNewEmailCodeGuard = sendNewSmsCodeGuard('email');

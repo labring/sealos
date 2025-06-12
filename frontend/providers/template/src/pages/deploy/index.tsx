@@ -26,6 +26,8 @@ import { getResourceUsage } from '@/utils/usage';
 import Head from 'next/head';
 import { useMessage } from '@sealos/ui';
 import { ResponseCode } from '@/types/response';
+import { useGuideStore } from '@/store/guide';
+import { useSystemConfigStore } from '@/store/config';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 const Header = dynamic(() => import('./components/Header'), { ssr: false });
@@ -58,6 +60,7 @@ export default function EditApp({
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const { screenWidth } = useGlobalStore();
   const { setCached, cached, insideCloud, deleteCached, setInsideCloud } = useCachedStore();
+  const { setEnvs } = useSystemConfigStore();
   const { setAppType } = useSearchStore();
   // const { userSourcePrice, checkQuotaAllow, loadUserQuota } = useUserStore();
   // useEffect(() => {
@@ -78,6 +81,9 @@ export default function EditApp({
     ['getPlatformEnvs'],
     () => getPlatformEnv({ insideCloud }),
     {
+      onSuccess(data) {
+        setEnvs(data);
+      },
       retry: 3
     }
   );
@@ -165,20 +171,16 @@ export default function EditApp({
     return () => subscription.unsubscribe();
   }, [formHook, formOnchangeDebounce]);
 
+  const { createCompleted } = useGuideStore();
   const submitSuccess = async () => {
+    if (!createCompleted) {
+      return router.push('/instance?instanceName=fastgpt-mock');
+    }
     // const quoteCheckRes = checkQuotaAllow({
     //   cpu: usage.cpu.max,
     //   memory: usage.memory.max,
     //   storage: usage.storage.max
     // });
-    // if (quoteCheckRes) {
-    //   return toast({
-    //     status: 'warning',
-    //     title: t(quoteCheckRes),
-    //     duration: 5000,
-    //     isClosable: true
-    //   });
-    // }
 
     setIsLoading(true);
 

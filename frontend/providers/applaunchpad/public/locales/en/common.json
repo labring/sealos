@@ -326,5 +326,20 @@
   "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "forbidden_create_app": "You do not have sufficient permissions to create an application in the current workspace. Please contact the owner of the workspace to request the necessary permissions.",
   "add_credit": "Add Credit",
-  "app_already_exists": "App name already exists. Please use a different name or check your app list."
+  "app_already_exists": "App name already exists. Please use a different name or check your app list.",
+  "driver": {
+    "create_launchpad": "Create Launchpad",
+    "define_settings": "Define your application settings and start deployment",
+    "next": "Next",
+    "access_application": "Access Application",
+    "copy_address": "Copy the private or public address for access",
+    "click_anywhere": "Click anywhere to finish the tutorial.",
+    "quit_guide": "Explore More Guides",
+    "still_here": "We're still here!",
+    "find_guide_tip": "You can always find your way back to this guide in the top navigation bar. Happy exploring!",
+    "create_launchpad_header": "Feel free to explore. No changes will be saved and no charges will apply in this guided demo.",
+    "configure_launchpad": "Configure Launchpad",
+    "define_image_settings": "Define image settings, and adjust CPU & memory as needed",
+    "got_it": "Got it"
+  }
 }

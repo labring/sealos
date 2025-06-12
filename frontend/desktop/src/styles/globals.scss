@@ -79,6 +79,47 @@ div {
 }
 
 #driver-popover-content {
-  padding: 14px;
-  border: 1px solid #94b5ff;
+  border: none;
+  border-radius: 12px;
+  background: #2563eb;
+  color: #fff;
+}
+
+.driver-popover-arrow {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-width: 8px;
+  border-style: solid;
+  display: block !important;
+  border-color: transparent;
+}
+
+.driver-popover-arrow-side-left {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-left-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-right {
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-top {
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-top-color: #2563eb !important;
+}
+
+.driver-popover-arrow-side-bottom {
+  border-left-color: transparent !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: #2563eb !important;
 }

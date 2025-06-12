@@ -20,6 +20,7 @@ import { useUserStore } from '@/store/user';
 import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import { useGuideStore } from '@/store/guide';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -45,7 +46,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   const { initSystemConfig, initSystemEnvs } = useSystemConfigStore();
   const [refresh, setRefresh] = useState(false);
   const { loadUserSourcePrice } = useUserStore();
-  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME;
+  const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
 
   useEffect(() => {
     initSystemConfig(i18n.language);
@@ -129,6 +130,7 @@ const App = ({ Component, pageProps }: AppProps) => {
           e: MessageEvent<{
             name: string;
             type: string;
+            action?: string;
           }>
         ) => {
           const whitelist = [`https://${envs.DESKTOP_DOMAIN}`];
@@ -143,6 +145,12 @@ const App = ({ Component, pageProps }: AppProps) => {
                   instanceName: e.data.name
                 }
               });
+            }
+            if (e.data?.action === 'guide') {
+              router.push({
+                pathname: '/'
+              });
+              useGuideStore.getState().resetGuideState(false);
             }
           } catch (error) {
             console.log(error, 'error');

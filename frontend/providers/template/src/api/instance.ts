@@ -1,7 +1,8 @@
 import { GET } from '@/services/request';
-import { InstanceListType, TemplateInstanceType } from '@/types/app';
+import { InstanceListItemType, InstanceListType, TemplateInstanceType } from '@/types/app';
 import { AppCrdType } from '@/types/appCRD';
 import { KbPgClusterType } from '@/types/db';
+import { AppListItemType } from '@/types/launchpad';
 import { ObjectStorageItemType } from '@/types/objectStorage';
 import {
   adaptAppListItem,
@@ -24,15 +25,11 @@ export const listInstance = () =>
     .then((res) => res.items.map(adaptInstanceListItem))
     .then(sortItemsByCreateTime);
 
-export const getInstanceByName = (instanceName: string) =>
-  GET<TemplateInstanceType>('/api/instance/getByName', { instanceName }).then(
-    adaptInstanceListItem
-  );
+export const getInstanceByName = (instanceName: string, mock = false) =>
+  GET<InstanceListItemType>('/api/instance/getByName', { instanceName, mock });
 
-export const getAppLaunchpadByName = (instanceName: string) =>
-  GET<V1Deployment & V1StatefulSet[]>(`/api/app/getAppByName?instanceName=${instanceName}`).then(
-    (data) => data.map(adaptAppListItem)
-  );
+export const getAppLaunchpadByName = (instanceName: string, mock = false) =>
+  GET<AppListItemType[]>(`/api/app/getAppByName?instanceName=${instanceName}&mock=${mock}`);
 
 export const getDBListByName = (instanceName: string) =>
   GET<KbPgClusterType[]>(`/api/app/getDBListByName?instanceName=${instanceName}`).then((data) =>

@@ -1,6 +1,9 @@
-import { Box, Flex, FlexProps, HStack, Text, VStack } from '@chakra-ui/react';
+import { Avatar, Box, Flex, FlexProps, HStack, Text, VStack, Image } from '@chakra-ui/react';
 import { useQueryClient } from '@tanstack/react-query';
+import { CheckIcon } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
+import { useState, useEffect } from 'react';
+import BoringAvatar from 'boring-avatars';
 
 const NsListItem = ({
   isSelected,
@@ -8,6 +11,8 @@ const NsListItem = ({
   displayPoint = false,
   teamName,
   selectedColor = 'white',
+  showCheck = false,
+  teamAvatar,
   ...flexprop
 }: {
   displayPoint: boolean;
@@ -15,54 +20,51 @@ const NsListItem = ({
   isPrivate: boolean;
   isSelected: boolean;
   selectedColor?: string;
+  showCheck?: boolean;
+  teamAvatar?: string;
 } & FlexProps) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+
   return (
     <Flex
       align={'center'}
-      p="6px 4px"
-      mb="2px"
+      px={'8px'}
       position={'relative'}
-      borderRadius="4px"
       onClick={(e) => {
         e.preventDefault();
         queryClient.invalidateQueries({ queryKey: ['teamList'] });
       }}
       cursor={'pointer'}
       {...flexprop}
-      {...(isSelected
-        ? {
-            background: 'rgba(255, 244, 244, 0.10)'
-          }
-        : {
-            bgColor: 'unset'
-          })}
-      _hover={{
-        '> .namespace-option': {
-          display: 'flex'
-        },
-        bgColor: 'rgba(255, 244, 244, 0.10)'
-      }}
     >
-      <HStack gap={'8px'} align={'center'} width={'full'}>
-        <Box
-          h="8px"
-          w={displayPoint ? '8px' : '0'}
-          m="4px"
-          borderRadius="50%"
-          bgColor={isSelected ? '#47C8BF' : '#9699B4'}
-        />
-        <Text
-          {...(isSelected
-            ? {
-                color: selectedColor
-              }
-            : {})}
-          textTransform={'capitalize'}
-        >
-          {isPrivate ? t('common:default_team') : teamName}
+      <HStack
+        align={'center'}
+        width={'full'}
+        px={'8px'}
+        borderRadius={'8px'}
+        p={'6px 8px'}
+        _hover={{
+          bg: '#F4F4F5'
+        }}
+        bg={isSelected ? selectedColor : 'transparent'}
+      >
+        {teamAvatar && (
+          <Box boxSize={'24px'}>
+            <BoringAvatar
+              size={24}
+              name={teamAvatar}
+              colors={['#ff9e9e', '#b4f8cc', '#4294ff', '#ffe5f0', '#03e2db']}
+            />
+          </Box>
+        )}
+        <Text textTransform={'capitalize'}>
+          {/* {isPrivate ? t('common:default_team') : teamName} */}
+          {teamName}
         </Text>
+        {isSelected && showCheck && (
+          <CheckIcon style={{ marginLeft: 'auto' }} size={16} color={'#1C4EF5'} />
+        )}
       </HStack>
     </Flex>
   );

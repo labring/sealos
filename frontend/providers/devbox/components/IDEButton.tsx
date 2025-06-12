@@ -10,11 +10,13 @@ import {
   MenuItem,
   MenuList,
   Tooltip,
-  Text
+  Text,
+  Center,
+  Portal
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 import MyIcon from './Icon';
 import { useEnvStore } from '@/stores/env';
@@ -24,6 +26,9 @@ import { getSSHConnectionInfo } from '@/api/devbox';
 
 import ToolboxModal from './modals/ToolboxModal';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
+import { useGuideStore } from '@/stores/guide';
+import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
+import { X } from 'lucide-react';
 
 interface Props {
   devboxName: string;
@@ -33,6 +38,7 @@ interface Props {
   isBigButton?: boolean;
   leftButtonProps?: ButtonProps;
   rightButtonProps?: ButtonProps;
+  isGuide?: boolean;
 }
 
 export interface JetBrainsGuideData {
@@ -62,6 +68,7 @@ const IDEButton = ({
   isBigButton = true,
   leftButtonProps = {},
   rightButtonProps = {},
+  isGuide = false,
   ...props
 }: Props & FlexProps) => {
   const t = useTranslations();
@@ -132,8 +139,17 @@ const IDEButton = ({
     [toast, t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
   );
 
+  const { guideIDE, setguideIDE } = useGuideStore();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!guideIDE && isGuide) {
+      setIsMenuOpen(true);
+    }
+  }, [guideIDE, isGuide, t]);
+
   return (
-    <Flex className="guide-ide-button" {...props}>
+    <Flex {...props} position={isGuide ? 'relative' : 'static'}>
       <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
         <Button
           height={'32px'}
@@ -163,7 +179,12 @@ const IDEButton = ({
           )}
         </Button>
       </Tooltip>
-      <Menu placement="bottom-end" isLazy>
+      <Menu
+        placement="bottom-end"
+        isLazy
+        isOpen={isGuide || isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      >
         <MenuButton
           height={'32px'}
           bg={'grayModern.150'}
@@ -191,6 +212,7 @@ const IDEButton = ({
             backgroundColor: 'grayModern.250'
           }}
           {...rightButtonProps}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
         />
         <MenuList
           color={'grayModern.600'}
@@ -311,6 +333,100 @@ const IDEButton = ({
           })}
         </MenuList>
       </Menu>
+
+      {!guideIDE && isGuide && (
+        <Center
+          borderRadius={'12px'}
+          zIndex={99}
+          border={'2px solid #2563EB'}
+          position={'absolute'}
+          top={'-6px'}
+          left={'-104px'}
+          w={'240px'}
+          h={'280px'}
+        >
+          <Box
+            position={'absolute'}
+            top={'50%'}
+            left={'105%'}
+            width={'250px'}
+            bg={'#2563EB'}
+            p={'12px'}
+            borderRadius={'12px'}
+            color={'#fff'}
+          >
+            <Flex alignItems={'center'} justifyContent={'space-between'}>
+              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
+                {t('driver.code_in_ide')}
+              </Text>
+              <Box
+                cursor={'pointer'}
+                ml={'auto'}
+                onClick={() => {
+                  startDriver(quitGuideDriverObj(t));
+                }}
+              >
+                <X width={'16px'} height={'16px'} />
+              </Box>
+            </Flex>
+            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
+              {t('driver.choose_ide')}
+            </Text>
+            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
+              <Text fontSize={'13px'} fontWeight={500}>
+                4/5
+              </Text>
+              <Center
+                color={'#fff'}
+                fontSize={'14px'}
+                fontWeight={500}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                background={'rgba(255, 255, 255, 0.20)'}
+                w={'fit-content'}
+                h={'32px'}
+                p={'8px'}
+                onClick={() => {
+                  setguideIDE(true);
+                  startDriver(startManageAndDeploy(t));
+                }}
+              >
+                {t('driver.next')}
+              </Center>
+            </Flex>
+            <Box
+              position={'absolute'}
+              top={'20px'}
+              left={'-18px'}
+              width={0}
+              height={0}
+              borderTop={'8px solid transparent'}
+              borderLeft={'8px solid transparent'}
+              borderBottom={'8px solid transparent'}
+              borderRight={'10px solid #2563EB'}
+            />
+          </Box>
+        </Center>
+      )}
+
+      {!guideIDE && isGuide && (
+        <Portal>
+          <Box
+            position="fixed"
+            top={0}
+            left={0}
+            right={0}
+            bottom={0}
+            zIndex={98}
+            onClick={() => {
+              setguideIDE(true);
+              startDriver(startManageAndDeploy(t));
+            }}
+            cursor="pointer"
+          />
+        </Portal>
+      )}
+
       {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
         <JetBrainsGuideModal
           onSuccess={() => {}}

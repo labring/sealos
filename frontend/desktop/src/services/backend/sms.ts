@@ -28,10 +28,6 @@ const getTransporter = () => {
 };
 
 export const smsReq = async (phoneNumbers: string) => {
-  // for dev
-  if (process.env.NODE_ENV === 'development' && !process.env.DEV_SMS_ENABLED) {
-    return '123456';
-  }
   const aliConfig = global.AppConfig.desktop.auth.idp.sms?.ali;
   if (!aliConfig) throw Error('config error');
   const { signName, templateCode, accessKeyID: accessKeyId, accessKeySecret } = aliConfig;
@@ -105,7 +101,6 @@ export const captchaReq = async ({ captchaVerifyParam }: { captchaVerifyParam?: 
       if (!_result) {
         throw new Error('captcha result is null');
       }
-      console.log(_result);
       if (_result.body.code !== 'Success' || !_result.body.success) {
         throw new Error(`
 				${_result.body.message}

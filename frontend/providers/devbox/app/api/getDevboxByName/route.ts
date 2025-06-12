@@ -1,15 +1,14 @@
-import { NextRequest } from 'next/server';
-
-import { PortInfos } from '@/types/ingress';
-import { KBDevboxTypeV2 } from '@/types/k8s';
-import { ProtocolType } from '@/types/devbox';
-import { devboxDB } from '@/services/db/init';
-import { adaptDevboxDetailV2 } from '@/utils/adapt';
+import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
+import { MockDevboxDetail } from '@/constants/mock';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { devboxKey, ingressProtocolKey, publicDomainKey } from '@/constants/devbox';
-import { RequestSchema } from './schema';
+import { devboxDB } from '@/services/db/init';
+import { ProtocolType } from '@/types/devbox';
+import { PortInfos } from '@/types/ingress';
+import { KBDevboxTypeV2 } from '@/types/k8s';
+import { adaptDevboxDetailV2 } from '@/utils/adapt';
+import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,13 +18,18 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
+    const mock = searchParams.get('mock') === 'true';
 
-    const validationResult = RequestSchema.safeParse({ devboxName });
+    if (mock) {
+      return jsonRes({
+        data: MockDevboxDetail
+      });
+    }
 
-    if (!validationResult.success) {
+    if (!devboxName) {
       return jsonRes({
         code: 400,
-        error: 'Invalid request parameters'
+        error: 'devboxName is required'
       });
     }
 
@@ -101,9 +105,10 @@ export async function GET(req: NextRequest) {
           customDomain: ingressInfo?.customDomain
         };
       }) || [];
-    const resp = [devboxBody, portInfos, template] as [KBDevboxTypeV2, PortInfos, typeof template];
-    const adaptedData = adaptDevboxDetailV2(resp);
-    return jsonRes({ data: adaptedData });
+
+    const data = adaptDevboxDetailV2([devboxBody, portInfos, template]);
+
+    return jsonRes({ data });
   } catch (err: any) {
     return jsonRes({
       code: 500,

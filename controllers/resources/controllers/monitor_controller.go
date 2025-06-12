@@ -25,6 +25,8 @@ import (
 	"sync"
 	"time"
 
+	v1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"github.com/labring/sealos/controllers/pkg/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -260,9 +262,29 @@ func (r *MonitorReconciler) enqueueNamespacesForReconcile() {
 		return
 	}
 
+	filterNormalNamespace(namespaceList)
+
 	if err := r.processNamespaceList(namespaceList); err != nil {
 		r.Logger.Error(err, "failed to process namespace", "time", time.Now().Format(time.RFC3339))
 	}
+}
+
+func filterNormalNamespace(namespaceList *corev1.NamespaceList) {
+	var items []corev1.Namespace
+	for i := range namespaceList.Items {
+		debtStatus := ""
+		anno := namespaceList.Items[i].Annotations
+		if anno != nil {
+			debtStatus = anno[v1.DebtNamespaceAnnoStatusKey]
+		}
+		if debtStatus == v1.SuspendDebtNamespaceAnnoStatus || debtStatus == v1.SuspendCompletedDebtNamespaceAnnoStatus ||
+			debtStatus == v1.FinalDeletionDebtNamespaceAnnoStatus || debtStatus == v1.FinalDeletionCompletedDebtNamespaceAnnoStatus {
+			continue
+		}
+		items = append(items, namespaceList.Items[i])
+	}
+	namespaceList.Items = items
+	logger.Info("filter normal namespace", "namespaceList len", len(namespaceList.Items), "time", time.Now().Format(time.RFC3339))
 }
 
 func (r *MonitorReconciler) processNamespaceList(namespaceList *corev1.NamespaceList) error {
@@ -580,9 +602,14 @@ func (r *MonitorReconciler) monitorObjectStorageTraffic() error {
 			sent := int64(0)
 			if r.lastObjectMetrics != nil && r.lastObjectMetrics[user].Sent != nil {
 				if _, ok := r.lastObjectMetrics[user].Sent[bucket]; ok {
-					ss := m - r.lastObjectMetrics[user].Sent[bucket]
-					if ss > 0 {
-						sent = ss
+					if m == -1 {
+						r.currentObjectMetrics[user].Sent[bucket] = r.lastObjectMetrics[user].Sent[bucket]
+						m = r.lastObjectMetrics[user].Sent[bucket]
+					} else {
+						ss := m - r.lastObjectMetrics[user].Sent[bucket]
+						if ss > 0 {
+							sent = ss
+						}
 					}
 				}
 			}

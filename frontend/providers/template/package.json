@@ -32,6 +32,7 @@
     "cron-parser": "^4.9.0",
     "croner": "^8.1.0",
     "cronstrue": "^2.32.0",
+    "lucide-react": "^0.476.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
     "fast-json-patch": "^3.1.1",

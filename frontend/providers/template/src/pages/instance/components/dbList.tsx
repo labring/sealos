@@ -31,7 +31,8 @@ export default function AppList({ instanceName }: { instanceName: string }) {
             return { id: item.id, name: item.name, kind: 'DataBase' };
           })
         );
-      }
+      },
+      enabled: !!instanceName
     }
   );
 

@@ -43,7 +43,11 @@ type State = {
     devboxUid: string
   ) => Promise<DevboxVersionListItemType[]>;
   devboxDetail?: DevboxDetailTypeV2;
-  setDevboxDetail: (devboxName: string, sealosDomain: string) => Promise<DevboxDetailTypeV2>;
+  setDevboxDetail: (
+    devboxName: string,
+    sealosDomain: string,
+    mock?: boolean
+  ) => Promise<DevboxDetailTypeV2>;
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>;
   loadDetailMonitorData: (devboxName: string) => Promise<any>;
 };
@@ -110,8 +114,13 @@ export const useDevboxStore = create<State>()(
       },
       startedTemplate: undefined,
       devboxDetail: undefined,
-      setDevboxDetail: async (devboxName: string, sealosDomain: string) => {
-        const detail = await getDevboxByName(devboxName);
+      setDevboxDetail: async (devboxName: string, sealosDomain: string, mock?: boolean) => {
+        const detail = await getDevboxByName(devboxName, mock);
+        if (mock) {
+          set((state) => {
+            state.devboxDetail = detail;
+          });
+        }
 
         // SSH configuration should be obtained regardless of whether it is running on or not
         const { base64PrivateKey, userName, token } = await getSSHConnectionInfo({

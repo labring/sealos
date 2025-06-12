@@ -1,22 +1,44 @@
-import { AxiosProgressEvent } from 'axios';
+import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
 
+import { DELETE, GET, POST } from '@/services/request';
+import { GetDevboxByNameReturn } from '@/types/adapt';
 import {
+  DevboxDetailTypeV2,
   DevboxEditTypeV2,
   DevboxListItemTypeV2,
   DevboxPatchPropsType,
   DevboxVersionListItemType,
-  ShutdownModeType,
-  DevboxDetailTypeV2,
-  PodDetailType
+  ShutdownModeType
 } from '@/types/devbox';
-import { AppListItemType } from '@/types/app';
-import { DELETE, GET, POST } from '@/services/request';
+import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
+import {
+  adaptAppListItem,
+  adaptDevboxDetailV2,
+  adaptDevboxListItemV2,
+  adaptDevboxVersionListItem,
+  adaptPod
+} from '@/utils/adapt';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
+import { AxiosProgressEvent } from 'axios';
 
-export const getMyDevboxList = () => GET<DevboxListItemTypeV2[]>('/api/getDevboxList');
-
-export const getDevboxByName = (devboxName: string) =>
-  GET<DevboxDetailTypeV2>('/api/getDevboxByName', { devboxName });
+export const getMyDevboxList = () =>
+  GET<
+    [
+      KBDevboxTypeV2,
+      {
+        templateRepository: {
+          iconId: string | null;
+        };
+        uid: string;
+      }
+    ][]
+  >('/api/getDevboxList').then((data): DevboxListItemTypeV2[] =>
+    data.map(adaptDevboxListItemV2).sort((a, b) => {
+      return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+    })
+  );
+export const getDevboxByName = (devboxName: string, mock = false) =>
+  GET<DevboxDetailTypeV2>('/api/getDevboxByName', { devboxName, mock });
 
 export const applyYamlList = (yamlList: string[], type: 'create' | 'replace' | 'update') =>
   POST('/api/applyYamlList', { yamlList, type });
@@ -37,7 +59,12 @@ export const shutdownDevbox = (data: { devboxName: string; shutdownMode: Shutdow
   POST('/api/shutdownDevbox', data);
 
 export const getDevboxVersionList = (devboxName: string, devboxUid: string) =>
-  GET<DevboxVersionListItemType[]>('/api/getDevboxVersionList', { devboxName, devboxUid });
+  GET<KBDevboxReleaseType[]>('/api/getDevboxVersionList', { devboxName, devboxUid }).then(
+    (data): DevboxVersionListItemType[] =>
+      data.map(adaptDevboxVersionListItem).sort((a, b) => {
+        return new Date(b.createTime).getTime() - new Date(a.createTime).getTime();
+      })
+  );
 
 export const releaseDevbox = (data: {
   devboxName: string;
@@ -64,7 +91,7 @@ export const getSSHConnectionInfo = (data: { devboxName: string }) =>
   }>('/api/getSSHConnectionInfo', data);
 
 export const getDevboxPodsByDevboxName = (name: string) =>
-  GET<PodDetailType[]>('/api/getDevboxPodsByDevboxName', { name });
+  GET<V1Pod[]>('/api/getDevboxPodsByDevboxName', { name }).then((item) => item.map(adaptPod));
 
 export const getDevboxMonitorData = (payload: {
   queryName: string;
@@ -73,7 +100,9 @@ export const getDevboxMonitorData = (payload: {
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
 export const getAppsByDevboxId = (devboxId: string) =>
-  GET<AppListItemType[]>('/api/getAppsByDevboxId', { devboxId });
+  GET<V1Deployment & V1StatefulSet[]>('/api/getAppsByDevboxId', { devboxId }).then((res) =>
+    res.map(adaptAppListItem)
+  );
 
 export const execCommandInDevboxPod = (data: {
   devboxName: string;

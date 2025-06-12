@@ -164,6 +164,35 @@ const useAppStore = create<TOSState>()(
             state.maxZIndex = zIndex;
           });
         },
+        // open desktop app by app key and pathname, and send message to app
+        openDesktopApp: ({
+          appKey,
+          query = {},
+          messageData = {},
+          pathname = '/',
+          appSize = 'maximize'
+        }: {
+          appKey: string;
+          query?: Record<string, string>;
+          messageData?: Record<string, any>;
+          pathname: string;
+          appSize?: WindowSize;
+        }) => {
+          const app = get().installedApps.find((item) => item.key === appKey);
+          const runningApp = get().runningInfo.find((item) => item.key === appKey);
+
+          if (!app) return;
+
+          get().openApp(app, { query, pathname, appSize });
+
+          if (runningApp) {
+            get().setToHighestLayerById(runningApp.pid);
+          }
+
+          const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
+          if (!iframe) return;
+          iframe.contentWindow?.postMessage(messageData, app.data.url);
+        },
         // maximize app
         switchAppById: (pid: number) => {
           set((state) => {

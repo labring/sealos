@@ -21,6 +21,9 @@ export const monitorFetch = async (props: AxiosRequestConfig, kubeconfig: string
     }
     return await response.json();
   } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      throw new Error('Please check if monitor service api is configured:');
+    }
     throw error;
   }
 };

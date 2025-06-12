@@ -1,9 +1,7 @@
-import Iconfont from '@/components/iconfont';
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
-import { formatTime } from '@/utils/tools';
-import { Box, Button, Flex, Text, UseDisclosureReturn } from '@chakra-ui/react';
-import { ClearOutlineIcon, CloseIcon, NotificationIcon, WarnIcon, useMessage } from '@sealos/ui';
+import { Box, Button, Center, Flex, Image, Text, UseDisclosureReturn } from '@chakra-ui/react';
+import { NotificationIcon, WarnIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { produce } from 'immer';
@@ -12,6 +10,13 @@ import { useEffect, useRef, useState } from 'react';
 import styles from './index.module.scss';
 import { TNotification } from '@/types';
 import { listNotification } from '@/api/platform';
+import { TriangleAlert, X } from 'lucide-react';
+
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+dayjs.extend(relativeTime);
+dayjs.locale('en');
 
 type NotificationProps = {
   disclosure: UseDisclosureReturn;
@@ -21,21 +26,14 @@ type NotificationProps = {
 export default function Notification(props: NotificationProps) {
   const { t, i18n } = useTranslation();
   const { disclosure, onAmount } = props;
-  const { installedApps, openApp } = useAppStore();
-  const [readNotes, setReadNotes] = useState<TNotification[]>([]);
-  const [unReadNotes, setUnReadNotes] = useState<TNotification[]>([]);
+  const { openDesktopApp } = useAppStore();
+  const [notifications, setNotifications] = useState<TNotification[]>([]);
   const { message } = useMessage();
   const isForbiddenRef = useRef(false);
 
   const [MessageConfig, setMessageConfig] = useState<{
-    activeTab: 'read' | 'unread';
-    activePage: 'index' | 'detail';
-    msgDetail?: TNotification;
     popupMessage?: TNotification;
   }>({
-    activeTab: 'unread',
-    activePage: 'index',
-    msgDetail: undefined,
     popupMessage: undefined
   });
 
@@ -52,26 +50,24 @@ export default function Notification(props: NotificationProps) {
   const compareByTimestamp = (a: TNotification, b: TNotification) => b?.timestamp - a?.timestamp;
 
   const handleNotificationData = (data: TNotification[]) => {
-    const unReadMessage = data.filter((item) => !item.isRead);
-    const readMessage = data.filter((item) => item.isRead);
+    const sortedMessages = data.sort(compareByTimestamp);
+    const unReadCount = data.filter((item) => !item.isRead).length;
 
-    unReadMessage.sort(compareByTimestamp);
-    readMessage.sort(compareByTimestamp);
-
-    if (unReadMessage?.[0]?.desktopPopup && !isForbiddenRef.current) {
+    if (
+      sortedMessages?.[0]?.desktopPopup &&
+      !isForbiddenRef.current &&
+      !sortedMessages?.[0]?.isRead
+    ) {
       setMessageConfig(
         produce((draft) => {
-          draft.popupMessage = unReadMessage[0];
+          draft.popupMessage = sortedMessages[0];
         })
       );
     }
 
-    onAmount(unReadMessage?.length || 0);
-    setReadNotes(readMessage);
-    setUnReadNotes(unReadMessage);
+    onAmount(unReadCount);
+    setNotifications(sortedMessages);
   };
-
-  const notifications = MessageConfig.activeTab === 'unread' ? unReadNotes : readNotes;
 
   const readMsgMutation = useMutation({
     mutationFn: (name: string[]) =>
@@ -93,48 +89,36 @@ export default function Notification(props: NotificationProps) {
     }
   });
 
-  const goMsgDetail = (item: TNotification) => {
-    if (MessageConfig.activeTab === 'unread') {
+  const handleReadMessage = (item: TNotification) => {
+    if (!item.isRead) {
       readMsgMutation.mutate([item?.name]);
     }
-    setMessageConfig(
-      produce((draft) => {
-        draft.activePage = 'detail';
-        draft.msgDetail = item;
-        draft.popupMessage = undefined;
-      })
-    );
-  };
-
-  const markAllAsRead = () => {
-    const names = unReadNotes?.map((item: TNotification) => item?.name);
-    readMsgMutation.mutate(names);
-    setMessageConfig(
-      produce((draft) => {
-        draft.popupMessage = undefined;
-      })
-    );
   };
 
   const handleCharge = () => {
-    const costCenter = installedApps.find((i) => i.key === 'system-costcenter');
-    if (!costCenter) return;
-    openApp(costCenter, {
+    openDesktopApp({
+      appKey: 'system-account-center',
       query: {
-        openRecharge: 'true'
-      }
+        page: 'plan'
+      },
+      messageData: {
+        page: 'plan'
+      },
+      pathname: '/redirect'
     });
   };
 
-  const resetMessageState = () => {
-    setMessageConfig(
-      produce((draft) => {
-        draft.activeTab = 'unread';
-        draft.activePage = 'index';
-        draft.msgDetail = undefined;
-      })
-    );
-    disclosure.onClose();
+  const handleReferral = () => {
+    openDesktopApp({
+      appKey: 'system-account-center',
+      query: {
+        page: 'referral'
+      },
+      messageData: {
+        page: 'referral'
+      },
+      pathname: '/redirect'
+    });
   };
 
   useEffect(() => {
@@ -154,158 +138,154 @@ export default function Notification(props: NotificationProps) {
     }
   };
 
+  const getNotificationIconColor = (from: string | undefined) => {
+    switch (from) {
+      case 'Debt-System':
+        return '#DC2626';
+      case 'Active-System':
+        return '#F97316';
+      default:
+        return '#F97316';
+    }
+  };
+
+  const markAllAsRead = () => {
+    const names = notifications?.map((item: TNotification) => item?.name);
+    readMsgMutation.mutate(names);
+    setMessageConfig(
+      produce((draft) => {
+        draft.popupMessage = undefined;
+      })
+    );
+    refetch();
+  };
+
+  const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null);
+
+  const toggleExpand = (uid: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpandedMessageId(expandedMessageId === uid ? null : uid);
+  };
+
   return disclosure.isOpen ? (
     <>
-      <Box className={styles.bg} onClick={resetMessageState} cursor={'auto'}></Box>
+      <Box className={styles.bg} onClick={() => disclosure.onClose()} cursor={'auto'}></Box>
       <Box className={clsx(styles.container)}>
         <Flex
-          className={clsx(styles.title)}
-          h={'32px'}
+          h={'44px'}
           alignItems={'center'}
-          justifyContent={'center'}
           position="relative"
+          pl={'20px'}
+          pr={'16px'}
+          borderBottom={'1px solid #F4F4F5'}
         >
-          <Box
-            className={clsx(styles.back_btn)}
-            onClick={() =>
-              setMessageConfig(
-                produce((draft) => {
-                  draft.activePage = 'index';
-                })
-              )
-            }
-            data-active={MessageConfig.activePage}
-          >
-            <Iconfont iconName="icon-left" color="#239BF2" width={32} height={32} />
-          </Box>
-          <Text>
-            {MessageConfig.activePage === 'index'
-              ? t('common:message_center')
-              : MessageConfig.msgDetail?.i18n[i18n.language]?.title}
-          </Text>
-        </Flex>
-        {MessageConfig.activePage === 'index' ? (
-          <>
-            <Flex alignItems={'center'}>
-              <Box
-                className={clsx(MessageConfig.activeTab === 'unread' && styles.active, styles.tab)}
-                onClick={() =>
-                  setMessageConfig(
-                    produce((draft) => {
-                      draft.activeTab = 'unread';
-                    })
-                  )
-                }
-              >
-                {t('common:unread')} ({unReadNotes?.length || 0})
-              </Box>
-              <Box
-                ml={'12px'}
-                className={clsx(MessageConfig.activeTab === 'read' && styles.active, styles.tab)}
-                onClick={() =>
-                  setMessageConfig(
-                    produce((draft) => {
-                      draft.activeTab = 'read';
-                    })
-                  )
-                }
-              >
-                {t('common:have_read')}
-              </Box>
-              <Button
-                ml={'auto'}
-                onClick={() => markAllAsRead()}
-                variant={'white-bg-icon'}
-                leftIcon={<ClearOutlineIcon color={'rgba(255, 255, 255, 0.60)'} />}
-                iconSpacing="4px"
-                borderRadius={'4px'}
-              >
-                <Text className={styles.tab}>{t('common:read_all')}</Text>
-              </Button>
-            </Flex>
-            <Flex pt={'9px'} pb="12px" direction={'column'} h="430px" className={styles.scrollWrap}>
-              {notifications?.map((item: TNotification) => {
-                return (
-                  <Flex
-                    mt={'8px'}
-                    direction={'column'}
-                    className={clsx(styles.message)}
-                    key={item?.uid}
-                    onClick={() => goMsgDetail(item)}
-                  >
-                    <Text className={styles.title}>{item.i18n[i18n.language]?.title}</Text>
-                    <Text flexShrink={0} mt="4px" noOfLines={1} className={clsx(styles.desc)}>
-                      {item.i18n[i18n.language]?.message}
-                    </Text>
-                    <Flex
-                      mt="4px"
-                      justifyContent={'space-between'}
-                      className={clsx(styles.desc, styles.footer)}
-                    >
-                      <Text>
-                        {t('common:from')}「{item.i18n[i18n.language]?.from}」
-                      </Text>
-                      <Text>{formatTime((item?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}</Text>
-                    </Flex>
-                  </Flex>
-                );
-              })}
-            </Flex>
-          </>
-        ) : (
-          <Box
-            h="430px"
-            w="100%"
-            mt="16px"
-            p="16px"
-            borderRadius={'12px'}
-            backgroundColor="rgba(255, 255, 255, 0.9)"
-          >
-            <Flex
-              className={clsx(styles.desc, styles.footer)}
-              color="#717D8A"
-              fontSize="10px"
-              fontWeight="400"
-            >
-              <Text>
-                {t('common:from')}「{MessageConfig.msgDetail?.i18n[i18n.language]?.from}」
-              </Text>
-              <Box display={'inline-block'} ml={'auto'}>
-                {formatTime((MessageConfig.msgDetail?.timestamp || 0) * 1000, 'YYYY-MM-DD HH:mm')}
-              </Box>
-            </Flex>
-            <Text
-              whiteSpace="pre-wrap"
-              mt="14px"
-              fontSize="12px"
-              fontWeight={400}
-              color="#000000"
-              h="300px"
-              overflowY="auto"
-            >
-              {MessageConfig.msgDetail?.i18n[i18n.language]?.message}
+          <Text>{t('common:alert')}</Text>
+          <Flex alignItems={'center'} gap={'12px'} ml={'auto'} cursor={'pointer'}>
+            <Text color={'#1C4EF5'} fontSize={'12px'} fontWeight={500} onClick={markAllAsRead}>
+              {t('common:read_all')}
             </Text>
-            {MessageConfig.msgDetail?.i18n['en']?.from === 'Debt-System' && (
-              <Flex justifyContent={'center'} mt="26px">
-                <Button
-                  w="159px"
-                  h="32px"
-                  bg="#24282C"
-                  borderRadius={'4px'}
-                  color={'#FFF'}
-                  fontSize={'12px'}
-                  variant={'primary'}
-                  onClick={() => {
-                    resetMessageState();
-                    handleCharge();
-                  }}
+            <X
+              cursor={'pointer'}
+              size={16}
+              color="#737373"
+              onClick={() => disclosure.onClose()}
+              style={{ marginLeft: 'auto' }}
+            />
+          </Flex>
+        </Flex>
+
+        <Flex direction={'column'} h="430px" className={styles.scrollWrap}>
+          {notifications?.length > 0 ? (
+            notifications?.map((item: TNotification) => (
+              <Flex
+                cursor={'pointer'}
+                key={item?.uid}
+                onClick={() => handleReadMessage(item)}
+                position="relative"
+                borderBottom={'1px solid #f4f4f5'}
+                p={'12px 20px'}
+                gap={'12px'}
+              >
+                <Center
+                  flexShrink={0}
+                  width="32px"
+                  height="32px"
+                  borderRadius="full"
+                  border="1px solid #F4F4F5"
+                  position={'relative'}
                 >
-                  {t('common:charge')}
-                </Button>
+                  {item?.i18n['en']?.from === 'Referral' ? null : (
+                    <TriangleAlert
+                      size={20}
+                      color={getNotificationIconColor(item?.i18n['en']?.from)}
+                    />
+                  )}
+                  {!item.isRead && (
+                    <Box
+                      position="absolute"
+                      top="0px"
+                      right="0px"
+                      w="6px"
+                      h="6px"
+                      borderRadius="50%"
+                      bg="red.500"
+                    />
+                  )}
+                </Center>
+                <Box>
+                  <Text fontSize={'14px'} fontWeight={500} color={'#000000'}>
+                    {item.i18n[i18n.language]?.title}
+                  </Text>
+                  <Text
+                    height={expandedMessageId === item.uid ? 'auto' : '32px'}
+                    mt={'2px'}
+                    whiteSpace="pre-wrap"
+                    fontSize={'12px'}
+                    color={'#737373'}
+                    noOfLines={expandedMessageId === item.uid ? undefined : 2}
+                    overflow={'hidden'}
+                    textOverflow={'ellipsis'}
+                    onClick={(e) => toggleExpand(item.uid, e)}
+                    cursor="pointer"
+                    position="relative"
+                  >
+                    {item?.i18n['en']?.from === 'Referral' ? (
+                      <div
+                        style={{ cursor: 'pointer', marginTop: '10px' }}
+                        onClick={handleReferral}
+                      >
+                        {item.i18n[i18n.language]?.message}
+                      </div>
+                    ) : (
+                      <>{item.i18n[i18n.language]?.message}</>
+                    )}
+                  </Text>
+                  <Text mt="8px" fontSize={'14px'} fontWeight={400} color={'#18181B'}>
+                    {dayjs((item?.timestamp || 0) * 1000).fromNow()}
+                  </Text>
+                </Box>
               </Flex>
-            )}
-          </Box>
-        )}
+            ))
+          ) : (
+            <Flex
+              h="100%"
+              color={'#737373'}
+              width={'220px'}
+              flexDirection={'column'}
+              justifyContent={'center'}
+              alignItems={'center'}
+              mx={'auto'}
+            >
+              <Image src="/images/no-notification.svg" alt="no-notification" />
+              <Text mt={'20px'} fontSize={'16px'} fontWeight={500} color={'#18181B'}>
+                No notifications yet
+              </Text>
+              <Text color={'#71717A'} mt={'4px'} fontSize={'14px'}>
+                Recent notifications will be shown here. Everything is going well.
+              </Text>
+            </Flex>
+          )}
+        </Flex>
       </Box>
     </>
   ) : (
@@ -314,26 +294,34 @@ export default function Notification(props: NotificationProps) {
         <Box
           cursor={'default'}
           position={'absolute'}
-          w="320px"
-          h={'170px'}
-          top={'48px'}
-          right={'0px'}
-          bg="rgba(220, 220, 224, 0.05)"
-          backdropFilter={'blur(50px)'}
-          boxShadow={'0px 15px 20px 0px rgba(0, 0, 0, 0.10)'}
-          borderRadius={'12px 0px 12px 12px'}
-          p="20px"
+          w="396px"
+          top={'70px'}
+          right={'60px'}
+          bg="#FFF"
+          boxShadow={'0px 4px 12px 0px rgba(0, 0, 0, 0.08)'}
+          borderRadius={'12px'}
+          p="24px"
           zIndex={9}
-          color={'white'}
         >
-          <Flex alignItems={'center'}>
-            {getNotificationIcon(MessageConfig.popupMessage?.i18n['en']?.from)}
-            <Text fontSize={'16px'} fontWeight={600} ml="10px">
+          <Flex alignItems={'center'} position={'relative'}>
+            {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? null : (
+              <TriangleAlert
+                size={20}
+                color={getNotificationIconColor(MessageConfig.popupMessage?.i18n['en']?.from)}
+              />
+            )}
+            <Text fontSize={'16px'} fontWeight={600} ml="6px">
               {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
             </Text>
-            <CloseIcon
-              ml="auto"
-              fill={'white'}
+            <X
+              size={20}
+              color="#18181B"
+              style={{
+                position: 'absolute',
+                right: '0px',
+                top: '0px',
+                color: '#18181B'
+              }}
               cursor={'pointer'}
               onClick={() => {
                 const temp = MessageConfig.popupMessage;
@@ -346,49 +334,31 @@ export default function Notification(props: NotificationProps) {
               }}
             />
           </Flex>
-          <Text
-            whiteSpace="pre-wrap"
-            mt="14px"
-            fontSize="12px"
-            fontWeight={400}
-            className="overflow-auto"
-            noOfLines={2}
-            height={'36px'}
-          >
-            {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
-          </Text>
 
-          <Flex alignItems={'center'} justifyContent={'end'} mt="18px" gap="8px">
-            <Button
-              w="78px"
-              h="32px"
-              bg="rgba(255, 255, 255, 0.20)"
-              borderRadius={'4px'}
-              variant={'unstyled'}
-              color={'white'}
-              onClick={() => {
-                const temp = MessageConfig.popupMessage;
-                setMessageConfig(
-                  produce((draft) => {
-                    draft.activePage = 'detail';
-                    draft.msgDetail = temp;
-                    draft.popupMessage = undefined;
-                  })
-                );
-                readMsgMutation.mutate([temp?.name || '']);
-                disclosure.onOpen();
-              }}
+          {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? (
+            <div style={{ cursor: 'pointer', marginTop: '10px' }} onClick={handleReferral}>
+              {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+            </div>
+          ) : (
+            <Text
+              whiteSpace="pre-wrap"
+              mt="8px"
+              fontSize={'14px'}
+              fontWeight={400}
+              color={'#18181B'}
             >
-              {t('common:detail')}
-            </Button>
-            {MessageConfig.msgDetail?.i18n['en']?.from === 'Debt-System' && (
+              {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+            </Text>
+          )}
+
+          <Flex alignItems={'center'} mt="16px">
+            {MessageConfig.popupMessage?.i18n['en']?.from === 'Debt-System' && (
               <Button
-                w="78px"
+                w="92px"
                 h="32px"
-                variant={'unstyled'}
-                bg={'white'}
-                color={'grayModern.900'}
-                borderRadius={'4px'}
+                variant={'solid'}
+                color={'#FAFAFA'}
+                borderRadius={'8px'}
                 onClick={() => {
                   const temp = MessageConfig.popupMessage;
                   setMessageConfig(

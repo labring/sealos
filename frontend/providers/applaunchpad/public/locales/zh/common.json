@@ -326,5 +326,20 @@
   "user_balance_not_enough": "快完成了！您需要额外积分才能完成此部署。",
   "forbidden_create_app": "您在当前工作空间没有足够的权限来创建应用。请联系该工作空间的 owner (所有者) 为您授权。",
   "add_credit": "充值",
-  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用"
+  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
+  "driver": {
+    "create_launchpad": "创建应用",
+    "define_settings": "定义您的应用设置并开始部署",
+    "next": "下一步",
+    "access_application": "访问应用",
+    "copy_address": "复制私有或公共地址以进行访问",
+    "click_anywhere": "点击任意位置完成教程",
+    "quit_guide": "退出指南",
+    "still_here": "我们还在这里！",
+    "find_guide_tip": "你可以随时在顶部导航栏重新打开本指南，祝你探索愉快！",
+    "create_launchpad_header": "请随意探索。本演示指南不会保存任何更改，也不会收取任何费用。",
+    "configure_launchpad": "配置启动台",
+    "define_image_settings": "定义镜像设置，并按需调整 CPU 和内存",
+    "got_it": "明白"
+  }
 }

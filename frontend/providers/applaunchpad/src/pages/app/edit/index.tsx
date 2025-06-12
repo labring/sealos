@@ -3,7 +3,6 @@ import { checkPermission } from '@/api/platform';
 import { defaultSliderKey } from '@/constants/app';
 import { defaultEditVal, editModeMap } from '@/constants/editApp';
 import { useConfirm } from '@/hooks/useConfirm';
-import useDriver from '@/hooks/useDriver';
 import { useLoading } from '@/hooks/useLoading';
 import { useAppStore } from '@/store/app';
 import { useGlobalStore } from '@/store/global';
@@ -34,6 +33,7 @@ import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
+import { useGuideStore } from '@/store/guide';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -125,12 +125,12 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
     }
     return val;
   }, [screenWidth]);
+  const { createCompleted } = useGuideStore();
 
   // form
   const formHook = useForm<AppEditType>({
     defaultValues: defaultEditVal
   });
-  const { isGuided, closeGuide } = useDriver({ setIsAdvancedOpen });
 
   const realTimeForm = useRef(defaultEditVal);
 
@@ -158,6 +158,10 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
 
   const submitSuccess = useCallback(
     async (yamlList: YamlItemType[]) => {
+      if (!createCompleted) {
+        return router.push('/app/detail?name=hello&guide=true');
+      }
+
       setIsLoading(true);
       try {
         const parsedNewYamlList = yamlList.map((item) => item.value);
@@ -212,7 +216,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
       t,
       applySuccess,
       userSourcePrice?.gpu,
-      refetchPrice
+      refetchPrice,
+      createCompleted
     ]
   );
 
@@ -349,9 +354,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
           yamlList={yamlList}
           applyBtnText={applyBtnText}
           applyCb={() => {
-            closeGuide();
             formHook.handleSubmit(async (data) => {
-              // console.log(data, 'formHook.handleSubmit');
               const parseYamls = formData2Yamls(data);
               setYamlList(parseYamls);
 

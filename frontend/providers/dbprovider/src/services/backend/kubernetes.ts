@@ -101,7 +101,7 @@ export async function createYaml(
         // console.log('delete error', spec.kind);
       }
     }
-    return Promise.reject(error);
+    return Promise.reject(error?.body || error);
   }
   return created;
 }
