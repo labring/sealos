@@ -11,10 +11,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    const headerList = req.headers;
     const { searchParams } = req.nextUrl;
     const devboxName = searchParams.get('devboxName') as string;
-
-    const headerList = req.headers;
 
     const { k8sCore, namespace, k8sCustomObjects } = await getK8s({
       kubeconfig: await authSession(headerList)
@@ -29,7 +28,15 @@ export async function GET(req: NextRequest) {
       response.body.data?.['SEALOS_DEVBOX_JWT_SECRET'] as string,
       'base64'
     ).toString('utf-8');
-    const token = generateAccessToken({ namespace, devboxName }, jwtSecret);
+
+    const token = generateAccessToken(
+      {
+        namespace,
+        devboxName
+      },
+      jwtSecret
+    );
+
     const { body: devboxBody } = (await k8sCustomObjects.getNamespacedCustomObject(
       'devbox.sealos.io',
       'v1alpha1',
