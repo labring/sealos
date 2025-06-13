@@ -269,75 +269,68 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
   };
 
   const configMapVolumeNames = getConfigMapVolumeNames();
-  console.log('🔍 ConfigMap volume names:', configMapVolumeNames);
 
-  const getConfigMapList = () => {
-    if (!deployKindsMap.ConfigMap?.data || configMapVolumeNames.length === 0 || !appDeploy) {
+  const getConfigMapList = (): Array<{ mountPath: string; value: string; key: string }> => {
+    const configMap = deployKindsMap.ConfigMap;
+    if (!configMap?.data || !appDeploy) {
       return [];
     }
 
-    const allConfigMapVolumeMounts =
-      appDeploy.spec?.template?.spec?.containers?.[0]?.volumeMounts?.filter((mount) =>
-        configMapVolumeNames.includes(mount.name)
-      ) || [];
+    console.log('ConfigMap name:', configMap.metadata?.name);
+    console.log('ConfigMap keys:', Object.keys(configMap.data));
 
-    console.log(
-      'All ConfigMap volumeMounts:',
-      allConfigMapVolumeMounts.map((m) => ({
-        name: m.name,
-        mountPath: m.mountPath,
-        subPath: m.subPath
-      }))
-    );
+    const configMapName = configMap.metadata?.name;
+    const volumes = appDeploy.spec?.template?.spec?.volumes || [];
+    const configMapVolumes = volumes.filter((volume) => volume.configMap?.name === configMapName);
 
-    return allConfigMapVolumeMounts
-      .map((mount) => {
-        let configMapKey: string;
-        let mountPath = mount.mountPath;
+    if (configMapVolumes.length === 0) {
+      return [];
+    }
 
-        // 根据volumeMounts name找到对应的volume配置
-        const relatedVolume = appDeploy?.spec?.template?.spec?.volumes?.find(
-          (volume) => volume.name === mount.name
-        );
+    const volumeMounts = appDeploy.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
 
-        const configMapItems = relatedVolume?.configMap?.items || [];
+    const results: Array<{ mountPath: string; value: string; key: string }> = [];
 
-        console.log(`Processing mount ${mount.name}:`, {
-          mountPath,
-          subPath: mount.subPath,
-          hasItems: configMapItems.length > 0,
-          items: configMapItems
-        });
+    configMapVolumes.forEach((volume) => {
+      const relatedMounts = volumeMounts.filter((mount) => mount.name === volume.name);
 
-        if (configMapItems.length > 0) {
-          // 老应用逻辑：通过items映射找到对应的key
-          const matchedItem = configMapItems.find((item) => item.path === mount.subPath);
-          if (matchedItem) {
-            configMapKey = matchedItem.key;
-          } else {
-            configMapKey = mount.subPath || '';
+      if (volume.configMap?.items && volume.configMap.items.length > 0) {
+        volume.configMap.items.forEach((item) => {
+          if (!item.key) return;
+          // 通过 item.path 找到对应的 volumeMount
+          const matchedMount = relatedMounts.find((mount) => mount.subPath === item.path);
+
+          if (matchedMount) {
+            const value = configMap.data?.[item.key] || '';
+            console.log(`Items 映射: ${item.key} (${item.path}) -> ${matchedMount.mountPath}`);
+            results.push({
+              mountPath: matchedMount.mountPath,
+              value: value,
+              key: item.key
+            });
           }
-        } else {
-          configMapKey = mount.subPath || '';
-        }
-
-        const value = deployKindsMap.ConfigMap?.data?.[configMapKey] || '';
-
-        console.log(`ConfigMap mapping result:`, {
-          volumeName: mount.name,
-          mountPath,
-          subPath: mount.subPath,
-          configMapKey,
-          hasValue: !!value,
-          valuePreview: value.substring(0, 50) + '...'
         });
+      } else {
+        relatedMounts.forEach((mount) => {
+          if (mount.subPath) {
+            const configMapKey = mount.subPath;
+            const value = configMap?.data?.[configMapKey] || '';
 
-        return {
-          mountPath,
-          value
-        };
-      })
-      .filter((item) => item.value);
+            if (value) {
+              console.log(`直接映射: ${configMapKey} -> ${mount.mountPath}`);
+
+              results.push({
+                mountPath: mount.mountPath,
+                value: value,
+                key: configMapKey
+              });
+            }
+          }
+        });
+      }
+    });
+
+    return results.filter((item) => item.value);
   };
 
   const useGpu = !!Number(

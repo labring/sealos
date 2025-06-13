@@ -20,7 +20,7 @@ import {
 import { useForm } from 'react-hook-form';
 import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
-import { pathToNameFormat } from '@/utils/tools';
+import { mountPathToConfigMapKey } from '@/utils/tools';
 import { MyTooltip } from '@sealos/ui';
 import { PVC_STORAGE_MAX } from '@/store/static';
 
@@ -152,7 +152,7 @@ const StoreModal = ({
                     return true;
                   },
                   onChange(e) {
-                    setValue('name', pathToNameFormat(e.target.value));
+                    setValue('name', mountPathToConfigMapKey(e.target.value));
                   }
                 })}
               />
