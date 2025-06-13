@@ -249,6 +249,21 @@
       }
     },
     "/api/deployDevbox": {
+      "get": {
+        "description": "New endpoint",
+        "responses": {
+          "200": {
+            "description": "New response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "": ""
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "Deploy"
@@ -298,6 +313,15 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/DevBox/list": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "Get devbox list",
+        "description": "Get all devboxes in the current namespace"
       }
     }
   }
