@@ -276,9 +276,6 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
       return [];
     }
 
-    console.log('ConfigMap name:', configMap.metadata?.name);
-    console.log('ConfigMap keys:', Object.keys(configMap.data));
-
     const configMapName = configMap.metadata?.name;
     const volumes = appDeploy.spec?.template?.spec?.volumes || [];
     const configMapVolumes = volumes.filter((volume) => volume.configMap?.name === configMapName);
@@ -302,7 +299,6 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
 
           if (matchedMount) {
             const value = configMap.data?.[item.key] || '';
-            console.log(`Items 映射: ${item.key} (${item.path}) -> ${matchedMount.mountPath}`);
             results.push({
               mountPath: matchedMount.mountPath,
               value: value,
@@ -317,8 +313,6 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
             const value = configMap?.data?.[configMapKey] || '';
 
             if (value) {
-              console.log(`直接映射: ${configMapKey} -> ${mount.mountPath}`);
-
               results.push({
                 mountPath: mount.mountPath,
                 value: value,
