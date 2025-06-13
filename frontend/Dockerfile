@@ -36,7 +36,7 @@ COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-pnpm -r --offline --filter=./packages/* install \
+pnpm -r  --filter=./packages/* install \
 && pnpm -r --filter=./packages/* run build
 
 FROM deps AS builder
@@ -94,14 +94,8 @@ RUN if ["$name" = "objectstorage" ]; then \
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
+COPY providers/devbox/app/api/mcp/devbox.json /app/providers/devbox/app/api/mcp/
 
-RUN if [ -f /app/providers/devbox/app/api/mcp/devbox.json ]; then \
-    mkdir -p ./providers/devbox/app/api/mcp/ && \
-    cp /app/providers/devbox/app/api/mcp/devbox.json ./providers/devbox/app/api/mcp/devbox.json && \
-    chown nextjs:nodejs ./providers/devbox/app/api/mcp/devbox.json; \
-    else \
-    echo "devbox.json not found, skipping copy"; \
-    fi
 
 EXPOSE 3000
 
