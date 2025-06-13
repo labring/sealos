@@ -21,12 +21,14 @@ export type ConfigMapType = {
   id?: string;
   mountPath: string;
   value: string;
+  key: string;
 };
 
 const ConfigmapModal = ({
   defaultValue = {
     mountPath: '',
-    value: ''
+    value: '',
+    key: ''
   },
   listNames,
   successCb,

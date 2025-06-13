@@ -69,7 +69,7 @@ export const pathFormat = (str: string) => {
   if (str.startsWith('/')) return `.${str}`;
   return `./${str}`;
 };
-export const pathToNameFormat = (str: string) => {
+export const mountPathToConfigMapKey = (str: string) => {
   const endsWithSlash = str.endsWith('/');
   const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
   const replacedStr = withoutTrailingSlash.replace(/_/g, '-').replace(/[\/.]/g, 'vn-');

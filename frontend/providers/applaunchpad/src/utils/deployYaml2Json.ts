@@ -9,7 +9,7 @@ import {
 } from '@/constants/app';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
-import { pathFormat, pathToNameFormat, str2Num, strToBase64 } from '@/utils/tools';
+import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 
@@ -101,7 +101,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
   const configMapVolumeMounts = data.configMapList.map((item) => ({
     name: `${data.appName}-cm`,
     mountPath: item.mountPath,
-    subPath: pathToNameFormat(item.mountPath)
+    subPath: item.key
   }));
 
   const configMapVolumes =
@@ -436,7 +436,7 @@ export const json2ConfigMap = (data: AppEditType) => {
 
   const configFile: { [key: string]: string } = {};
   data.configMapList.forEach((item) => {
-    configFile[pathToNameFormat(item.mountPath)] = item.value;
+    configFile[item.key] = item.value;
   });
 
   const template = {
