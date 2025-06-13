@@ -36,6 +36,10 @@ COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm --filter=./packages/mcp-sdk install \
+    && pnpm --filter=./packages/mcp-sdk run build
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 pnpm -r --offline --filter=./packages/* install \
 && pnpm -r --filter=./packages/* run build
 
