@@ -6,26 +6,8 @@
     "description": ""
   },
   "paths": {
-    "/api/v1/createSimpleDevbox": {
-      "get": {
-        "description": "New endpoint",
-        "responses": {
-          "200": {
-            "description": "New response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "": ""
-                }
-              }
-            }
-          }
-        }
-      },
+    "/api/v1/DevBox/create": {
       "post": {
-        "tags": [
-          "Lifecycle"
-        ],
         "summary": "创建Devbox",
         "description": "创建一个新的Devbox，即Create",
         "requestBody": {
@@ -86,11 +68,8 @@
         }
       }
     },
-    "/api/v1/releaseDevboxDefault": {
+    "/api/v1/Devbox/release": {
       "post": {
-        "tags": [
-          "ReleaseAndDeploy"
-        ],
         "summary": "Devbox发版",
         "description": "Devbox发版，release，为现有的Devbox发布一个新的版本",
         "requestBody": {
@@ -133,11 +112,8 @@
         }
       }
     },
-    "/api/v1/getDevboxReleaseListDefault": {
+    "/api/v1/DevBox/releases": {
       "get": {
-        "tags": [
-          "ReleaseAndDeploy"
-        ],
         "summary": "获取Devbox版本历史",
         "description": "获取单个Devbox的所有历史版本",
         "parameters": [
@@ -155,11 +131,8 @@
         ]
       }
     },
-    "/api/v1/lifecycleDevbox": {
+    "/api/v1/DevBox/lifecycle": {
       "post": {
-        "tags": [
-          "Lifecycle"
-        ],
         "summary": "操作Devbox",
         "description": "操作Devbox，Devbox生命周期管理，主要包含开机，关机，重启，冷关机，这些操作都通过这个工具完成",
         "requestBody": {
@@ -203,11 +176,8 @@
         }
       }
     },
-    "/api/v1/createDevboxPort": {
+    "/api/v1/DevBox/ports/create": {
       "post": {
-        "tags": [
-          "Port"
-        ],
         "summary": "创建Devbox端口",
         "description": "创建Devbox端口，为现有的Devbox创建一个新的端口",
         "requestBody": {
@@ -320,8 +290,8 @@
         "tags": [
           "Query"
         ],
-        "summary": "Get devbox list",
-        "description": "Get all devboxes in the current namespace"
+        "summary": "获取DevBox列表",
+        "description": "获取DevBox列表，获得每个DevBox的详细信息"
       }
     }
   }
