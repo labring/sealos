@@ -7,6 +7,10 @@ export enum QueryKey {
   GetDashboardData = 'getDashboardData',
   GetUserLogDetail = 'getUserLogDetail',
 
+  // mcp hub
+  mcpList = 'mcpList',
+  mcpDetail = 'mcpDetail',
+
   // admin
   GetChannels = 'getChannels',
   GetAllChannels = 'getAllChannels',

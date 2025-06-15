@@ -19,6 +19,8 @@ import { GetAllChannelResponse } from '@/app/api/admin/channel/all/route'
 import { DashboardQueryParams } from '@/app/api/user/dashboard/route'
 import { DashboardResponse } from '@/types/user/dashboard'
 import { UserLogDetailResponse } from '@/app/api/user/log/detail/[log_id]/route'
+import { GetMcpListQueryParams, GetMcpListResponse } from '@/app/api/mcp/route'
+import { McpDetail } from '@/types/mcp'
 
 export const initAppConfig = () =>
   GET<{
@@ -54,6 +56,16 @@ export const updateToken = (id: number, status: number) =>
 // dashboard
 export const getDashboardData = (params: DashboardQueryParams) =>
   GET<DashboardResponse['data']>('/api/user/dashboard', params)
+
+// mcp hub
+export const getMcpList = (params: GetMcpListQueryParams) =>
+  GET<GetMcpListResponse['data']>('/api/mcp', params)
+
+export const getMcpDetail = (id: string) => GET<McpDetail>(`/api/mcp/${id}`)
+
+export const updateMcpParams = (id: string, params: Record<string, string>) =>
+  POST<ApiResp>(`/api/mcp/${id}`, params)
+
 // ------------------------------------------------------------
 // <admin>
 

@@ -11,6 +11,8 @@ import logsIcon from '@/ui/svg/icons/sidebar/logs.svg'
 import logsIcon_a from '@/ui/svg/icons/sidebar/logs_a.svg'
 import priceIcon from '@/ui/svg/icons/sidebar/price.svg'
 import priceIcon_a from '@/ui/svg/icons/sidebar/price_a.svg'
+import mcpIcon from '@/ui/svg/icons/sidebar/mcp.svg'
+import mcpIcon_a from '@/ui/svg/icons/sidebar/mcp_a.svg'
 import keysIcon from '@/ui/svg/icons/sidebar/key.svg'
 import keysIcon_a from '@/ui/svg/icons/sidebar/key_a.svg'
 import { useI18n } from '@/providers/i18n/i18nContext'
@@ -64,6 +66,14 @@ const SideBar = (): JSX.Element => {
       icon: priceIcon,
       activeIcon: priceIcon_a,
       display: true
+    },
+    {
+      id: 'mcp-hub',
+      url: '/mcp-hub',
+      value: t('Sidebar.McpHub'),
+      icon: mcpIcon,
+      activeIcon: mcpIcon_a,
+      display: true
     }
   ]
 
@@ -82,7 +92,7 @@ const SideBar = (): JSX.Element => {
           .filter((menu) => menu.display)
           .map((menu) => {
             const fullUrl = `/${lng}${menu.url}`
-            const isActive = pathname === fullUrl
+            const isActive = pathname === fullUrl || pathname.startsWith(fullUrl + '/')
 
             return (
               <Link href={fullUrl} key={menu.id} style={{ textDecoration: 'none' }}>

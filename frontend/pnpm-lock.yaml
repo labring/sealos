@@ -716,9 +716,15 @@ importers:
       react-json-view:
         specifier: ^1.21.3
         version: 1.21.3(@types/react@18.2.37)(react-dom@18.2.0)(react@18.2.0)
+      react-markdown:
+        specifier: ^8.0.7
+        version: 8.0.7(@types/react@18.2.37)(react@18.2.0)
       react-syntax-highlighter:
         specifier: ^15.5.0
         version: 15.5.0(react@18.2.0)
+      remark-gfm:
+        specifier: ^3.0.1
+        version: 3.0.1
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
@@ -741,6 +747,9 @@ importers:
       '@types/react-dom':
         specifier: ^18
         version: 18.0.11
+      '@types/react-syntax-highlighter':
+        specifier: ^15.5.7
+        version: 15.5.10
       eslint:
         specifier: ^8
         version: 8.57.0
