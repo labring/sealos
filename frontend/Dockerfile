@@ -36,6 +36,10 @@ COPY ./tsconfig.web.json ./tsconfig.web.json
 COPY ./packages ./packages
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm --filter=./packages/mcp-sdk install \
+    && pnpm --filter=./packages/mcp-sdk run build
+
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 pnpm -r --offline --filter=./packages/* install \
 && pnpm -r --filter=./packages/* run build
 
@@ -94,6 +98,9 @@ RUN if ["$name" = "objectstorage" ]; then \
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
+COPY providers/devbox/app/api/mcp/devbox.json /app/providers/devbox/app/api/mcp/
+
+
 EXPOSE 3000
 
 ENV PORT=3000
