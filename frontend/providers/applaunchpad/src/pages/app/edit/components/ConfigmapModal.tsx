@@ -22,13 +22,15 @@ export type ConfigMapType = {
   mountPath: string;
   value: string;
   key: string;
+  volumeName: string;
 };
 
 const ConfigmapModal = ({
   defaultValue = {
     mountPath: '',
     value: '',
-    key: ''
+    key: '',
+    volumeName: ''
   },
   listNames,
   successCb,

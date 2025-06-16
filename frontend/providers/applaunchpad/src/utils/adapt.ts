@@ -270,23 +270,25 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
 
   const configMapVolumeNames = getConfigMapVolumeNames();
 
-  const getConfigMapList = (): Array<{ mountPath: string; value: string; key: string }> => {
+  const getConfigMapList = (): Array<{
+    mountPath: string;
+    value: string;
+    key: string;
+    volumeName: string;
+  }> => {
     const configMap = deployKindsMap.ConfigMap;
     if (!configMap?.data || !appDeploy) {
       return [];
     }
-
     const configMapName = configMap.metadata?.name;
     const volumes = appDeploy.spec?.template?.spec?.volumes || [];
     const configMapVolumes = volumes.filter((volume) => volume.configMap?.name === configMapName);
-
     if (configMapVolumes.length === 0) {
       return [];
     }
-
     const volumeMounts = appDeploy.spec?.template?.spec?.containers?.[0]?.volumeMounts || [];
-
-    const results: Array<{ mountPath: string; value: string; key: string }> = [];
+    const results: Array<{ mountPath: string; value: string; key: string; volumeName: string }> =
+      [];
 
     configMapVolumes.forEach((volume) => {
       const relatedMounts = volumeMounts.filter((mount) => mount.name === volume.name);
@@ -302,7 +304,8 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
             results.push({
               mountPath: matchedMount.mountPath,
               value: value,
-              key: item.key
+              key: item.key,
+              volumeName: volume.name
             });
           }
         });
@@ -316,7 +319,8 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
               results.push({
                 mountPath: mount.mountPath,
                 value: value,
-                key: configMapKey
+                key: configMapKey,
+                volumeName: volume.name
               });
             }
           }

@@ -392,8 +392,6 @@ export const patchYamlList = ({
         }
       }
 
-      console.log('patch result:', oldFormJson.metadata?.name, oldFormJson.kind, actionsJson);
-
       actions.push({
         type: 'patch',
         kind: newYamlJson.kind as `${YamlKindEnum}`,

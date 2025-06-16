@@ -1148,7 +1148,9 @@ const Form = ({
                         w={'100%'}
                         height={'32px'}
                         variant={'outline'}
-                        onClick={() => setConfigEdit({ mountPath: '', value: '', key: '' })}
+                        onClick={() =>
+                          setConfigEdit({ mountPath: '', value: '', key: '', volumeName: '' })
+                        }
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
                         {t('form.add_configmap')}
@@ -1344,7 +1346,8 @@ const Form = ({
             if (!e.id) {
               appendConfigMaps({
                 ...e,
-                key: mountPathToConfigMapKey(e.mountPath)
+                key: mountPathToConfigMapKey(e.mountPath),
+                volumeName: getValues('appName') + '-cm'
               });
             } else {
               setValue(
@@ -1353,7 +1356,8 @@ const Form = ({
                   return {
                     mountPath: item.id === e.id ? e.mountPath : item.mountPath,
                     value: item.id === e.id ? e.value : item.value,
-                    key: item.id === e.id ? e.key : item.key
+                    key: item.id === e.id ? e.key : item.key,
+                    volumeName: item.id === e.id ? e.volumeName : item.volumeName
                   };
                 })
               );

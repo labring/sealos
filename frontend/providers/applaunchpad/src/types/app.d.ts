@@ -109,6 +109,7 @@ export interface AppEditType {
     mountPath: string;
     value: string;
     key: string;
+    volumeName: string;
   }[];
   storeList: {
     name: string;
