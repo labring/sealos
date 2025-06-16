@@ -15,6 +15,33 @@ import tavilyIcon from '@/ui/svg/icons/mcp/tavily.svg'
 import jinaIcon from '@/ui/svg/icons/mcp/jina.svg'
 import howtocookIcon from '@/ui/svg/icons/mcp/howtocook.svg'
 import timeIcon from '@/ui/svg/icons/mcp/time.svg'
+import blenderIcon from '@/ui/svg/icons/mcp/blender.svg'
+import browserbaseIcon from '@/ui/svg/icons/mcp/browserbase.svg'
+import excelIcon from '@/ui/svg/icons/mcp/excel.svg'
+import magicIcon from '@/ui/svg/icons/mcp/21dev.png'
+import alibabacloudDmsIcon from '@/ui/svg/icons/mcp/alibabacloud-dms.svg'
+import academicSearchIcon from '@/ui/svg/icons/mcp/academic-search.svg'
+import allvoicelabIcon from '@/ui/svg/icons/mcp/allvoicelab.png'
+import cfworkerIcon from '@/ui/svg/icons/mcp/cfworker.svg'
+import elasticsearchIcon from '@/ui/svg/icons/mcp/elasticsearch.svg'
+import everythingSearchIcon from '@/ui/svg/icons/mcp/everything-search.svg'
+import filesystemIcon from '@/ui/svg/icons/mcp/filesystem.svg'
+import gitIcon from '@/ui/svg/icons/mcp/git.svg'
+import knowledgeGraphMemoryIcon from '@/ui/svg/icons/mcp/knowledge-graph-memory.svg'
+import mysqlIcon from '@/ui/svg/icons/mcp/mysql.svg'
+import oceanbaseIcon from '@/ui/svg/icons/mcp/oceanbase.svg'
+import openmemoryIcon from '@/ui/svg/icons/mcp/openmemory.svg'
+import officeWordIcon from '@/ui/svg/icons/mcp/office-word.svg'
+import redbookSearchCommentIcon from '@/ui/svg/icons/mcp/redbook-search-comment.svg'
+import puppeteerIcon from '@/ui/svg/icons/mcp/puppeteer.svg'
+import playwrightIcon from '@/ui/svg/icons/mcp/playwright.svg'
+import markdownifyIcon from '@/ui/svg/icons/mcp/markdownify.svg'
+import redisIcon from '@/ui/svg/icons/mcp/redis.svg'
+import sqliteIcon from '@/ui/svg/icons/mcp/sqlite.svg'
+import stockAnalysisIcon from '@/ui/svg/icons/mcp/stock-analysis.svg'
+import queryTableIcon from '@/ui/svg/icons/mcp/query-table.svg'
+import unionpayIcon from '@/ui/svg/icons/mcp/unionpay.svg'
+import wecomBotIcon from '@/ui/svg/icons/mcp/wecom-bot.svg'
 
 export const mcpIcons = {
   default: DefaultIcon,
@@ -32,7 +59,34 @@ export const mcpIcons = {
   tavily: tavilyIcon,
   jina: jinaIcon,
   howtocook: howtocookIcon,
-  time: timeIcon
+  time: timeIcon,
+  blender: blenderIcon,
+  browserbase: browserbaseIcon,
+  excel: excelIcon,
+  magic: magicIcon,
+  'alibabacloud-dms': alibabacloudDmsIcon,
+  'academic-search': academicSearchIcon,
+  allvoicelab: allvoicelabIcon,
+  cfworker: cfworkerIcon,
+  elasticsearch: elasticsearchIcon,
+  'everything-search': everythingSearchIcon,
+  filesystem: filesystemIcon,
+  git: gitIcon,
+  'knowledge-graph-memory': knowledgeGraphMemoryIcon,
+  mysql: mysqlIcon,
+  oceanbase: oceanbaseIcon,
+  openmemory: openmemoryIcon,
+  'office-word': officeWordIcon,
+  'redbook-search-comment': redbookSearchCommentIcon,
+  puppeteer: puppeteerIcon,
+  playwright: playwrightIcon,
+  markdownify: markdownifyIcon,
+  redis: redisIcon,
+  sqlite: sqliteIcon,
+  'stock-analysis': stockAnalysisIcon,
+  'query-table': queryTableIcon,
+  unionpay: unionpayIcon,
+  'wecom-bot': wecomBotIcon
 }
 
 export const getMcpIcon = (mcpId: string): StaticImageData => {

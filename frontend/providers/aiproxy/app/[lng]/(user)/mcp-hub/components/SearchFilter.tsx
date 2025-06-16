@@ -1,5 +1,5 @@
 'use client'
-import { Flex, Input, Select, InputGroup, InputLeftElement } from '@chakra-ui/react'
+import { Flex, Input, Button, InputGroup, InputLeftElement, HStack, Text } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { useState, useEffect } from 'react'
@@ -41,8 +41,17 @@ export default function SearchFilter({
     }
   }
 
+  const handleServiceTypeToggle = (type: 'hosted' | 'local') => {
+    // 如果点击的是当前选中的类型，则取消选择（回到全部）
+    if (serviceType === type) {
+      onServiceTypeChange('')
+    } else {
+      onServiceTypeChange(type)
+    }
+  }
+
   return (
-    <Flex gap="16px" mb="24px" flexWrap="wrap">
+    <Flex gap="24px" mb="24px" flexWrap="wrap" alignItems="center">
       <InputGroup flex="1" minW="300px">
         <InputLeftElement pointerEvents="none">
           <svg
@@ -85,24 +94,89 @@ export default function SearchFilter({
           }}
         />
       </InputGroup>
-      <Select
-        value={serviceType}
-        onChange={(e) => onServiceTypeChange(e.target.value)}
-        w="200px"
-        bg="white"
-        border="1px solid"
-        borderColor="grayModern.200"
-        borderRadius="8px"
-        fontSize="14px"
-        fontWeight={400}
-        _focus={{
-          borderColor: 'brightBlue.500',
-          boxShadow: '0 0 0 1px var(--chakra-colors-brightBlue-500)'
-        }}>
-        <option value="">{t('mcpHub.allTypes')}</option>
-        <option value="hosted">{t('mcpHub.hosted')}</option>
-        <option value="local">{t('mcpHub.local')}</option>
-      </Select>
+
+      <HStack spacing="0" bg="grayModern.50" borderRadius="8px" p="4px">
+        <Text color="grayModern.700" fontSize="14px" fontWeight={500} mr="12px" ml="8px">
+          {t('mcpHub.serviceType')}:
+        </Text>
+
+        <Button
+          size="sm"
+          variant="ghost"
+          bg={serviceType === 'hosted' ? 'brightBlue.500' : 'transparent'}
+          color={serviceType === 'hosted' ? 'white' : 'grayModern.600'}
+          border="none"
+          borderRadius="6px"
+          fontSize="14px"
+          fontWeight={serviceType === 'hosted' ? 600 : 500}
+          h="32px"
+          px="12px"
+          _hover={{
+            bg: serviceType === 'hosted' ? 'brightBlue.600' : 'grayModern.100',
+            color: serviceType === 'hosted' ? 'white' : 'grayModern.700'
+          }}
+          _active={{
+            bg: serviceType === 'hosted' ? 'brightBlue.700' : 'grayModern.200'
+          }}
+          leftIcon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 2L10.5 4.5L8 7L5.5 4.5L8 2Z" fill="currentColor" opacity="0.8" />
+              <path d="M2 8L4.5 10.5L7 8L4.5 5.5L2 8Z" fill="currentColor" />
+              <path d="M9 8L11.5 10.5L14 8L11.5 5.5L9 8Z" fill="currentColor" />
+              <path d="M8 9L10.5 11.5L8 14L5.5 11.5L8 9Z" fill="currentColor" opacity="0.8" />
+            </svg>
+          }
+          onClick={() => handleServiceTypeToggle('hosted')}>
+          {t('mcpHub.hosted')}
+        </Button>
+
+        <Button
+          size="sm"
+          variant="ghost"
+          bg={serviceType === 'local' ? 'brightBlue.500' : 'transparent'}
+          color={serviceType === 'local' ? 'white' : 'grayModern.600'}
+          border="none"
+          borderRadius="6px"
+          fontSize="14px"
+          fontWeight={serviceType === 'local' ? 600 : 500}
+          h="32px"
+          px="12px"
+          _hover={{
+            bg: serviceType === 'local' ? 'brightBlue.600' : 'grayModern.100',
+            color: serviceType === 'local' ? 'white' : 'grayModern.700'
+          }}
+          _active={{
+            bg: serviceType === 'local' ? 'brightBlue.700' : 'grayModern.200'
+          }}
+          leftIcon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M2 4C2 3.44772 2.44772 3 3 3H13C13.5523 3 14 3.44772 14 4V5H2V4Z"
+                fill="currentColor"
+              />
+              <path
+                d="M2 6H14V11C14 11.5523 13.5523 12 13 12H3C2.44772 12 2 11.5523 2 11V6Z"
+                fill="currentColor"
+                opacity="0.8"
+              />
+              <circle cx="4" cy="8.5" r="0.5" fill="currentColor" />
+              <circle cx="6" cy="8.5" r="0.5" fill="currentColor" />
+            </svg>
+          }
+          onClick={() => handleServiceTypeToggle('local')}>
+          {t('mcpHub.local')}
+        </Button>
+      </HStack>
     </Flex>
   )
 }
