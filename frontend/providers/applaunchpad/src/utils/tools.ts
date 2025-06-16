@@ -311,7 +311,7 @@ export const patchYamlList = ({
 
           if (!crOldYamlJson) return newYamlJson;
 
-          /* Fill in volume - 处理 Deployment/StatefulSet */
+          /* Fill in volume - Handle Deployment/StatefulSet */
           if (
             oldFormJson.kind === YamlKindEnum.Deployment ||
             oldFormJson.kind === YamlKindEnum.StatefulSet

@@ -296,7 +296,6 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
       if (volume.configMap?.items && volume.configMap.items.length > 0) {
         volume.configMap.items.forEach((item) => {
           if (!item.key) return;
-          // 通过 item.path 找到对应的 volumeMount
           const matchedMount = relatedMounts.find((mount) => mount.subPath === item.path);
 
           if (matchedMount) {
