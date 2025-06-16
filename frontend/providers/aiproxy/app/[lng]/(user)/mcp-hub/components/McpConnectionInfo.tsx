@@ -33,7 +33,7 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
 
   const generateConfig = (type: 'sse' | 'streamable_http') => {
     const endpoint = type === 'sse' ? mcpDetail.endpoints.sse : mcpDetail.endpoints.streamable_http
-    const url = `${mcpDetail.endpoints.host}${endpoint}`
+    const url = `https://${mcpDetail.endpoints.host}${endpoint}?key=your_token`
 
     return {
       mcpServers: {
