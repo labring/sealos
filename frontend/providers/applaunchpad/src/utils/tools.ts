@@ -228,48 +228,53 @@ export const addConfigMapToYamlList = (yamlList: string[], configMapName: string
   if (mountPath && configMapName) {
 
     yamlList.forEach((yamlstr: any) => {
-      const yamlobj: any = yaml.load(yamlstr);
-      if (yamlobj.kind === 'Deployment' || yamlobj.kind === 'StatefulSet') {
-        // Ensure volumes array exists
-        if (!yamlobj.spec.template.spec.volumes) {
-          yamlobj.spec.template.spec.volumes = [];
-        }
+      console.log(yamlstr, 'yamlstr');
+      const yamlobjs: any = yaml.loadAll(yamlstr);
+      // let newYamlObjs: any[] = [];
+      yamlobjs.forEach((yamlobj: any) => {
+        if (yamlobj.kind === 'Deployment' || yamlobj.kind === 'StatefulSet') {
+          // Ensure volumes array exists
+          if (!yamlobj.spec.template.spec.volumes) {
+            yamlobj.spec.template.spec.volumes = [];
+          }
 
-        // check if the volume already exists
-        if (yamlobj.spec.template.spec.volumes.find((v: any) => v.name === configMapName)) {
-        } else {
-    
-          // Add the ConfigMap volume
-          yamlobj.spec.template.spec.volumes.push({
-            name: configMapName,
-            configMap: {
+          // check if the volume already exists
+          if (yamlobj.spec.template.spec.volumes.find((v: any) => v.name === configMapName)) {
+          } else {
+      
+            // Add the ConfigMap volume
+            yamlobj.spec.template.spec.volumes.push({
               name: configMapName,
-            },
-          });
-        }
-    
-        // Ensure containers array exists
-        if (yamlobj.spec.template.spec.containers) {
-          yamlobj.spec.template.spec.containers.forEach((container: any) => {
-            // Ensure volumeMounts array exists
-            if (!container.volumeMounts) {
-              container.volumeMounts = [];
-            }
-
-            // check if the volumeMount already exists
-            if (container.volumeMounts.find((vm: any) => vm.name === configMapName)) {
-            } else {
-              
-              // Add the volumeMount
-              container.volumeMounts.push({
+              configMap: {
                 name: configMapName,
-                mountPath: mountPath,
-              });
-            }
-          });
+              },
+            });
+          }
+      
+          // Ensure containers array exists
+          if (yamlobj.spec.template.spec.containers) {
+            yamlobj.spec.template.spec.containers.forEach((container: any) => {
+              // Ensure volumeMounts array exists
+              if (!container.volumeMounts) {
+                container.volumeMounts = [];
+              }
+
+              // check if the volumeMount already exists
+              if (container.volumeMounts.find((vm: any) => vm.name === configMapName)) {
+              } else {
+                
+                // Add the volumeMount
+                container.volumeMounts.push({
+                  name: configMapName,
+                  mountPath: mountPath,
+                });
+              }
+            });
+          }
         }
-      }
-      new_yamlList.push(yaml.dump(yamlobj));
+        new_yamlList.push(yaml.dump(yamlobj));
+      });
+      // new_yamlList.push(yaml.dump(newYamlObjs));
     });
   }
   return new_yamlList;
@@ -356,16 +361,13 @@ export const patchYamlList = ({
                 if (
                   containers[ii].name === container.name
                 ) {
-                  // @ts-ignore
                   containers[ii].volumeMounts =
                     container.volumeMounts;
                 }
               }
             }
-            if ("spec" in oldFormJson && oldFormJson.spec && "volumeClaimTemplates" in oldFormJson.spec &&
-              "spec" in crOldYamlJson && crOldYamlJson.spec && "volumeClaimTemplates" in crOldYamlJson.spec) {
-                crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
-            }
+            // @ts-ignore
+            crOldYamlJson.spec.volumeClaimTemplates = oldFormJson.spec.volumeClaimTemplates;
           }
 
           /* generate new json */

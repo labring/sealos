@@ -31,8 +31,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         }
     };
 
-    // update the ConfigMap
-    await k8sCore.replaceNamespacedConfigMap(name, namespace, configMap); 
+    // check if the ConfigMap exists
+    try {
+        await k8sCore.readNamespacedConfigMap(name, namespace);
+        // update the ConfigMap
+        await k8sCore.replaceNamespacedConfigMap(name, namespace, configMap); 
+    } catch (error: any) {
+        if (error?.code !== 404 && error?.statusCode !== 404) {
+            await k8sCore.createNamespacedConfigMap(namespace, configMap);
+            jsonRes(res, {
+                data: {
+                    message: 'successfully created'
+                }
+            });
+            return;
+        } else {
+            throw error; // rethrow if it's not a 404 error
+        }
+    }
 
     jsonRes(res, {
         data: {

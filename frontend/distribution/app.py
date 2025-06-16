@@ -10,6 +10,7 @@ import zipfile
 from apscheduler.schedulers.background import BackgroundScheduler
 import re
 import requests
+from record_events import get_pod_exception_map, record_events
 from node import add_node_to_cluster, delete_node_from_cluster
 from stress_test import *
 from scheduling import *
@@ -1082,6 +1083,27 @@ def api_check_all_apps():
     except Exception as e:
         print(e)
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/get_pod_exception', methods=['GET'])
+def api_get_pod_exception():
+    try:
+        exceptions = get_pod_exception_map()
+        alert_list = []
+        for path, exception in exceptions.items():
+            if exception:
+                strs = path.split('/')
+                ns = strs[0]
+                name = strs[1]
+                alert_list.append({
+                    'namespace': ns,
+                    'podName': name,
+                    'appName': exception.get('appName', 'Unknown'),
+                    'alertStatus': exception.get('status', 'Unknown'),
+                    'alertMessage': exception.get('message', 'No message'),
+                })
+        return jsonify(alert_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
 def cron_job():
     while True:
@@ -1104,6 +1126,11 @@ def cron_job():
         except Exception as e:
             print("Error in check_all_apps: {}".format(str(e)))
 
+def cron_job_10():
+    while True:
+        time.sleep(10)
+        record_events()
+
 if __name__ == '__main__':
     init_db()
     init_configmap()
@@ -1122,8 +1149,11 @@ if __name__ == '__main__':
     thread = threading.Thread(target=cron_job)
     thread.start()
 
-    thread = threading.Thread(target=export_app_listener)
-    thread.start()
+    thread2 = threading.Thread(target=export_app_listener)
+    thread2.start()
+
+    thread3 = threading.Thread(target=cron_job_10)
+    thread3.start()
 
 
 

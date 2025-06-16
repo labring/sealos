@@ -35,6 +35,7 @@ import Yaml from './components/Yaml';
 import { useMessage } from '@sealos/ui';
 import { getCurrentNamespace, getUserNamespace } from '@/utils/user';
 import YAML from 'js-yaml';
+import { isConditionalExpression } from 'typescript';
 
 const ErrorModal = dynamic(() => import('./components/ErrorModal'));
 
