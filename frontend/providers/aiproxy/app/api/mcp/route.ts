@@ -19,6 +19,8 @@ export type GetMcpListResponse = ApiResp<{
 export interface GetMcpListQueryParams {
   page: number
   perPage: number
+  type: 'hosted' | 'local' | ''
+  keyword: string
 }
 
 function validateParams(queryParams: GetMcpListQueryParams): string | null {
@@ -44,6 +46,12 @@ async function fetchMcpList(
     )
     url.searchParams.append('p', queryParams.page.toString())
     url.searchParams.append('per_page', queryParams.perPage.toString())
+    if (queryParams.type) {
+      url.searchParams.append('type', queryParams.type)
+    }
+    if (queryParams.keyword) {
+      url.searchParams.append('keyword', queryParams.keyword)
+    }
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
@@ -83,7 +91,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<GetMcpList
     const searchParams = request.nextUrl.searchParams
     const queryParams: GetMcpListQueryParams = {
       page: parseInt(searchParams.get('page') || '1', 10),
-      perPage: parseInt(searchParams.get('perPage') || '10', 10)
+      perPage: parseInt(searchParams.get('perPage') || '10', 10),
+      type: (searchParams.get('type') as 'hosted' | 'local' | '') || '',
+      keyword: searchParams.get('keyword') || ''
     }
 
     const validationError = validateParams(queryParams)

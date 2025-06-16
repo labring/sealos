@@ -16,6 +16,7 @@ export interface McpDetail {
   hosted: boolean
   readme: string
   readme_cn: string
+  github_url: string
   endpoints: {
     host: string
     sse: string

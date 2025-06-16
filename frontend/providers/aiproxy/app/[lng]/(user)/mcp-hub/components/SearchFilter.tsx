@@ -2,10 +2,11 @@
 import { Flex, Input, Select, InputGroup, InputLeftElement } from '@chakra-ui/react'
 import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
+import { useState, useEffect } from 'react'
 
 export interface SearchFilterProps {
   searchTerm: string
-  serviceType: string
+  serviceType: 'hosted' | 'local' | ''
   onSearchChange: (value: string) => void
   onServiceTypeChange: (value: string) => void
 }
@@ -18,6 +19,27 @@ export default function SearchFilter({
 }: SearchFilterProps) {
   const { lng } = useI18n()
   const { t } = useTranslationClientSide(lng, 'common')
+
+  // 本地输入状态
+  const [inputValue, setInputValue] = useState(searchTerm)
+
+  // 当外部searchTerm变化时，同步到本地状态
+  useEffect(() => {
+    setInputValue(searchTerm)
+  }, [searchTerm])
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      onSearchChange(inputValue)
+    }
+  }
+
+  const handleInputBlur = () => {
+    // 当失去焦点时也触发搜索，提供更好的用户体验
+    if (inputValue !== searchTerm) {
+      onSearchChange(inputValue)
+    }
+  }
 
   return (
     <Flex gap="16px" mb="24px" flexWrap="wrap">
@@ -44,8 +66,10 @@ export default function SearchFilter({
           </svg>
         </InputLeftElement>
         <Input
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          onBlur={handleInputBlur}
           placeholder={t('mcpHub.searchPlaceholder')}
           bg="white"
           border="1px solid"

@@ -17,10 +17,64 @@ import { useTranslationClientSide } from '@/app/i18n/client'
 import { useI18n } from '@/providers/i18n/i18nContext'
 import { McpDetail } from '@/types/mcp'
 import { useMessage } from '@sealos/ui'
+import { useRouter } from 'next/navigation'
 
 export interface McpConnectionInfoProps {
   mcpDetail: McpDetail
   setViewMode?: () => void
+}
+
+// 自定义配置渲染组件
+const ConfigRenderer = ({ config, lng }: { config: any; lng: string }) => {
+  const router = useRouter()
+
+  const handleTokenClick = () => {
+    router.push(`/${lng}/key`)
+  }
+
+  const renderConfigContent = () => {
+    const configString = JSON.stringify(config, null, 2)
+    const parts = configString.split('your_token')
+
+    if (parts.length === 1) {
+      return <span>{configString}</span>
+    }
+
+    return (
+      <>
+        {parts.map((part, index) => (
+          <span key={index}>
+            {part}
+            {index < parts.length - 1 && (
+              <Text
+                as="span"
+                color="blue.300"
+                cursor="pointer"
+                textDecoration="underline"
+                _hover={{ color: 'blue.200' }}
+                onClick={handleTokenClick}>
+                your_token
+              </Text>
+            )}
+          </span>
+        ))}
+      </>
+    )
+  }
+
+  return (
+    <Code
+      as="pre"
+      colorScheme="gray"
+      bg="transparent"
+      color="white"
+      fontSize="12px"
+      fontFamily="Monaco, monospace"
+      whiteSpace="pre-wrap"
+      w="full">
+      {renderConfigContent()}
+    </Code>
+  )
 }
 
 export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnectionInfoProps) {
@@ -78,17 +132,7 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
 
           <Box flex="1" overflow="hidden">
             <Box flex="1" overflow="auto" bg="grayModern.900" borderRadius="8px" p="16px">
-              <Code
-                as="pre"
-                colorScheme="gray"
-                bg="transparent"
-                color="white"
-                fontSize="12px"
-                fontFamily="Monaco, monospace"
-                whiteSpace="pre-wrap"
-                w="full">
-                {JSON.stringify(config, null, 2)}
-              </Code>
+              <ConfigRenderer config={config} lng={lng} />
               <Flex justifyContent="flex-end" gap="8px">
                 <Button size="sm" variant="outline" onClick={() => copyToClipboard(config)}>
                   {t('copy')}
@@ -118,17 +162,7 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
 
           <Box flex="1" overflow="hidden">
             <Box flex="1" overflow="auto" bg="grayModern.900" borderRadius="8px" p="16px">
-              <Code
-                as="pre"
-                colorScheme="gray"
-                bg="transparent"
-                color="white"
-                fontSize="12px"
-                fontFamily="Monaco, monospace"
-                whiteSpace="pre-wrap"
-                w="full">
-                {JSON.stringify(config, null, 2)}
-              </Code>
+              <ConfigRenderer config={config} lng={lng} />
               <Flex justifyContent="flex-end" gap="8px">
                 <Button size="sm" variant="outline" onClick={() => copyToClipboard(config)}>
                   {t('copy')}
@@ -165,17 +199,7 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
 
               <Box flex="1" overflow="hidden">
                 <Box flex="1" overflow="auto" bg="grayModern.900" borderRadius="8px" p="16px">
-                  <Code
-                    as="pre"
-                    colorScheme="gray"
-                    bg="transparent"
-                    color="white"
-                    fontSize="12px"
-                    fontFamily="Monaco, monospace"
-                    whiteSpace="pre-wrap"
-                    w="full">
-                    {JSON.stringify(generateConfig('sse'), null, 2)}
-                  </Code>
+                  <ConfigRenderer config={generateConfig('sse')} lng={lng} />
                   <Flex justifyContent="flex-end" gap="8px">
                     <Button
                       size="sm"
@@ -203,23 +227,13 @@ export default function McpConnectionInfo({ mcpDetail, setViewMode }: McpConnect
 
               <Box flex="1" overflow="hidden">
                 <Box flex="1" overflow="auto" bg="grayModern.900" borderRadius="8px" p="16px">
-                  <Code
-                    as="pre"
-                    colorScheme="gray"
-                    bg="transparent"
-                    color="white"
-                    fontSize="12px"
-                    fontFamily="Monaco, monospace"
-                    whiteSpace="pre-wrap"
-                    w="full">
-                    {JSON.stringify(generateConfig('streamable_http'), null, 2)}
-                  </Code>
+                  <ConfigRenderer config={generateConfig('streamable_http')} lng={lng} />
 
                   <Flex justifyContent="flex-end" gap="8px">
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => copyToClipboard(generateConfig('sse'))}>
+                      onClick={() => copyToClipboard(generateConfig('streamable_http'))}>
                       {t('copy')}
                     </Button>
                     {setViewMode && (
