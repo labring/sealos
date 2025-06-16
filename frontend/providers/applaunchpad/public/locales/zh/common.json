@@ -341,5 +341,8 @@
     "configure_launchpad": "配置启动台",
     "define_image_settings": "定义镜像设置，并按需调整 CPU 和内存",
     "got_it": "明白"
-  }
+  },
+  "set_remarks": "设置备注",
+  "set_remarks_title": "设置备注",
+  "remarks": "备注"
 }

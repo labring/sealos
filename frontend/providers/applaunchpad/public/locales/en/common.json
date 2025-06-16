@@ -341,5 +341,8 @@
     "configure_launchpad": "Configure Launchpad",
     "define_image_settings": "Define image settings, and adjust CPU & memory as needed",
     "got_it": "Got it"
-  }
+  },
+  "set_remarks": "set remarks",
+  "set_remarks_title": "Set Remarks",
+  "remarks": "Remarks"
 }
