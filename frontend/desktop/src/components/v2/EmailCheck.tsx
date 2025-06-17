@@ -26,6 +26,7 @@ import request from '@/services/request';
 import { sessionConfig } from '@/utils/sessionConfig';
 import { Turnstile, TurnstileInstance } from '@marsidev/react-turnstile';
 import { useConfigStore } from '@/stores/config';
+import { gtmLoginSuccess } from '@/utils/gtm';
 
 export default function EmailCheckComponent() {
   const router = useRouter();
@@ -74,11 +75,20 @@ export default function EmailCheckComponent() {
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
       setToken(globalToken);
+      const method = 'email';
       if (result.data?.needInit) {
+        gtmLoginSuccess({
+          user_type: 'new',
+          method
+        });
         await router.push('/workspace');
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
+          gtmLoginSuccess({
+            user_type: 'returning',
+            method
+          });
           await sessionConfig(regionTokenRes.data);
           await router.replace('/');
         }

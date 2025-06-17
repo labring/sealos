@@ -10,6 +10,7 @@ import { MouseEvent, useContext, useMemo, useRef, useState } from 'react';
 import { useContextMenu } from 'react-contexify';
 import { ChevronDownIcon } from '../icons';
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { gtmOpenCostcenter } from '@/utils/gtm';
 
 const APP_DOCK_MENU_ID = 'APP_DOCK_MENU_ID';
 
@@ -254,7 +255,9 @@ export default function AppDock() {
       moreAppsContent?.setShowMoreApps(true);
       return;
     }
-
+    if (item.key === 'system-costcenter') {
+      gtmOpenCostcenter();
+    }
     if (item.pid === currentAppPid && item.size !== 'minimize') {
       updateOpenedAppInfo({
         ...item,

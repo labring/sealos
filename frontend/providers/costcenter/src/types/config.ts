@@ -61,6 +61,12 @@ export type AppConfigType = {
     transferEnabled: boolean;
     giftCodeEnabled: boolean;
     currencyType: string;
+    layout: {
+      meta: {
+        noscripts: any[];
+        scripts: any[];
+      };
+    };
     invoice: Invoice;
     recharge: Recharge;
     components: Components;
@@ -120,6 +126,12 @@ export var DefaultAppConfig: AppConfigType = {
     components: {
       accountService: {
         url: 'http://account-service.account-system.svc:2333'
+      }
+    },
+    layout: {
+      meta: {
+        scripts: [],
+        noscripts: []
       }
     },
     gpuEnabled: false,
