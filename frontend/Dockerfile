@@ -98,7 +98,9 @@ RUN if ["$name" = "objectstorage" ]; then \
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
-COPY providers/devbox/app/api/mcp/devbox.json /app/providers/devbox/app/api/mcp/
+RUN if ["$name" = "devbox" ]; then \
+  COPY providers/devbox/app/api/mcp/devbox.json /app/providers/devbox/app/api/mcp/ \
+  fi
 
 
 EXPOSE 3000
