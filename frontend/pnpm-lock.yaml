@@ -1572,9 +1572,6 @@ importers:
       '@kubernetes/client-node':
         specifier: ^0.21.0
         version: 0.21.0
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.11.4
-        version: 1.12.1
       '@prisma/client':
         specifier: ^5.10.2
         version: 5.10.2(prisma@5.10.2)
@@ -1590,9 +1587,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^4.35.3
         version: 4.36.1(react-dom@18.2.0)(react@18.2.0)
-      '@vercel/mcp-adapter':
-        specifier: ^0.6.2
-        version: 0.6.2(next@14.2.5)
       axios:
         specifier: ^1.7.3
         version: 1.7.3
@@ -1677,6 +1671,9 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
+      sealos-mcp-sdk:
+        specifier: workspace:^
+        version: link:../../packages/mcp-sdk
       zod:
         specifier: ^3.23.8
         version: 3.23.8
@@ -8408,24 +8405,6 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
-  /@modelcontextprotocol/sdk@1.10.2:
-    resolution: {integrity: sha512-rb6AMp2DR4SN+kc6L1ta2NCpApyA9WYNx3CrTSZvGxq9wH71bRur+zRqPfg0vQ9mjywR7qZdX2RGHOPq3ss+tA==}
-    engines: {node: '>=18'}
-    dependencies:
-      content-type: 1.0.5
-      cors: 2.8.5
-      cross-spawn: 7.0.6
-      eventsource: 3.0.7
-      express: 5.1.0
-      express-rate-limit: 7.5.0(express@5.1.0)
-      pkce-challenge: 5.0.0
-      raw-body: 3.0.0
-      zod: 3.23.8
-      zod-to-json-schema: 3.24.5(zod@3.23.8)
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /@modelcontextprotocol/sdk@1.12.1:
     resolution: {integrity: sha512-KG1CZhZfWg+u8pxeM/mByJDScJSrjjxLc8fwQqbsS8xCjBmQfMNEBTotYdNanKekepnfRI85GtgQlctLFpcYPw==}
     engines: {node: '>=18'}
@@ -12096,21 +12075,6 @@ packages:
       hookable: 5.5.3
       unhead: 1.11.20
       vue: 3.5.13(typescript@5.2.2)
-    dev: false
-
-  /@vercel/mcp-adapter@0.6.2(next@14.2.5):
-    resolution: {integrity: sha512-FE7h6IzNVAkv6bXBT/SwHWQRyPkC3NoGqQpnGTYtsqc6nFTJo2k+V1mdUfTE/LtgNPylGa5K45G1oR8dbvCdLA==}
-    hasBin: true
-    peerDependencies:
-      next: '>=13.0.0'
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.10.2
-      chalk: 5.4.1
-      commander: 11.1.0
-      next: 14.2.5(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
-      redis: 4.7.1
-    transitivePeerDependencies:
-      - supports-color
     dev: false
 
   /@vercel/mcp-adapter@0.9.1(@modelcontextprotocol/sdk@1.12.1)(next@14.2.5):
@@ -16164,7 +16128,7 @@ packages:
       debug: 3.2.7
       eslint: 8.57.0
       eslint-import-resolver-node: 0.3.9
-      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@6.13.1)(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.31.0)(eslint@8.57.0)
+      eslint-import-resolver-typescript: 3.6.1(@typescript-eslint/parser@6.13.1)(eslint-import-resolver-node@0.3.9)(eslint-plugin-import@2.29.0)(eslint@8.57.0)
     transitivePeerDependencies:
       - supports-color
     dev: true

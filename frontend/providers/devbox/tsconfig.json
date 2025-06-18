@@ -2,14 +2,20 @@
   "extends": "../../tsconfig.web.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "target": "ES2020",
     "forceConsistentCasingInFileNames": false,
     "paths": {
-      "@/*": ["./*"],
-      "prisma/*": ["prisma/*"],
-      "@mcp-sdk/*": ["../../packages/mcp-sdk/src/*"],
-      "@mcp-sdk": ["../../packages/mcp-sdk/src"]
+      "@/*": [
+        "./*"
+      ],
+      "prisma/*": [
+        "prisma/*"
+      ],
     },
     "plugins": [
       {
@@ -17,5 +23,10 @@
       }
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ]
 }
