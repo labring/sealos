@@ -679,9 +679,6 @@ importers:
       '@kubernetes/client-node':
         specifier: ^0.18.1
         version: 0.18.1
-      '@modelcontextprotocol/sdk':
-        specifier: ^1.11.4
-        version: 1.12.1
       '@next/font':
         specifier: 13.1.6
         version: 13.1.6
@@ -697,9 +694,6 @@ importers:
       '@tanstack/react-table':
         specifier: ^8.10.7
         version: 8.10.7(react-dom@18.2.0)(react@18.2.0)
-      '@vercel/mcp-adapter':
-        specifier: ^0.11.1
-        version: 0.11.1(@modelcontextprotocol/sdk@1.12.1)(next@13.1.6)
       ansi_up:
         specifier: ^5.2.1
         version: 5.2.1
@@ -12102,23 +12096,6 @@ packages:
       hookable: 5.5.3
       unhead: 1.11.20
       vue: 3.5.13(typescript@5.2.2)
-    dev: false
-
-  /@vercel/mcp-adapter@0.11.1(@modelcontextprotocol/sdk@1.12.1)(next@13.1.6):
-    resolution: {integrity: sha512-6IUuBSrHhc4nn4g/B64LCPDJGAQsChs60HKSzcifkQd7/0bgiIwAQ29ap6FdFHwYvRsXC4UcVPRcBUxhK9PsgQ==}
-    hasBin: true
-    peerDependencies:
-      '@modelcontextprotocol/sdk': ^1.12.0
-      next: '>=13.0.0'
-    peerDependenciesMeta:
-      next:
-        optional: true
-    dependencies:
-      '@modelcontextprotocol/sdk': 1.12.1
-      chalk: 5.4.1
-      commander: 11.1.0
-      next: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
-      redis: 4.7.1
     dev: false
 
   /@vercel/mcp-adapter@0.6.2(next@14.2.5):
