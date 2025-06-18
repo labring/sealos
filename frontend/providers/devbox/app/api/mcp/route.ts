@@ -4,7 +4,7 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 const handler = McpHandler(
-  path.resolve(__dirname, './devbox.json'),
+  path.join(process.cwd(), 'public', 'devbox.json'),
   'http://devbox-frontend.devbox-frontend.svc.cluster.local:3000'
 );
 
