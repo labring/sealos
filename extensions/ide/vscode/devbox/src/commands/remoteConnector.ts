@@ -262,13 +262,28 @@ export class RemoteSSHConnector extends Disposable {
       return true
     }
 
-    const remoteSSHId = 'ms-vscode-remote.remote-ssh'
+    const msRemoteSSHId = 'ms-vscode-remote.remote-ssh'
 
-    const msVscodeRemoteExt = vscode.extensions.getExtension(remoteSSHId)
+    // cursor has their custom extension
+    const cursorCustomRemoteSSHId = 'anysphere.remote-ssh'
 
-    if (msVscodeRemoteExt) {
+    const msVscodeRemoteSSHExt = vscode.extensions.getExtension(msRemoteSSHId)
+    const cursorCustomRemoteSSHExt = vscode.extensions.getExtension(
+      cursorCustomRemoteSSHId
+    )
+
+    // If Remote-SSH extension is already installed（ms or anysphere）, return true
+    if (
+      msVscodeRemoteSSHExt ||
+      (vscode.env.uriScheme === 'cursor' && cursorCustomRemoteSSHExt)
+    ) {
       return true
     }
+
+    const installRemoteSSHExtId =
+      vscode.env.uriScheme === 'cursor'
+        ? cursorCustomRemoteSSHId
+        : msRemoteSSHId
 
     const install = message.Install
     const cancel = message.Cancel
@@ -284,13 +299,16 @@ export class RemoteSSHConnector extends Disposable {
       return false
     }
 
-    await vscode.commands.executeCommand('extension.open', remoteSSHId)
+    await vscode.commands.executeCommand(
+      'extension.open',
+      installRemoteSSHExtId
+    )
     await vscode.commands.executeCommand(
       'workbench.extensions.installExtension',
-      remoteSSHId
+      installRemoteSSHExtId
     )
 
-    Logger.info(`"${remoteSSHId}" extension is installed`)
+    Logger.info(`"${installRemoteSSHExtId}" extension is installed`)
 
     return true
   }
