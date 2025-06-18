@@ -43,6 +43,7 @@ import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
+import { mountPathToConfigMapKey } from '@/utils/tools';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -1147,7 +1148,9 @@ const Form = ({
                         w={'100%'}
                         height={'32px'}
                         variant={'outline'}
-                        onClick={() => setConfigEdit({ mountPath: '', value: '' })}
+                        onClick={() =>
+                          setConfigEdit({ mountPath: '', value: '', key: '', volumeName: '' })
+                        }
                         leftIcon={<MyIcon name="plus" w={'16px'} fill="#485264" />}
                       >
                         {t('form.add_configmap')}
@@ -1341,14 +1344,22 @@ const Form = ({
             .map((item) => item.mountPath.toLocaleLowerCase())}
           successCb={(e) => {
             if (!e.id) {
-              appendConfigMaps(e);
+              appendConfigMaps({
+                ...e,
+                key: mountPathToConfigMapKey(e.mountPath),
+                volumeName: getValues('appName') + '-cm'
+              });
             } else {
               setValue(
                 'configMapList',
-                configMaps.map((item) => ({
-                  mountPath: item.id === e.id ? e.mountPath : item.mountPath,
-                  value: item.id === e.id ? e.value : item.value
-                }))
+                configMaps.map((item) => {
+                  return {
+                    mountPath: item.id === e.id ? e.mountPath : item.mountPath,
+                    value: item.id === e.id ? e.value : item.value,
+                    key: item.id === e.id ? e.key : item.key,
+                    volumeName: item.id === e.id ? e.volumeName : item.volumeName
+                  };
+                })
               );
             }
             setConfigEdit(undefined);

@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     if (!ingress.body.items || ingress.body.items.length === 0) {
-      throw new Error('No ingress found');
+      throw new Error('Check ready error: No ingress found');
     }
 
     const checkResults = await Promise.all(
@@ -75,7 +75,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: checkResults
     });
   } catch (error: any) {
-    console.error(error);
     return jsonRes(res, {
       code: 500,
       error: error?.message

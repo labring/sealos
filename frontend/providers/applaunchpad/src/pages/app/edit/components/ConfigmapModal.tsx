@@ -21,12 +21,16 @@ export type ConfigMapType = {
   id?: string;
   mountPath: string;
   value: string;
+  key: string;
+  volumeName: string;
 };
 
 const ConfigmapModal = ({
   defaultValue = {
     mountPath: '',
-    value: ''
+    value: '',
+    key: '',
+    volumeName: ''
   },
   listNames,
   successCb,
@@ -68,7 +72,6 @@ const ConfigmapModal = ({
           <ModalBody>
             <MyFormControl showError errorText={errors.mountPath?.message}>
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
-                {' '}
                 {t('filename')}
               </Box>
               <Input

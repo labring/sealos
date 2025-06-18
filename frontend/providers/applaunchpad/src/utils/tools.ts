@@ -69,12 +69,18 @@ export const pathFormat = (str: string) => {
   if (str.startsWith('/')) return `.${str}`;
   return `./${str}`;
 };
-export const pathToNameFormat = (str: string) => {
+
+export const mountPathToConfigMapKey = (str: string) => {
   const endsWithSlash = str.endsWith('/');
   const withoutTrailingSlash = endsWithSlash ? str.slice(0, -1) : str;
   const replacedStr = withoutTrailingSlash.replace(/_/g, '-').replace(/[\/.]/g, 'vn-');
+  const result = replacedStr.toLowerCase();
 
-  return replacedStr.toLowerCase();
+  if (result.length > 63) {
+    return result.slice(-63);
+  }
+
+  return result;
 };
 
 /**
@@ -274,10 +280,16 @@ export const patchYamlList = ({
 
   // find create and patch
   newFormJsonList.forEach((newYamlJson) => {
-    const oldFormJson = oldFormJsonList.find(
-      (item) =>
-        item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
-    );
+    const oldFormJson =
+      newYamlJson.kind === 'ConfigMap'
+        ? originalYamlList.find(
+            (item) =>
+              item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+          )
+        : oldFormJsonList.find(
+            (item) =>
+              item.kind === newYamlJson.kind && item?.metadata?.name === newYamlJson?.metadata?.name
+          );
 
     if (oldFormJson) {
       const patchRes = jsonpatch.compare(oldFormJson, newYamlJson);
@@ -299,7 +311,7 @@ export const patchYamlList = ({
 
           if (!crOldYamlJson) return newYamlJson;
 
-          /* Fill in volumn */
+          /* Fill in volume - Handle Deployment/StatefulSet */
           if (
             oldFormJson.kind === YamlKindEnum.Deployment ||
             oldFormJson.kind === YamlKindEnum.StatefulSet
@@ -379,8 +391,6 @@ export const patchYamlList = ({
           actionsJson.spec.ports[0].name = 'adaptport';
         }
       }
-
-      console.log('patch result:', oldFormJson.metadata?.name, oldFormJson.kind, actionsJson);
 
       actions.push({
         type: 'patch',

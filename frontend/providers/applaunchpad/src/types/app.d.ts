@@ -108,6 +108,8 @@ export interface AppEditType {
   configMapList: {
     mountPath: string;
     value: string;
+    key: string;
+    volumeName: string;
   }[];
   storeList: {
     name: string;
