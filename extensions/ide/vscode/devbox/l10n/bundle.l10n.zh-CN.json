@@ -19,7 +19,6 @@
   "Open in Browser": "在浏览器中打开",
   "Preview in Editor": "在编辑器中预览",
   "Open Database Web Terminal": "打开数据库 Web 终端",
-  "The Devbox of Cursor is usually not the latest. If there are any issues, please manually install the [plugin](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) referring to this [URI](https://www.cursor.com/how-to-install-extension).": "Cursor 的 Devbox 通常不是最新的。如果有任何问题，请手动安装 [插件](https://marketplace.visualstudio.com/items?itemName=labring.devbox-aio&ssr=false#overview) 参考此 [URI](https://www.cursor.com/how-to-install-extension).",
   "SSH Port is not correct,maybe your devbox's nodeport is over the limit": "SSH 端口不正确，可能您的 Devbox 的 nodeport 超过了限制",
   "Failed to write SSH configuration": "写入 SSH 配置失败",
   "Failed to write SSH private key": "写入 SSH 私钥失败",
