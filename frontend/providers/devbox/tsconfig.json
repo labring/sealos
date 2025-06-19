@@ -4,6 +4,7 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "target": "ES2020",
     "forceConsistentCasingInFileNames": false,
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./*"],
       "prisma/*": ["prisma/*"]
