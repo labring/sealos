@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (address[0] !== publicDomain) {
             return reject({
               code: 'CNAME_MISMATCH',
-              message: "Cname auth error: customDomain's cname is not equal to publicDomain",
+              message: `CNAME mismatch: The CNAME for ${customDomain} does not point to the expected value ${publicDomain}`,
               expected: publicDomain,
               actual: address[0],
               hostname: customDomain
@@ -71,11 +71,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     jsonRes(res);
   } catch (error: any) {
-    console.error('CNAME auth error:', error);
+    console.log('CNAME mismatch error:', error);
     jsonRes(res, {
-      code: 500,
+      code: 400,
       error,
-      message: error?.message || 'CNAME auth error'
+      message: error?.message || 'CNAME mismatch error'
     });
   }
 }
