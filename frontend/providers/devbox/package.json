@@ -11,7 +11,8 @@
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
     "gen-client": "prisma generate --schema ./prisma/schema.prisma",
-    "postinstall": "pnpm gen-client"
+    "postinstall": "pnpm gen-client",
+    "ui": "pnpm dlx shadcn@latest add"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.8.1",
@@ -24,6 +25,7 @@
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "axios": "^1.7.3",
+    "class-variance-authority": "^0.7.1",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.10",
     "dns": "^0.2.2",
@@ -67,9 +69,15 @@
     "@types/nprogress": "^0.2.3",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "eslint": "^8",
+    "clsx": "^2.1.1",
+    "eslint": "^9.29.0",
     "eslint-config-next": "14.2.5",
+    "postcss": "^8",
     "prettier": "^2.8.8",
+    "prettier-plugin-tailwindcss": "^0.6.12",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.10",
+    "tw-animate-css": "^1.3.4",
     "typescript": "^5"
   }
 }
