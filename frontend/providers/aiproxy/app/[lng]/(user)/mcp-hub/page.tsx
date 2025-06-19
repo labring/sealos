@@ -17,7 +17,7 @@ export default function McpHubPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [serviceType, setServiceType] = useState<'hosted' | 'local' | ''>('')
   const [page, setPage] = useState(1)
-  const [pageSize] = useState(30) // 固定每页30个
+  const [pageSize] = useState(28) // 固定每页28个
 
   const { data: mcpListData, isLoading } = useQuery({
     queryKey: [
@@ -72,8 +72,8 @@ export default function McpHubPage() {
           <Box
             flex="1"
             overflow="auto"
-            pb="16px"
-            pt="16px"
+            pb="12px"
+            pt="8px"
             sx={{
               '&::-webkit-scrollbar': {
                 display: 'none'

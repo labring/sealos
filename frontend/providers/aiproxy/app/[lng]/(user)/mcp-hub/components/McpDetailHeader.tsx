@@ -89,7 +89,7 @@ export default function McpDetailHeader({ mcpDetail }: McpDetailHeaderProps) {
               />
             )}
           </Flex>
-          <Text color="grayModern.600" fontSize="16px" fontWeight={400} lineHeight="24px">
+          <Text color="grayModern.600" fontSize="14px" fontWeight={400} lineHeight="24px">
             {mcpDescription}
           </Text>
         </Flex>

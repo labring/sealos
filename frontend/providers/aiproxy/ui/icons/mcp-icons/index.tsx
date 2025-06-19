@@ -42,6 +42,12 @@ import stockAnalysisIcon from '@/ui/svg/icons/mcp/stock-analysis.svg'
 import queryTableIcon from '@/ui/svg/icons/mcp/query-table.svg'
 import unionpayIcon from '@/ui/svg/icons/mcp/unionpay.svg'
 import wecomBotIcon from '@/ui/svg/icons/mcp/wecom-bot.svg'
+import chatIcon from '@/ui/svg/icons/mcp/chat.svg'
+import webcontentIcon from '@/ui/svg/icons/mcp/webcontent.svg'
+import githubIcon from '@/ui/svg/icons/mcp/github.svg'
+import notionIcon from '@/ui/svg/icons/mcp/notion.svg'
+import zhipuaiIcon from '@/ui/svg/icons/mcp/zhipuai.svg'
+import weatherIcon from '@/ui/svg/icons/mcp/weather.svg'
 
 export const mcpIcons = {
   default: DefaultIcon,
@@ -86,7 +92,14 @@ export const mcpIcons = {
   'stock-analysis': stockAnalysisIcon,
   'query-table': queryTableIcon,
   unionpay: unionpayIcon,
-  'wecom-bot': wecomBotIcon
+  'wecom-bot': wecomBotIcon,
+  chatsum: chatIcon,
+  fetch: webcontentIcon,
+  xhs: redbookSearchCommentIcon,
+  github: githubIcon,
+  notion: notionIcon,
+  zhipuai: zhipuaiIcon,
+  weather: weatherIcon
 }
 
 export const getMcpIcon = (mcpId: string): StaticImageData => {

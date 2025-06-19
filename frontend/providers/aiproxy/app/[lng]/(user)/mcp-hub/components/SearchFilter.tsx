@@ -23,6 +23,11 @@ export default function SearchFilter({
   // 本地输入状态
   const [inputValue, setInputValue] = useState(searchTerm)
 
+  // 本地多选状态管理 - 完全独立的视觉状态
+  const [selectedTypes, setSelectedTypes] = useState<Set<'hosted' | 'local'>>(() => {
+    return new Set<'hosted' | 'local'>() // 默认都不选
+  })
+
   // 当外部searchTerm变化时，同步到本地状态
   useEffect(() => {
     setInputValue(searchTerm)
@@ -42,18 +47,33 @@ export default function SearchFilter({
   }
 
   const handleServiceTypeToggle = (type: 'hosted' | 'local') => {
-    // 如果点击的是当前选中的类型，则取消选择（回到全部）
-    if (serviceType === type) {
-      onServiceTypeChange('')
+    const newSelectedTypes = new Set(selectedTypes)
+
+    if (newSelectedTypes.has(type)) {
+      // 取消选择该类型
+      newSelectedTypes.delete(type)
     } else {
-      onServiceTypeChange(type)
+      // 选择该类型
+      newSelectedTypes.add(type)
+    }
+
+    setSelectedTypes(newSelectedTypes)
+
+    // 根据选择状态决定传递给父组件的值
+    if (newSelectedTypes.size === 0 || newSelectedTypes.size === 2) {
+      // 没有选择任何类型或选择了所有类型，都表示显示全部
+      onServiceTypeChange('')
+    } else if (newSelectedTypes.has('hosted')) {
+      onServiceTypeChange('hosted')
+    } else if (newSelectedTypes.has('local')) {
+      onServiceTypeChange('local')
     }
   }
 
   return (
-    <Flex gap="24px" mb="24px" flexWrap="wrap" alignItems="center">
+    <Flex gap="24px" flexWrap="wrap" alignItems="center">
       <InputGroup flex="1" minW="300px">
-        <InputLeftElement pointerEvents="none">
+        <InputLeftElement pointerEvents="none" h="36px">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="16"
@@ -85,6 +105,7 @@ export default function SearchFilter({
           borderColor="grayModern.200"
           borderRadius="8px"
           fontSize="14px"
+          h="36px"
           fontWeight={400}
           lineHeight="20px"
           _placeholder={{ color: 'grayModern.500' }}
@@ -95,87 +116,93 @@ export default function SearchFilter({
         />
       </InputGroup>
 
-      <HStack spacing="0" bg="grayModern.50" borderRadius="8px" p="4px">
-        <Text color="grayModern.700" fontSize="14px" fontWeight={500} mr="12px" ml="8px">
+      <HStack spacing="16px" alignItems="center">
+        <Text color="grayModern.700" fontSize="14px" fontWeight={500}>
           {t('mcpHub.serviceType')}:
         </Text>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          bg={serviceType === 'hosted' ? 'brightBlue.500' : 'transparent'}
-          color={serviceType === 'hosted' ? 'white' : 'grayModern.600'}
-          border="none"
-          borderRadius="6px"
-          fontSize="14px"
-          fontWeight={serviceType === 'hosted' ? 600 : 500}
-          h="32px"
-          px="12px"
-          _hover={{
-            bg: serviceType === 'hosted' ? 'brightBlue.600' : 'grayModern.100',
-            color: serviceType === 'hosted' ? 'white' : 'grayModern.700'
-          }}
-          _active={{
-            bg: serviceType === 'hosted' ? 'brightBlue.700' : 'grayModern.200'
-          }}
-          leftIcon={
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path d="M8 2L10.5 4.5L8 7L5.5 4.5L8 2Z" fill="currentColor" opacity="0.8" />
-              <path d="M2 8L4.5 10.5L7 8L4.5 5.5L2 8Z" fill="currentColor" />
-              <path d="M9 8L11.5 10.5L14 8L11.5 5.5L9 8Z" fill="currentColor" />
-              <path d="M8 9L10.5 11.5L8 14L5.5 11.5L8 9Z" fill="currentColor" opacity="0.8" />
-            </svg>
-          }
-          onClick={() => handleServiceTypeToggle('hosted')}>
-          {t('mcpHub.hosted')}
-        </Button>
+        <HStack spacing="12px">
+          <Button
+            variant="ghost"
+            display="flex"
+            px="12px"
+            py="6px"
+            h="auto"
+            minW="auto"
+            justifyContent="flex-start"
+            alignItems="center"
+            gap="6px"
+            borderRadius="8px"
+            color={selectedTypes.has('hosted') ? '#0884DD' : 'grayModern.600'}
+            fontSize="14px"
+            fontWeight="400"
+            bg={selectedTypes.has('hosted') ? '#EEF2FF' : '#F8FAFC'}
+            _hover={{
+              bg: '#EEF2FF',
+              color: '#0884DD'
+            }}
+            leftIcon={
+              <svg
+                viewBox="0 0 1024 1024"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="none">
+                <path
+                  d="M539.861333 136.106667V122.24v-1.408a55.466667 55.466667 0 0 0-55.296-55.466667V191.573333a55.466667 55.466667 0 0 0 55.296-55.466666zM778.581333 508.288a266.666667 266.666667 0 1 1-533.333333 0 266.666667 266.666667 0 0 1 533.333333 0z m-58.325333 0a208.341333 208.341333 0 1 0-416.682667 0 208.341333 208.341333 0 0 0 416.682667 0zM437.930667 866.773333a55.466667 55.466667 0 0 1-54.016-55.466666h255.957333v1.365333a55.466667 55.466667 0 0 1-55.466667 54.101333H437.930667zM618.538667 903.125333v1.365334a55.466667 55.466667 0 0 1-55.466667 54.101333H459.264a55.466667 55.466667 0 0 1-54.016-55.466667h213.290667zM789.674667 148.352l-0.085334 0.170667-55.381333 95.872-7.594667 13.184a55.466667 55.466667 0 0 0 75.648-20.394667l0.213334-0.426667 7.253333-12.501333 0.085333-0.213333a55.466667 55.466667 0 0 0-20.138666-75.690667zM234.325333 148.48l-0.085333-0.128a55.466667 55.466667 0 0 0-20.138667 75.690667l0.128 0.213333 7.210667 12.544 0.213333 0.426667a55.466667 55.466667 0 0 0 75.648 20.352L234.325333 148.522667zM889.045333 432.64l-0.426666 0.213333a55.466667 55.466667 0 0 1-75.690667-20.138666l109.098667-62.976 0.128-0.128a55.466667 55.466667 0 0 1-20.352 75.648l-0.426667 0.256-12.373333 7.082666zM115.029333 357.248l0.170667 0.085333 95.914667 55.381334a55.466667 55.466667 0 0 1-75.306667 20.352l-13.141333-7.552-0.426667-0.256a55.466667 55.466667 0 0 1-20.394667-75.648l0.170667 0.128 13.013333 7.509333z"
+                  p-id="6011"
+                  fill="currentColor"></path>
+              </svg>
+            }
+            onClick={() => handleServiceTypeToggle('hosted')}>
+            {t('mcpHub.hosted')}
+          </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          bg={serviceType === 'local' ? 'brightBlue.500' : 'transparent'}
-          color={serviceType === 'local' ? 'white' : 'grayModern.600'}
-          border="none"
-          borderRadius="6px"
-          fontSize="14px"
-          fontWeight={serviceType === 'local' ? 600 : 500}
-          h="32px"
-          px="12px"
-          _hover={{
-            bg: serviceType === 'local' ? 'brightBlue.600' : 'grayModern.100',
-            color: serviceType === 'local' ? 'white' : 'grayModern.700'
-          }}
-          _active={{
-            bg: serviceType === 'local' ? 'brightBlue.700' : 'grayModern.200'
-          }}
-          leftIcon={
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M2 4C2 3.44772 2.44772 3 3 3H13C13.5523 3 14 3.44772 14 4V5H2V4Z"
-                fill="currentColor"
-              />
-              <path
-                d="M2 6H14V11C14 11.5523 13.5523 12 13 12H3C2.44772 12 2 11.5523 2 11V6Z"
-                fill="currentColor"
-                opacity="0.8"
-              />
-              <circle cx="4" cy="8.5" r="0.5" fill="currentColor" />
-              <circle cx="6" cy="8.5" r="0.5" fill="currentColor" />
-            </svg>
-          }
-          onClick={() => handleServiceTypeToggle('local')}>
-          {t('mcpHub.local')}
-        </Button>
+          <Button
+            variant="ghost"
+            display="flex"
+            px="12px"
+            py="6px"
+            h="auto"
+            minW="auto"
+            justifyContent="flex-start"
+            alignItems="center"
+            gap="6px"
+            borderRadius="8px"
+            color={selectedTypes.has('local') ? '#0884DD' : 'grayModern.600'}
+            fontSize="14px"
+            fontWeight="400"
+            bg={selectedTypes.has('local') ? '#EEF2FF' : '#F8FAFC'}
+            _hover={{
+              bg: '#EEF2FF',
+              color: '#0884DD'
+            }}
+            leftIcon={
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect
+                  x="2"
+                  y="4"
+                  width="12"
+                  height="8"
+                  rx="1"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+                <rect x="4" y="6" width="8" height="1" rx="0.5" fill="currentColor" />
+                <rect x="4" y="8" width="6" height="1" rx="0.5" fill="currentColor" />
+                <rect x="4" y="10" width="4" height="1" rx="0.5" fill="currentColor" />
+              </svg>
+            }
+            onClick={() => handleServiceTypeToggle('local')}>
+            {t('mcpHub.local')}
+          </Button>
+        </HStack>
       </HStack>
     </Flex>
   )

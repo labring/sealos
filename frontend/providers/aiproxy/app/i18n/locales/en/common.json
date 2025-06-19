@@ -132,7 +132,7 @@
   },
   "mcpHub": {
     "title": "MCP Hub",
-    "config": "configuration",
+    "config": "Configuration",
     "search": "Search MCP Services",
     "searchPlaceholder": "Enter service name to search",
     "serviceType": "Service Type",
