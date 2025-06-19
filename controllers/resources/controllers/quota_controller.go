@@ -41,7 +41,7 @@ type NamespaceQuotaReconciler struct {
 func (r *NamespaceQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	evt := &corev1.Event{}
 	if err := r.Get(ctx, req.NamespacedName, evt); err == nil {
-		if strings.Contains(evt.Message, "exceeded quota") && evt.Reason == "FailedCreate" {
+		if strings.Contains(evt.Message, "exceeded quota") && (evt.Reason == "FailedCreate" || evt.Reason == "Devbox is exceeded quota") {
 			// lock
 			if r.namespaceLocks[evt.Namespace] == nil {
 				r.namespaceLocks[evt.Namespace] = &sync.Mutex{}
@@ -248,7 +248,7 @@ func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	checkEventPredicate := func(obj client.Object) bool {
 		eventObj, ok := obj.(*corev1.Event)
-		if !ok || eventObj.Reason != "FailedCreate" || !strings.Contains(eventObj.Message, "exceeded quota") {
+		if !ok || (eventObj.Reason != "FailedCreate" && eventObj.Reason != "Devbox is exceeded quota") || !strings.Contains(eventObj.Message, "exceeded quota") {
 			return false
 		}
 
