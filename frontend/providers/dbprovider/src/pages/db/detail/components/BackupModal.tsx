@@ -1,4 +1,5 @@
-import { createBackup, getBackupPolicyByCluster, updateBackupPolicy } from '@/api/backup';
+import { createBackup, updateBackupPolicy } from '@/api/backup';
+import { getDBByName } from '@/api/db';
 import Tip from '@/components/Tip';
 import { DBBackupMethodNameMap, DBTypeEnum, SelectTimeList, WeekSelectList } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -46,11 +47,16 @@ const BackupModal = ({
   const { data: defaultVal, refetch: refetchPolicy } = useQuery(
     ['initpolicy', dbName, dbType],
     () =>
-      getBackupPolicyByCluster({
-        dbName,
-        dbType
+      getDBByName({
+        name: dbName,
+        mock: false
       }),
     {
+      onSuccess(data) {
+        if (data?.autoBackup) {
+          resetAutoForm(data.autoBackup);
+        }
+      },
       refetchOnMount: true
     }
   );
@@ -210,13 +216,6 @@ const BackupModal = ({
     }
   });
 
-  useEffect(() => {
-    if (defaultVal) {
-      resetAutoForm(defaultVal);
-    }
-    setRefresh((state) => !state);
-  }, [defaultVal, resetAutoForm]);
-
   return (
     <>
       <Modal isOpen onClose={onClose} isCentered lockFocusAcrossFrames={false}>
@@ -242,7 +241,7 @@ const BackupModal = ({
                   variant={'deepLight'}
                   isChecked={getAutoValues('start')}
                   onChange={(e) => {
-                    if (defaultVal?.start) {
+                    if (defaultVal?.autoBackup?.start) {
                       CloseAutoBackup(onclickCloseAutoBackup)();
                       return;
                     }

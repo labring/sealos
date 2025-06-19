@@ -2,6 +2,7 @@ import type { SecretResponse } from '@/pages/api/getSecretByName';
 import { DELETE, GET, POST } from '@/services/request';
 import type {
   BackupItemType,
+  DBDetailType,
   DBEditType,
   DBListItemType,
   DBType,
@@ -31,7 +32,7 @@ export const getDBByName = ({
   name: string;
   mock?: boolean;
   config?: AxiosRequestConfig;
-}) => GET(`/api/getDBByName?name=${name}&mock=${mock}`, {}, config);
+}) => GET<DBDetailType>(`/api/getDBByName?name=${name}&mock=${mock}`, {}, config);
 
 export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType }) =>
   GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
