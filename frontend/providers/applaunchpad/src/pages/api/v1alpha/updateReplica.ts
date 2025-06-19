@@ -71,7 +71,7 @@ async function handleIngress(
     }
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject(`无法读取到ingress: ${error.message}`);
+      return Promise.reject(`not found ingress: ${error.message}`);
     }
   }
 
@@ -138,7 +138,7 @@ export async function PauseApp({
     requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到hpa');
+      return Promise.reject('not found hpa');
     }
   }
 

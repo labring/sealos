@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)); // delete HorizontalPodAutoscaler
     } catch (error: any) {
       if (error?.statusCode !== 404) {
-        return Promise.reject('无法读取到hpa');
+        return Promise.reject('not found hpa');
       }
     }
 
