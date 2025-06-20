@@ -1,6 +1,7 @@
 import Script from 'next/script';
 import { enableMapSet } from 'immer';
-import { Inter } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import type { Metadata, Viewport } from 'next';
 
 import IntlProvider from '@/components/providers/MyIntlProvider';
@@ -8,8 +9,6 @@ import QueryProvider from '@/components/providers/MyQueryProvider';
 
 import './globals.css';
 import '@sealos/driver/src/driver.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Sealos DevBox',
@@ -38,8 +37,8 @@ export default function RootLayout({
 }>) {
   const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
   return (
-    <html lang={lang}>
-      <body className={inter.className}>
+    <html lang={lang} className={`${GeistSans.variable} ${GeistMono.variable}`}>
+      <body>
         <IntlProvider>
           <QueryProvider>{children}</QueryProvider>
         </IntlProvider>
