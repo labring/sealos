@@ -9,7 +9,7 @@
     "/api/v1/DevBox/create": {
       "post": {
         "summary": "createDevbox",
-        "description": "使用模版，创建一个新的DevBox,1111111",
+        "description": "使用模版，创建一个新的DevBox",
         "requestBody": {
           "content": {
             "application/json": {
