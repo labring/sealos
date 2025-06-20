@@ -1,45 +1,44 @@
 'use client';
 
-import { usePathname, useRouter } from '@/i18n';
 import throttle from 'lodash/throttle';
-import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
+import { usePathname, useRouter } from '@/i18n';
+import { useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 
-// import { useConfirm } from '@/hooks/useConfirm'
-import { useLoading } from '@/hooks/useLoading';
-
-import { useEnvStore } from '@/stores/env';
-import { useGlobalStore } from '@/stores/global';
-import { usePriceStore } from '@/stores/price';
-
 import { initUser } from '@/api/template';
-import ChakraProvider from '@/components/providers/MyChakraProvider';
-import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
+import { useEnvStore } from '@/stores/env';
+import { useUserStore } from '@/stores/user';
 import { useConfirm } from '@/hooks/useConfirm';
+import { usePriceStore } from '@/stores/price';
+import { useLoading } from '@/hooks/useLoading';
+import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
-import { useQueryClient } from '@tanstack/react-query';
+
 import TemplateModal from './template/TemplateModal';
-import { useUserStore } from '@/stores/user';
+import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { Loading } = useLoading();
-  const { setEnv, env } = useEnvStore();
   const searchParams = useSearchParams();
-  const { setSourcePrice } = usePriceStore();
-  const { loadUserDebt } = useUserStore();
-  const [refresh, setRefresh] = useState(false);
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'jump_prompt',
     content: 'not_allow_standalone_use'
   });
   const queryClient = useQueryClient();
+
+  const { setEnv, env } = useEnvStore();
+  const { loadUserDebt } = useUserStore();
+  const { setSourcePrice } = usePriceStore();
+  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+
   const [init, setInit] = useState(false);
+  const [refresh, setRefresh] = useState(false);
   // init session
   useEffect(() => {
     const response = createSealosApp();
@@ -77,7 +76,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     if (!init) return;
     setSourcePrice();
     loadUserDebt();
-    // setRuntime()
     setEnv();
     const changeI18n = async (data: any) => {
       const lastLang = getLangStore();
@@ -147,13 +145,11 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   }, [router, searchParams]);
 
   return (
-    <ChakraProvider>
-      <RouteHandlerProvider>
-        <ConfirmChild />
-        <Loading loading={loading} />
-        {children}
-        <TemplateModal />
-      </RouteHandlerProvider>
-    </ChakraProvider>
+    <RouteHandlerProvider>
+      <ConfirmChild />
+      <Loading loading={loading} />
+      {children}
+      <TemplateModal />
+    </RouteHandlerProvider>
   );
 }
