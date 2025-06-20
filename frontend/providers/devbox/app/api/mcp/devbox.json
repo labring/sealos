@@ -8,8 +8,8 @@
   "paths": {
     "/api/v1/DevBox/create": {
       "post": {
-        "summary": "使用模版，创建一个新的DevBox",
-        "description": "使用模版，创建一个新的DevBox",
+        "summary": "createDevbox",
+        "description": "使用模版，创建一个新的DevBox,1111111",
         "requestBody": {
           "content": {
             "application/json": {
@@ -216,7 +216,7 @@
     },
     "/api/v1/DevBox/release": {
       "post": {
-        "summary": "DevBox发版，发布新的版本",
+        "summary": "releaseDevbox",
         "description": "DevBox发版，release，为现有的DevBox发布一个新的版本",
         "requestBody": {
           "content": {
@@ -252,7 +252,7 @@
     },
     "/api/v1/DevBox/releases": {
       "get": {
-        "summary": "获取Devbox版本历史",
+        "summary": "getDevboxreleases",
         "description": "获取单个Devbox的所有历史版本",
         "parameters": [
           {
@@ -271,7 +271,7 @@
     },
     "/api/v1/DevBox/lifecycle": {
       "post": {
-        "summary": "操作Devbox",
+        "summary": "manageDevbox",
         "description": "操作Devbox，Devbox生命周期管理，主要包含开机，关机，重启，冷关机，这些操作都通过这个工具完成",
         "requestBody": {
           "content": {
@@ -316,7 +316,7 @@
     },
     "/api/v1/DevBox/ports/create": {
       "post": {
-        "summary": "创建Devbox端口",
+        "summary": "createPort",
         "description": "创建Devbox端口，为现有的Devbox创建一个新的端口",
         "requestBody": {
           "content": {
@@ -357,26 +357,8 @@
       }
     },
     "/api/deployDevbox": {
-      "get": {
-        "description": "New endpoint",
-        "responses": {
-          "200": {
-            "description": "New response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "": ""
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
-        "tags": [
-          "Deploy"
-        ],
-        "summary": "部署 Devbox",
+        "summary": "deployDevbox",
         "description": "部署 Devbox",
         "requestBody": {
           "content": {
@@ -428,7 +410,7 @@
         "tags": [
           "Query"
         ],
-        "summary": "获取DevBox列表",
+        "summary": "getDevboxList",
         "description": "获取DevBox列表，获得每个DevBox的详细信息"
       }
     }

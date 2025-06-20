@@ -17,7 +17,6 @@ export function McpHandler(path: string, url: string) {
           const context = requestContextStorage.getStore();
           // @ts-ignore
           const headers = context ? context.headers : {};
-          console.log(`Request headers when executing tool ${tool.name}:`, headers);
           const createUserResult = await executeHttpRequest(id, tool.name, params, url, headers);
           return {
             content: [
@@ -53,7 +52,6 @@ export function McpHandler(path: string, url: string) {
     request.headers.forEach((value, key) => {
       headersObj[key] = value;
     });
-    console.log('Received request, headers:', headersObj);
 
     // Create request context
     const requestContext = {
