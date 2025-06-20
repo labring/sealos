@@ -4,18 +4,12 @@ import duration from 'dayjs/plugin/duration';
 import * as jsonpatch from 'fast-json-patch';
 import yaml from 'js-yaml';
 import { useTranslations } from 'next-intl';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 import { YamlKindEnum } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
 import { customAlphabet } from 'nanoid';
 
 dayjs.extend(duration);
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export const cpuFormatToM = (cpu = '0') => {
   if (!cpu || cpu === '0') {
