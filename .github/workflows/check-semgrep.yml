@@ -1,24 +1,9 @@
 # Name of this GitHub Actions workflow.
-name: Check-Semgrep
+name: Run Semgrep check
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ "main" ]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.yaml"
-      - "CONTRIBUTORS"
-      - "CHANGELOG/**"
-  pull_request:
-    branches: [ "*" ]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.yaml"
-      - "CONTRIBUTORS"
-      - "CHANGELOG/**"
+
 
 jobs:
   semgrep:

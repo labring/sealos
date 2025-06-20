@@ -1,93 +1,133 @@
-#Usage in github: https://github.com/actions/labeler
+# Usage in github: https://github.com/actions/labeler (v5 syntax)
 
 area/command:
-  - any: [ 'lifecycle/cmd/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/cmd/**/*' ]
 
 kind/documentation:
-  - any: [ 'docs/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'docs/**/*' ]
 
 area/qa:
-  - 'QA.md'
+- changed-files:
+  - any-glob-to-any-file: [ 'QA.md' ]
 
 area/test:
-  - '**/*_test.go'
-  - 'lifecycle/test/**/*'
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*_test.go'
+    - 'lifecycle/test/**/*'
 
 area/buildah:
-  - any: [ 'lifecycle/pkg/buildah/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/buildah/**/*' ]
 
 area/imageCRIShim:
-  - any: [ 'lifecycle/staging/src/github.com/labring/image-cri-shim/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/staging/src/github.com/labring/image-cri-shim/**/*' ]
 
 area/lvscare:
-  - any: [ 'lifecycle/staging/src/github.com/labring/lvscare/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/staging/src/github.com/labring/lvscare/**/*' ]
 
 area/bootstrap:
-  - any: [ 'lifecycle/pkg/bootstrap/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/bootstrap/**/*' ]
 
 area/clusterfile:
-  - any: [ 'lifecycle/pkg/clusterfile/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/clusterfile/**/*' ]
 
 area/config:
-  - any: [ 'lifecycle/pkg/config/**/*' ]
-  - any: [ 'lifecycle/pkg/env/**/*' ]
-  - any: [ 'lifecycle/pkg/template/**/*' ]
+- any:
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/pkg/config/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/pkg/env/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/pkg/template/**/*' ]
 
 area/guest:
-  - any: [ 'lifecycle/pkg/guest/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/guest/**/*' ]
 
 area/env:
-  - any: [ 'lifecycle/pkg/system/**/*' ]
+# Note: 'env' here refers to 'lifecycle/pkg/system/**/*' from the original file
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/system/**/*' ]
 
 area/filesystem:
-  - any: [ 'lifecycle/pkg/filesystem/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/filesystem/**/*' ]
 
 area/apply:
-  - any: [ 'lifecycle/pkg/apply/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/apply/**/*' ]
 
 area/check:
-  - any: [ 'lifecycle/pkg/checker/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/checker/**/*' ]
 
 area/ipvs:
-  - any: [ 'lifecycle/pkg/ipvs/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/ipvs/**/*' ]
 
 area/ssh:
-  - any: [ 'lifecycle/pkg/ssh/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/ssh/**/*' ]
 
 area/registry:
-  - any: [ 'lifecycle/pkg/registry/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/registry/**/*' ]
 
 area/runtime:
-  - any: [ 'lifecycle/pkg/runtime/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'lifecycle/pkg/runtime/**/*' ]
 
 area/api:
-  - any: [ 'lifecycle/pkg/types/**/*']
-  - any: [ 'lifecycle/**/*_types.go' ]
+- any:
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/pkg/types/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/**/*_types.go' ]
 
 area/cloud:
-  - any: [ 'controllers/**/*' ]
-  - any: [ 'service/**/*' ]
-  - any: ['docs/4.0/docs/**', '!docs/4.0/docs/lifecycle-management/**']
-  - any: ['docs/4.0/i18n/zh-Hans/**', '!docs/4.0/i18n/zh-Hans/lifecycle-management/**']
+- any:
+  - changed-files:
+    - any-glob-to-any-file: [ 'controllers/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'service/**/*' ]
+  - changed-files:
+    - all-globs-to-any-file: [ 'docs/4.0/docs/**', '!docs/4.0/docs/lifecycle-management/**' ]
+  - changed-files:
+    - all-globs-to-any-file: [ 'docs/4.0/i18n/zh-Hans/**', '!docs/4.0/i18n/zh-Hans/lifecycle-management/**' ]
 
 area/lifecycle-management:
-  - any: [ 'lifecycle/pkg/**/*' ]
-  - any: [ 'lifecycle/staging/**/*' ]
-  - any: [ 'docs/4.0/docs/lifecycle-management/**/*' ]
-  - any: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/**/*' ]
-
+- any:
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/pkg/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'lifecycle/staging/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'docs/4.0/docs/lifecycle-management/**/*' ]
+  - changed-files:
+    - any-glob-to-any-file: [ 'docs/4.0/i18n/zh-Hans/lifecycle-management/**/*' ]
 
 area/frontend:
-  - any: [ 'frontend/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ 'frontend/**/*' ]
 
 area/ci:
-  - 'scripts/**/*'
-  - 'lifecycle/scripts/**/*'
-  - 'lifecycle/docker/**/*'
-  - 'deploy/**/*'
-  - '.golangci.yml'
-  - 'lifecycle/.goreleaser.yml'
-  - 'lifecycle/Makefile'
+- changed-files:
+  - any-glob-to-any-file:
+    - 'scripts/**/*'
+    - 'lifecycle/scripts/**/*'
+    - 'lifecycle/docker/**/*'
+    - 'deploy/**/*'
+    - '.golangci.yml'
+    - 'lifecycle/.goreleaser.yml'
+    - 'lifecycle/Makefile'
 
 area/workflow:
-  - any: [ '.github/**/*' ]
+- changed-files:
+  - any-glob-to-any-file: [ '.github/**/*' ]
