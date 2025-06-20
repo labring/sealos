@@ -46,6 +46,7 @@ export type MetaConfigType = {
   description: string;
   keywords: string;
   scripts?: MetaScriptType[];
+  noscripts?: any[];
 };
 
 export type MetaScriptType = {

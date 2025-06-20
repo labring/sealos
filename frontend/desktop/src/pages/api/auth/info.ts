@@ -87,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           } else if (o.providerType === ProviderType.PHONE) {
             return enablePhoneSms() && getVersion() === 'cn';
           } else if (o.providerType === ProviderType.EMAIL) {
-            return enableEmailSms() && getVersion() === 'en';
+            return enableEmailSms();
           } else if (o.providerType === ProviderType.PASSWORD) {
             return enablePassword();
           } else if (o.providerType === ProviderType.WECHAT) {

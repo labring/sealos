@@ -1,19 +1,9 @@
 import {
-  AbsoluteCenter,
   Box,
   Button,
-  Checkbox,
   Divider,
-  FormControl,
-  FormLabel,
   Input,
   Stack,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  FormErrorMessage,
   Flex,
   useColorModeValue,
   Text,
@@ -21,7 +11,7 @@ import {
   InputLeftElement
 } from '@chakra-ui/react';
 import useProtocol from '@/components/signin/auth/useProtocol';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -30,23 +20,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { GoogleIcon, GithubIcon } from '../icons';
-import {
-  ILoginParams,
-  IRegisterParamsWithoutName,
-  loginParamsSchema,
-  registerParamsWithoutNameSchema
-} from '@/schema/auth';
+import { ILoginParams, loginParamsSchema } from '@/schema/auth';
 import { useSignupStore } from '@/stores/signup';
-import { EmailSignIn, EmailSignUpCheck, getRegionToken } from '@/api/auth';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
 import { OauthProvider } from '@/types/user';
-import { sessionConfig } from '@/utils/sessionConfig';
 import Link from 'next/link';
 import { WechatIcon } from '@sealos/ui';
-import useSmsStateStore from '@/stores/captcha';
 import { z } from 'zod';
-import { status } from 'nprogress';
+import { gtmLoginStart } from '@/utils/gtm';
 
 export default function SigninComponent() {
   const { t, i18n } = useTranslation();
@@ -60,7 +42,7 @@ export default function SigninComponent() {
   const needEmail = conf.authConfig?.idp.email.enabled;
   const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
-  const { generateState, setProvider, setToken } = useSessionStore();
+  const { generateState, setProvider, setToken, session, token } = useSessionStore();
   const {
     register: registerSignin,
     handleSubmit: handleSigninSubmit,
@@ -80,8 +62,8 @@ export default function SigninComponent() {
       service_protocol: conf.layoutConfig?.protocol?.serviceProtocol.en as string,
       private_protocol: conf.layoutConfig?.protocol?.privateProtocol.en as string
     };
-
   const handleSocialLogin = async (provider: OauthProvider) => {
+    gtmLoginStart();
     if (!authConfig) {
       console.error('Auth config not found');
       return;
@@ -189,7 +171,6 @@ export default function SigninComponent() {
       // });
     }
   };
-
   const bg = useColorModeValue('white', 'gray.700');
 
   return (
@@ -241,6 +222,18 @@ export default function SigninComponent() {
                 px={'0'}
                 borderRadius={'8px'}
                 onClick={() => {
+                  const result = z
+                    .string()
+                    .regex(/^1[3-9]\d{9}$/, { message: 'Invalid phone number format' })
+                    .safeParse(signupData?.providerId);
+                  console.log(result);
+                  if (result.error) {
+                    toast({
+                      title: result.error.errors[0].message,
+                      status: 'error'
+                    });
+                    return;
+                  }
                   if (signupData?.providerId) {
                     router.push('/phoneCheck');
                   }
@@ -285,7 +278,6 @@ export default function SigninComponent() {
                     .string()
                     .email({ message: 'Invalid email format' })
                     .safeParse(signupData?.providerId);
-                  console.log(result);
                   if (result.error) {
                     toast({
                       title: result.error.errors[0].message,
@@ -294,6 +286,7 @@ export default function SigninComponent() {
                     return;
                   }
                   if (signupData?.providerId) {
+                    gtmLoginStart();
                     router.push('/emailCheck');
                   }
                 }}
@@ -310,15 +303,19 @@ export default function SigninComponent() {
         ) : (
           <></>
         )}
-        <Flex gap={'10px'} alignItems={'center'}>
-          <Divider />
-          <Flex justify="center" align="center" bg="white">
-            <Text color="#71717A" fontSize="12px" width={'max-content'}>
-              {t('v2:or')}
-            </Text>
+        {((conf.layoutConfig?.version === 'cn' && needPhone) ||
+          conf.layoutConfig?.version === 'en' ||
+          needEmail) && (
+          <Flex gap={'10px'} alignItems={'center'}>
+            <Divider />
+            <Flex justify="center" align="center" bg="white">
+              <Text color="#71717A" fontSize="12px" width={'max-content'}>
+                {t('v2:or')}
+              </Text>
+            </Flex>
+            <Divider />
           </Flex>
-          <Divider />
-        </Flex>
+        )}
         <Stack spacing={'16px'}>
           {authConfig?.idp.wechat?.enabled && (
             <Button
@@ -326,7 +323,7 @@ export default function SigninComponent() {
               variant="outline"
               onClick={() => handleSocialLogin('WECHAT')}
               w={'100%'}
-              leftIcon={<WechatIcon />}
+              leftIcon={<WechatIcon mr={0} />}
               display="flex"
               flexDirection="row"
               justifyContent="center"
@@ -345,13 +342,13 @@ export default function SigninComponent() {
               variant="outline"
               onClick={() => handleSocialLogin('GITHUB' as OauthProvider)}
               w={'100%'}
-              leftIcon={<GithubIcon />}
+              leftIcon={<GithubIcon mr={0} />}
               display="flex"
               flexDirection="row"
               justifyContent="center"
               alignItems="center"
               padding="12px 16px"
-              gap="8px"
+              // gap="8px"
               height="40px"
               // background="#0A0A0A"
             >
@@ -364,13 +361,13 @@ export default function SigninComponent() {
               variant="outline"
               onClick={() => handleSocialLogin('GOOGLE' as OauthProvider)}
               w={'100%'}
-              leftIcon={<GoogleIcon />}
+              leftIcon={<GoogleIcon mr={0} />}
               display="flex"
               flexDirection="row"
               justifyContent="center"
               alignItems="center"
               padding="12px 16px"
-              gap="8px"
+              // gap="8px"
               height="40px"
               // background="#0A0A0A"
             >

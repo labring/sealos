@@ -245,9 +245,9 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         <link rel="shortcut icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
         <link rel="icon" href={layoutConfig?.logo ? layoutConfig?.logo : '/favicon.ico'} />
       </Head>
-      {layoutConfig?.meta.scripts?.map((item, i) => {
+      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
-      })}
+      })} */}
       <MoreAppsContext.Provider value={{ showMoreApps, setShowMoreApps }}>
         <DesktopContent />
       </MoreAppsContext.Provider>

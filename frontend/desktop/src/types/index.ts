@@ -25,4 +25,5 @@ declare global {
   var WechatExpiresIn: number | undefined;
   var nodemailer: Transporter<SMTPPool.SentMessageInfo> | undefined;
   var umami: Umami | undefined;
+  var dataLayer: { push: Function } | null;
 }

@@ -18,6 +18,11 @@ export type Response = {
 
 function getAppConfig(defaultConfig: AppConfigType, initConfig: AppConfigType): AppConfigType {
   function mergeConfig(defaultConfig: any, newConfig: any): any {
+    // 处理数组情况
+    if (Array.isArray(defaultConfig)) {
+      return Array.isArray(newConfig) ? newConfig : defaultConfig;
+    }
+
     if (typeof defaultConfig !== 'object' || defaultConfig === null) {
       return newConfig !== undefined ? newConfig : defaultConfig;
     }
