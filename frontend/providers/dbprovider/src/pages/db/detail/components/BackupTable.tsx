@@ -1,4 +1,4 @@
-import { deleteBackup, getBackupList, getBackupPolicyByCluster } from '@/api/backup';
+import { deleteBackup, getBackupList } from '@/api/backup';
 import MyIcon from '@/components/Icon';
 import { BackupStatusEnum, backupTypeMap } from '@/constants/backup';
 import { useConfirm } from '@/hooks/useConfirm';
