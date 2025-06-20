@@ -94,6 +94,7 @@ RUN if ["$name" = "objectstorage" ]; then \
 COPY --from=builder /app/$path/public ./$path/public
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/$path/.next/static ./$path/.next/static
+
 EXPOSE 3000
 
 ENV PORT=3000
