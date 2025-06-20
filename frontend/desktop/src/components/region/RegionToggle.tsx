@@ -3,7 +3,17 @@ import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, Region } from '@/types';
 import { AccessTokenPayload } from '@/types/token';
-import { Box, Center, Flex, HStack, Text, useDisclosure, VStack } from '@chakra-ui/react';
+import {
+  Box,
+  Center,
+  Divider,
+  Flex,
+  HStack,
+  Img,
+  Text,
+  useDisclosure,
+  VStack
+} from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
 import { useTranslation } from 'next-i18next';
@@ -11,6 +21,7 @@ import { useRouter } from 'next/router';
 import { useMemo } from 'react';
 import { useConfigStore } from '@/stores/config';
 import { CheckIcon, ChevronDown } from 'lucide-react';
+import { I18nCloudProvidersKey } from '@/types/i18next';
 
 export default function RegionToggle() {
   const disclosure = useDisclosure();
@@ -110,7 +121,7 @@ export default function RegionToggle() {
                   '0px 20px 25px -5px rgba(0, 0, 0, 0.10), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)'
                 }
                 color={'#18181B'}
-                width={'240px'}
+                width={'fit-content'}
                 transition={'all 0.2s ease-in-out'}
               >
                 <Text px={'12px'} py={'6px'} color={'#71717A'} fontSize={'12px'} fontWeight={'500'}>
@@ -121,44 +132,73 @@ export default function RegionToggle() {
                     const cpuPrice = region?.description?.prices?.find((p) => p.name === 'CPU');
                     return (
                       <Flex
+                        border={'1px solid #E4E4E7'}
+                        flexDirection={'column'}
                         fontSize={'14px'}
-                        justifyContent={'space-between'}
-                        alignItems={'center'}
                         whiteSpace={'nowrap'}
-                        borderRadius={'8px'}
-                        py={'10px'}
-                        px={'8px'}
+                        borderRadius={'12px'}
+                        py={'12px'}
+                        px={'16px'}
                         key={region.uid}
                         onClick={() => {
                           handleCick(region);
                         }}
                         cursor={'pointer'}
                         _hover={{
-                          bgColor: '#F4F4F5'
+                          bgColor: '#FAFAFA'
                         }}
                       >
-                        <Text>{region?.displayName}</Text>
-                        {region.uid === curRegionUid && <CheckIcon size={16} color={'#1C4EF5'} />}
-
-                        {/* <Divider bg={'rgba(255, 255, 255, 0.10)'} my={'12px'} /> */}
-                        {/* <Box px={'16px'} fontSize={'11px'} fontWeight={'500'}>
-                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
-                            <ProviderIcon boxSize={'12px'} />
-                            <Text>{t('cloudProviders:provider')}</Text>
-                          </HStack>
-                          <Text color={'white'} mb={'8px'}>
+                        <Flex justifyContent={'space-between'} alignItems={'center'}>
+                          <Box>
+                            <Text fontSize={'14px'} fontWeight={400} color={'#18181B'}>
+                              {region?.displayName} {region?.description?.serial}
+                            </Text>
+                            {cpuPrice && (
+                              <Text
+                                mt={'4px'}
+                                color={'#71717A'}
+                                fontSize={'12px'}
+                                whiteSpace={'nowrap'}
+                              >
+                                {cpuPrice?.name} {cpuPrice?.unit_price || 0} {t('common:yuan')}/
+                                {t('common:core')}/{t('common:year')}
+                              </Text>
+                            )}
+                          </Box>
+                          {region.uid === curRegionUid && <CheckIcon size={16} color={'#1C4EF5'} />}
+                        </Flex>
+                        <Divider bg={'#F4F4F5'} my={'8px'} />
+                        <Flex alignItems={'center'}>
+                          {region?.description.provider &&
+                            [
+                              'volcano_engine',
+                              'alibaba_cloud',
+                              'tencent_cloud',
+                              'google_cloud'
+                            ].includes(region?.description.provider) && (
+                              <Img
+                                boxSize={'14px'}
+                                mr={'4px'}
+                                flexShrink={0}
+                                src={`/images/cloud_providers/${region?.description.provider}.svg`}
+                              ></Img>
+                            )}
+                          <Text color={'#71717A'}>
                             {t(region?.description?.provider as I18nCloudProvidersKey, {
                               ns: 'cloudProviders'
                             })}
                           </Text>
-                          <HStack color={'rgba(255, 255, 255, 0.80)'} gap={'4px'} mb={'2px'}>
-                            <InfoIcon boxSize={'12px'} />
-                            <Text>{t('common:description')}</Text>
-                          </HStack>
-                          <Text whiteSpace={'pre-wrap'} color={'white'} lineHeight={'20px'}>
+                          <Divider
+                            orientation="vertical"
+                            h={'8px'}
+                            bg={'#E4E4E7'}
+                            mx={'8px'}
+                            flexShrink={0}
+                          />
+                          <Text color={'#71717A'}>
                             {region?.description?.description?.[i18n.language as 'zh' | 'en']}
                           </Text>
-                        </Box> */}
+                        </Flex>
                       </Flex>
                     );
                   })}

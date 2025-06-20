@@ -42,11 +42,23 @@ export async function GetApps({ req }: { req: NextApiRequest }) {
     )
   ]);
 
-  const apps = response
-    .filter((item) => item.status === 'fulfilled')
-    .map((item: any) => item?.value?.body?.items)
-    .filter((item) => item)
-    .flat();
+  const deployments =
+    response[0].status === 'fulfilled'
+      ? response[0].value?.body?.items?.map((item: any) => ({
+          ...item,
+          kind: 'Deployment'
+        })) || []
+      : [];
+
+  const statefulSets =
+    response[1].status === 'fulfilled'
+      ? response[1].value?.body?.items?.map((item: any) => ({
+          ...item,
+          kind: 'StatefulSet'
+        })) || []
+      : [];
+
+  const apps = [...deployments, ...statefulSets];
 
   return apps;
 }

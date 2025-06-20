@@ -42,6 +42,7 @@ import { defaultEditVal } from '@/constants/editApp';
 import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import type { EnvResponse } from '@/types';
+import { lauchpadRemarkKey } from '@/constants/account';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -114,7 +115,9 @@ export const adaptAppListItem = (app: V1Deployment & V1StatefulSet): AppListItem
     minReplicas: +(app.metadata?.annotations?.[minReplicasKey] || app.status?.readyReplicas || 0),
     storeAmount,
     labels: app.metadata?.labels || {},
-    source: getAppSource(app)
+    source: getAppSource(app),
+    kind: app.kind?.toLowerCase() as 'deployment' | 'statefulset',
+    remark: app.metadata?.annotations?.[lauchpadRemarkKey]
   };
 };
 

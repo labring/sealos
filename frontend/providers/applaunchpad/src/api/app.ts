@@ -62,3 +62,9 @@ export const getAppLogs = (payload: LogQueryPayload) => POST<string>('/api/log/q
 
 export const getLogPodList = (payload: PodListQueryPayload) =>
   POST<string[]>('/api/log/queryPodList', payload);
+
+export const setAppRemark = (payload: {
+  appName: string;
+  remark: string;
+  kind: 'deployment' | 'statefulset';
+}) => POST('/api/remark', payload);

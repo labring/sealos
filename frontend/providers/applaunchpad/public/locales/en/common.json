@@ -341,5 +341,11 @@
     "configure_launchpad": "Configure Launchpad",
     "define_image_settings": "Define image settings, and adjust CPU & memory as needed",
     "got_it": "Got it"
-  }
+  },
+  "set_remarks": "set remarks",
+  "set_remarks_title": "Set Remarks",
+  "remarks": "Remarks",
+  "set_remarks_placeholder": "Set remarks to help identify this app or service more easily.",
+  "remark_updated_successfully": "Remark updated successfully",
+  "update_remark_failed": "Update remark failed"
 }

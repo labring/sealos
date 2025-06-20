@@ -184,6 +184,7 @@
     "The applied memory exceeds the quota": "Requested storage exceeds your quota. Please contact admin.",
     "The applied storage exceeds the quota": "The applied storage exceeds the quota"
   },
+  "app_already_exists": "App name already exists. Please use a different name or check your app list.",
   "balance": "balance",
   "capacity": "capacity",
   "common": {
@@ -253,6 +254,7 @@
   "protocol": "protocol",
   "public": "public",
   "receive": "receive",
+  "set_app_remark": "Set Remarks",
   "storage": "Storage",
   "success": "success",
   "target_value": "Target Value",
@@ -260,6 +262,5 @@
   "user_balance_not_enough": "Almost there! You need additional credits for this deployment.",
   "users installed the app": "{{count}} users have installed this app",
   "websocket": "WebSocket",
-  "you_have_successfully_deployed_app": "You have successfully deployed an application!",
-  "app_already_exists": "App name already exists. Please use a different name or check your app list."
+  "you_have_successfully_deployed_app": "You have successfully deployed an application!"
 }
