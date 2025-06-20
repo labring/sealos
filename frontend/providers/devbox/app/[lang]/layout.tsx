@@ -1,17 +1,18 @@
-import type { Metadata, Viewport } from 'next';
+import Script from 'next/script';
+import { enableMapSet } from 'immer';
 import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
 
 import IntlProvider from '@/components/providers/MyIntlProvider';
 import QueryProvider from '@/components/providers/MyQueryProvider';
-import { enableMapSet } from 'immer';
+
 import './globals.css';
 import '@sealos/driver/src/driver.css';
-import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Sealos Devbox',
+  title: 'Sealos DevBox',
   description: 'Generated a development and production environment for you',
   icons: [
     {
@@ -25,12 +26,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1
 };
+
 enableMapSet();
+
 export default function RootLayout({
   children,
-
-  params: { lang },
-  ...props
+  params: { lang }
 }: Readonly<{
   children: React.ReactNode;
   params: { lang: string };
