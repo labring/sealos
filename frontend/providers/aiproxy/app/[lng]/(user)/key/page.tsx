@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import { Button, Flex, Text } from '@chakra-ui/react'
+import { Button, Flex, Text } from "@chakra-ui/react";
 
-import KeyList from '@/components/user/KeyList'
-import { useBackendStore } from '@/store/backend'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useSessionStore } from '@/store/session'
-import { MyTooltip } from '@/components/common/MyTooltip'
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { MyTooltip } from "@/components/common/MyTooltip";
+import KeyList from "@/components/user/KeyList";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { useBackendStore } from "@/store/backend";
+import { useSessionStore } from "@/store/session";
 export default function Key(): JSX.Element {
-  const { isInvitationActive } = useBackendStore()
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { session } = useSessionStore.getState()
-  const { invitationUrl } = useBackendStore()
-  let userInvitationUrl = ''
+  const { isInvitationActive } = useBackendStore();
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const { session } = useSessionStore.getState();
+  const { invitationUrl } = useBackendStore();
+  let userInvitationUrl = "";
   if (isInvitationActive && invitationUrl) {
-    const userId = session?.user.id
-    const baseUrl = new URL(invitationUrl).origin
-    userInvitationUrl = `${baseUrl}/?uid=${userId}`
+    const userId = session?.user.id;
+    const baseUrl = new URL(invitationUrl).origin;
+    userInvitationUrl = `${baseUrl}/?uid=${userId}`;
   }
 
   return (
@@ -34,14 +34,16 @@ export default function Key(): JSX.Element {
           h="full"
           w="full"
           minW="500px"
-          borderRadius="12px">
+          borderRadius="12px"
+        >
           <Flex
             p="6px 12px"
             justifyContent="center"
             alignItems="center"
             alignSelf="stretch"
             borderRadius="6px"
-            bgGradient="linear(90deg, #F0F4FF 4%, #FAF1FF 54%, #F0F4FF 100%)">
+            bgGradient="linear(90deg, #F0F4FF 4%, #FAF1FF 54%, #F0F4FF 100%)"
+          >
             <Flex gap="20px">
               <Flex gap="6px" alignItems="center">
                 <Flex>
@@ -52,8 +54,9 @@ export default function Key(): JSX.Element {
                     fontStyle="normal"
                     fontWeight={500}
                     lineHeight="20px"
-                    letterSpacing="0.1px">
-                    🎉{t('keyList.invitationText1')}
+                    letterSpacing="0.1px"
+                  >
+                    🎉{t("keyList.invitationText1")}
                   </Text>
                 </Flex>
                 <Flex>
@@ -64,24 +67,26 @@ export default function Key(): JSX.Element {
                     fontStyle="normal"
                     fontWeight={400}
                     lineHeight="20px"
-                    letterSpacing="0.25px">
-                    {t('keyList.invitationText2')}
+                    letterSpacing="0.25px"
+                  >
+                    {t("keyList.invitationText2")}
                   </Text>
                   <Text
                     sx={{
                       background:
-                        'linear-gradient(90deg, #004CFF 0.92%, #FF53D4 40.73%, #004CFF 91.52%)',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent'
+                        "linear-gradient(90deg, #004CFF 0.92%, #FF53D4 40.73%, #004CFF 91.52%)",
+                      backgroundClip: "text",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
                     }}
                     fontFamily="PingFang SC"
                     fontSize="14px"
                     fontStyle="normal"
                     fontWeight={500}
                     lineHeight="20px"
-                    letterSpacing="0.1px">
-                    {t('keyList.invitationText3')}
+                    letterSpacing="0.1px"
+                  >
+                    {t("keyList.invitationText3")}
                   </Text>
                 </Flex>
                 <Flex>
@@ -92,10 +97,11 @@ export default function Key(): JSX.Element {
                     fontStyle="normal"
                     fontWeight={500}
                     lineHeight="20px"
-                    letterSpacing="0.1px">
-                    {t('keyList.invitationText4')}
+                    letterSpacing="0.1px"
+                  >
+                    {t("keyList.invitationText4")}
                   </Text>
-                  <MyTooltip width="auto" height="auto" label={t('keyList.invitationText5')}>
+                  <MyTooltip width="auto" height="auto" label={t("keyList.invitationText5")}>
                     <Text
                       color="#487FFF"
                       fontFamily="PingFang SC"
@@ -109,8 +115,9 @@ export default function Key(): JSX.Element {
                       textUnderlineOffset="auto"
                       cursor="pointer"
                       onClick={() => {
-                        navigator.clipboard.writeText(userInvitationUrl)
-                      }}>
+                        navigator.clipboard.writeText(userInvitationUrl);
+                      }}
+                    >
                       {userInvitationUrl}
                     </Text>
                   </MyTooltip>
@@ -132,23 +139,26 @@ export default function Key(): JSX.Element {
                 bgGradient="linear(90deg, #1058FF 0%, #838AF1 57.5%, #FF80E6 100%)"
                 color="white"
                 onClick={() => {
-                  window.open(invitationUrl, '_blank')
-                }}>
+                  window.open(invitationUrl, "_blank");
+                }}
+              >
                 <Text
                   color="white"
                   fontFamily="PingFang SC"
                   fontSize="12px"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('keyList.invite')}
+                  letterSpacing="0.5px"
+                >
+                  {t("keyList.invite")}
                 </Text>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="15"
                   height="14"
                   viewBox="0 0 15 14"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -175,10 +185,11 @@ export default function Key(): JSX.Element {
           h="full"
           w="full"
           minW="500px"
-          borderRadius="12px">
+          borderRadius="12px"
+        >
           <KeyList />
         </Flex>
       )}
     </Flex>
-  )
+  );
 }

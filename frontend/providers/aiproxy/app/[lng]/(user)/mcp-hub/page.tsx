@@ -1,41 +1,43 @@
-'use client'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { Box, Flex, Text } from '@chakra-ui/react'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { getMcpList } from '@/api/platform'
-import { QueryKey } from '@/types/query-key'
-import SearchFilter from './components/SearchFilter'
-import McpList from './components/McpList'
-import SwitchPage from '@/components/common/SwitchPage'
+"use client";
+import { useState } from "react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import { useQuery } from "@tanstack/react-query";
+
+import { getMcpList } from "@/api/platform";
+import { useTranslationClientSide } from "@/app/i18n/client";
+import SwitchPage from "@/components/common/SwitchPage";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { QueryKey } from "@/types/query-key";
+
+import McpList from "./components/McpList";
+import SearchFilter from "./components/SearchFilter";
 
 export default function McpHubPage() {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
 
-  const [searchTerm, setSearchTerm] = useState('')
-  const [serviceType, setServiceType] = useState<'hosted' | 'local' | ''>('')
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(28) // 固定每页28个
+  const [searchTerm, setSearchTerm] = useState("");
+  const [serviceType, setServiceType] = useState<"hosted" | "local" | "">("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(28); // 固定每页28个
 
   const { data: mcpListData, isLoading } = useQuery({
     queryKey: [
       QueryKey.mcpList,
-      { page, perPage: pageSize, type: serviceType, keyword: searchTerm }
+      { page, perPage: pageSize, type: serviceType, keyword: searchTerm },
     ],
     queryFn: () =>
       getMcpList({
         page,
         perPage: pageSize,
         type: serviceType,
-        keyword: searchTerm
-      })
-  })
+        keyword: searchTerm,
+      }),
+  });
 
-  const mcps = mcpListData?.mcps || []
-  const total = mcpListData?.total || 0
-  const totalPages = Math.ceil(total / pageSize)
+  const mcps = mcpListData?.mcps || [];
+  const total = mcpListData?.total || 0;
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <Box w="full" h="full" display="inline-flex" pt="4px" pb="12px" pr="12px" alignItems="center">
@@ -49,8 +51,9 @@ export default function McpHubPage() {
               fontSize="20px"
               fontWeight={500}
               lineHeight="26px"
-              letterSpacing="0.15px">
-              {t('mcpHub.title')}
+              letterSpacing="0.15px"
+            >
+              {t("mcpHub.title")}
             </Text>
           </Flex>
 
@@ -59,12 +62,12 @@ export default function McpHubPage() {
             searchTerm={searchTerm}
             serviceType={serviceType}
             onSearchChange={(value) => {
-              setSearchTerm(value)
-              setPage(1) // 搜索时重置到第一页
+              setSearchTerm(value);
+              setPage(1); // 搜索时重置到第一页
             }}
             onServiceTypeChange={(type) => {
-              setServiceType(type as 'hosted' | 'local' | '')
-              setPage(1) // 筛选类型时重置到第一页
+              setServiceType(type as "hosted" | "local" | "");
+              setPage(1); // 筛选类型时重置到第一页
             }}
           />
 
@@ -75,12 +78,13 @@ export default function McpHubPage() {
             pb="12px"
             pt="8px"
             sx={{
-              '&::-webkit-scrollbar': {
-                display: 'none'
+              "&::-webkit-scrollbar": {
+                display: "none",
               },
-              msOverflowStyle: 'none',
-              scrollbarWidth: 'none'
-            }}>
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+            }}
+          >
             <McpList mcps={mcps} isLoading={isLoading} />
           </Box>
 
@@ -101,5 +105,5 @@ export default function McpHubPage() {
         </Flex>
       </Box>
     </Box>
-  )
+  );
 }

@@ -13,11 +13,11 @@ export type ApiProxyBackendResp<T = any> = {
 
 export const isApiResp = (x: unknown): x is ApiResp => {
   return (
-    typeof x === 'object' &&
+    typeof x === "object" &&
     x !== null &&
-    'code' in x &&
-    'message' in x &&
-    typeof (x as any).code === 'number' &&
-    typeof (x as any).message === 'string'
+    "code" in x &&
+    "message" in x &&
+    typeof (x as any).code === "number" &&
+    typeof (x as any).message === "string"
   )
 }

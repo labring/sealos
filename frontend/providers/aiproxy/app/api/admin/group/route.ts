@@ -1,10 +1,11 @@
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { isAdmin } from '@/utils/backend/isAdmin'
-import { NextRequest, NextResponse } from 'next/server'
-import { GroupInfo } from '@/types/admin/group'
+import { NextRequest, NextResponse } from "next/server"
 
-export const dynamic = 'force-dynamic'
+import { GroupInfo } from "@/types/admin/group"
+import { ApiProxyBackendResp, ApiResp } from "@/types/api"
+import { parseJwtToken } from "@/utils/backend/auth"
+import { isAdmin } from "@/utils/backend/isAdmin"
+
+export const dynamic = "force-dynamic"
 
 export type ApiProxyBackendGroupSearchResponse = ApiProxyBackendResp<{
   groups: GroupInfo[]
@@ -24,10 +25,10 @@ export interface GroupQueryParams {
 
 function validateParams(params: GroupQueryParams): string | null {
   if (params.page < 1) {
-    return 'Page number must be greater than 0'
+    return "Page number must be greater than 0"
   }
   if (params.perPage < 1 || params.perPage > 100) {
-    return 'Per page must be between 1 and 100'
+    return "Per page must be between 1 and 100"
   }
   return null
 }
@@ -41,22 +42,22 @@ async function fetchGroups(
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
 
-    url.searchParams.append('p', params.page.toString())
-    url.searchParams.append('per_page', params.perPage.toString())
+    url.searchParams.append("p", params.page.toString())
+    url.searchParams.append("per_page", params.perPage.toString())
 
     if (params.keyword) {
-      url.searchParams.append('keyword', params.keyword)
+      url.searchParams.append("keyword", params.keyword)
     }
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${token}`
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -65,15 +66,15 @@ async function fetchGroups(
 
     const result: ApiProxyBackendGroupSearchResponse = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'API request failed')
+      throw new Error(result.message || "API request failed")
     }
 
     return {
       groups: result.data?.groups || [],
-      total: result.data?.total || 0
+      total: result.data?.total || 0,
     }
   } catch (error) {
-    console.error('Error fetching groups:', error)
+    console.error("Error fetching groups:", error)
     throw error
   }
 }
@@ -85,9 +86,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
     const searchParams = request.nextUrl.searchParams
 
     const queryParams: GroupQueryParams = {
-      page: parseInt(searchParams.get('page') || '1', 10),
-      perPage: parseInt(searchParams.get('perPage') || '10', 10),
-      keyword: searchParams.get('keyword') || undefined
+      page: parseInt(searchParams.get("page") || "1", 10),
+      perPage: parseInt(searchParams.get("perPage") || "10", 10),
+      keyword: searchParams.get("keyword") || undefined,
     }
 
     const validationError = validateParams(queryParams)
@@ -96,7 +97,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
         {
           code: 400,
           message: validationError,
-          error: validationError
+          error: validationError,
         },
         { status: 400 }
       )
@@ -108,16 +109,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<GroupSearc
       code: 200,
       data: {
         groups,
-        total
-      }
+        total,
+      },
     } satisfies GroupSearchResponse)
   } catch (error) {
-    console.error('Groups search error:', error)
+    console.error("Groups search error:", error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        message: error instanceof Error ? error.message : "Internal server error",
+        error: error instanceof Error ? error.message : "Internal server error",
       },
       { status: 500 }
     )

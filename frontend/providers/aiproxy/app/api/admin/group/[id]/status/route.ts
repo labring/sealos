@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
-import { GroupStatus } from '@/types/admin/group'
+import { NextRequest, NextResponse } from "next/server"
 
-export const dynamic = 'force-dynamic'
+import { GroupStatus } from "@/types/admin/group"
+import { ApiProxyBackendResp, ApiResp } from "@/types/api"
+import { parseJwtToken } from "@/utils/backend/auth"
+import { isAdmin } from "@/utils/backend/isAdmin"
+
+export const dynamic = "force-dynamic"
 
 async function updateGroup(status: GroupStatus, id: string): Promise<void> {
   try {
@@ -15,13 +16,13 @@ async function updateGroup(status: GroupStatus, id: string): Promise<void> {
 
     const token = global.AppConfig?.auth.aiProxyBackendKey
     const response = await fetch(url.toString(), {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${token}`
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
       },
       body: JSON.stringify({ status: status }),
-      cache: 'no-store'
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -30,10 +31,10 @@ async function updateGroup(status: GroupStatus, id: string): Promise<void> {
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to update group status')
+      throw new Error(result.message || "Failed to update group status")
     }
   } catch (error) {
-    console.error('admin groups api: update group status error:## ', error)
+    console.error("admin groups api: update group status error:## ", error)
     throw error
   }
 }
@@ -51,8 +52,8 @@ export async function POST(
       return NextResponse.json(
         {
           code: 400,
-          message: 'Group id is required',
-          error: 'Bad Request'
+          message: "Group id is required",
+          error: "Bad Request",
         },
         { status: 400 }
       )
@@ -63,15 +64,15 @@ export async function POST(
 
     return NextResponse.json({
       code: 200,
-      message: 'Group status updated successfully'
+      message: "Group status updated successfully",
     } satisfies ApiResp)
   } catch (error) {
-    console.error('admin groups api: update group status error:## ', error)
+    console.error("admin groups api: update group status error:## ", error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        message: error instanceof Error ? error.message : "server error",
+        error: error instanceof Error ? error.message : "server error",
       } satisfies ApiResp,
       { status: 500 }
     )

@@ -1,19 +1,19 @@
-'use client'
+"use client"
 
 import {
   FallbackNs,
   initReactI18next,
   useTranslation,
   UseTranslationOptions,
-  UseTranslationResponse
-} from 'react-i18next'
-import i18next, { FlatNamespace, KeyPrefix } from 'i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
-import resourcesToBackend from 'i18next-resources-to-backend'
+  UseTranslationResponse,
+} from "react-i18next"
+import i18next, { FlatNamespace, KeyPrefix } from "i18next"
+import LanguageDetector from "i18next-browser-languagedetector"
+import resourcesToBackend from "i18next-resources-to-backend"
 
-import { getOptions, languages } from './settings'
+import { getOptions, languages } from "./settings"
 
-const runsOnServerSide = typeof window === 'undefined'
+const runsOnServerSide = typeof window === "undefined"
 
 i18next
   .use(initReactI18next)
@@ -27,9 +27,9 @@ i18next
     ...getOptions(),
     lng: undefined, // let detect the language on client side
     detection: {
-      order: ['path', 'htmlTag', 'navigator']
+      order: ["path", "htmlTag", "navigator"],
     },
-    preload: runsOnServerSide ? languages : []
+    preload: runsOnServerSide ? languages : [],
   })
 
 export function useTranslationClientSide<

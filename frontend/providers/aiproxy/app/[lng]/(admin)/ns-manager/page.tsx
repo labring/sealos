@@ -1,58 +1,58 @@
-'use client'
+"use client";
 
+import { useMemo, useState } from "react";
 import {
   Box,
-  Flex,
-  Text,
   Button,
+  Flex,
   Icon,
   Input,
+  Menu,
+  MenuButton,
   MenuItem,
   MenuList,
-  Menu,
-  MenuButton
-} from '@chakra-ui/react'
-import { CurrencySymbol } from '@sealos/ui'
-import { useMemo, useState } from 'react'
-
-import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from '@/api/platform'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import SwitchPage from '@/components/common/SwitchPage'
-import { BaseTable } from '@/components/table/BaseTable'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+  Text,
+} from "@chakra-ui/react";
+import { CurrencySymbol } from "@sealos/ui";
+import { useMessage } from "@sealos/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ColumnDef,
+  createColumnHelper,
   getCoreRowModel,
   useReactTable,
-  createColumnHelper
-} from '@tanstack/react-table'
-import { QueryKey } from '@/types/query-key'
-import { useBackendStore } from '@/store/backend'
-import { GroupInfo, GroupStatus } from '@/types/admin/group'
-import { useMessage } from '@sealos/ui'
-import { EditableTextNoLable } from '@/components/common/EditableTextNoLable'
+} from "@tanstack/react-table";
+
+import { deleteGroup, getGroups, updateGroupQpm, updateGroupStatus } from "@/api/platform";
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { EditableTextNoLable } from "@/components/common/EditableTextNoLable";
+import SwitchPage from "@/components/common/SwitchPage";
+import { BaseTable } from "@/components/table/BaseTable";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { useBackendStore } from "@/store/backend";
+import { GroupInfo, GroupStatus } from "@/types/admin/group";
+import { QueryKey } from "@/types/query-key";
 
 export default function Home(): React.JSX.Element {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const { currencySymbol } = useBackendStore();
   const { message } = useMessage({
-    warningBoxBg: '#FFFAEB',
-    warningIconBg: '#F79009',
-    warningIconFill: 'white',
-    successBoxBg: '#EDFBF3',
-    successIconBg: '#039855',
-    successIconFill: 'white'
-  })
+    warningBoxBg: "#FFFAEB",
+    warningIconBg: "#F79009",
+    warningIconFill: "white",
+    successBoxBg: "#EDFBF3",
+    successIconBg: "#039855",
+    successIconFill: "white",
+  });
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
-  const [groupId, setGroupId] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
-  const [groupData, setGroupData] = useState<GroupInfo[]>([])
-  const [total, setTotal] = useState(0)
+  const [groupId, setGroupId] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [groupData, setGroupData] = useState<GroupInfo[]>([]);
+  const [total, setTotal] = useState(0);
 
   const { isLoading } = useQuery(
     [QueryKey.GetGroups, page, pageSize, groupId],
@@ -60,174 +60,175 @@ export default function Home(): React.JSX.Element {
       getGroups({
         page,
         perPage: pageSize,
-        keyword: groupId
+        keyword: groupId,
       }),
     {
       onSuccess: (data) => {
         if (!data?.groups) {
-          setGroupData([])
-          setTotal(0)
-          return
+          setGroupData([]);
+          setTotal(0);
+          return;
         }
-        setGroupData(data?.groups || [])
-        setTotal(data?.total || 0)
-      }
+        setGroupData(data?.groups || []);
+        setTotal(data?.total || 0);
+      },
     }
-  )
+  );
 
   const deleteGroupMutation = useMutation(({ id }: { id: string }) => deleteGroup(id), {
     onSuccess() {
       message({
-        status: 'success',
-        title: t('nsManager.deleteGroupSuccess'),
+        status: "success",
+        title: t("nsManager.deleteGroupSuccess"),
         isClosable: true,
         duration: 2000,
-        position: 'top'
-      })
-      queryClient.invalidateQueries([QueryKey.GetGroups])
+        position: "top",
+      });
+      queryClient.invalidateQueries([QueryKey.GetGroups]);
     },
     onError(err: any) {
       message({
-        status: 'warning',
-        title: t('nsManager.deleteGroupFailed'),
-        description: err?.message || t('nsManager.deleteGroupFailed'),
+        status: "warning",
+        title: t("nsManager.deleteGroupFailed"),
+        description: err?.message || t("nsManager.deleteGroupFailed"),
         isClosable: true,
-        position: 'top'
-      })
-    }
-  })
+        position: "top",
+      });
+    },
+  });
 
   const updateGroupStatusMutation = useMutation(
     ({ id, status }: { id: string; status: number }) => updateGroupStatus(id, status),
     {
       onSuccess() {
         message({
-          status: 'success',
-          title: t('nsManager.updateGroupStatusSuccess'),
+          status: "success",
+          title: t("nsManager.updateGroupStatusSuccess"),
           isClosable: true,
           duration: 2000,
-          position: 'top'
-        })
-        queryClient.invalidateQueries([QueryKey.GetGroups])
+          position: "top",
+        });
+        queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
-          status: 'warning',
-          title: t('nsManager.updateGroupStatusFailed'),
-          description: err?.message || t('nsManager.updateGroupStatusFailed'),
+          status: "warning",
+          title: t("nsManager.updateGroupStatusFailed"),
+          description: err?.message || t("nsManager.updateGroupStatusFailed"),
           isClosable: true,
-          position: 'top'
-        })
-      }
+          position: "top",
+        });
+      },
     }
-  )
+  );
 
   const updateGroupQpmMutation = useMutation(
     ({ id, qpm }: { id: string; qpm: number }) => updateGroupQpm(id, qpm),
     {
       onSuccess() {
         message({
-          status: 'success',
-          title: t('nsManager.updateGroupQpmSuccess'),
+          status: "success",
+          title: t("nsManager.updateGroupQpmSuccess"),
           isClosable: true,
           duration: 2000,
-          position: 'top'
-        })
-        queryClient.invalidateQueries([QueryKey.GetGroups])
+          position: "top",
+        });
+        queryClient.invalidateQueries([QueryKey.GetGroups]);
       },
       onError(err: any) {
         message({
-          status: 'warning',
-          title: t('nsManager.updateGroupQpmFailed'),
-          description: err?.message || t('nsManager.updateGroupQpmFailed'),
+          status: "warning",
+          title: t("nsManager.updateGroupQpmFailed"),
+          description: err?.message || t("nsManager.updateGroupQpmFailed"),
           isClosable: true,
-          position: 'top'
-        })
-      }
+          position: "top",
+        });
+      },
     }
-  )
+  );
 
   // Update the button click handlers in the table actions column:
   const handleStatusUpdate = (id: string, currentStatus: number) => {
     const newStatus =
-      currentStatus === GroupStatus.DISABLED ? GroupStatus.ENABLED : GroupStatus.DISABLED
-    updateGroupStatusMutation.mutate({ id, status: newStatus })
-  }
-  const columnHelper = createColumnHelper<GroupInfo>()
+      currentStatus === GroupStatus.DISABLED ? GroupStatus.ENABLED : GroupStatus.DISABLED;
+    updateGroupStatusMutation.mutate({ id, status: newStatus });
+  };
+  const columnHelper = createColumnHelper<GroupInfo>();
 
   const columns = useMemo<ColumnDef<GroupInfo>[]>(() => {
     return [
       {
-        header: t('nsManager.groupId'),
-        accessorKey: 'id'
+        header: t("nsManager.groupId"),
+        accessorKey: "id",
       },
       {
-        header: t('nsManager.qpm'),
-        id: 'qpm',
+        header: t("nsManager.qpm"),
+        id: "qpm",
         cell: (info) => (
           <EditableTextNoLable
             value={info.row.original.qpm}
-            flexProps={{ gap: '2px' }}
+            flexProps={{ gap: "2px" }}
             onSubmit={(value) =>
               updateGroupQpmMutation.mutate({
                 id: info.row.original.id,
-                qpm: Number(value)
+                qpm: Number(value),
               })
             }
           />
-        )
+        ),
       },
       {
-        header: t('nsManager.created_at'),
+        header: t("nsManager.created_at"),
         accessorFn: (row) => new Date(row.created_at).toLocaleString(),
-        id: 'created_at'
+        id: "created_at",
       },
       {
-        header: t('nsManager.accessed_at'),
+        header: t("nsManager.accessed_at"),
         accessorFn: (row) => {
           if (row.accessed_at && row.accessed_at < 0) {
-            return t('key.unused')
+            return t("key.unused");
           }
 
-          return new Date(row.accessed_at).toLocaleString()
+          return new Date(row.accessed_at).toLocaleString();
         },
-        id: 'accessed_at'
+        id: "accessed_at",
       },
       {
-        header: t('nsManager.request_count'),
-        accessorKey: 'request_count'
+        header: t("nsManager.request_count"),
+        accessorKey: "request_count",
       },
       {
-        header: t('nsManager.status'),
+        header: t("nsManager.status"),
         accessorFn: (row) =>
-          row.status === GroupStatus.ENABLED ? t('nsManager.enabled') : t('nsManager.disabled'),
+          row.status === GroupStatus.ENABLED ? t("nsManager.enabled") : t("nsManager.disabled"),
         cell: ({ getValue }) => {
-          const value = getValue() as string
+          const value = getValue() as string;
           return (
             <Text
               color={
-                value === t('nsManager.enabled')
-                  ? 'var(--Green-600, #039855)'
-                  : 'var(--Red-600, #D92D20)'
+                value === t("nsManager.enabled")
+                  ? "var(--Green-600, #039855)"
+                  : "var(--Red-600, #D92D20)"
               }
               fontFamily="PingFang SC"
               fontSize="12px"
               fontWeight={500}
               lineHeight="16px"
-              letterSpacing="0.5px">
+              letterSpacing="0.5px"
+            >
               {value}
             </Text>
-          )
+          );
         },
-        id: 'status'
+        id: "status",
       },
       {
-        accessorKey: 'used_amount',
-        id: 'used_amount',
+        accessorKey: "used_amount",
+        id: "used_amount",
         header: () => {
           return (
-            <Box position={'relative'}>
-              <Flex alignItems={'center'} gap={'4px'}>
+            <Box position={"relative"}>
+              <Flex alignItems={"center"} gap={"4px"}>
                 <Text
                   noOfLines={1}
                   color="grayModern.600"
@@ -235,17 +236,18 @@ export default function Home(): React.JSX.Element {
                   fontSize="12px"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('nsManager.used_amount')}
+                  letterSpacing="0.5px"
+                >
+                  {t("nsManager.used_amount")}
                 </Text>
                 <CurrencySymbol type={currencySymbol} />
               </Flex>
             </Box>
-          )
-        }
+          );
+        },
       },
       columnHelper.display({
-        id: 'actions',
+        id: "actions",
         header: () => (
           <Text
             color="grayModern.600"
@@ -253,8 +255,9 @@ export default function Home(): React.JSX.Element {
             fontSize="12px"
             fontWeight={500}
             lineHeight="16px"
-            letterSpacing="0.5px">
-            {t('nsManager.actions')}
+            letterSpacing="0.5px"
+          >
+            {t("nsManager.actions")}
           </Text>
         ),
         cell: (info) => (
@@ -266,13 +269,15 @@ export default function Home(): React.JSX.Element {
               gap="6px"
               borderRadius="6px"
               transition="all 0.2s"
-              _hover={{ bg: 'gray.100' }}>
+              _hover={{ bg: "gray.100" }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -289,7 +294,8 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               bg="white"
               borderRadius="6px"
-              boxShadow="0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)">
+              boxShadow="0px 4px 10px 0px rgba(19, 51, 107, 0.10), 0px 0px 1px 0px rgba(19, 51, 107, 0.10)"
+            >
               <MenuItem
                 display="flex"
                 p="6px 4px"
@@ -299,10 +305,11 @@ export default function Home(): React.JSX.Element {
                 borderRadius="4px"
                 color="grayModern.600"
                 _hover={{
-                  bg: 'rgba(17, 24, 36, 0.05)',
-                  color: info.row.original.status === 1 ? '#D92D20' : 'brightBlue.600'
+                  bg: "rgba(17, 24, 36, 0.05)",
+                  color: info.row.original.status === 1 ? "#D92D20" : "brightBlue.600",
                 }}
-                onClick={() => handleStatusUpdate(info.row.original.id, info.row.original.status)}>
+                onClick={() => handleStatusUpdate(info.row.original.id, info.row.original.status)}
+              >
                 {info.row.original.status === GroupStatus.ENABLED ? (
                   <>
                     <svg
@@ -310,7 +317,8 @@ export default function Home(): React.JSX.Element {
                       width="16"
                       height="16"
                       viewBox="0 0 16 16"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -324,8 +332,9 @@ export default function Home(): React.JSX.Element {
                       fontStyle="normal"
                       fontWeight="500"
                       lineHeight="16px"
-                      letterSpacing="0.5px">
-                      {t('channels.disable')}
+                      letterSpacing="0.5px"
+                    >
+                      {t("channels.disable")}
                     </Text>
                   </>
                 ) : (
@@ -335,7 +344,8 @@ export default function Home(): React.JSX.Element {
                       width="16"
                       height="16"
                       viewBox="0 0 16 16"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -349,8 +359,9 @@ export default function Home(): React.JSX.Element {
                       fontStyle="normal"
                       fontWeight="500"
                       lineHeight="16px"
-                      letterSpacing="0.5px">
-                      {t('channels.enable')}
+                      letterSpacing="0.5px"
+                    >
+                      {t("channels.enable")}
                     </Text>
                   </>
                 )}
@@ -364,16 +375,18 @@ export default function Home(): React.JSX.Element {
                 borderRadius="4px"
                 color="grayModern.600"
                 _hover={{
-                  bg: 'rgba(17, 24, 36, 0.05)',
-                  color: '#D92D20'
+                  bg: "rgba(17, 24, 36, 0.05)",
+                  color: "#D92D20",
                 }}
-                onClick={() => deleteGroupMutation.mutate({ id: String(info.row.original.id) })}>
+                onClick={() => deleteGroupMutation.mutate({ id: String(info.row.original.id) })}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     fillRule="evenodd"
                     clipRule="evenodd"
@@ -387,22 +400,23 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontWeight="500"
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('channels.delete')}
+                  letterSpacing="0.5px"
+                >
+                  {t("channels.delete")}
                 </Text>
               </MenuItem>
             </MenuList>
           </Menu>
-        )
-      })
-    ]
-  }, [])
+        ),
+      }),
+    ];
+  }, []);
 
   const table = useReactTable({
     data: groupData,
     columns,
-    getCoreRowModel: getCoreRowModel()
-  })
+    getCoreRowModel: getCoreRowModel(),
+  });
 
   return (
     <Flex
@@ -412,7 +426,8 @@ export default function Home(): React.JSX.Element {
       h="100vh"
       width="full"
       flexDirection="column"
-      overflow="hidden">
+      overflow="hidden"
+    >
       <Flex
         bg="white"
         px="32px"
@@ -423,7 +438,8 @@ export default function Home(): React.JSX.Element {
         flexDirection="column"
         h="full"
         w="full"
-        flex="1">
+        flex="1"
+      >
         {/* -- header */}
         <Flex flexDirection="column" gap="16px" alignItems="flex-start">
           <Flex
@@ -431,7 +447,8 @@ export default function Home(): React.JSX.Element {
             h="32px"
             justifyContent="space-between"
             alignItems="center"
-            alignSelf="stretch">
+            alignSelf="stretch"
+          >
             <Text
               color="black"
               fontFamily="PingFang SC"
@@ -439,25 +456,26 @@ export default function Home(): React.JSX.Element {
               fontStyle="normal"
               fontWeight="500"
               lineHeight="26px"
-              letterSpacing="0.15px">
-              {t('nsManager.ns_manager')}
+              letterSpacing="0.15px"
+            >
+              {t("nsManager.ns_manager")}
             </Text>
             <Button
               variant="outline"
               _hover={{
-                transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transform: "scale(1.05)",
+                transition: "transform 0.2s ease",
               }}
               _active={{
-                transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                transform: "scale(0.92)",
+                animation: "pulse 0.3s ease",
               }}
               sx={{
-                '@keyframes pulse': {
-                  '0%': { transform: 'scale(0.92)' },
-                  '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
+                "@keyframes pulse": {
+                  "0%": { transform: "scale(0.92)" },
+                  "50%": { transform: "scale(0.96)" },
+                  "100%": { transform: "scale(0.92)" },
+                },
               }}
               display="flex"
               padding="8px"
@@ -469,14 +487,16 @@ export default function Home(): React.JSX.Element {
               bg="white"
               boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
               onClick={() => {
-                setGroupId('')
-              }}>
+                setGroupId("");
+              }}
+            >
               <Icon
                 xmlns="http://www.w3.org/2000/svg"
                 width="16px"
                 height="16px"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   d="M6.4354 14.638C5.1479 14.2762 4.0979 13.5684 3.2854 12.5145C2.4729 11.4606 2.06665 10.2473 2.06665 8.87454C2.06665 8.16346 2.1854 7.48656 2.4229 6.84385C2.6604 6.20113 2.9979 5.61181 3.4354 5.07589C3.5729 4.92619 3.74165 4.84809 3.94165 4.8416C4.14165 4.83512 4.3229 4.91321 4.4854 5.07589C4.6229 5.21311 4.6949 5.38152 4.7014 5.58113C4.7079 5.78073 4.64215 5.96785 4.50415 6.1425C4.20415 6.52923 3.9729 6.95338 3.8104 7.41496C3.6479 7.87653 3.56665 8.36306 3.56665 8.87454C3.56665 9.88501 3.86365 10.7865 4.45765 11.5789C5.05165 12.3713 5.81715 12.9107 6.75415 13.1971C6.91665 13.247 7.0509 13.3406 7.1569 13.4778C7.2629 13.6151 7.31615 13.7648 7.31665 13.9269C7.31665 14.1764 7.22915 14.373 7.05415 14.5167C6.87915 14.6605 6.6729 14.7009 6.4354 14.638ZM9.6979 14.638C9.4604 14.7004 9.25415 14.6567 9.07915 14.507C8.90415 14.3573 8.81665 14.1577 8.81665 13.9082C8.81665 13.7585 8.8699 13.6151 8.9764 13.4778C9.0829 13.3406 9.21715 13.247 9.37915 13.1971C10.3167 12.8977 11.0824 12.3551 11.6764 11.5691C12.2704 10.7832 12.5672 9.88501 12.5667 8.87454C12.5667 7.62703 12.1292 6.56665 11.2542 5.6934C10.3792 4.82015 9.31665 4.38352 8.06665 4.38352H8.0104L8.3104 4.68292C8.4479 4.82015 8.51665 4.9948 8.51665 5.20687C8.51665 5.41895 8.4479 5.5936 8.3104 5.73083C8.1729 5.86805 7.9979 5.93666 7.7854 5.93666C7.5729 5.93666 7.3979 5.86805 7.2604 5.73083L5.6854 4.15897C5.6104 4.08412 5.5574 4.00303 5.5264 3.91571C5.4954 3.82838 5.47965 3.73482 5.47915 3.63502C5.47915 3.53522 5.4949 3.44166 5.5264 3.35433C5.5579 3.26701 5.6109 3.18592 5.6854 3.11107L7.2604 1.53921C7.3979 1.40199 7.5729 1.33337 7.7854 1.33337C7.9979 1.33337 8.1729 1.40199 8.3104 1.53921C8.4479 1.67644 8.51665 1.85109 8.51665 2.06316C8.51665 2.27524 8.4479 2.44989 8.3104 2.58712L8.0104 2.88652H8.06665C9.74165 2.88652 11.1604 3.46661 12.3229 4.62678C13.4854 5.78696 14.0667 7.20288 14.0667 8.87454C14.0667 10.2343 13.6604 11.4444 12.8479 12.5048C12.0354 13.5652 10.9854 14.2762 9.6979 14.638Z"
                   fill="#485264"
@@ -490,7 +510,8 @@ export default function Home(): React.JSX.Element {
               alignItems="flex-start"
               justifyContent="space-between"
               gap="160px"
-              alignSelf="stretch">
+              alignSelf="stretch"
+            >
               <Flex h="32px" gap="48px" alignItems="center" flex="1" justifyContent="flex-start">
                 <Text
                   whiteSpace="nowrap"
@@ -500,8 +521,9 @@ export default function Home(): React.JSX.Element {
                   fontStyle="normal"
                   fontWeight="500"
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('nsManager.groupId')}
+                  letterSpacing="0.5px"
+                >
+                  {t("nsManager.groupId")}
                 </Text>
                 <Input
                   w="276px"
@@ -512,18 +534,18 @@ export default function Home(): React.JSX.Element {
                   border="1px solid"
                   borderColor="grayModern.200"
                   bgColor="grayModern.50"
-                  _hover={{ borderColor: 'grayModern.300' }}
-                  _focus={{ borderColor: 'grayModern.300' }}
-                  _focusVisible={{ borderColor: 'grayModern.300' }}
-                  _active={{ borderColor: 'grayModern.300' }}
-                  placeholder={t('nsManager.select_group_id')}
+                  _hover={{ borderColor: "grayModern.300" }}
+                  _focus={{ borderColor: "grayModern.300" }}
+                  _focusVisible={{ borderColor: "grayModern.300" }}
+                  _active={{ borderColor: "grayModern.300" }}
+                  placeholder={t("nsManager.select_group_id")}
                   _placeholder={{
-                    color: 'grayModern.500',
-                    fontFamily: 'PingFang SC',
-                    fontSize: '12px',
+                    color: "grayModern.500",
+                    fontFamily: "PingFang SC",
+                    fontSize: "12px",
                     fontWeight: 400,
-                    lineHeight: '16px',
-                    letterSpacing: '0.048px'
+                    lineHeight: "16px",
+                    letterSpacing: "0.048px",
                   }}
                   value={groupId}
                   onChange={(e) => setGroupId(e.target.value)}
@@ -541,7 +563,7 @@ export default function Home(): React.JSX.Element {
           <BaseTable table={table} isLoading={isLoading} />
           <SwitchPage
             m="0"
-            justifyContent={'end'}
+            justifyContent={"end"}
             currentPage={page}
             totalPage={Math.ceil(total / pageSize)}
             totalItem={total}
@@ -552,5 +574,5 @@ export default function Home(): React.JSX.Element {
         {/* -- table end */}
       </Flex>
     </Flex>
-  )
+  );
 }

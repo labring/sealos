@@ -1,102 +1,104 @@
-'use client'
-import { Flex, Text, Badge } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { MyTooltip } from '@/components/common/MyTooltip'
-import { useMessage } from '@sealos/ui'
-import { ModelConfig } from '@/types/models/model'
-import Image, { StaticImageData } from 'next/image'
-import { getTranslationWithFallback } from '@/utils/common'
-import { modelIcons } from '@/ui/icons/mode-icons'
+"use client";
+import { Badge, Flex, Text } from "@chakra-ui/react";
+import { useMessage } from "@sealos/ui";
+import Image, { StaticImageData } from "next/image";
+
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { MyTooltip } from "@/components/common/MyTooltip";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { ModelConfig } from "@/types/models/model";
+import { modelIcons } from "@/ui/icons/mode-icons";
+import { getTranslationWithFallback } from "@/utils/common";
 
 export const getModelIcon = (modelOwner: string): StaticImageData => {
-  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons['default']
-  return icon
-}
+  const icon = modelIcons[modelOwner as keyof typeof modelIcons] || modelIcons["default"];
+  return icon;
+};
 
 // 在组件外部定义样式配置
 const MODEL_TYPE_STYLES = {
   1: {
-    background: '#F0FBFF',
-    color: '#0884DD'
+    background: "#F0FBFF",
+    color: "#0884DD",
   },
   2: {
-    background: '#F4F4F7',
-    color: '#383F50'
+    background: "#F4F4F7",
+    color: "#383F50",
   },
   3: {
-    background: '#EBFAF8',
-    color: '#007E7C'
+    background: "#EBFAF8",
+    color: "#007E7C",
   },
   4: {
-    background: '#FEF3F2',
-    color: '#F04438'
+    background: "#FEF3F2",
+    color: "#F04438",
   },
   5: {
-    background: '#F0EEFF',
-    color: '#6F5DD7'
+    background: "#F0EEFF",
+    color: "#6F5DD7",
   },
   6: {
-    background: '#FFFAEB',
-    color: '#DC6803'
+    background: "#FFFAEB",
+    color: "#DC6803",
   },
   7: {
-    background: '#FAF1FF',
-    color: '#9E53C1'
+    background: "#FAF1FF",
+    color: "#9E53C1",
   },
   8: {
-    background: '#FFF1F6',
-    color: '#E82F72'
+    background: "#FFF1F6",
+    color: "#E82F72",
   },
   9: {
-    background: '#F0F4FF',
-    color: '#3370FF'
+    background: "#F0F4FF",
+    color: "#3370FF",
   },
   10: {
-    background: '#EDFAFF',
-    color: '#0077A9'
+    background: "#EDFAFF",
+    color: "#0077A9",
   },
   default: {
-    background: '#F4F4F7',
-    color: '#383F50'
-  }
-} as const
+    background: "#F4F4F7",
+    color: "#383F50",
+  },
+} as const;
 
 // 在组件中使用
 export const getTypeStyle = (type: number) => {
-  return MODEL_TYPE_STYLES[type as keyof typeof MODEL_TYPE_STYLES] || MODEL_TYPE_STYLES.default
-}
+  return MODEL_TYPE_STYLES[type as keyof typeof MODEL_TYPE_STYLES] || MODEL_TYPE_STYLES.default;
+};
 
 export const ModelComponent = ({
   modelConfig,
-  displayType = false
+  displayType = false,
 }: {
-  modelConfig: ModelConfig
-  displayType?: boolean
+  modelConfig: ModelConfig;
+  displayType?: boolean;
 }) => {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
   const { message } = useMessage({
-    warningBoxBg: '#FFFAEB',
-    warningIconBg: '#F79009',
-    warningIconFill: 'white',
-    successBoxBg: '#EDFBF3',
-    successIconBg: '#039855',
-    successIconFill: 'white'
-  })
+    warningBoxBg: "#FFFAEB",
+    warningIconBg: "#F79009",
+    warningIconFill: "white",
+    successBoxBg: "#EDFBF3",
+    successIconBg: "#039855",
+    successIconFill: "white",
+  });
 
-  const iconSrc = getModelIcon(modelConfig.owner)
+  const iconSrc = getModelIcon(modelConfig.owner);
 
   return (
     <Flex alignItems="center" justifyContent="flex-start" gap="8px" h="42px">
       <MyTooltip
         label={getTranslationWithFallback(
           `modeOwner.${String(modelConfig.owner)}`,
-          'modeOwner.unknown',
+          "modeOwner.unknown",
           t as any
         )}
         width="auto"
-        height="auto">
+        height="auto"
+      >
         <Image src={iconSrc} alt={modelConfig.model} width={32} height={32} />
       </MyTooltip>
       <Flex gap="4px" alignItems="flex-start" direction="column">
@@ -113,25 +115,26 @@ export const ModelComponent = ({
             navigator.clipboard.writeText(modelConfig.model).then(
               () => {
                 message({
-                  status: 'success',
-                  title: t('copySuccess'),
+                  status: "success",
+                  title: t("copySuccess"),
                   isClosable: true,
                   duration: 2000,
-                  position: 'top'
-                })
+                  position: "top",
+                });
               },
               (err) => {
                 message({
-                  status: 'warning',
-                  title: t('copyFailed'),
-                  description: err?.message || t('copyFailed'),
+                  status: "warning",
+                  title: t("copyFailed"),
+                  description: err?.message || t("copyFailed"),
                   isClosable: true,
-                  position: 'top'
-                })
+                  position: "top",
+                });
               }
             )
           }
-          cursor="pointer">
+          cursor="pointer"
+        >
           {modelConfig.model}
         </Text>
         <Flex gap="4px" alignItems="center" justifyContent="flex-start">
@@ -142,17 +145,19 @@ export const ModelComponent = ({
               justifyContent="center"
               alignItems="center"
               borderRadius="4px"
-              background={getTypeStyle(modelConfig.type).background}>
+              background={getTypeStyle(modelConfig.type).background}
+            >
               <Text
                 color={getTypeStyle(modelConfig.type).color}
                 fontFamily="PingFang SC"
                 fontSize="12px"
                 fontWeight={500}
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {getTranslationWithFallback(
                   `modeType.${String(modelConfig.type)}`,
-                  'modeType.0',
+                  "modeType.0",
                   t as any
                 )}
               </Text>
@@ -166,12 +171,14 @@ export const ModelComponent = ({
                   fontFamily="Inter"
                   fontSize="12px"
                   fontWeight={400}
-                  lineHeight="150%">
-                  {t('price.modelVisionLabel')}
+                  lineHeight="150%"
+                >
+                  {t("price.modelVisionLabel")}
                 </Text>
               }
               width="auto"
-              height="auto">
+              height="auto"
+            >
               <Badge
                 display="flex"
                 padding="1px 4px"
@@ -179,13 +186,15 @@ export const ModelComponent = ({
                 alignItems="center"
                 gap="2px"
                 borderRadius="4px"
-                background="var(--Teal-50, #EBFAF8)">
+                background="var(--Teal-50, #EBFAF8)"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"
                   height="14"
                   viewBox="0 0 14 14"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M6.9999 5.35705C7.43565 5.35705 7.85355 5.53015 8.16167 5.83827C8.46979 6.14639 8.64289 6.56429 8.64289 7.00004C8.64289 7.43578 8.46979 7.85368 8.16167 8.1618C7.85355 8.46992 7.43565 8.64302 6.9999 8.64302C6.56416 8.64302 6.14626 8.46992 5.83814 8.1618C5.53002 7.85368 5.35692 7.43578 5.35692 7.00004C5.35692 6.56429 5.53002 6.14639 5.83814 5.83827C6.14626 5.53015 6.56416 5.35705 6.9999 5.35705ZM6.9999 2.89258C9.44394 2.89258 11.5695 4.2494 12.6718 6.25045C12.7785 6.44422 12.8319 6.5411 12.8719 6.73711C12.8982 6.86627 12.8982 7.13381 12.8719 7.26297C12.8319 7.45898 12.7785 7.55586 12.6718 7.74962C11.5695 9.75068 9.44394 11.1075 6.9999 11.1075C4.55587 11.1075 2.43032 9.75068 1.32805 7.74962C1.22132 7.55586 1.16795 7.45898 1.12793 7.26297C1.10156 7.13381 1.10156 6.86627 1.12793 6.73711C1.16795 6.5411 1.22132 6.44422 1.32805 6.25045C2.43032 4.2494 4.55587 2.89258 6.9999 2.89258ZM2.70809 6.12392C2.56204 6.31728 2.48901 6.41395 2.4229 6.6637C2.38194 6.81844 2.38194 7.18164 2.4229 7.33638C2.48901 7.58612 2.56204 7.6828 2.70809 7.87616C3.10318 8.3992 3.59235 8.84798 4.15342 9.19794C5.00732 9.73055 5.99352 10.0129 6.9999 10.0129C8.00629 10.0129 8.99249 9.73055 9.84639 9.19794C10.4075 8.84798 10.8966 8.3992 11.2917 7.87616C11.4378 7.6828 11.5108 7.58612 11.5769 7.33638C11.6179 7.18164 11.6179 6.81844 11.5769 6.6637C11.5108 6.41395 11.4378 6.31728 11.2917 6.12392C10.8966 5.60087 10.4075 5.15209 9.84639 4.80213C8.99249 4.26953 8.00629 3.98718 6.9999 3.98718C5.99352 3.98718 5.00732 4.26953 4.15342 4.80213C3.59235 5.15209 3.10318 5.60088 2.70809 6.12392Z"
                     fill="#00A9A6"
@@ -198,8 +207,9 @@ export const ModelComponent = ({
                   fontSize="11px"
                   fontWeight={500}
                   lineHeight="16px"
-                  letterSpacing="0.5px">
-                  {t('price.modelVision')}
+                  letterSpacing="0.5px"
+                >
+                  {t("price.modelVision")}
                 </Text>
               </Badge>
             </MyTooltip>
@@ -212,13 +222,15 @@ export const ModelComponent = ({
               alignItems="center"
               gap="2px"
               borderRadius="4px"
-              background="#F0EEFF">
+              background="#F0EEFF"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="14"
                 height="14"
                 viewBox="0 0 14 14"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -237,8 +249,9 @@ export const ModelComponent = ({
                 fontSize="11px"
                 fontWeight={500}
                 lineHeight="16px"
-                letterSpacing="0.5px">
-                {t('price.modelToolChoice')}
+                letterSpacing="0.5px"
+              >
+                {t("price.modelToolChoice")}
               </Text>
             </Badge>
           )}
@@ -284,7 +297,8 @@ export const ModelComponent = ({
               justifyContent="center"
               alignItems="center"
               borderRadius="4px"
-              background="#F7F8FA">
+              background="#F7F8FA"
+            >
               <Text
                 color="#667085"
                 fontFamily="PingFang SC"
@@ -292,7 +306,8 @@ export const ModelComponent = ({
                 fontSize="11px"
                 fontWeight={500}
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {`${
                   modelConfig.config.max_context_tokens % 1024 === 0
                     ? Math.ceil(modelConfig.config.max_context_tokens / 1024)
@@ -308,7 +323,8 @@ export const ModelComponent = ({
               justifyContent="center"
               alignItems="center"
               borderRadius="4px"
-              background="#EDFAFF">
+              background="#EDFAFF"
+            >
               <Text
                 color="#0077A9"
                 fontFamily="PingFang SC"
@@ -316,9 +332,10 @@ export const ModelComponent = ({
                 fontSize="11px"
                 fontWeight={500}
                 lineHeight="16px"
-                letterSpacing="0.5px">
+                letterSpacing="0.5px"
+              >
                 {`${Math.ceil(modelConfig.config.max_output_tokens / 1024)}K ${t(
-                  'price.response'
+                  "price.response"
                 )}`}
               </Text>
             </Badge>
@@ -326,5 +343,5 @@ export const ModelComponent = ({
         </Flex>
       </Flex>
     </Flex>
-  )
-}
+  );
+};

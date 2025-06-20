@@ -15,5 +15,5 @@ export type AppConfigType = {
     accountServer: string
   }
   adminNameSpace: string[]
-  currencySymbol: 'shellCoin' | 'cny' | 'usd'
+  currencySymbol: "shellCoin" | "cny" | "usd"
 }

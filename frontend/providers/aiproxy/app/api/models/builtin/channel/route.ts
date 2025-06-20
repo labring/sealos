@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
-import { isAdmin } from '@/utils/backend/isAdmin'
-import { ChannelWithMode } from '@/types/models/model'
+import { NextRequest, NextResponse } from "next/server"
 
-export const dynamic = 'force-dynamic'
+import { ApiProxyBackendResp, ApiResp } from "@/types/api"
+import { ChannelWithMode } from "@/types/models/model"
+import { parseJwtToken } from "@/utils/backend/auth"
+import { isAdmin } from "@/utils/backend/isAdmin"
+
+export const dynamic = "force-dynamic"
 
 type ApiProxyBackendAllChannelEnabledModeResponse = ApiProxyBackendResp<ChannelWithMode>
 export type GetAllChannelEnabledModelsResponse = ApiResp<ChannelWithMode>
@@ -12,16 +13,16 @@ export type GetAllChannelEnabledModelsResponse = ApiResp<ChannelWithMode>
 async function fetchAllChannelEnabledModels(): Promise<ChannelWithMode> {
   try {
     const url = new URL(
-      '/api/models/builtin/channel',
+      "/api/models/builtin/channel",
       global.AppConfig?.backend.aiproxyInternal || global.AppConfig?.backend.aiproxy
     )
     const response = await fetch(url.toString(), {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`
+        "Content-Type": "application/json",
+        Authorization: `${global.AppConfig?.auth.aiProxyBackendKey}`,
       },
-      cache: 'no-store'
+      cache: "no-store",
     })
     if (!response.ok) {
       throw new Error(`HTTP error, status code: ${response.status}`)
@@ -29,12 +30,12 @@ async function fetchAllChannelEnabledModels(): Promise<ChannelWithMode> {
     const result: ApiProxyBackendAllChannelEnabledModeResponse = await response.json()
 
     if (!result.success) {
-      throw new Error(result.message || 'builtin channel api: ai proxy backend error')
+      throw new Error(result.message || "builtin channel api: ai proxy backend error")
     }
 
     return result.data || {}
   } catch (error) {
-    console.error('builtin channel api: fetch enabled models error:', error)
+    console.error("builtin channel api: fetch enabled models error:", error)
     throw error
   }
 }
@@ -48,15 +49,15 @@ export async function GET(
 
     return NextResponse.json({
       code: 200,
-      data: await fetchAllChannelEnabledModels()
+      data: await fetchAllChannelEnabledModels(),
     } satisfies GetAllChannelEnabledModelsResponse)
   } catch (error) {
-    console.error('builtin channel api: get enabled models error:', error)
+    console.error("builtin channel api: get enabled models error:", error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : 'server error',
-        error: error instanceof Error ? error.message : 'server error'
+        message: error instanceof Error ? error.message : "server error",
+        error: error instanceof Error ? error.message : "server error",
       },
       { status: 500 }
     )

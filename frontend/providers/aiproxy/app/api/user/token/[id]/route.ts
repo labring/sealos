@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { checkSealosUserIsRealName, parseJwtToken } from '@/utils/backend/auth'
-import { ApiProxyBackendResp, ApiResp } from '@/types/api'
+import { NextRequest, NextResponse } from "next/server"
 
-export const dynamic = 'force-dynamic'
+import { ApiProxyBackendResp, ApiResp } from "@/types/api"
+import { checkSealosUserIsRealName, kcOrAppTokenAuth, parseJwtToken } from "@/utils/backend/auth"
+
+export const dynamic = "force-dynamic"
 
 async function deleteToken(group: string, id: string): Promise<void> {
   try {
@@ -13,12 +14,12 @@ async function deleteToken(group: string, id: string): Promise<void> {
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${token}`
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
       },
-      cache: 'no-store'
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -27,10 +28,10 @@ async function deleteToken(group: string, id: string): Promise<void> {
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to delete token')
+      throw new Error(result.message || "Failed to delete token")
     }
   } catch (error) {
-    console.error('Error deleting token:', error)
+    console.error("Error deleting token:", error)
     throw error
   }
 }
@@ -40,14 +41,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ): Promise<NextResponse<ApiResp>> {
   try {
-    const userGroup = await parseJwtToken(request.headers)
+    const userGroup = await kcOrAppTokenAuth(request.headers)
 
     if (!params.id) {
       return NextResponse.json(
         {
           code: 400,
-          message: 'Token ID is required',
-          error: 'Bad Request'
+          message: "Token ID is required",
+          error: "Bad Request",
         },
         { status: 400 }
       )
@@ -57,15 +58,15 @@ export async function DELETE(
 
     return NextResponse.json({
       code: 200,
-      message: 'Token deleted successfully'
+      message: "Token deleted successfully",
     } satisfies ApiResp)
   } catch (error) {
-    console.error('Token deletion error:', error)
+    console.error("Token deletion error:", error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        message: error instanceof Error ? error.message : "Internal server error",
+        error: error instanceof Error ? error.message : "Internal server error",
       } satisfies ApiResp,
       { status: 500 }
     )
@@ -80,7 +81,7 @@ interface UpdateTokenRequestBody {
 async function updateToken(group: string, id: string, status: number): Promise<void> {
   try {
     if (status !== 1 && status !== 2) {
-      throw new Error('Invalid status')
+      throw new Error("Invalid status")
     }
     const url = new URL(
       `/api/token/${group}/${id}/status`,
@@ -89,13 +90,13 @@ async function updateToken(group: string, id: string, status: number): Promise<v
     const token = global.AppConfig?.auth.aiProxyBackendKey
 
     const response = await fetch(url.toString(), {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `${token}`
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
       },
       body: JSON.stringify({ status }),
-      cache: 'no-store'
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -104,10 +105,10 @@ async function updateToken(group: string, id: string, status: number): Promise<v
 
     const result: ApiProxyBackendResp = await response.json()
     if (!result.success) {
-      throw new Error(result.message || 'Failed to update token')
+      throw new Error(result.message || "Failed to update token")
     }
   } catch (error) {
-    console.error('Error updating token:', error)
+    console.error("Error updating token:", error)
     throw error
   }
 }
@@ -117,14 +118,14 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse<ApiResp>> {
   try {
-    const userGroup = await parseJwtToken(request.headers)
+    const userGroup = await kcOrAppTokenAuth(request.headers)
 
     if (!params.id) {
       return NextResponse.json(
         {
           code: 400,
-          message: 'Token ID is required',
-          error: 'Bad Request'
+          message: "Token ID is required",
+          error: "Bad Request",
         },
         { status: 400 }
       )
@@ -136,8 +137,8 @@ export async function POST(
       return NextResponse.json(
         {
           code: 400,
-          message: 'key.userNotRealName',
-          error: 'key.userNotRealName'
+          message: "key.userNotRealName",
+          error: "key.userNotRealName",
         },
         { status: 400 }
       )
@@ -145,12 +146,12 @@ export async function POST(
 
     const updateTokenBody: UpdateTokenRequestBody = await request.json()
 
-    if (typeof updateTokenBody.status !== 'number') {
+    if (typeof updateTokenBody.status !== "number") {
       return NextResponse.json(
         {
           code: 400,
-          message: 'Status must be a number',
-          error: 'Bad Request'
+          message: "Status must be a number",
+          error: "Bad Request",
         },
         { status: 400 }
       )
@@ -160,15 +161,15 @@ export async function POST(
 
     return NextResponse.json({
       code: 200,
-      message: 'Token updated successfully'
+      message: "Token updated successfully",
     } satisfies ApiResp)
   } catch (error) {
-    console.error('Token update error:', error)
+    console.error("Token update error:", error)
     return NextResponse.json(
       {
         code: 500,
-        message: error instanceof Error ? error.message : 'Internal server error',
-        error: error instanceof Error ? error.message : 'Internal server error'
+        message: error instanceof Error ? error.message : "Internal server error",
+        error: error instanceof Error ? error.message : "Internal server error",
       } satisfies ApiResp,
       { status: 500 }
     )

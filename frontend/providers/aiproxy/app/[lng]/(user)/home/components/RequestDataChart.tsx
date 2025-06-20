@@ -1,117 +1,118 @@
-import { Box, Flex, Text } from '@chakra-ui/react'
-import { useEffect, useRef } from 'react'
-import * as echarts from 'echarts'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { ChartDataItem } from '@/types/user/dashboard'
-import { useBackendStore } from '@/store/backend'
+import { useEffect, useRef } from "react";
+import { Box, Flex, Text } from "@chakra-ui/react";
+import * as echarts from "echarts";
+
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { useBackendStore } from "@/store/backend";
+import { ChartDataItem } from "@/types/user/dashboard";
 
 export default function RequestDataChart({ data }: { data: ChartDataItem[] }): React.JSX.Element {
-  const costChartRef = useRef<HTMLDivElement>(null)
-  const requestChartRef = useRef<HTMLDivElement>(null)
-  const costChartInstance = useRef<echarts.ECharts>()
-  const requestChartInstance = useRef<echarts.ECharts>()
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const { currencySymbol } = useBackendStore()
+  const costChartRef = useRef<HTMLDivElement>(null);
+  const requestChartRef = useRef<HTMLDivElement>(null);
+  const costChartInstance = useRef<echarts.ECharts>();
+  const requestChartInstance = useRef<echarts.ECharts>();
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const { currencySymbol } = useBackendStore();
 
   // Add helper function to determine date format
   const getDateFormat = (timestamps: number[]) => {
-    if (timestamps.length < 2) return 'detailed'
+    if (timestamps.length < 2) return "detailed";
 
-    const timeDiff = timestamps[timestamps.length - 1] - timestamps[0]
+    const timeDiff = timestamps[timestamps.length - 1] - timestamps[0];
     // If time difference is more than 15 days (1296000 seconds), show daily format
-    return timeDiff > 1296000 ? 'daily' : 'detailed'
-  }
+    return timeDiff > 1296000 ? "daily" : "detailed";
+  };
 
   // 初始化图表
   useEffect(() => {
     if (costChartRef.current && requestChartRef.current) {
       costChartInstance.current = echarts.init(costChartRef.current, undefined, {
-        renderer: 'svg'
-      })
+        renderer: "svg",
+      });
       requestChartInstance.current = echarts.init(requestChartRef.current, undefined, {
-        renderer: 'svg'
-      })
+        renderer: "svg",
+      });
     }
 
     return () => {
-      costChartInstance.current?.dispose()
-      requestChartInstance.current?.dispose()
-      costChartInstance.current = undefined
-      requestChartInstance.current = undefined
-    }
-  }, [])
+      costChartInstance.current?.dispose();
+      requestChartInstance.current?.dispose();
+      costChartInstance.current = undefined;
+      requestChartInstance.current = undefined;
+    };
+  }, []);
 
   // 配置图表选项
   useEffect(() => {
-    if (!costChartInstance.current || !requestChartInstance.current) return
+    if (!costChartInstance.current || !requestChartInstance.current) return;
 
-    const commonTooltipStyle: echarts.EChartsOption['tooltip'] = {
-      trigger: 'axis',
+    const commonTooltipStyle: echarts.EChartsOption["tooltip"] = {
+      trigger: "axis",
       axisPointer: {
-        type: 'line',
+        type: "line",
         lineStyle: {
-          color: '#219BF4'
-        }
+          color: "#219BF4",
+        },
       },
-      backgroundColor: 'white',
+      backgroundColor: "white",
       borderWidth: 0,
       padding: [8, 12],
       textStyle: {
-        color: '#111824',
-        fontSize: 12
-      }
-    }
+        color: "#111824",
+        fontSize: 12,
+      },
+    };
 
-    const commonXAxis: echarts.EChartsOption['xAxis'] = {
-      type: 'time',
+    const commonXAxis: echarts.EChartsOption["xAxis"] = {
+      type: "time",
       // boundaryGap: ['0%', '5%'] as [string, string],
-      boundaryGap: ['0%', '0%'] as [string, string],
+      boundaryGap: ["0%", "0%"] as [string, string],
       axisLine: {
         lineStyle: {
-          color: '#E8EBF0',
-          width: 2
-        }
+          color: "#E8EBF0",
+          width: 2,
+        },
       },
       splitLine: {
         show: false,
         lineStyle: {
-          color: '#DFE2EA',
-          type: 'dashed' as const
-        }
+          color: "#DFE2EA",
+          type: "dashed" as const,
+        },
       },
       axisTick: {
         show: true,
         length: 6,
         lineStyle: {
-          color: '#E8EBF0',
-          width: 2
-        }
+          color: "#E8EBF0",
+          width: 2,
+        },
       },
       axisLabel: {
         show: true,
-        color: '#667085',
+        color: "#667085",
         formatter: (value: number) => {
-          const date = new Date(value * 1000)
-          const format = getDateFormat(data.map((item) => item.timestamp))
+          const date = new Date(value * 1000);
+          const format = getDateFormat(data.map((item) => item.timestamp));
 
           return date
             .toLocaleString(lng, {
-              month: '2-digit',
-              day: '2-digit',
-              ...(format === 'detailed' && {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })
+              month: "2-digit",
+              day: "2-digit",
+              ...(format === "detailed" && {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }),
             })
-            .replace(/\//g, '-')
+            .replace(/\//g, "-");
         },
         margin: 14,
-        align: 'left'
-      }
-    }
+        align: "left",
+      },
+    };
 
     // 成本图表配置
     const costOption: echarts.EChartsOption = {
@@ -122,25 +123,25 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
             | echarts.DefaultLabelFormatterCallbackParams
             | echarts.DefaultLabelFormatterCallbackParams[]
         ) {
-          if (!params) return ''
-          const paramArray = Array.isArray(params) ? params : [params]
-          if (paramArray.length === 0) return ''
+          if (!params) return "";
+          const paramArray = Array.isArray(params) ? params : [params];
+          if (paramArray.length === 0) return "";
 
-          const time = new Date((paramArray[0].value as [number, number])[0] * 1000)
+          const time = new Date((paramArray[0].value as [number, number])[0] * 1000);
           const timeStr = time.toLocaleString(lng, {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
           let result = `
             <div style="font-weight: 500; margin-bottom: 4px; margin-top: 4px; color: #667085; font-size: 12px">${timeStr}</div>
             <div style="height: 1px; background: #DFE2EA; margin: 8px 0;"></div>
-          `
+          `;
 
           const currency =
-            currencySymbol === 'shellCoin'
+            currencySymbol === "shellCoin"
               ? `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 15 15" fill="none">
 <circle cx="7" cy="7.4854" r="6.74" fill="url(#paint0_linear_802_289)" stroke="url(#paint1_linear_802_289)" stroke-width="0.52"/>
 <circle cx="6.99996" cy="7.48542" r="6.11562" fill="url(#paint2_linear_802_289)"/>
@@ -197,16 +198,16 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
 </linearGradient>
 </defs>
 </svg>`
-              : currencySymbol === 'cny'
-              ? '￥'
-              : '$'
+              : currencySymbol === "cny"
+              ? "￥"
+              : "$";
 
           paramArray.forEach((param) => {
-            const value = (param.value as [number, number])[1]
+            const value = (param.value as [number, number])[1];
             const formattedValue = Number(value).toLocaleString(lng, {
               minimumFractionDigits: 0,
-              maximumFractionDigits: 4
-            })
+              maximumFractionDigits: 4,
+            });
             result += `
               <div style="display: flex; align-items: center; margin: 4px 0; min-width: 150px">
                 <div style="display: flex; align-items: center; flex: 1">
@@ -216,84 +217,84 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
                 </div>
                 <div style="font-weight: 500; color: #667085; font-size: 12px">${formattedValue}</div>
               </div>
-            `
-          })
+            `;
+          });
 
-          return result
-        }
+          return result;
+        },
       },
       legend: {
         show: false,
-        data: [t('dataDashboard.cost')],
-        bottom: 0
+        data: [t("dataDashboard.cost")],
+        bottom: 0,
       },
       grid: {
         left: 0,
         right: 0,
         bottom: 10,
         top: 10,
-        containLabel: true
+        containLabel: true,
       },
       xAxis: commonXAxis,
       yAxis: {
-        type: 'value',
+        type: "value",
         splitLine: {
           show: true,
           lineStyle: {
-            color: '#DFE2EA',
-            type: 'dashed'
-          }
+            color: "#DFE2EA",
+            type: "dashed",
+          },
         },
         axisLine: {
           show: false,
           lineStyle: {
-            color: '#667085',
-            width: 2
-          }
+            color: "#667085",
+            width: 2,
+          },
         },
         axisLabel: {
           // formatter: '${value}',
-          color: '#667085'
-        }
+          color: "#667085",
+        },
       },
       series: [
         {
-          name: t('dataDashboard.cost'),
-          type: 'line',
+          name: t("dataDashboard.cost"),
+          type: "line",
           smooth: true,
           showSymbol: false,
           data: data.map((item) => [item.timestamp, item.used_amount]),
           itemStyle: {
-            color: '#13C4B9'
-          }
-        }
-      ]
-    }
+            color: "#13C4B9",
+          },
+        },
+      ],
+    };
 
     // 请求数图表配置
     const requestOption: echarts.EChartsOption = {
       tooltip: {
         ...commonTooltipStyle,
         formatter: function (params) {
-          if (!params) return ''
-          const paramArray = Array.isArray(params) ? params : [params]
-          if (paramArray.length === 0) return ''
+          if (!params) return "";
+          const paramArray = Array.isArray(params) ? params : [params];
+          if (paramArray.length === 0) return "";
 
-          const time = new Date((paramArray[0].value as [number, number])[0] * 1000)
+          const time = new Date((paramArray[0].value as [number, number])[0] * 1000);
           const timeStr = time.toLocaleString(lng, {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
           let result = `
             <div style="font-weight: 500; margin-bottom: 4px; margin-top: 4px; color: #667085; font-size: 12px">${timeStr}</div>
             <div style="height: 1px; background: #DFE2EA; margin: 8px 0;"></div>
-          `
+          `;
 
           paramArray.forEach((param) => {
-            const value = (param.value as [number, number])[1]
+            const value = (param.value as [number, number])[1];
             result += `
               <div style="display: flex; align-items: center; margin: 4px 0; min-width: 150px">
                 <div style="display: flex; align-items: center; flex: 1">
@@ -302,91 +303,91 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
                 </div>
                 <div style="font-weight: 500; color: #667085; font-size: 12px">${value}</div>
               </div>
-            `
-          })
+            `;
+          });
 
-          return result
-        }
+          return result;
+        },
       },
       legend: {
-        data: [t('dataDashboard.callCount'), t('dataDashboard.exceptionCount')],
-        bottom: 10
+        data: [t("dataDashboard.callCount"), t("dataDashboard.exceptionCount")],
+        bottom: 10,
       },
       grid: {
         left: 0,
         right: 0,
         bottom: 60,
         top: 10,
-        containLabel: true
+        containLabel: true,
       },
       xAxis: commonXAxis,
       yAxis: {
-        type: 'value',
+        type: "value",
         splitLine: {
           show: true,
           lineStyle: {
-            color: '#DFE2EA',
-            type: 'dashed'
-          }
+            color: "#DFE2EA",
+            type: "dashed",
+          },
         },
         axisLine: {
           show: false,
           lineStyle: {
-            color: '#667085',
-            width: 2
-          }
+            color: "#667085",
+            width: 2,
+          },
         },
         axisLabel: {
-          color: '#667085'
-        }
+          color: "#667085",
+        },
       },
       series: [
         {
-          name: t('dataDashboard.callCount'),
-          type: 'line',
+          name: t("dataDashboard.callCount"),
+          type: "line",
           smooth: true,
           showSymbol: false,
           data: data.map((item) => [item.timestamp, item.request_count]),
           itemStyle: {
-            color: '#11B6FC'
-          }
+            color: "#11B6FC",
+          },
         },
         {
-          name: t('dataDashboard.exceptionCount'),
-          type: 'line',
+          name: t("dataDashboard.exceptionCount"),
+          type: "line",
           smooth: true,
           showSymbol: false,
           data: data.map((item) => [item.timestamp, item.exception_count]),
           itemStyle: {
-            color: '#FDB022'
-          }
-        }
-      ]
-    }
+            color: "#FDB022",
+          },
+        },
+      ],
+    };
 
     // 设置图表选项
-    costChartInstance.current.setOption(costOption)
-    requestChartInstance.current.setOption(requestOption)
+    costChartInstance.current.setOption(costOption);
+    requestChartInstance.current.setOption(requestOption);
 
     // 图表联动
-    costChartInstance.current.group = 'request-data'
-    requestChartInstance.current.group = 'request-data'
-    echarts.connect('request-data')
-  }, [data, t, lng])
+    costChartInstance.current.group = "request-data";
+    requestChartInstance.current.group = "request-data";
+    echarts.connect("request-data");
+  }, [data, t, lng]);
 
   // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
-      costChartInstance.current?.resize()
-      requestChartInstance.current?.resize()
-    }
+      costChartInstance.current?.resize();
+      requestChartInstance.current?.resize();
+    };
 
-    window.addEventListener('resize', handleResize)
+    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [])
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
     <Box
@@ -398,12 +399,13 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
       overflowY="auto"
       overflowX="hidden"
       sx={{
-        '&::-webkit-scrollbar': {
-          display: 'none'
+        "&::-webkit-scrollbar": {
+          display: "none",
         },
-        msOverflowStyle: 'none',
-        scrollbarWidth: 'none'
-      }}>
+        msOverflowStyle: "none",
+        scrollbarWidth: "none",
+      }}
+    >
       <Flex w="full" flex="4.5" flexDirection="column" gap="24px">
         <Text
           color="black"
@@ -412,8 +414,9 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           fontSize="14px"
           fontWeight="500"
           lineHeight="20px"
-          letterSpacing="0.1px">
-          {t('dataDashboard.cost')}
+          letterSpacing="0.1px"
+        >
+          {t("dataDashboard.cost")}
         </Text>
         <Box ref={costChartRef} w="full" h="full" position="relative" minH="140px" />
       </Flex>
@@ -425,11 +428,12 @@ export default function RequestDataChart({ data }: { data: ChartDataItem[] }): R
           fontSize="14px"
           fontWeight="500"
           lineHeight="20px"
-          letterSpacing="0.1px">
-          {t('dataDashboard.callCount')}
+          letterSpacing="0.1px"
+        >
+          {t("dataDashboard.callCount")}
         </Text>
         <Box ref={requestChartRef} w="full" h="full" position="relative" minH="160px" />
       </Flex>
     </Box>
-  )
+  );
 }

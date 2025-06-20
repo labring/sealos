@@ -1,4 +1,4 @@
-import { ChannelType } from './channels/channelInfo'
+import { ChannelType } from "./channels/channelInfo"
 
 export interface BatchOptionData {
   DefaultChannelModelMapping: string

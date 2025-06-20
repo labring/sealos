@@ -1,35 +1,45 @@
-'use client'
-import { Box, Button, InputGroup, Input, FormLabel, VStack, ListItem, List } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { useState, ReactNode, useEffect } from 'react'
-import { useCombobox, UseComboboxReturnValue } from 'downshift'
+"use client";
+import { ReactNode, useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  FormLabel,
+  Input,
+  InputGroup,
+  List,
+  ListItem,
+  VStack,
+} from "@chakra-ui/react";
+import { useCombobox, UseComboboxReturnValue } from "downshift";
+
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { useI18n } from "@/providers/i18n/i18nContext";
 
 export const SingleSelectCombobox: <T>(props: {
-  dropdownItems: T[]
-  setSelectedItem: (value: T) => void
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
-  initSelectedItem?: T
+  dropdownItems: T[];
+  setSelectedItem: (value: T) => void;
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
+  initSelectedItem?: T;
 }) => JSX.Element = function <T>({
   dropdownItems,
   setSelectedItem,
   handleDropdownItemFilter,
   handleDropdownItemDisplay,
-  initSelectedItem
+  initSelectedItem,
 }: {
-  dropdownItems: T[]
-  setSelectedItem: (value: T) => void
-  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[]
-  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode
-  initSelectedItem?: T
+  dropdownItems: T[];
+  setSelectedItem: (value: T) => void;
+  handleDropdownItemFilter: (dropdownItems: T[], inputValue: string) => T[];
+  handleDropdownItemDisplay: (dropdownItem: T) => ReactNode;
+  initSelectedItem?: T;
 }) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems)
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const [getFilteredDropdownItems, setGetFilteredDropdownItems] = useState<T[]>(dropdownItems);
   useEffect(() => {
-    setGetFilteredDropdownItems(dropdownItems)
-  }, [dropdownItems])
+    setGetFilteredDropdownItems(dropdownItems);
+  }, [dropdownItems]);
 
   const {
     isOpen: isComboboxOpen,
@@ -39,22 +49,22 @@ export const SingleSelectCombobox: <T>(props: {
     getInputProps,
     highlightedIndex,
     getItemProps,
-    selectedItem
+    selectedItem,
   }: UseComboboxReturnValue<T> = useCombobox({
     items: getFilteredDropdownItems,
     onInputValueChange: ({ inputValue }) => {
-      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue))
+      setGetFilteredDropdownItems(handleDropdownItemFilter(dropdownItems, inputValue));
     },
 
     initialSelectedItem: initSelectedItem || undefined,
 
     onSelectedItemChange: ({ selectedItem }) => {
-      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem)
+      const selectedDropdownItem = dropdownItems.find((item) => item === selectedItem);
       if (selectedDropdownItem) {
-        setSelectedItem(selectedDropdownItem)
+        setSelectedItem(selectedDropdownItem);
       }
-    }
-  })
+    },
+  });
   return (
     <Box w="full">
       <VStack w="full" align="stretch" alignItems="flex-start" spacing="8px">
@@ -72,8 +82,9 @@ export const SingleSelectCombobox: <T>(props: {
           justifyContent="flex-start"
           whiteSpace="nowrap"
           m={0}
-          {...getLabelProps()}>
-          {t('channelsForm.type')}
+          {...getLabelProps()}
+        >
+          {t("channelsForm.type")}
         </FormLabel>
 
         <InputGroup w="full" alignItems="center">
@@ -88,7 +99,7 @@ export const SingleSelectCombobox: <T>(props: {
             border="1px solid var(--Gray-Modern-200, #E8EBF0)"
             bgColor="grayModern.50"
             variant="unstyled"
-            placeholder={t('channelsFormPlaceholder.type')}
+            placeholder={t("channelsFormPlaceholder.type")}
             color="grayModern.900"
             fontFamily="PingFang SC"
             fontSize="12px"
@@ -96,12 +107,12 @@ export const SingleSelectCombobox: <T>(props: {
             lineHeight="16px"
             letterSpacing="0.048px"
             _placeholder={{
-              color: 'grayModern.500',
-              fontFamily: 'PingFang SC',
-              fontSize: '12px',
+              color: "grayModern.500",
+              fontFamily: "PingFang SC",
+              fontSize: "12px",
               fontWeight: 400,
-              lineHeight: '16px',
-              letterSpacing: '0.048px'
+              lineHeight: "16px",
+              letterSpacing: "0.048px",
             }}
             {...getInputProps()}
           />
@@ -115,14 +126,16 @@ export const SingleSelectCombobox: <T>(props: {
             display="flex"
             alignItems="center"
             justifyContent="center"
-            {...getToggleButtonProps()}>
+            {...getToggleButtonProps()}
+          >
             {isComboboxOpen ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -136,7 +149,8 @@ export const SingleSelectCombobox: <T>(props: {
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -162,8 +176,9 @@ export const SingleSelectCombobox: <T>(props: {
         overflowY="auto"
         zIndex="10"
         borderRadius="6px"
-        display={isComboboxOpen && getFilteredDropdownItems.length ? 'block' : 'none'}
-        {...getMenuProps()}>
+        display={isComboboxOpen && getFilteredDropdownItems.length ? "block" : "none"}
+        {...getMenuProps()}
+      >
         {isComboboxOpen &&
           getFilteredDropdownItems.map((item, index) => (
             <ListItem
@@ -174,8 +189,8 @@ export const SingleSelectCombobox: <T>(props: {
               gap="8px"
               alignSelf="stretch"
               borderRadius="4px"
-              bg={highlightedIndex === index ? 'rgba(17, 24, 36, 0.05)' : 'transparent'}
-              fontWeight={selectedItem === item ? 'bold' : 'normal'}
+              bg={highlightedIndex === index ? "rgba(17, 24, 36, 0.05)" : "transparent"}
+              fontWeight={selectedItem === item ? "bold" : "normal"}
               cursor="pointer"
               color="grayModern.900"
               fontFamily="PingFang SC"
@@ -183,12 +198,13 @@ export const SingleSelectCombobox: <T>(props: {
               fontStyle="normal"
               lineHeight="16px"
               letterSpacing="0.5px"
-              _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-              {...getItemProps({ item, index })}>
+              _hover={{ bg: "rgba(17, 24, 36, 0.05)" }}
+              {...getItemProps({ item, index })}
+            >
               {handleDropdownItemDisplay(item)}
             </ListItem>
           ))}
       </List>
     </Box>
-  )
-}
+  );
+};

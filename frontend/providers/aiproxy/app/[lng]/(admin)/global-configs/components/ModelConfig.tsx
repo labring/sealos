@@ -1,85 +1,86 @@
-'use client'
-import { Button, Flex, Text, FormControl, VStack, Skeleton } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { MultiSelectCombobox } from '@/components/common/MultiSelectCombobox'
-import { SingleSelectCombobox } from '@/components/common/SingleSelectCombobox'
-import { useForm, Controller, FieldErrors, FieldErrorsImpl, FieldError } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+"use client";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Controller, FieldError, FieldErrors, FieldErrorsImpl, useForm } from "react-hook-form";
+import { Button, Flex, FormControl, Skeleton, Text, VStack } from "@chakra-ui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMessage } from "@sealos/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+
 import {
   batchOption,
   getChannelBuiltInSupportModels,
   getChannelTypeNames,
-  getOption
-} from '@/api/platform'
-import { SetStateAction, Dispatch, useEffect, useState } from 'react'
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
-import ConstructMappingComponent from '@/components/common/ConstructMappingComponent'
-import { DefaultChannelModel, DefaultChannelModelMapping } from '@/types/admin/option'
-import { ChannelType } from '@/types/admin/channels/channelInfo'
-import { QueryKey } from '@/types/query-key'
-import { useMessage } from '@sealos/ui'
-import { BatchOptionData } from '@/types/admin/option'
+  getOption,
+} from "@/api/platform";
+import { useTranslationClientSide } from "@/app/i18n/client";
+import ConstructMappingComponent from "@/components/common/ConstructMappingComponent";
+import { MultiSelectCombobox } from "@/components/common/MultiSelectCombobox";
+import { SingleSelectCombobox } from "@/components/common/SingleSelectCombobox";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { ChannelType } from "@/types/admin/channels/channelInfo";
+import { DefaultChannelModel, DefaultChannelModelMapping } from "@/types/admin/option";
+import { BatchOptionData } from "@/types/admin/option";
+import { QueryKey } from "@/types/query-key";
 
 const ModelConfig = () => {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const queryClient = useQueryClient()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const queryClient = useQueryClient();
 
   const { message } = useMessage({
-    warningBoxBg: '#FFFAEB',
-    warningIconBg: '#F79009',
-    warningIconFill: 'white',
+    warningBoxBg: "#FFFAEB",
+    warningIconBg: "#F79009",
+    warningIconFill: "white",
 
-    successBoxBg: '#EDFBF3',
-    successIconBg: '#039855',
-    successIconFill: 'white'
-  })
+    successBoxBg: "#EDFBF3",
+    successIconBg: "#039855",
+    successIconFill: "white",
+  });
 
-  const [allSupportChannel, setAllSupportChannel] = useState<string[]>([])
+  const [allSupportChannel, setAllSupportChannel] = useState<string[]>([]);
   const [allSupportChannelWithMode, setAllSupportChannelWithMode] = useState<{
-    [key in ChannelType]: string[]
-  }>({})
+    [key in ChannelType]: string[];
+  }>({});
 
-  const [defaultModel, setDefaultModel] = useState<DefaultChannelModel>({})
-  const [defaultModelMapping, setDefaultModelMapping] = useState<DefaultChannelModelMapping>({})
+  const [defaultModel, setDefaultModel] = useState<DefaultChannelModel>({});
+  const [defaultModelMapping, setDefaultModelMapping] = useState<DefaultChannelModelMapping>({});
 
   const { isLoading: isChannelTypeNamesLoading, data: channelTypeNames } = useQuery({
     queryKey: [QueryKey.GetChannelTypeNames],
-    queryFn: () => getChannelTypeNames()
-  })
+    queryFn: () => getChannelTypeNames(),
+  });
 
   const { isLoading: isBuiltInSupportModelsLoading, data: builtInSupportModels } = useQuery({
     queryKey: [QueryKey.GetAllChannelModes],
-    queryFn: () => getChannelBuiltInSupportModels()
-  })
+    queryFn: () => getChannelBuiltInSupportModels(),
+  });
 
   const { isLoading: isOptionLoading, data: optionData } = useQuery({
     queryKey: [QueryKey.GetOption],
     queryFn: () => getOption(),
     onSuccess: (data) => {
-      if (!data) return
+      if (!data) return;
 
-      const defaultModels: DefaultChannelModel = JSON.parse(data.DefaultChannelModels)
+      const defaultModels: DefaultChannelModel = JSON.parse(data.DefaultChannelModels);
       const defaultModelMappings: DefaultChannelModelMapping = JSON.parse(
         data.DefaultChannelModelMapping
-      )
+      );
 
-      setDefaultModel(defaultModels)
-      setDefaultModelMapping(defaultModelMappings)
-    }
-  })
+      setDefaultModel(defaultModels);
+      setDefaultModelMapping(defaultModelMappings);
+    },
+  });
 
   useEffect(() => {
-    if (!channelTypeNames || !builtInSupportModels) return
+    if (!channelTypeNames || !builtInSupportModels) return;
 
     // 1. 处理 allSupportChannel
     const supportedChannels = Object.entries(channelTypeNames)
       .filter(([channel]) => channel in builtInSupportModels)
-      .map(([_, name]) => name)
+      .map(([_, name]) => name);
 
-    setAllSupportChannel(supportedChannels)
+    setAllSupportChannel(supportedChannels);
 
     // 2. 处理 allSupportChannelWithMode
     // 渠道类型可能出现在 channelTypeNames 中，但不在 builtInSupportModels 中，所以需要过滤
@@ -87,17 +88,17 @@ const ModelConfig = () => {
     const channelWithModes = Object.entries(channelTypeNames)
       .filter(([channelType, _]) => channelType in builtInSupportModels)
       .reduce((acc, [channelType, channelName]) => {
-        const modelInfos = builtInSupportModels[channelType as ChannelType] || []
-        const models = [...new Set(modelInfos.map((info) => info.model))]
+        const modelInfos = builtInSupportModels[channelType as ChannelType] || [];
+        const models = [...new Set(modelInfos.map((info) => info.model))];
 
         return {
           ...acc,
-          [channelType]: models
-        }
-      }, {} as { [key in ChannelType]: string[] })
+          [channelType]: models,
+        };
+      }, {} as { [key in ChannelType]: string[] });
 
-    setAllSupportChannelWithMode(channelWithModes)
-  }, [channelTypeNames, builtInSupportModels])
+    setAllSupportChannelWithMode(channelWithModes);
+  }, [channelTypeNames, builtInSupportModels]);
 
   // form schema
   const itemSchema = z.object({
@@ -107,15 +108,15 @@ const ModelConfig = () => {
       .record(z.string(), z.string())
       .refine((mapping) => {
         // 检查所有值不能为空字符串
-        return Object.values(mapping).every((value) => value.trim() !== '')
+        return Object.values(mapping).every((value) => value.trim() !== "");
       })
-      .default({})
-  })
+      .default({}),
+  });
 
-  const schema = z.array(itemSchema)
+  const schema = z.array(itemSchema);
 
-  type ConfigItem = z.infer<typeof itemSchema>
-  type FormData = ConfigItem[]
+  type ConfigItem = z.infer<typeof itemSchema>;
+  type FormData = ConfigItem[];
 
   const {
     register,
@@ -124,174 +125,174 @@ const ModelConfig = () => {
     setValue,
     watch,
     formState: { errors },
-    control
+    control,
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: [],
-    mode: 'onChange',
-    reValidateMode: 'onChange'
-  })
+    mode: "onChange",
+    reValidateMode: "onChange",
+  });
 
   useEffect(() => {
-    if (!defaultModel || !defaultModelMapping) return
+    if (!defaultModel || !defaultModelMapping) return;
     // Only proceed if both defaultModel and defaultModelMapping are available
-    if (Object.keys(defaultModel).length === 0) return
+    if (Object.keys(defaultModel).length === 0) return;
 
     // Transform the data into form format
     const formData: FormData = Object.entries(defaultModel).map(([channelType, modes]) => {
       return {
         type: Number(channelType),
         defaultMode: modes || [], // Using first mode as default
-        defaultModeMapping: defaultModelMapping[channelType as ChannelType] || {}
-      }
-    })
+        defaultModeMapping: defaultModelMapping[channelType as ChannelType] || {},
+      };
+    });
 
     // Reset form with the new values
-    reset(formData)
-  }, [defaultModel, defaultModelMapping, reset])
+    reset(formData);
+  }, [defaultModel, defaultModelMapping, reset]);
 
   const handleAddDefaultModel = () => {
     const newItem = {
       type: undefined, // Default type value
       defaultMode: [],
-      defaultModeMapping: {}
-    }
+      defaultModeMapping: {},
+    };
 
     // Get current form values
-    const currentValues = watch()
+    const currentValues = watch();
     // Create new array with new item at the beginning
-    const newValues = [newItem, ...Object.values(currentValues)]
+    const newValues = [newItem, ...Object.values(currentValues)];
     // Reset form with new values
-    reset(newValues)
-  }
+    reset(newValues);
+  };
 
-  const formValues = watch()
+  const formValues = watch();
 
   const formValuesArray: FormData = Array.isArray(formValues)
     ? formValues
-    : Object.values(formValues)
+    : Object.values(formValues);
 
   const batchOptionMutation = useMutation({
     mutationFn: batchOption,
     onSuccess: () => {
       message({
-        title: t('globalConfigs.saveDefaultModelSuccess'),
-        status: 'success'
-      })
-    }
-  })
+        title: t("globalConfigs.saveDefaultModelSuccess"),
+        status: "success",
+      });
+    },
+  });
 
   const transformFormDataToConfig = (formData: FormData): BatchOptionData => {
     // 初始化两个对象
-    const defaultChannelModelMapping: Record<string, Record<string, string>> = {}
-    const defaultChannelModels: Record<string, string[]> = {}
+    const defaultChannelModelMapping: Record<string, Record<string, string>> = {};
+    const defaultChannelModels: Record<string, string[]> = {};
 
     // 遍历 FormData
     formData.forEach((item) => {
-      const type = item.type.toString()
+      const type = item.type.toString();
 
       // 处理 DefaultChannelModelMapping
       if (Object.keys(item.defaultModeMapping).length > 0) {
-        defaultChannelModelMapping[type] = item.defaultModeMapping
+        defaultChannelModelMapping[type] = item.defaultModeMapping;
       }
 
       // 处理 DefaultChannelModels
       if (item.defaultMode.length > 0) {
-        defaultChannelModels[type] = item.defaultMode
+        defaultChannelModels[type] = item.defaultMode;
       }
-    })
+    });
 
     return {
       // 转换为 JSON 字符串
       DefaultChannelModelMapping: JSON.stringify(defaultChannelModelMapping),
-      DefaultChannelModels: JSON.stringify(defaultChannelModels)
-    }
-  }
+      DefaultChannelModels: JSON.stringify(defaultChannelModels),
+    };
+  };
 
   const resetForm = () => {
-    reset()
-  }
+    reset();
+  };
 
   type FieldErrorType =
     | FieldError
     | FieldErrorsImpl<{
-        type: number
-        defaultMode: string[]
-        defaultModeMapping: Record<string, string>
-      }>
+        type: number;
+        defaultMode: string[];
+        defaultModeMapping: Record<string, string>;
+      }>;
 
   const getFirstErrorMessage = (errors: FieldErrors<FormData>): string => {
     // Iterate through top-level errors
     for (const index in errors) {
-      const fieldError = errors[index] as FieldErrorType
-      if (!fieldError) continue
+      const fieldError = errors[index] as FieldErrorType;
+      if (!fieldError) continue;
 
       // Check if error is an object
-      if (typeof fieldError === 'object') {
+      if (typeof fieldError === "object") {
         // If it has a direct message property
-        if ('message' in fieldError && fieldError.message) {
-          return `Item ${Number(index) + 1}: ${fieldError.message}`
+        if ("message" in fieldError && fieldError.message) {
+          return `Item ${Number(index) + 1}: ${fieldError.message}`;
         }
 
         // Iterate through nested field errors
-        const errorKeys = Object.keys(fieldError) as Array<keyof typeof fieldError>
+        const errorKeys = Object.keys(fieldError) as Array<keyof typeof fieldError>;
         for (const fieldName of errorKeys) {
-          const nestedError = fieldError[fieldName]
-          if (nestedError && typeof nestedError === 'object' && 'message' in nestedError) {
+          const nestedError = fieldError[fieldName];
+          if (nestedError && typeof nestedError === "object" && "message" in nestedError) {
             // Map field names to their display labels
             const fieldLabel =
               {
-                type: 'Type',
-                defaultMode: 'Default Mode',
-                defaultModeMapping: 'Model Mapping'
-              }[fieldName as string] || fieldName
+                type: "Type",
+                defaultMode: "Default Mode",
+                defaultModeMapping: "Model Mapping",
+              }[fieldName as string] || fieldName;
 
-            return `Item ${Number(index) + 1} ${fieldLabel}: ${nestedError.message}`
+            return `Item ${Number(index) + 1} ${fieldLabel}: ${nestedError.message}`;
           }
         }
       }
     }
-    return 'Form validation failed'
-  }
+    return "Form validation failed";
+  };
 
   const onValidate = async (data: FormData) => {
     try {
-      const batchOptionData: BatchOptionData = transformFormDataToConfig(data)
-      await batchOptionMutation.mutateAsync(batchOptionData)
+      const batchOptionData: BatchOptionData = transformFormDataToConfig(data);
+      await batchOptionMutation.mutateAsync(batchOptionData);
 
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetOption] })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] })
-      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] })
-      resetForm()
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetOption] });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetChannelTypeNames] });
+      queryClient.invalidateQueries({ queryKey: [QueryKey.GetAllChannelModes] });
+      resetForm();
     } catch (error) {
       message({
-        title: t('globalConfigs.saveDefaultModelFailed'),
-        status: 'error',
-        position: 'top',
+        title: t("globalConfigs.saveDefaultModelFailed"),
+        status: "error",
+        position: "top",
         duration: 2000,
         isClosable: true,
         description:
-          error instanceof Error ? error.message : t('globalConfigs.saveDefaultModelFailed')
-      })
-      console.error(error)
+          error instanceof Error ? error.message : t("globalConfigs.saveDefaultModelFailed"),
+      });
+      console.error(error);
     }
-  }
+  };
 
   const onInvalid = (errors: FieldErrors<FormData>): void => {
-    console.error('errors', errors)
+    console.error("errors", errors);
 
-    const errorMessage = getFirstErrorMessage(errors)
+    const errorMessage = getFirstErrorMessage(errors);
 
     message({
       title: errorMessage,
-      status: 'error',
-      position: 'top',
+      status: "error",
+      position: "top",
       duration: 2000,
-      isClosable: true
-    })
-  }
+      isClosable: true,
+    });
+  };
 
-  const onSubmit = handleSubmit(onValidate, onInvalid)
+  const onSubmit = handleSubmit(onValidate, onInvalid);
   return (
     /*
     顶级 Flex 容器的高度: calc(100vh - 16px - 24px - 12px - 32px - 36px)
@@ -310,8 +311,9 @@ const ModelConfig = () => {
           fontStyle="normal"
           fontWeight="500"
           lineHeight="24px"
-          letterSpacing="0.15px">
-          {t('globalConfigs.model_config')}
+          letterSpacing="0.15px"
+        >
+          {t("globalConfigs.model_config")}
         </Text>
       </Flex>
       {/* -- title end */}
@@ -328,8 +330,9 @@ const ModelConfig = () => {
             fontStyle="normal"
             fontWeight="500"
             lineHeight="20px"
-            letterSpacing="0.1px">
-            {t('globalConfigs.defaultModel')}
+            letterSpacing="0.1px"
+          >
+            {t("globalConfigs.defaultModel")}
           </Text>
           <Flex justifyContent="flex-end" alignItems="center" gap="15px" minW="0">
             <Button
@@ -344,13 +347,15 @@ const ModelConfig = () => {
               border="1px solid"
               borderColor="grayModern.250"
               bg="white"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -366,8 +371,9 @@ const ModelConfig = () => {
                 fontStyle="normal"
                 fontWeight="500"
                 lineHeight="16px"
-                letterSpacing="0.5px">
-                {t('globalConfigs.addDefaultModel')}
+                letterSpacing="0.5px"
+              >
+                {t("globalConfigs.addDefaultModel")}
               </Text>
             </Button>
             <Button
@@ -384,13 +390,15 @@ const ModelConfig = () => {
               border="1px solid"
               borderColor="brightBlue.300"
               bg="white"
-              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)">
+              boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
                 height="16"
                 viewBox="0 0 17 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -406,8 +414,9 @@ const ModelConfig = () => {
                 fontStyle="normal"
                 fontWeight="500"
                 lineHeight="16px"
-                letterSpacing="0.5px">
-                {t('globalConfigs.saveDefaultModel')}
+                letterSpacing="0.5px"
+              >
+                {t("globalConfigs.saveDefaultModel")}
               </Text>
             </Button>
           </Flex>
@@ -426,7 +435,8 @@ const ModelConfig = () => {
           // bg="red"
           borderRadius="6px"
           overflow="hidden"
-          overflowY="auto">
+          overflowY="auto"
+        >
           {isChannelTypeNamesLoading ||
           isBuiltInSupportModelsLoading ||
           isOptionLoading ||
@@ -445,7 +455,8 @@ const ModelConfig = () => {
                   alignSelf="stretch"
                   borderRadius="4px"
                   bg="grayModern.100"
-                  position="relative">
+                  position="relative"
+                >
                   <Button
                     position="absolute"
                     right="12px"
@@ -456,20 +467,22 @@ const ModelConfig = () => {
                     borderRadius="4px"
                     variant="ghost"
                     _hover={{
-                      bg: 'rgba(17, 24, 36, 0.05)',
-                      color: '#D92D20'
+                      bg: "rgba(17, 24, 36, 0.05)",
+                      color: "#D92D20",
                     }}
                     onClick={() => {
-                      const currentValues = watch()
-                      const newValues = Object.values(currentValues).filter((_, i) => i !== index)
-                      reset(newValues)
-                    }}>
+                      const currentValues = watch();
+                      const newValues = Object.values(currentValues).filter((_, i) => i !== index);
+                      reset(newValues);
+                    }}
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       width="18"
                       height="18"
                       viewBox="0 0 18 18"
-                      fill="none">
+                      fill="none"
+                    >
                       <path
                         fillRule="evenodd"
                         clipRule="evenodd"
@@ -484,7 +497,8 @@ const ModelConfig = () => {
                     spacing="24px"
                     justifyContent="center"
                     alignItems="center"
-                    align="stretch">
+                    align="stretch"
+                  >
                     <FormControl isRequired>
                       <Controller
                         name={`${index}.type`}
@@ -497,7 +511,7 @@ const ModelConfig = () => {
                               (type): type is ChannelType =>
                                 type !== undefined && type in channelTypeNames
                             )
-                            .map((type) => channelTypeNames[type])
+                            .map((type) => channelTypeNames[type]);
 
                           // Filter available types
                           const availableTypes = allSupportChannel.filter(
@@ -507,11 +521,11 @@ const ModelConfig = () => {
                               (field.value &&
                                 channelTypeNames[String(field.value) as ChannelType] ===
                                   channelType)
-                          )
+                          );
 
                           const initSelectedItem = field.value
                             ? channelTypeNames[String(field.value) as ChannelType]
-                            : undefined
+                            : undefined;
 
                           return (
                             <SingleSelectCombobox<string>
@@ -521,20 +535,20 @@ const ModelConfig = () => {
                                 if (channelName) {
                                   const channelType = Object.entries(channelTypeNames).find(
                                     ([_, name]) => name === channelName
-                                  )?.[0]
+                                  )?.[0];
 
                                   if (channelType) {
                                     const defaultModelField =
-                                      defaultModel[channelType as ChannelType]
+                                      defaultModel[channelType as ChannelType];
                                     const defaultModelMappingField =
-                                      defaultModelMapping[channelType as ChannelType]
+                                      defaultModelMapping[channelType as ChannelType];
 
-                                    field.onChange(Number(channelType))
-                                    setValue(`${index}.defaultMode`, defaultModelField || [])
+                                    field.onChange(Number(channelType));
+                                    setValue(`${index}.defaultMode`, defaultModelField || []);
                                     setValue(
                                       `${index}.defaultModeMapping`,
                                       defaultModelMappingField || {}
-                                    )
+                                    );
                                   }
                                 }
                               }}
@@ -542,11 +556,11 @@ const ModelConfig = () => {
                                 dropdownItems: string[],
                                 inputValue: string
                               ) => {
-                                const lowerCasedInput = inputValue.toLowerCase()
+                                const lowerCasedInput = inputValue.toLowerCase();
                                 return dropdownItems.filter(
                                   (item) =>
                                     !inputValue || item.toLowerCase().includes(lowerCasedInput)
-                                )
+                                );
                               }}
                               handleDropdownItemDisplay={(item: string) => (
                                 <Text
@@ -556,12 +570,13 @@ const ModelConfig = () => {
                                   fontStyle="normal"
                                   fontWeight={400}
                                   lineHeight="16px"
-                                  letterSpacing="0.048px">
+                                  letterSpacing="0.048px"
+                                >
                                   {item}
                                 </Text>
                               )}
                             />
-                          )
+                          );
                         }}
                       />
                     </FormControl>
@@ -572,10 +587,10 @@ const ModelConfig = () => {
                         control={control}
                         render={({ field }) => {
                           // Get the current type value from the form
-                          const currentType = watch(`${index}.type`)
+                          const currentType = watch(`${index}.type`);
                           const dropdownItems = currentType
                             ? allSupportChannelWithMode[String(currentType) as ChannelType] || []
-                            : []
+                            : [];
 
                           const handleSetCustomModel = (
                             selectedItems: string[],
@@ -586,35 +601,35 @@ const ModelConfig = () => {
                             if (customModeName.trim()) {
                               const exists = field.value.some(
                                 (item) => item === customModeName.trim()
-                              )
+                              );
 
                               if (!exists) {
-                                field.onChange([...field.value, customModeName.trim()])
-                                setCustomModeName('')
+                                field.onChange([...field.value, customModeName.trim()]);
+                                setCustomModeName("");
                               }
                             }
-                          }
+                          };
 
                           const handleModelFilteredDropdownItems = (
                             dropdownItems: string[],
                             selectedItems: string[],
                             inputValue: string
                           ) => {
-                            const lowerCasedInputValue = inputValue.toLowerCase()
+                            const lowerCasedInputValue = inputValue.toLowerCase();
 
                             return dropdownItems.filter(
                               (item) =>
                                 !selectedItems.includes(item) &&
                                 item.toLowerCase().includes(lowerCasedInputValue)
-                            )
-                          }
+                            );
+                          };
 
                           return (
                             <MultiSelectCombobox<string>
                               dropdownItems={dropdownItems || []}
                               selectedItems={field.value || []} // Use field.value for selected items
                               setSelectedItems={(models) => {
-                                field.onChange(models)
+                                field.onChange(models);
                               }}
                               handleFilteredDropdownItems={handleModelFilteredDropdownItems}
                               handleDropdownItemDisplay={(item) => (
@@ -624,7 +639,8 @@ const ModelConfig = () => {
                                   fontSize="12px"
                                   fontWeight={500}
                                   lineHeight="16px"
-                                  letterSpacing="0.5px">
+                                  letterSpacing="0.5px"
+                                >
                                   {item}
                                 </Text>
                               )}
@@ -636,13 +652,14 @@ const ModelConfig = () => {
                                   fontStyle="normal"
                                   fontWeight={400}
                                   lineHeight="20px"
-                                  letterSpacing="0.25px">
+                                  letterSpacing="0.25px"
+                                >
                                   {item}
                                 </Text>
                               )}
                               handleSetCustomSelectedItem={handleSetCustomModel}
                             />
-                          )
+                          );
                         }}
                       />
                     </FormControl>
@@ -652,31 +669,31 @@ const ModelConfig = () => {
                         name={`${index}.defaultModeMapping`}
                         control={control}
                         render={({ field }) => {
-                          const defaultMode = watch(`${index}.defaultMode`)
-                          const defaultModeMapping = watch(`${index}.defaultModeMapping`)
+                          const defaultMode = watch(`${index}.defaultMode`);
+                          const defaultModeMapping = watch(`${index}.defaultModeMapping`);
 
                           return (
                             <ConstructMappingComponent
                               mapKeys={defaultMode}
                               mapData={defaultModeMapping}
                               setMapData={(mapping) => {
-                                field.onChange(mapping)
+                                field.onChange(mapping);
                               }}
                             />
-                          )
+                          );
                         }}
                       />
                     </FormControl>
                   </VStack>
                 </Flex>
-              )
+              );
             })
           )}
         </Flex>
       </Flex>
       {/* -- config end */}
     </Flex>
-  )
-}
+  );
+};
 
-export default ModelConfig
+export default ModelConfig;

@@ -1,97 +1,99 @@
-'use client'
-import { Button, Flex, Text, useDisclosure, useToast } from '@chakra-ui/react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import ChannelTable from './components/ChannelTable'
-import UpdateChannelModal from './components/UpdateChannelModal'
-import { useState, useRef } from 'react'
-import { ChannelInfo } from '@/types/admin/channels/channelInfo'
-import { getAllChannels, uploadChannels } from '@/api/platform'
-import { QueryKey } from '@/types/query-key'
-import { downloadJson } from '@/utils/common'
-import { useMessage } from '@sealos/ui'
+"use client";
+import { useRef, useState } from "react";
+import { Button, Flex, Text, useDisclosure, useToast } from "@chakra-ui/react";
+import { useMessage } from "@sealos/ui";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { getAllChannels, uploadChannels } from "@/api/platform";
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { ChannelInfo } from "@/types/admin/channels/channelInfo";
+import { QueryKey } from "@/types/query-key";
+import { downloadJson } from "@/utils/common";
+
+import ChannelTable from "./components/ChannelTable";
+import UpdateChannelModal from "./components/UpdateChannelModal";
 
 export default function DashboardPage() {
-  const { isOpen, onOpen, onClose } = useDisclosure()
-  const [operationType, setOperationType] = useState<'create' | 'update'>('create')
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const [exportData, setExportData] = useState<ChannelInfo[]>([])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [operationType, setOperationType] = useState<"create" | "update">("create");
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const [exportData, setExportData] = useState<ChannelInfo[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { message } = useMessage({
-    warningBoxBg: 'var(--Yellow-50, #FFFAEB)',
-    warningIconBg: 'var(--Yellow-500, #F79009)',
-    warningIconFill: 'white',
+    warningBoxBg: "var(--Yellow-50, #FFFAEB)",
+    warningIconBg: "var(--Yellow-500, #F79009)",
+    warningIconFill: "white",
 
-    successBoxBg: 'var(--Green-50, #EDFBF3)',
-    successIconBg: 'var(--Green-600, #039855)',
-    successIconFill: 'white'
-  })
+    successBoxBg: "var(--Green-50, #EDFBF3)",
+    successIconBg: "var(--Green-600, #039855)",
+    successIconFill: "white",
+  });
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const {
     data: allChannels,
     isFetching: isAllChannelsFetching,
-    refetch
+    refetch,
   } = useQuery({
     queryKey: [QueryKey.GetAllChannels],
     queryFn: getAllChannels,
     refetchOnReconnect: false,
-    enabled: false
-  })
+    enabled: false,
+  });
 
   const uploadMutation = useMutation({
-    mutationFn: uploadChannels
-  })
+    mutationFn: uploadChannels,
+  });
 
   const handleExport = async () => {
     if (exportData.length === 0) {
-      const result = await refetch()
-      const dataToExport = result.data || []
-      downloadJson(dataToExport, 'channels')
+      const result = await refetch();
+      const dataToExport = result.data || [];
+      downloadJson(dataToExport, "channels");
     } else {
-      downloadJson(exportData, 'channels')
+      downloadJson(exportData, "channels");
     }
-  }
+  };
 
   const handleImport = () => {
-    fileInputRef.current?.click()
-  }
+    fileInputRef.current?.click();
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const formData = new FormData()
-    formData.append('file', file)
+    const formData = new FormData();
+    formData.append("file", file);
 
     try {
-      await uploadMutation.mutateAsync(formData)
+      await uploadMutation.mutateAsync(formData);
       message({
-        title: t('dashboard.importSuccess'),
-        status: 'success',
+        title: t("dashboard.importSuccess"),
+        status: "success",
         duration: 3000,
-        isClosable: true
-      })
-      queryClient.invalidateQueries([QueryKey.GetChannels])
-      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames])
+        isClosable: true,
+      });
+      queryClient.invalidateQueries([QueryKey.GetChannels]);
+      queryClient.invalidateQueries([QueryKey.GetChannelTypeNames]);
     } catch (error) {
-      console.error('Import error:', error)
+      console.error("Import error:", error);
       message({
-        title: t('dashboard.importError'),
-        status: 'error',
+        title: t("dashboard.importError"),
+        status: "error",
         duration: 3000,
-        isClosable: true
-      })
+        isClosable: true,
+      });
     } finally {
       if (fileInputRef.current) {
-        fileInputRef.current.value = ''
+        fileInputRef.current.value = "";
       }
     }
-  }
+  };
 
   return (
     <Flex pt="4px" pb="12px" pr="12px" h="full" width="full">
@@ -105,7 +107,8 @@ export default function DashboardPage() {
         flexDirection="column"
         borderRadius="12px"
         w="full"
-        flex="1">
+        flex="1"
+      >
         {/* header */}
         <Flex w="full" alignSelf="stretch" alignItems="center" justifyContent="space-between">
           <Text
@@ -116,8 +119,9 @@ export default function DashboardPage() {
             fontStyle="normal"
             fontWeight="500"
             lineHeight="26px"
-            letterSpacing="0.15px">
-            {t('dashboard.title')}
+            letterSpacing="0.15px"
+          >
+            {t("dashboard.title")}
           </Text>
 
           <Flex justifyContent="flex-end" alignContent="center" gap="12px">
@@ -139,30 +143,32 @@ export default function DashboardPage() {
               letterSpacing="0.5px"
               transition="all 0.2s ease"
               _hover={{
-                transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transform: "scale(1.05)",
+                transition: "transform 0.2s ease",
               }}
               _active={{
-                transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                transform: "scale(0.92)",
+                animation: "pulse 0.3s ease",
               }}
               sx={{
-                '@keyframes pulse': {
-                  '0%': { transform: 'scale(0.92)' },
-                  '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
+                "@keyframes pulse": {
+                  "0%": { transform: "scale(0.92)" },
+                  "50%": { transform: "scale(0.96)" },
+                  "100%": { transform: "scale(0.92)" },
+                },
               }}
               onClick={() => {
-                setOperationType('create')
-                onOpen()
-              }}>
+                setOperationType("create");
+                onOpen();
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -170,7 +176,7 @@ export default function DashboardPage() {
                   fill="white"
                 />
               </svg>
-              {t('dashboard.create')}
+              {t("dashboard.create")}
             </Button>
             <>
               <input
@@ -178,7 +184,7 @@ export default function DashboardPage() {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 accept=".json"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
               />
               <Button
                 onClick={handleImport}
@@ -199,26 +205,28 @@ export default function DashboardPage() {
                 lineHeight="16px"
                 letterSpacing="0.5px"
                 _hover={{
-                  transform: 'scale(1.05)',
-                  transition: 'transform 0.2s ease'
+                  transform: "scale(1.05)",
+                  transition: "transform 0.2s ease",
                 }}
                 _active={{
-                  transform: 'scale(0.92)',
-                  animation: 'pulse 0.3s ease'
+                  transform: "scale(0.92)",
+                  animation: "pulse 0.3s ease",
                 }}
                 sx={{
-                  '@keyframes pulse': {
-                    '0%': { transform: 'scale(0.92)' },
-                    '50%': { transform: 'scale(0.96)' },
-                    '100%': { transform: 'scale(0.92)' }
-                  }
-                }}>
+                  "@keyframes pulse": {
+                    "0%": { transform: "scale(0.92)" },
+                    "50%": { transform: "scale(0.96)" },
+                    "100%": { transform: "scale(0.92)" },
+                  },
+                }}
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="16"
                   height="16"
                   viewBox="0 0 16 16"
-                  fill="none">
+                  fill="none"
+                >
                   <path
                     d="M4.67403 1.54568C4.67403 1.42836 4.57892 1.33325 4.4616 1.33325C2.77074 1.33325 1.40002 2.70397 1.40002 4.39483V11.605C1.40002 13.2959 2.77074 14.6666 4.4616 14.6666H11.6718C13.3626 14.6666 14.7334 13.2959 14.7334 11.605V4.39483C14.7334 2.70397 13.3626 1.33325 11.6718 1.33325H10.1347C9.76646 1.33325 9.46799 1.63173 9.46799 1.99992C9.46799 2.36811 9.76646 2.66659 10.1347 2.66659H11.6718C12.6263 2.66659 13.4 3.44035 13.4 4.39483V11.605C13.4 12.5595 12.6263 13.3333 11.6718 13.3333H4.4616C3.50712 13.3333 2.73336 12.5595 2.73336 11.605V4.39483C2.73336 3.44035 3.50712 2.66659 4.4616 2.66659C4.57892 2.66659 4.67403 2.57148 4.67403 2.45416V1.54568Z"
                     fill="white"
@@ -228,7 +236,7 @@ export default function DashboardPage() {
                     fill="white"
                   />
                 </svg>
-                {t('dashboard.import')}
+                {t("dashboard.import")}
               </Button>
             </>
             <Button
@@ -250,26 +258,28 @@ export default function DashboardPage() {
               whiteSpace="nowrap"
               letterSpacing="0.5px"
               _hover={{
-                transform: 'scale(1.05)',
-                transition: 'transform 0.2s ease'
+                transform: "scale(1.05)",
+                transition: "transform 0.2s ease",
               }}
               _active={{
-                transform: 'scale(0.92)',
-                animation: 'pulse 0.3s ease'
+                transform: "scale(0.92)",
+                animation: "pulse 0.3s ease",
               }}
               sx={{
-                '@keyframes pulse': {
-                  '0%': { transform: 'scale(0.92)' },
-                  '50%': { transform: 'scale(0.96)' },
-                  '100%': { transform: 'scale(0.92)' }
-                }
-              }}>
+                "@keyframes pulse": {
+                  "0%": { transform: "scale(0.92)" },
+                  "50%": { transform: "scale(0.96)" },
+                  "100%": { transform: "scale(0.92)" },
+                },
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"
                 height="16"
                 viewBox="0 0 16 16"
-                fill="none">
+                fill="none"
+              >
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -277,7 +287,7 @@ export default function DashboardPage() {
                   fill="white"
                 />
               </svg>
-              {exportData.length > 0 ? t('dashboard.export') : t('dashboard.exportAll')}
+              {exportData.length > 0 ? t("dashboard.export") : t("dashboard.exportAll")}
             </Button>
           </Flex>
         </Flex>
@@ -288,5 +298,5 @@ export default function DashboardPage() {
         <UpdateChannelModal isOpen={isOpen} onClose={onClose} operationType={operationType} />
       </Flex>
     </Flex>
-  )
+  );
 }

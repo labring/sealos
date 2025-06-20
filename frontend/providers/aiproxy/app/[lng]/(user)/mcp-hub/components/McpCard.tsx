@@ -1,28 +1,29 @@
-'use client'
-import { Box, Flex, Text, Badge, Icon } from '@chakra-ui/react'
-import { useTranslationClientSide } from '@/app/i18n/client'
-import { useI18n } from '@/providers/i18n/i18nContext'
-import { Mcp } from '@/types/mcp'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { getMcpIcon } from '@/ui/icons/mcp-icons'
+"use client";
+import { Badge, Box, Flex, Icon, Text } from "@chakra-ui/react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+import { useTranslationClientSide } from "@/app/i18n/client";
+import { useI18n } from "@/providers/i18n/i18nContext";
+import { Mcp } from "@/types/mcp";
+import { getMcpIcon } from "@/ui/icons/mcp-icons";
 
 export interface McpCardProps {
-  mcp: Mcp
+  mcp: Mcp;
 }
 
 export default function McpCard({ mcp }: McpCardProps) {
-  const { lng } = useI18n()
-  const { t } = useTranslationClientSide(lng, 'common')
-  const router = useRouter()
+  const { lng } = useI18n();
+  const { t } = useTranslationClientSide(lng, "common");
+  const router = useRouter();
 
-  const mcpName = lng === 'zh' ? mcp.name_cn || mcp.name : mcp.name
-  const mcpDescription = lng === 'zh' ? mcp.description_cn || mcp.description : mcp.description
+  const mcpName = lng === "zh" ? mcp.name_cn || mcp.name : mcp.name;
+  const mcpDescription = lng === "zh" ? mcp.description_cn || mcp.description : mcp.description;
 
   const handleCardClick = () => {
-    router.push(`/${lng}/mcp-hub/${mcp.id}`)
-  }
-  const iconSrc = getMcpIcon(mcp.id)
+    router.push(`/${lng}/mcp-hub/${mcp.id}`);
+  };
+  const iconSrc = getMcpIcon(mcp.id);
   return (
     <Box
       bg="white"
@@ -33,11 +34,12 @@ export default function McpCard({ mcp }: McpCardProps) {
       cursor="pointer"
       transition="all 0.2s ease"
       _hover={{
-        borderColor: 'brightBlue.300',
-        transform: 'translateY(-2px)',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+        borderColor: "brightBlue.300",
+        transform: "translateY(-2px)",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
       }}
-      onClick={handleCardClick}>
+      onClick={handleCardClick}
+    >
       <Flex direction="column" gap="16px">
         {/* Header with icon and title */}
         <Flex alignItems="center" gap="12px">
@@ -49,7 +51,8 @@ export default function McpCard({ mcp }: McpCardProps) {
             bg="grayModern.50"
             display="flex"
             alignItems="center"
-            justifyContent="center">
+            justifyContent="center"
+          >
             <Image src={iconSrc} alt={mcpName} width={24} height={24} />
           </Box>
           <Flex direction="column" flex="1">
@@ -59,7 +62,8 @@ export default function McpCard({ mcp }: McpCardProps) {
                 fontSize="16px"
                 fontWeight={600}
                 lineHeight="22px"
-                noOfLines={1}>
+                noOfLines={1}
+              >
                 {mcpName}
               </Text>
               {mcp.hosted ? (
@@ -71,8 +75,9 @@ export default function McpCard({ mcp }: McpCardProps) {
                   bg="green.50"
                   color="green.600"
                   fontSize="12px"
-                  fontWeight={500}>
-                  {t('mcpHub.hosted')}
+                  fontWeight={500}
+                >
+                  {t("mcpHub.hosted")}
                 </Badge>
               ) : (
                 <Badge
@@ -83,8 +88,9 @@ export default function McpCard({ mcp }: McpCardProps) {
                   bg="grayModern.50"
                   color="grayModern.500"
                   fontSize="12px"
-                  fontWeight={500}>
-                  {t('mcpHub.local')}
+                  fontWeight={500}
+                >
+                  {t("mcpHub.local")}
                 </Badge>
               )}
             </Flex>
@@ -97,7 +103,8 @@ export default function McpCard({ mcp }: McpCardProps) {
           fontSize="14px"
           fontWeight={400}
           lineHeight="20px"
-          noOfLines={3}>
+          noOfLines={3}
+        >
           {mcpDescription}
         </Text>
 
@@ -105,14 +112,15 @@ export default function McpCard({ mcp }: McpCardProps) {
         <Flex justifyContent="flex-end">
           <Flex alignItems="center" gap="4px" color="brightBlue.500">
             <Text fontSize="12px" fontWeight={500}>
-              {t('logs.detail')}
+              {t("logs.detail")}
             </Text>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="12"
               height="12"
               viewBox="0 0 12 12"
-              fill="none">
+              fill="none"
+            >
               <path
                 fillRule="evenodd"
                 clipRule="evenodd"
@@ -124,5 +132,5 @@ export default function McpCard({ mcp }: McpCardProps) {
         </Flex>
       </Flex>
     </Box>
-  )
+  );
 }
