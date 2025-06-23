@@ -796,9 +796,6 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
-      sealos-mcp-sdk:
-        specifier: workspace:^
-        version: link:../../packages/mcp-sdk
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
@@ -1155,9 +1152,6 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
-      sealos-mcp-sdk:
-        specifier: workspace:^
-        version: link:../../packages/mcp-sdk
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
@@ -1508,9 +1502,6 @@ importers:
       sealos-desktop-sdk:
         specifier: workspace:*
         version: link:../../packages/client-sdk
-      sealos-mcp-sdk:
-        specifier: workspace:^
-        version: link:../../packages/mcp-sdk
       sharp:
         specifier: ^0.32.6
         version: 0.32.6
