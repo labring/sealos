@@ -1,7 +1,8 @@
 
 import MyIcon from '@/components/Icon'
-import { Box, Textarea, FormControl, FormLabel, Flex, Button, Center, Toast } from '@chakra-ui/react'
+import { Box, Textarea, FormControl, Flex, Button, Center } from '@chakra-ui/react'
 import { useState } from 'react'
+import { useToast } from '@/hooks/useToast';
 import { createConfigMap,updateConfigMap,syncConfigMap } from '@/api/configMap'
 const Title = '配置管理'
 
@@ -9,17 +10,19 @@ const ConfigManage = () => {
     const [saveLoading,setSaveLoading] = useState(false)
     const [syncLoading,setSyncLoading] = useState(false)
     const [configInfo, setConfigInfo] = useState('')
+    const { toast } = useToast();
     const handleSave = async ()=>{
         setSaveLoading(true)
         try {
-            await updateConfigMap(configInfo)
-            Toast({
+            await updateConfigMap({data:configInfo})
+            debugger
+            toast({
                 status:'success',
                 title:"保存成功"
             })
             setSaveLoading(false)
         } catch (error) {
-            Toast({
+            toast({
                 status:'error',
                 title:"保存失败"
             })
@@ -30,13 +33,13 @@ const ConfigManage = () => {
         setSyncLoading(true)
         try {
             await syncConfigMap()
-            Toast({
+            toast({
                 status:'success',
                 title:"同步成功"
             })
             setSyncLoading(false)
         } catch (error) {
-            Toast({
+            toast({
                 status:'error',
                 title:"同步失败"
             })
