@@ -32,11 +32,7 @@ export async function executeHttpRequest(
     const config: any = {
       method: method.toLowerCase(),
       url: url,
-      headers: cleanedHeaders,
-      // Disable SSL verification
-      httpsAgent: new https.Agent({
-        rejectUnauthorized: false
-      })
+      headers: cleanedHeaders
     };
     if (method.toLowerCase() === 'get') {
       if (params && typeof params === 'object') {

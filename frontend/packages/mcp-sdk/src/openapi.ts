@@ -14,6 +14,22 @@ export interface Tool {
   };
 }
 
+function getOpenApiSpecPath(specPath: any) {
+  if (typeof specPath !== 'string') {
+    throw new Error('Invalid OpenAPI spec path');
+  }
+  const normalizedPath = path.normalize(specPath).replace(/^(\.\.(\/|\\|$))+/, '');
+  const fullPath = path.resolve(process.cwd(), normalizedPath);
+  const baseDir = process.cwd();
+  if (!fullPath.startsWith(baseDir)) {
+    throw new Error('Access to paths outside the base directory is not allowed');
+  }
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`OpenAPI spec file not found: ${normalizedPath}`);
+  }
+  return fullPath;
+}
+
 export class OpenAPIToolsParser {
   public static loadAndParseOpenAPISpec(config: {
     openApiSpec: string | OpenAPIV3.Document;
@@ -21,10 +37,7 @@ export class OpenAPIToolsParser {
     const tools = new Map<string, Tool>();
     let spec: OpenAPIV3.Document;
     try {
-      const resolvedPath =
-        typeof config.openApiSpec === 'string'
-          ? path.resolve(process.cwd(), config.openApiSpec)
-          : process.cwd();
+      const resolvedPath = getOpenApiSpecPath(config.openApiSpec);
       const content = fs.readFileSync(resolvedPath, 'utf-8');
       spec = JSON.parse(content);
     } catch (error) {
