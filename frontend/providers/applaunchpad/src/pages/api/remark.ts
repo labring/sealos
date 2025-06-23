@@ -18,6 +18,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('appName or kind or remark is empty');
     }
 
+    if (remark.length > 60) {
+      throw new Error('remark length cannot exceed 60 characters');
+    }
+
     const { k8sApp, namespace } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
