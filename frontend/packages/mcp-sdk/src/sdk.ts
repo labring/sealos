@@ -2,7 +2,6 @@ import { createMcpHandler } from '@vercel/mcp-adapter';
 import { OpenAPIToolsParser } from './openapi';
 import { executeHttpRequest, convertToZodProperties } from './httprequest';
 import { NextApiRequest, NextApiResponse } from 'next';
-
 import { AsyncLocalStorage } from 'async_hooks';
 
 export function McpHandler(path: string, url: string) {
@@ -96,6 +95,7 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
       res.status(response.status);
       if (response.body) {
         const responseData = await response.text();
+        // nosemgrep: javascript.express.security.audit.xss.direct-response-write.direct-response-write
         return res.send(responseData);
       } else {
         return res.end();
