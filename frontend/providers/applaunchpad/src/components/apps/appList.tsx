@@ -598,6 +598,7 @@ const AppList = ({
                 width={'100%'}
                 value={remarkValue}
                 onChange={(e) => setRemarkValue(e.target.value)}
+                maxLength={60}
               />
             </FormControl>
           </ModalBody>
