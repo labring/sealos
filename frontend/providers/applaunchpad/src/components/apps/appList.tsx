@@ -1,8 +1,8 @@
-import { pauseAppByName, restartAppByName, startAppByName } from '@/api/app';
+import { pauseAppByName, restartAppByName, startAppByName, setAppRemark } from '@/api/app';
 import AppStatusTag from '@/components/AppStatusTag';
 import GPUItem from '@/components/GPUItem';
 import MyIcon from '@/components/Icon';
-import { SealosMenu } from '@sealos/ui';
+import { MyTooltip, SealosMenu } from '@sealos/ui';
 import PodLineChart from '@/components/PodLineChart';
 import { MyTable } from '@sealos/ui';
 import { useConfirm } from '@/hooks/useConfirm';
@@ -19,18 +19,29 @@ import {
   Flex,
   MenuButton,
   useTheme,
-  useDisclosure
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  Input,
+  FormControl,
+  FormLabel
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import type { ThemeType } from '@sealos/ui';
 import UpdateModal from '@/components/app/detail/index/UpdateModal';
 import { useGuideStore } from '@/store/guide';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
 import LangSelect from '../LangSelect';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { PencilLine } from 'lucide-react';
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 
@@ -49,6 +60,9 @@ const AppList = ({
   const router = useRouter();
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
+  const [remarkAppName, setRemarkAppName] = useState('');
+  const [remarkValue, setRemarkValue] = useState('');
+
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: 'pause_message'
   });
@@ -57,6 +71,54 @@ const AppList = ({
     onOpen: onOpenUpdateModal,
     onClose: onCloseUpdateModal
   } = useDisclosure();
+
+  const {
+    isOpen: isOpenRemarkModal,
+    onOpen: onOpenRemarkModal,
+    onClose: onCloseRemarkModal
+  } = useDisclosure();
+
+  const handleOpenRemarkModal = useCallback(
+    (appName: string) => {
+      const app = apps.find((app) => app.name === appName);
+      setRemarkAppName(appName);
+      setRemarkValue(app?.remark || '');
+      onOpenRemarkModal();
+    },
+    [apps, onOpenRemarkModal]
+  );
+
+  const handleSaveRemark = useCallback(async () => {
+    try {
+      setLoading(true);
+      const app = apps.find((app) => app.name === remarkAppName);
+      const kind = app?.kind || 'deployment';
+
+      await setAppRemark({
+        appName: remarkAppName,
+        remark: remarkValue,
+        kind
+      });
+
+      toast({
+        title: t('remark_updated_successfully'),
+        status: 'success'
+      });
+
+      refetchApps();
+    } catch (error: any) {
+      toast({
+        title: t(getErrText(error), 'update_remark_failed'),
+        status: 'error'
+      });
+      console.error(error);
+    } finally {
+      setLoading(false);
+      onCloseRemarkModal();
+      setRemarkAppName('');
+      setRemarkValue('');
+    }
+  }, [apps, remarkAppName, remarkValue, setLoading, toast, t, refetchApps, onCloseRemarkModal]);
 
   const handleRestartApp = useCallback(
     async (appName: string) => {
@@ -136,10 +198,104 @@ const AppList = ({
         title: t('Name'),
         key: 'name',
         render: (item: AppListItemType) => {
-          return (
-            <Box pl={4} color={'myGray.900'} fontSize={'md'} fontWeight={'bold'}>
-              {item.name}
+          const tooltipContent = (
+            <Box>
+              <Text>{item.name}</Text>
+              {item.remark && (
+                <Text fontSize="sm" mt={1}>
+                  {item.remark}
+                </Text>
+              )}
             </Box>
+          );
+
+          return (
+            <Flex
+              cursor={'pointer'}
+              pl={4}
+              fontSize={'14px'}
+              fontWeight={'500'}
+              alignItems={item?.remark ? 'flex-start' : 'center'}
+              _hover={{
+                '& .remark-button': {
+                  opacity: 1,
+                  visibility: 'visible'
+                },
+                '& .app-name': {
+                  maxWidth: '100px'
+                }
+              }}
+              flexDirection={item?.remark ? 'column' : 'row'}
+              gap={item?.remark ? '4px' : 0}
+            >
+              <Flex alignItems="center" width="100%">
+                <Text
+                  className="app-name"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                  title=""
+                  maxWidth="150px"
+                  transition="max-width 0.2s"
+                >
+                  {item.name}
+                </Text>
+
+                {!item.remark && (
+                  <Center
+                    className="remark-button"
+                    gap={'4px'}
+                    color={'#737373'}
+                    opacity={0}
+                    visibility="hidden"
+                    transition="all 0.2s"
+                    flexShrink={0}
+                    ml={2}
+                    onClick={() => handleOpenRemarkModal(item.name)}
+                  >
+                    <PencilLine size={16} />
+                    <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
+                      {t('set_remarks')}
+                    </Text>
+                  </Center>
+                )}
+              </Flex>
+              {item.remark && (
+                <Flex alignItems="center" width="100%">
+                  <Text
+                    className="app-name"
+                    fontSize={'12px'}
+                    color={'#737373'}
+                    flex={1}
+                    overflow="hidden"
+                    textOverflow="ellipsis"
+                    whiteSpace="nowrap"
+                    title=""
+                    maxWidth="150px"
+                    transition="max-width 0.2s"
+                  >
+                    {item.remark}
+                  </Text>
+
+                  <Center
+                    className="remark-button"
+                    gap={'4px'}
+                    color={'#737373'}
+                    opacity={0}
+                    visibility="hidden"
+                    transition="all 0.2s"
+                    flexShrink={0}
+                    ml={2}
+                    onClick={() => handleOpenRemarkModal(item.name)}
+                  >
+                    <PencilLine size={16} />
+                    <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
+                      {t('set_remarks')}
+                    </Text>
+                  </Center>
+                </Flex>
+              )}
+            </Flex>
           );
         }
       },
@@ -341,7 +497,16 @@ const AppList = ({
         )
       }
     ],
-    [handlePauseApp, handleRestartApp, handleStartApp, onOpenPause, router, t, userSourcePrice?.gpu]
+    [
+      handlePauseApp,
+      handleRestartApp,
+      handleStartApp,
+      onOpenPause,
+      router,
+      t,
+      userSourcePrice?.gpu,
+      handleOpenRemarkModal
+    ]
   );
 
   const { listCompleted } = useGuideStore();
@@ -391,7 +556,15 @@ const AppList = ({
         </Button>
       </Flex>
 
-      <MyTable itemClass="appItem" columns={columns} data={apps} />
+      <Box
+        sx={{
+          '& > div': {
+            gridTemplateColumns: `200px repeat(${columns.length - 1}, 1fr) !important`
+          }
+        }}
+      >
+        <MyTable itemClass="appItem" columns={columns} data={apps} />
+      </Box>
 
       <PauseChild />
       {!!delAppName && (
@@ -410,6 +583,35 @@ const AppList = ({
           onCloseUpdateModal();
         }}
       />
+      <Modal isOpen={isOpenRemarkModal} onClose={onCloseRemarkModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader bg={'#fff'} borderBottom={'none'} pt={'24px'}>
+            {t('set_remarks_title')}
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody px={'24px'} pb={'16px'} pt={'0px'}>
+            <FormControl>
+              <FormLabel>{t('remarks')}</FormLabel>
+              <Input
+                placeholder={t('set_remarks_placeholder')}
+                width={'100%'}
+                value={remarkValue}
+                onChange={(e) => setRemarkValue(e.target.value)}
+                maxLength={60}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter px={'24px'}>
+            <Button variant="outline" onClick={onCloseRemarkModal} mr={'12px'}>
+              {t('Cancel')}
+            </Button>
+            <Button colorScheme="blue" onClick={handleSaveRemark}>
+              {t('Confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

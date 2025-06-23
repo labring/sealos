@@ -4,3 +4,5 @@ export const GUIDE_LAUNCHPAD_GIFT_KEY = 'activity.beginner-guide.launchpad.giveA
 export const GUIDE_LAUNCHPAD_DETAIL_KEY = 'frontend.guide.launchpad.detail';
 
 export const templateDeployKey = 'cloud.sealos.io/deploy-on-sealos';
+
+export const lauchpadRemarkKey = 'cloud.sealos.io/remark';

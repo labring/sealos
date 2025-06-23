@@ -184,6 +184,7 @@
     "The applied memory exceeds the quota": "申请的 '内存' 超出配额限制，请联系管理员",
     "The applied storage exceeds the quota": "申请的 '存储' 超出配额限制，请联系管理员"
   },
+  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用",
   "balance": "余额",
   "capacity": "容量",
   "common": {
@@ -253,6 +254,7 @@
   "protocol": "协议",
   "public": "公共",
   "receive": "收到",
+  "set_app_remark": "设置备注",
   "storage": "存储卷",
   "success": "成功",
   "target_value": "目标值",
@@ -260,6 +262,5 @@
   "user_balance_not_enough": "快完成了！您需要额外积分才能完成此部署。",
   "users installed the app": "已有 {{count}} 名用户安装该应用",
   "websocket": "WebSocket",
-  "you_have_successfully_deployed_app": "您已成功部署一个应用！",
-  "app_already_exists": "应用名称已被使用，请更换应用名称或前往应用列表查看现有应用"
+  "you_have_successfully_deployed_app": "您已成功部署一个应用！"
 }

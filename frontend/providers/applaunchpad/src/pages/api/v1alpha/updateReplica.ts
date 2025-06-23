@@ -3,18 +3,84 @@ import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { jsonRes } from '@/services/backend/response';
-import { maxReplicasKey, minReplicasKey, pauseKey } from '@/constants/app';
+import { maxReplicasKey, minReplicasKey, pauseKey, appDeployKey } from '@/constants/app';
 import { json2HPA } from '@/utils/deployYaml2Json';
 import { AppEditType } from '@/types/app';
+import { NetworkingV1Api, PatchUtils } from '@kubernetes/client-node';
 
 type UpdateReplicaParams = {
   appName: string;
   replica: string;
 };
+
+async function handleIngress(
+  k8sNetworkingApp: NetworkingV1Api,
+  namespace: string,
+  appName: string,
+  fromClass: string,
+  toClass: string
+): Promise<any[]> {
+  const ingressPromises: Promise<any>[] = [];
+
+  try {
+    const { body: ingress } = await k8sNetworkingApp.listNamespacedIngress(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${appDeployKey}=${appName}`
+    );
+
+    if (ingress?.items?.length > 0) {
+      for (const ingressItem of ingress.items) {
+        if (ingressItem?.metadata?.name) {
+          const patchData: Record<string, any> = {};
+
+          if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === fromClass) {
+            patchData.metadata = {
+              annotations: {
+                'kubernetes.io/ingress.class': toClass
+              }
+            };
+          }
+
+          if (ingressItem.spec?.ingressClassName === fromClass) {
+            patchData.spec = {
+              ingressClassName: toClass
+            };
+          }
+
+          if (Object.keys(patchData).length > 0) {
+            ingressPromises.push(
+              k8sNetworkingApp.patchNamespacedIngress(
+                ingressItem.metadata.name,
+                namespace,
+                patchData,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+              )
+            );
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    if (error?.statusCode !== 404) {
+      return Promise.reject(`not found ingress: ${error.message}`);
+    }
+  }
+
+  return ingressPromises;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const { appName, replica } = req.body as UpdateReplicaParams;
-    console.log(appName, replica);
 
     if (!appName) {
       throw new Error('appName is empty');
@@ -42,7 +108,7 @@ export async function PauseApp({
   replica,
   req
 }: UpdateReplicaParams & { req: NextApiRequest }) {
-  const { apiClient, k8sAutoscaling, getDeployApp, namespace } = await getK8s({
+  const { apiClient, k8sAutoscaling, getDeployApp, namespace, k8sNetworkingApp } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
@@ -69,12 +135,22 @@ export async function PauseApp({
     restartAnnotations.value = `${
       hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
     }`;
-    requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)); // delete HorizontalPodAutoscaler
+    requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
   } catch (error: any) {
     if (error?.statusCode !== 404) {
-      return Promise.reject('无法读取到hpa');
+      return Promise.reject('not found hpa');
     }
   }
+
+  // handle ingress - change nginx to pause
+  const ingressPromises = await handleIngress(
+    k8sNetworkingApp,
+    namespace,
+    appName,
+    'nginx',
+    'pause'
+  );
+  requestQueue.push(...ingressPromises);
 
   // replace source file
   app.metadata.annotations[pauseKey] = JSON.stringify(restartAnnotations);
@@ -90,7 +166,7 @@ export async function StartApp({
   replica,
   req
 }: UpdateReplicaParams & { req: NextApiRequest }) {
-  const { apiClient, getDeployApp, applyYamlList } = await getK8s({
+  const { apiClient, getDeployApp, applyYamlList, namespace, k8sNetworkingApp } = await getK8s({
     kubeconfig: await authSession(req.headers)
   });
 
@@ -132,6 +208,16 @@ export async function StartApp({
       requestQueue.push(applyYamlList([hpaYaml], 'create'));
     }
   }
+
+  // handle ingress - change pause to nginx
+  const ingressPromises = await handleIngress(
+    k8sNetworkingApp,
+    namespace,
+    appName,
+    'pause',
+    'nginx'
+  );
+  requestQueue.push(...ingressPromises);
 
   return (await Promise.all(requestQueue)).map((item) => item?.body || item);
 }

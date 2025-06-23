@@ -59,6 +59,8 @@ export interface AppListItemType {
   storeAmount: number;
   labels: { [key: string]: string };
   source: TAppSource;
+  kind?: 'deployment' | 'statefulset';
+  remark?: string;
 }
 
 export type ApplicationProtocolType = 'HTTP' | 'GRPC' | 'WS';
