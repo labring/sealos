@@ -1,0 +1,418 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Devbox API",
+    "version": "1.0.0",
+    "description": ""
+  },
+  "paths": {
+    "/api/v1/DevBox/create": {
+      "post": {
+        "summary": "createDevbox",
+        "description": "使用模版，创建一个新的DevBox",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "DevBox名称"
+                  },
+                  "runtimeName": {
+                    "type": "string",
+                    "enum": [
+                      "Debian",
+                      "C++",
+                      "Rust",
+                      "Java",
+                      "Go",
+                      "Python",
+                      "Node.js",
+                      ".Net",
+                      "C",
+                      "PHP"
+                    ],
+                    "description": "DevBox 创建所使用的模版的名称，有以下可选项：Debian，C++，Rust，Java，Go，Python，Node.js，.Net，C，PHP"
+                  },
+                  "cpu": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 2000,
+                    "description": "CPU核心数, 使用1000，2000的格式,代表1Core, 2Core"
+                  },
+                  "memory": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 4096,
+                    "description": "内存数, 使用2048, 4096,代表2G, 4G"
+                  }
+                },
+                "required": [
+                  "name",
+                  "runtimeName"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Devbox created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "description": "Devbox name"
+                        },
+                        "sshPort": {
+                          "type": "number",
+                          "description": "SSH port"
+                        },
+                        "base64PrivateKey": {
+                          "type": "string",
+                          "description": "Base64 encoded private key"
+                        },
+                        "userName": {
+                          "type": "string",
+                          "description": "User name"
+                        },
+                        "workingDir": {
+                          "type": "string",
+                          "description": "Working directory"
+                        },
+                        "domain": {
+                          "type": "string",
+                          "description": "Domain"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "sshPort",
+                        "base64PrivateKey",
+                        "userName",
+                        "workingDir",
+                        "domain"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Template not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Devbox already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/DevBox/release": {
+      "post": {
+        "summary": "releaseDevbox",
+        "description": "DevBox发版，release，为现有的DevBox发布一个新的版本",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "devboxName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "DevBox名称"
+                  },
+                  "tag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "DevBox新的Tag"
+                  },
+                  "releaseDes": {
+                    "type": "string",
+                    "default": "",
+                    "description": "新版本的介绍"
+                  }
+                },
+                "required": [
+                  "devboxName",
+                  "tag"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/DevBox/releases": {
+      "get": {
+        "summary": "getDevboxreleases",
+        "description": "获取单个Devbox的所有历史版本",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "devboxName",
+            "description": "Devbox名称",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Devbox名称"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    "/api/v1/DevBox/lifecycle": {
+      "post": {
+        "summary": "manageDevbox",
+        "description": "操作Devbox，Devbox生命周期管理，主要包含开机，关机，重启，冷关机，这些操作都通过这个工具完成",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "devboxName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Devbox名称"
+                  },
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "start",
+                      "stop",
+                      "restart",
+                      "shutdown"
+                    ],
+                    "description": "操作方式：start为开机，stop为关机，restart为重启，shutdown为冷关机"
+                  }
+                },
+                "required": [
+                  "devboxName",
+                  "action"
+                ]
+              }
+            }
+          }
+        },
+        "/api/v1/getDevboxListEasyResponse": {
+          "get": {
+            "tags": [
+              "Query"
+            ],
+            "summary": "获取所有Devbox",
+            "description": "获取所有Devbox，得到Devbox的列表，可以知道当前有哪些Devbox"
+          }
+        }
+      }
+    },
+    "/api/v1/DevBox/ports/create": {
+      "post": {
+        "summary": "createPort",
+        "description": "创建Devbox端口，为现有的Devbox创建一个新的端口",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "devboxName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Devbox名称"
+                  },
+                  "port": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "新创建端口的端口号"
+                  },
+                  "protocol": {
+                    "type": "string",
+                    "enum": [
+                      "HTTP",
+                      "GRPC",
+                      "WS"
+                    ],
+                    "default": "HTTP",
+                    "description": "这个端口的通信方式，有三种通信方式可选：HTTP，GRPC，WS"
+                  }
+                },
+                "required": [
+                  "devboxName",
+                  "port"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deployDevbox": {
+      "post": {
+        "summary": "deployDevbox",
+        "description": "部署 Devbox",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "devboxName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Devbox名称"
+                  },
+                  "port": {
+                    "type": "number",
+                    "minimum": 1,
+                    "default": 65535,
+                    "description": "端口号"
+                  },
+                  "tag": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Devbox版本号，即Devbox发布版本时所使用的版本号"
+                  },
+                  "cpu": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 2000,
+                    "description": "CPU核心数，使用1000、2000，分别代表1核、2核"
+                  },
+                  "memory": {
+                    "type": "number",
+                    "minimum": 0,
+                    "default": 4096,
+                    "description": "内存大小，使用2048、4096，分别代表2G、4G"
+                  }
+                },
+                "required": [
+                  "devboxName",
+                  "tag"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/DevBox/list": {
+      "get": {
+        "tags": [
+          "Query"
+        ],
+        "summary": "getDevboxList",
+        "description": "获取DevBox列表，获得每个DevBox的详细信息"
+      }
+    }
+  }
+}

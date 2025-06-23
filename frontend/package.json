@@ -18,7 +18,7 @@
     "gen:theme-typings": "pnpm chakra-cli tokens packages/ui/src/theme/theme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
     "postinstall": "pnpm run gen:theme-typings && pnpm run build-packages",
     "prepare": "cd .. && husky frontend/.husky",
-    "build-packages": "pnpm -r --filter ./packages/client-sdk run build"
+    "build-packages": "pnpm -r --filter './packages/*' run build"
   },
   "workspaces": [
     "./packages/*",
