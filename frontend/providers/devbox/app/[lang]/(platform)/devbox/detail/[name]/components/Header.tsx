@@ -10,7 +10,7 @@ import { useGlobalStore } from '@/stores/global';
 
 import { DevboxDetailTypeV2 } from '@/types/devbox';
 
-import DevboxStatusTag from '@/components/DevboxStatusTag';
+import DevboxStatusTag from '@/components/StatusTag';
 import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
 import DelModal from '@/components/modals/DelModal';

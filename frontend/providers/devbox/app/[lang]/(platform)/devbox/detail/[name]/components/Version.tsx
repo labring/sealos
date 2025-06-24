@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
-import DevboxStatusTag from '@/components/DevboxStatusTag';
+import DevboxStatusTag from '@/components/StatusTag';
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
 import ReleaseModal from '@/components/modals/ReleaseModal';
 import MyTable from '@/components/MyTable';

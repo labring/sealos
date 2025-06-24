@@ -32,6 +32,7 @@ th,
 td {
   margin: 0;
 }
+
 body,
 button,
 input,
@@ -50,9 +51,11 @@ em,
 var {
   font-style: normal;
 }
+
 body {
-  background-color: #f4f4f7 !important;
+  background-color: #fafafa !important;
 }
+
 small {
   font-size: 12px;
 }
@@ -209,10 +212,10 @@ div {
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
+  /* --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 4px); */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -247,7 +250,7 @@ div {
 }
 
 :root {
-  --radius: 0.625rem;
+  /* --radius: 0.625rem; */
   --background: oklch(1 0 0);
   --foreground: #0a0a0a; /* neutral-950 */
   --card: oklch(1 0 0);

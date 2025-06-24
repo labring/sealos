@@ -1,44 +1,39 @@
-import {
-  Box,
-  Button,
-  ButtonProps,
-  Flex,
-  FlexProps,
-  IconButton,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuList,
-  Tooltip,
-  Text,
-  Center,
-  Portal
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import Image from 'next/image';
+import { toast } from 'sonner';
+import { Check, ChevronDown, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState, useEffect } from 'react';
 
-import MyIcon from './Icon';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
+import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';
-import { DevboxStatusMapType } from '@/types/devbox';
 import { getSSHConnectionInfo } from '@/api/devbox';
+import { DevboxStatusMapType } from '@/types/devbox';
+import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
 
 import ToolboxModal from './modals/ToolboxModal';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
-import { useGuideStore } from '@/stores/guide';
-import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
-import { X } from 'lucide-react';
 
-interface Props {
+interface IDEButtonProps {
   devboxName: string;
   runtimeType: string;
   sshPort: number;
   status: DevboxStatusMapType;
   isBigButton?: boolean;
-  leftButtonProps?: ButtonProps;
-  rightButtonProps?: ButtonProps;
+  leftButtonProps?: React.ComponentProps<typeof Button>;
+  rightButtonProps?: React.ComponentProps<typeof Button>;
   isGuide?: boolean;
+  className?: string;
 }
 
 export interface JetBrainsGuideData {
@@ -54,10 +49,10 @@ export interface JetBrainsGuideData {
 }
 
 interface MenuItem {
-  value: string;
+  value: IDEType;
   menuLabel: string;
   group?: string;
-  options?: { value: string; menuLabel: string }[];
+  options?: { value: IDEType; menuLabel: string }[];
 }
 
 const IDEButton = ({
@@ -69,12 +64,11 @@ const IDEButton = ({
   leftButtonProps = {},
   rightButtonProps = {},
   isGuide = false,
-  ...props
-}: Props & FlexProps) => {
+  className
+}: IDEButtonProps) => {
   const t = useTranslations();
 
   const { env } = useEnvStore();
-  const { message: toast } = useMessage();
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore();
 
   const [loading, setLoading] = useState(false);
@@ -88,12 +82,8 @@ const IDEButton = ({
     async (currentIDE: IDEType = 'cursor') => {
       setLoading(true);
 
-      if (currentIDE !== 'gateway' && currentIDE !== 'toolbox') {
-        toast({
-          title: t('opening_ide'),
-          status: 'info'
-        });
-      }
+      // TODO: Add a reminder: If you haven't opened it for a long time, please check whether the corresponding IDE is installed.
+      if (currentIDE !== 'gateway' && currentIDE !== 'toolbox') toast.info(t('opening_ide'));
 
       try {
         const { base64PrivateKey, userName, workingDir, token } = await getSSHConnectionInfo({
@@ -136,7 +126,7 @@ const IDEButton = ({
         setLoading(false);
       }
     },
-    [toast, t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
+    [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
   );
 
   const { guideIDE, setguideIDE } = useGuideStore();
@@ -149,282 +139,154 @@ const IDEButton = ({
   }, [guideIDE, isGuide, t]);
 
   return (
-    <Flex {...props} position={isGuide ? 'relative' : 'static'}>
-      <Tooltip label={t('ide_tooltip')} hasArrow bg={'#FFFFFF'} color={'grayModern.900'}>
-        <Button
-          height={'32px'}
-          width={'100px'}
-          fontSize={'base'}
-          bg={'grayModern.150'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600',
-            bg: '#1118240D'
-          }}
-          borderRightWidth={0}
-          borderRightRadius={0}
-          onClick={() => handleGotoIDE(currentIDE)}
-          isDisabled={status.value !== 'Running' || loading}
-          {...leftButtonProps}
-        >
-          {isBigButton ? (
-            <Flex alignItems={'center'} w={'100%'} justifyContent={'center'}>
-              <MyIcon name={getIconName(currentIDE)} w={'25%'} />
-              <Box w={'75%'} textAlign={'center'} px={'7px'} whiteSpace="nowrap">
-                {ideObj[currentIDE]?.label}
-              </Box>
-            </Flex>
-          ) : (
-            <MyIcon name={getIconName(currentIDE)} w={'16px'} />
-          )}
-        </Button>
+    <div className={cn('flex min-w-fit', className)}>
+      {/* left button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="secondary"
+            className="rounded-r-none px-2"
+            onClick={() => handleGotoIDE(currentIDE)}
+            disabled={status.value !== 'Running' || loading}
+            {...leftButtonProps}
+          >
+            {isBigButton ? (
+              <div className="flex w-full items-center justify-center gap-1.5">
+                <Image
+                  width={18}
+                  height={18}
+                  alt={currentIDE}
+                  src={`/images/ide/${currentIDE}.svg`}
+                />
+                <span>{ideObj[currentIDE]?.label}</span>
+              </div>
+            ) : (
+              <Image
+                width={18}
+                height={18}
+                alt={currentIDE}
+                src={`/images/ide/${currentIDE}.svg`}
+              />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <p>{t('ide_tooltip')}</p>
+        </TooltipContent>
       </Tooltip>
-      <Menu
-        placement="bottom-end"
-        isLazy
-        isOpen={isGuide || isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-      >
-        <MenuButton
-          height={'32px'}
-          bg={'grayModern.150'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
-          p={2}
-          borderLeftRadius={0}
-          borderLeftWidth={0}
-          boxShadow={
-            '2px 1px 2px 0px rgba(19, 51, 107, 0.05),0px 0px 1px 0px rgba(19, 51, 107, 0.08)'
-          }
-          as={IconButton}
-          isDisabled={status.value !== 'Running' || loading}
-          icon={<MyIcon name={'chevronDown'} w={'16px'} h={'16px'} />}
-          _before={{
-            content: '""',
-            position: 'absolute',
-            left: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '1px',
-            height: '20px',
-            backgroundColor: 'grayModern.250'
-          }}
-          {...rightButtonProps}
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        />
-        <MenuList
-          color={'grayModern.600'}
-          fontWeight={500}
-          fontSize={'12px'}
-          defaultValue={currentIDE}
-          p={'6px'}
-          px={'4px'}
-          w={'230px'}
-          display={'flex'}
-          flexDirection={'column'}
-          gap={'2px'}
-        >
-          {menuItems.map((item) => {
-            if (item.group) {
-              return (
-                <Flex key={item.value} gap={'4px'}>
-                  {item.options?.map((option, index) => (
-                    <Flex key={option.value} alignItems={'center'}>
-                      <MenuItem
-                        h={'32px'}
-                        {...(index === 0 && {
-                          pl: '8px',
-                          pr: '4px',
-                          w: '100px'
-                        })}
-                        {...(index === 1 && {
-                          pr: '8px',
-                          w: '110px'
-                        })}
-                        borderRadius={'4px'}
-                        value={option.value}
-                        onClick={() => {
-                          updateDevboxIDE(option.value as IDEType, devboxName);
-                          handleGotoIDE(option.value as IDEType);
-                        }}
-                        _hover={{
-                          bg: 'grayModern.100',
-                          borderRadius: 4
-                        }}
-                        _focus={{
-                          bg: '#1118240D',
-                          borderRadius: 4
-                        }}
-                        {...(currentIDE === option.value && {
-                          color: 'brightBlue.600'
-                        })}
-                      >
-                        <Flex alignItems="center" w={'100%'}>
-                          <MyIcon
-                            name={getIconName(option.value as IDEType)}
-                            w={'16px'}
-                            mr={'6px'}
-                          />
-                          <Text whiteSpace="nowrap" mr={'2px'} fontWeight={500}>
-                            {option.menuLabel}
-                          </Text>
-                          {currentIDE === option.value && (
-                            <MyIcon name="check" w={'12px'} ml={'6px'} />
-                          )}
-                        </Flex>
-                      </MenuItem>
-                      {index === 0 && (
-                        <Box h={'12px'} w={'2px'} bg={'grayModern.200'} ml={'4px'}></Box>
+
+      {/* right button */}
+      <DropdownMenu open={isGuide || isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="secondary"
+            className="rounded-l-none !pl-1"
+            disabled={status.value !== 'Running' || loading}
+            {...rightButtonProps}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="p-1.5" align="end">
+          {menuItems.map((item) =>
+            item.group ? (
+              <div key={item.value} className="flex gap-1">
+                {item.options?.map((option, index) => (
+                  <div key={option.value} className="flex items-center">
+                    <DropdownMenuItem
+                      className={cn(
+                        index === 0 && 'w-[100px] pr-1 pl-2',
+                        index === 1 && 'w-[110px] pr-2',
+                        currentIDE === option.value && 'text-[#2563EB]'
                       )}
-                    </Flex>
-                  ))}
-                </Flex>
-              );
-            } else {
-              return (
-                <MenuItem
-                  h={'32px'}
-                  w={'100%'}
-                  p={'6px'}
-                  borderRadius={'4px'}
-                  key={item.value}
-                  value={item.value}
-                  onClick={() => {
-                    updateDevboxIDE(item.value as IDEType, devboxName);
-                    handleGotoIDE(item.value as IDEType);
-                  }}
-                  _hover={{
-                    bg: 'grayModern.100',
-                    borderRadius: 4
-                  }}
-                  _focus={{
-                    bg: '#1118240D',
-                    borderRadius: 4
-                  }}
-                  {...(currentIDE === item.value && {
-                    color: 'brightBlue.600'
-                  })}
-                >
-                  <Flex
-                    alignItems="center"
-                    w={'100%'}
-                    p={'7px 2px'}
-                    justifyContent={'space-between'}
-                  >
-                    <Flex alignItems={'center'}>
-                      <MyIcon name={getIconName(item.value as IDEType)} w={'16px'} mr={'6px'} />
-                      <Text
-                        whiteSpace="nowrap"
-                        overflow="hidden"
-                        textOverflow="ellipsis"
-                        mr={'4px'}
-                        fontWeight={500}
-                      >
-                        {item?.menuLabel}
-                      </Text>
-                    </Flex>
-                    {currentIDE === item.value && <MyIcon name="check" w={'12px'} />}
-                  </Flex>
-                </MenuItem>
-              );
-            }
-          })}
-        </MenuList>
-      </Menu>
+                      onClick={() => {
+                        updateDevboxIDE(option.value, devboxName);
+                        handleGotoIDE(option.value);
+                      }}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Image
+                          width={18}
+                          height={18}
+                          alt={option.value}
+                          src={`/images/ide/${option.value}.svg`}
+                        />
+                        <span className="whitespace-nowrap">{option.menuLabel}</span>
+                        {currentIDE === option.value && <Check className="h-4 w-4 text-blue-600" />}
+                      </div>
+                    </DropdownMenuItem>
+                    {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <DropdownMenuItem
+                key={item.value}
+                className={cn(
+                  'h-9 justify-between text-zinc-600',
+                  currentIDE === item.value && 'text-zinc-900'
+                )}
+                onClick={() => {
+                  updateDevboxIDE(item.value, devboxName);
+                  handleGotoIDE(item.value);
+                }}
+              >
+                <div className="flex items-center gap-1.5">
+                  <Image
+                    width={18}
+                    height={18}
+                    alt={item.value}
+                    src={`/images/ide/${item.value}.svg`}
+                  />
+                  <span>{item?.menuLabel}</span>
+                </div>
+                {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
+              </DropdownMenuItem>
+            )
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {!guideIDE && isGuide && (
-        <Center
-          borderRadius={'12px'}
-          zIndex={99}
-          border={'2px solid #2563EB'}
-          position={'absolute'}
-          top={'-6px'}
-          left={'-104px'}
-          w={'240px'}
-          h={'280px'}
-        >
-          <Box
-            position={'absolute'}
-            top={'50%'}
-            left={'105%'}
-            width={'250px'}
-            bg={'#2563EB'}
-            p={'12px'}
-            borderRadius={'12px'}
-            color={'#fff'}
-          >
-            <Flex alignItems={'center'} justifyContent={'space-between'}>
-              <Text color={'#fff'} fontSize={'14px'} fontWeight={600}>
-                {t('driver.code_in_ide')}
-              </Text>
-              <Box
-                cursor={'pointer'}
-                ml={'auto'}
+        <div className="absolute -top-1.5 -left-[104px] z-[99] h-[280px] w-60 rounded-xl border-2 border-[#2563EB]">
+          <div className="absolute top-1/2 left-[105%] w-[250px] rounded-xl bg-[#2563EB] p-3 text-white">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">{t('driver.code_in_ide')}</span>
+              <div
+                className="ml-auto cursor-pointer"
                 onClick={() => {
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
-                <X width={'16px'} height={'16px'} />
-              </Box>
-            </Flex>
-            <Text mt={'8px'} color={'#FFFFFFCC'} fontSize={'14px'} fontWeight={400}>
-              {t('driver.choose_ide')}
-            </Text>
-            <Flex justifyContent={'space-between'} alignItems={'center'} mt={'16px'}>
-              <Text fontSize={'13px'} fontWeight={500}>
-                4/5
-              </Text>
-              <Center
-                color={'#fff'}
-                fontSize={'14px'}
-                fontWeight={500}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                background={'rgba(255, 255, 255, 0.20)'}
-                w={'fit-content'}
-                h={'32px'}
-                p={'8px'}
+                <X className="h-4 w-4" />
+              </div>
+            </div>
+            <p className="mt-2 text-sm font-normal text-[#FFFFFFCC]">{t('driver.choose_ide')}</p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-[13px] font-medium">4/5</span>
+              <button
+                className="h-8 cursor-pointer rounded-lg bg-white/20 px-2 text-sm font-medium text-white"
                 onClick={() => {
                   setguideIDE(true);
                   startDriver(startManageAndDeploy(t));
                 }}
               >
                 {t('driver.next')}
-              </Center>
-            </Flex>
-            <Box
-              position={'absolute'}
-              top={'20px'}
-              left={'-18px'}
-              width={0}
-              height={0}
-              borderTop={'8px solid transparent'}
-              borderLeft={'8px solid transparent'}
-              borderBottom={'8px solid transparent'}
-              borderRight={'10px solid #2563EB'}
-            />
-          </Box>
-        </Center>
+              </button>
+            </div>
+            <div className="absolute top-5 -left-[18px] h-0 w-0 border-t-8 border-r-[10px] border-b-8 border-l-8 border-t-transparent border-r-[#2563EB] border-b-transparent border-l-transparent" />
+          </div>
+        </div>
       )}
 
       {!guideIDE && isGuide && (
-        <Portal>
-          <Box
-            position="fixed"
-            top={0}
-            left={0}
-            right={0}
-            bottom={0}
-            zIndex={98}
-            onClick={() => {
-              setguideIDE(true);
-              startDriver(startManageAndDeploy(t));
-            }}
-            cursor="pointer"
-          />
-        </Portal>
+        <div
+          className="fixed inset-0 z-[98] cursor-pointer bg-black/50"
+          onClick={() => {
+            setguideIDE(true);
+            startDriver(startManageAndDeploy(t));
+          }}
+        />
       )}
 
       {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
@@ -441,7 +303,7 @@ const IDEButton = ({
           jetbrainsGuideData={jetbrainsGuideData}
         />
       )}
-    </Flex>
+    </div>
   );
 };
 
@@ -520,30 +382,12 @@ export const ideObj = {
   }
 } as const;
 
-const getIconName = (
-  ide: IDEType
-):
-  | 'link'
-  | 'search'
-  | 'template'
-  | 'ellipse'
-  | 'cursor'
-  | 'vscode'
-  | 'vscodeInsiders'
-  | 'windsurf'
-  | 'trae'
-  | 'gateway'
-  | 'toolbox' => {
-  if (ide === 'traeCN') return 'trae';
-  return ide;
-};
-
 const menuItems = Object.values(ideObj)
   .sort((a, b) => a.sortId - b.sortId)
   .reduce((acc, item) => {
     if (item.group === 'trae' && !acc.some((i) => i.group === 'trae')) {
       acc.push({
-        value: 'trae-group',
+        value: 'trae-group' as IDEType,
         menuLabel: 'Trae',
         group: 'trae',
         options: [
@@ -553,7 +397,7 @@ const menuItems = Object.values(ideObj)
       });
     } else if (item.group === 'jetbrains' && !acc.some((i) => i.group === 'jetbrains')) {
       acc.push({
-        value: 'jetbrains-group',
+        value: 'jetbrains-group' as IDEType,
         menuLabel: 'JetBrains',
         group: 'jetbrains',
         options: [

@@ -10,7 +10,6 @@ import {
   getMyDevboxList,
   getSSHConnectionInfo
 } from '@/api/devbox';
-import { devboxStatusMap, PodStatusEnum } from '@/constants/devbox';
 import type {
   DevboxDetailType,
   DevboxDetailTypeV2,

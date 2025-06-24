@@ -1,24 +1,19 @@
-import { Box, Flex } from '@chakra-ui/react';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 
-import MyIcon from '@/components/Icon';
-import { useRouter } from '@/i18n';
-
 const Empty = () => {
-  const router = useRouter();
   const t = useTranslations();
+
   return (
-    <Flex
-      w={'full'}
-      flex={1}
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      bg={'#F3F4F5'}
-    >
-      <MyIcon name={'noEvents'} color={'transparent'} width={'80px'} height={'80px'} />
-      <Box py={8}>{t('devbox_empty')}</Box>
-    </Flex>
+    <div className="relative flex flex-1 flex-col items-center justify-center">
+      <Image width={900} height={328} alt={'list-empty'} src={'/images/list-empty.svg'} />
+      <div className="absolute top-1/2 left-1/2 flex w-[292px] -translate-x-1/2 translate-y-1/10 flex-col items-center gap-1">
+        <div className="text-2xl/8 font-medium">{t('create_your_first_devbox')}</div>
+        <div className="text-center text-sm/6 text-zinc-500">
+          {t('click_here_to_create_devbox')}
+        </div>
+      </div>
+    </div>
   );
 };
 

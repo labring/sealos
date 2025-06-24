@@ -1,0 +1,91 @@
+import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { BookOpen, LayoutTemplate, Plus } from 'lucide-react';
+
+import { useRouter } from '@/i18n';
+import { useGuideStore } from '@/stores/guide';
+import { useTemplateStore } from '@/stores/template';
+import { TemplateState } from '@/constants/template';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
+
+import { Button } from '@/components/ui/button';
+
+export default function Header({ listLength }: { listLength: number }) {
+  const router = useRouter();
+  const t = useTranslations();
+  const { openTemplateModal, config, updateTemplateModalConfig } = useTemplateStore();
+
+  const lastRoute = '/?openTemplate=publicTemplate';
+  useEffect(() => {
+    const refreshLastRoute = '/';
+    if (config.lastRoute.includes('openTemplate')) {
+      openTemplateModal({
+        ...config,
+        lastRoute: refreshLastRoute
+      });
+    } else {
+      updateTemplateModalConfig({
+        ...config,
+        lastRoute: refreshLastRoute
+      });
+    }
+  }, []);
+
+  const { guide2, setGuide2 } = useGuideStore();
+  const isClientSide = useClientSideValue(true);
+  useEffect(() => {
+    if (!guide2 && isClientSide) {
+      startDriver(
+        startGuide2(t, () => {
+          router.push('/devbox/create');
+        })
+      );
+    }
+  }, [guide2, router, t, isClientSide]);
+
+  const handleOpenTemplateModal = () => {
+    openTemplateModal({
+      templateState: TemplateState.publicTemplate,
+      lastRoute
+    });
+  };
+
+  const handleCreateDevbox = () => {
+    setGuide2(true);
+    destroyDriver();
+    router.push('/devbox/create');
+  };
+
+  return (
+    <div className="flex h-[90px] w-full items-center justify-between">
+      {/* left side */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center">
+            <span className="text-2xl/8 font-semibold">DevBox</span>
+          </div>
+          <div className="border-thin flex items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5">
+            <span className="leading-none font-medium text-zinc-500">{listLength}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-blue-600">
+          <BookOpen className="h-4 w-4" />
+          <span className="text-sm/5 font-medium">{t('docs')}</span>
+        </div>
+      </div>
+      {/* right side */}
+      <div className="flex items-center gap-3">
+        <Button variant="outline" className="h-10 w-auto" onClick={handleOpenTemplateModal}>
+          <LayoutTemplate className="h-4 w-4" />
+          <span className="leading-5"> {t('scan_templates')}</span>
+        </Button>
+        {/* NOTE: About guide we should test it */}
+        <Button className="h-10" onClick={handleCreateDevbox}>
+          <Plus className="h-4 w-4" />
+          <span className="leading-5">{t('create_devbox')}</span>
+        </Button>
+      </div>
+    </div>
+  );
+}

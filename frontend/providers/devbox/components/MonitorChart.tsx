@@ -4,105 +4,39 @@ import dayjs from 'dayjs';
 import * as echarts from 'echarts';
 import React, { useEffect, useMemo, useRef } from 'react';
 
+import { cn } from '@/lib/utils';
 import { useGlobalStore } from '@/stores/global';
 import { MonitorDataResult } from '@/types/monitor';
 
 const map = {
   blue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(3, 190, 232, 0.42)'
-        },
-        {
-          offset: 1,
-          color: 'rgba(0, 182, 240, 0)'
-        }
-      ],
-      global: false
-    },
-    lineColor: '#36ADEF'
+    backgroundColor: 'rgba(229, 243, 255, 0.3)',
+    lineColor: '#49AEFF'
+  },
+  green: {
+    backgroundColor: 'rgba(214, 245, 241, 0.3)',
+    lineColor: '#00A9A6'
   },
   deepBlue: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(47, 112, 237, 0.42)'
-        },
-        {
-          offset: 1,
-          color: 'rgba(94, 159, 235, 0)'
-        }
-      ],
-      global: false
-    },
+    backgroundColor: 'rgba(47, 112, 237, 0.3)',
     lineColor: '#3293EC'
   },
   purple: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(211, 190, 255, 0.42)'
-        },
-        {
-          offset: 1,
-          color: 'rgba(52, 60, 255, 0)'
-        }
-      ],
-      global: false // 缺省为 false
-    },
+    backgroundColor: 'rgba(211, 190, 255, 0.3)',
     lineColor: '#8172D8'
-  },
-  green: {
-    backgroundColor: {
-      type: 'linear',
-      x: 0,
-      y: 0,
-      x2: 0,
-      y2: 1,
-      colorStops: [
-        {
-          offset: 0,
-          color: 'rgba(4, 209, 148, 0.42)'
-        },
-        {
-          offset: 1,
-          color: 'rgba(19, 217, 181, 0)'
-        }
-      ],
-      global: false
-    },
-    lineColor: '#00A9A6',
-    max: 100
   }
 };
 
-const PodLineChart = ({
+const MonitorChart = ({
   type,
   data,
-  isShowLabel = false
+  isShowLabel = false,
+  className
 }: {
-  type: 'blue' | 'deepBlue' | 'green' | 'purple';
+  type: keyof typeof map;
   data?: MonitorDataResult;
   isShowLabel?: boolean;
+  className?: string;
 }) => {
   const { screenWidth } = useGlobalStore();
   const xData =
@@ -221,7 +155,14 @@ const PodLineChart = ({
     myChart.current.resize();
   }, [screenWidth]);
 
-  return <div ref={Dom} style={{ width: '100%', height: '100%' }} />;
+  return (
+    <div className={cn('relative h-9 w-55', className)}>
+      <div ref={Dom} style={{ width: '100%', height: '100%' }} />
+      <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
+        {data?.yData[data?.yData?.length - 1]}%
+      </span>
+    </div>
+  );
 };
 
-export default React.memo(PodLineChart);
+export default React.memo(MonitorChart);
