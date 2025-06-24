@@ -7,7 +7,9 @@ import useNotEnough from '@/hooks/useNotEnough';
 import request from '@/service/request';
 import useEnvStore from '@/stores/env';
 import useOverviewStore from '@/stores/overview';
+import useRechargeStore from '@/stores/recharge';
 import { ApiResp } from '@/types';
+import { gtmTopupSuccess } from '@/utils/gtm';
 import { Box, Flex, useToast } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
@@ -25,12 +27,19 @@ function CostOverview() {
   const router = useRouter();
   const toast = useToast();
   const { i18nIsInitialized } = useEnvStore();
+  const { resetProcess, amount, paid, isProcess } = useRechargeStore();
+
   useEffect(() => {
     (async () => {
       const lng = ((await sealosApp.getLanguage())?.lng || 'en') as 'en' | 'zh';
       const { stripeState } = router.query;
       if (!i18nIsInitialized || !router.isReady || !stripeState) return;
       if (stripeState === 'success') {
+        isProcess &&
+          gtmTopupSuccess({
+            amount,
+            paid
+          });
         toast({
           status: 'success',
           duration: 3000,
@@ -48,9 +57,8 @@ function CostOverview() {
           isClosable: true,
           position: 'top'
         });
-      } else {
-        return;
       }
+      resetProcess();
       !!stripeState && router.replace(router.pathname);
     })();
   }, [t, i18nIsInitialized, router.query, router.isReady]);

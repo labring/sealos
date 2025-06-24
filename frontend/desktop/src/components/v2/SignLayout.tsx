@@ -9,15 +9,24 @@ import bgimageZh from 'public/images/signin_bg_zh.png';
 import LangSelectSimple from '../LangSelect/simple';
 import InviterPop from './InviterPop';
 import { useTranslation } from 'next-i18next';
+import useSessionStore from '@/stores/session';
+import { useRouter } from 'next/router';
 
 export default function SignLayout({ children }: { children: React.ReactNode }) {
   const { layoutConfig, authConfig } = useConfigStore();
   const { setCaptchaIsLoad } = useScriptStore();
+  const { session, token } = useSessionStore();
+  const router = useRouter();
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
     if (!!url) {
       sessionStorage.clear();
       window.location.replace(url);
+    }
+  }, []);
+  useEffect(() => {
+    if (session && token) {
+      router.replace('/');
     }
   }, []);
   const { i18n } = useTranslation();
@@ -35,9 +44,9 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       )}
-      {layoutConfig?.meta.scripts?.map((item, i) => {
+      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
-      })}
+      })} */}
       <Flex width={'full'}>
         <Img
           objectFit={'cover'}

@@ -41,9 +41,9 @@ export default function SigninPage() {
           }}
         />
       )}
-      {layoutConfig?.meta.scripts?.map((item, i) => {
+      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
         return <Script key={i} {...item} />;
-      })}
+      })} */}
 
       <SignLayout>
         <SigninComponent />

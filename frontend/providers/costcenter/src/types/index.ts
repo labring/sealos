@@ -8,4 +8,5 @@ export * from './Transfer';
 export * from './env';
 declare global {
   var mongodb: MongoClient | null;
+  var dataLayer: { push: Function } | null;
 }
