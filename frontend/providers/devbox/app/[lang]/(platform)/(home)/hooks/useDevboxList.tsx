@@ -1,21 +1,13 @@
-// components/DevboxListContainer.tsx
-'use client';
+import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
+import { isElementInViewport } from '@/utils/tools';
 import { useTemplateStore } from '@/stores/template';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
-import { isElementInViewport } from '@/utils/tools';
-import { Flex, FlexProps } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from '@/i18n';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import DevboxHeader from './DevboxHeader';
-import DevboxList from './DevboxList';
-import Empty from './Empty';
-import { useSearchParams } from 'next/navigation';
-import { useGuideStore } from '@/stores/guide';
-import { useClientSideValue } from '@/hooks/useClientSideValue';
 
-function useDevboxList() {
+export const  useDevboxList=()=>{
   const router = useRouter();
   const [refresh, setFresh] = useState(false);
   const { isOpen: templateIsOpen } = useTemplateStore();
@@ -97,7 +89,6 @@ function useDevboxList() {
     }
   );
 
-  // 路由预加载
   useEffect(() => {
     router.prefetch('/devbox/detail');
     router.prefetch('/devbox/create');
@@ -124,37 +115,4 @@ function useDevboxList() {
       retryFetch();
     }
   };
-}
-
-export default function DevboxListContainer({ ...props }: FlexProps) {
-  const { list, isLoading, refetchList } = useDevboxList();
-  const searchParams = useSearchParams();
-  const action = searchParams.get('action');
-  const { resetGuideState } = useGuideStore();
-  const isClientSide = useClientSideValue(true);
-
-  useEffect(() => {
-    if (isClientSide) {
-      resetGuideState(!(action === 'guide'));
-    }
-  }, [action, isClientSide, resetGuideState]);
-
-  return (
-    <Flex
-      flexDir={'column'}
-      backgroundColor={'grayModern.100'}
-      px={'32px'}
-      h="100vh"
-      mb={'40px'}
-      {...props}
-    >
-      <DevboxHeader listLength={list.length} />
-      {list.length === 0 && !isLoading ? (
-        <Empty />
-      ) : (
-        <DevboxList devboxList={list} refetchDevboxList={refetchList} />
-      )}
-      {/* <Loading loading={isLoading} /> */}
-    </Flex>
-  );
 }

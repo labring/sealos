@@ -18,7 +18,7 @@ import dynamic from 'next/dynamic';
 
 import MyIcon from '@/components/Icon';
 import MyTable from '@/components/MyTable';
-import PodLineChart from '@/components/PodLineChart';
+import PodLineChart from '@/components/MonitorChart';
 
 import { NetworkType } from '@/types/devbox';
 import { useCopyData } from '@/utils/tools';
@@ -68,12 +68,15 @@ const MainBody = () => {
   const statusMap = useMemo(
     () =>
       networkStatus
-        ? networkStatus.reduce((acc, item) => {
-            if (item?.url) {
-              acc[item.url] = item;
-            }
-            return acc;
-          }, {} as Record<string, { ready: boolean; url: string }>)
+        ? networkStatus.reduce(
+            (acc, item) => {
+              if (item?.url) {
+                acc[item.url] = item;
+              }
+              return acc;
+            },
+            {} as Record<string, { ready: boolean; url: string }>
+          )
         : {},
     [networkStatus]
   );

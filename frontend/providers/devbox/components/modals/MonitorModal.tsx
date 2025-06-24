@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
 
-import PodLineChart from '@/components/PodLineChart';
+import PodLineChart from '@/components/MonitorChart';
 import { useDevboxStore } from '@/stores/devbox';
 
 const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {

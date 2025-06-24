@@ -54,12 +54,13 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))'
         }
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
       }
+      // NOTE：shadcn add these,but we don't need them and these influence the tailwindcss default design, remove and remove global related css
+      // borderRadius: {
+      //   lg: 'var(--radius)',
+      //   md: 'calc(var(--radius) - 2px)',
+      //   sm: 'calc(var(--radius) - 4px)'
+      // }
     }
   }
 } satisfies Config;

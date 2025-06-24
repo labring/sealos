@@ -100,6 +100,8 @@ export const defaultDevboxEditValueV2: DevboxEditTypeV2 = {
   memory: MemorySlideMarkList[1].value,
   networks: []
 };
+
+// TODO: should delete this map,we don not need this in backend
 export const devboxStatusMap = {
   [DevboxStatusEnum.Stopping]: {
     label: 'Stopping',

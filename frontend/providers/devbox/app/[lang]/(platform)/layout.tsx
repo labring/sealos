@@ -18,6 +18,7 @@ import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
+import { Toaster } from '@/components/ui/sonner';
 import TemplateModal from './template/TemplateModal';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 
@@ -147,6 +148,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   return (
     <RouteHandlerProvider>
       <ConfirmChild />
+      <Toaster />
       <Loading loading={loading} />
       {children}
       <TemplateModal />
