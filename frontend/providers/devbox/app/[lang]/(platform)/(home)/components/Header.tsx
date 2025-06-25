@@ -58,7 +58,7 @@ export default function Header({ listLength }: { listLength: number }) {
   };
 
   return (
-    <div className="flex h-[90px] w-full items-center justify-between">
+    <div className="flex h-24 w-full flex-shrink-0 items-center justify-between">
       {/* left side */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
@@ -71,6 +71,7 @@ export default function Header({ listLength }: { listLength: number }) {
         </div>
         <div className="flex items-center gap-2 text-blue-600">
           <BookOpen className="h-4 w-4" />
+          {/* TODO: add docs link */}
           <span className="text-sm/5 font-medium">{t('docs')}</span>
         </div>
       </div>
