@@ -34,7 +34,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex h-full w-fit flex-col px-12">
+    <div className="flex h-[calc(100vh-28px)] w-fit flex-col px-12">
       <DevboxHeader listLength={list.length} />
       {list.length === 0 ? (
         <Empty />

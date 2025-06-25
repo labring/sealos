@@ -180,7 +180,7 @@ const IDEButton = ({
         <DropdownMenuTrigger asChild>
           <Button
             variant="secondary"
-            className="rounded-l-none !pl-1"
+            className="rounded-l-none"
             disabled={status.value !== 'Running' || loading}
             {...rightButtonProps}
           >
@@ -195,7 +195,7 @@ const IDEButton = ({
                   <div key={option.value} className="flex items-center">
                     <DropdownMenuItem
                       className={cn(
-                        index === 0 && 'w-[100px] pr-1 pl-2',
+                        index === 0 && 'w-[110px] pr-1 pl-2',
                         index === 1 && 'w-[110px] pr-2',
                         currentIDE === option.value && 'text-[#2563EB]'
                       )}

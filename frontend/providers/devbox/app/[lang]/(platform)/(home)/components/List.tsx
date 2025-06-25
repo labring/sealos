@@ -113,12 +113,12 @@ const DevboxList = ({
     },
     {
       key: 'create_time',
-      width: 139,
+      width: 150,
       render: (item) => <span className="text-sm text-zinc-600">{item.createTime}</span>
     },
     {
       key: 'action',
-      width: 255,
+      width: 270,
       render: (item) => (
         <div className="flex flex-shrink-0 items-center justify-end gap-2">
           <IDEButton
