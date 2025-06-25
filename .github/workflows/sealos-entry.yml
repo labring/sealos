@@ -1,53 +1,59 @@
-name: CI Patch Images Package
-
-env:
-  # Common versions
-  GO_VERSION: "1.20"
-  DEFAULT_OWNER: "labring"
+name: Default sealos workflow entry
 
 on:
   workflow_dispatch:
     inputs:
-      push_mage:
+      push_image:
         description: 'Push images'
         required: false
+        default: false
         type: boolean
   push:
     branches: [ "main" ]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.yaml"
-      - "CONTRIBUTORS"
-      - "CHANGELOG/**"
-      - "controllers/**"
-      - "service/**"
-      - "webhooks/**"
-      - "frontend/**"
+    paths:
+      - "lifecycle/**"
+      - "!**/*.md"
+      - "!**/*.yaml"
+      - "!**/*.yml"
+
   pull_request:
     branches: [ "*" ]
-    paths-ignore:
-      - "docs/**"
-      - "CHANGELOG/**"
-      - "**/*.md"
-      - "**/*.yaml"
-      - "CONTRIBUTORS"
-      - "CHANGELOG/**"
-      - "controllers/**"
-      - "service/**"
-      - "webhooks/**"
-      - "frontend/**"
+    paths:
+        - "lifecycle/**"
+        - "!**/*.md"
+        - "!**/*.yaml"
+        - "!**/*.yml"
 
 jobs:
+  check-license:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check License
+        env:
+          PROJECT_PATH: "lifecycle"
+        run: cd "${PROJECT_PATH}" && make verify-license
+  run-linter:
+    uses: ./.github/workflows/golangci-lint.yml
+    with:
+      workdir: "lifecycle"
+      module_path: ""
+      version: "1.22"
   call_ci_workflow:
-    uses: ./.github/workflows/import-patch-image.yml
+    uses: ./.github/workflows/build-sealos-image.yml
     with:
       arch: amd64,arm64
-
+      image: ${{ inputs.push_image }}
   container-sealos:
+    permissions:
+      contents: read
+      packages: write
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-24.04
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,20 +79,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sealos-amd64
-          path: docker/sealos/bin/sealos-amd64
+          path: lifecycle/docker/sealos/bin/sealos-amd64
 
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
           name: sealos-arm64
-          path: docker/sealos/bin/sealos-arm64
+          path: lifecycle/docker/sealos/bin/sealos-arm64
 
       - name: build (and publish) main sealos image
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           GIT_COMMIT_SHORT_SHA: ${{ env.GIT_COMMIT_SHORT_SHA }}
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
-        working-directory: docker/sealos
+        working-directory: lifecycle/docker/sealos
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
@@ -107,45 +113,19 @@ jobs:
           -t "${DOCKER_REPO}:latest" \
           -f Dockerfile.main \
           .
-
-  build-on-cluster-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-    needs:
-      - container-sealos
-    runs-on: ubuntu-24.04
-    permissions:
-      issues: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos latest"
   save-sealos:
-    uses: ./.github/workflows/import-save-sealos.yml
+    uses: ./.github/workflows/fetch-sealos.yml
     with:
       artifact_name: sealos
   build-on-cluster-patch-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
     needs:
       - call_ci_workflow
       - save-sealos
     runs-on: ubuntu-24.04
     permissions:
-      issues: write
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -193,18 +173,3 @@ jobs:
           sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-arm64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-arm64"
           sudo sealos images
           bash scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest"
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-patch:latest"

@@ -1,0 +1,50 @@
+name: Fetch sealos
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        description: The sealos version to fetch
+        default: 4.1.7
+      artifact_name:
+        type: string
+        description: The name of the artifact to save
+        default: sealos
+# TODO: upload binaries with versions
+jobs:
+  check-if-exists:
+    runs-on: ubuntu-24.04
+    outputs:
+      exists: ${{ steps.check-artifact.outputs.result }}
+    steps:
+      - name: Check if artifact already exists
+        id: check-artifact
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: artifacts } = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            const artifactExists = artifacts.artifacts.some(artifact => artifact.name === '${{ inputs.artifact_name }}');
+            console.log(`Artifact exists: ${artifactExists}`);
+            return artifactExists;
+          result-encoding: string
+  upload:
+    needs: [check-if-exists]
+    if: ${{ needs.check-if-exists.outputs.exists }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install sealos
+        uses: labring/sealos-action@v0.0.7
+        with:
+          sealosVersion: ${{ inputs.version }}
+      - name: Save binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: /usr/bin/sealos
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 1

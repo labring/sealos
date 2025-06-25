@@ -1,0 +1,78 @@
+name: Prepare Image Information
+on:
+  workflow_call:
+    inputs:
+      module_name:
+        required: true
+        type: string
+      comp:
+        required: true
+        type: string
+      custom:
+        required: false
+        type: boolean
+        default: false
+      custom_tag:
+        required: false
+        type: string
+        default: "latest"
+      orig_owner:
+        required: false
+        type: string
+        default: labring
+    outputs:
+      orig_docker_repo:
+        value: ${{ jobs.prepare.outputs.orig_docker_repo }}
+      cur_docker_repo:
+        value: ${{ jobs.prepare.outputs.cur_docker_repo }}
+      orig_cluster_repo:
+        value: ${{ jobs.prepare.outputs.orig_cluster_repo }}
+      cur_cluster_repo:
+        value: ${{ jobs.prepare.outputs.cur_cluster_repo }}
+      tag_name:
+        value: ${{ jobs.prepare.outputs.tag_name }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      orig_docker_repo: ${{ steps.prepare-image-info.outputs.orig_docker_repo }}
+      cur_docker_repo: ${{ steps.prepare-image-info.outputs.cur_docker_repo }}
+      orig_cluster_repo: ${{ steps.prepare-image-info.outputs.orig_cluster_repo }}
+      cur_cluster_repo: ${{ steps.prepare-image-info.outputs.cur_cluster_repo }}
+      tag_name: ${{ steps.prepare-tag-info.outputs.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Check if tagged
+        id: check_tag
+        env:
+          REF: ${{ github.ref }} # required by resolve_tag.sh
+        run: |
+          bash .github/workflows/scripts/resolve_tag.sh
+      - name: Prepare tag info
+        id: prepare-tag-info
+        env:
+          IF_CUSTOM: ${{ inputs.custom }}
+          TAGGED: ${{ steps.check_tag.outputs.tagged }}
+          CUSTOM_TAG: ${{ inputs.custom_tag }}
+        run: |
+           bash .github/workflows/scripts/resolve_tag.sh "$IF_CUSTOM" "$TAGGED" "$CUSTOM_TAG"
+      - name: Prepare image info
+        id: prepare-image-info
+        env:
+          MODULE_NAME: ${{ inputs.module_name }}
+          ORIG_OWNER: ${{ inputs.orig_owner }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          COMP: ${{ inputs.comp }}
+        run: |
+          {
+            echo "orig_docker_repo=ghcr.io/${ORIG_OWNER}/sealos-${MODULE_NAME}-${COMP}"
+            echo "cur_docker_repo=ghcr.io/${REPO_OWNER}/sealos-${MODULE_NAME}-${COMP}"
+            echo "orig_cluster_repo=ghcr.io/${ORIG_OWNER}/sealos-cloud-${MODULE_NAME}-${COMP}"
+            echo "cur_cluster_repo=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-${COMP}"
+          } >> "$GITHUB_OUTPUT"
