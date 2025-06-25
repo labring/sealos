@@ -104,8 +104,19 @@ const MonitorChart = ({
       },
       appendToBody: true,
       formatter: (params: any[]) => {
-        const axisValue = params[0]?.axisValue;
-        return `${axisValue} ${params[0]?.value || 0}%`;
+        const xValue = params[0]?.axisValue;
+        const yValue = params[0]?.value;
+        return `
+          <div>
+            <div style="font-size: 12px; margin-bottom: 6px; font-weight: 500; color: #09090B;">
+              ${xValue}
+            </div>
+            <div style="display: flex; align-items: center; font-size: 12px; font-weight: 500;">
+              <span style="display: inline-block; width: 8px; height: 8px; background-color: ${map[type].lineColor}; margin-right: 8px; border-radius: 1px;"></span>
+              <span style="color: #09090B;">${yValue || 0}%</span>
+            </div>
+          </div>
+        `;
       }
     },
     series: [
