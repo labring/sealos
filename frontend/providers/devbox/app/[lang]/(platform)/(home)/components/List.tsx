@@ -42,6 +42,7 @@ import DevboxStatusTag from '@/components/StatusTag';
 import { Pagination } from '@/components/ui/pagination';
 import ReleaseModal from '@/components/modals/ReleaseModal';
 import ShutdownModal from '@/components/modals/ShutdownModal';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const DelModal = dynamic(() => import('@/components/modals/DelModal'));
 
@@ -80,15 +81,38 @@ const DevboxList = ({
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
-                <Image
-                  width={21}
-                  height={21}
-                  alt={item.id}
-                  src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
-                />
-              </div>
+            <div className="flex cursor-pointer items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
+                    <Image
+                      width={21}
+                      height={21}
+                      alt={item.id}
+                      src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start" sideOffset={1}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
+                      <Image
+                        width={21}
+                        height={21}
+                        alt={item.id}
+                        src={`/images/runtime/${item.template.templateRepository.iconId}.svg`}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <p className="text-sm/5 font-medium">
+                        {item.template.templateRepository.iconId}
+                      </p>
+                      {/* TODO: we need change devboxListType */}
+                      <p className="text-xs/5 text-zinc-500">{'test'}</p>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
               <span className="text-sm/1 font-medium">{item.name}</span>
             </div>
           );
