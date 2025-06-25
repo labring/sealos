@@ -271,7 +271,9 @@ const DevboxList = ({
       pagination: {
         pageSize: PAGE_SIZE
       }
-    }
+    },
+    // NOTE: this option may cause some bug,but the probability is very small,maybe we should test it carefully.
+    autoResetPageIndex: false
   });
 
   return (
