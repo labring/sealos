@@ -13,11 +13,11 @@ import { useEnvStore } from '@/stores/env';
 import { useUserStore } from '@/stores/user';
 import { useConfirm } from '@/hooks/useConfirm';
 import { usePriceStore } from '@/stores/price';
-import { useLoading } from '@/hooks/useLoading';
 import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
+import { Loading } from '@/components/ui/loading';
 import { Toaster } from '@/components/ui/sonner';
 import TemplateModal from './template/TemplateModal';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
@@ -25,7 +25,6 @@ import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider'
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { Loading } = useLoading();
   const searchParams = useSearchParams();
   const { openConfirm, ConfirmChild } = useConfirm({
     title: 'jump_prompt',
@@ -145,11 +144,12 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
     router.push(path);
   }, [router, searchParams]);
 
+  if (loading) return <Loading />;
+
   return (
     <RouteHandlerProvider>
       <ConfirmChild />
       <Toaster />
-      <Loading loading={loading} />
       {children}
       <TemplateModal />
     </RouteHandlerProvider>
