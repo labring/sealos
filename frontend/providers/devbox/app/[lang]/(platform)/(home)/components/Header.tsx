@@ -61,13 +61,8 @@ export default function Header({ listLength }: { listLength: number }) {
     <div className="flex h-24 w-full flex-shrink-0 items-center justify-between">
       {/* left side */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center">
-            <span className="text-2xl/8 font-semibold">DevBox</span>
-          </div>
-          <div className="border-thin flex items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5">
-            <span className="leading-none font-medium text-zinc-500">{listLength}</span>
-          </div>
+        <div className="flex items-center">
+          <span className="text-2xl/8 font-semibold">DevBox</span>
         </div>
         <div className="flex items-center gap-2 text-blue-600">
           <BookOpen className="h-4 w-4" />
