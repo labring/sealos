@@ -1,25 +1,55 @@
 # sealos frontend
 
-## prepare dev host
+## Development setup
 
-```bash
-# dev
-echo '35.220.145.199 apiserver.cluster.local' | sudo tee -a /etc/hosts
-# io
-echo '35.240.227.100 apiserver.cluster.local' | sudo tee -a /etc/hosts
-# cn
-echo '121.41.82.246 apiserver.cluster.local' | sudo tee -a /etc/hosts
+- It's recommended using this directory (`/frontend`) as root for your workspace.
+- We use `pnpm` for package management, you should have it installed before getting started. ([Tutorial](https://pnpm.io/installation))
+- Desktop app is under `desktop/` directory, sub apps are under `providers/<package>/`.
+
+### Install dependencies
+
+The post install script will run automatically, and local packages should be built.
+
+```sh
+pnpm install
 ```
 
-## how to dev
+### Generate Prisma clients for desktop app
 
-- It is best to use `sealos/frontend` as the workspace directory to develop applications.
-- Before dev, you should install `pnpm` first. [pnpm](https://pnpm.io/zh/)
-- The `sealos/frontend/packages/*` are local dependencies, you need run `pnpm -r --filter ./packages/client-sdk run build` in the `sealos/frontend` directory tobuild them.
-- The `sealos/frontend/providers/*` are sub applications..
-- The `sealos/frontend/desktop` is desktop app.
+```sh
+cd desktop
+pnpm gen:global && pnpm gen:region
+```
 
-- add packages
+### Prepare environment variables
+
+`.env.template` files are located at the workspace root directory for each app. Duplicate and rename them to `.env`, then fill the required configurations.
+
+`NEXT_PUBLIC_MOCK_USER` is the kubeconfig mocked for development, you can copy it from your Sealos desktop. (Only one line allowed, you should escape the line breaks)
+
+### Run apps for development
+
+You can either run apps in workspace root or in specific app's directory.
+
+```sh
+# Run desktop app
+pnpm dev-desktop
+
+# Run specific provider app
+pnpm dev-app        # applaunchpad
+pnpm dev-db         # dbprovider
+pnpm dev-cost       # costcenter
+pnpm dev-terminal   # terminal
+pnpm dev-template   # template
+pnpm dev-cronjob    # cronjob
+pnpm dev-devbox     # devbox
+
+# or run dev script in app's package directory
+cd desktop
+pnpm dev
+```
+
+## how to add packages
 
 ```bash
 cd frontend
