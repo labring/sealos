@@ -52,12 +52,10 @@ export function McpHandler(path: string, url: string) {
     request.headers.forEach((value, key) => {
       headersObj[key] = value;
     });
-
     // Create request context
     const requestContext = {
       headers: headersObj
     };
-
     // Run request handler with async local storage
     return await requestContextStorage.run(requestContext, async () => {
       try {
@@ -89,8 +87,12 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
       });
       const handler = McpHandler(path, baseUrl);
       const response = await handler(request);
+      const essentialHeaders = ['cache-control', 'connection', 'content-type'];
       response.headers.forEach((value, key) => {
-        res.setHeader(key, value);
+        const lowerKey = key.toLowerCase();
+        if (essentialHeaders.includes(lowerKey)) {
+          res.setHeader(key, value);
+        }
       });
       res.status(response.status);
       if (response.body) {
@@ -108,4 +110,47 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
       });
     }
   };
+}
+
+export function getToolsList(path: string): string {
+  const toolsMap = OpenAPIToolsParser.loadAndParseOpenAPISpec({
+    openApiSpec: path
+  });
+  const apiName = path.split('/').pop()?.split('.')[0] || 'API';
+  const apiTitle = `MCP Tools List`;
+  let markdown = `# ${apiTitle}\n\n\n`;
+  markdown += `${apiName} Tool 用于访问和管理相关资源。该工具提供了完整的功能，让您能够轻松操作和使用适合项目需求的各种服务。\n\n`;
+  markdown +=
+    '在使用这些工具的时候，您需要确认您有效的认证凭据，并确保有足够的权限访问目标资源。\n\n\n';
+  for (const [toolName, tool] of toolsMap.entries()) {
+    markdown += `## ${tool.name}\n\n`;
+    if (tool.description) {
+      markdown += `${tool.description}\n\n`;
+    }
+    if (
+      tool.inputSchema &&
+      tool.inputSchema.properties &&
+      Object.keys(tool.inputSchema.properties).length > 0
+    ) {
+      markdown += '**参数说明：**\n\n';
+      const properties = tool.inputSchema.properties;
+      const required = tool.inputSchema.required || [];
+      for (const [paramName, paramDetails] of Object.entries(properties)) {
+        const isRequired = required.includes(paramName) ? '（必填）' : '（可选）';
+        let paramDescription = paramDetails.description || '';
+        let defaultValue =
+          paramDetails.default !== undefined ? `（默认：${paramDetails.default}）` : '';
+        if (paramDetails.enum && Array.isArray(paramDetails.enum)) {
+          paramDescription += paramDescription ? '，' : '';
+          paramDescription += `可选值：${paramDetails.enum.map((v: any) => `\`${v}\``).join('、')}`;
+        }
+        markdown += `- \`${paramName}\`：${paramDescription}${isRequired}${defaultValue}\n`;
+      }
+    } else {
+      markdown += '此工具不需要任何参数。\n';
+    }
+    markdown += '\n---\n\n';
+  }
+
+  return markdown;
 }
