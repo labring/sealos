@@ -23,11 +23,13 @@ pnpm gen:global && pnpm gen:region
 
 ### Prepare environment variables
 
-`.env.template` files are located at the workspace root directory for each app. Duplicate and rename them to `.env.development.local`, then fill the required configurations.
+`.env.template` files are located at the workspace root directory for each app. Duplicate and rename them to `.env`, then fill the required configurations.
 
 `NEXT_PUBLIC_MOCK_USER` is the kubeconfig mocked for development, you can copy it from your Sealos desktop. (Only one line allowed, you should escape the line breaks)
 
 ### Run apps for development
+
+You can either run apps in workspace root or in specific app's directory.
 
 ```sh
 # Run desktop app
@@ -41,6 +43,10 @@ pnpm dev-terminal   # terminal
 pnpm dev-template   # template
 pnpm dev-cronjob    # cronjob
 pnpm dev-devbox     # devbox
+
+# or run dev script in app's package directory
+cd desktop
+pnpm dev
 ```
 
 ## how to add packages
