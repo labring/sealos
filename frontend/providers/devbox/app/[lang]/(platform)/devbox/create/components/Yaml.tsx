@@ -14,7 +14,7 @@ import { useCopyData } from '@/utils/tools';
 
 import styles from './index.module.scss';
 
-const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
+const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   const theme = useTheme();
   const router = useRouter();
   const t = useTranslations();
@@ -25,13 +25,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
   const devboxName = searchParams.get('name') as string;
 
   return (
-    <Grid
-      h={'100%'}
-      templateColumns={'220px 1fr'}
-      gridGap={5}
-      alignItems={'start'}
-      px={`${pxVal}px`}
-    >
+    <Grid h={'100%'} templateColumns={'220px 1fr'} gridGap={5} alignItems={'start'}>
       <Box>
         <Tabs
           list={[

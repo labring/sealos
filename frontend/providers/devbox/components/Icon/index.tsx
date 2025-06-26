@@ -1,5 +1,6 @@
 import type { IconProps } from '@chakra-ui/react';
 import { Icon } from '@chakra-ui/react';
+import { cn } from '@/lib/utils';
 
 const map = {
   codeServer: require('./icons/codeServer.svg').default,
@@ -95,15 +96,23 @@ const map = {
   toolbox: require('./icons/toolbox.svg').default
 };
 
-const MyIcon = ({
-  name,
-  w = 'auto',
-  h = 'auto',
-  ...props
-}: { name: keyof typeof map } & IconProps) => {
-  return map[name] ? (
-    <Icon as={map[name]} verticalAlign={'text-top'} fill={'currentColor'} w={w} h={h} {...props} />
-  ) : null;
-};
+interface IconsProps extends IconProps {
+  name: keyof typeof map;
+  className?: string;
+}
 
-export default MyIcon;
+export function Icons({ name, className, w = 'auto', h = 'auto', ...props }: IconsProps) {
+  return map[name] ? (
+    <Icon
+      as={map[name]}
+      verticalAlign={'text-top'}
+      fill={'currentColor'}
+      w={w}
+      h={h}
+      className={cn(className)}
+      {...props}
+    />
+  ) : null;
+}
+
+export default Icons;

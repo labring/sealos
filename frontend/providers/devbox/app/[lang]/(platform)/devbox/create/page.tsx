@@ -1,65 +1,61 @@
 'use client';
-'use client';
+
+import { toast } from 'sonner';
+import { debounce } from 'lodash';
+import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
+
+import { FormProvider, useForm } from 'react-hook-form';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRouter } from '@/i18n';
-import { Box, Flex } from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import dynamic from 'next/dynamic';
-import { useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
-
-import Form from './components/form';
-import Header from './components/Header';
-import Yaml from './components/Yaml';
-
 import type { YamlItemType } from '@/types';
-import type { DevboxEditType, DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
-
-import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
-
-import { useDevboxStore } from '@/stores/devbox';
-import { useEnvStore } from '@/stores/env';
-import { useGlobalStore } from '@/stores/global';
-import { useIDEStore } from '@/stores/ide';
-import { useUserStore } from '@/stores/user';
-import { usePriceStore } from '@/stores/price';
-
-import { createDevbox, updateDevbox } from '@/api/devbox';
-import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
-import { useTemplateStore } from '@/stores/template';
-import { generateYamlList } from '@/utils/json2Yaml';
 import { patchYamlList } from '@/utils/tools';
-import { debounce } from 'lodash';
+import { useConfirm } from '@/hooks/useConfirm';
+import { generateYamlList } from '@/utils/json2Yaml';
+import { createDevbox, updateDevbox } from '@/api/devbox';
+import type { DevboxEditTypeV2, DevboxKindsType } from '@/types/devbox';
+import { defaultDevboxEditValueV2, editModeMap } from '@/constants/devbox';
+
+import { useEnvStore } from '@/stores/env';
+import { useIDEStore } from '@/stores/ide';
+import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
+import { useGlobalStore } from '@/stores/global';
+import { useDevboxStore } from '@/stores/devbox';
+import { useTemplateStore } from '@/stores/template';
+
+import Form from './components/Form';
+import Yaml from './components/Yaml';
+import Header from './components/Header';
+import { Loading } from '@/components/ui/loading';
 
 const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'));
+
 const DevboxCreatePage = () => {
-  const { env } = useEnvStore();
-  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
   const router = useRouter();
   const t = useTranslations();
-  const { Loading, setIsLoading } = useLoading();
-
   const searchParams = useSearchParams();
-  const { message: toast } = useMessage();
+
+  const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
+  const { setDevboxDetail } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
-  const { checkQuotaAllow } = useUserStore();
-  const { setDevboxDetail, devboxList } = useDevboxStore();
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
   const formOldYamls = useRef<YamlItemType[]>([]);
   const oldDevboxEditData = useRef<DevboxEditTypeV2>();
 
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
 
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
+
+  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
@@ -84,22 +80,13 @@ const DevboxCreatePage = () => {
     content: applyMessage
   });
 
-  // compute container width
-  const { screenWidth, lastRoute } = useGlobalStore();
-
-  const pxVal = useMemo(() => {
-    const val = Math.floor((screenWidth - 1050) / 2);
-    if (val < 20) {
-      return 20;
-    }
-    return val;
-  }, [screenWidth]);
+  const { lastRoute } = useGlobalStore();
 
   const formHook = useForm<DevboxEditTypeV2>({
     defaultValues: defaultDevboxEditValueV2
   });
 
-  // updateyamlList every time yamlList change
+  // update yamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
     () =>
       debounce((data: DevboxEditTypeV2, env) => {
@@ -161,10 +148,7 @@ const DevboxCreatePage = () => {
         formHook.reset(res);
       },
       onError(err) {
-        toast({
-          title: String(err),
-          status: 'error'
-        });
+        toast.error(String(err));
       },
       onSettled() {
         setIsLoading(false);
@@ -182,35 +166,13 @@ const DevboxCreatePage = () => {
       if (formData.gpu?.type) {
         const inventory = countGpuInventory(formData.gpu?.type);
         if (formData.gpu?.amount > inventory) {
-          return toast({
-            status: 'warning',
-            title: t('Gpu under inventory Tip', {
+          return toast.warning(
+            t('Gpu under inventory Tip', {
               gputype: formData.gpu.type
             })
-          });
+          );
         }
       }
-      // quote check
-      // const quoteCheckRes = checkQuotaAllow(
-      //   { ...formData, nodeports: devboxList.length + 1 } as DevboxEditTypeV2 & {
-      //     nodeports: number;
-      //   },
-      //   {
-      //     ...oldDevboxEditData.current,
-      //     nodeports: devboxList.length
-      //   } as DevboxEditType & {
-      //     nodeports: number;
-      //   }
-      // );
-      // if (quoteCheckRes) {
-      //   setIsLoading(false);
-      //   return toast({
-      //     status: 'warning',
-      //     title: t(quoteCheckRes),
-      //     duration: 5000,
-      //     isClosable: true
-      //   });
-      // }
 
       // update
       if (isEdit) {
@@ -223,12 +185,7 @@ const DevboxCreatePage = () => {
           [...new Set(parsedNewYamlList)].every((item) => new Set(parsedOldYamlList).has(item));
         if (areYamlListsEqual) {
           setIsLoading(false);
-          return toast({
-            status: 'info',
-            title: t('No changes detected'),
-            duration: 5000,
-            isClosable: true
-          });
+          return toast.info(t('No changes detected'));
         }
         if (!parsedNewYamlList) {
           // prevent empty yamlList
@@ -247,10 +204,7 @@ const DevboxCreatePage = () => {
         await createDevbox(formData);
       }
       addDevboxIDE('vscode', formData.name);
-      toast({
-        title: t(applySuccess),
-        status: 'success'
-      });
+      toast.success(t(applySuccess));
       updateTemplateModalConfig({
         ...templateConfig,
         lastRoute
@@ -278,25 +232,15 @@ const DevboxCreatePage = () => {
       }
       return deepSearch(Object.values(obj)[0]);
     };
-    toast({
-      title: deepSearch(formHook.formState.errors),
-      status: 'error',
-      position: 'top',
-      duration: 3000,
-      isClosable: true
-    });
-  }, [formHook.formState.errors, toast, t]);
+    toast.error(deepSearch(formHook.formState.errors));
+  }, [formHook.formState.errors, t]);
+
+  if (isLoading) return <Loading />;
 
   return (
     <>
       <FormProvider {...formHook}>
-        <Flex
-          flexDirection={'column'}
-          alignItems={'center'}
-          h={'100vh'}
-          minWidth={'1024px'}
-          backgroundColor={'grayModern.100'}
-        >
+        <div className="bg-grayModern-100 flex h-[calc(100vh-28px)] min-w-[1024px] flex-col items-center">
           <Header
             yamlList={yamlList}
             title={title}
@@ -308,17 +252,16 @@ const DevboxCreatePage = () => {
               )()
             }
           />
-          <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
+          <div className="w-full px-5 py-10 md:px-10 lg:px-20">
             {tabType === 'form' ? (
-              <Form pxVal={pxVal} isEdit={isEdit} countGpuInventory={countGpuInventory} />
+              <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
             ) : (
-              <Yaml yamlList={yamlList} pxVal={pxVal} />
+              <Yaml yamlList={yamlList} />
             )}
-          </Box>
-        </Flex>
+          </div>
+        </div>
       </FormProvider>
       <ConfirmChild />
-      <Loading />
 
       {!!errorMessage && (
         <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />

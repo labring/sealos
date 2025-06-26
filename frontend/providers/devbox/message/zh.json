@@ -88,6 +88,7 @@
   "delete_warning_content": "您确定要删除该云沙箱嘛？",
   "delete_warning_content_2": "删除云沙箱会导致云沙箱远程环境被删除，您将无法访问远程开发环境。（您已发布的版本仍然会保留）。",
   "deploy": "上线",
+  "config_devbox": "配置 DevBox",
   "deploy_a_new_app": "上线一个新应用",
   "detail": "详情",
   "devbox_creation": "项目创建",
