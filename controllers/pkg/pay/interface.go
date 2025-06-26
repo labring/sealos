@@ -15,7 +15,8 @@
 package pay
 
 type Interface interface {
-	CreatePayment(amount int64, user, describe string) (string, string, error)
+	// amount = sealos amount
+	CreatePayment(amount int64, user, describe string) (tradeNo string, codeURL string, err error)
 	GetPaymentDetails(sessionID string) (string, int64, error)
 	ExpireSession(payment string) error
 }
@@ -26,6 +27,8 @@ func NewPayHandler(paymentMethod string) (Interface, error) {
 		return &StripePayment{}, nil
 	case "wechat":
 		return &WechatPayment{}, nil
+	case "alipay":
+		return NewAlipayPayment()
 	default:
 		//return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
 		//TODO Now set it as the default wechat, and modify it a few days later
