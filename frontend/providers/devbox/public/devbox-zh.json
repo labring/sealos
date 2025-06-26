@@ -9,7 +9,7 @@
     "/api/v1/DevBox/create": {
       "post": {
         "summary": "createDevbox",
-        "description": "Use a template to create a new DevBox.",
+        "description": "使用模版，创建一个新的DevBox",
         "requestBody": {
           "content": {
             "application/json": {
@@ -19,7 +19,7 @@
                   "name": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "DevBox Name"
+                    "description": "DevBox名称"
                   },
                   "runtimeName": {
                     "type": "string",
@@ -35,19 +35,19 @@
                       "C",
                       "PHP"
                     ],
-                    "description": "The name of the template used to create the DevBox, with the following options: Debian, C++, Rust, Java, Go, Python, Node.js, .Net, C, PHP"
+                    "description": "DevBox 创建所使用的模版的名称，有以下可选项：Debian，C++，Rust，Java，Go，Python，Node.js，.Net，C，PHP"
                   },
                   "cpu": {
                     "type": "number",
                     "minimum": 0,
                     "default": 2000,
-                    "description": "Number of CPU cores, using the format 1000, 2000, representing 1 Core, 2 Core"
+                    "description": "CPU核心数, 使用1000，2000的格式,代表1Core, 2Core"
                   },
                   "memory": {
                     "type": "number",
                     "minimum": 0,
                     "default": 4096,
-                    "description": "Memory size, using the format 2048, 4096, representing 2G, 4G"
+                    "description": "内存数, 使用2048, 4096,代表2G, 4G"
                   }
                 },
                 "required": [
@@ -217,7 +217,7 @@
     "/api/v1/DevBox/release": {
       "post": {
         "summary": "releaseDevbox",
-        "description": "DevBox release, publish a new version for an existing DevBox",
+        "description": "DevBox发版，release，为现有的DevBox发布一个新的版本",
         "requestBody": {
           "content": {
             "application/json": {
@@ -227,17 +227,17 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "DevBox name"
+                    "description": "DevBox名称"
                   },
                   "tag": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "New tag for DevBox"
+                    "description": "DevBox新的Tag"
                   },
                   "releaseDes": {
                     "type": "string",
                     "default": "",
-                    "description": "Description of the new version"
+                    "description": "新版本的介绍"
                   }
                 },
                 "required": [
@@ -253,16 +253,16 @@
     "/api/v1/DevBox/releases": {
       "get": {
         "summary": "getDevboxreleases",
-        "description": "Get all historical versions of a single DevBox",
+        "description": "获取单个Devbox的所有历史版本",
         "parameters": [
           {
             "in": "query",
             "name": "devboxName",
-            "description": "DevBox name",
+            "description": "Devbox名称",
             "schema": {
               "type": "string",
               "minLength": 1,
-              "description": "DevBox name"
+              "description": "Devbox名称"
             },
             "required": true
           }
@@ -272,7 +272,7 @@
     "/api/v1/DevBox/lifecycle": {
       "post": {
         "summary": "manageDevbox",
-        "description": "Managing DevBox, DevBox lifecycle management, mainly including powering on, shutting down, restarting, cold shutdown, all these operations are completed through this tool",
+        "description": "操作Devbox，Devbox生命周期管理，主要包含开机，关机，重启，冷关机，这些操作都通过这个工具完成",
         "requestBody": {
           "content": {
             "application/json": {
@@ -282,7 +282,7 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "DevBox name"
+                    "description": "Devbox名称"
                   },
                   "action": {
                     "type": "string",
@@ -292,7 +292,7 @@
                       "restart",
                       "shutdown"
                     ],
-                    "description": "Manage methods: start for powering on, stop for shutting down, restart for restarting, shutdown for cold shutdown"
+                    "description": "操作方式：start为开机，stop为关机，restart为重启，shutdown为冷关机"
                   }
                 },
                 "required": [
@@ -308,7 +308,7 @@
     "/api/v1/DevBox/ports/create": {
       "post": {
         "summary": "createPort",
-        "description": "Create DevBox port, create a new port for an existing DevBox",
+        "description": "创建Devbox端口，为现有的Devbox创建一个新的端口",
         "requestBody": {
           "content": {
             "application/json": {
@@ -318,13 +318,13 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "DevBox name"
+                    "description": "Devbox名称"
                   },
                   "port": {
                     "type": "number",
                     "minimum": 1,
                     "maximum": 65535,
-                    "description": "Port number of the newly created port"
+                    "description": "新创建端口的端口号"
                   },
                   "protocol": {
                     "type": "string",
@@ -334,7 +334,7 @@
                       "WS"
                     ],
                     "default": "HTTP",
-                    "description": "Communication method for this port, three communication methods available: HTTP, GRPC, WS"
+                    "description": "这个端口的通信方式，有三种通信方式可选：HTTP，GRPC，WS"
                   }
                 },
                 "required": [
@@ -350,7 +350,7 @@
     "/api/deployDevbox": {
       "post": {
         "summary": "deployDevbox",
-        "description": "Deploy Devbox",
+        "description": "部署 Devbox",
         "requestBody": {
           "content": {
             "application/json": {
@@ -360,30 +360,30 @@
                   "devboxName": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "DevBox name"
+                    "description": "Devbox名称"
                   },
                   "port": {
                     "type": "number",
                     "minimum": 1,
                     "default": 65535,
-                    "description": "port number"
+                    "description": "端口号"
                   },
                   "tag": {
                     "type": "string",
                     "minLength": 1,
-                    "description": "Devbox release version number"
+                    "description": "Devbox版本号，即Devbox发布版本时所使用的版本号"
                   },
                   "cpu": {
                     "type": "number",
                     "minimum": 0,
                     "default": 2000,
-                    "description": "Number of CPU cores, using the format 1000, 2000, representing 1 Core, 2 Core"
+                    "description": "CPU核心数，使用1000、2000，分别代表1核、2核"
                   },
                   "memory": {
                     "type": "number",
                     "minimum": 0,
                     "default": 4096,
-                    "description": "Memory size, using the format 2048, 4096, representing 2G, 4G"
+                    "description": "内存大小，使用2048、4096，分别代表2G、4G"
                   }
                 },
                 "required": [
@@ -402,7 +402,7 @@
           "Query"
         ],
         "summary": "getDevboxList",
-        "description": "Get DevBox list, obtain detailed information for each DevBox"
+        "description": "获取DevBox列表，获得每个DevBox的详细信息"
       }
     }
   }

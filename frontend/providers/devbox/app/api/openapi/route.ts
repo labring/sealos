@@ -1433,9 +1433,12 @@ const applaunchpadDocument = {
 };
 
 export async function GET(request: Request) {
+  const region = process.env.REGION || 'EN';
+  const fileName = region === "ZH" ? "devbox-zh.json" : "devbox.json";
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get('domain') || '';
-  const mcp = getToolsList(path.join(process.cwd(), 'public', 'devbox.json'),)
+  //Since the API currently only has English documentation, we'll use EN here for now
+  const mcp = getToolsList(path.join(process.cwd(), 'public', fileName),"EN")
   try {
     const baseDoc = tmpOpenApiDocument(domain,mcp);
     const openApiDoc = {

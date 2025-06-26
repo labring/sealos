@@ -112,16 +112,22 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
   };
 }
 
-export function getToolsList(path: string): string {
+export function getToolsList(path: string, region: string = 'EN'): string {
   const toolsMap = OpenAPIToolsParser.loadAndParseOpenAPISpec({
     openApiSpec: path
   });
   const apiName = path.split('/').pop()?.split('.')[0] || 'API';
-  const apiTitle = `MCP Tools List`;
+  const apiTitle = region === 'EN' ? `MCP Tools List` : `MCP 工具列表`;
   let markdown = `# ${apiTitle}\n\n\n`;
-  markdown += `${apiName} Tool 用于访问和管理相关资源。该工具提供了完整的功能，让您能够轻松操作和使用适合项目需求的各种服务。\n\n`;
-  markdown +=
-    '在使用这些工具的时候，您需要确认您有效的认证凭据，并确保有足够的权限访问目标资源。\n\n\n';
+  if (region === 'EN') {
+    markdown += `${apiName} Tool is used to access and manage related reNources. This tool provides complete functionality, allowing you to easily operate and use various services suitable for your project needs.\n\n`;
+    markdown +=
+      'When using these tools, you need to ensure you have valid authentication credentials and sufficient permissions to access the target resources.\n\n\n';
+  } else {
+    markdown += `${apiName} Tool 用于访问和管理相关资源。该工具提供了完整的功能，让您能够轻松操作和使用适合项目需求的各种服务。\n\n`;
+    markdown +=
+      '在使用这些工具的时候，您需要确认您有效的认证凭据，并确保有足够的权限访问目标资源。\n\n\n';
+  }
   for (const [toolName, tool] of toolsMap.entries()) {
     markdown += `## ${tool.name}\n\n`;
     if (tool.description) {
@@ -132,25 +138,41 @@ export function getToolsList(path: string): string {
       tool.inputSchema.properties &&
       Object.keys(tool.inputSchema.properties).length > 0
     ) {
-      markdown += '**参数说明：**\n\n';
+      markdown += region === 'EN' ? '**Parameter Description:**\n\n' : '**参数说明：**\n\n';
       const properties = tool.inputSchema.properties;
       const required = tool.inputSchema.required || [];
+
       for (const [paramName, paramDetails] of Object.entries(properties)) {
-        const isRequired = required.includes(paramName) ? '（必填）' : '（可选）';
+        const isRequired = required.includes(paramName)
+          ? region === 'EN'
+            ? '(Required)'
+            : '（必填）'
+          : region === 'EN'
+          ? '(Optional)'
+          : '（可选）';
         let paramDescription = paramDetails.description || '';
         let defaultValue =
-          paramDetails.default !== undefined ? `（默认：${paramDetails.default}）` : '';
+          paramDetails.default !== undefined
+            ? region === 'EN'
+              ? `(Default: ${paramDetails.default})`
+              : `（默认：${paramDetails.default}）`
+            : '';
         if (paramDetails.enum && Array.isArray(paramDetails.enum)) {
-          paramDescription += paramDescription ? '，' : '';
-          paramDescription += `可选值：${paramDetails.enum.map((v: any) => `\`${v}\``).join('、')}`;
+          paramDescription += paramDescription ? (region === 'EN' ? ', ' : '，') : '';
+          paramDescription +=
+            region === 'EN'
+              ? `Available values: ${paramDetails.enum.map((v: any) => `\`${v}\``).join(', ')}`
+              : `可选值：${paramDetails.enum.map((v: any) => `\`${v}\``).join('、')}`;
         }
         markdown += `- \`${paramName}\`：${paramDescription}${isRequired}${defaultValue}\n`;
       }
     } else {
-      markdown += '此工具不需要任何参数。\n';
+      markdown +=
+        region === 'EN'
+          ? 'This tool does not require any parameters.\n'
+          : '此工具不需要任何参数。\n';
     }
     markdown += '\n---\n\n';
   }
-
   return markdown;
 }
