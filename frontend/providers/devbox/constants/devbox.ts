@@ -199,7 +199,7 @@ export const editModeMap: (isEdit: boolean) => {
   }
 
   return {
-    title: 'create_devbox',
+    title: 'config_devbox',
     applyBtnText: 'create',
     applyMessage: 'confirm_create_devbox',
     applySuccess: 'create_success',
