@@ -50,7 +50,7 @@ import { NextResponse } from 'next/server';
 import {getToolsList} from 'sealos-mcp-sdk';
 import path from 'path';
 
-bu gconst ErrorResponseSchema = z.object({
+const ErrorResponseSchema = z.object({
   code: z.number(),
   message: z.string(),
   data: z.string().optional()
