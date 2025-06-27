@@ -14,6 +14,7 @@ interface Limits {
 
 interface RequestBody {
 	namespace: string;
+	username?: string; // Optional, if not provided, it will be inferred from the session
 	limits: Limits;
 }
 
@@ -30,7 +31,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 			kind: 'ResourceQuota',
 			metadata: {
 				name: 'quota',
-				namespace: namespace
+				namespace: namespace,
+				annotations: {
+					'sealos/username': req.body.username || namespace
+				}
 			},
 			spec: {
 				hard: {

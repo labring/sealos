@@ -29,7 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kind: 'ResourceQuota',
       metadata: {
         name: 'quota',
-        namespace: ns
+        namespace: ns,
+        annotations: {
+          'sealos/username': ns // Assuming the namespace name is used as the username
+        }
       },
       spec: {
         hard: {
