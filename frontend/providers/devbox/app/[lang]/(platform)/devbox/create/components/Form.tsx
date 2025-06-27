@@ -42,8 +42,9 @@ const Form = ({
   };
 
   return (
-    <div className="grid grid-cols-[220px_1fr] gap-6">
+    <div className="flex gap-6">
       {/* left grid */}
+      {/* TODO: we need skeleton */}
       <div className="flex min-w-65 flex-col gap-4">
         <Tabs defaultValue="form" onValueChange={handleTabChange}>
           <TabsList className="h-11 w-full">
