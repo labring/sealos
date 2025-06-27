@@ -1,7 +1,7 @@
 import Script from 'next/script';
 import { enableMapSet } from 'immer';
 import { GeistSans } from 'geist/font/sans';
-import { GeistMono } from 'geist/font/mono';
+import { Fira_Code } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
 
 import IntlProvider from '@/components/providers/MyIntlProvider';
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
   ]
 };
 
+const FiraCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code'
+});
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1
@@ -37,7 +42,7 @@ export default function RootLayout({
 }>) {
   const scripts: { src: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
   return (
-    <html lang={lang} className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang={lang} className={`${GeistSans.variable} ${FiraCode.variable}`}>
       <body>
         <IntlProvider>
           <QueryProvider>{children}</QueryProvider>

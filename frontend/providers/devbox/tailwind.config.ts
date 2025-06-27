@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)']
+        firaCode: ['var(--font-fira-code)']
       },
       colors: {
         background: 'hsl(var(--background))',
