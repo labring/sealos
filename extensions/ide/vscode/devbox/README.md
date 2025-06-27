@@ -1,69 +1,83 @@
-# Devbox
+# DevBox by Sealos
 
-Sailos Devbox is a remote development&production environment that helps you develop and deploy your projects.
+Seamless cloud development on Kubernetes — right inside your IDE.
 
-This plugin support connection and management of Devbox.
+DevBox by Sealos gives you zero-config cloud dev environments backed by Kubernetes. Build, test, and deploy projects remotely, with all the power of your favorite editor.
 
-> Note: Currently, only connections and simple devbox management are supported, other functions(including amazing AI features integrated with sailos natively) will be supported next version.
+> Note: Current version supports remote connections and basic management. Advanced features—including AI coding tools—are coming soon.
 
-## Features
+## Important Links
+- [Sealos](https://sealos.io) - an enterprise-grade cloud operating system built on Kubernetes that provides a unified platform for developers to develop, deploy, and scale applications with ease.
+- [Sealos DevBox](https://sealos.io/products/devbox) - a ready-to-code cloud developmnet envrionemnt that eliminates development environment friction with instant setup, perfect isolation, and enterprise security.
 
-- Remote environment is based on Kubernetes, it has the advantages of K8S's environment.
-- Zero-configuration, no need to configure the environment, just connect to the Devbox.
-- Preset popular languages and frameworks make it easy to get started with development.
-- It has all the features of the editor, such as VSCode and Cursor.
-- Support local port forwarding and public port export.
+## Key Features
+- Remote-by-default: Your DevBox runs on Kubernetes in the cloud.
+- Zero config: No setup required. Just log in and connect.
+- Ready-to-code: Preinstalled languages and frameworks.
+- VS Code & Cursor compatible: Use all your favorite editor features.
+- Port access: Forward local ports or expose them publicly.
 
-## Usage
+## How DevBox Works
 
-### 1. Connect to the remote environment
+### 1. Create a DevBox
 
-Login to the [Sailos Devbox](https://usw.sailos.io/) and create a new Devbox.
+Login to [Sealos](https://os.sealos.io) and head over to the [DevBox](https://os.sealos.io/?openapp=system-devbox) module to create a new DevBox.
 
 ![create](https://raw.githubusercontent.com/mlhiter/typora-images/master/create.png)
 
-Then you can connect to the Devbox by your own IDE in the list page.
+### 2. Open in your IDE
+
+From DevBox chose your prfered IDE and connnect with just one click.
 
 ![list](https://raw.githubusercontent.com/mlhiter/typora-images/master/list.png)
 
-After that, you can use the Devbox just like your local environment.
+### 3, Start Coding Remotely
 
-### 2. Develop your project just like your local environment.
+Use the DevBox like a local dev environment — just faster and preconfigured.
 
 ![dev](https://raw.githubusercontent.com/mlhiter/typora-images/master/dev.png)
 
-### 3. Get your port export result
+### 4. Access Your App
 
-You can use local port forwarding supported by VSCode or Cursor to get your own page.
+#### Local Preview
+
+Use VS Code or Cursor port forwarding to preview your app.
 
 ![port-forward](https://raw.githubusercontent.com/mlhiter/typora-images/master/port-forward.png)
 
 ![port-forward-result](https://raw.githubusercontent.com/mlhiter/typora-images/master/port-forward-result.png)
 
-If you want to **share your port (maybe a page or an API) with others**,you can update your network config in Sailos Devbox Website to export your port **in public network**.
+#### Share Publicly
 
-you can update a public port or there is **a preset default public export port**(Different runtime has a different default public export port).
+Want others to view your app or API? Expose a public port from your DevBox dashboard.
+
+Use the preset default public port per runtime or configure custom port exports easily
 
 ![update-network](https://raw.githubusercontent.com/mlhiter/typora-images/master/update-network.png)
 
-## Managements
+## DevBox Management
 
-### 1. basic
+### 1. Quick Actions
 
-You can do some simple management operations or give us feedback in the Devbox list page.
+Manage your DevBoxes or send feedback directly from the extension.
 
-> Note: Delete devbox only influence local ssh config, will not delete remote devbox.
+> Note: Deleting a DevBox from the plugin only removes the local SSH config—it won’t delete the actual environment.
 
 ![manage](https://raw.githubusercontent.com/mlhiter/typora-images/master/manage.png)
 
 ### 2. Network and Database panel
 
-You can view the network and database(all your databases in your namespace) of the Devbox in the Network and Database panel.
+Monitor your the network settings of your DevBox and view all databases in your namespace.
 
 ![network](https://raw.githubusercontent.com/mlhiter/typora-images/master/network.png)
 ![database](https://raw.githubusercontent.com/mlhiter/typora-images/master/database.png)
 
 ## Requirements
 
-1. You need to install `Remote - SSH` extension in your IDE firstly.
-2. You need `a SSH client` in your local environment.
+- VS Code, Cursor or any other VS Code compatible IDE
+- Remote - SSH extension installed
+- An SSH client installed locally
+
+## Coming Soon
+
+- Natively integrated AI features
