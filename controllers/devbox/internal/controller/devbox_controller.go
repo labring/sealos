@@ -475,7 +475,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
-	if err := r.Delete(ctx, pod); err != nil {
+	if err := r.Delete(ctx, pod, client.GracePeriodSeconds(0), client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
 		logger.Error(err, "delete pod failed")
 		return err
 	}
