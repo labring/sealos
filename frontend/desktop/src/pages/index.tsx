@@ -211,6 +211,15 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         semData.additionalInfo = { semKeyword: k as string };
       }
       setUserSemData(semData);
+    } else if (msclkid) {
+      // Bing click data
+      setAdClickData({
+        source: 'Bing',
+        clickId: msclkid as string,
+        additionalData: {
+          timestamp: Date.now()
+        }
+      });
     }
   }, []);
 

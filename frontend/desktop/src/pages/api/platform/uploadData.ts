@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
 import { AdClickData } from '@/types/adClick';
+import { BingAdApiClient } from '@/services/backend/bingAdApiClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -42,10 +43,40 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return jsonRes(res, {
         data: result
       });
+    } else if (data.source === 'Bing') {
+      if (global.AppConfig.desktop.auth.bingAd.enabled === false) {
+        return jsonRes(res, {
+          data: 'Bing Ads API is not enabled.'
+        });
+      }
+
+      if (!global.bingAdApiClient) {
+        global.bingAdApiClient = new BingAdApiClient(
+          global.AppConfig.desktop.auth.bingAd.tenant,
+          global.AppConfig.desktop.auth.bingAd.clientId,
+          global.AppConfig.desktop.auth.bingAd.clientSecret,
+          global.AppConfig.desktop.auth.bingAd.refreshToken,
+          global.AppConfig.desktop.auth.bingAd.developerToken,
+          global.AppConfig.desktop.auth.bingAd.customerId,
+          global.AppConfig.desktop.auth.bingAd.customerAccountId,
+          global.AppConfig.desktop.auth.bingAd.conversionName
+        );
+      }
+
+      // Initialized above, it's safe to assert its existence
+      const result = await global.bingAdApiClient!.applyOfflineConversion({
+        name: global.AppConfig.desktop.auth.bingAd.conversionName,
+        time: new Date(data.additionalData.timestamp),
+        clickId: data.clickId
+      });
+
+      return jsonRes(res, {
+        data: result
+      });
     }
 
-    jsonRes(res, {
-      data: 'Unsupported AD source.',
+    return jsonRes(res, {
+      data: 'Unsupported AD click source.',
       code: 400
     });
   } catch (error) {
