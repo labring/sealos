@@ -112,22 +112,35 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
   };
 }
 
-export function getToolsList(path: string, region: string = 'EN'): string {
+export function getToolsList(path: string, region: string = 'en'): string {
+  const isEN = region === 'en';
+  const texts = {
+    apiTitle: isEN ? 'MCP Tools List' : 'MCP 工具列表',
+    introText: (apiName: string) =>
+      isEN
+        ? `${apiName} Tool is used to access and manage related reNources. This tool provides complete functionality, allowing you to easily operate and use various services suitable for your project needs.`
+        : `${apiName} Tool 用于访问和管理相关资源。该工具提供了完整的功能，让您能够轻松操作和使用适合项目需求的各种服务。`,
+    authText: isEN
+      ? 'When using these tools, you need to ensure you have valid authentication credentials and sufficient permissions to access the target resources.'
+      : '在使用这些工具的时候，您需要确认您有效的认证凭据，并确保有足够的权限访问目标资源。',
+    paramDesc: isEN ? '**Parameter Description:**' : '**参数说明：**',
+    required: isEN ? '(Required)' : '（必填）',
+    optional: isEN ? '(Optional)' : '（可选）',
+    defaultValue: (value: any) => (isEN ? `(Default: ${value})` : `（默认：${value}）`),
+    separator: isEN ? ', ' : '，',
+    availableValues: (values: any[]) =>
+      isEN
+        ? `Available values: ${values.map((v: any) => `\`${v}\``).join(', ')}`
+        : `可选值：${values.map((v: any) => `\`${v}\``).join('、')}`,
+    noParams: isEN ? 'This tool does not require any parameters.' : '此工具不需要任何参数。'
+  };
   const toolsMap = OpenAPIToolsParser.loadAndParseOpenAPISpec({
     openApiSpec: path
   });
   const apiName = path.split('/').pop()?.split('.')[0] || 'API';
-  const apiTitle = region === 'EN' ? `MCP Tools List` : `MCP 工具列表`;
-  let markdown = `# ${apiTitle}\n\n\n`;
-  if (region === 'EN') {
-    markdown += `${apiName} Tool is used to access and manage related reNources. This tool provides complete functionality, allowing you to easily operate and use various services suitable for your project needs.\n\n`;
-    markdown +=
-      'When using these tools, you need to ensure you have valid authentication credentials and sufficient permissions to access the target resources.\n\n\n';
-  } else {
-    markdown += `${apiName} Tool 用于访问和管理相关资源。该工具提供了完整的功能，让您能够轻松操作和使用适合项目需求的各种服务。\n\n`;
-    markdown +=
-      '在使用这些工具的时候，您需要确认您有效的认证凭据，并确保有足够的权限访问目标资源。\n\n\n';
-  }
+  let markdown = `# ${texts.apiTitle}\n\n\n`;
+  markdown += `${texts.introText(apiName)}\n\n`;
+  markdown += `${texts.authText}\n\n\n`;
   for (const [toolName, tool] of toolsMap.entries()) {
     markdown += `## ${tool.name}\n\n`;
     if (tool.description) {
@@ -138,39 +151,23 @@ export function getToolsList(path: string, region: string = 'EN'): string {
       tool.inputSchema.properties &&
       Object.keys(tool.inputSchema.properties).length > 0
     ) {
-      markdown += region === 'EN' ? '**Parameter Description:**\n\n' : '**参数说明：**\n\n';
+      markdown += `${texts.paramDesc}\n\n`;
       const properties = tool.inputSchema.properties;
       const required = tool.inputSchema.required || [];
 
       for (const [paramName, paramDetails] of Object.entries(properties)) {
-        const isRequired = required.includes(paramName)
-          ? region === 'EN'
-            ? '(Required)'
-            : '（必填）'
-          : region === 'EN'
-          ? '(Optional)'
-          : '（可选）';
+        const isRequired = required.includes(paramName) ? texts.required : texts.optional;
         let paramDescription = paramDetails.description || '';
         let defaultValue =
-          paramDetails.default !== undefined
-            ? region === 'EN'
-              ? `(Default: ${paramDetails.default})`
-              : `（默认：${paramDetails.default}）`
-            : '';
+          paramDetails.default !== undefined ? texts.defaultValue(paramDetails.default) : '';
         if (paramDetails.enum && Array.isArray(paramDetails.enum)) {
-          paramDescription += paramDescription ? (region === 'EN' ? ', ' : '，') : '';
-          paramDescription +=
-            region === 'EN'
-              ? `Available values: ${paramDetails.enum.map((v: any) => `\`${v}\``).join(', ')}`
-              : `可选值：${paramDetails.enum.map((v: any) => `\`${v}\``).join('、')}`;
+          paramDescription += paramDescription ? texts.separator : '';
+          paramDescription += texts.availableValues(paramDetails.enum);
         }
         markdown += `- \`${paramName}\`：${paramDescription}${isRequired}${defaultValue}\n`;
       }
     } else {
-      markdown +=
-        region === 'EN'
-          ? 'This tool does not require any parameters.\n'
-          : '此工具不需要任何参数。\n';
+      markdown += `${texts.noParams}\n`;
     }
     markdown += '\n---\n\n';
   }
