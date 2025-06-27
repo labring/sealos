@@ -1,21 +1,39 @@
 'use client';
 
 import { ApiReferenceReact } from '@scalar/api-reference-react';
-
 import { useEnvStore } from '@/stores/env';
-import { openApiDocument } from '@/app/api/openapi';
 import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user';
-
 import '@scalar/api-reference-react/style.css';
+import { useEffect, useState } from 'react';
 
 export default function References() {
   const { env } = useEnvStore();
-
+  const [apiData, setApiData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const devboxToken = getSessionFromSessionStorage();
   const session = getDesktopSessionFromSessionStorage();
-
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/openapi');
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
+        const data = await response.json();
+        setApiData(data);
+      } catch (error) {
+        // @ts-ignore
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
   const config = {
-    content: openApiDocument(env.sealosDomain),
+    content: JSON.stringify(apiData),
     authentication: {
       preferredSecurityScheme: ['kubeconfigAuth', 'jwtAuth'],
       securitySchemes: {
@@ -35,5 +53,6 @@ export default function References() {
       ? undefined
       : `https://devbox.${env.sealosDomain}/scalar/cdn.js`
   };
+
   return <ApiReferenceReact configuration={config} />;
 }
