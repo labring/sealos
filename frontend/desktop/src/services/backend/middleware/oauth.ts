@@ -12,17 +12,23 @@ import { BIND_STATUS } from '@/types/response/bind';
 import { UNBIND_STATUS } from '@/types/response/unbind';
 import { SemData } from '@/types/sem';
 import axios from 'axios';
+import { AdClickData } from '@/types/adClick';
 
 export const OauthCodeFilter = async (
   req: NextApiRequest,
   res: NextApiResponse,
-  next: (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) => void
+  next: (data: {
+    code: string;
+    inviterId?: string;
+    semData?: SemData;
+    adClickData?: AdClickData;
+  }) => void
 ) => {
-  const { code, inviterId, semData, bdVid } = req.body as {
+  const { code, inviterId, semData, adClickData } = req.body as {
     code?: string;
     inviterId?: string;
     semData?: SemData;
-    bdVid?: string;
+    adClickData?: AdClickData;
   };
   if (!code) {
     return jsonRes(res, {
@@ -36,7 +42,7 @@ export const OauthCodeFilter = async (
       code,
       inviterId,
       semData,
-      bdVid
+      adClickData
     })
   );
 };

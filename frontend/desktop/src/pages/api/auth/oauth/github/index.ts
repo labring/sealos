@@ -14,7 +14,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
   if (!enableGithub()) {
     throw new Error('github clinet is not defined');
   }
-  await OauthCodeFilter(req, res, async ({ code, inviterId, semData, bdVid }) => {
+  await OauthCodeFilter(req, res, async ({ code, inviterId, semData, adClickData }) => {
     await githubOAuthEnvFilter()(async ({ clientID, clientSecret }) => {
       await githubOAuthGuard(
         clientID,
@@ -41,7 +41,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
           email,
           inviterId,
           semData,
-          bdVid,
+          adClickData,
           providerType: 'GITHUB'
         })(req, res);
       });

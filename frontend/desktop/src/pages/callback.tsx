@@ -5,7 +5,7 @@ import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
 import { bindRequest, getRegionToken, signInRequest, unBindRequest } from '@/api/auth';
-import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import useCallbackStore, { MergeUserStatus } from '@/stores/callback';
 import { ProviderType } from 'prisma/global/generated/client';
 import request from '@/services/request';
@@ -66,7 +66,7 @@ export default function Callback() {
               code,
               inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
-              bdVid: getBaiduId() ?? undefined
+              adClickData: getAdClickData() ?? undefined
             });
             setProvider();
             if (data.code === 200 && data.data?.token) {

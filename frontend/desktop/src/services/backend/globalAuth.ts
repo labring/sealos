@@ -16,6 +16,7 @@ import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enabl
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
 import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
+import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
   PrismaClient,
@@ -375,7 +376,7 @@ export const getGlobalToken = async ({
   password,
   inviterId,
   semData,
-  bdVid
+  adClickData
 }: {
   provider: ProviderType;
   providerId: string;
@@ -385,7 +386,7 @@ export const getGlobalToken = async ({
   password?: string;
   inviterId?: string;
   semData?: SemData;
-  bdVid?: string;
+  adClickData?: AdClickData;
 }) => {
   let user: User | null = null;
 
@@ -500,8 +501,8 @@ export const getGlobalToken = async ({
             signResult: result
           });
         }
-        if (bdVid) {
-          await uploadConvertData({ newType: [3], bdVid })
+        if (adClickData) {
+          await uploadConvertData(adClickData)
             .then((res) => {
               console.log(res);
             })

@@ -23,7 +23,7 @@ import useSessionStore from '@/stores/session';
 import { useMutation } from '@tanstack/react-query';
 import request from '@/services/request';
 import { ApiResp } from '@/types';
-import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { HiddenCaptchaComponent, TCaptchaInstance } from '../signin/Captcha';
 import { useConfigStore } from '@/stores/config';
 import useCustomError from '../signin/auth/useCustomError';
@@ -64,7 +64,7 @@ export default function PhoneCheckComponent() {
         code: data.code,
         inviterId: getInviterId(),
         semData: getUserSemData(),
-        bdVid: getBaiduId()
+        adClickData: getAdClickData()
       }),
     async onSuccess(result) {
       const globalToken = result.data?.token;
