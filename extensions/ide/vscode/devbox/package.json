@@ -2,7 +2,7 @@
   "name": "devbox-aio",
   "displayName": "%displayName%",
   "description": "%description%",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "keywords": [
     "devbox",
     "remote development",
