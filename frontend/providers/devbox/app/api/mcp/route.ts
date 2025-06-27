@@ -4,7 +4,7 @@ import path from 'path';
 export const dynamic = 'force-dynamic';
 
 
-const region = process.env.REGION || 'EN';
+const region = process.env.FORCED_LANGUAGE || 'EN';
 const fileName = region === "ZH" ? "devbox-zh.json" : "devbox.json";
 
 const handler = McpHandler(
