@@ -41,7 +41,7 @@ Use the DevBox like a local dev environment — just faster and preconfigured.
 
 #### Local Preview
 
-Use VS Code or Cursor’s port forwarding to preview your app.
+Use VS Code or Cursor port forwarding to preview your app.
 
 ![port-forward](https://raw.githubusercontent.com/mlhiter/typora-images/master/port-forward.png)
 
