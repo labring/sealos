@@ -114,7 +114,6 @@ export function createMcpApiHandler(path: string, baseUrl: string) {
 
 export function getToolsList(path: string, region: string = 'en'): string {
   const isEN = region === 'en';
-  console.log('isEN', isEN);
   const texts = {
     apiTitle: isEN ? 'MCP Tools List' : 'MCP 工具列表',
     introText: (apiName: string) =>
