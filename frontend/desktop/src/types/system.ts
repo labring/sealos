@@ -90,8 +90,7 @@ export type AuthConfigType = {
   callbackURL: string;
   signUpEnabled?: boolean;
   baiduToken?: string;
-  bingAd: {
-    enabled: boolean;
+  bingAd?: {
     tenant: string;
     clientId: string;
     clientSecret: string;
@@ -201,6 +200,7 @@ export type AuthClientConfigType = {
     AuthConfigType,
     [
       'baiduToken',
+      'bingAd',
       'signUpEnabled',
       'invite.lafSecretKey',
       'invite.lafBaseURL',

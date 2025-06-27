@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: result
       });
     } else if (data.source === 'Bing') {
-      if (global.AppConfig.desktop.auth.bingAd.enabled === false) {
+      if (!global.AppConfig.desktop.auth.bingAd) {
         return jsonRes(res, {
           data: 'Bing Ads API is not enabled.'
         });
