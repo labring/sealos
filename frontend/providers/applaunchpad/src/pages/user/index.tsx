@@ -71,8 +71,9 @@ const AppList = ({
   const toast = useToast();
 
   const columns = [
+    { title: '用户名', field: 'username' },
     { title: '命名空间', field: 'namespace' },
-    // { title: '用户名', field: 'name' },
+    { title: '创建时间', field: 'createtime', render: (row: any) => formatPodTime(row.createTime) },
     { title: 'cpu', field: 'cpu' },
     { title: '内存', field: 'memory' },
     { title: '磁盘数量', field: 'persistentvolumeclaims' },
@@ -145,6 +146,7 @@ const AppList = ({
   const onEdit = async (data: any) => {
     setCurrentData({
       namespace: data.namespace,
+      username: data.username,
       services: Number(data.services),
       requestsStorage: Number(data.storage.split('Gi')[0]),
       persistentVolumeClaims: Number(data.persistentvolumeclaims),
@@ -191,6 +193,7 @@ const AppList = ({
       if (currentData) {
         const resp = await updateResourceQuotas(currentData.namespace, {
           namespace: currentData.namespace,
+          username: currentData.username,
           limits: {
             services: currentData.services,
             requestsStorage: `${currentData.requestsStorage}Gi`,
@@ -314,6 +317,21 @@ const AppList = ({
             <FormControl mb={7} w={'100%'}>
               <Flex alignItems={'center'} mb={5}>
                 <Label>用户名</Label>
+                <Input
+                  type='text'
+                  value={currentData?.username}
+                  onChange={(e) => {
+                    setCurrentData({
+                      ...currentData,
+                      username: e.target.value
+                    })
+                  }}
+                  autoFocus={true}
+                  maxLength={60}
+                />
+              </Flex>
+              <Flex alignItems={'center'} mb={5}>
+                <Label>命名空间</Label>
                 <Input
                   value={currentData?.namespace}
                   autoFocus={true}

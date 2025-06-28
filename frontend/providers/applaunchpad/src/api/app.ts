@@ -34,6 +34,7 @@ interface Limits {
 
 interface UpdateResourceQuotasData {
   namespace: string;
+  username: string;
   limits: Limits;
 }
 export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuotasData) =>

@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     const kubeconfig = await authSession(req.headers);
     const { k8sCore, kube_user } = await getK8s({ kubeconfig });
-    let resourceQuotasList: { namespace: string, name: string, cpu: string, memory: string, storage: string, services: string, persistentvolumeclaims: string }[] = [];
+    let resourceQuotasList: { namespace: string, username: string, createtime: string, name: string, cpu: string, memory: string, storage: string, services: string, persistentvolumeclaims: string }[] = [];
 
     if (kube_user.name === 'kubernetes-admin' || kube_user.name === 'inClusterUser') {
       const namespacesResult = await k8sCore.listNamespace();
@@ -17,8 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       for (const ns of namespaces) {
         const resourceQuotaResult = await k8sCore.listNamespacedResourceQuota(ns);
         resourceQuotaResult.body.items.forEach((item: any) => {
+          let username = item.metadata.annotations?.['sealos/username'] || ns; // Fallback to namespace if annotation is not present
           resourceQuotasList.push({
             namespace: ns,
+            username: username,
+            createtime: item.metadata.creationTimestamp,
             name: item.metadata.name,
             cpu: item.spec.hard['limits.cpu'],
             memory: item.spec.hard['limits.memory'],
