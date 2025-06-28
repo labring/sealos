@@ -129,6 +129,7 @@ subjects:
       {
         name: 'kubernetes',
         cluster: {
+          // server: 'https://'+process.env.SEALOS_DOMAIN+':6443',
           server: 'https://'+process.env.SEALOS_DOMAIN+':6443',
           'certificate-authority-data': secret.body.data?.['ca.crt'] ?? '',
         }

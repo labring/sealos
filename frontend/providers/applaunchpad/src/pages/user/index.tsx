@@ -47,6 +47,7 @@ import dayjs from 'dayjs';
 import { debounce } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
+import { syncConfigMap } from '@/api/configMap'
 import { createNamespace } from '@/api/platform';
 
 const AppList = ({
@@ -116,7 +117,6 @@ const AppList = ({
   }
 
   const onClose = () => {
-    setUsername('')
     setIsOpen(false)
   }
 
@@ -126,6 +126,7 @@ const AppList = ({
         ns: username
       })
       if (resp) {
+        await syncConfigMap()
         toast({
           status: 'success',
           title: '创建成功'

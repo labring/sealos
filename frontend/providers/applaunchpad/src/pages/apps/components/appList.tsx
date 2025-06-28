@@ -11,6 +11,7 @@ import { useGlobalStore } from '@/store/global';
 import { useUserStore } from '@/store/user';
 import { AppListItemType } from '@/types/app';
 import { getErrText } from '@/utils/tools';
+import { syncConfigMap } from '@/api/configMap'
 import {
   Box,
   Button,
@@ -516,6 +517,7 @@ const AppList = ({
                 }
 
                 await createNamespace({ ns });
+                await syncConfigMap();
                 onClose();
                 setNs('');
                 refetchApps('default');

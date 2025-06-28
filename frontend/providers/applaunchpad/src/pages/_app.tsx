@@ -243,6 +243,7 @@ const App = ({ Component, pageProps }: AppProps) => {
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/computePower' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/computePower${showMenu ? '?showMenu=true' : ''}`)}>算力测算</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/monitor${showMenu ? '?showMenu=true' : ''}`)}>监控管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/menu' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/menu${showMenu ? '?showMenu=true' : ''}`)}>菜单管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/menu' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/alert${showMenu ? '?showMenu=true' : ''}`)}>告警管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/configManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/configManage${showMenu ? '?showMenu=true' : ''}`)}>配置管理</Text>
                         </Box> : null
                     }

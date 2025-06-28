@@ -146,7 +146,7 @@ def export_app_helper(yaml_content, images, appname, namespace):
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
-                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': ''})
+                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': 'str(single_yaml['spec']['ports'][port_index]['nodePort']'})
     print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
@@ -400,8 +400,8 @@ def deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace=
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
                     internal_port = str(single_yaml['spec']['ports'][port_index]['port'])
-                    if internal_port not in ports.keys():
-                        return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
+                  #  if internal_port not in ports.keys():
+                  #      return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
                     if not isinstance(ports[internal_port], int):
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be int'}), 400
                     if ports[internal_port] < 30000 or ports[internal_port] > 32767:

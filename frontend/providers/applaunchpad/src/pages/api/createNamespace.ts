@@ -33,11 +33,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       },
       spec: {
         hard: {
-          'services': '5',
-          'requests.storage': '10Gi',
-          'persistentvolumeclaims': '5',
-          'limits.cpu': '4',
-          'limits.memory': '8Gi'
+          'services': '5000',
+          'requests.storage': '1000Gi',
+          'persistentvolumeclaims': '5000',
+          'limits.cpu': '4000',
+          'limits.memory': '8000Gi'
         }
       }
     };
