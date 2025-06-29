@@ -49,6 +49,7 @@ import {
   DrawerCloseButton,
   Textarea,
 } from '@chakra-ui/react';
+import ReactSelect from 'react-select'
 import type { ThemeType } from '@sealos/ui';
 import { useMessage } from '@sealos/ui';
 import axios from 'axios';
@@ -136,7 +137,7 @@ const AppList = ({
     qps: "",
     max_latency: "",
     test_data: "",
-    stress_type: ''
+    stress_type: 'server'
   });
   const [nameSpaceList, setNameSpaceList] = useState([]);
   const [appList, setAppList] = useState<any>([]);
@@ -191,16 +192,20 @@ const AppList = ({
     onClose()
   }
 
-  const getAppWithNameSpace = async () => {
-    const data = await getMyApps(nodeModel.namespace)
+  const getAppWithNameSpace = async (nameSpace?:string) => {
+    const data = await getMyApps(nameSpace || nodeModel.namespace)
     setAppList(data)
   }
 
   const createNodeModelConfirm = async () => {
     setCreateLoading(true)
     try {
-      let params = Object.keys(nodeModel).reduce((prev: any, next: any) => {
-        return `${prev}${prev === '' ? '' : '&'}${next}=${nodeModel[next]}`
+      let _nodeModel = {...nodeModel,app_list:nodeModel.app_list ? nodeModel.app_list.map((item:any)=>{
+        return item.label
+      }).join('|') : ''}
+      console.log(nodeModel)
+      let params = Object.keys(_nodeModel).reduce((prev: any, next: any) => {
+        return `${prev}${prev === '' ? '' : '&'}${next}=${_nodeModel[next]}`
       }, '')
       params += `&stress_id=${Date.now()}`
       const resp = await addStressTesting(params)
@@ -365,7 +370,19 @@ const AppList = ({
         </Flex>
         <Flex gap={2}>
           {/* <Button onClick={openBackupDrawer} marginLeft={2}>备用节点</Button> */}
-          <Button onClick={onOpen}>添加测算</Button>
+          <Button onClick={()=>{
+            setNodeModel({
+              namespace: "",
+              app_list: "",
+              core_api: "",
+              port: "",
+              qps: "",
+              max_latency: "",
+              test_data: "",
+              stress_type: 'server'
+            })
+            onOpen()
+          }}>添加测算</Button>
         </Flex>
       </Flex>
 
@@ -409,7 +426,7 @@ const AppList = ({
                       ...nodeModel,
                       namespace: e.target.value
                     })
-                    getAppWithNameSpace();
+                    getAppWithNameSpace(e.target.value);
                   }}
                 >
                   {
@@ -441,15 +458,20 @@ const AppList = ({
             <FormControl mb={7} w={'100%'}>
               <Flex alignItems={'center'}>
                 <Label>{"应用"}</Label>
-                <Input
-                  width={'60%'}
-                  autoFocus={true}
-                  maxLength={60}
+                <ReactSelect
+                  className='mulSelect w60'
                   value={nodeModel.app_list}
+                  isMulti
+                  options={appList.map((appInfo:any)=>{
+                    return {
+                      label:appInfo.name,
+                      value:appInfo.name
+                    }
+                  })}
                   onChange={e => {
                     setNodeModel({
                       ...nodeModel,
-                      app_list: e.target.value
+                      app_list: e
                     })
                   }}
                 />
