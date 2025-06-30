@@ -25,8 +25,8 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from '@/i18n';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 import { DevboxStatusEnum } from '@/constants/devbox';
-import { useControlDevbox } from '../hooks/useControlDevbox';
 import { generateMockMonitorData } from '@/constants/mock';
+import { useControlDevbox } from '@/hooks/useControlDevbox';
 
 import {
   DropdownMenu,

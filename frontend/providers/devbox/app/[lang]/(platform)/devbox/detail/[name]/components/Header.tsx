@@ -1,38 +1,34 @@
-import { toast } from 'sonner';
+import { useState } from 'react';
+import { ArrowLeft, Terminal, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { sealosApp } from 'sealos-desktop-sdk/app';
-import { Dispatch, useCallback, useMemo, useState } from 'react';
 
 import { useRouter } from '@/i18n';
-import { useUserStore } from '@/stores/user';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
-import { useGlobalStore } from '@/stores/global';
 import { DevboxDetailTypeV2 } from '@/types/devbox';
 import { DevboxStatusEnum } from '@/constants/devbox';
-import { restartDevbox, startDevbox } from '@/api/devbox';
+import { useControlDevbox } from '@/hooks/useControlDevbox';
 
-import MyIcon from '@/components/Icon';
 import IDEButton from '@/components/IDEButton';
 import { Button } from '@/components/ui/button';
 import DelModal from '@/components/modals/DelModal';
 import DevboxStatusTag from '@/components/StatusTag';
+import { ButtonGroup } from '@/components/ui/button-group';
 import ShutdownModal from '@/components/modals/ShutdownModal';
 
 interface HeaderProps {
   refetchDevboxDetail: () => void;
-  setShowSlider: Dispatch<boolean>;
-  isLargeScreen: boolean;
 }
 
-const Header = ({ refetchDevboxDetail, setShowSlider, isLargeScreen = true }: HeaderProps) => {
+const Header = ({ refetchDevboxDetail }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
 
-  const { isOutStandingPayment } = useUserStore();
-  const { setLoading } = useGlobalStore();
+  const { guideIDE } = useGuideStore();
   const { devboxDetail, setDevboxList } = useDevboxStore();
+  const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
+    useControlDevbox(refetchDevboxDetail);
 
   const [onOpenShutdown, setOnOpenShutdown] = useState(false);
   const [delDevbox, setDelDevbox] = useState<DevboxDetailTypeV2 | null>(null);
@@ -43,204 +39,81 @@ const Header = ({ refetchDevboxDetail, setShowSlider, isLargeScreen = true }: He
     }
   });
 
-  const handleRestartDevbox = useCallback(
-    async (devbox: DevboxDetailTypeV2) => {
-      try {
-        setLoading(true);
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          setLoading(false);
-          return;
-        }
-        await restartDevbox({ devboxName: devbox.name });
-        toast.success(t('restart_success'));
-      } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('restart_error'));
-        console.error(error, '==');
-      }
-      refetchDevboxDetail();
-      setLoading(false);
-    },
-    [setLoading, t, refetchDevboxDetail, isOutStandingPayment]
-  );
-  const handleStartDevbox = useCallback(
-    async (devbox: DevboxDetailTypeV2) => {
-      try {
-        setLoading(true);
-        if (isOutStandingPayment) {
-          toast.error(t('start_outstanding_tips'));
-          setLoading(false);
-          return;
-        }
-        await startDevbox({ devboxName: devbox.name });
-        toast.success(t('start_success'));
-      } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('start_error'));
-        console.error(error, '==');
-      }
-      refetchDevboxDetail();
-      setLoading(false);
-    },
-    [setLoading, t, refetchDevboxDetail, isOutStandingPayment]
-  );
-  const handleGoToTerminal = useCallback(
-    async (devbox: DevboxDetailTypeV2) => {
-      const defaultCommand = `kubectl exec -it $(kubectl get po -l app.kubernetes.io/name=${devbox.name} -oname) -- sh -c "clear; (bash || ash || sh)"`;
-      try {
-        sealosApp.runEvents('openDesktopApp', {
-          appKey: 'system-terminal',
-          query: {
-            defaultCommand
-          },
-          messageData: { type: 'new terminal', command: defaultCommand }
-        });
-      } catch (error: any) {
-        toast.error(typeof error === 'string' ? error : error.message || t('jump_terminal_error'));
-        console.error(error);
-      }
-    },
-    [t]
-  );
-  const { guideIDE } = useGuideStore();
-
   if (!devboxDetail) return null;
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-5 pt-2 pl-4">
-      {/* left back button and title */}
-      <div className="flex items-center gap-2">
-        <MyIcon
-          name="arrowLeft"
-          w={'24px'}
-          onClick={() => router.push('/')}
-          cursor={'pointer'}
-          className="mt-1 ml-1"
+    <div className="flex h-20 flex-wrap items-center justify-between gap-5 px-6">
+      {/* left */}
+      <div className="flex h-6 cursor-pointer items-center gap-3" onClick={() => router.push('/')}>
+        <ArrowLeft className="h-6 w-6" />
+        <div className="text-xl font-semibold">{devboxDetail.name}</div>
+        <DevboxStatusTag
+          status={devboxDetail.status}
+          isShutdown={devboxDetail.status.value === DevboxStatusEnum.Shutdown}
         />
-        <div className="text-2xl font-bold">{devboxDetail.name}</div>
-        {/* detail button */}
-        <div className="flex items-center">
-          <DevboxStatusTag
-            status={devboxDetail.status}
-            className="h-[27px]"
-            isShutdown={devboxDetail.status.value === DevboxStatusEnum.Shutdown}
-          />
-          {!isLargeScreen && (
-            <div className="ml-4">
-              <Button
-                className="h-10 w-24 border bg-white text-[#485264] hover:text-[#1890FF]"
-                onClick={() => setShowSlider(true)}
-              >
-                <MyIcon name="detail" w="16px" h="16px" className="mr-2" />
-                {t('detail')}
-              </Button>
-            </div>
-          )}
-        </div>
       </div>
-      {/* right main button group */}
-      <div className="flex gap-5">
-        <div>
-          <IDEButton
-            isGuide={!guideIDE}
-            runtimeType={devboxDetail.iconId}
-            devboxName={devboxDetail.name}
-            sshPort={devboxDetail.sshPort as number}
-            status={devboxDetail.status}
-            isBigButton={isBigButton}
-            leftButtonProps={{
-              className: 'h-10 w-24 border-[1px_0_1px_1px] bg-white text-[#485264]'
-            }}
-            rightButtonProps={{
-              className:
-                'h-10 border-[1px_1px_1px_0] bg-white text-[#485264] shadow-[2px_1px_2px_0px_rgba(19,51,107,0.05),0px_0px_1px_0px_rgba(19,51,107,0.08)]'
-            }}
-          />
-        </div>
+      {/* right */}
+      <div className="flex h-10 gap-3">
         <Button
-          className="h-10 border bg-white text-sm text-[#485264] hover:text-[#1890FF] disabled:opacity-50"
+          size="icon"
+          variant="outline"
+          className="h-10 w-10 bg-white text-neutral-500 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+          onClick={() => setDelDevbox(devboxDetail)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 bg-white text-neutral-500 hover:text-neutral-600"
           disabled={devboxDetail.status.value !== 'Running'}
           onClick={() => handleGoToTerminal(devboxDetail)}
         >
-          {isBigButton ? (
-            <>
-              <MyIcon name={'terminal'} w={'16px'} className="mr-2" />
-              {t('terminal')}
-            </>
-          ) : (
-            <MyIcon name={'terminal'} w={'16px'} />
-          )}
+          <Terminal className="h-4 w-4" />
         </Button>
-        {devboxDetail.status.value === 'Running' && (
-          <Button
-            className="guide-close-button h-10 border bg-white text-sm text-[#485264] hover:text-[#1890FF]"
-            onClick={() => setOnOpenShutdown(true)}
-          >
-            {isBigButton ? (
-              <>
-                <MyIcon name={'shutdown'} w={'16px'} className="mr-2" />
-                {t('pause')}
-              </>
-            ) : (
-              <MyIcon name={'shutdown'} w={'16px'} />
-            )}
-          </Button>
-        )}
-        {(devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown') && (
-          <Button
-            className="h-10 border bg-white text-sm text-[#485264] hover:text-[#1890FF]"
-            onClick={() => handleStartDevbox(devboxDetail)}
-          >
-            {isBigButton ? (
-              <>
-                <MyIcon name={'start'} w={'16px'} className="mr-2" />
-                {t('start')}
-              </>
-            ) : (
-              <MyIcon name={'start'} w={'16px'} />
-            )}
-          </Button>
-        )}
-        <Button
-          className="h-10 border bg-white text-sm text-[#485264] hover:text-[#1890FF]"
-          onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}
-        >
-          {!isBigButton ? (
-            <MyIcon name={'change'} w={'16px'} />
+        <IDEButton
+          isGuide={!guideIDE}
+          runtimeType={devboxDetail.iconId}
+          devboxName={devboxDetail.name}
+          sshPort={devboxDetail.sshPort as number}
+          status={devboxDetail.status}
+          leftButtonProps={{
+            className:
+              'h-10 border border-r-[0.5px] border-r-[rgba(228,228,231,0.20)] border-l-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-r-none hover:bg-zinc-800'
+          }}
+          rightButtonProps={{
+            className:
+              'h-10 border border-l-[0.5px] border-l-[rgba(228,228,231,0.20)] border-r-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-l-none hover:bg-zinc-800'
+          }}
+        />
+        <ButtonGroup>
+          {devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown' ? (
+            <Button variant="outline" size="lg" onClick={() => handleStartDevbox(devboxDetail)}>
+              {t('start')}
+            </Button>
           ) : (
-            <>
-              <MyIcon name={'change'} w={'16px'} className="mr-2" />
-              {t('update')}
-            </>
+            <Button
+              variant="outline"
+              size="lg"
+              className="guide-close-button"
+              onClick={() => setOnOpenShutdown(true)}
+            >
+              {t('pause')}
+            </Button>
           )}
-        </Button>
-        {devboxDetail.status.value !== 'Stopped' && devboxDetail.status.value !== 'Shutdown' && (
           <Button
-            className="h-10 border bg-white text-sm text-[#485264] hover:text-[#1890FF]"
-            onClick={() => handleRestartDevbox(devboxDetail)}
+            variant="outline"
+            size="lg"
+            onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}
           >
-            {isBigButton ? (
-              <>
-                <MyIcon name={'restart'} w={'16px'} className="mr-2" />
-                {t('restart')}
-              </>
-            ) : (
-              <MyIcon name={'restart'} w={'16px'} />
-            )}
+            {t('update')}
           </Button>
-        )}
-        <Button
-          className="h-10 border bg-white text-sm text-[#485264] hover:text-red-600"
-          onClick={() => setDelDevbox(devboxDetail)}
-        >
-          {isBigButton ? (
-            <>
-              <MyIcon name={'delete'} w={'16px'} className="mr-2" />
-              {t('delete')}
-            </>
-          ) : (
-            <MyIcon name={'delete'} w={'16px'} />
-          )}
-        </Button>
+          <Button variant="outline" size="lg" onClick={() => handleRestartDevbox(devboxDetail)}>
+            {t('restart')}
+          </Button>
+        </ButtonGroup>
       </div>
+      {/* modals */}
       {!!delDevbox && (
         <DelModal
           devbox={delDevbox}
@@ -252,18 +125,19 @@ const Header = ({ refetchDevboxDetail, setShowSlider, isLargeScreen = true }: He
           refetchDevboxList={refetchDevboxList}
         />
       )}
-
-      <ShutdownModal
-        open={!!onOpenShutdown && !!devboxDetail}
-        onSuccess={() => {
-          refetchDevboxDetail();
-          setOnOpenShutdown(false);
-        }}
-        onClose={() => {
-          setOnOpenShutdown(false);
-        }}
-        devbox={devboxDetail || ({} as DevboxDetailTypeV2)}
-      />
+      {!!devboxDetail && (
+        <ShutdownModal
+          open={!!onOpenShutdown}
+          onSuccess={() => {
+            refetchDevboxDetail();
+            setOnOpenShutdown(false);
+          }}
+          onClose={() => {
+            setOnOpenShutdown(false);
+          }}
+          devbox={devboxDetail}
+        />
+      )}
     </div>
   );
 };
