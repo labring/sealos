@@ -5,9 +5,8 @@ import { BingAdApiClient } from '@/services/backend/bingAdApiClient';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { data, main_url } = req.body as {
+    const { data } = req.body as {
       data: AdClickData;
-      main_url: string;
     };
 
     if (data.source === 'Baidu') {
@@ -19,11 +18,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      const mainUrl = 'https://ads.sealos.run';
+
       const url = 'https://ocpc.baidu.com/ocpcapi/api/uploadConvertData';
       const uploadBody = {
         token: BD_TOKEN,
         conversionTypes: data.additionalData.newType.map((item) => ({
-          logidUrl: `${main_url}?bd_vid=${data.clickId}`,
+          logidUrl: `${mainUrl}?bd_vid=${data.clickId}`,
           newType: item
         }))
       };
@@ -38,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })
       ).json();
 
-      console.log('upload baidu ad click data:', data, 'result:', result);
+      console.log('Uploaded baidu AD click data:', data, '\nResult:', result);
 
       return jsonRes(res, {
         data: result
@@ -63,12 +64,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         );
       }
 
-      // Initialized above, it's safe to assert its existence
-      const result = await global.bingAdApiClient!.applyOfflineConversion({
+      const result = await global.bingAdApiClient.applyOfflineConversion({
         name: global.AppConfig.desktop.auth.bingAd.conversionName,
         time: new Date(data.additionalData.timestamp),
         clickId: data.clickId
       });
+
+      console.log('Uploaded Bing AD click data:', data, '\nResult:', result);
 
       return jsonRes(res, {
         data: result

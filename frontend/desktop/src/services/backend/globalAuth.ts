@@ -502,13 +502,7 @@ export const getGlobalToken = async ({
           });
         }
         if (adClickData) {
-          await uploadConvertData(adClickData)
-            .then((res) => {
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
+          await uploadConvertData(adClickData);
         }
         if (enableTracking()) {
           await trackSignUp({

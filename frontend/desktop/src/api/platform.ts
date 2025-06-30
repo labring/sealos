@@ -17,11 +17,9 @@ import { UserTask } from '@/types/task';
  */
 export const uploadConvertData = (data: AdClickData) => {
   const baseurl = `http://${process.env.HOSTNAME || 'localhost'}:${process.env.PORT || 3000}`;
-  const defaultUrl = 'https://ads.sealos.run';
 
   return request.post(`${baseurl}/api/platform/uploadData`, {
-    data,
-    main_url: defaultUrl
+    data
   });
 };
 
