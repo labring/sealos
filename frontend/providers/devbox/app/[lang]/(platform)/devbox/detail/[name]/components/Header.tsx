@@ -71,21 +71,6 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
         >
           <Terminal className="h-4 w-4" />
         </Button>
-        <IDEButton
-          isGuide={!guideIDE}
-          runtimeType={devboxDetail.iconId}
-          devboxName={devboxDetail.name}
-          sshPort={devboxDetail.sshPort as number}
-          status={devboxDetail.status}
-          leftButtonProps={{
-            className:
-              'h-10 border border-r-[0.5px] border-r-[rgba(228,228,231,0.20)] border-l-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-r-none hover:bg-zinc-800'
-          }}
-          rightButtonProps={{
-            className:
-              'h-10 border border-l-[0.5px] border-l-[rgba(228,228,231,0.20)] border-r-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-l-none hover:bg-zinc-800'
-          }}
-        />
         <ButtonGroup>
           {devboxDetail.status.value === 'Stopped' || devboxDetail.status.value === 'Shutdown' ? (
             <Button variant="outline" size="lg" onClick={() => handleStartDevbox(devboxDetail)}>
@@ -112,6 +97,21 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
             {t('restart')}
           </Button>
         </ButtonGroup>
+        <IDEButton
+          isGuide={!guideIDE}
+          runtimeType={devboxDetail.iconId}
+          devboxName={devboxDetail.name}
+          sshPort={devboxDetail.sshPort as number}
+          status={devboxDetail.status}
+          leftButtonProps={{
+            className:
+              'h-[39px] border border-r-[0.5px] border-r-[rgba(228,228,231,0.20)] border-l-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-r-none hover:bg-zinc-800'
+          }}
+          rightButtonProps={{
+            className:
+              'h-[39px] border border-l-[0.5px] border-l-[rgba(228,228,231,0.20)] border-r-zinc-900 border-t-zinc-900 border-b-zinc-900 bg-zinc-900 text-white rounded-l-none hover:bg-zinc-800'
+          }}
+        />
       </div>
       {/* modals */}
       {!!delDevbox && (
