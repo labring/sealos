@@ -1,24 +1,40 @@
-import MyIcon from '@/components/Icon';
+import Image from 'next/image';
+import { HTMLAttributes, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+
+import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
-import { type Tag as TTag } from '@/prisma/generated/client';
 import { useDevboxStore } from '@/stores/devbox';
 import { useTemplateStore } from '@/stores/template';
+import { type Tag as TTag } from '@/prisma/generated/client';
+
 import {
-  Box,
-  BoxProps,
-  Button,
-  Flex,
-  Img,
-  MenuButton,
-  Tag,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
-import { MyTooltip, SealosMenu } from '@sealos/ui';
-import { useLocale, useTranslations } from 'next-intl';
-import DeleteTemplateReposistoryModal from '../updateTemplate/DeleteTemplateReposistoryModal';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 import EditTemplateModal from '../updateTemplate/EditTemplateModal';
-import EditTemplateRepositoryModal from '../updateTemplate/EditTemplateReposistoryModal';
+import DeleteTemplateRepositoryModal from '../updateTemplate/DeleteTemplateRepositoryModal';
+import EditTemplateRepositoryModal from '../updateTemplate/EditTemplateRepositoryModal';
+import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
+
+interface TemplateCardProps extends HTMLAttributes<HTMLDivElement> {
+  isPublic?: boolean;
+  iconId: string;
+  isDisabled?: boolean;
+  inPublicStore?: boolean;
+  templateRepositoryName: string;
+  templateRepositoryDescription: string | null;
+  templateRepositoryUid: string;
+  tags: TTag[];
+}
+
 const TemplateCard = ({
   isPublic,
   iconId,
@@ -28,160 +44,92 @@ const TemplateCard = ({
   isDisabled = false,
   inPublicStore = true,
   tags,
+  className,
   ...props
-}: {
-  isPublic?: boolean;
-  iconId: string;
-  isDisabled?: boolean;
-  inPublicStore?: boolean;
-  templateRepositoryName: string;
-  templateRepositoryDescription: string | null;
-  templateRepositoryUid: string;
-  tags: TTag[];
-} & BoxProps) => {
+}: TemplateCardProps) => {
   const t = useTranslations();
-  const { closeTemplateModal, config, updateTemplateModalConfig } = useTemplateStore();
-  const editTemplateHandle = useDisclosure();
-  const editTemplateRepositoryHandle = useDisclosure();
-  const deleteTemplateHandle = useDisclosure();
+  const { closeTemplateModal } = useTemplateStore();
   const { setStartedTemplate } = useDevboxStore();
   const router = useRouter();
   const description = templateRepositoryDescription
     ? templateRepositoryDescription
     : t('no_description');
   const lastLang = useLocale();
+
+  const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
+  const [isEditRepositoryOpen, setIsEditRepositoryOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
   return (
     <>
-      <Box
-        position="relative"
-        width={'full'}
-        _before={
-          isDisabled
-            ? {
-                content: "''",
-                position: 'absolute',
-                inset: 0,
-                background: '#fff',
-                opacity: 0.3,
-                'pointer-events': 'none'
-              }
-            : {}
-        }
-        display="flex"
-        maxW={'440px'}
-        flexDirection="column"
-        alignItems="flex-start"
-        gap="12px"
-        data-group
+      <Card
+        className={cn(
+          'group relative flex w-full max-w-[440px] flex-col items-start gap-3 border border-gray-200 bg-gray-50 p-5 hover:bg-gray-100',
+          isDisabled &&
+            'before:pointer-events-none before:absolute before:inset-0 before:bg-white before:opacity-30 before:content-[""]',
+          className
+        )}
         {...props}
-        bgColor={'grayModern.50'}
-        _groupHover={{
-          bgColor: 'grayModern.150'
-        }}
-        border="1px solid #E8EBF0"
-        borderRadius="8px"
-        px="20px"
-        pt={'16px'}
-        pb={'12px'}
       >
-        <Box w="full" height={'44px'}>
-          <Flex justifyContent="space-between" alignItems="center" gap="12px" height={'full'}>
-            <Flex alignItems="center" gap="12px" flex="1" height={'full'} width={'0'}>
+        <div className="h-11 w-full">
+          <div className="flex h-full items-center justify-between gap-3">
+            <div className="flex h-full w-0 flex-1 items-center gap-3">
               {/* Python Logo */}
-              <Img boxSize={'32px'} src={`/images/${iconId}.svg`} />
+              <Image
+                width={32}
+                height={32}
+                src={`/images/${iconId}.svg`}
+                alt={templateRepositoryName}
+              />
 
               {/* Title and Description */}
-              <Flex direction="column" gap="3px" flex={1} width={0}>
-                <Flex gap="8px" width={'full'}>
-                  <Text
-                    fontSize="16px"
-                    fontWeight="500"
-                    color="#111824"
-                    letterSpacing="0.15px"
-                    overflow={'hidden'}
-                    flex={'0 1 auto'}
-                    textOverflow={'ellipsis'}
-                    whiteSpace={'nowrap'}
-                  >
+              <div className="flex w-0 flex-1 flex-col gap-[3px]">
+                <div className="flex w-full gap-2">
+                  <span className="flex-[0_1_auto] truncate overflow-hidden text-base font-medium tracking-[0.15px] text-gray-900">
                     {templateRepositoryName}
-                  </Text>
+                  </span>
                   {inPublicStore ? (
                     tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
-                      <MyTooltip
-                        label={t('tags_enum.official')}
-                        shouldWrapChildren={true}
-                        placement="bottom"
-                        offset={[0, 15]}
-                      >
-                        <MyIcon name="official" boxSize={'20px'} position={'relative'} />
-                      </MyTooltip>
-                    ) : (
-                      <></>
-                    )
-                  ) : isPublic ? (
-                    <Tag
-                      size="sm"
-                      bg="green.50"
-                      color="green.600"
-                      border="1px solid"
-                      borderColor={'green.200'}
-                      borderRadius="33px"
-                      px="8px"
-                      minW={'max-content'}
-                      fontSize="10px"
-                    >
-                      {t('public')}
-                    </Tag>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Image src="/images/official.svg" alt="official" width={20} height={20} />
+                        </TooltipTrigger>
+                        <TooltipContent>{t('tags_enum.official')}</TooltipContent>
+                      </Tooltip>
+                    ) : null
                   ) : (
-                    <Tag
-                      size="sm"
-                      bg="adora.50"
-                      color="adora.600"
-                      border="1px solid"
-                      borderColor={'adora.200'}
-                      borderRadius="33px"
-                      px="8px"
-                      minW={'max-content'}
-                      fontSize="10px"
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        'rounded-full px-2 text-[10px]',
+                        isPublic
+                          ? 'border-green-200 bg-green-50 text-green-600'
+                          : 'border-[#F4B8FF] bg-[#FDF4FF] text-[#9E00FF]'
+                      )}
                     >
-                      {t('private')}
-                    </Tag>
+                      {t(isPublic ? 'public' : 'private')}
+                    </Badge>
                   )}
-                </Flex>
-                <Flex width={'full'}>
-                  <MyTooltip label={description} placement="bottom" offset={[0, 15]}>
-                    <Text
-                      fontSize="12px"
-                      color="#667085"
-                      letterSpacing="0.004em"
-                      overflow={'hidden'}
-                      // maxW={'150px'}
-                      width={'0'}
-                      flex={1}
-                      textOverflow={'ellipsis'}
-                      whiteSpace={'nowrap'}
-                      h={'16px'}
-                    >
-                      {description}
-                    </Text>
-                  </MyTooltip>
-                </Flex>
-              </Flex>
-            </Flex>
+                </div>
+                <div className="w-full">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <p className="h-4 w-0 flex-1 truncate overflow-hidden text-xs tracking-[0.004em] text-gray-500">
+                        {description}
+                      </p>
+                    </TooltipTrigger>
+                    <TooltipContent>{description}</TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </div>
 
             {/* Buttons */}
-            <Flex alignItems="center" gap="2px">
+            <div className="flex items-center gap-[2px]">
               <Button
                 size="sm"
-                bg="#0884DD"
-                color="white"
-                fontSize="12px"
-                px="10px"
-                h="28px"
-                display={'none'}
-                _groupHover={{
-                  display: 'flex'
-                }}
+                variant="default"
+                className="hidden h-7 bg-[#0884DD] px-[10px] text-xs group-hover:flex hover:bg-[#0773c4]"
                 onClick={() => {
                   setStartedTemplate({
                     uid: templateRepositoryUid,
@@ -191,86 +139,66 @@ const TemplateCard = ({
                   closeTemplateModal();
                   router.push(`/devbox/create?templateRepository${templateRepositoryUid}`);
                 }}
-                isDisabled={isDisabled}
-                _hover={{ bg: '#0773c4' }}
+                disabled={isDisabled}
               >
                 {t('start_devbox')}
               </Button>
               {!inPublicStore && (
-                <SealosMenu
-                  width={100}
-                  Button={
-                    <MenuButton as={Button} variant={'square'} w={'30px'} h={'30px'}>
-                      <MyIcon name={'more'} color={'grayModern.600'} fill={'currentcolor'} />
-                    </MenuButton>
-                  }
-                  menuList={[
-                    {
-                      child: (
-                        <>
-                          <MyIcon name={'edit'} w={'16px'} />
-                          <Box ml={2}>{t('edit')}</Box>
-                        </>
-                      ),
-                      onClick: editTemplateRepositoryHandle.onOpen
-                    },
-                    {
-                      child: (
-                        <>
-                          <MyIcon name={'settings'} w={'16px'} fill={'currentcolor'} />
-                          <Box ml={2}>{t('version_manage')}</Box>
-                        </>
-                      ),
-                      onClick: editTemplateHandle.onOpen
-                    },
-                    {
-                      child: (
-                        <>
-                          <MyIcon name={'delete'} w={'16px'} />
-                          <Box ml={2}>{t('delete')}</Box>
-                        </>
-                      ),
-                      onClick: deleteTemplateHandle.onOpen
-                    }
-                  ]}
-                />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-[30px] w-[30px]">
+                      <Ellipsis className="text-gray-600" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[100px]">
+                    <DropdownMenuItem onClick={() => setIsEditRepositoryOpen(true)}>
+                      <PencilLine className="mr-2 h-4 w-4" />
+                      {t('edit')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditTemplateOpen(true)}>
+                      <GitFork className="mr-2 h-4 w-4" />
+                      {t('version_manage')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
-            </Flex>
-          </Flex>
-        </Box>
+            </div>
+          </div>
+        </div>
         {/* Tags */}
-        <Flex gap="4px" wrap={'wrap'} minH={'22px'}>
+        <div className="flex min-h-[22px] flex-wrap gap-1">
           {tags
             .filter((tag) => tag.name !== 'official')
             .map((tag) => (
-              <Tag
-                px={'8px'}
-                py={'4px'}
+              <Badge
                 key={tag.uid}
-                bg="grayModern.150"
-                color="brightBlue.600"
-                borderRadius="33px"
-                fontSize="10px"
+                variant="outline"
+                className="rounded-full bg-gray-100 px-2 py-1 text-[10px] text-blue-600"
               >
                 {tag[lastLang === 'zh' ? 'zhName' : 'enName'] || tag.name}
-              </Tag>
+              </Badge>
             ))}
-        </Flex>
-      </Box>
+        </div>
+      </Card>
+
       <EditTemplateModal
-        isOpen={editTemplateHandle.isOpen}
+        isOpen={isEditTemplateOpen}
         templateRepositoryName={templateRepositoryName}
-        onClose={editTemplateHandle.onClose}
+        onClose={() => setIsEditTemplateOpen(false)}
         uid={templateRepositoryUid}
       />
       <EditTemplateRepositoryModal
-        isOpen={editTemplateRepositoryHandle.isOpen}
-        onClose={editTemplateRepositoryHandle.onClose}
+        isOpen={isEditRepositoryOpen}
+        onClose={() => setIsEditRepositoryOpen(false)}
         uid={templateRepositoryUid}
       />
-      <DeleteTemplateReposistoryModal
-        isOpen={deleteTemplateHandle.isOpen}
-        onClose={deleteTemplateHandle.onClose}
+      <DeleteTemplateRepositoryModal
+        isOpen={isDeleteOpen}
+        onClose={() => setIsDeleteOpen(false)}
         templateRepositoryName={templateRepositoryName}
         uid={templateRepositoryUid}
       />

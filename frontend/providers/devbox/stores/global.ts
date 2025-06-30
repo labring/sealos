@@ -20,7 +20,7 @@ type State = {
   lastRoute: string;
   setLastRoute: (val: string) => void;
 };
-
+// TODO: this hook need to be refactored
 export const useGlobalStore = create<State>()(
   devtools(
     immer((set, get) => ({

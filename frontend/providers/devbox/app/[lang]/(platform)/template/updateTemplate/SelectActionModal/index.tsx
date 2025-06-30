@@ -1,26 +1,23 @@
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Text
-} from '@chakra-ui/react';
+import { toast } from 'sonner';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
-import MyIcon from '@/components/Icon';
-import { useMessage } from '@sealos/ui';
-import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import TemplateDropdown from './TemplateDropdown';
+import { Plus } from 'lucide-react';
 
 const SelectTemplateModal = ({
   isOpen,
   onClose,
   onOpenCreate,
-  onOpenUdate,
+  onOpenUpdate,
   templateRepositoryList
 }: {
   isOpen: boolean;
@@ -33,63 +30,55 @@ const SelectTemplateModal = ({
   }[];
   onSubmit?: (data: FormData) => void;
   onOpenCreate: () => void;
-  onOpenUdate: (templateRepoUid: string) => void;
+  onOpenUpdate: (templateRepoUid: string) => void;
 }) => {
-  const { message } = useMessage();
   const t = useTranslations();
   const [selectedTemplateRepoUid, setSelectedTemplateRepoUid] = useState(
     templateRepositoryList?.[0]?.uid
   );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
-      <ModalOverlay />
-      <ModalContent maxW="504px" margin={'auto'}>
-        <ModalHeader>
-          <Text>{t('create_or_update_template')}</Text>
-        </ModalHeader>
-        <ModalBody pt={'32px'} px={'52px'} pb={'24px'}>
-          <ModalCloseButton />
-          <Text mb={'10px'} color={'grayModern.900'} fontWeight={500}>
-            {t('select_template_tips')}
-          </Text>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[504px]">
+        <DialogHeader>
+          <DialogTitle>{t('create_or_update_template')}</DialogTitle>
+        </DialogHeader>
+
+        <div className="px-[52px] pt-6 pb-6">
+          <p className="mb-2.5 font-medium text-gray-900">{t('select_template_tips')}</p>
           <TemplateDropdown
             templateRepositoryList={templateRepositoryList || []}
             selectedTemplateRepoUid={selectedTemplateRepoUid}
             setSelectedTemplateRepoUid={setSelectedTemplateRepoUid}
           />
-        </ModalBody>
-        <ModalFooter gap={'16px'} px={'52px'}>
+        </div>
+
+        <DialogFooter className="gap-4 px-[52px]">
           <Button
-            variant={'unstyled'}
-            color={'brightBlue.600'}
-            display={'flex'}
+            variant="ghost"
+            className="flex items-center gap-2 text-blue-600"
             onClick={() => {
               onOpenCreate();
               onClose();
             }}
           >
-            <MyIcon name="plus" boxSize={'20px'} />
-            <Text> {t('create_template')}</Text>
+            <Plus className="size-4" />
+            {t('create_template')}
           </Button>
           <Button
-            variant={'solid'}
             onClick={() => {
               if (!selectedTemplateRepoUid) {
-                return message({
-                  title: t('select_template_tips'),
-                  status: 'error'
-                });
+                return toast.error(t('select_template_tips'));
               }
-
-              onOpenUdate(selectedTemplateRepoUid);
+              onOpenUpdate(selectedTemplateRepoUid);
               onClose();
             }}
           >
             {t('confirm')}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -10,10 +10,6 @@ import {
   SquareTerminal,
   Trash2
 } from 'lucide-react';
-import Image from 'next/image';
-import dynamic from 'next/dynamic';
-import { useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState } from 'react';
 import {
   getCoreRowModel,
   getPaginationRowModel,
@@ -21,6 +17,10 @@ import {
   flexRender,
   type ColumnDef
 } from '@tanstack/react-table';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useRouter } from '@/i18n';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
@@ -321,36 +321,39 @@ const DevboxList = ({
       {/* modals */}
       {!!delDevbox && (
         <DelModal
-          devbox={delDevbox!}
+          devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={refetchDevboxList}
           refetchDevboxList={refetchDevboxList}
         />
       )}
-      {!!onOpenRelease && !!currentDevboxListItem && (
+
+      {!!currentDevboxListItem && (
         <ReleaseModal
+          open={!!onOpenRelease}
           onSuccess={() => {
-            router.push(`/devbox/detail/${currentDevboxListItem!.name}`);
+            router.push(`/devbox/detail/${currentDevboxListItem.name}`);
           }}
           onClose={() => {
             setOnOpenRelease(false);
             setCurrentDevboxListItem(null);
           }}
-          devbox={currentDevboxListItem!}
+          devbox={currentDevboxListItem}
         />
       )}
-      {onOpenShutdown && currentDevboxListItem && (
-        <ShutdownModal
-          onSuccess={() => {
-            refetchDevboxList();
-            setOnOpenShutdown(false);
-          }}
-          onClose={() => {
-            setOnOpenShutdown(false);
-          }}
-          devbox={currentDevboxListItem!}
-        />
-      )}
+
+      {/* TODO: modal open condition need to be changed */}
+      <ShutdownModal
+        open={!!onOpenShutdown && !!currentDevboxListItem}
+        onSuccess={() => {
+          refetchDevboxList();
+          setOnOpenShutdown(false);
+        }}
+        onClose={() => {
+          setOnOpenShutdown(false);
+        }}
+        devbox={currentDevboxListItem || ({} as DevboxListItemTypeV2)}
+      />
     </>
   );
 };

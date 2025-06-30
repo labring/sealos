@@ -1,36 +1,33 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Radio,
-  RadioGroup
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
+import { cn } from '@/lib/utils';
 import { shutdownDevbox } from '@/api/devbox';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2, ShutdownModeType } from '@/types/devbox';
-import MyIcon from '../Icon';
 
-const ReleaseModal = ({
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+const ShutdownModal = ({
   onSuccess,
   onClose,
-  devbox
+  devbox,
+  open
 }: {
   onSuccess: () => void;
   onClose: () => void;
   devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
+  open: boolean;
 }) => {
   const t = useTranslations();
-  const { message: toast } = useMessage();
   const [loading, setLoading] = useState(false);
   const [shutdownMode, setShutdownMode] = useState<ShutdownModeType>('Stopped');
 
@@ -38,168 +35,121 @@ const ReleaseModal = ({
     try {
       setLoading(true);
       await shutdownDevbox({ devboxName: devbox.name, shutdownMode });
-      toast({
-        title: t('pause_success'),
-        status: 'success'
-      });
+      toast.success(t('pause_success'));
+      onSuccess();
     } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('pause_error'),
-        status: 'error'
-      });
+      toast.error(typeof error === 'string' ? error : error.message || t('pause_error'));
       console.error(error);
     }
-    onSuccess();
     setLoading(false);
-  }, [onSuccess, setLoading, t, toast, devbox.name, shutdownMode]);
+  }, [onSuccess, t, devbox.name, shutdownMode]);
 
   return (
-    <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-        <ModalOverlay />
-        <ModalContent minW={'500px'} mt={'100px'} minH={'300px'} top={'50px'}>
-          <ModalHeader>
-            <Flex alignItems={'center'} gap={'10px'} ml={'14px'} fontSize={'16px'}>
-              {t('choose_shutdown_mode')}
-            </Flex>
-          </ModalHeader>
-          <ModalCloseButton top={'10px'} right={'10px'} />
-          <ModalBody pb={4}>
-            <RadioGroup
-              onChange={(value) => setShutdownMode(value as ShutdownModeType)}
-              value={shutdownMode}
-            >
-              {/* normal mode */}
-              <Box
-                onClick={() => setShutdownMode('Stopped')}
-                p={'12px'}
-                borderRadius={'7px'}
-                borderWidth={1}
-                borderColor={shutdownMode === 'Stopped' ? 'brightBlue.500' : 'gray.300'}
-                boxShadow={
-                  shutdownMode === 'Stopped' ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'
-                }
-                mb={'16px'}
-              >
-                <Radio value="Stopped">
-                  <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
-                    {t('normal_shutdown_mode')}
-                  </Box>
-                </Radio>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
-                  <Flex alignItems={'start'} gap={'6px'} mb={'2px'}>
-                    <MyIcon
-                      name="ellipseFull"
-                      color={'grayModern.300'}
-                      w={'6px'}
-                      h={'6px'}
-                      mt={'6px'}
-                    />
-                    <Box>
-                      {t.rich('normal_shutdown_mode_desc', {
-                        yellow: (chunks) => (
-                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
-                            {chunks}
-                          </Box>
-                        )
-                      })}
-                    </Box>
-                  </Flex>
-                  <Flex alignItems={'start'} gap={'6px'}>
-                    <MyIcon
-                      name="ellipseFull"
-                      color={'grayModern.300'}
-                      w={'6px'}
-                      h={'6px'}
-                      mt={'6px'}
-                    />
-                    <Box>
-                      {t.rich('normal_shutdown_mode_desc_2', {
-                        yellow: (chunks) => (
-                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
-                            {chunks}
-                          </Box>
-                        )
-                      })}
-                    </Box>
-                  </Flex>
-                </Box>
-              </Box>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="min-h-[300px] min-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="ml-3.5 text-base">{t('choose_shutdown_mode')}</DialogTitle>
+        </DialogHeader>
 
-              {/* cold mode */}
-              <Box
-                onClick={() => setShutdownMode('Shutdown')}
-                p={'12px'}
-                borderRadius={'7px'}
-                borderWidth={1}
-                borderColor={shutdownMode === 'Shutdown' ? 'brightBlue.500' : 'gray.300'}
-                boxShadow={
-                  shutdownMode === 'Shutdown'
-                    ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)'
-                    : 'none'
-                }
-              >
-                <Radio value="Shutdown">
-                  <Box fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
-                    {t('cold_shutdown_mode')}
-                  </Box>
-                </Radio>
-                <Box fontSize={'12px'} fontWeight={400} color={'grayModern.600'} pl={'20px'}>
-                  <Flex alignItems={'start'} gap={'6px'} mb={'2px'}>
-                    <MyIcon
-                      name="ellipseFull"
-                      color={'grayModern.300'}
-                      w={'6px'}
-                      h={'6px'}
-                      mt={'6px'}
-                    />
-                    <Box>
-                      {t.rich('cold_shutdown_mode_desc', {
-                        yellow: (chunks) => (
-                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
-                            {chunks}
-                          </Box>
-                        )
-                      })}
-                    </Box>
-                  </Flex>
-                  <Flex alignItems={'start'} gap={'6px'}>
-                    <MyIcon
-                      name="ellipseFull"
-                      color={'grayModern.300'}
-                      w={'6px'}
-                      h={'6px'}
-                      mt={'6px'}
-                    />
-                    <Box>
-                      {t.rich('cold_shutdown_mode_desc_2', {
-                        yellow: (chunks) => (
-                          <Box as={'span'} color={'yellow.500'} fontWeight={500}>
-                            {chunks}
-                          </Box>
-                        )
-                      })}
-                    </Box>
-                  </Flex>
-                </Box>
-              </Box>
-            </RadioGroup>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              mt={'10px'}
-              variant={'solid'}
-              onClick={handleShutdown}
-              width={'fit-content'}
-              isLoading={loading}
+        <div className="p-4">
+          <RadioGroup
+            value={shutdownMode}
+            onValueChange={(value) => setShutdownMode(value as ShutdownModeType)}
+            className="flex flex-col gap-4"
+          >
+            {/* normal mode */}
+            <div
+              className={cn(
+                'cursor-pointer rounded-lg border p-3',
+                shutdownMode === 'Stopped'
+                  ? 'border-blue-500 shadow-[0px_0px_0px_2.4px_rgba(33,155,244,0.15)]'
+                  : 'border-gray-300'
+              )}
+              onClick={() => setShutdownMode('Stopped')}
             >
-              {t('confirm_shutdown')}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </Box>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Stopped" id="stopped" />
+                <label htmlFor="stopped" className="text-sm font-medium text-gray-900">
+                  {t('normal_shutdown_mode')}
+                </label>
+              </div>
+              <div className="mt-2 space-y-0.5 pl-5 text-xs text-gray-600">
+                <div className="flex items-start gap-1.5">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
+                  <div>
+                    {t.rich('normal_shutdown_mode_desc', {
+                      yellow: (chunks) => (
+                        <span className="font-medium text-yellow-500">{chunks}</span>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
+                  <div>
+                    {t.rich('normal_shutdown_mode_desc_2', {
+                      yellow: (chunks) => (
+                        <span className="font-medium text-yellow-500">{chunks}</span>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* cold mode */}
+            <div
+              className={cn(
+                'cursor-pointer rounded-lg border p-3',
+                shutdownMode === 'Shutdown'
+                  ? 'border-blue-500 shadow-[0px_0px_0px_2.4px_rgba(33,155,244,0.15)]'
+                  : 'border-gray-300'
+              )}
+              onClick={() => setShutdownMode('Shutdown')}
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Shutdown" id="shutdown" />
+                <label htmlFor="shutdown" className="text-sm font-medium text-gray-900">
+                  {t('cold_shutdown_mode')}
+                </label>
+              </div>
+              <div className="mt-2 space-y-0.5 pl-5 text-xs text-gray-600">
+                <div className="flex items-start gap-1.5">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
+                  <div>
+                    {t.rich('cold_shutdown_mode_desc', {
+                      yellow: (chunks) => (
+                        <span className="font-medium text-yellow-500">{chunks}</span>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
+                  <div>
+                    {t.rich('cold_shutdown_mode_desc_2', {
+                      yellow: (chunks) => (
+                        <span className="font-medium text-yellow-500">{chunks}</span>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </RadioGroup>
+        </div>
+
+        <DialogFooter>
+          <Button onClick={handleShutdown} disabled={loading} className="mt-2.5">
+            {loading && (
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+            )}
+            {t('confirm_shutdown')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default ReleaseModal;
+export default ShutdownModal;

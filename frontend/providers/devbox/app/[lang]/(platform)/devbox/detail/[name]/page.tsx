@@ -1,26 +1,26 @@
 'use client';
 
-import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 
-import { useLoading } from '@/hooks/useLoading';
-import BasicInfo from './components/BasicInfo';
 import Header from './components/Header';
-import MainBody from './components/MainBody';
 import Version from './components/Version';
-
-import { useDevboxStore } from '@/stores/devbox';
-import { useEnvStore } from '@/stores/env';
-import { useGlobalStore } from '@/stores/global';
-import { useGuideStore } from '@/stores/guide';
+import MainBody from './components/MainBody';
+import BasicInfo from './components/BasicInfo';
 import IDEButton from '@/components/IDEButton';
+import { Loading } from '@/components/ui/loading';
+
+import { cn } from '@/lib/utils';
+import { useEnvStore } from '@/stores/env';
+import { useGuideStore } from '@/stores/guide';
+import { useDevboxStore } from '@/stores/devbox';
+import { useGlobalStore } from '@/stores/global';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
-  const { Loading } = useLoading();
 
   const { env } = useEnvStore();
+  const { guideIDE } = useGuideStore();
   const { screenWidth } = useGlobalStore();
   const { devboxDetail, setDevboxDetail, loadDetailMonitorData, intervalLoadPods } =
     useDevboxStore();
@@ -28,9 +28,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const [showSlider, setShowSlider] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { guideIDE } = useGuideStore();
 
-  const { refetch, data } = useQuery(
+  const { refetch } = useQuery(
     ['initDevboxDetail'],
     () => setDevboxDetail(devboxName, env.sealosDomain, !guideIDE),
     {
@@ -71,79 +70,45 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     }
   }, []);
 
-  console.log(devboxDetail, initialized);
+  if (!initialized) return <Loading />;
 
   return (
-    <Flex p={5} h={'100vh'} px={'32px'} flexDirection={'column'}>
-      <Loading loading={!initialized} />
+    <div className="flex h-screen flex-col px-8 py-5">
       {devboxDetail && initialized && (
         <>
-          <Box mb={6}>
+          <div className="mb-6">
             <Header
               refetchDevboxDetail={refetch}
               setShowSlider={setShowSlider}
               isLargeScreen={isLargeScreen}
             />
-          </Box>
-          <Flex position={'relative'} flex={'1 0 0'} h={0}>
-            <Box
-              h={'100%'}
-              flex={'0 0 410px'}
-              w={'410px'}
-              mr={4}
-              overflow={'overlay'}
-              zIndex={1}
-              transition={'0.4s'}
-              bg={'white'}
-              borderWidth={1}
-              borderRadius={'lg'}
-              {...(isLargeScreen
-                ? {}
-                : {
-                    position: 'absolute',
-                    left: 0,
-                    boxShadow: '7px 4px 12px rgba(165, 172, 185, 0.25)',
-                    transform: `translateX(${showSlider ? '0' : '-500'}px)`
-                  })}
+          </div>
+          <div className="relative flex h-0 flex-1">
+            <div
+              className={cn(
+                'z-10 mr-4 h-full w-[410px] flex-none overflow-auto rounded-lg border bg-white transition-transform duration-400',
+                !isLargeScreen && 'absolute left-0 shadow-md',
+                !isLargeScreen && !showSlider && '-translate-x-[500px]'
+              )}
             >
               <BasicInfo />
-            </Box>
-            <Flex
-              flexDirection={'column'}
-              minH={'100%'}
-              flex={'1 0 0'}
-              w={0}
-              overflow={'overlay'}
-              sx={{
-                '&::-webkit-scrollbar': {
-                  display: 'none'
-                },
-                msOverflowStyle: 'none', // IE and Edge
-                scrollbarWidth: 'none' // Firefox
-              }}
-            >
-              <Box mb={4} bg={'white'} borderRadius={'lg'} flexShrink={0} minH={'257px'}>
+            </div>
+            <div className="scrollbar-hide flex min-h-full w-0 flex-1 flex-col overflow-auto">
+              <div className="mb-4 min-h-[257px] flex-shrink-0 rounded-lg bg-white">
                 <MainBody />
-              </Box>
-              <Box bg={'white'} borderRadius={'lg'} flex={'1'}>
+              </div>
+              <div className="flex-1 rounded-lg bg-white">
                 <Version />
-              </Box>
-            </Flex>
-          </Flex>
+              </div>
+            </div>
+          </div>
           {/* mask */}
           {!isLargeScreen && showSlider && (
-            <Box
-              position={'fixed'}
-              top={0}
-              left={0}
-              right={0}
-              bottom={0}
-              onClick={() => setShowSlider(false)}
-            />
+            <div className="fixed inset-0" onClick={() => setShowSlider(false)} />
           )}
         </>
       )}
-    </Flex>
+    </div>
   );
 };
 

@@ -17,7 +17,7 @@ import {
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 
-const DeleteTemplateReposistoryModal = ({
+const DeleteTemplateRepositoryModal = ({
   uid,
   templateRepositoryName,
   ...props
@@ -83,4 +83,4 @@ const DeleteTemplateReposistoryModal = ({
   );
 };
 
-export default DeleteTemplateReposistoryModal;
+export default DeleteTemplateRepositoryModal;

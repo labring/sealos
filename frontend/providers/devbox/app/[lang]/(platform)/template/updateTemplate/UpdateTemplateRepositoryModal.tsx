@@ -1,39 +1,32 @@
-import { updateTemplate } from '@/api/template';
-import MyIcon from '@/components/Icon';
-import MyFormLabel from '@/components/MyFormControl';
-import { versionSchema } from '@/utils/validate';
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  Flex,
-  HStack,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure,
-  VStack
-} from '@chakra-ui/react';
-import { AddIcon, useMessage } from '@sealos/ui';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { FC, useEffect, useRef, useState } from 'react';
-import { FormProvider, useForm, useFormContext } from 'react-hook-form';
-import { z } from 'zod';
+import { ChevronDown, PlusCircle } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { cn } from '@/lib/utils';
+import { updateTemplate } from '@/api/template';
+import { versionSchema } from '@/utils/validate';
+
 import OverviewTemplateVersionModal from '../updateTemplateVersion/OverviewTemplateVersionModal';
 import TemplateRepositoryDescriptionField from './components/TemplateRepositoryDescriptionField';
 import TemplateRepositoryNameField from './components/TemplateRepositoryNameField';
 import TemplateRepositoryTagField from './components/TemplateRepositoryTagField';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Form, FormField, FormItem, FormLabel } from '@/components/ui/form';
 
 interface CreateTemplateModalProps {
   isOpen: boolean;
@@ -59,116 +52,79 @@ interface CreateTemplateModalProps {
 }
 
 const VersionSelect = ({ templateList }: { templateList: { uid: string; name: string }[] }) => {
-  const { watch, setValue } = useFormContext<any>();
   const [inputValue, setInputValue] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const { setValue, watch } = useForm();
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations();
 
   const handleVersionSelect = (version: string) => {
     setInputValue(version);
-    setValue('version', inputValue);
-    handler.onClose();
+    setValue('version', version);
+    setIsOpen(false);
   };
-  const handler = useDisclosure();
 
   const handleCreateVersion = () => {
-    // 处理创建新版本的逻辑
     setValue('version', inputValue);
-    handler.onClose();
+    setIsOpen(false);
   };
-  const t = useTranslations();
-  return (
-    <>
-      <Popover
-        placement="bottom-start"
-        isOpen={handler.isOpen}
-        onOpen={handler.onOpen}
-        onClose={handler.onClose}
-      >
-        <PopoverTrigger>
-          <Flex
-            width={'350px'}
-            bgColor={'grayModern.50'}
-            border={'1px solid'}
-            borderColor={'grayModern.200'}
-            borderRadius={'6px'}
-            py={'8px'}
-            px={'12px'}
-            justify={'space-between'}
-          >
-            <Text fontSize={'12px'} width={400}>
-              {watch('version')}
-            </Text>
-            <MyIcon name="chevronDown" boxSize={'16px'} color={'grayModern.500'} />
-          </Flex>
-        </PopoverTrigger>
-        <PopoverContent onFocus={() => inputRef.current?.focus()}>
-          <PopoverBody
-            p="6px"
-            width="280px"
-            boxShadow="box-shadow: 0px 0px 1px 0px #13336B1A,box-shadow: 0px 4px 10px 0px #13336B1A"
-            border="none"
-            borderRadius="6px"
-          >
-            <Input
-              ref={inputRef}
-              width="full"
-              height="32px"
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value);
-              }}
-              // border="1px solid #219BF4"
-              // boxShadow="0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)"
-              borderRadius="4px"
-              fontSize="12px"
-              placeholder={t('search_or_add_version')}
-              _focus={{
-                border: '1px solid #219BF4',
-                boxShadow: '0px 0px 0px 2.4px rgba(51, 112, 255, 0.15)'
-              }}
-            />
-            <VStack spacing="0" align="stretch" mt={'4px'} maxH={'200px'} overflow={'auto'}>
-              {/* 已有版本列表 */}
-              {templateList
-                .filter((v) => v.name.toLowerCase().includes(inputValue.toLowerCase()))
-                .map((v) => (
-                  <Box
-                    key={v.uid}
-                    p="8px 12px"
-                    borderRadius={'4px'}
-                    fontSize="12px"
-                    cursor="pointer"
-                    _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-                    onClick={() => handleVersionSelect(v.name)}
-                  >
-                    {v.name}
-                  </Box>
-                ))}
 
-              {/* 创建新版本选项 */}
-              {inputValue && !templateList.find((v) => v.name === inputValue) && (
-                <HStack
-                  p="8px 12px"
-                  spacing="8px"
-                  cursor="pointer"
-                  _hover={{ bg: 'rgba(17, 24, 36, 0.05)' }}
-                  onClick={handleCreateVersion}
-                >
-                  <AddIcon w="16px" h="16px" color="#667085" />
-                  <Text fontSize="12px" lineHeight="16px" letterSpacing="0.004em" color="#111824">
-                    {t('create_template_version', {
-                      version: inputValue
-                    })}
-                  </Text>
-                </HStack>
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={isOpen}
+          className="w-[350px] justify-between"
+        >
+          <span className="truncate">{watch('version')}</span>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[350px] p-0" align="start">
+        <div className="p-3">
+          <Input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={t('search_or_add_version')}
+            className="h-8"
+          />
+        </div>
+        <ScrollArea className="h-[200px]">
+          {templateList
+            .filter((v) => v.name.toLowerCase().includes(inputValue.toLowerCase()))
+            .map((v) => (
+              <button
+                key={v.uid}
+                onClick={() => handleVersionSelect(v.name)}
+                className={cn(
+                  'w-full px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground',
+                  'cursor-pointer text-left'
+                )}
+              >
+                {v.name}
+              </button>
+            ))}
+          {inputValue && !templateList.find((v) => v.name === inputValue) && (
+            <button
+              onClick={handleCreateVersion}
+              className={cn(
+                'flex w-full items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground',
+                'cursor-pointer text-left'
               )}
-            </VStack>
-          </PopoverBody>
-        </PopoverContent>
-      </Popover>
-    </>
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              {t('create_template_version', { version: inputValue })}
+            </button>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
   );
 };
+
 const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
@@ -188,6 +144,7 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       .max(3, t('select_lest_than_3_tags')),
     description: z.string()
   });
+
   const queryClient = useQueryClient();
   type FormData = z.infer<typeof formSchema>;
   const mutation = useMutation(updateTemplate, {
@@ -196,53 +153,42 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       queryClient.invalidateQueries(['template-repository-detail']);
     }
   });
-  const methods = useForm<FormData>({
+
+  const form = useForm<FormData>({
     defaultValues: {
       name: '',
       version: '',
-      // agreeTerms: false,
       tags: [],
       description: ''
     }
   });
-  const {
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-    setValue,
-    watch
-  } = methods;
+
   useEffect(() => {
     if (templateRepository && isOpen) {
-      setValue(
+      form.setValue(
         'tags',
         templateRepository.templateRepositoryTags.map(({ tag }) => ({
           value: tag.uid
         }))
       );
-      setValue('version', templateRepository.templates[0]?.name || '');
-      setValue('name', templateRepository.name);
-      setValue('description', templateRepository.description || '');
+      form.setValue('version', templateRepository.templates[0]?.name || '');
+      form.setValue('name', templateRepository.name);
+      form.setValue('description', templateRepository.description || '');
     }
-  }, [templateRepository, isOpen]);
-  const { message: toast } = useMessage();
-  const overviewHandler = useDisclosure();
+  }, [templateRepository, isOpen, form]);
+
+  const [showOverview, setShowOverview] = useState(false);
+
   const submit = async (_data: FormData) => {
     try {
       const result = formSchema.safeParse(_data);
       if (!result.success) {
         const error = result.error.errors[0];
         if (error.path[0] === 'version' && error.code === 'invalid_string') {
-          toast({
-            title: t('invalide_template_version'),
-            status: 'error'
-          });
+          toast.error(t('invalide_template_version'));
           return;
         }
-        toast({
-          title: error.message,
-          status: 'error'
-        });
+        toast.error(error.message);
         return;
       }
       const data = result.data;
@@ -255,22 +201,17 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
       });
 
       queryClient.invalidateQueries(['template-repository-list']);
-      reset();
+      form.reset();
       onClose();
-      toast({
-        title: t('update_template_success'),
-        status: 'success'
-      });
+      toast.success(t('update_template_success'));
     } catch (error) {
-      toast({
-        title: error as string,
-        status: 'error'
-      });
+      toast.error(error as string);
     }
   };
-  const onSubmitHandler = (data: FormData) => {
+
+  const onSubmit = (data: FormData) => {
     if (templateRepository.templates.findIndex((d) => data.version === d.name) > -1) {
-      overviewHandler.onOpen();
+      setShowOverview(true);
       return;
     }
     return submit(data);
@@ -278,72 +219,61 @@ const UpdateTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="md" onCloseComplete={() => reset()}>
-        <ModalOverlay />
-        <ModalContent maxW="562px" margin={'auto'}>
-          <FormProvider {...methods}>
-            <form onSubmit={handleSubmit(onSubmitHandler)}>
-              <ModalHeader>
-                <Text>{t('update_template')}</Text>
-              </ModalHeader>
-              <ModalBody pt={'32px'} pb={'24px'} px={'52px'}>
-                <ModalCloseButton />
-                <VStack spacing={6} align="stretch">
-                  {/* 名称 */}
-                  <TemplateRepositoryNameField isDisabled />
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="sm:max-w-[562px]">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <DialogHeader>
+                <DialogTitle>{t('update_template')}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6 px-[52px] py-8">
+                {/* 名称 */}
+                <TemplateRepositoryNameField isDisabled />
 
-                  {/* 版本号 */}
-                  <Flex justify={'space-between'} align={'center'}>
-                    <MyFormLabel width="108px" m="0" fontSize="14px" isRequired>
-                      {t('version')}
-                    </MyFormLabel>
-                    <VStack>
+                {/* 版本号 */}
+                <FormField
+                  control={form.control}
+                  name="version"
+                  render={() => (
+                    <FormItem className="flex items-center justify-between">
+                      <FormLabel className="m-0 w-[108px] text-sm">{t('version')}</FormLabel>
                       <VersionSelect templateList={templateRepository.templates} />
-                    </VStack>
-                  </Flex>
+                    </FormItem>
+                  )}
+                />
 
-                  {/* 标签 */}
-                  <TemplateRepositoryTagField />
+                {/* 标签 */}
+                <TemplateRepositoryTagField />
 
-                  {/* 简介 */}
-                  <TemplateRepositoryDescriptionField />
-                </VStack>
-              </ModalBody>
-              <ModalFooter px={'52px'} pb={'32px'}>
-                {/* 按钮组 */}
-                <ButtonGroup variant={'outline'}>
-                  <Button
-                    px={'29.5px'}
-                    py={'8px'}
-                    onClick={() => {
-                      reset();
-                      onClose();
-                    }}
-                  >
-                    {t('cancel')}
-                  </Button>
-                  <Button
-                    type="submit"
-                    px={'29.5px'}
-                    py={'8px'}
-                    variant={'solid'}
-                    isLoading={isSubmitting}
-                  >
-                    {t('save_template')}
-                  </Button>
-                </ButtonGroup>
-              </ModalFooter>
+                {/* 简介 */}
+                <TemplateRepositoryDescriptionField />
+              </div>
+              <DialogFooter className="px-[52px] pb-8">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    form.reset();
+                    onClose();
+                  }}
+                >
+                  {t('cancel')}
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {t('save_template')}
+                </Button>
+              </DialogFooter>
             </form>
-          </FormProvider>
-        </ModalContent>
-      </Modal>
+          </Form>
+        </DialogContent>
+      </Dialog>
       <OverviewTemplateVersionModal
-        isOpen={overviewHandler.isOpen}
-        onClose={overviewHandler.onClose}
+        isOpen={showOverview}
+        onClose={() => setShowOverview(false)}
         onSubmit={() => {
-          submit(methods.getValues());
+          submit(form.getValues());
         }}
-        version={watch('version')}
+        version={form.watch('version')}
         template={templateRepository.name}
       />
     </>

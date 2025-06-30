@@ -1,6 +1,6 @@
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Box, Text, Flex, Image, Tooltip, Button } from '@chakra-ui/react';
 
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
@@ -10,8 +10,11 @@ import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 
 import MyIcon from '@/components/Icon';
 import GPUItem from '@/components/GPUItem';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectModal from '@/components/modals/SshConnectModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const BasicInfo = () => {
   const t = useTranslations();
@@ -68,237 +71,170 @@ const BasicInfo = () => {
   );
 
   return (
-    <Flex borderRadius="lg" bg={'white'} p={4} flexDirection={'column'} h={'100%'}>
+    <div className="flex h-full flex-col rounded-lg bg-white p-4">
       {/* basic info */}
-      <Flex mb={3} mt={2}>
-        <MyIcon name="info" w={'15px'} h={'15px'} mr={'4px'} color={'grayModern.600'} mt={'1px'} />
-        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
-          {t('basic_info')}
-        </Box>
-      </Flex>
-      <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('name')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.name}</Text>
+      <div className="mt-2 mb-3 flex">
+        <MyIcon name="info" className="mt-[1px] mr-1 h-[15px] w-[15px] text-gray-600" />
+        <div className="text-base font-bold text-gray-600">{t('basic_info')}</div>
+      </div>
+      <Card className="space-y-4 bg-gray-50 p-4">
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('name')}</span>
+          <div className="flex w-[60%] text-gray-600">
+            <span className="text-xs">{devboxDetail?.name}</span>
             <Image
-              ml={2}
-              width={'20px'}
-              height={'20px'}
+              className="ml-2"
+              width={20}
+              height={20}
               onError={(e) => {
                 e.currentTarget.src = '/images/custom.svg';
               }}
-              alt={devboxDetail?.iconId}
+              alt={devboxDetail?.iconId as string}
               src={`/images/${devboxDetail?.iconId}.svg`}
             />
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('image_info')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text
-              fontSize={'12px'}
-              w={'full'}
-            >{`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}</Text>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('create_time')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.createTime}</Text>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('start_runtime')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'} w={'full'} textOverflow={'ellipsis'}>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('image_info')}</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="w-full text-xs">
+              {`${env.registryAddr}/${env.namespace}/${devboxDetail?.name}`}
+            </span>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('create_time')}</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="text-xs">{devboxDetail?.createTime}</span>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('start_runtime')}</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="w-full truncate text-xs">
               {`${devboxDetail?.templateRepositoryName}-${devboxDetail?.templateName}`}
-            </Text>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('start_time')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{devboxDetail?.upTime}</Text>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            CPU Limit
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{(devboxDetail?.cpu || 0) / 1000} Core</Text>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            Memory Limit
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Text fontSize={'12px'}>{(devboxDetail?.memory || 0) / 1024} G</Text>
-          </Flex>
-        </Flex>
+            </span>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('start_time')}</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="text-xs">{devboxDetail?.upTime}</span>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">CPU Limit</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="text-xs">{(devboxDetail?.cpu || 0) / 1000} Core</span>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">Memory Limit</span>
+          <div className="w-[60%] text-gray-600">
+            <span className="text-xs">{(devboxDetail?.memory || 0) / 1024} G</span>
+          </div>
+        </div>
         {sourcePrice?.gpu && (
-          <Flex>
-            <Text mr={2} width={'40%'} fontSize={'12px'}>
-              GPU
-            </Text>
-            <Flex width={'60%'} color={'grayModern.600'}>
+          <div className="flex">
+            <span className="mr-2 w-[40%] text-xs">GPU</span>
+            <div className="w-[60%] text-gray-600">
               <GPUItem gpu={devboxDetail?.gpu} />
-            </Flex>
-          </Flex>
+            </div>
+          </div>
         )}
-      </Flex>
+      </Card>
       {/* ssh config */}
-      <Flex mb={3} mt={4} alignItems={'center'} justify={'space-between'}>
-        <Flex>
-          <MyIcon
-            name="link"
-            w={'15px'}
-            h={'15px'}
-            mr={'4px'}
-            color={'grayModern.600'}
-            mt={'1px'}
-            ml={'1px'}
-          />
-          <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
-            {t('ssh_config')}
-          </Box>
-        </Flex>
+      <div className="mt-4 mb-3 flex items-center justify-between">
+        <div className="flex">
+          <MyIcon name="link" className="mt-[1px] mr-1 ml-[1px] h-[15px] w-[15px] text-gray-600" />
+          <div className="text-base font-bold text-gray-600">{t('ssh_config')}</div>
+        </div>
         <Button
-          size={'sm'}
-          leftIcon={<MyIcon name="settings" w={'16px'} />}
-          bg={'white'}
-          isDisabled={devboxDetail?.status.value !== 'Running'}
-          color={'grayModern.600'}
-          border={'1px solid'}
-          borderColor={'grayModern.200'}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
+          size="sm"
+          variant="outline"
+          className="bg-white text-gray-600 hover:text-blue-600"
+          disabled={devboxDetail?.status.value !== 'Running'}
           onClick={() => handleOneClickConfig()}
         >
+          <MyIcon name="settings" className="mr-2 h-4 w-4" />
           {t('one_click_config')}
         </Button>
-      </Flex>
-      <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('ssh_connect_info')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Tooltip
-              label={t('copy')}
-              isDisabled={devboxDetail?.status.value !== 'Running'}
-              hasArrow
-              bg={'#FFFFFF'}
-              color={'grayModern.900'}
-              width={'45px'}
-              height={'30px'}
-              fontSize={'12px'}
-              fontWeight={400}
-              py={2}
-              borderRadius={'md'}
-            >
-              <Text
-                fontSize={'12px'}
-                {...(devboxDetail?.status.value === 'Running' && {
-                  cursor: 'pointer',
-                  _hover: { color: 'blue.500' },
-                  onClick: () => copyData(sshConnectCommand)
-                })}
-                w={'full'}
-              >
-                {devboxDetail?.status.value === 'Running' ? (
-                  sshConnectCommand
-                ) : (
-                  <span style={{ marginLeft: '8px' }}>-</span>
-                )}
-              </Text>
-            </Tooltip>
-          </Flex>
-        </Flex>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('private_key')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'}>
-            <Tooltip
-              label={t('export_privateKey')}
-              hasArrow
-              bg={'#FFFFFF'}
-              color={'grayModern.900'}
-              fontSize={'12px'}
-              fontWeight={400}
-              py={2}
-              borderRadius={'md'}
-            >
-              <Flex
-                p={1}
-                borderRadius={'6px'}
-                _hover={{
-                  bg: 'rgba(17, 24, 36, 0.05)'
-                }}
-              >
-                <MyIcon
-                  cursor={'pointer'}
-                  name="download"
-                  color={'grayModern.600'}
-                  w={'16px'}
-                  h={'16px'}
-                  onClick={() =>
-                    downLoadBlob(
-                      devboxDetail?.sshConfig?.sshPrivateKey as string,
-                      'application/octet-stream',
-                      `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
-                    )
-                  }
-                />
-              </Flex>
-            </Tooltip>
-          </Flex>
-        </Flex>
-      </Flex>
+      </div>
+      <Card className="space-y-4 bg-gray-50 p-4">
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('ssh_connect_info')}</span>
+          <div className="w-[60%] text-gray-600">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild disabled={devboxDetail?.status.value !== 'Running'}>
+                  <span
+                    className={`w-full text-xs ${
+                      devboxDetail?.status.value === 'Running'
+                        ? 'cursor-pointer hover:text-blue-500'
+                        : ''
+                    }`}
+                    onClick={
+                      devboxDetail?.status.value === 'Running'
+                        ? () => copyData(sshConnectCommand)
+                        : undefined
+                    }
+                  >
+                    {devboxDetail?.status.value === 'Running' ? (
+                      sshConnectCommand
+                    ) : (
+                      <span className="ml-2">-</span>
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white text-gray-900">{t('copy')}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('private_key')}</span>
+          <div className="w-[60%] text-gray-600">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className="cursor-pointer rounded-md p-1 hover:bg-gray-100"
+                    onClick={() =>
+                      downLoadBlob(
+                        devboxDetail?.sshConfig?.sshPrivateKey as string,
+                        'application/octet-stream',
+                        `${env.sealosDomain}_${env.namespace}_${devboxDetail?.name}`
+                      )
+                    }
+                  >
+                    <MyIcon name="download" className="h-4 w-4 text-gray-600" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="bg-white text-gray-900">
+                  {t('export_privateKey')}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      </Card>
       {/* event */}
-      <Flex mb={3} mt={4}>
-        <MyIcon
-          name="response"
-          w={'15px'}
-          h={'15px'}
-          mr={'4px'}
-          color={'grayModern.600'}
-          mt={'2px'}
-        />
-        <Box color={'grayModern.600'} fontSize={'base'} fontWeight={'bold'}>
-          {t('event')}
-        </Box>
-      </Flex>
-      <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} gap={4} flexDirection={'column'}>
-        <Flex>
-          <Text mr={2} width={'40%'} fontSize={'12px'}>
-            {t('recent_error')}
-          </Text>
-          <Flex width={'60%'} color={'grayModern.600'} alignItems={'center'}>
+      <div className="mt-4 mb-3 flex">
+        <MyIcon name="response" className="mt-[2px] mr-1 h-[15px] w-[15px] text-gray-600" />
+        <div className="text-base font-bold text-gray-600">{t('event')}</div>
+      </div>
+      <Card className="space-y-4 bg-gray-50 p-4">
+        <div className="flex">
+          <span className="mr-2 w-[40%] text-xs">{t('recent_error')}</span>
+          <div className="w-[60%] items-center text-gray-600">
             {devboxDetail?.lastTerminatedReason ? (
-              <Text fontSize={'12px'} color={'red'}>
-                {devboxDetail?.lastTerminatedReason}
-              </Text>
+              <span className="text-xs text-red-500">{devboxDetail?.lastTerminatedReason}</span>
             ) : (
-              <Text fontSize={'12px'}>{t('none')}</Text>
+              <span className="text-xs">{t('none')}</span>
             )}
-          </Flex>
-        </Flex>
-      </Flex>
+          </div>
+        </div>
+      </Card>
       {onOpenSsHConnect && sshConfigData && (
         <SshConnectModal
           jetbrainsGuideData={sshConfigData}
@@ -310,7 +246,7 @@ const BasicInfo = () => {
           }}
         />
       )}
-    </Flex>
+    </div>
   );
 };
 

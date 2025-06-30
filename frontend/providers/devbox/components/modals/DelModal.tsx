@@ -1,25 +1,22 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Text
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
 import { delDevbox } from '@/api/devbox';
-import MyIcon from '@/components/Icon';
 import { useIDEStore } from '@/stores/ide';
 import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import MyIcon from '@/components/Icon';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const DelModal = ({
   devbox,
@@ -33,7 +30,6 @@ const DelModal = ({
   refetchDevboxList: () => void;
 }) => {
   const t = useTranslations();
-  const { message: toast } = useMessage();
   const { removeDevboxIDE } = useIDEStore();
 
   const [loading, setLoading] = useState(false);
@@ -44,10 +40,7 @@ const DelModal = ({
       setLoading(true);
       await delDevbox(devbox.name);
       removeDevboxIDE(devbox.name);
-      toast({
-        title: t('delete_successful'),
-        status: 'success'
-      });
+      toast.success(t('delete_successful'));
       onSuccess();
       onClose();
 
@@ -64,76 +57,63 @@ const DelModal = ({
       };
       retry();
     } catch (error: any) {
-      toast({
-        title: typeof error === 'string' ? error : error.message || t('delete_failed'),
-        status: 'error'
-      });
+      toast.error(typeof error === 'string' ? error : error.message || t('delete_failed'));
       console.error(error);
     }
     setLoading(false);
-  }, [devbox.name, removeDevboxIDE, toast, t, onSuccess, onClose, refetchDevboxList]);
+  }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList]);
 
   return (
-    <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false} size={'lg'}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <Flex alignItems={'center'} gap={'10px'}>
-            <MyIcon name="warning" width={'20px'} h={'20px'} />
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MyIcon name="warning" width={20} height={20} />
             {t('delete_warning')}
-          </Flex>
-        </ModalHeader>
-        <ModalCloseButton top={'10px'} right={'10px'} />
-        <ModalBody pb={4}>
-          <Box>{t('delete_warning_content')}</Box>
-          <Box
-            fontSize={'12px'}
-            color={'grayModern.600'}
-            mt={2}
-            bg={'grayModern.50'}
-            borderRadius={'4px'}
-            p={2}
-          >
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <DialogDescription>{t('delete_warning_content')}</DialogDescription>
+
+          <div className="rounded bg-gray-50 p-2 text-xs text-gray-600">
             {t('delete_warning_content_2')}
-          </Box>
-          <Box mt={4}>
+          </div>
+
+          <div>
             {t.rich('please_enter_devbox_name_confirm', {
               name: devbox.name,
               strong: (chunks) => (
-                <Text fontWeight={'bold'} display={'inline-block'} userSelect={'all'}>
-                  {chunks}
-                </Text>
+                <span className="inline-block font-bold select-all">{chunks}</span>
               )
             })}
-          </Box>
+          </div>
+
           <Input
             placeholder={devbox.name}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            mt={4}
-            w={'100%'}
-            border={'1px solid'}
-            borderColor={'grayModern.300'}
-            borderRadius={'4px'}
-            p={2}
+            className="w-full"
           />
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={onClose} variant={'outline'}>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
             {t('cancel')}
           </Button>
           <Button
-            ml={3}
-            variant={'solid'}
-            isLoading={loading}
+            variant="default"
+            disabled={inputValue !== devbox.name || loading}
             onClick={handleDelDevbox}
-            isDisabled={inputValue !== devbox.name}
           >
+            {loading ? (
+              <MyIcon name="loadingCircle" className="animate-spin" width={16} height={16} />
+            ) : null}
             {t('confirm_delete')}
           </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 
