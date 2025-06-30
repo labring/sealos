@@ -1,6 +1,6 @@
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { nanoid } from '@/utils/tools';
-import { devboxNameSchema } from '@/utils/vaildate';
+import { devboxNameSchema } from '@/utils/validate';
 import { Flex, FormControl, FormControlProps, Input } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
 import { useFieldArray, useFormContext } from 'react-hook-form';

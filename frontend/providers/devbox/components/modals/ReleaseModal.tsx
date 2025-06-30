@@ -20,7 +20,7 @@ import { releaseDevbox, shutdownDevbox, startDevbox } from '@/api/devbox';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useEnvStore } from '@/stores/env';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
-import { versionSchema } from '@/utils/vaildate';
+import { versionSchema } from '@/utils/validate';
 import MyIcon from '../Icon';
 
 const ReleaseModal = ({

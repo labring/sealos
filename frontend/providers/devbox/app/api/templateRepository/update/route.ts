@@ -3,7 +3,7 @@ import { authSessionWithJWT } from '@/services/backend/auth';
 import { jsonRes } from '@/services/backend/response';
 import { devboxDB } from '@/services/db/init';
 import { getRegionUid } from '@/utils/env';
-import { updateTemplateRepositorySchema } from '@/utils/vaildate';
+import { updateTemplateRepositorySchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 export async function POST(req: NextRequest) {
