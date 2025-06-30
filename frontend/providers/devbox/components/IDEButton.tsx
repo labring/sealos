@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { Check, ChevronDown, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Check, ChevronDown, X } from 'lucide-react';
 import { useCallback, useState, useEffect } from 'react';
 
 import {
@@ -24,18 +24,6 @@ import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/d
 import ToolboxModal from './modals/ToolboxModal';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
 
-interface IDEButtonProps {
-  devboxName: string;
-  runtimeType: string;
-  sshPort: number;
-  status: DevboxStatusMapType;
-  isBigButton?: boolean;
-  leftButtonProps?: React.ComponentProps<typeof Button>;
-  rightButtonProps?: React.ComponentProps<typeof Button>;
-  isGuide?: boolean;
-  className?: string;
-}
-
 export interface JetBrainsGuideData {
   devboxName: string;
   runtimeType: string;
@@ -55,12 +43,22 @@ interface MenuItem {
   options?: { value: IDEType; menuLabel: string }[];
 }
 
+interface IDEButtonProps {
+  devboxName: string;
+  runtimeType: string;
+  sshPort: number;
+  status: DevboxStatusMapType;
+  leftButtonProps?: React.ComponentProps<typeof Button>;
+  rightButtonProps?: React.ComponentProps<typeof Button>;
+  isGuide?: boolean;
+  className?: string;
+}
+
 const IDEButton = ({
   devboxName,
   runtimeType,
   sshPort,
   status,
-  isBigButton = true,
   leftButtonProps = {},
   rightButtonProps = {},
   isGuide = false,
@@ -150,24 +148,15 @@ const IDEButton = ({
             disabled={status.value !== 'Running' || loading}
             {...leftButtonProps}
           >
-            {isBigButton ? (
-              <div className="flex w-full items-center justify-center gap-1.5">
-                <Image
-                  width={18}
-                  height={18}
-                  alt={currentIDE}
-                  src={`/images/ide/${currentIDE}.svg`}
-                />
-                <span>{ideObj[currentIDE]?.label}</span>
-              </div>
-            ) : (
+            <div className="flex w-full items-center justify-center gap-1.5">
               <Image
                 width={18}
                 height={18}
                 alt={currentIDE}
                 src={`/images/ide/${currentIDE}.svg`}
               />
-            )}
+              <span>{ideObj[currentIDE]?.label}</span>
+            </div>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">
@@ -195,9 +184,10 @@ const IDEButton = ({
                   <div key={option.value} className="flex items-center">
                     <DropdownMenuItem
                       className={cn(
-                        index === 0 && 'w-[110px] pr-1 pl-2',
-                        index === 1 && 'w-[110px] pr-2',
-                        currentIDE === option.value && 'text-[#2563EB]'
+                        'w-[110px] text-zinc-600',
+                        index === 0 && 'pr-1 pl-2',
+                        index === 1 && 'pr-2 text-zinc-600',
+                        currentIDE === option.value && 'text-zinc-900'
                       )}
                       onClick={() => {
                         updateDevboxIDE(option.value, devboxName);
@@ -247,6 +237,7 @@ const IDEButton = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
+      {/* NOTE: the follow code is not test and refactored */}
       {!guideIDE && isGuide && (
         <div className="absolute -top-1.5 -left-[104px] z-[99] h-[280px] w-60 rounded-xl border-2 border-[#2563EB]">
           <div className="absolute top-1/2 left-[105%] w-[250px] rounded-xl bg-[#2563EB] p-3 text-white">
