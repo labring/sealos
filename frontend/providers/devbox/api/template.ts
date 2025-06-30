@@ -4,7 +4,7 @@ import {
   CreateTemplateRepositoryType,
   UpdateTemplateRepositoryType,
   UpdateTemplateType
-} from '@/utils/vaildate';
+} from '@/utils/validate';
 
 export const listOfficialTemplateRepository = () =>
   GET<{

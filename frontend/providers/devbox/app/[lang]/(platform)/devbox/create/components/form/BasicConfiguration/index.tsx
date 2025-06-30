@@ -1,4 +1,3 @@
-import MyIcon from '@/components/Icon';
 import { Box, BoxProps } from '@chakra-ui/react';
 import { useTranslations } from 'next-intl';
 
@@ -7,7 +6,6 @@ import GpuSelector from './GpuSelector';
 import MemorySelector from './MemorySelector';
 import DevboxNameInput from './DevboxNameInput';
 import TemplateSelector from './TemplateSelector';
-import ConfigurationHeader from '../ConfigurationHeader';
 import TemplateRepositorySelector from './TemplateRepositorySelector';
 
 export default function BasicConfiguration({
@@ -18,10 +16,6 @@ export default function BasicConfiguration({
   const t = useTranslations();
   return (
     <Box {...props}>
-      <ConfigurationHeader>
-        <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
-        {t('basic_configuration')}
-      </ConfigurationHeader>
       <Box px={'42px'} py={'24px'}>
         {/* Devbox Name */}
         <DevboxNameInput isEdit={isEdit} />

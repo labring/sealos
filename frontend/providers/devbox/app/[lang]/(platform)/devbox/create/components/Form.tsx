@@ -1,33 +1,40 @@
 'use client';
 
-import { throttle } from 'lodash';
+import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
-import { useFormContext } from 'react-hook-form';
-import { useEffect, useState, useMemo } from 'react';
 
-import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
 import { useDevboxStore } from '@/stores/devbox';
 import type { DevboxEditTypeV2 } from '@/types/devbox';
 
+import Gpu from './Gpu';
+import Cpu from './Cpu';
+import Memory from './Memory';
+import Network from './Network';
 import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
-import { Separator } from '@/components/ui/separator';
-import BasicConfiguration from './form/BasicConfiguration';
-import NetworkConfiguration from './form/NetworkConfiguration';
+import DevboxName from './DevboxName';
+
+import { Form as FormUI } from '@/components/ui/form';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Form = ({
   isEdit,
-  countGpuInventory
+  countGpuInventory,
+  defaultValues
 }: {
   isEdit: boolean;
   countGpuInventory: (type: string) => number;
+  defaultValues?: Partial<DevboxEditTypeV2>;
 }) => {
   const router = useRouter();
   const t = useTranslations();
-  const { watch } = useFormContext<DevboxEditTypeV2>();
+
+  const form = useForm<DevboxEditTypeV2>({
+    defaultValues
+  });
+  const formValues = form.watch();
 
   const { devboxList } = useDevboxStore();
 
@@ -42,46 +49,44 @@ const Form = ({
   };
 
   return (
-    <div className="flex gap-6">
-      {/* left grid */}
-      {/* TODO: we need skeleton */}
-      <div className="flex min-w-65 flex-col gap-4">
-        <Tabs defaultValue="form" onValueChange={handleTabChange}>
-          <TabsList className="h-11 w-full">
-            <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
-            <TabsTrigger value="yaml">{t('yaml_file')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <PriceBox
-          components={[
-            {
-              cpu: watch('cpu'),
-              memory: watch('memory'),
-              nodeports: devboxList.length
-            }
-          ]}
-        />
-        <QuotaBox />
-      </div>
+    <FormUI {...form}>
+      <div className="flex justify-center gap-6">
+        {/* left grid */}
+        <div className="flex min-w-65 flex-col gap-4">
+          <Tabs defaultValue="form" onValueChange={handleTabChange}>
+            <TabsList className="h-11 w-full">
+              <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
+              <TabsTrigger value="yaml">{t('yaml_file')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <PriceBox
+            components={[
+              {
+                cpu: formValues.cpu,
+                memory: formValues.memory,
+                nodeports: devboxList.length
+              }
+            ]}
+          />
+          <QuotaBox />
+        </div>
 
-      {/* right grid */}
-      {/* <div
-        id="form-container"
-        className="relative h-full overflow-y-scroll px-5 pb-[100px] md:px-10 lg:px-20"
-      >
-        <BasicConfiguration
-          isEdit={isEdit}
-          id="baseInfo"
-          className="mb-4 rounded-lg border bg-white"
-          countGpuInventory={countGpuInventory}
-        />
-        <NetworkConfiguration
-          isEdit={isEdit}
-          id="network"
-          className="mb-4 rounded-lg border bg-white"
-        />
-      </div> */}
-    </div>
+        {/* right grid */}
+        <div id="form-container" className="relative flex h-full flex-col gap-4">
+          {/* Devbox Name */}
+          <DevboxName isEdit={isEdit} />
+          {/* Usage */}
+          <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
+            <span className="text-xl/7 font-medium">{t('usage')}</span>
+            <Gpu countGpuInventory={countGpuInventory} />
+            <Cpu />
+            <Memory />
+          </div>
+          {/* Network */}
+          <Network isEdit={isEdit} />
+        </div>
+      </div>
+    </FormUI>
   );
 };
 

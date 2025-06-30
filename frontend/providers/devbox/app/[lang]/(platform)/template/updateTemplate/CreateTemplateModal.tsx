@@ -3,7 +3,7 @@ import MyFormLabel from '@/components/MyFormControl';
 import { TemplateState } from '@/constants/template';
 import { usePathname } from '@/i18n';
 import { useTemplateStore } from '@/stores/template';
-import { templateNameSchema, versionSchema } from '@/utils/vaildate';
+import { templateNameSchema, versionSchema } from '@/utils/validate';
 import {
   Button,
   ButtonGroup,

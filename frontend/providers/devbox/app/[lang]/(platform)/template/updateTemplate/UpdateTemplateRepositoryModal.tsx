@@ -1,7 +1,7 @@
 import { updateTemplate } from '@/api/template';
 import MyIcon from '@/components/Icon';
 import MyFormLabel from '@/components/MyFormControl';
-import { versionSchema } from '@/utils/vaildate';
+import { versionSchema } from '@/utils/validate';
 import {
   Box,
   Button,
