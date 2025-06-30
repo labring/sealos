@@ -14,6 +14,7 @@ from record_events import get_pod_exception_map, record_events
 from node import add_node_to_cluster, delete_node_from_cluster
 from stress_test import *
 from scheduling import *
+from menu import *
 import threading
 
 
@@ -46,6 +47,7 @@ NODE_DELETE_THRESHOLD = os.getenv('NODE_DOWN_THRESHOLD') or '15'
 NODE_ADD_THRESHOLD = os.getenv('NODE_UP_THRESHOLD') or '70'
 
 MASTER_IP = ''
+
 #如果CLUSTER_DOMAIN是IP地址，MASTER_IP就是CLUSTER_DOMAIN
 if re.match(r'^\d+\.\d+\.\d+\.\d+$', CLUSTER_DOMAIN):
     MASTER_IP = CLUSTER_DOMAIN
@@ -69,6 +71,12 @@ def run_command(command):
 def upload_deploy_helper(file_path, namespace, appname, images):
 
     return deployAppWithImage(file_path, '', '', '', namespace, appname, images)
+
+
+def get_db_connection():
+    conn = sqlite3.connect('rbac.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
 # API端点：导出应用程序
 @app.route('/api/exportApp', methods=['POST'])
@@ -146,7 +154,7 @@ def export_app_helper(yaml_content, images, appname, namespace):
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
-                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': 'str(single_yaml['spec']['ports'][port_index]['nodePort']'})
+                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': ''})
     print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
@@ -400,8 +408,8 @@ def deployAppWithImage(file_path, modelName, modelCode, modelVersion, namespace=
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
                     internal_port = str(single_yaml['spec']['ports'][port_index]['port'])
-                  #  if internal_port not in ports.keys():
-                  #      return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
+                    if internal_port not in ports.keys():
+                        return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' is required'}), 400
                     if not isinstance(ports[internal_port], int):
                         return jsonify({'error': 'ExternalPort for InternalPort ' + internal_port + ' should be int'}), 400
                     if ports[internal_port] < 30000 or ports[internal_port] > 32767:
@@ -1126,13 +1134,165 @@ def cron_job():
         except Exception as e:
             print("Error in check_all_apps: {}".format(str(e)))
 
+@app.route('/getImageUse', methods=['GET'])
+def get_image_use_configmap():
+    # 执行kubectl命令
+    command = "kubectl get cm image-use -o jsonpath='{.data}'"
+    result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+    # 将输出转换为JSON对象
+    data = json.loads(result.stdout)
+    # 返回JSON响应
+    return jsonify({'status': 'success','data': data})
+
+@app.route('/menus', methods=['GET'])
+def get_menus():
+    return get_all_menus()
+
 def cron_job_10():
     while True:
         time.sleep(10)
         record_events()
 
+# 菜单相关API (与您提供的代码一致)
+@app.route('/api/getAllMenus', methods=['GET'])
+def get_all_menus():
+    """获取所有菜单"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM menus ORDER BY id")
+    menus = [dict(menu) for menu in cursor.fetchall()]
+    conn.close()
+    return jsonify({"message": "成功","data": menus}), 200
+
+# 角色相关API
+@app.route('/api/roles', methods=['GET'])
+def get_all_roles():
+    """获取所有角色"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM roles ORDER BY id")
+    roles = [dict(role) for role in cursor.fetchall()]
+    conn.close()
+    return jsonify({"message": "成功","data": roles}), 200
+
+@app.route('/api/roles/<int:role_id>', methods=['GET'])
+def get_role(role_id):
+    """获取指定角色"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM roles WHERE id = ?", (role_id,))
+    role = cursor.fetchone()
+    conn.close()
+    return jsonify(dict(role)) if role else ('', 404)
+    return jsonify({"message": "成功","data": dict(role)}), 200 
+
+
+@app.route('/api/roles', methods=['POST'])
+def create_role():
+    """创建新角色"""
+    data = request.get_json()
+    role = RoleCreate(**data)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO roles (name, description, status) VALUES (?, ?, ?)",
+        (role.name, role.description, role.status)
+    )
+    role_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return jsonify({"message":"成功","data":{"id": role_id}}), 200
+
+@app.route('/api/roles/<int:role_id>', methods=['PUT'])
+def update_role(role_id):
+    """更新角色信息"""
+    data = request.get_json()
+    role = RoleUpdate(**data)
+    
+    updates = []
+    params = []
+    
+    if role.name:
+        updates.append("name = ?")
+        params.append(role.name)
+    if role.description:
+        updates.append("description = ?")
+        params.append(role.description)
+    if role.status is not None:
+        updates.append("status = ?")
+        params.append(role.status)
+    
+    if not updates:
+        return jsonify({"error": "No fields to update"}), 400
+    
+    updates.append("updated_at = CURRENT_TIMESTAMP")
+    params.append(role_id)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = f"UPDATE roles SET {', '.join(updates)} WHERE id = ?"
+    cursor.execute(query, params)
+    conn.commit()
+    conn.close()
+    return jsonify({"message":"成功","success": True})
+
+@app.route('/api/roles/<int:role_id>', methods=['DELETE'])
+def delete_role(role_id):
+    """删除角色"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM roles WHERE id = ?", (role_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"success": True,"message":"成功"})
+
+# 角色菜单关联API
+@app.route('/api/roles/<int:role_id>/menus', methods=['GET'])
+def get_role_menus(role_id):
+    """获取角色拥有的菜单"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT m.* FROM menus m
+        JOIN role_menus rm ON m.id = rm.menu_id
+        WHERE rm.role_id = ?
+    ''', (role_id,))
+    menus = [dict(menu) for menu in cursor.fetchall()]
+    conn.close()
+    return jsonify({"message":"成功","data": menus}), 200
+
+@app.route('/api/roles/<int:role_id>/menus', methods=['POST'])
+def assign_role_menus(role_id):
+    """为角色分配菜单权限"""
+    data = request.get_json()
+    assign_data = RoleMenuAssign(**data)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    try:
+        # 先删除原有权限
+        cursor.execute("DELETE FROM role_menus WHERE role_id = ?", (role_id,))
+        
+        # 添加新权限
+        for menu_id in assign_data.menu_ids:
+            cursor.execute(
+                "INSERT INTO role_menus (role_id, menu_id) VALUES (?, ?)",
+                (role_id, menu_id)
+            )
+        
+        conn.commit()
+        return jsonify({"success": True,"message":"成功"})
+    except sqlite3.Error as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 400
+    finally:
+        conn.close()
+
 if __name__ == '__main__':
     init_db()
+    init_menu_db()
     init_configmap()
     init_scheduling()
     # 创建定时任务调度器
