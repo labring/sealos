@@ -1,4 +1,4 @@
-import { getTemplateRepository, updateTemplateReposistory } from '@/api/template';
+import { getTemplateRepository, updateTemplateRepository } from '@/api/template';
 import { TemplateVersionState } from '@/constants/template';
 import {
   Button,
@@ -79,7 +79,7 @@ const EditTemplateRepositoryModal: FC<CreateTemplateModalProps> = ({ isOpen, onC
       enabled: isOpen
     }
   );
-  const updateMutation = useMutation(updateTemplateReposistory, {
+  const updateMutation = useMutation(updateTemplateRepository, {
     onSuccess() {
       queryClient.invalidateQueries(['template-repository-list']);
       queryClient.invalidateQueries(['template-repository-detail']);

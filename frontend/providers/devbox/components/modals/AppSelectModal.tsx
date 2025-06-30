@@ -1,25 +1,24 @@
-import {
-  Box,
-  Flex,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalOverlay,
-  Button,
-  ModalHeader,
-  Text,
-  Divider
-} from '@chakra-ui/react';
-import { useTranslations } from 'next-intl';
+'use client';
+
 import { useCallback } from 'react';
+import { Rocket } from 'lucide-react';
 import { customAlphabet } from 'nanoid';
+import { useTranslations } from 'next-intl';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
+import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
 
-import MyIcon from '../Icon';
-import MyTable from '../MyTable';
-import { useEnvStore } from '@/stores/env';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/dialog';
+import MyTable from '@/components/MyTable';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -43,19 +42,23 @@ interface DeployData {
   };
 }
 
-const AppSelectModal = ({
-  apps,
-  deployData,
-  devboxName,
-  onSuccess,
-  onClose
-}: {
+interface AppSelectModalProps {
   apps: AppListItemType[];
   devboxName: string;
   deployData: DeployData;
   onSuccess: () => void;
   onClose: () => void;
-}) => {
+  open: boolean;
+}
+
+export default function AppSelectModal({
+  apps,
+  deployData,
+  devboxName,
+  onSuccess,
+  onClose,
+  open
+}: AppSelectModalProps) {
   const t = useTranslations();
   const { env } = useEnvStore();
 
@@ -94,115 +97,80 @@ const AppSelectModal = ({
     [deployData, onSuccess]
   );
 
-  const columns: {
-    title: string;
-    dataIndex?: keyof AppListItemType;
-    key: string;
-    width?: string;
-    render?: (item: AppListItemType) => JSX.Element;
-  }[] = [
+  const columns = [
     {
       title: t('app_name'),
       dataIndex: 'name',
       key: 'name',
-      render: (item: AppListItemType) => {
-        return (
-          <Text ml={4} color={'grayModern.600'}>
-            {item.name}
-          </Text>
-        );
-      }
+      render: (item: AppListItemType) => (
+        <div className="ml-4 text-muted-foreground">{item.name}</div>
+      )
     },
     {
       title: t('current_image_name'),
       dataIndex: 'imageName',
       key: 'imageName',
       render: (item: AppListItemType) => {
-        // note: no same devbox matched image will be dealt.
         const dealImageName = item.imageName.startsWith(
           `${env.registryAddr}/${env.namespace}/${devboxName}`
         )
           ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
           : '-';
-        return <Text color={'grayModern.600'}>{dealImageName}</Text>;
+        return <div className="text-muted-foreground">{dealImageName}</div>;
       }
     },
     {
       title: t('create_time'),
       dataIndex: 'createTime',
       key: 'createTime',
-      render: (item: AppListItemType) => {
-        return <Text color={'grayModern.600'}>{item.createTime}</Text>;
-      }
+      render: (item: AppListItemType) => (
+        <div className="text-muted-foreground">{item.createTime}</div>
+      )
     },
     {
       title: t('control'),
       key: 'control',
       render: (item: AppListItemType) => (
-        <Flex>
+        <div className="flex">
           <Button
-            height={'27px'}
-            w={'60px'}
-            size={'sm'}
-            fontSize={'base'}
-            bg={'grayModern.150'}
-            borderWidth={1}
-            color={'grayModern.900'}
-            _hover={{
-              color: 'brightBlue.600'
-            }}
+            variant="outline"
+            size="sm"
+            className="hover:text-primary"
             onClick={() => handleUpdate(item)}
           >
             {t('to_update')}
           </Button>
-        </Flex>
+        </div>
       )
     }
   ];
 
   return (
-    <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-        <ModalOverlay />
-        <ModalContent top={'30%'} maxWidth={'800px'} w={'700px'}>
-          <ModalHeader pl={10}>{t('deploy')}</ModalHeader>
-          <ModalBody pb={4}>
-            <Flex
-              alignItems={'center'}
-              direction={'column'}
-              mb={2}
-              justifyContent={'space-between'}
-              p={4}
-            >
-              <Text fontSize={'lg'} fontWeight={'medium'}>
-                {t('create_directly')}
-              </Text>
-              <Button
-                onClick={handleCreate}
-                height={'36px'}
-                mt={4}
-                size={'md'}
-                px={8}
-                fontSize={'base'}
-                leftIcon={<MyIcon name="rocket" w={'15px'} h={'15px'} color={'white'} />}
-              >
-                {t('deploy')}
-              </Button>
-            </Flex>
-            <Divider />
-            <Box mt={4}>
-              <Flex alignItems={'center'} mb={4} justifyContent={'center'}>
-                <Text fontSize={'lg'} fontWeight={'medium'}>
-                  {t('update_matched_apps_notes')}
-                </Text>
-              </Flex>
-              <MyTable columns={columns} data={apps} />
-            </Box>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
-  );
-};
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[700px]">
+        <DialogHeader>
+          <DialogTitle>{t('deploy')}</DialogTitle>
+        </DialogHeader>
 
-export default AppSelectModal;
+        <div className="space-y-6">
+          <div className="flex flex-col items-center space-y-4">
+            <DialogDescription>{t('create_directly')}</DialogDescription>
+            <Button onClick={handleCreate} size="lg">
+              <Rocket className="mr-2 h-4 w-4" />
+              <span>{t('deploy')}</span>
+            </Button>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <DialogDescription className="text-center">
+              {t('update_matched_apps_notes')}
+            </DialogDescription>
+            <MyTable columns={columns} data={apps} />
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,40 +1,36 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Input,
-  Modal,
-  ModalBody,
-  ModalCloseButton,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  Textarea
-} from '@chakra-ui/react';
-import { useMessage } from '@sealos/ui';
-import { useTranslations, useLocale } from 'next-intl';
+import { toast } from 'sonner';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 
-import { releaseDevbox, shutdownDevbox, startDevbox } from '@/api/devbox';
-import { useConfirm } from '@/hooks/useConfirm';
+import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
-import { DevboxListItemTypeV2 } from '@/types/devbox';
+import { useConfirm } from '@/hooks/useConfirm';
 import { versionSchema } from '@/utils/validate';
-import MyIcon from '../Icon';
+import { DevboxListItemTypeV2 } from '@/types/devbox';
+import { releaseDevbox, shutdownDevbox, startDevbox } from '@/api/devbox';
 
-const ReleaseModal = ({
-  onClose,
-  onSuccess,
-  devbox
-}: {
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+
+interface ReleaseModalProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;
+  open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-}) => {
+}
+
+const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) => {
   const t = useTranslations();
   const locale = useLocale();
-  const { message: toast } = useMessage();
 
   const { env } = useEnvStore();
 
@@ -55,10 +51,7 @@ const ReleaseModal = ({
     if (!tag) {
       setTagError(true);
     } else if (versionSchema.safeParse(tag).success === false) {
-      toast({
-        title: t('tag_format_error'),
-        status: 'error'
-      });
+      toast.error(t('tag_format_error'));
     } else {
       setTagError(false);
       openConfirm((enableRestartMachine: boolean) => handleReleaseDevbox(enableRestartMachine))();
@@ -90,141 +83,97 @@ const ReleaseModal = ({
         if (enableRestartMachine) {
           await startDevbox({ devboxName: devbox.name });
         }
-        toast({
-          title: t('submit_release_successful'),
-          status: 'success'
-        });
+        toast.success(t('submit_release_successful'));
         onSuccess();
         onClose();
       } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('submit_release_failed'),
-          status: 'error'
-        });
+        toast.error(
+          typeof error === 'string' ? error : error.message || t('submit_release_failed')
+        );
         console.error(error);
       }
       setLoading(false);
     },
-    [devbox.status.value, devbox.name, devbox.id, tag, releaseDes, toast, t, onSuccess, onClose]
+    [devbox.status.value, devbox.name, devbox.id, tag, releaseDes, t, onSuccess, onClose]
   );
 
   return (
-    <Box>
-      <Modal isOpen onClose={onClose} lockFocusAcrossFrames={false}>
-        <ModalOverlay />
-        <ModalContent minW={'500px'} mt={'100px'} minH={'300px'} top={'50px'}>
-          <ModalHeader>
-            <Flex alignItems={'center'} gap={'10px'} ml={'14px'} fontSize={'16px'}>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="min-h-[300px] min-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="ml-3.5 flex items-center gap-2.5 text-base">
               {t('release_version')}
-            </Flex>
-          </ModalHeader>
-          <ModalCloseButton top={'10px'} right={'10px'} />
-          <ModalBody pb={4}>
-            <Flex
-              alignItems={'center'}
-              gap={'8px'}
-              p={'12px'}
-              mb={'24px'}
-              borderRadius={'6px'}
-              bg={'brightBlue.50'}
-            >
-              <MyIcon name="infoRounded" w="16px" h="16px" color={'brightBlue.600'} />
-              <Box
-                color={'brightBlue.600'}
-                fontSize={'12px'}
-                fontWeight={'500'}
-                lineHeight={'16px'}
-                letterSpacing={'0.5px'}
-              >
-                <Box>{t('release_version_info')}</Box>
-                <Box>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6 p-6">
+            <div className="mb-6 flex items-center gap-2 rounded-md bg-blue-50 p-3">
+              <div className="text-xs leading-4 font-medium tracking-wide text-blue-600">
+                <div>{t('release_version_info')}</div>
+                <div>
                   {t.rich('release_version_info_2', {
                     underline: (chunks) => (
-                      <Button
-                        variant={'link'}
-                        display={'inline-block'}
-                        textDecoration={'underline'}
-                        cursor={'pointer'}
-                        fontWeight={'500'}
-                        fontSize={'12px'}
-                        color={'brightBlue.600'}
+                      <button
+                        className="inline-block cursor-pointer text-xs font-medium text-blue-600 underline"
                         onClick={() => {
-                          if (locale === 'zh') {
-                            window.open(
-                              'https://sealos.run/docs/guides/fundamentals/entrypoint-sh',
-                              '_blank'
-                            );
-                          } else {
-                            window.open(
-                              'https://sealos.io/docs/guides/fundamentals/entrypoint-sh',
-                              '_blank'
-                            );
-                          }
+                          window.open(
+                            locale === 'zh'
+                              ? 'https://sealos.run/docs/guides/fundamentals/entrypoint-sh'
+                              : 'https://sealos.io/docs/guides/fundamentals/entrypoint-sh',
+                            '_blank'
+                          );
                         }}
                       >
                         {chunks}
-                        <MyIcon name="arrowUpRight" w="11px" h="11px" mr={'6px'} />
-                      </Button>
+                        <ArrowUpRight className="mr-1.5 inline h-2.5 w-2.5" />
+                      </button>
                     )
                   })}
-                </Box>
-              </Box>
-            </Flex>
-            <Flex alignItems={'start'} gap={'auto'} mb={'24px'}>
-              <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
-                {t('image_name')}
-              </Box>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 flex items-start gap-4">
+              <div className="w-[110px] text-lg font-bold">{t('image_name')}</div>
               <Input
-                defaultValue={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
-                isReadOnly
+                value={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
+                readOnly
+                className="flex-1"
               />
-            </Flex>
-            <Flex alignItems={'start'} gap={'auto'}>
-              <Box w={'110px'} fontWeight={'bold'} fontSize={'lg'}>
-                {t('version_config')}
-              </Box>
-              <Flex gap={'5px'} direction={'column'}>
-                <Box w={'100px'}>{t('version_number')}</Box>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="w-[110px] text-lg font-bold">{t('version_config')}</div>
+              <div className="flex flex-1 flex-col gap-1.5">
+                <div className="w-[100px]">{t('version_number')}</div>
                 <Input
                   placeholder={t('enter_version_number')}
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
-                  mb={'8px'}
-                  borderColor={tagError ? 'red.500' : undefined}
+                  className={cn('mb-2', tagError && 'border-red-500')}
                 />
-                {tagError && (
-                  <Box color="red.500" fontSize="sm">
-                    {t('tag_required')}
-                  </Box>
-                )}
-                <Box w={'100px'}>{t('version_description')}</Box>
+                {tagError && <div className="text-sm text-red-500">{t('tag_required')}</div>}
+                <div className="w-[100px]">{t('version_description')}</div>
                 <Textarea
                   value={releaseDes}
-                  minH={'150px'}
+                  className="min-h-[150px]"
                   onChange={(e) => setReleaseDes(e.target.value)}
                   placeholder={t('enter_version_description')}
-                  _placeholder={{
-                    color: 'grayModern.500'
-                  }}
                 />
-              </Flex>
-            </Flex>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant={'solid'}
-              onClick={handleSubmit}
-              mr={'11px'}
-              width={'80px'}
-              isLoading={loading}
-            >
-              {t('publish')}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={handleSubmit} className="mr-2.5 w-20" disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('publish')}
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ConfirmChild />
-    </Box>
+    </>
   );
 };
 

@@ -1,42 +1,53 @@
 'use client';
 
-import { Box, Button, Flex, MenuButton, Text, useDisclosure } from '@chakra-ui/react';
-import { SealosMenu, useMessage } from '@sealos/ui';
-import { useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { ArrowBigUpDash, Ellipsis, LayoutTemplate, PencilLine, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
-import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
-import DevboxStatusTag from '@/components/StatusTag';
-import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
-import ReleaseModal from '@/components/modals/ReleaseModal';
-import MyTable from '@/components/MyTable';
-import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
-import { DevboxVersionListItemType } from '@/types/devbox';
-
+import { useEnvStore } from '@/stores/env';
+import { AppListItemType } from '@/types/app';
 import { useConfirm } from '@/hooks/useConfirm';
-import { useLoading } from '@/hooks/useLoading';
-
+import { useDevboxStore } from '@/stores/devbox';
+import { parseTemplateConfig } from '@/utils/tools';
+import { DevboxVersionListItemType } from '@/types/devbox';
+import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
+import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Loading } from '@/components/ui/loading';
+import DevboxStatusTag from '@/components/StatusTag';
+import ReleaseModal from '@/components/modals/ReleaseModal';
+import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
 import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal';
 import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal';
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
 import AppSelectModal from '@/components/modals/AppSelectModal';
-import { useDevboxStore } from '@/stores/devbox';
-import { useEnvStore } from '@/stores/env';
-import { AppListItemType } from '@/types/app';
-import { parseTemplateConfig } from '@/utils/tools';
-import MyIcon from '@/components/Icon';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
 const Version = () => {
   const t = useTranslations();
-  const { message: toast } = useMessage();
-  const { Loading, setIsLoading } = useLoading();
-  const { isOpen: isOpenEdit, onOpen: onOpenEdit, onClose: onCloseEdit } = useDisclosure();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpenEdit, setIsOpenEdit] = useState(false);
 
   const { env } = useEnvStore();
   const { devboxDetail: devbox, devboxVersionList, setDevboxVersionList } = useDevboxStore();
@@ -51,21 +62,23 @@ const Version = () => {
     | null
     | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
   >(null);
-  const createTemplateModalHandler = useDisclosure();
-  const selectTemplalteModalHandler = useDisclosure();
-  const updateTemplateModalHandler = useDisclosure();
+  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
+  const [isSelectTemplateModalOpen, setIsSelectTemplateModalOpen] = useState(false);
+  const [isUpdateTemplateModalOpen, setIsUpdateTemplateModalOpen] = useState(false);
+
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'delete_version_confirm_info'
   });
+
   const { refetch } = useQuery(
     ['initDevboxVersionList'],
     () => setDevboxVersionList(devbox!.name, devbox!.id),
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
-        !createTemplateModalHandler.isOpen &&
-        !updateTemplateModalHandler.isOpen &&
-        !selectTemplalteModalHandler.isOpen &&
+        !isCreateTemplateModalOpen &&
+        !isUpdateTemplateModalOpen &&
+        !isSelectTemplateModalOpen &&
         (devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending ||
           devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Failed)
           ? 3000
@@ -156,15 +169,13 @@ const Version = () => {
     },
     [devbox, env.ingressDomain, env.namespace, env.registryAddr]
   );
+
   const handleDelDevboxVersion = useCallback(
     async (versionName: string) => {
       try {
         setIsLoading(true);
         await delDevboxVersionByName(versionName);
-        toast({
-          title: t('delete_successful'),
-          status: 'success'
-        });
+        toast.success(t('delete_successful'));
         let retryCount = 0;
         const maxRetries = 3;
         const retryInterval = 3000;
@@ -178,262 +189,176 @@ const Version = () => {
         };
         retry();
       } catch (error: any) {
-        toast({
-          title: typeof error === 'string' ? error : error.message || t('delete_failed'),
-          status: 'error'
-        });
+        toast.error(typeof error === 'string' ? error : error.message || t('delete_failed'));
         console.error(error);
       }
       setIsLoading(false);
     },
-    [setIsLoading, toast, t, refetch]
+    [setIsLoading, t, refetch]
   );
 
-  const columns: {
-    title: string;
-    dataIndex?: keyof DevboxVersionListItemType;
-    key: string;
-    render?: (item: DevboxVersionListItemType) => JSX.Element;
-  }[] = [
-    {
-      title: t('version_number'),
-      key: 'tag',
-      render: (item: DevboxVersionListItemType) => (
-        <Box color={'grayModern.900'} pl={'12px'}>
-          {item.tag}
-        </Box>
-      )
-    },
-    {
-      title: t('status'),
-      key: 'status',
-      render: (item: DevboxVersionListItemType) => (
-        <DevboxStatusTag status={item.status} h={'27px'} thinMode />
-      )
-    },
-    {
-      title: t('create_time'),
-      dataIndex: 'createTime',
-      key: 'createTime',
-      render: (item: DevboxVersionListItemType) => {
-        return <Text color={'grayModern.600'}>{item.createTime}</Text>;
-      }
-    },
-    {
-      title: t('version_description'),
-      key: 'description',
-      render: (item: DevboxVersionListItemType) => (
-        <Flex alignItems="center" minH={'20px'} width={'full'}>
-          <Box color={'grayModern.600'} noOfLines={1} w={'0'} flex={1}>
-            {item.description}
-          </Box>
-        </Flex>
-      )
-    },
-    {
-      title: t('control'),
-      key: 'control',
-      render: (item: DevboxVersionListItemType) => (
-        <Flex alignItems={'center'}>
-          <Button
-            className="guide-online-button"
-            mr={5}
-            height={'27px'}
-            w={'60px'}
-            size={'sm'}
-            h="32px"
-            fontSize={'base'}
-            bg={'grayModern.150'}
-            color={'grayModern.900'}
-            _hover={{
-              color: 'brightBlue.600'
-            }}
-            isDisabled={item.status.value !== DevboxReleaseStatusEnum.Success}
-            onClick={() => handleDeploy(item)}
-          >
-            {t('deploy')}
-          </Button>
-          <SealosMenu
-            width={100}
-            Button={
-              <MenuButton
-                as={Button}
-                variant={'square'}
-                boxSize={'32px'}
-                data-group
-                isDisabled={item?.status?.value !== 'Success'}
-              >
-                <MyIcon
-                  name={'more'}
-                  color={'grayModern.600'}
-                  _groupHover={{
-                    color: 'brightBlue.600'
-                  }}
-                  fill={'currentcolor'}
-                />
-              </MenuButton>
-            }
-            menuList={[
-              {
-                child: (
-                  <>
-                    <MyIcon name={'edit'} w={'16px'} />
-                    <Box ml={2}>{t('edit')}</Box>
-                  </>
-                ),
-                onClick: () => {
-                  setCurrentVersion(item);
-                  onOpenEdit();
-                }
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'template'} w={'16px'} />
-                    <Box ml={2}>{t('convert_to_runtime')}</Box>
-                  </>
-                ),
-                onClick: () => {
-                  setCurrentVersion(item);
-                  // onOpenEdit()
-                  // openTemplateModal({templateState: })
-                  if (templateRepositoryList.length > 0) {
-                    selectTemplalteModalHandler.onOpen();
-                  } else {
-                    createTemplateModalHandler.onOpen();
-                  }
-                }
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'delete'} w={'16px'} />
-                    <Box ml={2}>{t('delete')}</Box>
-                  </>
-                ),
-                menuItemStyle: {
-                  _hover: {
-                    color: 'red.600',
-                    bg: 'rgba(17, 24, 36, 0.05)'
-                  }
-                },
-                onClick: () => openConfirm(() => handleDelDevboxVersion(item.name))()
-              }
-            ]}
-          />
-        </Flex>
-      )
-    }
-  ];
+  if (!initialized || isLoading) return <Loading />;
+
   return (
-    <Box
-      borderWidth={1}
-      borderRadius="lg"
-      pl={6}
-      pt={4}
-      pr={6}
-      bg={'white'}
-      h={'full'}
-      position={'relative'}
-    >
-      <Flex alignItems="center" justifyContent={'space-between'} mb={5} py={'4px'} pr={'2px'}>
-        <Flex alignItems={'center'}>
-          <MyIcon name="list" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
-          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
-            {t('version_history')}
-          </Text>
-        </Flex>
+    <div className="relative h-full rounded-lg border bg-white p-6">
+      <div className="mb-5 flex items-center justify-between py-1 pr-0.5">
+        <div className="flex items-center">
+          <span className="text-base font-bold text-gray-600">{t('version_history')}</span>
+        </div>
         <Button
           className="guide-release-button"
           onClick={() => setOnOpenRelease(true)}
-          bg={'white'}
-          color={'grayModern.600'}
-          borderWidth={1}
-          mr={1}
-          leftIcon={<MyIcon name="version" />}
-          _hover={{
-            color: 'brightBlue.600'
-          }}
+          variant="outline"
+          size="default"
         >
+          <ArrowBigUpDash className="mr-2" />
           {t('release_version')}
         </Button>
-      </Flex>
-      <Loading loading={!initialized} fixed={false} />
+      </div>
+
       {devboxVersionList.length === 0 && initialized ? (
-        <Flex
-          justifyContent={'center'}
-          alignItems={'center'}
-          mt={10}
-          flexDirection={'column'}
-          gap={4}
-        >
-          <MyIcon name="empty" w={'40px'} h={'40px'} color={'white'} />
-          <Box textAlign={'center'} color={'grayModern.600'}>
-            {t('no_versions')}
-          </Box>
-        </Flex>
+        <div className="mt-10 flex flex-col items-center justify-center gap-4">
+          <ArrowBigUpDash className="h-[40px] w-[40px] text-white" />
+          <div className="text-center text-gray-600">{t('no_versions')}</div>
+        </div>
       ) : (
-        <MyTable
-          columns={columns}
-          data={devboxVersionList}
-          needRadius
-          gridTemplateColumns={'105px 105px 144px minmax(0, 1fr) 140px'}
-        />
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{t('version_number')}</TableHead>
+              <TableHead>{t('status')}</TableHead>
+              <TableHead>{t('create_time')}</TableHead>
+              <TableHead>{t('version_description')}</TableHead>
+              <TableHead>{t('control')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {devboxVersionList.map((item) => (
+              <TableRow key={item.tag}>
+                <TableCell className="pl-3 text-gray-900">{item.tag}</TableCell>
+                <TableCell>
+                  <DevboxStatusTag status={item.status} className="h-[27px]" />
+                </TableCell>
+                <TableCell className="text-gray-600">{item.createTime}</TableCell>
+                <TableCell>
+                  <div className="flex min-h-[20px] w-full items-center">
+                    <div className="flex-1 truncate text-gray-600">{item.description}</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <Button
+                      className="guide-online-button mr-5"
+                      variant="secondary"
+                      size="sm"
+                      disabled={item.status.value !== DevboxReleaseStatusEnum.Success}
+                      onClick={() => handleDeploy(item)}
+                    >
+                      {t('deploy')}
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={item?.status?.value !== 'Success'}
+                        >
+                          <Ellipsis className="text-gray-600 hover:text-blue-600" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setCurrentVersion(item);
+                            setIsOpenEdit(true);
+                          }}
+                        >
+                          <PencilLine className="mr-2 h-4 w-4" />
+                          {t('edit')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setCurrentVersion(item);
+                            if (templateRepositoryList.length > 0) {
+                              setIsSelectTemplateModalOpen(true);
+                            } else {
+                              setIsCreateTemplateModalOpen(true);
+                            }
+                          }}
+                        >
+                          <LayoutTemplate className="mr-2 h-4 w-4" />
+                          {t('convert_to_runtime')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600 hover:bg-red-50"
+                          onClick={() => openConfirm(() => handleDelDevboxVersion(item.name))()}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          {t('delete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
       {!!currentVersion && (
         <EditVersionDesModal
+          open={isOpenEdit}
           version={currentVersion}
           onSuccess={refetch}
-          isOpen={isOpenEdit}
-          onClose={onCloseEdit}
+          onClose={() => setIsOpenEdit(false)}
         />
       )}
-      {!!onOpenRelease && !!devbox && (
-        <ReleaseModal
-          onSuccess={refetch}
-          onClose={() => {
-            setOnOpenRelease(false);
-          }}
-          devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
-        />
-      )}
-      {!!onOpenSelectApp && (
-        <AppSelectModal
-          apps={apps}
-          devboxName={devbox?.name || ''}
-          deployData={deployData}
-          onSuccess={() => setOnOpenSelectApp(false)}
-          onClose={() => setOnOpenSelectApp(false)}
-        />
-      )}
+      <ReleaseModal
+        open={!!onOpenRelease && !!devbox}
+        onSuccess={refetch}
+        onClose={() => {
+          setOnOpenRelease(false);
+        }}
+        devbox={{ ...devbox!, sshPort: devbox!.sshPort || 0 }}
+      />
+
+      <AppSelectModal
+        open={!!onOpenSelectApp}
+        apps={apps}
+        devboxName={devbox?.name || ''}
+        deployData={deployData}
+        onSuccess={() => setOnOpenSelectApp(false)}
+        onClose={() => setOnOpenSelectApp(false)}
+      />
       <ConfirmChild />
       <CreateTemplateModal
-        isOpen={createTemplateModalHandler.isOpen}
-        onClose={createTemplateModalHandler.onClose}
+        isOpen={isCreateTemplateModalOpen}
+        onClose={() => setIsCreateTemplateModalOpen(false)}
         devboxReleaseName={currentVersion?.name || ''}
       />
       {templateRepositoryList.length > 0 && (
         <SelectTemplateModal
-          onOpenCreate={createTemplateModalHandler.onOpen}
-          onOpenUdate={(uid) => {
+          onOpenCreate={() => setIsCreateTemplateModalOpen(true)}
+          onOpenUpdate={(uid) => {
             const repo = templateRepositoryList.find((item) => item.uid === uid);
             setUpdateTemplateRepo(repo || null);
-            updateTemplateModalHandler.onOpen();
+            setIsUpdateTemplateModalOpen(true);
           }}
           templateRepositoryList={templateRepositoryList}
-          isOpen={selectTemplalteModalHandler.isOpen}
-          onClose={selectTemplalteModalHandler.onClose}
+          isOpen={isSelectTemplateModalOpen}
+          onClose={() => setIsSelectTemplateModalOpen(false)}
         />
       )}
       {!!updateTemplateRepo && (
         <UpdateTemplateRepositoryModal
           templateRepository={updateTemplateRepo}
-          isOpen={updateTemplateModalHandler.isOpen}
-          onClose={updateTemplateModalHandler.onClose}
+          isOpen={isUpdateTemplateModalOpen}
+          onClose={() => setIsUpdateTemplateModalOpen(false)}
           devboxReleaseName={currentVersion?.name || ''}
         />
       )}
-    </Box>
+    </div>
   );
 };
 

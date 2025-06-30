@@ -1,33 +1,22 @@
-import {
-  Box,
-  Button,
-  Center,
-  Flex,
-  Popover,
-  PopoverArrow,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  Tooltip,
-  useDisclosure
-} from '@chakra-ui/react';
 import dayjs from 'dayjs';
-import { useTranslations, useLocale } from 'next-intl';
 import dynamic from 'next/dynamic';
-
-import MyIcon from '@/components/Icon';
-import MyTable from '@/components/MyTable';
-import PodLineChart from '@/components/MonitorChart';
-
-import { NetworkType } from '@/types/devbox';
-import { useCopyData } from '@/utils/tools';
-
-import { useDevboxStore } from '@/stores/devbox';
-import { useEnvStore } from '@/stores/env';
-import { useMemo, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from 'react';
+import { CircleHelp, MonitorIcon, NetworkIcon, Maximize } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+
+import MyTable from '@/components/MyTable';
+import { Button } from '@/components/ui/button';
+import PodLineChart from '@/components/MonitorChart';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
+import { cn } from '@/lib/utils';
+import { useEnvStore } from '@/stores/env';
 import { checkReady } from '@/api/platform';
+import { useCopyData } from '@/utils/tools';
+import { NetworkType } from '@/types/devbox';
+import { useDevboxStore } from '@/stores/devbox';
 
 const MonitorModal = dynamic(() => import('@/components/modals/MonitorModal'));
 
@@ -35,9 +24,13 @@ const MainBody = () => {
   const t = useTranslations();
   const locale = useLocale();
   const { copyData } = useCopyData();
-  const { devboxDetail } = useDevboxStore();
+
   const { env } = useEnvStore();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { devboxDetail } = useDevboxStore();
+
+  const onOpen = () => setIsOpen(true);
+  const onClose = () => setIsOpen(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   const retryCount = useRef(0);
   const { data: networkStatus, refetch } = useQuery({
@@ -92,11 +85,7 @@ const MainBody = () => {
       title: t('port'),
       key: 'port',
       render: (item: NetworkType) => {
-        return (
-          <Text pl={4} color={'grayModern.600'}>
-            {item.port}
-          </Text>
-        );
+        return <p className="pl-4 text-gray-600">{item.port}</p>;
       },
       width: '0.5fr'
     },
@@ -105,28 +94,20 @@ const MainBody = () => {
       key: 'internalAddress',
       render: (item: NetworkType) => {
         return (
-          <Tooltip
-            label={t('copy')}
-            hasArrow
-            bg={'#FFFFFF'}
-            color={'grayModern.900'}
-            fontSize={'12px'}
-            fontWeight={400}
-            py={2}
-            borderRadius={'md'}
-          >
-            <Text
-              cursor="pointer"
-              _hover={{
-                textDecoration: 'underline'
-              }}
-              color={'grayModern.600'}
-              onClick={() =>
-                copyData(
-                  `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`
-                )
-              }
-            >{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</Text>
+          <Tooltip>
+            <TooltipTrigger>
+              <p
+                className="cursor-pointer text-gray-600 hover:underline"
+                onClick={() =>
+                  copyData(
+                    `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`
+                  )
+                }
+              >{`http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`}</p>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm">{t('copy')}</p>
+            </TooltipContent>
           </Tooltip>
         );
       }
@@ -139,227 +120,153 @@ const MainBody = () => {
           const address = item.customDomain || item.publicDomain;
           const displayAddress = `https://${address}`;
           return (
-            <Flex gap={'2'} alignItems={'center'}>
+            <div className="flex items-center gap-2">
               {displayAddress && (
                 <>
                   {statusMap[displayAddress]?.ready ? (
-                    <Center
-                      fontSize={'12px'}
-                      fontWeight={400}
-                      bg={'rgba(3, 152, 85, 0.05)'}
-                      color={'#039855'}
-                      borderRadius={'full'}
-                      p={'2px 8px 2px 8px'}
-                      gap={'2px'}
-                      minW={'63px'}
-                    >
-                      <Center w={'6px'} h={'6px'} borderRadius={'full'} bg={'#039855'}></Center>
+                    <div className="flex min-w-[63px] items-center gap-0.5 rounded-full bg-[rgba(3,152,85,0.05)] px-2 py-0.5 text-xs font-normal text-[#039855]">
+                      <div className="h-1.5 w-1.5 rounded-full bg-[#039855]" />
                       {t('Accessible')}
-                    </Center>
+                    </div>
                   ) : (
-                    <Popover trigger={'hover'}>
+                    <Popover>
                       <PopoverTrigger>
-                        <Flex
-                          alignItems={'center'}
-                          gap={'2px'}
-                          cursor="pointer"
-                          fontSize={'12px'}
-                          fontWeight={400}
-                          w={'fit-content'}
-                          bg={'rgba(17, 24, 36, 0.05)'}
-                          color={'#485264'}
-                          borderRadius={'full'}
-                          p={'2px 8px 2px 8px'}
-                        >
-                          <MyIcon name={'help'} w={'18px'} h={'18px'} />
-                          <Text fontSize={'12px'} w={'full'} color={'#485264'}>
-                            {t('prepare')}
-                          </Text>
-                        </Flex>
+                        <div className="flex cursor-pointer items-center gap-0.5 rounded-full bg-[rgba(17,24,36,0.05)] px-2 py-0.5 text-xs font-normal text-[#485264]">
+                          <CircleHelp className="h-4 w-4" />
+                          <p className="w-full text-xs text-[#485264]">{t('prepare')}</p>
+                        </div>
                       </PopoverTrigger>
-                      <PopoverContent
-                        minW={'410px'}
-                        h={'114px'}
-                        borderRadius={'10px'}
-                        w={'fit-content'}
-                        minH={'fit-content'}
-                      >
-                        <PopoverArrow />
-                        <PopoverBody>
-                          <Box h={'16px'} w={'100%'} fontSize={'12px'} fontWeight={400}>
-                            {t.rich('public_debug_address_tooltip_1', {
-                              blue: (chunks) => (
-                                <Text as={'span'} color={'brightBlue.600'}>
-                                  {chunks}
-                                </Text>
-                              )
-                            })}
-                          </Box>
-                          <Flex mt={'12px'} gap={'4px'} maxW={locale === 'zh' ? '410px' : '610px'}>
-                            <Flex alignItems={'center'} direction={'column'} mt={'2px'}>
-                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
-                              <Box
-                                h={locale === 'zh' ? '20px' : '22px'}
-                                w={'1px'}
-                                bg={'grayModern.250'}
-                              />
-                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
-                              <Box
-                                h={locale === 'zh' ? '38px' : '36px'}
-                                w={'1px'}
-                                bg={'grayModern.250'}
-                              />
-                              <MyIcon name="ellipse" w={'6px'} h={'6px'} />
-                            </Flex>
-                            <Flex gap={'6px'} alignItems={'center'} direction={'column'}>
-                              <Flex
-                                h={'16px'}
-                                w={'100%'}
-                                fontSize={'12px'}
-                                fontWeight={400}
-                                minH={'fit-content'}
-                              >
-                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
-                                  {t('public_debug_address_tooltip_2_1')}
-                                </Box>
-                                <Box color={'grayModern.600'} w={'80%'}>
-                                  {t('public_debug_address_tooltip_2_2')}
-                                </Box>
-                              </Flex>
-                              <Flex
-                                h={'16px'}
-                                w={'100%'}
-                                fontSize={'12px'}
-                                fontWeight={400}
-                                minH={'fit-content'}
-                              >
-                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
-                                  {t('public_debug_address_tooltip_3_1')}
-                                </Box>
-                                <Box color={'grayModern.600'} w={'80%'}>
-                                  {t.rich('public_debug_address_tooltip_3_2', {
-                                    underline: (chunks) => (
-                                      <Text as={'span'} textDecoration={'underline'}>
-                                        {chunks}
-                                      </Text>
-                                    )
-                                  })}
-                                </Box>
-                              </Flex>
-                              <Flex
-                                h={'16px'}
-                                w={'100%'}
-                                fontSize={'12px'}
-                                fontWeight={400}
-                                minH={'fit-content'}
-                              >
-                                <Box w={locale === 'zh' ? 'auto' : '20%'}>
-                                  {t('public_debug_address_tooltip_4_1')}
-                                </Box>
-                                <Box color={'grayModern.600'} w={'80%'}>
-                                  {t.rich('public_debug_address_tooltip_4_2', {
-                                    underline: (chunks) => (
-                                      <Text as={'span'} textDecoration={'underline'}>
-                                        {chunks}
-                                      </Text>
-                                    )
-                                  })}
-                                </Box>
-                              </Flex>
-                            </Flex>
-                          </Flex>
-                        </PopoverBody>
+                      <PopoverContent className="h-[114px] min-h-fit w-fit min-w-[410px] rounded-[10px]">
+                        <div className="h-4 w-full text-xs font-normal">
+                          {t.rich('public_debug_address_tooltip_1', {
+                            blue: (chunks) => <span className="text-blue-600">{chunks}</span>
+                          })}
+                        </div>
+                        <div className="mt-3 flex max-w-[410px] gap-1 lg:max-w-[610px]">
+                          <div className="mt-0.5 flex flex-col items-center">
+                            <div className="h-[6px] w-[6px] rounded-full border border-gray-400" />
+                            <div
+                              className={cn(
+                                'w-[1px] bg-gray-200',
+                                locale === 'zh' ? 'h-5' : 'h-[22px]'
+                              )}
+                            />
+                            <div className="h-[6px] w-[6px] rounded-full border border-gray-400" />
+                            <div
+                              className={cn(
+                                'w-[1px] bg-gray-200',
+                                locale === 'zh' ? 'h-[38px]' : 'h-9'
+                              )}
+                            />
+                            <div className="h-[6px] w-[6px] rounded-full border border-gray-400" />
+                          </div>
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex h-4 min-h-fit w-full text-xs font-normal">
+                              <div className={cn(locale === 'zh' ? 'w-auto' : 'w-1/5')}>
+                                {t('public_debug_address_tooltip_2_1')}
+                              </div>
+                              <div className="w-4/5 text-gray-600">
+                                {t('public_debug_address_tooltip_2_2')}
+                              </div>
+                            </div>
+                            <div className="flex h-4 min-h-fit w-full text-xs font-normal">
+                              <div className={cn(locale === 'zh' ? 'w-auto' : 'w-1/5')}>
+                                {t('public_debug_address_tooltip_3_1')}
+                              </div>
+                              <div className="w-4/5 text-gray-600">
+                                {t.rich('public_debug_address_tooltip_3_2', {
+                                  underline: (chunks) => <span className="underline">{chunks}</span>
+                                })}
+                              </div>
+                            </div>
+                            <div className="flex h-4 min-h-fit w-full text-xs font-normal">
+                              <div className={cn(locale === 'zh' ? 'w-auto' : 'w-1/5')}>
+                                {t('public_debug_address_tooltip_4_1')}
+                              </div>
+                              <div className="w-4/5 text-gray-600">
+                                {t.rich('public_debug_address_tooltip_4_2', {
+                                  underline: (chunks) => <span className="underline">{chunks}</span>
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </PopoverContent>
                     </Popover>
                   )}
                 </>
               )}
-              <Tooltip
-                label={t('open_link')}
-                hasArrow
-                bg={'#FFFFFF'}
-                color={'grayModern.900'}
-                fontSize={'12px'}
-                fontWeight={400}
-                py={2}
-                borderRadius={'md'}
-              >
-                <Text
-                  className="guide-network-address"
-                  cursor="pointer"
-                  color={'grayModern.600'}
-                  {...(!statusMap[displayAddress]?.ready && {
-                    color: 'grayModern.400'
-                  })}
-                  _hover={{ textDecoration: 'underline' }}
-                  onClick={() => window.open(`https://${address}`, '_blank')}
-                >
-                  https://{address}
-                </Text>
+              <Tooltip>
+                <TooltipTrigger>
+                  <p
+                    className={cn(
+                      'guide-network-address cursor-pointer hover:underline',
+                      statusMap[displayAddress]?.ready ? 'text-gray-600' : 'text-gray-400'
+                    )}
+                    onClick={() => window.open(`https://${address}`, '_blank')}
+                  >
+                    https://{address}
+                  </p>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-sm">{t('open_link')}</p>
+                </TooltipContent>
               </Tooltip>
-            </Flex>
+            </div>
           );
         }
-        return <Text>-</Text>;
+        return <p>-</p>;
       }
     }
   ];
 
   return (
-    <Box bg={'white'} borderRadius="lg" pl={6} pt={2} pr={6} pb={6} h={'full'} borderWidth={1}>
+    <div className="h-full rounded-lg border bg-white p-6 pt-2">
       {/* monitor */}
-      <Box mt={4}>
-        <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="monitor" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
-          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
-            {t('monitor')}
-          </Text>
-          <Box ml={2} color={'grayModern.500'}>
+      <div className="mt-4">
+        <div className="mb-2 flex items-center">
+          <MonitorIcon className="mr-1.5 h-[15px] w-[15px] text-gray-600" />
+          <p className="text-base font-bold text-gray-600">{t('monitor')}</p>
+          <div className="ml-2 text-gray-500">
             ({t('update Time')}&ensp;
             {dayjs().format('HH:mm')})
-          </Box>
-        </Flex>
-        <Flex bg={'grayModern.50'} p={4} borderRadius={'lg'} minH={'80px'} gap={4}>
-          <Box flex={1} position={'relative'}>
-            <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
+          </div>
+        </div>
+        <div className="flex min-h-[80px] gap-4 rounded-lg bg-gray-50 p-4">
+          <div className="relative flex-1">
+            <div className="mb-2 text-xs font-bold text-gray-600">
               {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
-            </Box>
-            <Box h={'60px'} minW={['200px', '250px', '300px']}>
-              <Box h={'60px'} minW={['200px', '250px', '300px']}>
+            </div>
+            <div className="h-[60px] min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
+              <div className="h-[60px] min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
                 <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
-              </Box>
-            </Box>
-          </Box>
-          <Box flex={1} position={'relative'}>
-            <Button
-              variant={'square'}
-              position={'absolute'}
-              right={'2px'}
-              top={'-6px'}
-              onClick={onOpen}
-            >
-              <MyIcon name="maximize" width={'16px'} fill={'#667085'} />
+              </div>
+            </div>
+          </div>
+          <div className="relative flex-1">
+            <Button variant="ghost" className="absolute -top-1.5 right-0.5" onClick={onOpen}>
+              <Maximize className="h-4 w-4 fill-[#667085]" />
             </Button>
-            <Box color={'grayModern.600'} fontWeight={'bold'} mb={2} fontSize={'12px'}>
+            <div className="mb-2 text-xs font-bold text-gray-600">
               {t('memory')}
               {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
-            </Box>
-            <Box h={'60px'}>
-              <Box h={'60px'}>
+            </div>
+            <div className="h-[60px]">
+              <div className="h-[60px]">
                 <PodLineChart type="purple" data={devboxDetail?.usedMemory} />
-              </Box>
-            </Box>
-          </Box>
-        </Flex>
-      </Box>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* network */}
-      <Box mt={4}>
-        <Flex alignItems={'center'} mb={2}>
-          <MyIcon name="network" w={'15px'} h={'15px'} mr={'5px'} color={'grayModern.600'} />
-          <Text fontSize="base" fontWeight={'bold'} color={'grayModern.600'}>
+      <div className="mt-4">
+        <div className="mb-2 flex items-center">
+          <NetworkIcon className="mr-1.5 h-[15px] w-[15px] text-gray-600" />
+          <p className="text-base font-bold text-gray-600">
             {t('network')} ( {devboxDetail?.networks?.length} )
-          </Text>
-        </Flex>
+          </p>
+        </div>
         {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
           <MyTable
             columns={networkColumn}
@@ -367,13 +274,13 @@ const MainBody = () => {
             alternateRowColors={true}
           />
         ) : (
-          <Flex justify={'center'} align={'center'} h={'100px'}>
-            <Text color={'grayModern.600'}>{t('no_network')}</Text>
-          </Flex>
+          <div className="flex h-[100px] items-center justify-center">
+            <p className="text-gray-600">{t('no_network')}</p>
+          </div>
         )}
-      </Box>
+      </div>
       <MonitorModal isOpen={isOpen} onClose={onClose} />
-    </Box>
+    </div>
   );
 };
 

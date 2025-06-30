@@ -114,7 +114,7 @@ function _PublicPanel({ search }: { search: string }) {
     search,
     tags: state.getSelectedTagList()
   };
-  const listTemplateReposistory = useQuery(
+  const listTemplateRepository = useQuery(
     ['template-repository-list', 'template-repository-public', queryBody],
     () => {
       return listTemplateRepository(
@@ -129,8 +129,8 @@ function _PublicPanel({ search }: { search: string }) {
   );
 
   useEffect(() => {
-    if (listTemplateReposistory.isSuccess && listTemplateReposistory.data) {
-      const data = listTemplateReposistory.data.page;
+    if (listTemplateRepository.isSuccess && listTemplateRepository.data) {
+      const data = listTemplateRepository.data.page;
       setPageQueryBody((prev) => ({
         ...prev,
         totalItems: data.totalItems || 0,
@@ -138,9 +138,9 @@ function _PublicPanel({ search }: { search: string }) {
         page: data.page || 1
       }));
     }
-  }, [listTemplateReposistory.data]); // 添加依赖项
+  }, [listTemplateRepository.data]); // 添加依赖项
 
-  const tempalteReposistoryList = listTemplateReposistory.data?.templateRepositoryList || [];
+  const tempalteRepositoryList = listTemplateRepository.data?.templateRepositoryList || [];
   const t = useTranslations();
   return (
     <TabPanel p={0} height={'full'}>
@@ -205,7 +205,7 @@ function _PublicPanel({ search }: { search: string }) {
               position={'absolute'}
               gridAutoRows={'max-content'}
             >
-              {tempalteReposistoryList.map((tr) => {
+              {tempalteRepositoryList.map((tr) => {
                 return (
                   <TemplateCard
                     key={tr.uid}

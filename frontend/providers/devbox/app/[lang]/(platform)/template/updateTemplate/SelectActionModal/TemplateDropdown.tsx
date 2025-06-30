@@ -1,19 +1,22 @@
-import MyIcon from '@/components/Icon';
-import { ChevronDownIcon } from '@chakra-ui/icons';
-import {
-  Box,
-  Button,
-  ButtonProps,
-  HStack,
-  Img,
-  Popover,
-  PopoverBody,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure,
-  VStack
-} from '@chakra-ui/react';
+'use client';
+
+import Image from 'next/image';
+import { Check, ChevronDownIcon } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+interface TemplateButtonProps {
+  icon: React.ReactNode;
+  title: string;
+  isActive?: boolean;
+  isInMenu?: boolean;
+  description: string;
+  onClick?: () => void;
+  className?: string;
+}
 
 const TemplateButton = ({
   isActive = false,
@@ -22,94 +25,58 @@ const TemplateButton = ({
   description,
   onClick,
   isInMenu = false,
+  className,
   ...props
-}: ButtonProps & {
-  icon: React.ReactNode;
-  title: string;
-  isActive?: boolean;
-  isInMenu?: boolean;
-  description: string;
-}) => {
+}: TemplateButtonProps) => {
   return (
     <Button
-      variant={'unstyled'}
-      w="400px"
-      h="74px"
-      bg="#F7F8FA"
-      border="1px solid"
-      borderColor={isActive ? '#219BF4' : '#E8EBF0'}
-      borderRadius="8px"
-      position="relative"
-      cursor="pointer"
-      boxShadow={isActive ? '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)' : 'none'}
+      variant="outline"
+      className={cn(
+        'relative h-[74px] w-[400px] bg-[#F7F8FA] p-0',
+        isActive && 'border-primary text-primary ring-[2.4px] ring-primary/15',
+        className
+      )}
       onClick={onClick}
       {...props}
     >
-      <HStack spacing="12px" position="absolute" left="16px" top="50%" transform="translateY(-50%)">
-        <Box w="32px" h="32px">
-          {icon}
-        </Box>
-        <Box width={'200px'} h={'40px'}>
-          <Text
-            fontSize="16px"
-            fontWeight="500"
-            lineHeight="24px"
-            letterSpacing="0.15px"
-            color={isActive ? '#0884DD' : '#111824'}
-            overflow={'hidden'}
-            textOverflow={'ellipsis'}
-            whiteSpace={'nowrap'}
-            width={'200px'}
-            textAlign={'left'}
+      <div className="absolute top-1/2 left-4 flex -translate-y-1/2 items-center gap-3">
+        <div className="h-8 w-8">{icon}</div>
+        <div className="h-10 w-[200px]">
+          <p
+            className={cn(
+              'w-[200px] overflow-hidden text-left text-base leading-6 font-medium tracking-[0.15px] text-ellipsis whitespace-nowrap',
+              isActive ? 'text-primary' : 'text-[#111824]'
+            )}
           >
             {title}
-          </Text>
-          <Text
-            fontSize="12px"
-            lineHeight="16px"
-            letterSpacing="0.004em"
-            color={isActive ? '#0884DD' : '#667085'}
-            overflow={'hidden'}
-            width={'auto'}
-            textOverflow={'ellipsis'}
-            whiteSpace={'nowrap'}
-            textAlign={'left'}
+          </p>
+          <p
+            className={cn(
+              'w-auto overflow-hidden text-left text-xs leading-4 tracking-[0.004em] text-ellipsis whitespace-nowrap',
+              isActive ? 'text-primary' : 'text-[#667085]'
+            )}
           >
             {description}
-          </Text>
-        </Box>
-      </HStack>
+          </p>
+        </div>
+      </div>
       {!isActive && !isInMenu && (
-        <ChevronDownIcon
-          position="absolute"
-          right="16px"
-          top="50%"
-          transform="translateY(-50%)"
-          w="20px"
-          h="20px"
-          color="#667085"
-        />
+        <ChevronDownIcon className="absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-[#667085]" />
       )}
       {isActive && (
-        <MyIcon
-          name="checkTemplate"
-          position="absolute"
-          right="16px"
-          top="50%"
-          transform="translateY(-50%)"
-          boxSize="20px"
-          color="#219BF4"
-        />
+        <Check className="absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 text-primary" />
       )}
     </Button>
   );
 };
+
 type TRepositoryItem = {
   iconId: string | null;
   name: string;
   description: string | null;
   uid: string;
 };
+
 export default function TemplateDropdown({
   templateRepositoryList,
   selectedTemplateRepoUid,
@@ -122,44 +89,42 @@ export default function TemplateDropdown({
   const selectedTemplateRepository = templateRepositoryList.find(
     (t) => t.uid === selectedTemplateRepoUid
   );
-  const { isOpen, onOpen, onClose } = useDisclosure();
+
   return (
-    <Popover
-      placement="bottom-start"
-      isOpen={isOpen}
-      onClose={() => isOpen && onClose()}
-      onOpen={() => !isOpen && onOpen()}
-    >
-      <PopoverTrigger>
-        <Box width={'400px'}>
+    <Popover>
+      <PopoverTrigger asChild>
+        <div className="w-[400px]">
           <TemplateButton
-            userSelect={'none'}
+            className="select-none"
             isActive={false}
-            width={'400px'}
-            icon={<Img src={`/images/${selectedTemplateRepository?.iconId || ''}.svg`} />}
+            icon={
+              <Image
+                src={`/images/${selectedTemplateRepository?.iconId || ''}.svg`}
+                width={32}
+                height={32}
+                alt={selectedTemplateRepository?.name || ''}
+              />
+            }
             title={selectedTemplateRepository?.name || ''}
             description={selectedTemplateRepository?.description || ''}
           />
-        </Box>
+        </div>
       </PopoverTrigger>
-      {/* <Portal> */}
-      <PopoverContent w="400px" p="12px" borderRadius="8px">
-        <PopoverBody p={0}>
-          <VStack spacing="8px" align="stretch">
-            {templateRepositoryList.map(({ uid, iconId, description, name }) => (
-              <TemplateButton
-                key={uid}
-                width={'full'}
-                isActive={selectedTemplateRepoUid === uid}
-                icon={<Img src={`/images/${iconId}.svg`} />}
-                isInMenu
-                title={name}
-                description={description || ''}
-                onClick={() => setSelectedTemplateRepoUid(uid)}
-              />
-            ))}
-          </VStack>
-        </PopoverBody>
+      <PopoverContent className="w-[400px] p-3" align="start">
+        <div className="flex flex-col gap-2">
+          {templateRepositoryList.map(({ uid, iconId, description, name }) => (
+            <TemplateButton
+              key={uid}
+              className="w-full"
+              isActive={selectedTemplateRepoUid === uid}
+              icon={<Image src={`/images/${iconId}.svg`} width={32} height={32} alt={name} />}
+              isInMenu
+              title={name}
+              description={description || ''}
+              onClick={() => setSelectedTemplateRepoUid(uid)}
+            />
+          ))}
+        </div>
       </PopoverContent>
     </Popover>
   );

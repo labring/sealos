@@ -31,7 +31,7 @@ export default function PrivatePanel({ search }: { search: string }) {
     pageSize: pageQueryBody.pageSize,
     search
   };
-  const listPrivateTemplateReposistory = useQuery(
+  const listPrivateTemplateRepository = useQuery(
     ['template-repository-list', 'template-repository-private', queryBody],
     () => {
       return listPrivateTemplateRepository(queryBody);
@@ -40,11 +40,11 @@ export default function PrivatePanel({ search }: { search: string }) {
 
   useEffect(() => {
     if (
-      listPrivateTemplateReposistory.isFetched &&
-      listPrivateTemplateReposistory.isSuccess &&
-      listPrivateTemplateReposistory.data
+      listPrivateTemplateRepository.isFetched &&
+      listPrivateTemplateRepository.isSuccess &&
+      listPrivateTemplateRepository.data
     ) {
-      const data = listPrivateTemplateReposistory.data.page;
+      const data = listPrivateTemplateRepository.data.page;
       setPageQueryBody((prev) => ({
         ...prev,
         totalItems: data.totalItems || 0,
@@ -53,14 +53,14 @@ export default function PrivatePanel({ search }: { search: string }) {
       }));
     }
   }, [
-    listPrivateTemplateReposistory.data,
-    listPrivateTemplateReposistory.isFetched,
-    listPrivateTemplateReposistory.isSuccess
+    listPrivateTemplateRepository.data,
+    listPrivateTemplateRepository.isFetched,
+    listPrivateTemplateRepository.isSuccess
   ]);
 
   const t = useTranslations();
-  const privateTempalteReposistoryList =
-    listPrivateTemplateReposistory.data?.templateRepositoryList || [];
+  const privateTempalteRepositoryList =
+    listPrivateTemplateRepository.data?.templateRepositoryList || [];
   return (
     <TabPanel p={0} height={'full'}>
       <Flex flex="1" direction={'column'} h={'full'}>
@@ -75,7 +75,7 @@ export default function PrivatePanel({ search }: { search: string }) {
             inset={0}
             gridAutoRows={'max-content'}
           >
-            {privateTempalteReposistoryList.map((tr) => (
+            {privateTempalteRepositoryList.map((tr) => (
               <TemplateCard
                 key={tr.uid}
                 isPublic={tr.isPublic}
@@ -89,7 +89,7 @@ export default function PrivatePanel({ search }: { search: string }) {
               />
             ))}
           </Grid>
-          {privateTempalteReposistoryList.length === 0 && (
+          {privateTempalteRepositoryList.length === 0 && (
             <Flex
               justifyContent={'center'}
               flex={1}
