@@ -6,10 +6,12 @@ on:
         description: "Number of days."
         required: true
         default: 30
+        type: number
       minimum_runs:
         description: "The minimum runs to keep for each workflow."
         required: true
         default: 6
+        type: number
       delete_workflow_pattern:
         description: "The name or filename of the workflow. if not set then it will target all workflows."
         required: false
@@ -31,6 +33,9 @@ on:
 jobs:
   del_runs:
     runs-on: ubuntu-24.04
+    permissions:
+        actions: write
+        contents: read
     steps:
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@v2

@@ -1,0 +1,2 @@
+adminer:
+- 'controllers/db/adminer/**'

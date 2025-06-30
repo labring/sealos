@@ -1,4 +1,4 @@
-name: Import Patch Images Package
+name: Build Sealos images
 
 env:
   # Common versions
@@ -8,10 +8,6 @@ env:
 on:
   workflow_call:
     inputs:
-      e2e:
-        required: false
-        type: boolean
-        default: false
       arch:
         required: true
         type: string
@@ -109,38 +105,6 @@ jobs:
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
           path: ${{ env.PROJECT_PATH }}/bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
-  test:
-    runs-on: ubuntu-24.04
-    if: ${{ (inputs.e2e == true) }}
-    steps:
-      - name: Checkout
-        if: ${{ (inputs.target_pull == false) }}
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Checkout by Pull Request Target
-        uses: actions/checkout@v4
-        if: ${{ (inputs.target_pull == true) }}
-        with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-      - name: Build E2e Test
-        env:
-          PROJECT_PATH: ${{ env.PROJECT_PATH }}
-        run: |
-          cd "${PROJECT_PATH}" && go install github.com/onsi/ginkgo/v2/ginkgo
-          cd test/e2e && ginkgo build .
-      - name: Save E2e Test
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e.test
-          path: ${{ env.PROJECT_PATH }}/test/e2e/e2e.test
   docker:
     needs: [ resolve-modules-arch,build ]
     runs-on: ubuntu-24.04
