@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
-import { CircleHelp } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
+import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
@@ -197,7 +197,7 @@ const Network = () => {
   ];
 
   return (
-    <div className="flex h-full w-full flex-col items-start gap-3 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-full w-full flex-col items-center gap-3 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
@@ -233,8 +233,16 @@ const Network = () => {
           </TableBody>
         </Table>
       ) : (
-        <div className="flex h-[100px] items-center justify-center">
-          <p className="text-gray-600">{t('no_network')}</p>
+        <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
+          <div className="rounded-lg border border-dashed border-zinc-200 p-2">
+            <NetworkIcon className="h-6 w-6 text-zinc-400" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-semibold text-center text-sm text-black">{t('no_network')}</span>
+            <span className="text-center text-sm/5 text-neutral-500">
+              {t('click_manage_to_add_network')}
+            </span>
+          </div>
         </div>
       )}
     </div>

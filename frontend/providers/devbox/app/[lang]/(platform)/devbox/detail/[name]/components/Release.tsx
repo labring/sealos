@@ -1,12 +1,19 @@
 'use client';
 
+import {
+  ArrowBigUpDash,
+  ArrowUpRight,
+  Ellipsis,
+  LayoutTemplate,
+  PencilLine,
+  Trash2
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
-import { ArrowBigUpDash, Ellipsis, LayoutTemplate, PencilLine, Trash2 } from 'lucide-react';
-import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useCallback, useMemo, useState } from 'react';
 
 import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
@@ -197,114 +204,148 @@ const Release = () => {
     [setIsLoading, t, refetch]
   );
 
+  const releaseColumn = useMemo(
+    () => [
+      {
+        title: t('version_number'),
+        key: 'tag',
+        render: (item: DevboxVersionListItemType) => (
+          <span className="text-zinc-900">{item.tag}</span>
+        )
+      },
+      {
+        title: t('status'),
+        key: 'status',
+        render: (item: DevboxVersionListItemType) => <DevboxStatusTag status={item.status} />
+      },
+      {
+        title: t('create_time'),
+        key: 'createTime',
+        render: (item: DevboxVersionListItemType) => <span>{item.createTime}</span>
+      },
+      {
+        title: t('version_description'),
+        key: 'description',
+        render: (item: DevboxVersionListItemType) => (
+          <div className="flex items-center gap-1">
+            <span>{item.description}</span>
+            <PencilLine
+              className="h-4 w-4 cursor-pointer"
+              onClick={() => {
+                setCurrentVersion(item);
+                setIsOpenEdit(true);
+              }}
+            />
+          </div>
+        )
+      },
+      {
+        title: '',
+        key: 'control',
+        render: (item: DevboxVersionListItemType) => (
+          <div className="flex items-center gap-2">
+            <Button
+              className="guide-online-button text-accent-foreground"
+              variant="outline"
+              disabled={item.status.value !== DevboxReleaseStatusEnum.Success}
+              onClick={() => handleDeploy(item)}
+            >
+              {t('deploy')}
+              <ArrowUpRight className="h-4 w-4 text-neutral-500" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" disabled={item?.status?.value !== 'Success'}>
+                  <Ellipsis className="text-gray-600 hover:text-blue-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setCurrentVersion(item);
+                    if (templateRepositoryList.length > 0) {
+                      setIsSelectTemplateModalOpen(true);
+                    } else {
+                      setIsCreateTemplateModalOpen(true);
+                    }
+                  }}
+                >
+                  <LayoutTemplate className="h-4 w-4 text-neutral-500" />
+                  {t('convert_to_runtime')}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                  onClick={() => openConfirm(() => handleDelDevboxVersion(item.name))()}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                  {t('delete')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )
+      }
+    ],
+    [t, handleDeploy, templateRepositoryList.length, openConfirm, handleDelDevboxVersion]
+  );
+
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="relative h-full rounded-lg border bg-white p-6">
-      <div className="mb-5 flex items-center justify-between py-1 pr-0.5">
-        <div className="flex items-center">
-          <span className="text-base font-bold text-gray-600">{t('version_history')}</span>
-        </div>
+    <div className="flex h-full w-full flex-col items-center gap-4 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+      <div className="flex w-full items-center justify-between">
+        <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button
           className="guide-release-button"
           onClick={() => setOnOpenRelease(true)}
           variant="outline"
-          size="default"
         >
-          <ArrowBigUpDash className="mr-2" />
+          <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />
           {t('release_version')}
         </Button>
       </div>
 
-      {devboxVersionList.length === 0 && initialized ? (
-        <div className="mt-10 flex flex-col items-center justify-center gap-4">
-          <ArrowBigUpDash className="h-[40px] w-[40px] text-white" />
-          <div className="text-center text-gray-600">{t('no_versions')}</div>
+      {devboxVersionList.length === 0 && !initialized ? (
+        <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
+          <div className="rounded-lg border border-dashed border-zinc-200 p-2">
+            <ArrowBigUpDash className="h-6 w-6 text-zinc-400" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-semibold text-center text-sm text-black">{t('no_versions')}</span>
+            <span className="text-center text-sm/5 text-neutral-500">
+              {t('click_release_to_deploy_app')}
+            </span>
+          </div>
         </div>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('version_number')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead>{t('create_time')}</TableHead>
-              <TableHead>{t('version_description')}</TableHead>
-              <TableHead>{t('control')}</TableHead>
+              {releaseColumn.map((column) => (
+                <TableHead key={column.key}>{column.title}</TableHead>
+              ))}
             </TableRow>
           </TableHeader>
           <TableBody>
             {devboxVersionList.map((item) => (
               <TableRow key={item.tag}>
-                <TableCell className="pl-3 text-gray-900">{item.tag}</TableCell>
-                <TableCell>
-                  <DevboxStatusTag status={item.status} className="h-[27px]" />
-                </TableCell>
-                <TableCell className="text-gray-600">{item.createTime}</TableCell>
-                <TableCell>
-                  <div className="flex min-h-[20px] w-full items-center">
-                    <div className="flex-1 truncate text-gray-600">{item.description}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <Button
-                      className="guide-online-button mr-5"
-                      variant="secondary"
-                      size="sm"
-                      disabled={item.status.value !== DevboxReleaseStatusEnum.Success}
-                      onClick={() => handleDeploy(item)}
-                    >
-                      {t('deploy')}
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          disabled={item?.status?.value !== 'Success'}
-                        >
-                          <Ellipsis className="text-gray-600 hover:text-blue-600" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setCurrentVersion(item);
-                            setIsOpenEdit(true);
-                          }}
-                        >
-                          <PencilLine className="mr-2 h-4 w-4" />
-                          {t('edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setCurrentVersion(item);
-                            if (templateRepositoryList.length > 0) {
-                              setIsSelectTemplateModalOpen(true);
-                            } else {
-                              setIsCreateTemplateModalOpen(true);
-                            }
-                          }}
-                        >
-                          <LayoutTemplate className="mr-2 h-4 w-4" />
-                          {t('convert_to_runtime')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600 hover:bg-red-50"
-                          onClick={() => openConfirm(() => handleDelDevboxVersion(item.name))()}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          {t('delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </TableCell>
+                {releaseColumn.map((column) => (
+                  <TableCell key={`${item.tag}-${column.key}`}>{column.render(item)}</TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      )}
+      {!!devbox && (
+        <ReleaseModal
+          open={onOpenRelease}
+          onSuccess={refetch}
+          onClose={() => {
+            setOnOpenRelease(false);
+          }}
+          devbox={{ ...devbox, sshPort: devbox.sshPort || 0 }}
+        />
       )}
       {!!currentVersion && (
         <EditVersionDesModal
@@ -314,15 +355,6 @@ const Release = () => {
           onClose={() => setIsOpenEdit(false)}
         />
       )}
-      <ReleaseModal
-        open={!!onOpenRelease && !!devbox}
-        onSuccess={refetch}
-        onClose={() => {
-          setOnOpenRelease(false);
-        }}
-        devbox={{ ...devbox!, sshPort: devbox!.sshPort || 0 }}
-      />
-
       <AppSelectModal
         open={!!onOpenSelectApp}
         apps={apps}

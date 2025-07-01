@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
@@ -9,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -49,23 +51,27 @@ const EditVersionDesModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-h-[300px] min-w-[500px]">
+      <DialogContent className="min-w-[450px]">
         <DialogHeader>
           <DialogTitle>{t('edit_version_description')}</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-start gap-5 py-4">
-          <div className="w-[100px]">{t('version_description')}</div>
+        <div className="flex w-full flex-col items-start gap-2">
+          <Label htmlFor="description">{t('version_description')}</Label>
           <Textarea
             value={inputValue}
-            className="min-h-[150px]"
+            id="description"
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={t('enter_version_description')}
           />
         </div>
 
         <DialogFooter>
-          <Button onClick={handleEditVersionDes} disabled={loading}>
+          <Button variant={'outline'} onClick={onClose} size="lg">
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleEditVersionDes} disabled={loading} size="lg">
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('save')}
           </Button>
         </DialogFooter>
