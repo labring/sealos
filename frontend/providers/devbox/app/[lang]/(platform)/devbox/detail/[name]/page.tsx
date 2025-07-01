@@ -75,10 +75,10 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       <div className="flex h-full gap-2 px-6">
         <Sidebar />
         {/* right side */}
-        <div className="flex h-full flex-col">
-          <div className="flex">
+        <div className="flex h-full w-full flex-col gap-2">
+          <div className="flex w-full gap-2">
             <Basic />
-            <div className="flex flex-col gap-2">
+            <div className="flex w-full flex-col gap-2">
               <LiveMonitoring />
               <Network />
             </div>

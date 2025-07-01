@@ -27,17 +27,21 @@ const map = {
   }
 };
 
-const MonitorChart = ({
-  type,
-  data,
-  isShowLabel = false,
-  className
-}: {
+interface MonitorChartProps {
   type: keyof typeof map;
   data?: MonitorDataResult;
   isShowLabel?: boolean;
   className?: string;
-}) => {
+  isShowText?: boolean;
+}
+
+const MonitorChart = ({
+  type,
+  data,
+  isShowLabel = false,
+  className,
+  isShowText = true
+}: MonitorChartProps) => {
   const { screenWidth } = useGlobalStore();
   const xData =
     data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
@@ -167,11 +171,13 @@ const MonitorChart = ({
   }, [screenWidth]);
 
   return (
-    <div className={cn('relative h-9 w-55', className)}>
+    <div className={cn('relative h-full w-55', className)}>
       <div ref={Dom} style={{ width: '100%', height: '100%' }} />
-      <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
-        {data?.yData[data?.yData?.length - 1]}%
-      </span>
+      {isShowText && (
+        <span className="pointer-events-none absolute right-0 bottom-0.5 text-xs font-medium text-zinc-600 [text-shadow:1px_1px_0_#FFF,-1px_-1px_0_#FFF,1px_-1px_0_#FFF,-1px_1px_0_#FFF]">
+          {data?.yData[data?.yData?.length - 1]}%
+        </span>
+      )}
     </div>
   );
 };
