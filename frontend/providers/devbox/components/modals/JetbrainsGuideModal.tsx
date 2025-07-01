@@ -385,13 +385,12 @@ const JetBrainsGuideModal = ({
                 </Flex>
               )}
             </Box>
-            {onOpenSSHConnectModal && (
-              <SshConnectModal
-                onClose={() => setOnOpenSSHConnectModal(false)}
-                onSuccess={() => {}}
-                jetbrainsGuideData={jetbrainsGuideData}
-              />
-            )}
+            <SshConnectModal
+              open={onOpenSSHConnectModal}
+              onClose={() => setOnOpenSSHConnectModal(false)}
+              onSuccess={() => {}}
+              jetbrainsGuideData={jetbrainsGuideData}
+            />
           </ModalBody>
         </ModalContent>
       </Modal>

@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
-import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn } from '@/lib/utils';
@@ -17,9 +17,12 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 interface ReleaseModalProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;
@@ -38,12 +41,10 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
   const [loading, setLoading] = useState(false);
   const [tagError, setTagError] = useState(false);
   const [releaseDes, setReleaseDes] = useState('');
+  const [isAutoStart, setIsAutoStart] = useState(devbox.status.value === 'Running');
 
   const { openConfirm, ConfirmChild } = useConfirm({
-    content: 'release_confirm_info',
-    showCheckbox: true,
-    checkboxLabel: 'pause_devbox_info',
-    defaultChecked: devbox.status.value === 'Running'
+    content: 'release_confirm_info'
   });
 
   const handleSubmit = () => {
@@ -100,22 +101,21 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="min-h-[300px] min-w-[500px]">
+        <DialogContent className="min-w-[450px]">
           <DialogHeader>
-            <DialogTitle className="ml-3.5 flex items-center gap-2.5 text-base">
-              {t('release_version')}
-            </DialogTitle>
+            <DialogTitle>{t('release_version')}</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 p-6">
-            <div className="mb-6 flex items-center gap-2 rounded-md bg-blue-50 p-3">
-              <div className="text-xs leading-4 font-medium tracking-wide text-blue-600">
-                <div>{t('release_version_info')}</div>
-                <div>
+          <div className="flex flex-col items-start gap-4 self-stretch">
+            {/* prompt info */}
+            <div className="flex flex-col items-start gap-3 rounded-lg bg-zinc-100 p-4 text-sm/5">
+              <div className="flex flex-col items-start gap-1">
+                <span>{t('release_version_info')}</span>
+                <div className="flex items-center gap-1">
                   {t.rich('release_version_info_2', {
                     underline: (chunks) => (
-                      <button
-                        className="inline-block cursor-pointer text-xs font-medium text-blue-600 underline"
+                      <div
+                        className="flex cursor-pointer items-center gap-0.5 text-blue-600 underline"
                         onClick={() => {
                           window.open(
                             locale === 'zh'
@@ -126,48 +126,69 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
                         }}
                       >
                         {chunks}
-                        <ArrowUpRight className="mr-1.5 inline h-2.5 w-2.5" />
-                      </button>
+                        <ArrowUpRight className="h-4 w-4" />
+                      </div>
                     )
                   })}
                 </div>
               </div>
+              <Separator />
+              <span>{t('devbox_pause_save_change')}</span>
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  id="confirm-checkbox"
+                  checked={isAutoStart}
+                  onCheckedChange={(checked) =>
+                    setIsAutoStart(checked === 'indeterminate' ? false : checked)
+                  }
+                />
+                <span>{t('auto_start_devbox')}</span>
+              </div>
             </div>
-
-            <div className="mb-6 flex items-start gap-4">
-              <div className="w-[110px] text-lg font-bold">{t('image_name')}</div>
+            {/* image name */}
+            <div className="flex w-full flex-col items-start gap-2">
+              <Label htmlFor="image-name">{t('image_name')}</Label>
               <Input
+                id="image-name"
                 value={`${env.registryAddr}/${env.namespace}/${devbox.name}`}
-                readOnly
-                className="flex-1"
+                disabled
               />
             </div>
-
-            <div className="flex items-start gap-4">
-              <div className="w-[110px] text-lg font-bold">{t('version_config')}</div>
-              <div className="flex flex-1 flex-col gap-1.5">
-                <div className="w-[100px]">{t('version_number')}</div>
-                <Input
-                  placeholder={t('enter_version_number')}
-                  value={tag}
-                  onChange={(e) => setTag(e.target.value)}
-                  className={cn('mb-2', tagError && 'border-red-500')}
-                />
-                {tagError && <div className="text-sm text-red-500">{t('tag_required')}</div>}
-                <div className="w-[100px]">{t('version_description')}</div>
-                <Textarea
-                  value={releaseDes}
-                  className="min-h-[150px]"
-                  onChange={(e) => setReleaseDes(e.target.value)}
-                  placeholder={t('enter_version_description')}
-                />
-              </div>
+            {/* tag  */}
+            <div className="flex w-full flex-col items-start gap-2">
+              <Label htmlFor="tag">
+                <span className="text-red-500">*</span>
+                {t('version_number')}
+              </Label>
+              <Input
+                placeholder={t('enter_version_number')}
+                id="tag"
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+                className={cn('mb-2', tagError && 'border-red-500')}
+              />
+              {/* TODO: ugly logic */}
+              {tagError && <div className="text-sm text-red-500">{t('tag_required')}</div>}
+            </div>
+            {/* description */}
+            <div className="flex w-full flex-col items-start gap-2">
+              <Label htmlFor="description">{t('version_description')}</Label>
+              <Textarea
+                id="description"
+                value={releaseDes}
+                onChange={(e) => setReleaseDes(e.target.value)}
+                placeholder={t('enter_version_description')}
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button onClick={handleSubmit} className="mr-2.5 w-20" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('publish')}
+            <Button variant={'outline'} onClick={onClose} size="lg">
+              {t('cancel')}
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading} size="lg">
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t('release')}
             </Button>
           </DialogFooter>
         </DialogContent>
