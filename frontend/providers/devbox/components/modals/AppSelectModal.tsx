@@ -1,5 +1,3 @@
-'use client';
-
 import { useCallback } from 'react';
 import { Rocket } from 'lucide-react';
 import { customAlphabet } from 'nanoid';
@@ -10,13 +8,6 @@ import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from '@/components/ui/dialog';
-import {
   Table,
   TableHeader,
   TableBody,
@@ -25,7 +16,7 @@ import {
   TableCell
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -106,58 +97,49 @@ export default function AppSelectModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="min-w-[750px]">
         <DialogHeader>
           <DialogTitle>{t('deploy')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="flex flex-col items-center space-y-4">
-            <DialogDescription>{t('create_directly')}</DialogDescription>
-            <Button onClick={handleCreate} size="lg">
-              <Rocket className="mr-2 h-4 w-4" />
-              <span>{t('deploy')}</span>
-            </Button>
+        <div className="flex w-full flex-col gap-5">
+          {/* create directly */}
+          <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-6">
+            <div className="flex w-[400px] flex-col gap-3">
+              <span className="text-lg/7 font-semibold">{t('create_directly')}</span>
+              <Button onClick={handleCreate} size="lg" className="w-fit">
+                <Rocket className="mr-2 h-4 w-4" />
+                <span className="text-sm">{t('deploy')}</span>
+              </Button>
+            </div>
           </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <DialogDescription className="text-center">
-              {t('update_matched_apps_notes')}
-            </DialogDescription>
+          <span className="leading-6">{t('update_matched_apps_notes')}</span>
+          <div className="w-full">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('app_name')}</TableHead>
                   <TableHead>{t('current_image_name')}</TableHead>
                   <TableHead>{t('create_time')}</TableHead>
-                  <TableHead>{t('control')}</TableHead>
+                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {apps.map((item) => (
-                  <TableRow key={item.name}>
-                    <TableCell className="ml-4 text-muted-foreground">{item.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                  <TableRow key={item.name} className="[&>td]:text-black">
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell>
                       {item.imageName.startsWith(
                         `${env.registryAddr}/${env.namespace}/${devboxName}`
                       )
                         ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
                         : '-'}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{item.createTime}</TableCell>
+                    <TableCell>{item.createTime}</TableCell>
                     <TableCell>
-                      <div className="flex">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:text-primary"
-                          onClick={() => handleUpdate(item)}
-                        >
-                          {t('to_update')}
-                        </Button>
-                      </div>
+                      <Button variant="secondary" size="sm" onClick={() => handleUpdate(item)}>
+                        {t('to_update')}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

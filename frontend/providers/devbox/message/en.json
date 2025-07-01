@@ -337,7 +337,7 @@
   "update_app": "update/create",
   "update_devbox": "Update DevBox",
   "update_failed": "Update failed",
-  "update_matched_apps_notes": "Or you can update application: ",
+  "update_matched_apps_notes": "Or，you can update existing applications.",
   "update_success": "Update succeeded",
   "update_template": "Update Template",
   "update_template_success": "Template updated successfully!",
