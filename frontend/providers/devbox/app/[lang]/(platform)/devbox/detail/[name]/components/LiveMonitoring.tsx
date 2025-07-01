@@ -20,20 +20,30 @@ const LiveMonitoring = () => {
         </span>
       </div>
       {/* chart */}
-      <div className="flex min-h-[100px] gap-5">
-        <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+      <div className="flex min-h-[100px] w-full gap-5">
+        <div className="flex w-[50%] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('cpu')}:&nbsp;
             {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
           </span>
-          <MonitorChart type="blue" data={devboxDetail?.usedCpu} isShowText={false} />
+          <MonitorChart
+            type="blue"
+            data={devboxDetail?.usedCpu}
+            isShowText={false}
+            className="w-full"
+          />
         </div>
-        <div className="flex flex-shrink-0 flex-grow-1 flex-col gap-2">
+        <div className="flex w-[50%] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('memory')}:&nbsp;
             {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
           </span>
-          <MonitorChart type="purple" data={devboxDetail?.usedMemory} isShowText={false} />
+          <MonitorChart
+            type="purple"
+            data={devboxDetail?.usedMemory}
+            isShowText={false}
+            className="w-full"
+          />
         </div>
       </div>
     </div>
