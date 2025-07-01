@@ -16,7 +16,14 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
-import MyTable from '@/components/MyTable';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -97,54 +104,6 @@ export default function AppSelectModal({
     [deployData, onSuccess]
   );
 
-  const columns = [
-    {
-      title: t('app_name'),
-      dataIndex: 'name',
-      key: 'name',
-      render: (item: AppListItemType) => (
-        <div className="ml-4 text-muted-foreground">{item.name}</div>
-      )
-    },
-    {
-      title: t('current_image_name'),
-      dataIndex: 'imageName',
-      key: 'imageName',
-      render: (item: AppListItemType) => {
-        const dealImageName = item.imageName.startsWith(
-          `${env.registryAddr}/${env.namespace}/${devboxName}`
-        )
-          ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
-          : '-';
-        return <div className="text-muted-foreground">{dealImageName}</div>;
-      }
-    },
-    {
-      title: t('create_time'),
-      dataIndex: 'createTime',
-      key: 'createTime',
-      render: (item: AppListItemType) => (
-        <div className="text-muted-foreground">{item.createTime}</div>
-      )
-    },
-    {
-      title: t('control'),
-      key: 'control',
-      render: (item: AppListItemType) => (
-        <div className="flex">
-          <Button
-            variant="outline"
-            size="sm"
-            className="hover:text-primary"
-            onClick={() => handleUpdate(item)}
-          >
-            {t('to_update')}
-          </Button>
-        </div>
-      )
-    }
-  ];
-
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
@@ -167,7 +126,43 @@ export default function AppSelectModal({
             <DialogDescription className="text-center">
               {t('update_matched_apps_notes')}
             </DialogDescription>
-            <MyTable columns={columns} data={apps} />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('app_name')}</TableHead>
+                  <TableHead>{t('current_image_name')}</TableHead>
+                  <TableHead>{t('create_time')}</TableHead>
+                  <TableHead>{t('control')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {apps.map((item) => (
+                  <TableRow key={item.name}>
+                    <TableCell className="ml-4 text-muted-foreground">{item.name}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {item.imageName.startsWith(
+                        `${env.registryAddr}/${env.namespace}/${devboxName}`
+                      )
+                        ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
+                        : '-'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{item.createTime}</TableCell>
+                    <TableCell>
+                      <div className="flex">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hover:text-primary"
+                          onClick={() => handleUpdate(item)}
+                        >
+                          {t('to_update')}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </div>
       </DialogContent>

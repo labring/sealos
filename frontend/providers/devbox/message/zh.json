@@ -212,6 +212,7 @@
   "jump_terminal_error": "跳转终端失败",
   "language": "语言",
   "last_event": "最近事件",
+  "manage": "管理",
   "matched_apps": "已部署的同项目应用",
   "memory": "内存",
   "memory_exceeds_quota": "申请的 '内存' 超出限制，请联系管理员",
