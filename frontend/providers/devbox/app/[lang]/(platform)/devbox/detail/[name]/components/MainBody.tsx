@@ -1,4 +1,3 @@
-import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useRef, useState } from 'react';
@@ -222,43 +221,6 @@ const MainBody = () => {
 
   return (
     <div className="h-full rounded-lg border bg-white p-6 pt-2">
-      {/* monitor */}
-      <div className="mt-4">
-        <div className="mb-2 flex items-center">
-          <MonitorIcon className="mr-1.5 h-[15px] w-[15px] text-gray-600" />
-          <p className="text-base font-bold text-gray-600">{t('monitor')}</p>
-          <div className="ml-2 text-gray-500">
-            ({t('update Time')}&ensp;
-            {dayjs().format('HH:mm')})
-          </div>
-        </div>
-        <div className="flex min-h-[80px] gap-4 rounded-lg bg-gray-50 p-4">
-          <div className="relative flex-1">
-            <div className="mb-2 text-xs font-bold text-gray-600">
-              {t('cpu')} {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
-            </div>
-            <div className="h-[60px] min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
-              <div className="h-[60px] min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
-                <PodLineChart type="blue" data={devboxDetail?.usedCpu} />
-              </div>
-            </div>
-          </div>
-          <div className="relative flex-1">
-            <Button variant="ghost" className="absolute -top-1.5 right-0.5" onClick={onOpen}>
-              <Maximize className="h-4 w-4 fill-[#667085]" />
-            </Button>
-            <div className="mb-2 text-xs font-bold text-gray-600">
-              {t('memory')}
-              {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
-            </div>
-            <div className="h-[60px]">
-              <div className="h-[60px]">
-                <PodLineChart type="purple" data={devboxDetail?.usedMemory} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       {/* network */}
       <div className="mt-4">
         <div className="mb-2 flex items-center">

@@ -139,7 +139,11 @@ const DevboxList = ({
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <MonitorChart type="blue" data={item.usedCpu || generateMockMonitorData(item.name)} />
+            <MonitorChart
+              type="blue"
+              data={item.usedCpu || generateMockMonitorData(item.name)}
+              className="h-9"
+            />
           );
         }
       },
@@ -153,6 +157,7 @@ const DevboxList = ({
             <MonitorChart
               type="green"
               data={item.usedMemory || generateMockMonitorData(item.name)}
+              className="h-9"
             />
           );
         }
