@@ -1,109 +1,75 @@
-import { useState } from 'react';
-import { Box, Button, Collapse, Flex } from '@chakra-ui/react';
+'use client';
 
-import MyIcon from './Icon';
-import Code from './Code';
+import { useState } from 'react';
+import { ChevronRight, Copy } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
 import { useCopyData } from '@/utils/tools';
+
+import Code from './Code';
+import { Button } from '@/components/ui/button';
+
+interface ScriptCodeProps {
+  platform: string;
+  script: string;
+  defaultOpen?: boolean;
+  oneLine?: boolean;
+  className?: string;
+}
 
 const ScriptCode = ({
   platform,
   script,
   defaultOpen = false,
-  oneLine = false
-}: {
-  platform: string;
-  script: string;
-  defaultOpen?: boolean;
-  oneLine?: boolean;
-}) => {
-  const [onOpenScripts, setOnOpenScripts] = useState(defaultOpen);
-
+  oneLine = false,
+  className
+}: ScriptCodeProps) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const { copyData } = useCopyData();
 
   return (
-    <Flex
-      px={2}
-      py={1}
-      borderRadius={'6px'}
-      border={'1px solid'}
-      borderColor={'grayModern.200'}
-      flexDirection={oneLine ? 'row' : 'column'}
-      w={'585px'}
-      maxH={'300px'}
-      sx={{
-        '& .copy-button': {
-          display: 'none'
-        },
-        '&:hover .copy-button': {
-          display: 'flex'
-        }
-      }}
+    <div
+      className={cn(
+        'relative flex max-h-[300px] w-[585px] flex-col rounded-lg border border-input bg-background',
+        oneLine && 'flex-row',
+        className
+      )}
     >
-      <Flex justifyContent={oneLine ? 'null' : 'space-between'} alignItems={'center'} w={'full'}>
+      <div className={cn('flex w-full items-center', !oneLine && 'justify-between')}>
         {!oneLine && (
-          <Box>
-            <Button
-              onClick={() => setOnOpenScripts(!onOpenScripts)}
-              bg={'transparent'}
-              border={'none'}
-              boxShadow={'none'}
-              color={'grayModern.900'}
-              fontWeight={400}
-              _hover={{
-                cursor: 'pointer'
-              }}
-              leftIcon={
-                <MyIcon
-                  name="arrowRight"
-                  color={'grayModern.500'}
-                  w={'16px'}
-                  transform={onOpenScripts ? 'rotate(90deg)' : 'rotate(0)'}
-                  transition="transform 0.2s ease"
-                />
-              }
-            >
-              {platform === 'Windows' ? 'PowerShell' : 'Bash'}
-            </Button>
-          </Box>
+          <Button
+            variant="ghost"
+            className="gap-2 font-normal hover:bg-transparent hover:text-primary"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <ChevronRight
+              className={cn('h-4 w-4 text-muted-foreground transition-transform', {
+                'rotate-90': isOpen
+              })}
+            />
+            {platform === 'Windows' ? 'PowerShell' : 'Bash'}
+          </Button>
         )}
         {oneLine && (
-          <Box py={2} overflowY={'auto'} h={'100%'} pl={4}>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
             <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
-          </Box>
+          </div>
         )}
         <Button
-          className="copy-button"
-          bg={'transparent'}
-          border={'none'}
-          {...(oneLine && {
-            position: 'absolute',
-            right: 2
-          })}
-          boxShadow={'none'}
-          color={'grayModern.900'}
-          _hover={{
-            color: 'brightBlue.600',
-            '& svg': {
-              color: 'brightBlue.600'
-            }
-          }}
+          variant="ghost"
+          size="icon"
+          className="absolute right-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-transparent hover:text-primary"
+          onClick={() => copyData(script)}
         >
-          <MyIcon
-            name="copy"
-            color={'grayModern.600'}
-            w={'16px'}
-            onClick={() => copyData(script)}
-          />
+          <Copy className="h-4 w-4" />
         </Button>
-      </Flex>
-      {!oneLine && (
-        <Collapse in={onOpenScripts} animateOpacity>
-          <Box pt={2} pl={3} overflowY={'auto'} h={'100%'}>
-            <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
-          </Box>
-        </Collapse>
+      </div>
+      {!oneLine && isOpen && (
+        <div className="overflow-y-auto px-3 pt-2">
+          <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
+        </div>
       )}
-    </Flex>
+    </div>
   );
 };
 

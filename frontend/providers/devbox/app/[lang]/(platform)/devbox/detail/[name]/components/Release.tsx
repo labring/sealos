@@ -44,7 +44,7 @@ import AppSelectModal from '@/components/modals/AppSelectModal';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
-const Version = () => {
+const Release = () => {
   const t = useTranslations();
   const [isLoading, setIsLoading] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
@@ -362,4 +362,4 @@ const Version = () => {
   );
 };
 
-export default Version;
+export default Release;

@@ -3,17 +3,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-import Header from './components/Header';
-import Version from './components/Version';
-import MainBody from './components/MainBody';
 import Basic from './components/Basic';
+import Header from './components/Header';
+import Network from './components/Network';
+import Sidebar from './components/Sidebar';
+import Release from './components/Release';
 import IDEButton from '@/components/IDEButton';
 import { Loading } from '@/components/ui/loading';
+import LiveMonitoring from './components/LiveMonitoring';
 
 import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
-import Sidebar from './components/Sidebar';
 
 const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   const devboxName = params.name;
@@ -75,7 +76,14 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
         <Sidebar />
         {/* right side */}
         <div className="flex h-full flex-col">
-          <div className="flex">{/* <Basic /> */}</div>
+          <div className="flex">
+            <Basic />
+            <div className="flex flex-col gap-2">
+              <LiveMonitoring />
+              <Network />
+            </div>
+          </div>
+          <Release />
         </div>
       </div>
     </div>
