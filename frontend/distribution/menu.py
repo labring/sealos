@@ -11,7 +11,7 @@ def init_menu_db():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS menus (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
+        name TEXT,
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )

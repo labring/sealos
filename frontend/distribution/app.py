@@ -154,7 +154,7 @@ def export_app_helper(yaml_content, images, appname, namespace):
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
-                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': str(single_yaml['spec']['ports'][port_index]['nodePort']})
+                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': str(single_yaml['spec']['ports'][port_index]['nodePort'])})
     print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
