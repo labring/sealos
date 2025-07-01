@@ -70,15 +70,15 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   if (!initialized || !devboxDetail) return <Loading />;
 
   return (
-    <div className="flex h-[calc(100vh-28px)] flex-col">
+    <div className="flex h-[calc(100vh-28px)] min-w-[1600px] flex-col">
       <Header refetchDevboxDetail={refetch} />
       <div className="flex h-full gap-2 px-6">
         <Sidebar />
         {/* right side */}
-        <div className="flex h-full flex-col gap-2">
+        <div className="flex h-full flex-1 flex-col gap-2">
           <div className="flex gap-2">
             <Basic />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-1 flex-col gap-2">
               <LiveMonitoring />
               <Network />
             </div>
