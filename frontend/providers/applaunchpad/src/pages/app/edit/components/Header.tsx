@@ -40,7 +40,7 @@ const Header = ({
   applyCb: () => void;
   applyBtnText: string;
   namespace: string;
-  formHook: UseFormReturn<AppEditType, any, undefined>;
+  formHook: UseFormReturn<AppEditType, any>;
 }) => {
   const { t } = useTranslation();
   const router = useRouter();
