@@ -1,7 +1,7 @@
 import MyIcon from "@/components/Icon";
 import { Table, Thead, Tr, Th, Td, Tbody, Button, TableContainer, Flex, Box, ModalBody, ModalFooter, FormControl, InputGroup, Center, ButtonGroup, ModalCloseButton, Modal, ModalContent, Input, ModalOverlay, ModalHeader, InputRightAddon,useToast } from "@chakra-ui/react";
 import { getRoles, getAllMenus, addRoles,updateRoles } from '@/api/roles'
-import { DefineCheckBox } from './Checkbox'
+import { DefineCheckBox } from '../../components/Checkox'
 import { useEffect, useState } from "react";
 const Title = "角色管理"
 
