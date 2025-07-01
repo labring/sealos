@@ -1,6 +1,13 @@
 import { listTemplate } from '@/api/template';
 import MyIcon from '@/components/Icon';
-import MyTable from '@/components/MyTable';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from '@/components/ui/table';
 import {
   Box,
   Flex,
@@ -36,6 +43,7 @@ interface CreateTemplateModalProps {
   templateRepositoryName: string;
 }
 
+// NOTE: this component logic maybe modified by ai,check it later.
 const EditTemplateModal: FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
@@ -55,8 +63,8 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       name: string;
       config: string;
       image: string;
-      createAt: Date;
-      updateAt: Date;
+      createdAt: Date;
+      updatedAt: Date;
     };
     minWidth?: string;
     key: string;
@@ -65,8 +73,8 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
       name: string;
       config: string;
       image: string;
-      createdAt: Date;
-      updatedAt: Date;
+      createAt: Date;
+      updateAt: Date;
     }) => JSX.Element;
   }[] = [
     {
@@ -89,21 +97,21 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
     },
     {
       title: t('creation_time'),
-      dataIndex: 'createAt',
+      dataIndex: 'createdAt',
       key: 'createAt',
       render: (item) => {
         return (
-          <Text color={'grayModern.600'}>{dayjs(item.createdAt).format('YYYY-MM-DD HH:mm')}</Text>
+          <Text color={'grayModern.600'}>{dayjs(item.createAt).format('YYYY-MM-DD HH:mm')}</Text>
         );
       }
     },
     {
       title: t('update_time'),
-      dataIndex: 'updateAt',
+      dataIndex: 'updatedAt',
       key: 'updateAt',
       render: (item) => {
         return (
-          <Text color={'grayModern.600'}>{dayjs(item.updatedAt).format('YYYY-MM-DD HH:mm')}</Text>
+          <Text color={'grayModern.600'}>{dayjs(item.updateAt).format('YYYY-MM-DD HH:mm')}</Text>
         );
       }
     },
@@ -150,12 +158,32 @@ const EditTemplateModal: FC<CreateTemplateModalProps> = ({
             <ModalCloseButton />
             <Flex flexDirection={'column'} h={'full'}>
               <Flex h={'364px'} flex={'auto'} overflow={'auto'} flexDirection={'column'}>
-                <MyTable
-                  needRadius
-                  columns={columns}
-                  data={templateList}
-                  gridTemplateColumns={'120px 180px 180px auto'}
-                />
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {columns.map((column) => (
+                        <TableHead key={column.key} style={{ minWidth: column.minWidth }}>
+                          {column.title}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {templateList.map((item, index) => (
+                      <TableRow key={item.uid || index}>
+                        {columns.map((column) => (
+                          <TableCell key={column.key}>
+                            {column.render
+                              ? column.render(item)
+                              : column.dataIndex
+                                ? String(item[column.dataIndex as keyof typeof item] || '')
+                                : null}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 {templateList.length === 0 && (
                   <Flex
                     justifyContent={'center'}
