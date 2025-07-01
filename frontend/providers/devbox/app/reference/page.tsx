@@ -1,10 +1,12 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { ApiReferenceReact } from '@scalar/api-reference-react';
+
 import { useEnvStore } from '@/stores/env';
 import { getDesktopSessionFromSessionStorage, getSessionFromSessionStorage } from '@/utils/user';
+
 import '@scalar/api-reference-react/style.css';
-import { useEffect, useState } from 'react';
 
 export default function References() {
   const { env } = useEnvStore();

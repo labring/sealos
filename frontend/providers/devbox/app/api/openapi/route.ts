@@ -1433,8 +1433,7 @@ const applaunchpadDocument = {
 };
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const domain = searchParams.get('domain') || '';
+  const domain = process.env.SEALOS_DOMAIN || '';
   //Since the API currently only has English documentation, we'll use EN here for now
   const mcp = getToolsList(path.join(process.cwd(), 'public', "devbox.json"),"en")
   try {
