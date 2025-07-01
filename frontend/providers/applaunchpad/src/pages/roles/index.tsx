@@ -1,6 +1,6 @@
 import MyIcon from "@/components/Icon";
-import { Table, Thead, Tr, Th, Td, Tbody, Button, TableContainer, Flex, Box, ModalBody, ModalFooter, FormControl, InputGroup, Center, ButtonGroup, ModalCloseButton, Modal, ModalContent, Input, ModalOverlay, ModalHeader, InputRightAddon } from "@chakra-ui/react";
-import { getRoles, getAllMenus } from '@/api/roles'
+import { Table, Thead, Tr, Th, Td, Tbody, Button, TableContainer, Flex, Box, ModalBody, ModalFooter, FormControl, InputGroup, Center, ButtonGroup, ModalCloseButton, Modal, ModalContent, Input, ModalOverlay, ModalHeader, InputRightAddon,useToast } from "@chakra-ui/react";
+import { getRoles, getAllMenus, addRoles,updateRoles } from '@/api/roles'
 import { DefineCheckBox } from './Checkbox'
 import { useEffect, useState } from "react";
 const Title = "角色管理"
@@ -34,11 +34,13 @@ const Label = ({
 const Menu = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [name, setName] = useState('')
+    const [id,setId] = useState<any>(null)
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
     const [currentData, setCurrentData] = useState<any>(null)
-    const [isEditOpen, setIsEditOpen] = useState(false)
     const [list, setList] = useState<RoleItem[]>([])
     const [menus, setMenus] = useState<any[]>([])
+    const [desc, setDesc] = useState('')
+    const toast = useToast();
     const [selectedMenu, setSelectedMenu] = useState<any[]>([])
     const getList = async () => {
         const list: RoleItem[] = await getRoles({})
@@ -53,38 +55,40 @@ const Menu = () => {
     }
     const onConfirm = async () => {
         try {
-            // const resp = await createNamespace({
-            //     ns: username
-            // })
-            // if (resp) {
-            //     await syncConfigMap()
-            //     toast({
-            //         status: 'success',
-            //         title: '创建成功'
-            //     })
-            //     onClose()
-            //     initUserDataAndResource()
-            // }
+            await addRoles({
+                name,
+                description:desc,
+                status:'1'
+            })
+            toast({
+                status: 'success',
+                title: '创建成功'
+            })
+            onClose()
+            getList()
         } catch (error: any) {
-            // return toast({
-            //     status: 'error',
-            //     title: error.message
-            // });
+            return toast({
+                status: 'error',
+                title: error.message
+            });
         }
     }
-
-    const onEdit = async (data: any) => {
-        setCurrentData({
-            namespace: data.namespace,
-            username: data.username,
-            services: Number(data.services),
-            requestsStorage: Number(data.storage.split('Gi')[0]),
-            persistentVolumeClaims: Number(data.persistentvolumeclaims),
-            limitsCpu: Number(data.cpu),
-            limitsMemory: Number(data.memory.split('Gi')[0]),
-        })
-        setIsEditOpen(true)
+    const onClear = ()=>{
+        setName('')
+        setDesc('')
+        setId(null)
     }
+    const onEdit = async (data: any) => {
+        setName(data.name)
+        setDesc(data.description)
+        setId(data.id)
+        setIsOpen(true)
+    }
+    useEffect(()=>{
+        if(!isOpen){
+            onClear()
+        }
+    },[isOpen])
 
     const onDelete = async (data: any) => {
         setCurrentData(data)
@@ -115,7 +119,6 @@ const Menu = () => {
 
     const onEditClose = () => {
         setCurrentData(null)
-        setIsEditOpen(false)
     }
 
     const onOpen = () => {
@@ -124,26 +127,20 @@ const Menu = () => {
 
     const onEditConfirm = async () => {
         try {
-            if (currentData) {
-                // const resp = await updateResourceQuotas(currentData.namespace, {
-                //     namespace: currentData.namespace,
-                //     username: currentData.username,
-                //     limits: {
-                //         services: currentData.services,
-                //         requestsStorage: `${currentData.requestsStorage}Gi`,
-                //         persistentVolumeClaims: currentData.persistentVolumeClaims,
-                //         limitsCpu: `${currentData.limitsCpu}`,
-                //         limitsMemory: `${currentData.limitsMemory}Gi`
-                //     }
-                // })
-                // if (resp) {
-                //     toast({
-                //         status: 'success',
-                //         title: '编辑成功'
-                //     })
-                //     onEditClose()
-                //     initUserDataAndResource()
-                // }
+            if (id) {
+                const resp = await updateRoles(id, {
+                    name,
+                    description:desc,
+                    status:'1'
+                })
+                if (resp) {
+                    toast({
+                        status: 'success',
+                        title: '编辑成功'
+                    })
+                    onClose()
+                    getList()
+                }
             }
         } catch (error) {
         }
@@ -204,7 +201,9 @@ const Menu = () => {
                             </Td>
                             <Td>
                                 <ButtonGroup>
-                                    <Button size='sm' type="button">编辑</Button>
+                                    <Button onClick={()=>{
+                                        onEdit(item)
+                                    }} size='sm' type="button">编辑</Button>
                                     <Button bgColor={'red'} colorScheme='red' _hover={{ bgColor: 'red' }} size="sm" type="button">删除</Button>
                                 </ButtonGroup>
                             </Td>
@@ -216,7 +215,7 @@ const Menu = () => {
         <Modal isOpen={isOpen} onClose={onClose} isCentered>
             <ModalOverlay />
             <ModalContent>
-                <ModalHeader>新增角色</ModalHeader>
+                <ModalHeader>{id ? '编辑角色' : '新增角色'}</ModalHeader>
                 <ModalCloseButton />
                 <ModalBody>
                     <FormControl mb={7} w={'100%'}>
@@ -225,6 +224,18 @@ const Menu = () => {
                             <Input
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
+                                width={'60%'}
+                                autoFocus={true}
+                                maxLength={60}
+                            />
+                        </Flex>
+                    </FormControl>
+                    <FormControl mb={7} w={'100%'}>
+                        <Flex alignItems={'center'} mb={5}>
+                            <Label>描述</Label>
+                            <Input
+                                value={desc}
+                                onChange={(e) => setDesc(e.target.value)}
                                 width={'60%'}
                                 autoFocus={true}
                                 maxLength={60}
@@ -245,7 +256,13 @@ const Menu = () => {
                     </Flex>
                 </ModalBody>
                 <ModalFooter>
-                    <Button colorScheme="blue" mr={3} onClick={onConfirm}>
+                    <Button colorScheme="blue" mr={3} onClick={()=>{
+                        if(id){
+                            onEditConfirm()
+                        }else{
+                            onConfirm()
+                        }
+                    }}>
                         确认
                     </Button>
                 </ModalFooter>
@@ -262,128 +279,6 @@ const Menu = () => {
                 </ModalBody>
                 <ModalFooter>
                     <Button colorScheme="blue" mr={3} onClick={onDeleteConfirm}>
-                        确认
-                    </Button>
-                </ModalFooter>
-            </ModalContent>
-        </Modal>
-
-        <Modal isOpen={isEditOpen} onClose={onEditClose} size={'4xl'} isCentered>
-            <ModalOverlay />
-            <ModalContent>
-                <ModalHeader>编辑角色</ModalHeader>
-                <ModalCloseButton />
-                <ModalBody>
-                    <FormControl mb={7} w={'100%'}>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>用户名</Label>
-                            <Input
-                                type='text'
-                                value={currentData?.username}
-                                onChange={(e) => {
-                                    setCurrentData({
-                                        ...currentData,
-                                        username: e.target.value
-                                    })
-                                }}
-                                autoFocus={true}
-                                maxLength={60}
-                            />
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>命名空间</Label>
-                            <Input
-                                value={currentData?.namespace}
-                                autoFocus={true}
-                                maxLength={60}
-                                disabled={true}
-                            />
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>网络服务数量</Label>
-                            <Input
-                                type='number'
-                                value={currentData?.services}
-                                onChange={(e) => {
-                                    setCurrentData({
-                                        ...currentData,
-                                        services: Number(e.target.value)
-                                    })
-                                }}
-                                autoFocus={true}
-                                maxLength={60}
-                            />
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>请求存储</Label>
-                            <InputGroup>
-                                <Input
-                                    type='number'
-                                    value={currentData?.requestsStorage}
-                                    onChange={(e) => {
-                                        setCurrentData({
-                                            ...currentData,
-                                            requestsStorage: Number(e.target.value)
-                                        })
-                                    }}
-                                    autoFocus={true}
-                                    maxLength={60}
-                                />
-                                <InputRightAddon style={{ height: 32, borderColor: '#02A7F0' }}>Gi</InputRightAddon>
-                            </InputGroup>
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>磁盘数量</Label>
-                            <Input
-                                type='number'
-                                value={currentData?.persistentVolumeClaims}
-                                onChange={(e) => {
-                                    setCurrentData({
-                                        ...currentData,
-                                        persistentVolumeClaims: Number(e.target.value)
-                                    })
-                                }}
-                                autoFocus={true}
-                                maxLength={60}
-                            />
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>CPU 限制</Label>
-                            <Input
-                                type='number'
-                                value={currentData?.limitsCpu}
-                                onChange={(e) => {
-                                    setCurrentData({
-                                        ...currentData,
-                                        limitsCpu: Number(e.target.value)
-                                    })
-                                }}
-                                autoFocus={true}
-                                maxLength={60}
-                            />
-                        </Flex>
-                        <Flex alignItems={'center'} mb={5}>
-                            <Label>内存限制</Label>
-                            <InputGroup>
-                                <Input
-                                    type='number'
-                                    value={currentData?.limitsMemory}
-                                    onChange={(e) => {
-                                        setCurrentData({
-                                            ...currentData,
-                                            limitsMemory: Number(e.target.value)
-                                        })
-                                    }}
-                                    autoFocus={true}
-                                    maxLength={60}
-                                />
-                                <InputRightAddon style={{ height: 32, borderColor: '#02A7F0' }}>Gi</InputRightAddon>
-                            </InputGroup>
-                        </Flex>
-                    </FormControl>
-                </ModalBody>
-                <ModalFooter>
-                    <Button colorScheme="blue" mr={3} onClick={onEditConfirm}>
                         确认
                     </Button>
                 </ModalFooter>

@@ -154,7 +154,7 @@ def export_app_helper(yaml_content, images, appname, namespace):
         if 'kind' in single_yaml and single_yaml['kind'] == 'Service':
             if 'spec' in single_yaml and 'type' in single_yaml['spec'] and single_yaml['spec']['type'] == 'NodePort':
                 for port_index in range(len(single_yaml['spec']['ports'])):
-                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': ''})
+                    nodeports.append({'internal_port': str(single_yaml['spec']['ports'][port_index]['port']), 'external_port': str(single_yaml['spec']['ports'][port_index]['nodePort']})
     print('nodeports:', nodeports, flush=True)
 
     image_pairs = []
@@ -1134,15 +1134,6 @@ def cron_job():
         except Exception as e:
             print("Error in check_all_apps: {}".format(str(e)))
 
-@app.route('/getImageUse', methods=['GET'])
-def get_image_use_configmap():
-    # 执行kubectl命令
-    command = "kubectl get cm image-use -o jsonpath='{.data}'"
-    result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
-    # 将输出转换为JSON对象
-    data = json.loads(result.stdout)
-    # 返回JSON响应
-    return jsonify({'status': 'success','data': data})
 
 @app.route('/menus', methods=['GET'])
 def get_menus():
@@ -1289,6 +1280,51 @@ def assign_role_menus(role_id):
         return jsonify({"error": str(e)}), 400
     finally:
         conn.close()
+
+@app.route('/getImageUse',methods=['GET'])
+def get_image_use():
+    return get_configmap_data();
+
+def get_configmap_data():
+    try:
+        cmd = [
+            "kubectl",
+            "get",
+            "cm",
+            "-o",
+            "json",
+            "--kubeconfig=/etc/kubernetes/admin.conf"
+        ]
+        result = subprocess.run(cmd,capture_output=True,text=True,check=True)
+        data = json.loads(result.stdout)
+        return data.get("data",{})
+    except Exception as e:
+        return jsonify({'error':str(e)}), 500
+
+@app.route('/updateImageUse',methods=['POST'])
+def update_image_use():
+    try:
+        data = request.json
+        key = data.get('key')
+        value = data.get('value')
+        updates = {key : value}
+        current_data = get_configmap_data()
+        current_data.update(updates)
+        patch = json.dumps({"data": current_data})
+        cmd = [
+                "kubectl",
+                "patch",
+                "configmap",
+                "image-use",
+                "--patch",
+                patch,
+                "--kubeconfig=/etc/kubernetes/admin.conf"
+        ]
+        subprocess.run(cmd,check=True)
+        return jsonify({'message':'修改成功'}), 200
+    except Exception as e:
+        print(str(e))
+        return jsonify({'error':str(e)}), 500
 
 if __name__ == '__main__':
     init_db()

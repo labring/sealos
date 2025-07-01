@@ -11,7 +11,7 @@ import { getUserKubeConfig } from '@/utils/user';
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
-  timeout: 60000
+  timeout: 600000
 });
 
 // request interceptor
@@ -83,6 +83,14 @@ export function POST<T = any>(
   config?: AxiosRequestConfig
 ): Promise<T> {
   return request.post(url, data, config);
+}
+
+export function PUT<T = any>(
+  url: string,
+  data?: { [key: string]: any },
+  config?: AxiosRequestConfig
+): Promise<T> {
+  return request.put(url, data, config);
 }
 export function DELETE<T = any>(
   url: string,
