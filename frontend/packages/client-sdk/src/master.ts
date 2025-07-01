@@ -276,14 +276,23 @@ class MasterSDK {
     const iframes = document.querySelectorAll('iframe');
     for (let i = 0; i < iframes.length; i++) {
       const iframe = iframes[i];
-      iframe.contentWindow?.postMessage(data, iframe?.src);
+
+      if (!iframe?.src || iframe.src.trim() === '' || iframe.src === 'about:blank') {
+        continue;
+      }
+
+      try {
+        iframe.contentWindow?.postMessage(data, iframe.src);
+      } catch (error) {
+        console.error('postMessage error:', error);
+      }
     }
   }
 }
 
 export let masterApp: MasterSDK;
 
-export const createMasterAPP = (allowedOrigins: string[] = []) => {
+export const createMasterAPP = (allowedOrigins: string[] = ['*']) => {
   if (!isBrowser()) {
     console.error('This method need run in the browser.');
     return;
