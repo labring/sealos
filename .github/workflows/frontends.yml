@@ -32,6 +32,7 @@ on:
     paths:
       - "frontend/desktop/**"
       - "frontend/providers/**"
+      - "frontend/packages/**"
       - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"
@@ -40,6 +41,7 @@ on:
     paths:
       - "frontend/desktop/**"
       - "frontend/providers/**"
+      - "frontend/packages/**"
       - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"

@@ -64,6 +64,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
             {
               mountPath: '/etc/nginx/nginx.conf',
               subPath: 'nginx.conf',
+              key: 'nginx.conf',
+              volumeName: 'nginx-conf',
               value: await generateNginxConfig(bucket)
             }
           ],

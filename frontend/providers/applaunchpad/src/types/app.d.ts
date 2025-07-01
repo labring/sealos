@@ -112,6 +112,7 @@ export interface AppEditType {
     value: string;
     key: string;
     volumeName: string;
+    subPath?: string; // compatible old key
   }[];
   storeList: {
     name: string;
