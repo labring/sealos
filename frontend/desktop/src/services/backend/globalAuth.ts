@@ -502,7 +502,9 @@ export const getGlobalToken = async ({
           });
         }
         if (adClickData) {
-          await uploadConvertData(adClickData);
+          await uploadConvertData(adClickData).catch((e) => {
+            console.log('Failed to upload AD click data: ', e);
+          });
         }
         if (enableTracking()) {
           await trackSignUp({
