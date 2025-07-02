@@ -183,10 +183,10 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
           </div>
 
           <DialogFooter>
-            <Button variant={'outline'} onClick={onClose} size="lg">
+            <Button variant={'outline'} onClick={onClose}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleSubmit} disabled={loading} size="lg">
+            <Button onClick={handleSubmit} disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               {t('release')}
             </Button>

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Rocket } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -97,7 +97,7 @@ export default function AppSelectModal({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-w-[750px]">
+      <DialogContent className="min-w-[650px]">
         <DialogHeader>
           <DialogTitle>{t('deploy')}</DialogTitle>
         </DialogHeader>
@@ -107,18 +107,18 @@ export default function AppSelectModal({
           <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-6">
             <div className="flex w-[400px] flex-col gap-3">
               <span className="text-lg/7 font-semibold">{t('create_directly')}</span>
-              <Button onClick={handleCreate} size="lg" className="w-fit">
-                <Rocket className="mr-2 h-4 w-4" />
+              <Button onClick={handleCreate} className="w-fit">
                 <span className="text-sm">{t('deploy')}</span>
+                <ArrowUpRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
           <span className="leading-6">{t('update_matched_apps_notes')}</span>
           <div className="w-full">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t('app_name')}</TableHead>
+                  <TableHead className="w-[175px]">{t('app_name')}</TableHead>
                   <TableHead>{t('current_image_name')}</TableHead>
                   <TableHead>{t('create_time')}</TableHead>
                   <TableHead></TableHead>
@@ -126,8 +126,8 @@ export default function AppSelectModal({
               </TableHeader>
               <TableBody>
                 {apps.map((item) => (
-                  <TableRow key={item.name} className="[&>td]:text-black">
-                    <TableCell>{item.name}</TableCell>
+                  <TableRow key={item.name}>
+                    <TableCell className="w-[175px] truncate text-black">{item.name}</TableCell>
                     <TableCell>
                       {item.imageName.startsWith(
                         `${env.registryAddr}/${env.namespace}/${devboxName}`
@@ -136,8 +136,8 @@ export default function AppSelectModal({
                         : '-'}
                     </TableCell>
                     <TableCell>{item.createTime}</TableCell>
-                    <TableCell>
-                      <Button variant="secondary" size="sm" onClick={() => handleUpdate(item)}>
+                    <TableCell className="text-right">
+                      <Button variant="secondary" onClick={() => handleUpdate(item)}>
                         {t('to_update')}
                       </Button>
                     </TableCell>
