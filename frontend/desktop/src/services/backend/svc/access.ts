@@ -5,6 +5,7 @@ import { globalPrisma } from '../db/init';
 import { getGlobalToken } from '../globalAuth';
 import { jsonRes } from '../response';
 import { createMiddleware } from '@/utils/factory';
+import { AdClickData } from '@/types/adClick';
 type AuthContext = {
   avatar_url: string;
   providerId: string;
@@ -14,7 +15,7 @@ type AuthContext = {
   password?: string;
   inviterId?: string;
   semData?: SemData;
-  bdVid?: string;
+  adClickData?: AdClickData;
 };
 export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
   async ({ req, res, next, ctx }) => {
@@ -27,7 +28,7 @@ export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
       inviterId: ctx.inviterId,
       password: ctx.password,
       semData: ctx.semData,
-      bdVid: ctx.bdVid
+      adClickData: ctx.adClickData
     });
 
     if (data?.isRestricted) {

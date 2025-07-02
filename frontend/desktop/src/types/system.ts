@@ -90,6 +90,16 @@ export type AuthConfigType = {
   callbackURL: string;
   signUpEnabled?: boolean;
   baiduToken?: string;
+  bingAd?: {
+    tenant: string;
+    clientId: string;
+    clientSecret: string;
+    refreshToken: string;
+    developerToken: string;
+    customerId: number;
+    customerAccountId: number;
+    conversionName: string;
+  };
   hasBaiduToken?: boolean;
   jwt: JwtConfigType;
   billingUrl?: string;
@@ -190,6 +200,7 @@ export type AuthClientConfigType = {
     AuthConfigType,
     [
       'baiduToken',
+      'bingAd',
       'signUpEnabled',
       'invite.lafSecretKey',
       'invite.lafBaseURL',

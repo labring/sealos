@@ -10,7 +10,7 @@ import { SemData } from '@/types/sem';
 import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
-import { sessionConfig, setBaiduId, setInviterId, setUserSemData } from '@/utils/sessionConfig';
+import { sessionConfig, setAdClickData, setInviterId, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
@@ -187,21 +187,43 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     swtichWorksapceMutation.mutate(workspaceUid);
   }, [session?.user?.ns_uid, workspaces]);
 
-  // handle baidu
+  // handle page views from ad clicks
   useEffect(() => {
-    const { bd_vid, s, k } = router.query;
+    const { bd_vid, msclkid } = router.query;
+
+    // Baidu click data
     if (bd_vid) {
-      setBaiduId(bd_vid as string);
+      setAdClickData({
+        source: 'Baidu',
+        clickId: bd_vid as string,
+        additionalData: {
+          newType: [3]
+        }
+      });
+    } else if (msclkid) {
+      // Bing click data
+      setAdClickData({
+        source: 'Bing',
+        clickId: msclkid as string,
+        additionalData: {
+          timestamp: Date.now()
+        }
+      });
     }
 
     // handle new user sem source
-    const semData: SemData = { channel: '' };
+    const { search, s, k } = router.query;
+    const semData: SemData = { channel: '', additionalInfo: {} };
+    if (search) {
+      semData.additionalInfo.searchEngine = search as string;
+    }
     if (s) {
       semData.channel = s as string;
     }
     if (k) {
-      semData.additionalInfo = { semKeyword: k as string };
+      semData.additionalInfo.semKeyword = k as string;
     }
+
     setUserSemData(semData);
   }, []);
 

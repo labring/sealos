@@ -13,7 +13,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     await filterPhoneVerifyParams(
       req,
       res,
-      async ({ phoneNumbers, code, inviterId, semData, bdVid }) => {
+      async ({ phoneNumbers, code, inviterId, semData, adClickData }) => {
         await verifyCodeGuard(
           phoneNumbers,
           code,
@@ -25,7 +25,7 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
             providerId: phoneInfo.id,
             name: phoneInfo.id,
             semData,
-            bdVid,
+            adClickData,
             inviterId,
             providerType: 'PHONE'
           })(req, res);

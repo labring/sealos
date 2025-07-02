@@ -16,7 +16,7 @@ import { useRouter } from 'next/router';
 import { MouseEvent, MouseEventHandler, useCallback, useEffect, useRef, useState } from 'react';
 import { get, useForm } from 'react-hook-form';
 import { getRegionToken } from '@/api/auth';
-import { getBaiduId, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
+import { getAdClickData, getInviterId, getUserSemData, sessionConfig } from '@/utils/sessionConfig';
 import { I18nCommonKey } from '@/types/i18next';
 import { useConfigStore } from '@/stores/config';
 import useSmsStateStore from '@/stores/captcha';
@@ -59,7 +59,7 @@ export default function useSms({
               code: data.verifyCode,
               inviterId: data?.inviterId || getInviterId(),
               semData: getUserSemData(),
-              bdVid: getBaiduId()
+              adClickData: getAdClickData()
             }
           );
           const globalToken = result1?.data?.token;
