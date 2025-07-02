@@ -7,9 +7,9 @@ import { useGuideStore } from '@/stores/guide';
 import { useDevboxList } from './hooks/useDevboxList';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 
+import List from './components/List';
 import Empty from './components/Empty';
-import DevboxList from './components/List';
-import DevboxHeader from './components/Header';
+import Header from './components/Header';
 import { Loading } from '@/components/ui/loading';
 
 export default function HomePage() {
@@ -32,12 +32,8 @@ export default function HomePage() {
   return (
     <>
       <div className="flex h-[calc(100vh-28px)] w-fit flex-col px-12">
-        <DevboxHeader listLength={list.length} />
-        {list.length === 0 ? (
-          <Empty />
-        ) : (
-          <DevboxList devboxList={list} refetchDevboxList={refetchList} />
-        )}
+        <Header />
+        {list.length === 0 ? <Empty /> : <List devboxList={list} refetchDevboxList={refetchList} />}
       </div>
     </>
   );
