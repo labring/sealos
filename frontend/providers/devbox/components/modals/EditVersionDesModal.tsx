@@ -67,10 +67,10 @@ const EditVersionDesModal = ({
         </div>
 
         <DialogFooter>
-          <Button variant={'outline'} onClick={onClose} size="lg">
+          <Button variant={'outline'} onClick={onClose}>
             {t('cancel')}
           </Button>
-          <Button onClick={handleEditVersionDes} disabled={loading} size="lg">
+          <Button onClick={handleEditVersionDes} disabled={loading}>
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('save')}
           </Button>

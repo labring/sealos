@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 
@@ -13,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
@@ -46,104 +48,83 @@ const ShutdownModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-h-[300px] min-w-[500px]">
+      <DialogContent className="min-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="ml-3.5 text-base">{t('choose_shutdown_mode')}</DialogTitle>
+          <DialogTitle>{t('choose_shutdown_mode')}</DialogTitle>
         </DialogHeader>
 
-        <div className="p-4">
-          <RadioGroup
-            value={shutdownMode}
-            onValueChange={(value) => setShutdownMode(value as ShutdownModeType)}
-            className="flex flex-col gap-4"
+        <RadioGroup
+          value={shutdownMode}
+          onValueChange={(value) => setShutdownMode(value as ShutdownModeType)}
+          className="flex flex-col gap-2"
+        >
+          {/* normal mode */}
+          <div
+            className={cn(
+              'flex cursor-pointer flex-col gap-1.5 rounded-xl border p-4',
+              shutdownMode === 'Stopped' && 'border-zinc-900'
+            )}
+            onClick={() => setShutdownMode('Stopped')}
           >
-            {/* normal mode */}
-            <div
-              className={cn(
-                'cursor-pointer rounded-lg border p-3',
-                shutdownMode === 'Stopped'
-                  ? 'border-blue-500 shadow-[0px_0px_0px_2.4px_rgba(33,155,244,0.15)]'
-                  : 'border-gray-300'
-              )}
-              onClick={() => setShutdownMode('Stopped')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Stopped" id="stopped" />
-                <label htmlFor="stopped" className="text-sm font-medium text-gray-900">
-                  {t('normal_shutdown_mode')}
-                </label>
-              </div>
-              <div className="mt-2 space-y-0.5 pl-5 text-xs text-gray-600">
-                <div className="flex items-start gap-1.5">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
-                  <div>
-                    {t.rich('normal_shutdown_mode_desc', {
-                      yellow: (chunks) => (
-                        <span className="font-medium text-yellow-500">{chunks}</span>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
-                  <div>
-                    {t.rich('normal_shutdown_mode_desc_2', {
-                      yellow: (chunks) => (
-                        <span className="font-medium text-yellow-500">{chunks}</span>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <RadioGroupItem value="Stopped" id="stopped" />
+              <Label htmlFor="stopped">{t('normal_shutdown_mode')}</Label>
             </div>
+            <div className="flex w-full items-start gap-1.5 pl-5">
+              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
+              <span className="text-xs/4 text-zinc-500">
+                {t.rich('normal_shutdown_mode_desc', {
+                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
+                })}
+              </span>
+            </div>
+            <div className="flex w-full items-start gap-1.5 pl-5">
+              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
+              <span className="text-xs/4 text-zinc-500">
+                {t.rich('normal_shutdown_mode_desc_2', {
+                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
+                })}
+              </span>
+            </div>
+          </div>
 
-            {/* cold mode */}
-            <div
-              className={cn(
-                'cursor-pointer rounded-lg border p-3',
-                shutdownMode === 'Shutdown'
-                  ? 'border-blue-500 shadow-[0px_0px_0px_2.4px_rgba(33,155,244,0.15)]'
-                  : 'border-gray-300'
-              )}
-              onClick={() => setShutdownMode('Shutdown')}
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="Shutdown" id="shutdown" />
-                <label htmlFor="shutdown" className="text-sm font-medium text-gray-900">
-                  {t('cold_shutdown_mode')}
-                </label>
-              </div>
-              <div className="mt-2 space-y-0.5 pl-5 text-xs text-gray-600">
-                <div className="flex items-start gap-1.5">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
-                  <div>
-                    {t.rich('cold_shutdown_mode_desc', {
-                      yellow: (chunks) => (
-                        <span className="font-medium text-yellow-500">{chunks}</span>
-                      )
-                    })}
-                  </div>
-                </div>
-                <div className="flex items-start gap-1.5">
-                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-gray-300" />
-                  <div>
-                    {t.rich('cold_shutdown_mode_desc_2', {
-                      yellow: (chunks) => (
-                        <span className="font-medium text-yellow-500">{chunks}</span>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
+          {/* cold mode */}
+          <div
+            className={cn(
+              'flex cursor-pointer flex-col gap-1.5 rounded-xl border p-4',
+              shutdownMode === 'Shutdown' && 'border-zinc-900'
+            )}
+            onClick={() => setShutdownMode('Shutdown')}
+          >
+            <div className="flex items-center gap-1.5">
+              <RadioGroupItem value="Shutdown" id="shutdown" />
+              <Label htmlFor="shutdown">{t('cold_shutdown_mode')}</Label>
             </div>
-          </RadioGroup>
-        </div>
+            <div className="flex w-full items-start gap-1.5 pl-5">
+              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
+              <span className="text-xs/4 text-zinc-500">
+                {t.rich('cold_shutdown_mode_desc', {
+                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
+                })}
+              </span>
+            </div>
+            <div className="flex w-full items-start gap-1.5 pl-5">
+              <span className="mt-1 aspect-square h-1.5 w-1.5 rounded-full bg-gray-300" />
+              <span className="text-xs/4 text-zinc-500">
+                {t.rich('cold_shutdown_mode_desc_2', {
+                  black: (chunks) => <span className="text-zinc-900">{chunks}</span>
+                })}
+              </span>
+            </div>
+          </div>
+        </RadioGroup>
 
         <DialogFooter>
-          <Button onClick={handleShutdown} disabled={loading} className="mt-2.5">
-            {loading && (
-              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-            )}
+          <Button variant="outline" onClick={onClose}>
+            {t('cancel')}
+          </Button>
+          <Button onClick={handleShutdown} disabled={loading}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('confirm_shutdown')}
           </Button>
         </DialogFooter>

@@ -49,7 +49,6 @@ export const useConfirm = ({
             <div className="text-zinc-900">{t(content)}</div>
             <DialogFooter>
               <Button
-                size="lg"
                 variant="outline"
                 onClick={() => {
                   setIsOpen(false);
@@ -59,7 +58,6 @@ export const useConfirm = ({
                 {t(cancelText)}
               </Button>
               <Button
-                size="lg"
                 onClick={() => {
                   setIsOpen(false);
                   typeof confirmCb.current === 'function' && confirmCb.current();
