@@ -15,6 +15,7 @@ from node import add_node_to_cluster, delete_node_from_cluster
 from stress_test import *
 from scheduling import *
 from menu import *
+from bandwidth_autoscaler import run_autoscaler_all
 import threading
 
 
@@ -43,6 +44,7 @@ CONFIG_MAP_NAME = os.getenv('CONFIG_MAP_NAME', '')
 RESOURCE_THRESHOLD = os.getenv('RESOURCE_THRESHOLD') or '70'
 ENABLE_WORKLOAD_SCALING = bool((os.getenv('ENABLE_WORKLOAD_SCALING') or 'false') == 'true')
 ENABLE_NODE_SCALING = bool((os.getenv('ENABLE_NODE_SCALING') or 'false') == 'true')
+ENABLE_BANDWIDTH_AUTOSCALER = bool((os.getenv('ENABLE_BANDWIDTH_AUTOSCALER') or 'true') == 'true')
 NODE_DELETE_THRESHOLD = os.getenv('NODE_DOWN_THRESHOLD') or '15'
 NODE_ADD_THRESHOLD = os.getenv('NODE_UP_THRESHOLD') or '70'
 
@@ -1351,7 +1353,10 @@ if __name__ == '__main__':
     thread3 = threading.Thread(target=cron_job_10)
     thread3.start()
 
-
+    # 启动带宽自动扩缩容器线程
+    if ENABLE_BANDWIDTH_AUTOSCALER:
+        thread4 = threading.Thread(target=run_autoscaler_all)
+        thread4.start()
 
     app.run(debug=True, host='0.0.0.0', port=5002)
         
