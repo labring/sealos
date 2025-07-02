@@ -8,3 +8,7 @@ export const updateRoles = (id:any,params:any) => PUT<any>(`/api/node/updateRole
 
 //获取菜单列表
 export const getAllMenus = (params:any) => GET<any>(`/api/node/getAllMenus`);
+
+export const addRolesAndMenu = (id:any,params:any) => POST<any>(`/api/node/addRolesAndMenu`,{...params,id});
+export const getRolesAndMenu = (id:any) => GET<any>(`/api/node/getRolesAndMenu`,{id});
+export const deleteRoles = (id:any) => POST<any>(`/api/node/deleteRoles`,{id});

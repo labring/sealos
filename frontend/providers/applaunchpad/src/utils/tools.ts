@@ -40,6 +40,23 @@ export const useCopyData = () => {
   };
 };
 
+export function getParamValue(paramName:string) {
+  const url = window.location.href;
+  const paramStartIndex = url.indexOf('?') + 1;
+  const paramEndIndex = url.indexOf('#') !== -1 ? url.indexOf('#') : url.length;
+  const paramsString = url.slice(paramStartIndex, paramEndIndex);
+  const paramsArray = paramsString.split('&');
+
+  for (let i = 0; i < paramsArray.length; i++) {
+    const param = paramsArray[i].split('=');
+    if (param[0] === paramName) {
+      return decodeURIComponent(param[1].replace(/\+/g, ' '));
+    }
+  }
+
+  return '';
+}
+
 /**
  * format string to number or ''
  */

@@ -95,7 +95,7 @@ const AppList = ({
 
 
   const columns = [
-    { title: 'id', field: 'id' },
+    // { title: 'id', field: 'id' },
     { title: '测算类型', field: 'type' },
     // { title: '命名空间', field: 'namespace' },
     { title: '测算应用', field: 'apps' },

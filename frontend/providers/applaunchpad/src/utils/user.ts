@@ -47,6 +47,18 @@ export const setUserIsLogin = (isLogin: boolean, session: string) => {
   }
 };
 
+export const setMenuList = (menuList: any) => {
+  localStorage.setItem('user-menu',JSON.stringify(menuList));
+};
+
+export const getMenuList = () => {
+  try {
+    return JSON.parse(localStorage.getItem('user-menu'));
+  } catch (err) {
+    return null;
+  }
+};
+
 export const getUserIsLogin = (): boolean => {
   const loginState = localStorage.getItem('user-login');
   return loginState === 'true';

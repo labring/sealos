@@ -1,7 +1,7 @@
 'use client';
 
 import { login } from '@/api/platform';
-import { setUserIsLogin } from '@/utils/user';
+import { setMenuList, setUserIsLogin } from '@/utils/user';
 import {
   Button,
   Flex,
@@ -15,14 +15,16 @@ import {
 } from '@chakra-ui/react';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
+import { getParamValue } from '@/utils/tools'
+import { getRolesAndMenu } from '@/api/roles';
 
 export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const toast = useToast();
   const router = useRouter();
-
   useEffect(() => {
+    const showMenu = getParamValue('showMenu')
     if (!username && !password) {
       setUsername('admin');
       setPassword('Sealos@2024');
@@ -30,14 +32,28 @@ export default function LoginForm() {
   }, []);
 
   useEffect(() => {
-    if (username && password) {
+    const showMenu = getParamValue('showMenu')
+    if (username && password && !showMenu) {
       handleLogin();
     }
   }, [username, password]);
 
+  const initConfig = async (user:any)=>{
+    if(user?.name === 'admin'){
+     const res = await getRolesAndMenu(1)
+     setMenuList(res)
+    }
+  }
+
   const handleLogin = async () => {
+    const showMenu = getParamValue('showMenu')
     try {
       const session = await login({ username, password });
+      console.log(session)
+      const user = session?.state?.session?.user
+      if(user){
+        await initConfig(user)
+      }
       setUserIsLogin(true, JSON.stringify(session));
       toast({
         title: '登录成功',
@@ -46,7 +62,11 @@ export default function LoginForm() {
         isClosable: true,
         position: 'top'
       });
-      router.push('/apps');
+      if(showMenu){
+        router.push('/apps?showMenu=true');
+      }else{
+        router.push('/apps');
+      }
     } catch (error) {
       toast({
         position: 'top',

@@ -7,7 +7,7 @@ import { SEALOS_DOMAIN, loadInitData } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import '@/styles/reset.scss';
 import { getLangStore, setLangStore } from '@/utils/cookieUtils';
-import { getUserIsLogin } from '@/utils/user';
+import { getMenuList, getUserIsLogin } from '@/utils/user';
 import { Box, ChakraProvider, Flex, Heading, ListItem, Text, Link, useDisclosure, background, Button } from '@chakra-ui/react';
 import '@sealos/driver/src/driver.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import Login from './login';
 import { setUserIsLogin } from '@/utils/user';
+import { getParamValue } from '@/utils/tools'
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -57,12 +58,18 @@ const App = ({ Component, pageProps }: AppProps) => {
   const myStyles = {
     cursor: 'pointer',
   };
+  const menuList:any[] = getMenuList()
 
   useEffect(() => {
     const isLogin = getUserIsLogin();
+    const showMenu = getParamValue('showMenu')
     setLoginStatus(isLogin)
     if (!isLogin) {
-      router.push('/login');
+      if(showMenu){
+        router.push('/login?showMenu=true');
+      }else{
+        router.push('/login');
+      }
     }
     const response = createSealosApp();
     (async () => {
@@ -135,8 +142,8 @@ const App = ({ Component, pageProps }: AppProps) => {
   const [currentRoute, setCurrentRoute] = useState<string>('');
   useEffect(() => {
     setCurrentRoute(router.pathname)
-    const query = router.query;
-    setShowMenu(!!query.showMenu)
+    const showMenu = getParamValue('showMenu')
+    setShowMenu(!!showMenu)
   }, [router.pathname]);
 
 
@@ -179,7 +186,6 @@ const App = ({ Component, pageProps }: AppProps) => {
     };
     setupInternalAppCallListener();
   }, []);
-
   return (
     <>
       <Head>
@@ -219,7 +225,11 @@ const App = ({ Component, pageProps }: AppProps) => {
                       variant={'outline'}
                       onClick={() => {
                         setUserIsLogin(false, '');
-                        router.replace('/login');
+                        if(showMenu){
+                           router.replace('/login?showMenu=true');
+                        }else{
+                           router.replace('/login');
+                        }
                       }}
                     >
                       登出
@@ -235,16 +245,18 @@ const App = ({ Component, pageProps }: AppProps) => {
                     {
                       showMenu ?
                         <Box w="200px" bg="#001529" color="white" p={4} borderRight="1px" borderColor="gray.300">
-                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/imagehub' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/imagehub${showMenu ? '?showMenu=true' : ''}`)}>镜像管理</Text>
-                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/apps${showMenu ? '?showMenu=true' : ''}`)}>应用管理</Text>
+                          {menuList?.map((menu)=>{
+                            return <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === menu.path ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`${menu.path}${showMenu ? '?showMenu=true' : ''}`)}>{menu.name}</Text>
+                          })}
+                          {/* <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/apps' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/apps${showMenu ? '?showMenu=true' : ''}`)}>应用管理</Text> */}
                           {/* <Text fontSize="lg" p={4} className="menu" style={{color: currentRoute === '/tenantManage' ? '#02A7F0' : '#FFFFFF'}} onClick={()=>router.push('/tenantManage')}>租户管理</Text> */}
-                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/nodeManage${showMenu ? '?showMenu=true' : ''}`)}>节点管理</Text>
+                          {/* <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/nodeManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/nodeManage${showMenu ? '?showMenu=true' : ''}`)}>节点管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/user' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/user${showMenu ? '?showMenu=true' : ''}`)}>租户管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/computePower' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/computePower${showMenu ? '?showMenu=true' : ''}`)}>算力测算</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/monitor' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/monitor${showMenu ? '?showMenu=true' : ''}`)}>监控管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/roles' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/roles${showMenu ? '?showMenu=true' : ''}`)}>角色管理</Text>
                           <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/warn' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/alert${showMenu ? '?showMenu=true' : ''}`)}>告警管理</Text>
-                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/configManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/configManage${showMenu ? '?showMenu=true' : ''}`)}>配置管理</Text>
+                          <Text fontSize="lg" p={4} className="menu" style={{ color: currentRoute === '/configManage' ? '#02A7F0' : '#FFFFFF' }} onClick={() => router.push(`/configManage${showMenu ? '?showMenu=true' : ''}`)}>配置管理</Text> */}
                         </Box> : null
                     }
 

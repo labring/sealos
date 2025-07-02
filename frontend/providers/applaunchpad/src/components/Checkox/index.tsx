@@ -1,9 +1,8 @@
 import { Checkbox, Stack } from '@chakra-ui/react'
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 export function DefineCheckBox({ list, value, onChange }: { list: any[], value: any[], onChange: any }) {
     const allChecked = useMemo(() => {
-        console.log(value,list)
         if (value.length > 0 && value.length === list.length) return true
         return false
     }, [list, value])
@@ -12,6 +11,13 @@ export function DefineCheckBox({ list, value, onChange }: { list: any[], value: 
         return false
     }, [list, value])
     const [innerValueMap,setInnerValueMap] = React.useState<any>({})
+    useEffect(()=>{
+        const _innerValueMap = {...innerValueMap}
+        value?.map((key)=>{
+            _innerValueMap[key] = key
+        })
+        setInnerValueMap(_innerValueMap)
+    },[value])
     return (
         <div>
             <Checkbox
@@ -24,8 +30,8 @@ export function DefineCheckBox({ list, value, onChange }: { list: any[], value: 
                         let _selected: string[] = []
                         let _mapping:any = {}
                         list.forEach((item) => {
-                            _mapping[item.name] = true
-                            _selected.push(item.name)
+                            _mapping[item.id] = true
+                            _selected.push(item.id)
                         })
                         onChange(_selected)
                         setInnerValueMap(_mapping)
@@ -39,25 +45,25 @@ export function DefineCheckBox({ list, value, onChange }: { list: any[], value: 
             </Checkbox>
             <>
                 {list.map((item) => {
-                    return <div key={item.name}>
+                    return <div key={item.id}>
                         <Checkbox
-                            key={item.name}
-                            isChecked={innerValueMap[item.name]}
-                            value={innerValueMap[item.name]}
-                            name={item.name}
+                            key={item.id}
+                            isChecked={innerValueMap[item.id]}
+                            value={innerValueMap[item.id]}
+                            name={item.id}
                             onChange={(e) => {
                                 const findIndex = value.findIndex((name) => {
-                                    return name == item.name
+                                    return name == item.id
                                 })
                                 let _mapping:any = {...innerValueMap}
                                 const _value = value.slice()
-                                if (_mapping[item.name] && findIndex !=-1) {
+                                if (_mapping[item.id] && findIndex !=-1) {
                                     _value.splice(findIndex, 1)
                                     onChange(_value)
-                                    _mapping[item.name] = false
+                                    _mapping[item.id] = false
                                 } else {
-                                    _value.push(item.name)
-                                    _mapping[item.name] = true
+                                    _value.push(item.id)
+                                    _mapping[item.id] = true
                                     onChange(_value)
                                 }
                                 setInnerValueMap(_mapping)

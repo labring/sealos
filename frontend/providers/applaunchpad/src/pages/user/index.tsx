@@ -4,6 +4,7 @@ import FileSelect from '@/components/FileSelect';
 import MyIcon from '@/components/Icon';
 import { ImageHubItem } from '@/pages/api/imagehub/get';
 import { formatPodTime } from '@/utils/tools';
+import { getRoles } from '@/api/roles'
 import {
   Box,
   Button,
@@ -67,13 +68,13 @@ const AppList = ({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [currentData, setCurrentData] = useState<any>(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
-
+  const [roleId, setRoleId] = useState<any>(null)
   const toast = useToast();
 
   const columns = [
     { title: '用户名', field: 'username' },
     { title: '命名空间', field: 'namespace' },
-    { title: '创建时间', field: 'createtime', render: (row: any) => formatPodTime(row.createTime) },
+    { title: '创建时间', field: 'createtime', render: (row: any) => dayjs(row.createtime).format('YYYY-MM-DD HH:mm:ss') },
     { title: 'cpu', field: 'cpu' },
     { title: '内存', field: 'memory' },
     { title: '磁盘数量', field: 'persistentvolumeclaims' },
@@ -81,6 +82,7 @@ const AppList = ({
     { title: '存储', field: 'storage' },
     { title: '操作' }
   ];
+  const [roles, setRoles] = useState<any[]>([])
 
   const Label = ({
     children,
@@ -104,6 +106,7 @@ const AppList = ({
 
   useEffect(() => {
     initUserDataAndResource()
+    fetchRoleList()
   }, [])
 
   const initUserDataAndResource = async () => {
@@ -120,11 +123,16 @@ const AppList = ({
   const onClose = () => {
     setIsOpen(false)
   }
+  const fetchRoleList = async () => {
+    const res = await getRoles({})
+    setRoles(res)
+  }
 
   const onConfirm = async () => {
     try {
       const resp = await createNamespace({
-        ns: username
+        ns: username,
+        roleId: roleId
       })
       if (resp) {
         await syncConfigMap()
@@ -153,6 +161,7 @@ const AppList = ({
       limitsCpu: Number(data.cpu),
       limitsMemory: Number(data.memory.split('Gi')[0]),
     })
+    setRoleId(data.roleId)
     setIsEditOpen(true)
   }
 
@@ -188,12 +197,13 @@ const AppList = ({
     setIsEditOpen(false)
   }
 
-  const onEditConfirm = async() => {
+  const onEditConfirm = async () => {
     try {
       if (currentData) {
         const resp = await updateResourceQuotas(currentData.namespace, {
           namespace: currentData.namespace,
           username: currentData.username,
+          roleId:roleId,
           limits: {
             services: currentData.services,
             requestsStorage: `${currentData.requestsStorage}Gi`,
@@ -204,7 +214,7 @@ const AppList = ({
         })
         if (resp) {
           toast({
-            status:'success',
+            status: 'success',
             title: '编辑成功'
           })
           onEditClose()
@@ -252,11 +262,11 @@ const AppList = ({
                     <Td key={`${rowIndex}-${colIndex}`}>
                       <Flex gap={'1'}>
                         <Button size="sm" onClick={() => { onEdit(row) }}>编辑</Button>
-                        <Button bgColor={'red'} colorScheme='red' _hover={{bgColor: 'red'}} size="sm" onClick={() => { onDelete(row) }}>删除</Button>
+                        <Button bgColor={'red'} colorScheme='red' _hover={{ bgColor: 'red' }} size="sm" onClick={() => { onDelete(row) }}>删除</Button>
                       </Flex>
                     </Td> :
                     <Td key={`${rowIndex}-${colIndex}`}>
-                      {row[column.field as keyof typeof row]}
+                      {column.render ? column.render(row) : row[column.field as keyof typeof row]}
                     </Td>
                 ))}
               </Tr>
@@ -277,10 +287,30 @@ const AppList = ({
                 <Input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  width={'60%'}
+                  width={300}
                   autoFocus={true}
                   maxLength={60}
                 />
+              </Flex>
+            </FormControl>
+            <FormControl mb={7} w={'100%'}>
+              <Flex alignItems={'center'} mb={5}>
+                <Label>角色</Label>
+                <Select
+                  style={{borderColor: '#02A7F0'}}
+                  width={300}
+                  mr={4}
+                  value={roleId}
+                  onChange={(e) => {
+                    setRoleId(e.target.value)
+                  }}
+                >
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </Select>
               </Flex>
             </FormControl>
           </ModalBody>
@@ -329,6 +359,23 @@ const AppList = ({
                   autoFocus={true}
                   maxLength={60}
                 />
+              </Flex>
+              <Flex alignItems={'center'} mb={5}>
+                <Label>角色</Label>
+                <Select
+                  value={roleId}
+                  onChange={(e) => {
+                    setRoleId(e.target.value)
+                  }}
+                  style={{borderColor: '#02A7F0'}}
+                  width={300}
+                >
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
+                    </option>
+                  ))}
+                </Select>
               </Flex>
               <Flex alignItems={'center'} mb={5}>
                 <Label>命名空间</Label>

@@ -1,6 +1,6 @@
 import MyIcon from "@/components/Icon";
-import { Table, Thead, Tr, Th, Td, Tbody, Button, TableContainer, Flex, Box, ModalBody, ModalFooter, FormControl, InputGroup, Center, ButtonGroup, ModalCloseButton, Modal, ModalContent, Input, ModalOverlay, ModalHeader, InputRightAddon,useToast } from "@chakra-ui/react";
-import { getRoles, getAllMenus, addRoles,updateRoles } from '@/api/roles'
+import { Table, Thead, Tr, Th, Td, Tbody, Button, TableContainer, Flex, Box, ModalBody, ModalFooter, FormControl, InputGroup, Center, ButtonGroup, ModalCloseButton, Modal, ModalContent, Input, ModalOverlay, ModalHeader, InputRightAddon, useToast } from "@chakra-ui/react";
+import { getRoles, getAllMenus, addRoles, updateRoles, addRolesAndMenu, deleteRoles, getRolesAndMenu } from '@/api/roles'
 import { DefineCheckBox } from '../../components/Checkox'
 import { useEffect, useState } from "react";
 const Title = "角色管理"
@@ -34,7 +34,7 @@ const Label = ({
 const Menu = () => {
     const [isOpen, setIsOpen] = useState(false)
     const [name, setName] = useState('')
-    const [id,setId] = useState<any>(null)
+    const [id, setId] = useState<any>(null)
     const [isDeleteOpen, setIsDeleteOpen] = useState(false)
     const [currentData, setCurrentData] = useState<any>(null)
     const [list, setList] = useState<RoleItem[]>([])
@@ -55,10 +55,13 @@ const Menu = () => {
     }
     const onConfirm = async () => {
         try {
-            await addRoles({
+            const res = await addRoles({
                 name,
-                description:desc,
-                status:'1'
+                description: desc,
+                status: '1'
+            })
+            await addRolesAndMenu(res.id, {
+                menu_ids: selectedMenu
             })
             toast({
                 status: 'success',
@@ -73,7 +76,7 @@ const Menu = () => {
             });
         }
     }
-    const onClear = ()=>{
+    const onClear = () => {
         setName('')
         setDesc('')
         setId(null)
@@ -82,36 +85,36 @@ const Menu = () => {
         setName(data.name)
         setDesc(data.description)
         setId(data.id)
+        const res = await getRolesAndMenu(data.id)
+        setSelectedMenu(res.map((item: any) => item.id))
         setIsOpen(true)
     }
-    useEffect(()=>{
-        if(!isOpen){
+    useEffect(() => {
+        if (!isOpen) {
             onClear()
         }
-    },[isOpen])
+    }, [isOpen])
 
     const onDelete = async (data: any) => {
-        setCurrentData(data)
+        setId(data.id)
         setIsDeleteOpen(true)
     }
 
     const onDeleteClose = () => {
-        setCurrentData(null)
+        setId(null)
         setIsDeleteOpen(false)
     }
 
     const onDeleteConfirm = async () => {
         try {
-            if (currentData) {
-                // const resp = await deleteResourceQuotas(currentData.namespace)
-                // if (resp) {
-                //     toast({
-                //         status: 'success',
-                //         title: '删除成功'
-                //     })
-                //     onDeleteClose()
-                //     initUserDataAndResource()
-                // }
+            if (id) {
+                await deleteRoles(id)
+                toast({
+                    status: 'success',
+                    title: '删除成功'
+                })
+                onDeleteClose()
+                getList()
             }
         } catch (error) {
         }
@@ -128,19 +131,20 @@ const Menu = () => {
     const onEditConfirm = async () => {
         try {
             if (id) {
-                const resp = await updateRoles(id, {
+                await updateRoles(id, {
                     name,
-                    description:desc,
-                    status:'1'
+                    description: desc,
+                    status: '1'
                 })
-                if (resp) {
-                    toast({
-                        status: 'success',
-                        title: '编辑成功'
-                    })
-                    onClose()
-                    getList()
-                }
+                await addRolesAndMenu(id, {
+                    menu_ids: selectedMenu
+                })
+                toast({
+                    status: 'success',
+                    title: '编辑成功'
+                })
+                onClose()
+                getList()
             }
         } catch (error) {
         }
@@ -201,10 +205,12 @@ const Menu = () => {
                             </Td>
                             <Td>
                                 <ButtonGroup>
-                                    <Button onClick={()=>{
+                                    <Button onClick={() => {
                                         onEdit(item)
                                     }} size='sm' type="button">编辑</Button>
-                                    <Button bgColor={'red'} colorScheme='red' _hover={{ bgColor: 'red' }} size="sm" type="button">删除</Button>
+                                    <Button onClick={() => {
+                                        onDelete(item)
+                                    }} bgColor={'red'} colorScheme='red' _hover={{ bgColor: 'red' }} size="sm" type="button">删除</Button>
                                 </ButtonGroup>
                             </Td>
                         </Tr>
@@ -256,10 +262,10 @@ const Menu = () => {
                     </Flex>
                 </ModalBody>
                 <ModalFooter>
-                    <Button colorScheme="blue" mr={3} onClick={()=>{
-                        if(id){
+                    <Button colorScheme="blue" mr={3} onClick={() => {
+                        if (id) {
                             onEditConfirm()
-                        }else{
+                        } else {
                             onConfirm()
                         }
                     }}>

@@ -14,6 +14,7 @@ interface Limits {
 
 interface RequestBody {
 	namespace: string;
+	roleId:any;
 	username?: string; // Optional, if not provided, it will be inferred from the session
 	limits: Limits;
 }
@@ -33,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 				name: 'quota',
 				namespace: namespace,
 				annotations: {
-					'sealos/username': req.body.username || namespace
+					'sealos/username': req.body.username || namespace,
+					'sealos/roleId': req.body.roleId || null,
 				}
 			},
 			spec: {

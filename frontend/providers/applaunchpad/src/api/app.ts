@@ -36,6 +36,7 @@ interface UpdateResourceQuotasData {
   namespace: string;
   username: string;
   limits: Limits;
+  roleId: any;
 }
 export const updateResourceQuotas = (namespace: string, data: UpdateResourceQuotasData) =>
   POST(`/api/updateResourceQuotas?namespace=${namespace}`, data);
