@@ -21,7 +21,7 @@ import { getSSHConnectionInfo } from '@/api/devbox';
 import { DevboxStatusMapType } from '@/types/devbox';
 import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
 
-import ToolboxModal from './modals/ToolboxModal';
+import ToolboxDrawer from './modals/ToolboxDrawer';
 import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
 
 export interface JetBrainsGuideData {
@@ -70,7 +70,7 @@ const IDEButton = ({
   const { getDevboxIDEByDevboxName, updateDevboxIDE } = useIDEStore();
 
   const [loading, setLoading] = useState(false);
-  const [onOpenToolboxModal, setOnOpenToolboxModal] = useState(false);
+  const [onOpenToolboxDrawer, setOnOpenToolboxDrawer] = useState(false);
   const [onOpenJetbrainsModal, setOnOpenJetbrainsModal] = useState(false);
   const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
 
@@ -105,7 +105,7 @@ const IDEButton = ({
           setOnOpenJetbrainsModal(true);
           return;
         } else if (currentIDE === 'toolbox') {
-          setOnOpenToolboxModal(true);
+          setOnOpenToolboxDrawer(true);
           return;
         }
 
@@ -280,17 +280,18 @@ const IDEButton = ({
         />
       )}
 
-      {!!onOpenJetbrainsModal && !!jetbrainsGuideData && (
+      {!!jetbrainsGuideData && (
         <JetBrainsGuideModal
+          open={onOpenJetbrainsModal}
           onSuccess={() => {}}
           onClose={() => setOnOpenJetbrainsModal(false)}
           jetbrainsGuideData={jetbrainsGuideData}
         />
       )}
-      {!!onOpenToolboxModal && !!jetbrainsGuideData && (
-        <ToolboxModal
-          onSuccess={() => {}}
-          onClose={() => setOnOpenToolboxModal(false)}
+      {!!jetbrainsGuideData && (
+        <ToolboxDrawer
+          open={onOpenToolboxDrawer}
+          onClose={() => setOnOpenToolboxDrawer(false)}
           jetbrainsGuideData={jetbrainsGuideData}
         />
       )}

@@ -10,11 +10,10 @@ import { getTemplateConfig } from '@/api/template';
 import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 
 import GPUItem from '@/components/GPUItem';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { JetBrainsGuideData } from '@/components/IDEButton';
-import SshConnectModal from '@/components/modals/SshConnectModal';
+import SshConnectDrawer from '@/components/modals/SshConnectDrawer';
 
 const Basic = () => {
   const t = useTranslations();
@@ -199,7 +198,7 @@ const Basic = () => {
         </div>
       </div>
       {!!sshConfigData && (
-        <SshConnectModal
+        <SshConnectDrawer
           jetbrainsGuideData={sshConfigData}
           open={onOpenSsHConnect}
           onSuccess={() => {
