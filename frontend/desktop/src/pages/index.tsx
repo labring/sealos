@@ -190,6 +190,7 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
   // handle page views from ad clicks
   useEffect(() => {
     const { bd_vid, msclkid } = router.query;
+
     // Baidu click data
     if (bd_vid) {
       setAdClickData({
@@ -199,18 +200,6 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
           newType: [3]
         }
       });
-
-      // Baidu SEM data
-      const { s, k } = router.query;
-      // handle new user sem source
-      const semData: SemData = { channel: '' };
-      if (s) {
-        semData.channel = s as string;
-      }
-      if (k) {
-        semData.additionalInfo = { semKeyword: k as string };
-      }
-      setUserSemData(semData);
     } else if (msclkid) {
       // Bing click data
       setAdClickData({
@@ -221,6 +210,21 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
         }
       });
     }
+
+    // handle new user sem source
+    const { search, s, k } = router.query;
+    const semData: SemData = { channel: '', additionalInfo: {} };
+    if (search) {
+      semData.additionalInfo.searchEngine = search as string;
+    }
+    if (s) {
+      semData.channel = s as string;
+    }
+    if (k) {
+      semData.additionalInfo.semKeyword = k as string;
+    }
+
+    setUserSemData(semData);
   }, []);
 
   // handle workspaceInvite

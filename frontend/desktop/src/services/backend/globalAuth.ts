@@ -200,7 +200,7 @@ async function signUp({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
@@ -266,7 +266,7 @@ async function signUpWithEmail({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
@@ -326,7 +326,7 @@ export async function signUpByPassword({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
