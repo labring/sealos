@@ -1,6 +1,7 @@
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { trackEventName } from '@/constants/account';
+import { useSemParams } from '@/hooks/useSemParams';
 import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -187,45 +188,17 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     swtichWorksapceMutation.mutate(workspaceUid);
   }, [session?.user?.ns_uid, workspaces]);
 
-  // handle page views from ad clicks
+  // Grab params from ad clicks and store in local storage
+  const { adClickData, semData } = useSemParams();
   useEffect(() => {
-    const { bd_vid, msclkid } = router.query;
-
-    // Baidu click data
-    if (bd_vid) {
-      setAdClickData({
-        source: 'Baidu',
-        clickId: bd_vid as string,
-        additionalData: {
-          newType: [3]
-        }
-      });
-    } else if (msclkid) {
-      // Bing click data
-      setAdClickData({
-        source: 'Bing',
-        clickId: msclkid as string,
-        additionalData: {
-          timestamp: Date.now()
-        }
-      });
+    if (adClickData) {
+      setAdClickData(adClickData);
     }
 
-    // handle new user sem source
-    const { search, s, k } = router.query;
-    const semData: SemData = { channel: '', additionalInfo: {} };
-    if (search) {
-      semData.additionalInfo.searchEngine = search as string;
+    if (semData) {
+      setUserSemData(semData);
     }
-    if (s) {
-      semData.channel = s as string;
-    }
-    if (k) {
-      semData.additionalInfo.semKeyword = k as string;
-    }
-
-    setUserSemData(semData);
-  }, []);
+  });
 
   // handle workspaceInvite
   useEffect(() => {

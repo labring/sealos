@@ -12,6 +12,8 @@ import useScriptStore from '@/stores/script';
 import SignLayout from '@/components/v2/SignLayout';
 import LangSelectSimple from '@/components/LangSelect/simple';
 import SigninComponent from '@/components/v2/Sign';
+import { useSemParams } from '@/hooks/useSemParams';
+import { setAdClickData, setUserSemData } from '@/utils/sessionConfig';
 
 export default function SigninPage() {
   const { layoutConfig, authConfig } = useConfigStore();
@@ -24,6 +26,18 @@ export default function SigninPage() {
       window.location.replace(url);
     }
   }, []);
+
+  // Grab params from ad clicks and store in local storage
+  const { adClickData, semData } = useSemParams();
+  useEffect(() => {
+    if (adClickData) {
+      setAdClickData(adClickData);
+    }
+
+    if (semData) {
+      setUserSemData(semData);
+    }
+  });
 
   return (
     <Box>
