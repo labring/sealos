@@ -11,7 +11,7 @@ import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
 import { Button } from '@/components/ui/button';
 
-export default function Header({ listLength }: { listLength: number }) {
+export default function Header() {
   const router = useRouter();
   const t = useTranslations();
   const { openTemplateModal, config, updateTemplateModalConfig } = useTemplateStore();
