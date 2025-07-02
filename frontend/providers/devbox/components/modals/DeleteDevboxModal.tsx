@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
+import { Loader2, TriangleAlert } from 'lucide-react';
 
 import { delDevbox } from '@/api/devbox';
 import { useIDEStore } from '@/stores/ide';
@@ -9,16 +10,14 @@ import { DevboxDetailTypeV2, DevboxListItemTypeV2 } from '@/types/devbox';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import MyIcon from '@/components/Icon';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-const DelModal = ({
+const DeleteDevboxModal = ({
   devbox,
   onClose,
   refetchDevboxList,
@@ -65,35 +64,32 @@ const DelModal = ({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="w-[450px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MyIcon name="warning" width={20} height={20} />
+            <TriangleAlert className="h-4 w-4 text-yellow-600" />
             {t('delete_warning')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <DialogDescription>{t('delete_warning_content')}</DialogDescription>
+        <div className="text-sm/5">{t('delete_warning_content')}</div>
 
-          <div className="rounded bg-gray-50 p-2 text-xs text-gray-600">
-            {t('delete_warning_content_2')}
-          </div>
-
-          <div>
+        <div className="rounded-lg bg-red-50 p-4 text-sm/5 text-red-600">
+          {t('delete_warning_content_2')}
+        </div>
+        <div className="flex flex-col gap-2">
+          <span className="text-sm text-zinc-500">
             {t.rich('please_enter_devbox_name_confirm', {
               name: devbox.name,
               strong: (chunks) => (
-                <span className="inline-block font-bold select-all">{chunks}</span>
+                <span className="font-medium text-zinc-900 select-all">{chunks}</span>
               )
             })}
-          </div>
-
+          </span>
           <Input
             placeholder={devbox.name}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            className="w-full"
           />
         </div>
 
@@ -102,13 +98,11 @@ const DelModal = ({
             {t('cancel')}
           </Button>
           <Button
-            variant="default"
+            variant="destructive"
             disabled={inputValue !== devbox.name || loading}
             onClick={handleDelDevbox}
           >
-            {loading ? (
-              <MyIcon name="loadingCircle" className="animate-spin" width={16} height={16} />
-            ) : null}
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t('confirm_delete')}
           </Button>
         </DialogFooter>
@@ -117,4 +111,4 @@ const DelModal = ({
   );
 };
 
-export default DelModal;
+export default DeleteDevboxModal;

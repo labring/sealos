@@ -44,7 +44,7 @@ import ReleaseModal from '@/components/modals/ReleaseModal';
 import ShutdownModal from '@/components/modals/ShutdownModal';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const DelModal = dynamic(() => import('@/components/modals/DelModal'));
+const DeleteDevboxModal = dynamic(() => import('@/components/modals/DeleteDevboxModal'));
 
 const PAGE_SIZE = 10;
 
@@ -325,7 +325,7 @@ const DevboxList = ({
 
       {/* modals */}
       {!!delDevbox && (
-        <DelModal
+        <DeleteDevboxModal
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={refetchDevboxList}
