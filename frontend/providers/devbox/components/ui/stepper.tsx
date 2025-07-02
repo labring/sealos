@@ -2,16 +2,17 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Circle } from 'lucide-react';
 
 interface StepperContextValue {
   activeStep: number;
   orientation: 'vertical' | 'horizontal';
+  totalSteps: number;
 }
 
 const StepperContext = React.createContext<StepperContextValue>({
   activeStep: 0,
-  orientation: 'horizontal'
+  orientation: 'horizontal',
+  totalSteps: 0
 });
 
 interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -28,19 +29,31 @@ function Stepper({
   children,
   ...props
 }: StepperProps) {
+  const childrenArray = React.Children.toArray(children);
+  const totalSteps = childrenArray.length;
+
   return (
-    <StepperContext.Provider value={{ activeStep, orientation }}>
+    <StepperContext.Provider value={{ activeStep, orientation, totalSteps }}>
       <div
         data-orientation={orientation}
         className={cn(
-          'flex',
+          'relative flex w-full',
           orientation === 'vertical' ? 'flex-col' : 'flex-row',
           `gap-${gap}`,
           className
         )}
         {...props}
       >
-        {children}
+        {React.Children.map(childrenArray, (child, index) => {
+          if (React.isValidElement(child)) {
+            return React.cloneElement(child, {
+              ...child.props,
+              index,
+              isLastStep: index === totalSteps - 1
+            });
+          }
+          return child;
+        })}
       </div>
     </StepperContext.Provider>
   );
@@ -48,86 +61,70 @@ function Stepper({
 
 interface StepProps extends React.HTMLAttributes<HTMLDivElement> {
   index?: number;
+  isLastStep?: boolean;
 }
 
-function Step({ className, children, index = 0, ...props }: StepProps) {
+function Step({ className, children, index = 0, isLastStep = false, ...props }: StepProps) {
   const { orientation } = React.useContext(StepperContext);
+
   return (
     <div
+      data-step-index={index}
       className={cn(
-        'relative flex',
-        orientation === 'vertical' ? 'flex-col' : 'flex-row items-center',
+        'relative flex w-full',
+        orientation === 'vertical' ? 'flex-row gap-2' : 'flex-col items-center',
         className
       )}
       {...props}
     >
-      {children}
+      {!isLastStep && (
+        <div
+          className={cn(
+            'absolute bg-neutral-200',
+            orientation === 'vertical'
+              ? 'top-8 left-3 h-[calc(100%-32px)] w-0.25'
+              : 'top-3 left-8 h-0.25 w-[calc(100%-32px)]'
+          )}
+        />
+      )}
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, {
+            ...child.props,
+            index: index
+          });
+        }
+        return child;
+      })}
     </div>
   );
 }
 
-function StepIndicator({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        'relative flex h-8 w-8 items-center justify-center rounded-full bg-gray-100',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-function StepSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  const { orientation } = React.useContext(StepperContext);
-  return (
-    <div
-      className={cn(
-        'flex-1 bg-gray-200',
-        orientation === 'vertical' ? 'ml-4 w-px' : 'h-px',
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function StepStatus({
+function StepIndicator({
   className,
-  incomplete,
-  complete,
-  active,
+  children,
+  index,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> & {
-  incomplete?: React.ReactNode;
-  complete?: React.ReactNode;
-  active?: React.ReactNode;
-}) {
-  const { activeStep } = React.useContext(StepperContext);
-  const status = activeStep === 0 ? 'incomplete' : activeStep === 1 ? 'active' : 'complete';
-
+}: React.HTMLAttributes<HTMLDivElement> & { index?: number }) {
   return (
-    <div className={cn('flex items-center justify-center', className)} {...props}>
-      {status === 'incomplete' && incomplete}
-      {status === 'active' && active}
-      {status === 'complete' && complete}
+    <div
+      className={cn(
+        'relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center gap-2.5 rounded-full bg-neutral-200 text-xs/4 font-semibold',
+        className
+      )}
+      {...props}
+    >
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, {
+            ...child.props,
+            index: index
+          });
+        }
+        return child;
+      })}
     </div>
   );
 }
 
-function StepNumber({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('flex h-6 w-6 items-center justify-center text-sm font-medium', className)}
-      {...props}
-    />
-  );
-}
-
-function StepCircle({ className, ...props }: React.ComponentProps<typeof Circle>) {
-  return <Circle className={cn('h-2 w-2', className)} {...props} />;
-}
-
-export { Stepper, Step, StepIndicator, StepSeparator, StepStatus, StepNumber, StepCircle };
+export { Stepper, Step, StepIndicator };

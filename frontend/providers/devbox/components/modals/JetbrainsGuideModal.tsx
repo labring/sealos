@@ -26,19 +26,19 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 import MyIcon from '../Icon';
-import SshConnectModal from './SshConnectModal';
+import SshConnectDrawer from './SshConnectDrawer';
 
 import { JetBrainsGuideData } from '../IDEButton';
 import { execCommandInDevboxPod } from '@/api/devbox';
 
-const JetBrainsGuideModal = ({
-  onClose,
-  jetbrainsGuideData
-}: {
+interface JetBrainsGuideModalProps {
+  open: boolean;
   onSuccess: () => void;
   onClose: () => void;
   jetbrainsGuideData: JetBrainsGuideData;
-}) => {
+}
+
+const JetBrainsGuideModal = ({ open, onClose, jetbrainsGuideData }: JetBrainsGuideModalProps) => {
   const t = useTranslations();
 
   const controllerRef = useRef<AbortController | null>(null);
@@ -49,7 +49,7 @@ const JetBrainsGuideModal = ({
 
   const [progress, setProgress] = useState(0);
   const [onConnecting, setOnConnecting] = useState(false);
-  const [onOpenSSHConnectModal, setOnOpenSSHConnectModal] = useState(false);
+  const [onOpenSSHConnectDrawer, setOnOpenSSHConnectDrawer] = useState(false);
 
   const connectIDE = useCallback(
     async (idePathName: string, version: string) => {
@@ -145,8 +145,8 @@ const JetBrainsGuideModal = ({
   return (
     <Box>
       <Modal
-        isOpen
-        onClose={onConnecting ? () => {} : onClose}
+        isOpen={open}
+        onClose={onClose}
         lockFocusAcrossFrames={false}
         isCentered
         scrollBehavior={'inside'}
@@ -235,7 +235,7 @@ const JetBrainsGuideModal = ({
                           color: 'brightBlue.600'
                         }
                       }}
-                      onClick={() => setOnOpenSSHConnectModal(true)}
+                      onClick={() => setOnOpenSSHConnectDrawer(true)}
                     >
                       {t('jetbrains_guide_config_ssh')}
                     </Button>
@@ -385,9 +385,9 @@ const JetBrainsGuideModal = ({
                 </Flex>
               )}
             </Box>
-            <SshConnectModal
-              open={onOpenSSHConnectModal}
-              onClose={() => setOnOpenSSHConnectModal(false)}
+            <SshConnectDrawer
+              open={onOpenSSHConnectDrawer}
+              onClose={() => setOnOpenSSHConnectDrawer(false)}
               onSuccess={() => {}}
               jetbrainsGuideData={jetbrainsGuideData}
             />

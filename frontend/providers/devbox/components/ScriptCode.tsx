@@ -30,7 +30,7 @@ const ScriptCode = ({
   return (
     <div
       className={cn(
-        'relative flex max-h-[300px] w-[585px] flex-col rounded-lg border border-input bg-background',
+        'relative flex max-h-[300px] w-full flex-col overflow-hidden rounded-lg border bg-white p-3',
         oneLine && 'flex-row',
         className
       )}
@@ -39,11 +39,11 @@ const ScriptCode = ({
         {!oneLine && (
           <Button
             variant="ghost"
-            className="gap-2 font-normal hover:bg-transparent hover:text-primary"
             onClick={() => setIsOpen(!isOpen)}
+            className="hover:text-zinc-80 h-fit px-0 hover:bg-white has-[>svg]:p-0"
           >
             <ChevronRight
-              className={cn('h-4 w-4 text-muted-foreground transition-transform', {
+              className={cn('h-4 w-4 text-zinc-400 transition-transform', {
                 'rotate-90': isOpen
               })}
             />
@@ -51,21 +51,23 @@ const ScriptCode = ({
           </Button>
         )}
         {oneLine && (
-          <div className="flex-1 overflow-y-auto px-4 py-2">
+          <div className="min-w-0 flex-1">
             <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-2 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-transparent hover:text-primary"
-          onClick={() => copyData(script)}
-        >
-          <Copy className="h-4 w-4" />
-        </Button>
+        {!oneLine && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => copyData(script)}
+            className="h-fit w-fit shrink-0 hover:bg-white hover:text-zinc-200"
+          >
+            <Copy className="h-4 w-4 text-zinc-400" />
+          </Button>
+        )}
       </div>
       {!oneLine && isOpen && (
-        <div className="overflow-y-auto px-3 pt-2">
+        <div className="min-w-0 overflow-hidden">
           <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
         </div>
       )}
