@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
+import { ArrowUpRight } from 'lucide-react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import { useEnvStore } from '@/stores/env';
@@ -104,7 +104,7 @@ export default function AppSelectModal({
 
         <div className="flex w-full flex-col gap-5">
           {/* create directly */}
-          <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-6">
+          <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50 bg-[url('/plaid-background.svg')] bg-cover bg-center p-6">
             <div className="flex w-[400px] flex-col gap-3">
               <span className="text-lg/7 font-semibold">{t('create_directly')}</span>
               <Button onClick={handleCreate} className="w-fit">
