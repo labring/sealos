@@ -12,10 +12,10 @@ import { useControlDevbox } from '@/hooks/useControlDevbox';
 
 import IDEButton from '@/components/IDEButton';
 import { Button } from '@/components/ui/button';
-import DelModal from '@/components/modals/DelModal';
 import DevboxStatusTag from '@/components/StatusTag';
 import { ButtonGroup } from '@/components/ui/button-group';
 import ShutdownModal from '@/components/modals/ShutdownModal';
+import DeleteDevboxModal from '@/components/modals/DeleteDevboxModal';
 
 interface HeaderProps {
   refetchDevboxDetail: () => void;
@@ -118,7 +118,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
       </div>
       {/* modals */}
       {!!delDevbox && (
-        <DelModal
+        <DeleteDevboxModal
           devbox={delDevbox}
           onClose={() => setDelDevbox(null)}
           onSuccess={() => {
