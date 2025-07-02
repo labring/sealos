@@ -1,34 +1,16 @@
-import {
-  Box,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalOverlay,
-  ModalHeader,
-  Text,
-  Divider,
-  Button,
-  Flex,
-  Stepper,
-  Step,
-  StepIndicator,
-  StepStatus,
-  StepNumber,
-  StepSeparator,
-  Grid,
-  GridItem,
-  Circle,
-  ModalCloseButton,
-  Progress
-} from '@chakra-ui/react';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
+import { ArrowUpRight, Info, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
-import MyIcon from '../Icon';
-import SshConnectDrawer from './SshConnectDrawer';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { JetBrainsGuideData } from '@/components/IDEButton';
+import SshConnectDrawer from '@/components/modals/SshConnectDrawer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-import { JetBrainsGuideData } from '../IDEButton';
+import { cn } from '@/lib/utils';
 import { execCommandInDevboxPod } from '@/api/devbox';
 
 interface JetBrainsGuideModalProps {
@@ -143,258 +125,156 @@ const JetBrainsGuideModal = ({ open, onClose, jetbrainsGuideData }: JetBrainsGui
   }, [debouncedHandleConnectIDE]);
 
   return (
-    <Box>
-      <Modal
-        isOpen={open}
-        onClose={onClose}
-        lockFocusAcrossFrames={false}
-        isCentered
-        scrollBehavior={'inside'}
-      >
-        <ModalOverlay />
-        <ModalContent maxWidth={'800px'} w={'700px'} position={'relative'} h={'785px'}>
-          <ModalHeader pl={10}>{t('use_jetbrains')}</ModalHeader>
-          <ModalCloseButton top={'10px'} right={'10px'} isDisabled={onConnecting} />
-          <ModalBody pb={6} overflowY={'auto'}>
-            {/* prepare */}
-            <Box pb={6}>
-              <Text fontWeight={'bold'} fontSize={'lg'} mb={6}>
-                {t('jetbrains_guide_prepare')}
-              </Text>
-              <Stepper orientation="vertical" index={-1} mt={4} gap={0} position={'relative'}>
-                {/* 1 */}
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Box mt={1} ml={2} mb={5}>
-                    <Box fontSize={'14px'} mb={3}>
-                      {t.rich('jetbrains_guide_prepare_install', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}
-                          >
-                            {chunks}
-                          </Text>
-                        )
-                      })}
-                    </Box>
-                    <Button
-                      leftIcon={<MyIcon name="upperRight" color={'grayModern.600'} w={'16px'} />}
-                      bg={'white'}
-                      color={'grayModern.600'}
-                      borderRadius={'5px'}
-                      borderWidth={1}
-                      size={'sm'}
-                      _hover={{
-                        color: 'brightBlue.600',
-                        '& svg': {
-                          color: 'brightBlue.600'
-                        }
-                      }}
-                      onClick={() => {
-                        window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank');
-                      }}
-                    >
-                      JetBrains Gateway
-                    </Button>
-                  </Box>
-                  <StepSeparator />
-                </Step>
-                {/* 2 */}
-                <Step>
-                  <StepIndicator backgroundColor={'grayModern.100'} borderColor={'grayModern.100'}>
-                    <StepStatus incomplete={<StepNumber />} />
-                  </StepIndicator>
-                  <Box mt={1} ml={2} mb={5}>
-                    <Box fontSize={'14px'} mb={3}>
-                      {t.rich('jetbrains_guide_click_to_config', {
-                        blue: (chunks) => (
-                          <Text
-                            fontWeight={'bold'}
-                            display={'inline-block'}
-                            color={'brightBlue.600'}
-                          >
-                            {chunks}
-                          </Text>
-                        )
-                      })}
-                    </Box>
-                    <Button
-                      leftIcon={<MyIcon name="settings" color={'grayModern.600'} w={'16px'} />}
-                      bg={'white'}
-                      color={'grayModern.600'}
-                      borderRadius={'5px'}
-                      borderWidth={1}
-                      size={'sm'}
-                      _hover={{
-                        color: 'brightBlue.600',
-                        '& svg': {
-                          color: 'brightBlue.600'
-                        }
-                      }}
-                      onClick={() => setOnOpenSSHConnectDrawer(true)}
-                    >
-                      {t('jetbrains_guide_config_ssh')}
-                    </Button>
-                  </Box>
-                  <StepSeparator />
-                </Step>
-                {/* done */}
-                <Step>
-                  <Circle
-                    size="10px"
-                    bg="grayModern.100"
-                    top={-3}
-                    left={2.5}
-                    position={'absolute'}
-                  />
-                </Step>
-              </Stepper>
-            </Box>
-            <Divider />
-            <Box pt={6} pb={6}>
-              <Flex alignItems={'center'} mb={6}>
-                <Text fontWeight={'bold'} fontSize={'lg'} mr={2}>
-                  {t('jetbrains_guide_start_to_use')}
-                </Text>
-              </Flex>
-              <Text fontSize={'14px'} fontWeight={'400'}>
-                {t('jetbrains_guide_select_ide')}
-              </Text>
-              <Grid templateColumns={'repeat(3, 1fr)'} gap={4} mt={4}>
-                {Object.values(jetbrainsIDEObj).map((ideType: any) => (
-                  <GridItem key={ideType.value}>
-                    <Flex
-                      bg={selectedIDE === ideType ? 'brightBlue.25' : 'grayModern.25'}
-                      borderWidth={1}
-                      boxShadow={
-                        selectedIDE === ideType ? '0 0 0 2.4px rgba(33, 155, 244, 0.15)' : 'none'
-                      }
-                      borderColor={selectedIDE === ideType ? 'brightBlue.500' : 'grayModern.200'}
-                      borderRadius={'6px'}
-                      p={4}
-                      justifyContent={'center'}
-                      alignItems={'center'}
-                      flexDirection={'column'}
-                      cursor={onConnecting ? 'not-allowed' : 'pointer'}
-                      opacity={onConnecting ? 0.5 : 1}
-                      _hover={{
-                        bg: onConnecting ? 'inherit' : 'brightBlue.25'
-                      }}
-                      onClick={() => {
-                        if (!onConnecting) {
-                          setSelectedIDE(ideType);
-                        }
-                      }}
-                      position={'relative'}
-                    >
-                      <MyIcon name={ideType.value as any} color={'grayModern.600'} w={'36px'} />
-                      <Text>{ideType.label}</Text>
-                      {recommendIDE === ideType && (
-                        <Box
-                          bg="yellow.100"
-                          top={1.5}
-                          left={0}
-                          position={'absolute'}
-                          p={'1px 10px'}
-                          borderRadius={'0px 4px 4px 0px'}
-                          fontSize={'12px'}
-                          color={'yellow.600'}
-                        >
-                          {t('recommend')}
-                        </Box>
-                      )}
-                    </Flex>
-                  </GridItem>
-                ))}
-              </Grid>
-              <Button
-                mt={4}
-                w={'100%'}
-                bg={'white'}
-                borderWidth={1}
-                borderRadius={'6px'}
-                color={'grayModern.600'}
-                size={'sm'}
-                px={1}
-                borderColor={onConnecting ? 'brightBlue.500' : 'grayModern.200'}
-                _hover={
-                  onConnecting
-                    ? {}
-                    : {
-                        color: 'brightBlue.600',
-                        borderColor: 'brightBlue.500'
-                      }
-                }
-                onClick={debouncedHandleConnectIDE}
-                h={'36px'}
-              >
-                {onConnecting ? (
-                  <Flex position={'relative'} w={'full'} alignItems={'center'} justify={'center'}>
-                    {t.rich('jetbrains_guide_connecting', {
-                      process: progress
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="h-[785px] w-[700px] max-w-[800px]">
+        <DialogHeader>
+          <DialogTitle className="pl-10">{t('use_jetbrains')}</DialogTitle>
+        </DialogHeader>
+        <div className="overflow-y-auto pb-6">
+          {/* prepare */}
+          <div className="pb-6">
+            <h3 className="mb-6 text-lg font-bold">{t('jetbrains_guide_prepare')}</h3>
+            <div className="relative mt-4">
+              {/* 1 */}
+              <div className="relative pb-5 pl-8 before:absolute before:top-3 before:left-3 before:h-full before:w-[1px] before:bg-border">
+                <div className="absolute top-1 left-0 flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                  1
+                </div>
+                <div className="mt-1">
+                  <div className="mb-3 text-sm">
+                    {t.rich('jetbrains_guide_prepare_install', {
+                      blue: (chunks) => (
+                        <span className="inline-block font-bold text-blue-600">{chunks}</span>
+                      )
                     })}
-                    <Box
-                      _hover={{
-                        textDecoration: 'underline'
-                      }}
-                      cursor={'pointer'}
-                      color={'brightBlue.600'}
-                      ml={6}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        controllerRef.current?.abort();
-                        controllerRef.current = null;
-                        setProgress(0);
-                        setOnConnecting(false);
-                      }}
-                    >
-                      {t('jetbrains_guide_cancel')}
-                    </Box>
-                    <Progress
-                      value={progress}
-                      size={'xs'}
-                      colorScheme={'brightBlue'}
-                      position={'absolute'}
-                      bottom={'-9.5px'}
-                      w={'full'}
-                      left={0}
-                      right={0}
-                    />
-                  </Flex>
-                ) : (
-                  t('jetbrains_guide_start_to_connect')
-                )}
-              </Button>
-              {onConnecting && (
-                <Flex
-                  mt={4}
-                  bg={'brightBlue.50'}
-                  p={2}
-                  borderRadius={'6px'}
-                  alignItems={'center'}
-                  justify={'center'}
-                >
-                  <MyIcon name="infoCircle" color={'brightBlue.600'} w={'16px'} mr={1} />
-                  <Text fontSize={'14px'} fontWeight={'400'} color={'brightBlue.600'}>
-                    {t('jetbrains_guide_connecting_info')}
-                  </Text>
-                </Flex>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-gray-600 hover:text-blue-600"
+                    onClick={() => {
+                      window.open('https://code-with-me.jetbrains.com/remoteDev', '_blank');
+                    }}
+                  >
+                    <ArrowUpRight className="mr-2 h-4 w-4" />
+                    JetBrains Gateway
+                  </Button>
+                </div>
+              </div>
+              {/* 2 */}
+              <div className="relative pb-5 pl-8 before:absolute before:top-3 before:left-3 before:h-full before:w-[1px] before:bg-border">
+                <div className="absolute top-1 left-0 flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+                  2
+                </div>
+                <div className="mt-1">
+                  <div className="mb-3 text-sm">
+                    {t.rich('jetbrains_guide_click_to_config', {
+                      blue: (chunks) => (
+                        <span className="inline-block font-bold text-blue-600">{chunks}</span>
+                      )
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-gray-600 hover:text-blue-600"
+                    onClick={() => setOnOpenSSHConnectDrawer(true)}
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    {t('jetbrains_guide_config_ssh')}
+                  </Button>
+                </div>
+              </div>
+              {/* done */}
+              <div className="absolute -bottom-1 left-3 h-2.5 w-2.5 rounded-full bg-muted" />
+            </div>
+          </div>
+          <Separator />
+          <div className="pt-6 pb-6">
+            <div className="mb-6 flex items-center">
+              <h3 className="mr-2 text-lg font-bold">{t('jetbrains_guide_start_to_use')}</h3>
+            </div>
+            <p className="text-sm font-normal">{t('jetbrains_guide_select_ide')}</p>
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              {Object.values(jetbrainsIDEObj).map((ideType: any) => (
+                <div key={ideType.value}>
+                  <div
+                    className={cn(
+                      'relative flex cursor-pointer flex-col items-center justify-center rounded-lg border p-4',
+                      selectedIDE === ideType
+                        ? 'border-blue-500 bg-blue-50 shadow-[0_0_0_2.4px_rgba(33,155,244,0.15)]'
+                        : 'border-gray-200 bg-gray-50 hover:bg-blue-50',
+                      onConnecting && 'cursor-not-allowed opacity-50 hover:bg-gray-50'
+                    )}
+                    onClick={() => {
+                      if (!onConnecting) {
+                        setSelectedIDE(ideType);
+                      }
+                    }}
+                  >
+                    {/* <MyIcon name={ideType.value as any} className="h-9 w-9 text-gray-600" /> */}
+                    <span>{ideType.label}</span>
+                    {recommendIDE === ideType && (
+                      <div className="absolute top-1.5 left-0 rounded-r bg-yellow-100 px-2.5 py-0.5 text-xs text-yellow-600">
+                        {t('recommend')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button
+              className={cn(
+                'relative mt-4 h-9 w-full',
+                onConnecting
+                  ? 'border-blue-500'
+                  : 'border-gray-200 hover:border-blue-500 hover:text-blue-600'
               )}
-            </Box>
-            <SshConnectDrawer
-              open={onOpenSSHConnectDrawer}
-              onClose={() => setOnOpenSSHConnectDrawer(false)}
-              onSuccess={() => {}}
-              jetbrainsGuideData={jetbrainsGuideData}
-            />
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
+              variant="outline"
+              onClick={debouncedHandleConnectIDE}
+              disabled={onConnecting}
+            >
+              {onConnecting ? (
+                <div className="relative flex w-full items-center justify-center">
+                  {t.rich('jetbrains_guide_connecting', {
+                    process: progress
+                  })}
+                  <button
+                    className="ml-6 text-blue-600 hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      controllerRef.current?.abort();
+                      controllerRef.current = null;
+                      setProgress(0);
+                      setOnConnecting(false);
+                    }}
+                  >
+                    {t('jetbrains_guide_cancel')}
+                  </button>
+                  <Progress value={progress} className="absolute right-0 -bottom-2.5 left-0" />
+                </div>
+              ) : (
+                t('jetbrains_guide_start_to_connect')
+              )}
+            </Button>
+            {onConnecting && (
+              <div className="mt-4 flex items-center justify-center rounded-lg bg-blue-50 p-2">
+                <Info className="mr-1 h-4 w-4 text-blue-600" />
+                <span className="text-sm font-normal text-blue-600">
+                  {t('jetbrains_guide_connecting_info')}
+                </span>
+              </div>
+            )}
+          </div>
+          <SshConnectDrawer
+            open={onOpenSSHConnectDrawer}
+            onClose={() => setOnOpenSSHConnectDrawer(false)}
+            onSuccess={() => {}}
+            jetbrainsGuideData={jetbrainsGuideData}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
