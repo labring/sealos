@@ -274,7 +274,7 @@ export default function Desktop(props: any) {
           <Warn />
         </Flex> */}
 
-        <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
+        <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'} width={'100%'}>
           <Apps />
         </Flex>
 
