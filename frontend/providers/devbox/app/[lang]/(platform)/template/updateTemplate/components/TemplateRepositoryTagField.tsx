@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { createContext, useRef } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
-import { TagCheckbox } from '../../TagCheckbox';
+// import { TagCheckbox } from '../../TagCheckbox';
 
 const TagSelectorStoreCtx = createContext<ReturnType<typeof createTagSelectorStore> | null>(null);
 
@@ -42,7 +42,7 @@ const TagList = ({ tags, title }: { tags: Tag[]; title: string }) => {
       <Flex gap={'8px'} wrap="wrap" width={'350px'}>
         {tags.map((tag) => (
           <Flex key={tag.uid} px={'8px'} py={'4px'} bg="grayModern.50" borderRadius="full">
-            <TagCheckbox
+            {/* <TagCheckbox
               name={`tag-${tag.uid}`}
               isChecked={containTag(tag.uid)}
               onChange={(e) => handleTagClick(tag, e.target.checked)}
@@ -50,7 +50,7 @@ const TagList = ({ tags, title }: { tags: Tag[]; title: string }) => {
               <Text color={'grayModern.900'}>
                 {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
               </Text>
-            </TagCheckbox>
+            </TagCheckbox> */}
           </Flex>
         ))}
       </Flex>
