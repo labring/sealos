@@ -8,13 +8,11 @@ import { useTagSelectorStore } from '@/stores/tagSelector';
 import { listTag, listTemplateRepository as listTemplateRepositoryApi } from '@/api/template';
 
 import { Label } from '@/components/ui/label';
-import { TabsContent } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 import TemplateCard from './TemplateCard';
-import SwitchPage from '@/components/SwitchPage';
+import { Pagination } from '@/components/ui/pagination';
 
 const PublicTemplate = ({ search }: { search: string }) => {
   const { selectedTagList, getSelectedTagList, resetTags } = useTagSelectorStore();
@@ -114,7 +112,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
   const t = useTranslations();
 
   return (
-    <div className="flex h-full gap-3">
+    <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
       <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
         <span className="truncate px-2 py-1.5 text-sm text-zinc-900">{t('tags')}</span>
@@ -130,39 +128,34 @@ const PublicTemplate = ({ search }: { search: string }) => {
 
       {/* right content */}
       <div className="flex flex-1 flex-col">
-        <span className="mb-4 text-lg font-medium text-gray-600">{t('all_templates')}</span>
-        <div className="relative h-[400px] flex-1">
-          <ScrollArea className="absolute inset-0 pr-1">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-5">
-              {templateRepositoryList.map((tr) => (
-                <TemplateCard
-                  key={tr.uid}
-                  iconId={tr.iconId || ''}
-                  templateRepositoryName={tr.name}
-                  templateRepositoryDescription={tr.description}
-                  templateRepositoryUid={tr.uid}
-                  tags={tr.templateRepositoryTags.map((t) => t.tag)}
-                  isPublic
-                />
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-        <div className="flex">
-          <SwitchPage
-            className="mt-2 ml-auto"
-            pageSize={pageQueryBody.pageSize}
-            totalPage={pageQueryBody.totalPage}
-            totalItem={pageQueryBody.totalItems}
-            currentPage={pageQueryBody.page}
-            setCurrentPage={(currentPage) => {
-              setPageQueryBody((page) => ({
-                ...page,
-                page: currentPage
-              }));
-            }}
-          />
-        </div>
+        <ScrollArea className="h-[calc(100vh-200px)] pr-2">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
+            {templateRepositoryList.map((tr) => (
+              <TemplateCard
+                key={tr.uid}
+                iconId={tr.iconId || ''}
+                templateRepositoryName={tr.name}
+                templateRepositoryDescription={tr.description}
+                templateRepositoryUid={tr.uid}
+                tags={tr.templateRepositoryTags.map((t) => t.tag)}
+                isPublic
+              />
+            ))}
+          </div>
+        </ScrollArea>
+        <Pagination
+          className="pr-2"
+          pageSize={pageQueryBody.pageSize}
+          totalPages={pageQueryBody.totalPage}
+          totalItems={pageQueryBody.totalItems}
+          currentPage={pageQueryBody.page}
+          onPageChange={(currentPage) => {
+            setPageQueryBody((page) => ({
+              ...page,
+              page: currentPage
+            }));
+          }}
+        />
       </div>
     </div>
   );
@@ -189,7 +182,7 @@ const TagItem = ({ tag }: { tag: Tag }) => {
           setSelectedTag(tag.uid, checked as boolean);
         }}
       />
-      <Label htmlFor={tag.uid} className="cursor-point w-full text-sm text-zinc-900">
+      <Label htmlFor={tag.uid} className="w-full cursor-pointer text-sm text-zinc-900">
         {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
       </Label>
     </div>
