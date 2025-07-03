@@ -403,7 +403,6 @@ export default function Apps() {
   const gridGap = 8;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
-  const [totalPagesInGrid, setTotalPagesInGrid] = useState(0);
   const [currentPageInGrid, setCurrentPageInGrid] = useState(0);
 
   const [itemsPerPageInFolder, setItemsPerPageInFolder] = useState(0);
@@ -417,7 +416,7 @@ export default function Apps() {
     [appDisplayConfigs]
   );
 
-  const renderApps = useMemo(() => {
+  const normalApps = useMemo(() => {
     return installedApps.filter((app) => getAppDisplayType(app) === 'normal');
   }, [installedApps, getAppDisplayType]);
 
@@ -425,25 +424,31 @@ export default function Apps() {
     return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
-  const gridPages = useMemo(() => {
-    const getPageInGrid = (pageIndex: number) => {
-      const start = pageIndex * itemsPerPageInGrid;
-      const end = start + itemsPerPageInGrid;
-      return renderApps.slice(start, end);
-    };
+  // Placed on desktop, but there's not enough space to show these apps on desktop
+  const dynamicApps = useMemo(() => {
+    if (itemsPerPageInGrid === 0) return [];
+    return normalApps.slice(itemsPerPageInGrid - 1);
+  }, [normalApps, itemsPerPageInGrid]);
 
-    return Array.from({ length: totalPagesInGrid }).map((_, index) => getPageInGrid(index));
-  }, [renderApps, itemsPerPageInGrid, totalPagesInGrid]);
+  const folderApps = useMemo(() => {
+    return [...dynamicApps, ...moreApps];
+  }, [dynamicApps, moreApps]);
+
+  const desktopPages = useMemo(() => {
+    // One page desktop
+    const firstPageApps = itemsPerPageInGrid > 0 ? normalApps.slice(0, itemsPerPageInGrid - 1) : [];
+    return [firstPageApps];
+  }, [normalApps, itemsPerPageInGrid]);
 
   const folderPages = useMemo(() => {
     const getPageInFolder = (pageIndex: number) => {
       const start = pageIndex * itemsPerPageInFolder;
       const end = start + itemsPerPageInFolder;
-      return moreApps.slice(start, end);
+      return folderApps.slice(start, end);
     };
 
     return Array.from({ length: totalPagesInFolder }).map((_, index) => getPageInFolder(index));
-  }, [moreApps, itemsPerPageInFolder, totalPagesInFolder]);
+  }, [folderApps, itemsPerPageInFolder, totalPagesInFolder]);
 
   const { isDriverActive } = useGuideModalStore();
 
@@ -607,7 +612,7 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
-  console.log(renderApps, 'renderApps');
+  console.log(normalApps, 'renderApps');
 
   const gradientIconStyle = {
     '.gradient-icon': {
@@ -696,16 +701,15 @@ export default function Apps() {
         <AppGridPagingContainer
           gridGap={gridGap}
           appHeight={appHeight}
-          totalPages={totalPagesInGrid}
+          // One page desktop, other apps are in folder
+          totalPages={1}
           currentPage={currentPageInGrid}
           onChange={(currentPage, pageSize) => {
             setCurrentPageInGrid(currentPage);
             setItemsPerPageInGrid(pageSize);
-            // length + 1 = apps + more apps folder
-            setTotalPagesInGrid(Math.ceil((renderApps.length + 1) / pageSize));
           }}
         >
-          {gridPages.map((page, pageIndex) => (
+          {desktopPages.map((page, pageIndex) => (
             <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
               {page.map((app, index) => (
                 <AppItem
@@ -717,26 +721,15 @@ export default function Apps() {
                 />
               ))}
 
-              {/* More Apps Folder on last page */}
-              {moreApps && pageIndex === totalPagesInGrid - 1 && (
-                <MoreAppsFolder
-                  apps={moreApps}
-                  onClick={handleMoreAppsClick}
-                  onDrop={handleMoreAppsDrop}
-                />
-              )}
+              <MoreAppsFolder
+                apps={folderApps}
+                onClick={handleMoreAppsClick}
+                onDrop={handleMoreAppsDrop}
+              />
             </AppGrid>
           ))}
         </AppGridPagingContainer>
       </Flex>
-
-      <Box position="absolute" bottom="16px" left="0" right="0">
-        <PageSwitcher
-          pages={totalPagesInGrid}
-          current={currentPageInGrid}
-          onChange={(page) => setCurrentPageInGrid(page)}
-        />
-      </Box>
 
       <Modal isOpen={isFolderOpen} onClose={closeFolder} size="xl" isCentered>
         <ModalOverlay bg="rgba(0, 0, 0, 0.3)" backdropFilter="blur(2px)" />
