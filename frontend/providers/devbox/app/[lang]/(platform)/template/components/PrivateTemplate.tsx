@@ -1,13 +1,14 @@
-import { listPrivateTemplateRepository } from '@/api/template';
-import MyIcon from '@/components/Icon';
-import SwitchPage from '@/components/SwitchPage';
-import { Box, Flex, Grid, TabPanel, Text } from '@chakra-ui/react';
-import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import TemplateCard from './TemplateCard';
+import { useQuery } from '@tanstack/react-query';
+import { Box, Flex, Grid, TabPanel, Text } from '@chakra-ui/react';
 
-export default function PrivatePanel({ search }: { search: string }) {
+import { listPrivateTemplateRepository as listPrivateTemplateRepositoryApi } from '@/api/template';
+import MyIcon from '@/components/Icon';
+import TemplateCard from '../TemplateModal/TemplateCard';
+import SwitchPage from '@/components/SwitchPage';
+
+export default function PrivateTemplate({ search }: { search: string }) {
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
     pageSize: 30,
@@ -34,7 +35,7 @@ export default function PrivatePanel({ search }: { search: string }) {
   const listPrivateTemplateRepository = useQuery(
     ['template-repository-list', 'template-repository-private', queryBody],
     () => {
-      return listPrivateTemplateRepository(queryBody);
+      return listPrivateTemplateRepositoryApi(queryBody);
     }
   );
 
@@ -59,7 +60,7 @@ export default function PrivatePanel({ search }: { search: string }) {
   ]);
 
   const t = useTranslations();
-  const privateTempalteRepositoryList =
+  const privateTemplateRepositoryList =
     listPrivateTemplateRepository.data?.templateRepositoryList || [];
   return (
     <TabPanel p={0} height={'full'}>
@@ -75,7 +76,7 @@ export default function PrivatePanel({ search }: { search: string }) {
             inset={0}
             gridAutoRows={'max-content'}
           >
-            {privateTempalteRepositoryList.map((tr) => (
+            {privateTemplateRepositoryList.map((tr) => (
               <TemplateCard
                 key={tr.uid}
                 isPublic={tr.isPublic}
@@ -89,7 +90,7 @@ export default function PrivatePanel({ search }: { search: string }) {
               />
             ))}
           </Grid>
-          {privateTempalteRepositoryList.length === 0 && (
+          {privateTemplateRepositoryList.length === 0 && (
             <Flex
               justifyContent={'center'}
               flex={1}

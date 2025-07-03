@@ -25,7 +25,8 @@ const tabsListVariants = cva(
     variants: {
       variant: {
         default: 'h-9 rounded-lg bg-muted p-1',
-        underline: 'h-12 p-0'
+        underline: 'h-12 p-0',
+        ghost: 'bg-transparent'
       }
     },
     defaultVariants: {
@@ -60,6 +61,9 @@ const tabsTriggerVariants = cva(
         underline: [
           'border-b-1 border-transparent border-b-zinc-200',
           'data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-foreground'
+        ],
+        ghost: [
+          'font-semibold text-zinc-600 data-[state=active]:rounded-lg data-[state=active]:bg-[rgba(0,0,0,0.04)] data-[state=active]:text-zinc-900'
         ]
       }
     },
