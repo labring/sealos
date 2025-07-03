@@ -50,11 +50,6 @@ const AppItem = ({
 
   return (
     <Flex
-      draggable={
-        !['system-devbox', 'system-applaunchpad', 'system-template', 'system-dbprovider'].includes(
-          app.key
-        )
-      }
       flexDirection={'column'}
       justifyContent={'flex-start'}
       alignItems={'center'}
@@ -68,6 +63,7 @@ const AppItem = ({
       }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      draggable
     >
       <Center
         w={{ base: '64px', md: '78px' }}
@@ -137,6 +133,7 @@ const AppGridPagingContainer = ({
   appHeight,
   totalPages,
   currentPage,
+  handleNavigation,
   onChange
 }: {
   children: ReactNode;
@@ -144,6 +141,7 @@ const AppGridPagingContainer = ({
   appHeight: number;
   totalPages: number;
   currentPage: number;
+  handleNavigation: boolean;
   onChange: (currentPage: number, pageSize: number) => void;
 }) => {
   const gridWrapperRef = useRef<HTMLDivElement>(null);
@@ -153,8 +151,16 @@ const AppGridPagingContainer = ({
     md: 5
   });
 
-  const [scrollPosition, setGridScrollPosition] = useState(0);
+  const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [dragDelta, setDragDelta] = useState(0);
+
+  const scrollPosition =
+    pageWidth * currentPage - dragDelta > (totalPages - 1) * pageWidth
+      ? pageWidth * currentPage
+      : pageWidth * currentPage - dragDelta;
+
+  console.log(scrollPosition, 'scrollPosition');
 
   const calculateItemsPerPage = useCallback(() => {
     if (!gridWrapperRef.current) return 8;
@@ -169,11 +175,8 @@ const AppGridPagingContainer = ({
     (pageIndex: number) => {
       if (!gridWrapperRef.current) return;
 
-      const targetPage = pageIndex < 0 ? 0 : pageIndex >= totalPages ? totalPages - 1 : pageIndex;
-
       const gridWidth = gridWrapperRef.current.scrollWidth / totalPages;
-      const scrollLeft = targetPage * gridWidth;
-      setGridScrollPosition(scrollLeft);
+      setPageWidth(gridWidth);
     },
     [totalPages]
   );
@@ -197,7 +200,7 @@ const AppGridPagingContainer = ({
       window.removeEventListener('resize', handleResize);
       clearTimeout(debounceTimer);
     };
-  }, [columns, calculateItemsPerPage, changePageInGrid]);
+  }, [columns, calculateItemsPerPage]);
 
   // Change scroll position when currentPage changes and when screen size changes
   useEffect(() => {
@@ -223,13 +226,87 @@ const AppGridPagingContainer = ({
     onChange(currentPage, itemsPerPage);
   }, [currentPage, itemsPerPage, onChange]);
 
+  // Keyboard pagination
+  useEffect(() => {
+    const handleKeyboardPagination = (e: KeyboardEvent) => {
+      if (!handleNavigation) return;
+
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        onChange(Math.max(0, currentPage - 1), itemsPerPage);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyboardPagination);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyboardPagination);
+    };
+  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
+
+  // Pointer drag pagination
+  useEffect(() => {
+    const wrapper = gridWrapperRef.current;
+    if (!wrapper) return;
+
+    let startX = 0;
+    let currentDragDistance = 0;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!handleNavigation || !gridWrapperRef.current) return;
+
+      startX = e.clientX;
+      currentDragDistance = 0;
+
+      gridWrapperRef.current.setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!handleNavigation || !gridWrapperRef.current?.hasPointerCapture(e.pointerId)) return;
+
+      currentDragDistance = e.clientX - startX;
+      setDragDelta(currentDragDistance);
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (!handleNavigation || !gridWrapperRef.current?.hasPointerCapture(e.pointerId)) return;
+
+      gridWrapperRef.current.releasePointerCapture(e.pointerId);
+
+      if (Math.abs(currentDragDistance) > 80) {
+        if (currentDragDistance < -80) {
+          onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
+        } else if (currentDragDistance > 80) {
+          onChange(Math.max(0, currentPage - 1), itemsPerPage);
+        }
+      }
+
+      setDragDelta(0);
+    };
+
+    wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    wrapper.addEventListener('pointermove', handlePointerMove);
+    wrapper.addEventListener('pointerup', handlePointerUp);
+    wrapper.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      wrapper.removeEventListener('pointerdown', handlePointerDown);
+      wrapper.removeEventListener('pointermove', handlePointerMove);
+      wrapper.removeEventListener('pointerup', handlePointerUp);
+      wrapper.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
+
   return (
     <Flex
       ref={gridWrapperRef}
       h="full"
       w="full"
-      transform={`translateX(-${scrollPosition}px)`}
-      transition="transform 0.3s ease-out"
+      transition="transform 0.2s ease-out"
+      style={{
+        transform: `translateX(-${scrollPosition}px)`
+      }}
     >
       {children}
     </Flex>
@@ -421,7 +498,8 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
@@ -515,6 +593,19 @@ export default function Apps() {
     app: TApp,
     source: 'desktop' | 'folder'
   ) => {
+    // these apps are not allowed to be dragged
+    const notDraggableApps = [
+      'system-devbox',
+      'system-applaunchpad',
+      'system-template',
+      'system-dbprovider'
+    ];
+    if (notDraggableApps.includes(app.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     e.dataTransfer.setData('application/json', JSON.stringify({ app, source }));
     setDraggedApp(app);
 
@@ -598,6 +689,7 @@ export default function Apps() {
     } catch (error) {}
   };
 
+  // Close folder when clicking outside
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (folderRef.current && !folderRef.current.contains(e.target as Node) && isFolderOpen) {
@@ -704,6 +796,7 @@ export default function Apps() {
           // One page desktop, other apps are in folder
           totalPages={1}
           currentPage={currentPageInGrid}
+          handleNavigation={false}
           onChange={(currentPage, pageSize) => {
             setCurrentPageInGrid(currentPage);
             setItemsPerPageInGrid(pageSize);
@@ -766,6 +859,7 @@ export default function Apps() {
               appHeight={appHeight}
               totalPages={totalPagesInFolder}
               currentPage={currentPageInFolder}
+              handleNavigation={isFolderOpen}
               onChange={(currentPage, pageSize) => {
                 setCurrentPageInFolder(currentPage);
                 setItemsPerPageInFolder(pageSize);
