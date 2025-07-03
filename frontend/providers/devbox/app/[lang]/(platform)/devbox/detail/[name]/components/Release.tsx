@@ -45,7 +45,7 @@ import DevboxStatusTag from '@/components/StatusTag';
 import ReleaseModal from '@/components/modals/ReleaseModal';
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
 import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal';
-import SelectTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/SelectActionModal';
+import CreateOrUpdateDrawer from '@/components/modals/CreateOrUpdateDrawer';
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
 import AppSelectModal from '@/components/modals/AppSelectModal';
 
@@ -70,7 +70,8 @@ const Release = () => {
     | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
   >(null);
   const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
-  const [isSelectTemplateModalOpen, setIsSelectTemplateModalOpen] = useState(false);
+  const [isCreateOrUpdateTemplateDrawerOpen, setIsCreateOrUpdateTemplateDrawerOpen] =
+    useState(false);
   const [isUpdateTemplateModalOpen, setIsUpdateTemplateModalOpen] = useState(false);
 
   const { openConfirm, ConfirmChild } = useConfirm({
@@ -85,7 +86,7 @@ const Release = () => {
         devboxVersionList.length > 0 &&
         !isCreateTemplateModalOpen &&
         !isUpdateTemplateModalOpen &&
-        !isSelectTemplateModalOpen &&
+        !isCreateOrUpdateTemplateDrawerOpen &&
         (devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending ||
           devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Failed)
           ? 3000
@@ -204,6 +205,18 @@ const Release = () => {
     [setIsLoading, t, refetch]
   );
 
+  const handleConvertToRuntime = useCallback(
+    (version: DevboxVersionListItemType) => {
+      setCurrentVersion(version);
+      if (templateRepositoryList.length > 0) {
+        setIsCreateOrUpdateTemplateDrawerOpen(true); // choose create or update
+      } else {
+        setIsCreateTemplateModalOpen(true);
+      }
+    },
+    [templateRepositoryList.length]
+  );
+
   const releaseColumn = useMemo(
     () => [
       {
@@ -260,16 +273,7 @@ const Release = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setCurrentVersion(item);
-                    if (templateRepositoryList.length > 0) {
-                      setIsSelectTemplateModalOpen(true);
-                    } else {
-                      setIsCreateTemplateModalOpen(true);
-                    }
-                  }}
-                >
+                <DropdownMenuItem onClick={() => handleConvertToRuntime(item)}>
                   <LayoutTemplate className="h-4 w-4 text-neutral-500" />
                   {t('convert_to_runtime')}
                 </DropdownMenuItem>
@@ -286,7 +290,7 @@ const Release = () => {
         )
       }
     ],
-    [t, handleDeploy, templateRepositoryList.length, openConfirm, handleDelDevboxVersion]
+    [t, handleDeploy, openConfirm, handleDelDevboxVersion, handleConvertToRuntime]
   );
 
   if (!initialized || isLoading) return <Loading />;
@@ -370,7 +374,7 @@ const Release = () => {
         devboxReleaseName={currentVersion?.name || ''}
       />
       {templateRepositoryList.length > 0 && (
-        <SelectTemplateModal
+        <CreateOrUpdateDrawer
           onOpenCreate={() => setIsCreateTemplateModalOpen(true)}
           onOpenUpdate={(uid) => {
             const repo = templateRepositoryList.find((item) => item.uid === uid);
@@ -378,8 +382,8 @@ const Release = () => {
             setIsUpdateTemplateModalOpen(true);
           }}
           templateRepositoryList={templateRepositoryList}
-          isOpen={isSelectTemplateModalOpen}
-          onClose={() => setIsSelectTemplateModalOpen(false)}
+          isOpen={isCreateOrUpdateTemplateDrawerOpen}
+          onClose={() => setIsCreateOrUpdateTemplateDrawerOpen(false)}
         />
       )}
       {!!updateTemplateRepo && (

@@ -325,6 +325,7 @@
   "tags_enum": {
     "official": "Official Picks"
   },
+  "template": "Template",
   "template_description": "Description",
   "template_description_placeholder": "Briefly describe the purpose and features of this template......",
   "template_repository_name_already_exists": "This name is already taken. Please try another one.",
