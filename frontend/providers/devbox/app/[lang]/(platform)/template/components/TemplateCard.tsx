@@ -153,7 +153,7 @@ const TemplateCard = ({
             {/* description */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <p className="w-full truncate text-sm/5 text-zinc-500">{description}</p>
+                <span className="w-full truncate text-sm/5 text-zinc-500">{description}</span>
               </TooltipTrigger>
               <TooltipContent side="bottom">{description}</TooltipContent>
             </Tooltip>

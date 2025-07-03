@@ -326,6 +326,7 @@
   "tags_enum": {
     "official": "官方精选"
   },
+  "template": "模板",
   "template_description": "简介",
   "template_description_placeholder": "请简要描述模板的主要功能和用途...",
   "template_repository_name_already_exists": "输入的名称已存在，请重新输入。",

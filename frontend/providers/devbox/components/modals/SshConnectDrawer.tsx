@@ -315,7 +315,7 @@ const SshConnectDrawer = ({
         </div>
         <DrawerFooter>
           <div
-            className="flex h-12 w-full items-center justify-center rounded-b-2xl px-4 py-2 text-sm/5 font-medium text-zinc-900 hover:bg-zinc-100"
+            className="flex w-full items-center justify-center rounded-b-2xl text-sm/5 font-medium text-zinc-900 hover:bg-zinc-100"
             onClick={onClose}
           >
             {t('setup_complete')}
