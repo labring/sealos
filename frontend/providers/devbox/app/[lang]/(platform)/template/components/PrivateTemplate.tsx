@@ -5,7 +5,7 @@ import { Box, Flex, Grid, TabPanel, Text } from '@chakra-ui/react';
 
 import { listPrivateTemplateRepository as listPrivateTemplateRepositoryApi } from '@/api/template';
 import MyIcon from '@/components/Icon';
-import TemplateCard from '../TemplateModal/TemplateCard';
+import TemplateCard from './TemplateCard';
 import SwitchPage from '@/components/SwitchPage';
 
 export default function PrivateTemplate({ search }: { search: string }) {

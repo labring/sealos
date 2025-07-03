@@ -6,20 +6,18 @@ import { LayoutTemplate, Search, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 
-import { usePathname } from '@/i18n';
-import { TemplateState } from '@/constants/template';
-
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import Header from './components/Header';
-import PrivatePanel from './components/PrivateTemplate';
-import PublicPanel from './components/PublicTemplate';
+import PrivateTemplate from './components/PrivateTemplate';
+import PublicTemplate from './components/PublicTemplate';
 
 const TemplatePage = () => {
   const t = useTranslations();
   const searchParams = useSearchParams();
+
   const [search, setSearch] = useState('');
   const updateSearchVal = debounce((val: string) => {
     setSearch(val);
@@ -31,7 +29,7 @@ const TemplatePage = () => {
     <div className="flex h-full w-full flex-col">
       <Header />
       <div className="flex h-full w-full flex-col gap-5 px-10 py-6">
-        <Tabs defaultValue={defaultTab} className="flex flex-1 flex-col">
+        <Tabs defaultValue={defaultTab} className="flex flex-col">
           <div className="flex items-center justify-between gap-4">
             <TabsList variant="ghost" className="w-fit">
               <TabsTrigger value="public" variant="ghost">
@@ -52,14 +50,12 @@ const TemplatePage = () => {
             />
           </div>
 
-          {/* <ScrollArea className="mt-4 flex-1">
-            <TabsContent value="public" className="h-full">
-              <PublicPanel search={search} />
-            </TabsContent>
-            <TabsContent value="private" className="h-full">
-              <PrivatePanel search={search} />
-            </TabsContent>
-          </ScrollArea> */}
+          <TabsContent value="public" className="h-full">
+            <PublicTemplate search={search} />
+          </TabsContent>
+          {/* <TabsContent value="private" className="h-full">
+              <PrivateTemplate search={search} />
+            </TabsContent> */}
         </Tabs>
       </div>
     </div>

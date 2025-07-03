@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
-import { useTemplateStore } from '@/stores/template';
 import { type Tag as TTag } from '@/prisma/generated/client';
 
 import {
@@ -48,7 +47,6 @@ const TemplateCard = ({
   ...props
 }: TemplateCardProps) => {
   const t = useTranslations();
-  const { closeTemplateModal } = useTemplateStore();
   const { setStartedTemplate } = useDevboxStore();
   const router = useRouter();
   const description = templateRepositoryDescription
@@ -136,7 +134,6 @@ const TemplateCard = ({
                     name: templateRepositoryName,
                     iconId
                   });
-                  closeTemplateModal();
                   router.push(`/devbox/create?templateRepository${templateRepositoryUid}`);
                 }}
                 disabled={isDisabled}

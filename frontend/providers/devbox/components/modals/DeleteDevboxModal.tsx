@@ -62,6 +62,7 @@ const DeleteDevboxModal = ({
     setLoading(false);
   }, [devbox.name, removeDevboxIDE, t, onSuccess, onClose, refetchDevboxList]);
 
+  // TODO：refactor this component to alert dialog
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="w-[450px]">

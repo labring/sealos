@@ -1,10 +1,11 @@
-import MyFormLabel from '@/components/MyFormControl';
 import { useEnvStore } from '@/stores/env';
-import { Alert, Flex, FormControl, Link, Switch, Text, VStack } from '@chakra-ui/react';
-import { InfoCircleIcon } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
 import { Controller, useFormContext } from 'react-hook-form';
-import { TagCheckbox } from '../../TagCheckbox';
+
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
+import { InfoCircleIcon } from '@sealos/ui';
 
 export default function TemplateRepositoryIsPublicField({
   isDisabled = false
@@ -14,71 +15,65 @@ export default function TemplateRepositoryIsPublicField({
   const { control } = useFormContext();
   const t = useTranslations();
   const { env } = useEnvStore();
+
   return (
-    <Flex>
-      <MyFormLabel isRequired width="108px" m="0" fontSize="14px">
+    <div className="flex">
+      <Label className="m-0 w-[108px] text-sm font-medium" htmlFor="isPublic">
         {t('public')}
-      </MyFormLabel>
-      <VStack align="start" spacing={'12px'} flex={1}>
+        <span className="text-red-500">*</span>
+      </Label>
+      <div className="flex flex-1 flex-col gap-3">
         <Controller
           name="isPublic"
           control={control}
           render={({ field: { value, onChange } }) => (
             <Switch
-              isChecked={value}
-              onChange={onChange}
-              size="md"
-              colorScheme="blackAlpha"
-              isDisabled={isDisabled}
+              id="isPublic"
+              checked={value}
+              onCheckedChange={onChange}
+              disabled={isDisabled}
             />
           )}
         />
-        {
-          <Alert
-            status="info"
-            borderRadius="md"
-            py={'6px'}
-            px={'12px'}
-            color={'brightBlue.600'}
-            bgColor={'brightBlue.50'}
-          >
-            <InfoCircleIcon fill={'currentcolor'} mr={'4px'} boxSize={'14px'} />
-            <Text fontSize="12px" fontWeight={500}>
-              {t('set_template_to_public_tips')}
-            </Text>
-          </Alert>
-        }
+
+        <div className="flex items-center rounded-md border border-blue-100 bg-blue-50 px-3 py-1.5 text-blue-600">
+          <InfoCircleIcon fill="currentcolor" className="mr-1 h-3.5 w-3.5" />
+          <p className="text-xs font-medium">{t('set_template_to_public_tips')}</p>
+        </div>
+
         {!isDisabled && (
-          <FormControl>
+          <div>
             <Controller
               name="agreeTerms"
               control={control}
               render={({ field: { value, onChange, onBlur } }) => (
-                <TagCheckbox
-                  // value={value}
-                  name="agreeTerms"
-                  isChecked={value}
-                  onChange={onChange}
-                  onBlur={onBlur}
-                  size="sm"
-                >
-                  <Text fontSize="12px" color="grayModern.600" fontWeight={500}>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="agreeTerms"
+                    checked={value}
+                    onCheckedChange={onChange}
+                    onBlur={onBlur}
+                  />
+                  <label
+                    htmlFor="agreeTerms"
+                    className="cursor-pointer text-xs font-medium text-gray-600"
+                  >
                     {t('have_read_and_agree_to_the ')}
-                    <Link
-                      color={'brightBlue.600'}
-                      textDecoration={'underline'}
+                    <a
+                      className="text-blue-600 underline"
                       href={env.privacyUrl}
-                      target={'_blank'}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
                       {t('privacy_and_security_agreement')}
-                    </Link>
-                  </Text>
-                </TagCheckbox>
+                    </a>
+                  </label>
+                </div>
               )}
             />
-          </FormControl>
+          </div>
         )}
-      </VStack>
-    </Flex>
+      </div>
+    </div>
   );
 }
