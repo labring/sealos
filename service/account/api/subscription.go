@@ -260,6 +260,9 @@ func getOwnNsListWithClt(clt client.Client, user string) ([]string, error) {
 	}
 	nsListStr := make([]string, len(nsList.Items))
 	for i := range nsList.Items {
+		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
 		nsListStr[i] = nsList.Items[i].Name
 	}
 	return nsListStr, nil
