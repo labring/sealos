@@ -19,7 +19,6 @@ import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
 import { Loading } from '@/components/ui/loading';
 import { Toaster } from '@/components/ui/sonner';
-import TemplateModal from './template/TemplateModal';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 
 export default function PlatformLayout({ children }: { children: React.ReactNode }) {
@@ -151,7 +150,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
       <ConfirmChild />
       <Toaster />
       {children}
-      <TemplateModal />
     </RouteHandlerProvider>
   );
 }

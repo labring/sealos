@@ -1,4 +1,4 @@
-import { listTag, listTemplateRepository } from '@/api/template';
+import { listTag, listTemplateRepository as listTemplateRepositoryApi } from '@/api/template';
 import SwitchPage from '@/components/SwitchPage';
 import { Tag, TagType } from '@/prisma/generated/client';
 import { createTagSelectorStore } from '@/stores/tagSelector';
@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useStore } from 'zustand';
 import { TagCheckbox } from '../TagCheckbox';
-import TemplateCard from './TemplateCard';
+import TemplateCard from '../TemplateModal/TemplateCard';
 const TagSelectorStoreCtx = createContext<ReturnType<typeof createTagSelectorStore> | null>(null);
 const TagItem = ({ tag, ...props }: { tag: Tag } & FlexProps) => {
   const store = useContext(TagSelectorStoreCtx);
@@ -48,7 +48,7 @@ const TagList = ({ tags, title }: { tags: Tag[]; title: string }) => {
     </Box>
   );
 };
-const PublicPanel = ({ search }: { search: string }) => {
+const PublicTemplate = ({ search }: { search: string }) => {
   const [tagSelectorStore] = useState(createTagSelectorStore());
   return (
     <TagSelectorStoreCtx.Provider value={tagSelectorStore}>
@@ -117,7 +117,7 @@ function _PublicPanel({ search }: { search: string }) {
   const listTemplateRepository = useQuery(
     ['template-repository-list', 'template-repository-public', queryBody],
     () => {
-      return listTemplateRepository(
+      return listTemplateRepositoryApi(
         {
           page: queryBody.page,
           pageSize: queryBody.pageSize
@@ -244,4 +244,4 @@ function _PublicPanel({ search }: { search: string }) {
     </TabPanel>
   );
 }
-export default PublicPanel;
+export default PublicTemplate;

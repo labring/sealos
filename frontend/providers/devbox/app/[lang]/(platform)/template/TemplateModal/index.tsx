@@ -25,8 +25,8 @@ import { SearchIcon } from '@sealos/ui';
 import { debounce } from 'lodash';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-import PrivatePanel from './PrivatePanel';
-import PublicPanel from './PublicPanel';
+import PrivatePanel from '../components/PrivateTemplate';
+import PublicPanel from '../components/PublicTemplate';
 
 const TemplateModal = () => {
   const t = useTranslations();

@@ -4,8 +4,6 @@ import { BookOpen, LayoutTemplate, Plus } from 'lucide-react';
 
 import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
-import { useTemplateStore } from '@/stores/template';
-import { TemplateState } from '@/constants/template';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
@@ -14,23 +12,6 @@ import { Button } from '@/components/ui/button';
 export default function Header() {
   const router = useRouter();
   const t = useTranslations();
-  const { openTemplateModal, config, updateTemplateModalConfig } = useTemplateStore();
-
-  const lastRoute = '/?openTemplate=publicTemplate';
-  useEffect(() => {
-    const refreshLastRoute = '/';
-    if (config.lastRoute.includes('openTemplate')) {
-      openTemplateModal({
-        ...config,
-        lastRoute: refreshLastRoute
-      });
-    } else {
-      updateTemplateModalConfig({
-        ...config,
-        lastRoute: refreshLastRoute
-      });
-    }
-  }, []);
 
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
@@ -44,11 +25,8 @@ export default function Header() {
     }
   }, [guide2, router, t, isClientSide]);
 
-  const handleOpenTemplateModal = () => {
-    openTemplateModal({
-      templateState: TemplateState.publicTemplate,
-      lastRoute
-    });
+  const handleGotoTemplate = () => {
+    router.push('/template?tab=public');
   };
 
   const handleCreateDevbox = () => {
@@ -72,7 +50,7 @@ export default function Header() {
       </div>
       {/* right side */}
       <div className="flex items-center gap-3">
-        <Button variant="outline" className="h-10 w-auto" onClick={handleOpenTemplateModal}>
+        <Button variant="outline" className="h-10 w-auto" onClick={handleGotoTemplate}>
           <LayoutTemplate className="h-4 w-4" />
           <span className="leading-5"> {t('scan_templates')}</span>
         </Button>
