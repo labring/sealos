@@ -7,7 +7,6 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import Header from './components/Header';
@@ -28,7 +27,7 @@ const TemplatePage = () => {
   return (
     <div className="flex h-full w-full flex-col">
       <Header />
-      <div className="flex h-full w-full flex-col gap-5 px-10 py-6">
+      <div className="flex h-full w-full flex-col gap-5 px-10 pt-6">
         <Tabs defaultValue={defaultTab} className="flex flex-col">
           <div className="flex items-center justify-between gap-4">
             <TabsList variant="ghost" className="w-fit">
@@ -41,13 +40,14 @@ const TemplatePage = () => {
                 <span>{t('my_templates')}</span>
               </TabsTrigger>
             </TabsList>
-
-            <Input
-              className="w-[370px]"
-              icon={<Search className="h-4 w-4 text-zinc-500" />}
-              placeholder={t('template_search')}
-              onChange={(e) => updateSearchVal(e.target.value)}
-            />
+            <div className="flex items-center pr-2">
+              <Input
+                className="w-[370px]"
+                icon={<Search className="h-4 w-4 text-zinc-500" />}
+                placeholder={t('template_search')}
+                onChange={(e) => updateSearchVal(e.target.value)}
+              />
+            </div>
           </div>
 
           <TabsContent value="public" className="h-full">

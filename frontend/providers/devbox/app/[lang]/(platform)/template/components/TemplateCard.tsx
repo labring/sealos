@@ -1,11 +1,13 @@
 import Image from 'next/image';
-import { HTMLAttributes, useState } from 'react';
+import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
 import { type Tag as TTag } from '@/prisma/generated/client';
+import { tagColorMap, defaultTagColor } from '@/constants/tag';
 
 import {
   DropdownMenu,
@@ -21,9 +23,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import EditTemplateModal from '../updateTemplate/EditTemplateModal';
 import DeleteTemplateRepositoryModal from '../updateTemplate/DeleteTemplateRepositoryModal';
 import EditTemplateRepositoryModal from '../updateTemplate/EditTemplateRepositoryModal';
-import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
 
-interface TemplateCardProps extends HTMLAttributes<HTMLDivElement> {
+interface TemplateCardProps {
   isPublic?: boolean;
   iconId: string;
   isDisabled?: boolean;
@@ -42,92 +43,75 @@ const TemplateCard = ({
   templateRepositoryUid,
   isDisabled = false,
   inPublicStore = true,
-  tags,
-  className,
-  ...props
+  tags
 }: TemplateCardProps) => {
-  const t = useTranslations();
-  const { setStartedTemplate } = useDevboxStore();
   const router = useRouter();
+  const locale = useLocale();
+  const t = useTranslations();
+
+  const { setStartedTemplate } = useDevboxStore();
+
   const description = templateRepositoryDescription
     ? templateRepositoryDescription
     : t('no_description');
-  const lastLang = useLocale();
 
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
   const [isEditRepositoryOpen, setIsEditRepositoryOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   return (
     <>
       <Card
         className={cn(
-          'group relative flex w-full max-w-[440px] flex-col items-start gap-3 border border-gray-200 bg-gray-50 p-5 hover:bg-gray-100',
+          'relative flex w-full max-w-[375px] flex-col items-start border bg-white',
           isDisabled &&
-            'before:pointer-events-none before:absolute before:inset-0 before:bg-white before:opacity-30 before:content-[""]',
-          className
+            'before:pointer-events-none before:absolute before:inset-0 before:bg-white before:opacity-30 before:content-[""]'
         )}
-        {...props}
       >
-        <div className="h-11 w-full">
-          <div className="flex h-full items-center justify-between gap-3">
-            <div className="flex h-full w-0 flex-1 items-center gap-3">
-              {/* Python Logo */}
-              <Image
-                width={32}
-                height={32}
-                src={`/images/${iconId}.svg`}
-                alt={templateRepositoryName}
-              />
-
-              {/* Title and Description */}
-              <div className="flex w-0 flex-1 flex-col gap-[3px]">
-                <div className="flex w-full gap-2">
-                  <span className="flex-[0_1_auto] truncate overflow-hidden text-base font-medium tracking-[0.15px] text-gray-900">
-                    {templateRepositoryName}
-                  </span>
-                  {inPublicStore ? (
-                    tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <Image src="/images/official.svg" alt="official" width={20} height={20} />
-                        </TooltipTrigger>
-                        <TooltipContent>{t('tags_enum.official')}</TooltipContent>
-                      </Tooltip>
-                    ) : null
-                  ) : (
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'rounded-full px-2 text-[10px]',
-                        isPublic
-                          ? 'border-green-200 bg-green-50 text-green-600'
-                          : 'border-[#F4B8FF] bg-[#FDF4FF] text-[#9E00FF]'
-                      )}
-                    >
-                      {t(isPublic ? 'public' : 'private')}
-                    </Badge>
-                  )}
-                </div>
-                <div className="w-full">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p className="h-4 w-0 flex-1 truncate overflow-hidden text-xs tracking-[0.004em] text-gray-500">
-                        {description}
-                      </p>
-                    </TooltipTrigger>
-                    <TooltipContent>{description}</TooltipContent>
-                  </Tooltip>
-                </div>
+        {/* top */}
+        <div className="flex h-30 w-full flex-col items-start gap-2 px-4 pt-4 pb-2">
+          <div className="group flex items-center justify-between gap-2 self-stretch">
+            <div className="flex items-center gap-2">
+              {/* logo */}
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
+                <Image
+                  width={32}
+                  height={32}
+                  src={`/images/runtime/${iconId}.svg`}
+                  alt={templateRepositoryName}
+                />
               </div>
+              {/* name */}
+              <span className="font-medium">{templateRepositoryName}</span>
+              {/* badge */}
+              {inPublicStore ? (
+                tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Image src="/images/official.svg" alt="official" width={24} height={24} />
+                    </TooltipTrigger>
+                    <TooltipContent>{t('tags_enum.official')}</TooltipContent>
+                  </Tooltip>
+                ) : null
+              ) : (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'rounded-full px-2 text-[10px]',
+                    isPublic
+                      ? 'border-green-200 bg-green-50 text-green-600'
+                      : 'border-[#F4B8FF] bg-[#FDF4FF] text-[#9E00FF]'
+                  )}
+                >
+                  {t(isPublic ? 'public' : 'private')}
+                </Badge>
+              )}
             </div>
-
-            {/* Buttons */}
-            <div className="flex items-center gap-[2px]">
+            {/* action */}
+            <div className="flex items-center">
               <Button
+                className="invisible opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100"
                 size="sm"
-                variant="default"
-                className="hidden h-7 bg-[#0884DD] px-[10px] text-xs group-hover:flex hover:bg-[#0773c4]"
                 onClick={() => {
                   setStartedTemplate({
                     uid: templateRepositoryUid,
@@ -138,26 +122,26 @@ const TemplateCard = ({
                 }}
                 disabled={isDisabled}
               >
-                {t('start_devbox')}
+                {t('select')}
               </Button>
               {!inPublicStore && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-[30px] w-[30px]">
+                    <Button variant="ghost" size="icon">
                       <Ellipsis className="text-gray-600" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[100px]">
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setIsEditRepositoryOpen(true)}>
-                      <PencilLine className="mr-2 h-4 w-4" />
+                      <PencilLine className="h-4 w-4" />
                       {t('edit')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setIsEditTemplateOpen(true)}>
-                      <GitFork className="mr-2 h-4 w-4" />
+                      <GitFork className="h-4 w-4" />
                       {t('version_manage')}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
-                      <Trash2 className="mr-2 h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                       {t('delete')}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -165,20 +149,40 @@ const TemplateCard = ({
               )}
             </div>
           </div>
-        </div>
-        {/* Tags */}
-        <div className="flex min-h-[22px] flex-wrap gap-1">
-          {tags
-            .filter((tag) => tag.name !== 'official')
-            .map((tag) => (
-              <Badge
-                key={tag.uid}
-                variant="outline"
-                className="rounded-full bg-gray-100 px-2 py-1 text-[10px] text-blue-600"
-              >
-                {tag[lastLang === 'zh' ? 'zhName' : 'enName'] || tag.name}
-              </Badge>
-            ))}
+          <div className="flex w-full flex-col gap-4">
+            {/* description */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="w-full truncate text-sm/5 text-zinc-500">{description}</p>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{description}</TooltipContent>
+            </Tooltip>
+            {/* tag */}
+            <div className="flex gap-1">
+              {tags
+                .filter((tag) => tag.name !== 'official')
+                .map((tag) => {
+                  const tagStyle = tagColorMap[tag.type] || defaultTagColor;
+                  return (
+                    <Badge
+                      key={tag.uid}
+                      variant="outline"
+                      className="rounded-md border-none bg-zinc-100 px-2"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: tagStyle.color }}
+                        />
+                        <span className="text-xs/4 font-medium text-zinc-600">
+                          {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
+                        </span>
+                      </div>
+                    </Badge>
+                  );
+                })}
+            </div>
+          </div>
         </div>
       </Card>
 
