@@ -418,13 +418,11 @@ export default function Apps() {
   );
 
   const renderApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'normal');
-    return apps;
+    return installedApps.filter((app) => getAppDisplayType(app) === 'normal');
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
-    return apps;
+    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
   const gridPages = useMemo(() => {
@@ -525,9 +523,74 @@ export default function Apps() {
     setDraggedFromFolder(false);
     setIsDraggingOutside(false);
 
+    // ! =========================================================
     // if (folderIconRef.current) {
     // folderIconRef.current.classList.remove(styles.folderPulse);
     // }
+  };
+
+  const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
+    if (draggedFromFolder) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+
+      if (modalContentRef.current) {
+        const rect = modalContentRef.current.getBoundingClientRect();
+        const isOutside =
+          mouseX < rect.left - 5 ||
+          mouseX > rect.right + 5 ||
+          mouseY < rect.top - 5 ||
+          mouseY > rect.bottom + 5;
+
+        if (isOutside) {
+          closeFolder();
+        }
+        setIsDraggingOutside(isOutside);
+      }
+    }
+  };
+
+  const handleDesktopDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    console.log('handleDesktopDrop');
+
+    e.preventDefault();
+
+    try {
+      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
+        e.dataTransfer.getData('application/json')
+      );
+
+      if (data && data.app) {
+        console.log(data.source, 'data.source', isFolderOpen, 'isFolderOpen');
+        if (data.source === 'folder' && !isFolderOpen) {
+          updateAppDisplayType(data.app.key, 'normal');
+          console.log('将应用移动到桌面:', data.app.name);
+        }
+      }
+    } catch (error) {}
+  };
+
+  const handleMoreAppsDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    try {
+      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
+        e.dataTransfer.getData('application/json')
+      );
+
+      if (data && data.app) {
+        if (data.source === 'desktop') {
+          updateAppDisplayType(data.app.key, 'more');
+
+          setMoreAppsFolder((prev) => {
+            const newApps = [...prev];
+            if (!newApps.some((app) => app.key === data.app.key)) {
+              const app = installedApps.find((a) => a.key === data.app.key);
+              if (app) newApps.push(app);
+            }
+            return newApps;
+          });
+        }
+      }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -583,6 +646,8 @@ export default function Apps() {
       zIndex={1}
       ref={desktopRef}
       onDragOver={(e) => e.preventDefault()}
+      onDrag={handleDrag}
+      onDrop={handleDesktopDrop}
       sx={gradientIconStyle}
     >
       <svg width="0" height="0" style={{ position: 'absolute' }}>
@@ -654,7 +719,11 @@ export default function Apps() {
 
               {/* More Apps Folder on last page */}
               {moreApps && pageIndex === totalPagesInGrid - 1 && (
-                <MoreAppsFolder apps={moreApps} onClick={handleMoreAppsClick} />
+                <MoreAppsFolder
+                  apps={moreApps}
+                  onClick={handleMoreAppsClick}
+                  onDrop={handleMoreAppsDrop}
+                />
               )}
             </AppGrid>
           ))}
