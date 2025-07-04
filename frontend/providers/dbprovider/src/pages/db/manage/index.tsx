@@ -21,7 +21,7 @@ export default function ManageDataPage() {
     setSrc(`https://app.chat2db-ai.com?${p.toString()}`);
   }, [router.isReady, router.query]);
 
-  if (!router.isReady) return null; // 避免白屏
+  if (!router.isReady) return null;
 
   return (
     <iframe src={src} style={{ width: '100%', height: '100vh', border: 'none' }} title="Chat2DB" />
