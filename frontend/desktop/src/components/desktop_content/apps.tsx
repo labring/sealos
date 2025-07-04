@@ -45,11 +45,97 @@ const AppItem = ({
   onDragStart?: DragEventHandler<HTMLDivElement>;
   onDragEnd?: DragEventHandler<HTMLDivElement>;
 }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   const { i18n } = useTranslation();
   const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Dispatch dragstart event after holding for 500ms
+  useEffect(() => {
+    if (!wrapperRef.current) {
+      return;
+    }
+    const wrapper = wrapperRef.current;
+
+    let timer: NodeJS.Timeout | null = null;
+
+    let dragStartX = 0;
+    let dragStartY = 0;
+
+    console.log('effect run');
+
+    const handlePointerDown = (e: PointerEvent) => {
+      dragStartX = e.screenX;
+      dragStartY = e.screenY;
+
+      timer = setTimeout(() => {
+        console.log('setIsDragging(true)');
+
+        setIsDragging(true);
+      }, 500);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      // Cancel holding detection if user moves the pointer
+      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 16) {
+        console.log('cancel holding');
+        clearTimeout(timer);
+        timer = null;
+        setIsDragging(false);
+      }
+    };
+
+    const handlePointerEnd = (e: PointerEvent) => {
+      setIsDragging(false);
+    };
+
+    const handleDragEnd = (e: DragEvent) => {
+      setIsDragging(false);
+    };
+
+    const handleContextMenu = (e: Event) => {
+      e.preventDefault();
+    };
+
+    wrapper.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerEnd);
+    document.addEventListener('pointercancel', handlePointerEnd);
+    document.addEventListener('dragend', handleDragEnd);
+    wrapper.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      timer = null;
+      wrapper.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerEnd);
+      document.removeEventListener('pointercancel', handlePointerEnd);
+      document.removeEventListener('dragend', handleDragEnd);
+      wrapper.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, []);
+
+  // Dispatch dragstart event when dragging
+  useEffect(() => {
+    if (isDragging) {
+      const dragEvent = new DragEvent('dragstart', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: new DataTransfer(),
+        view: window
+      });
+
+      wrapperRef.current?.dispatchEvent(dragEvent);
+    }
+  }, [isDragging]);
 
   return (
     <Flex
+      ref={wrapperRef}
       flexDirection={'column'}
       justifyContent={'flex-start'}
       alignItems={'center'}
@@ -63,7 +149,13 @@ const AppItem = ({
       }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      // draggable
+      draggable={isDragging}
+      style={{
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none'
+      }}
     >
       <Center
         w={{ base: '64px', md: '78px' }}
@@ -619,11 +711,6 @@ export default function Apps() {
     setDraggedApp(null);
     setDraggedFromFolder(false);
     setIsDraggingOutside(false);
-
-    // ! =========================================================
-    // if (folderIconRef.current) {
-    // folderIconRef.current.classList.remove(styles.folderPulse);
-    // }
   };
 
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
