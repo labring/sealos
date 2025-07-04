@@ -69,19 +69,24 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
   const compNum = Object.keys(resources).length;
   const dbName = DBTypeList.find((item) => item.id === data.dbType)?.label ?? '';
 
+  // Resource distribution descriptions for each DB type
   const descriptionMap: Map<DBType, string> = new Map([
     [DBTypeEnum.postgresql, t('occupy', { comp: 'PostgreSQL', num: '100%' })],
     [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
     [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
-    [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
+    [
+      DBTypeEnum.kafka,
+      `kafka-controller 50%, kafka-metrics-exp, kafka-broker ${t('each', { perc: '25%' })}`
+    ],
     [
       DBTypeEnum.milvus,
-      `${t('occupy', { comp: 'Etcd', num: '30%' })}, ${t('occupy', {
-        comp: 'milvus',
-        num: '40%'
-      })}, ${t('occupy', { comp: 'minio', num: '30%' })}`
-    ]
+      `${t('occupy', { comp: 'milvus', num: '50%' })}, ${t('occupy', {
+        comp: 'Etcd',
+        num: '25%'
+      })}, ${t('occupy', { comp: 'minio', num: '25%' })}`
+    ],
+    [DBTypeEnum.clickhouse, `clickhouse 50%, ch-keeper, zookeeper ${t('each', { perc: '25%' })}`]
   ]);
 
   return (
@@ -335,7 +340,8 @@ const Form = ({
         [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.milvus:
-        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2]; // 4的倍数，从4开始
+        specialUse = 4;
         break;
       default:
         break;
@@ -357,8 +363,17 @@ const Form = ({
     if (getValues('memory') < minMemory) {
       setValue('memory', minMemory);
     }
-    setValue('storage', Math.max(3, minStorage, allocatedStorage));
-  }, [getValues, allocatedStorage, isEdit, minCPU, minMemory, setValue, minStorage]);
+
+    let storageValue = Math.max(3, minStorage, allocatedStorage);
+
+    // For Milvus, ensure storage is multiple of 4 and at least 4
+    if (getValues('dbType') === DBTypeEnum.milvus) {
+      storageValue = Math.max(4, Math.ceil(storageValue / 4) * 4);
+    }
+
+    setValue('storage', storageValue);
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
   const parameterConfigRef = useRef<HTMLDivElement | null>(null);
@@ -865,11 +880,24 @@ const Form = ({
                       step={minStorageChange}
                       position={'relative'}
                       value={
-                        Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
-                        minStorageChange
+                        getValues('dbType') === DBTypeEnum.milvus
+                          ? Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                            minStorageChange
+                          : Math.round(Math.max(getValues('storage') / minStorageChange, 1)) *
+                            minStorageChange
                       }
                       onChange={(e) => {
-                        e !== '' ? setValue('storage', +e) : setValue('storage', minStorage);
+                        if (e !== '') {
+                          const value = +e;
+                          if (getValues('dbType') === DBTypeEnum.milvus) {
+                            const adjustedValue = Math.max(4, Math.ceil(value / 4) * 4);
+                            setValue('storage', adjustedValue);
+                          } else {
+                            setValue('storage', value);
+                          }
+                        } else {
+                          setValue('storage', minStorage);
+                        }
                       }}
                     >
                       <NumberInputField
@@ -882,8 +910,7 @@ const Form = ({
                           max: {
                             value: SystemEnv.STORAGE_MAX_SIZE,
                             message: `${t('storage_max')}${SystemEnv.STORAGE_MAX_SIZE} Gi`
-                          },
-                          valueAsNumber: true
+                          }
                         })}
                         min={minStorage}
                         max={SystemEnv.STORAGE_MAX_SIZE}
@@ -928,6 +955,18 @@ const Form = ({
                       ml={4}
                       icon={<InfoOutlineIcon />}
                       text={t('multi_components_tip')}
+                      size="sm"
+                      borderRadius={'md'}
+                      height={'fit-content'}
+                      maxWidth={310}
+                      maxHeight={'100%'}
+                    />
+                  )}
+                  {getValues('dbType') === DBTypeEnum.milvus && (
+                    <Tip
+                      ml={4}
+                      icon={<InfoOutlineIcon />}
+                      text={'Milvus storage must be a multiple of 4 Gi, starting from 4 Gi' as any}
                       size="sm"
                       borderRadius={'md'}
                       height={'fit-content'}

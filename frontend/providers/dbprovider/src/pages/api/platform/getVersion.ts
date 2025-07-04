@@ -15,6 +15,28 @@ export type Response = Record<
 
 const MOCK: Response = DBVersionMap;
 
+// Databases that use ComponentVersion (cmpv) instead of ClusterVersion (cv)
+const COMPONENT_VERSION_DBS = [DBTypeEnum.mongodb, DBTypeEnum.redis, DBTypeEnum.clickhouse];
+
+// Helper function to parse component versions
+const parseComponentVersions = (cmpvItem: any): Array<{ id: string; label: string }> => {
+  const versions =
+    cmpvItem?.status?.serviceVersions || cmpvItem?.spec?.compatibilityRules?.[0]?.releases || [];
+  if (typeof versions === 'string') {
+    return versions.split(',').map((version: string) => ({
+      id: version.trim(),
+      label: version.trim()
+    }));
+  }
+  if (Array.isArray(versions)) {
+    return versions.map((version: any) => ({
+      id: typeof version === 'string' ? version : version.name || version.version,
+      label: typeof version === 'string' ? version : version.name || version.version
+    }));
+  }
+  return [];
+};
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const DBVersionMap: Response = {
@@ -31,43 +53,95 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       [DBTypeEnum.clickhouse]: []
     };
 
-    // source price
     const kc = K8sApi();
     const k8sCustomObjects = kc.makeApiClient(k8s.CustomObjectsApi);
 
-    const { body } = (await k8sCustomObjects.listClusterCustomObject(
-      'apps.kubeblocks.io',
-      'v1alpha1',
-      'clusterversions'
-    )) as any;
+    // Fetch ClusterVersions (cv) - for most databases
+    try {
+      const { body: cvBody } = (await k8sCustomObjects.listClusterCustomObject(
+        'apps.kubeblocks.io',
+        'v1alpha1',
+        'clusterversions'
+      )) as any;
 
-    body.items.forEach((item: any) => {
-      const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
+      cvBody.items.forEach((item: any) => {
+        const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
+        // Only use ClusterVersion for databases not using ComponentVersion
+        if (
+          DBVersionMap[db] &&
+          !COMPONENT_VERSION_DBS.includes(db as DBTypeEnum) &&
+          item?.metadata?.name &&
+          !DBVersionMap[db].find((existingDb) => existingDb.id === item.metadata.name)
+        ) {
+          DBVersionMap[db].unshift({
+            id: item.metadata.name,
+            label: item.metadata.name
+          });
+        }
+      });
+    } catch (cvError) {
+      console.log('Error fetching ClusterVersions:', cvError);
+    }
 
-      let db: `${DBTypeEnum}` | undefined;
+    // Fetch ComponentVersions (cmpv) - for MongoDB and Redis
+    try {
+      const { body: cmpvBody } = (await k8sCustomObjects.listClusterCustomObject(
+        'apps.kubeblocks.io',
+        'v1alpha1',
+        'componentversions'
+      )) as any;
 
-      if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
-        db = DBTypeEnum.mysql;
-      } else {
-        db = clusterDefinitionRef as `${DBTypeEnum}`;
-      }
+      cmpvBody.items.forEach((item: any) => {
+        const componentName = item?.metadata?.name;
+        let dbType: DBTypeEnum | null = null;
+        let versionPrefix = '';
 
-      if (
-        db &&
-        DBVersionMap[db] &&
-        item?.metadata?.name &&
-        !DBVersionMap[db].find((version) => version.id === item.metadata.name)
-      ) {
-        // Filter out mysql-8.0.33 version
-        if (db === DBTypeEnum.mysql && item.metadata.name === 'mysql-8.0.33') {
-          return;
+        // Map component names to database types and set version prefix
+        if (componentName === 'mongodb') {
+          dbType = DBTypeEnum.mongodb;
+          versionPrefix = 'mongodb-';
+        } else if (
+          componentName === 'redis' ||
+          componentName === 'redis-cluster' ||
+          componentName === 'redis-sentinel'
+        ) {
+          dbType = DBTypeEnum.redis;
+          versionPrefix = 'redis-';
         }
 
-        DBVersionMap[db].unshift({
-          id: item.metadata.name,
-          label: item.metadata.name
-        });
-      }
+        if (dbType && DBVersionMap[dbType]) {
+          const versions = parseComponentVersions(item);
+          versions.forEach((version) => {
+            // Add prefix to match static data format and avoid duplicates
+            const prefixedVersion = {
+              id: `${versionPrefix}${version.id}`,
+              label: `${versionPrefix}${version.id}`
+            };
+
+            if (!DBVersionMap[dbType!].find((existing) => existing.id === prefixedVersion.id)) {
+              DBVersionMap[dbType!].push(prefixedVersion);
+            }
+          });
+        }
+      });
+    } catch (cmpvError) {
+      console.log('Error fetching ComponentVersions:', cmpvError);
+    }
+
+    // Sort versions for better UX (latest first for each database)
+    Object.keys(DBVersionMap).forEach((dbType) => {
+      DBVersionMap[dbType as keyof typeof DBVersionMap].sort((a, b) => {
+        // Try to sort by version number if possible
+        const aVersion = a.id.match(/[\d.]+/)?.[0];
+        const bVersion = b.id.match(/[\d.]+/)?.[0];
+        if (aVersion && bVersion) {
+          return bVersion.localeCompare(aVersion, undefined, {
+            numeric: true,
+            sensitivity: 'base'
+          });
+        }
+        return b.id.localeCompare(a.id);
+      });
     });
 
     // Sort MySQL versions to ensure mysql-5.7.42 appears last
@@ -85,7 +159,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: DBVersionMap
     });
   } catch (error) {
-    console.log(error);
+    console.log('Error in getVersion API:', error);
     jsonRes(res, {
       data: MOCK
     });

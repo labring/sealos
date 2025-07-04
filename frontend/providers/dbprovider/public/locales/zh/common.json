@@ -471,5 +471,7 @@
     "quota_total": "总计: ",
     "title": "资源不足"
   },
-  "need_manual_table_creation": "你需要自行创建与 CSV 文件对应的数据表。"
+  "need_manual_table_creation": "你需要自行创建与 CSV 文件对应的数据表。",
+  "kafka_resource_desc": "kafka-broker占50%、controller、kafka-expoter各占25%",
+  "clickhouse_resource_desc": "clickhouse占50%、ch-keeper和zookeeper各占25%"
 }
