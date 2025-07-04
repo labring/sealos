@@ -4,13 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
 import { isElementInViewport } from '@/utils/tools';
-import { useTemplateStore } from '@/stores/template';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 
-export const  useDevboxList=()=>{
+export const useDevboxList = () => {
   const router = useRouter();
   const [refresh, setFresh] = useState(false);
-  const { isOpen: templateIsOpen } = useTemplateStore();
   const { devboxList, setDevboxList, loadAvgMonitorData, intervalLoadPods } = useDevboxStore();
   const list = useRef<DevboxListItemTypeV2[]>(devboxList);
 
@@ -18,8 +16,7 @@ export const  useDevboxList=()=>{
     onSettled(res) {
       if (!res) return;
       refreshList(res);
-    },
-    enabled: !templateIsOpen
+    }
   });
 
   const refreshList = useCallback(
@@ -52,8 +49,8 @@ export const  useDevboxList=()=>{
     },
     {
       refetchOnMount: true,
-      refetchInterval: !templateIsOpen ? 3000 : false,
-      enabled: !isLoading && !templateIsOpen,
+      refetchInterval: 3000,
+      enabled: !isLoading,
       onSettled() {
         refreshList();
       }
@@ -81,8 +78,8 @@ export const  useDevboxList=()=>{
     },
     {
       refetchOnMount: true,
-      refetchInterval: !templateIsOpen ? 2 * 60 * 1000 : false,
-      enabled: !isLoading && !templateIsOpen,
+      refetchInterval: 2 * 60 * 1000,
+      enabled: !isLoading,
       onSettled() {
         refreshList();
       }
@@ -115,4 +112,4 @@ export const  useDevboxList=()=>{
       retryFetch();
     }
   };
-}
+};

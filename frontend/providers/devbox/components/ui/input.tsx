@@ -8,7 +8,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 function Input({ className, type, icon, ...props }: InputProps) {
   return (
-    <div className="relative flex items-center">
+    <div className="relative flex w-full items-center">
       {icon && (
         <div className="pointer-events-none absolute left-3 flex h-full items-center">{icon}</div>
       )}
