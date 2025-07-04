@@ -46,7 +46,7 @@ import ReleaseModal from '@/components/modals/ReleaseModal';
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
 import CreateTemplateDrawer from '@/components/modals/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/modals/CreateOrUpdateDrawer';
-import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
+import UpdateTemplateDrawer from '@/components/modals/UpdateTemplateDrawer';
 import AppSelectModal from '@/components/modals/AppSelectModal';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
@@ -72,7 +72,7 @@ const Release = () => {
   const [isCreateTemplateDrawerOpen, setIsCreateTemplateDrawerOpen] = useState(false);
   const [isCreateOrUpdateTemplateDrawerOpen, setIsCreateOrUpdateTemplateDrawerOpen] =
     useState(false);
-  const [isUpdateTemplateModalOpen, setIsUpdateTemplateModalOpen] = useState(false);
+  const [isUpdateTemplateDrawerOpen, setIsUpdateTemplateDrawerOpen] = useState(false);
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: 'delete_version_confirm_info'
@@ -85,7 +85,7 @@ const Release = () => {
       refetchInterval:
         devboxVersionList.length > 0 &&
         !isCreateTemplateDrawerOpen &&
-        !isUpdateTemplateModalOpen &&
+        !isUpdateTemplateDrawerOpen &&
         !isCreateOrUpdateTemplateDrawerOpen &&
         (devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending ||
           devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Failed)
@@ -380,7 +380,7 @@ const Release = () => {
           onOpenUpdate={(uid) => {
             const repo = templateRepositoryList.find((item) => item.uid === uid);
             setUpdateTemplateRepo(repo || null);
-            setIsUpdateTemplateModalOpen(true);
+            setIsUpdateTemplateDrawerOpen(true);
           }}
           templateRepositoryList={templateRepositoryList}
           isOpen={isCreateOrUpdateTemplateDrawerOpen}
@@ -388,10 +388,10 @@ const Release = () => {
         />
       )}
       {!!updateTemplateRepo && (
-        <UpdateTemplateRepositoryModal
+        <UpdateTemplateDrawer
           templateRepository={updateTemplateRepo}
-          isOpen={isUpdateTemplateModalOpen}
-          onClose={() => setIsUpdateTemplateModalOpen(false)}
+          isOpen={isUpdateTemplateDrawerOpen}
+          onClose={() => setIsUpdateTemplateDrawerOpen(false)}
           devboxReleaseName={currentVersion?.name || ''}
         />
       )}

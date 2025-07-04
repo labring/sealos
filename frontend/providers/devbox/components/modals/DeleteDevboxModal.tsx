@@ -17,17 +17,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
+interface DeleteDevboxModalProps {
+  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
+  onClose: () => void;
+  onSuccess: () => void;
+  refetchDevboxList: () => void;
+}
+
 const DeleteDevboxModal = ({
   devbox,
   onClose,
   refetchDevboxList,
   onSuccess
-}: {
-  devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
-  onClose: () => void;
-  onSuccess: () => void;
-  refetchDevboxList: () => void;
-}) => {
+}: DeleteDevboxModalProps) => {
   const t = useTranslations();
   const { removeDevboxIDE } = useIDEStore();
 
