@@ -256,6 +256,15 @@ const AppGridPagingContainer = ({
       ? (pageWidth + pageGap) * clampedCurrentPage
       : (pageWidth + pageGap) * clampedCurrentPage - dragDelta;
 
+  console.log({
+    pageWidth,
+    pageGap,
+    clampedCurrentPage,
+    dragDelta,
+    totalPages,
+    scrollPosition
+  });
+
   console.log(scrollPosition, 'scrollPosition');
 
   const calculateItemsPerPage = useCallback(() => {
@@ -338,18 +347,18 @@ const AppGridPagingContainer = ({
   }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
 
   // Pointer drag pagination
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
+
   useEffect(() => {
     const wrapper = gridWrapperRef.current;
     if (!wrapper) return;
 
-    let startX = 0;
-    let currentDragDistance = 0;
-
     const handlePointerDown = (e: PointerEvent) => {
       if (!handleNavigation || !gridWrapperRef.current) return;
 
-      startX = e.clientX;
-      currentDragDistance = 0;
+      setDragStartX(e.clientX);
+      setDragDistance(0);
 
       gridWrapperRef.current.setPointerCapture(e.pointerId);
     };
@@ -357,8 +366,8 @@ const AppGridPagingContainer = ({
     const handlePointerMove = (e: PointerEvent) => {
       if (!handleNavigation || !gridWrapperRef.current?.hasPointerCapture(e.pointerId)) return;
 
-      currentDragDistance = e.clientX - startX;
-      setDragDelta(currentDragDistance);
+      setDragDistance(e.clientX - dragStartX);
+      setDragDelta(e.clientX - dragStartX);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
@@ -366,10 +375,10 @@ const AppGridPagingContainer = ({
 
       gridWrapperRef.current.releasePointerCapture(e.pointerId);
 
-      if (Math.abs(currentDragDistance) > 80) {
-        if (currentDragDistance < -80) {
+      if (Math.abs(dragDistance) > 80) {
+        if (dragDistance < -80) {
           onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
-        } else if (currentDragDistance > 80) {
+        } else if (dragDistance > 80) {
           onChange(Math.max(0, currentPage - 1), itemsPerPage);
         }
       }
@@ -388,7 +397,7 @@ const AppGridPagingContainer = ({
       wrapper.removeEventListener('pointerup', handlePointerUp);
       wrapper.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
+  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange, dragStartX, dragDistance]);
 
   return (
     <Flex
