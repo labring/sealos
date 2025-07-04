@@ -34,7 +34,8 @@ enum TabEnum {
   DataImport = 'dataImport',
   ErrorLog = 'errorLog',
   Overview = 'overview',
-  OperationLog = 'operationLog'
+  OperationLog = 'operationLog',
+  chat2db = 'chat2db'
 }
 
 const AppDetail = ({
@@ -128,6 +129,7 @@ const AppDetail = ({
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
   const { dbDetail, loadDBDetail } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
+  const [podsCount, setPodsCount] = useState(0);
 
   useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
@@ -236,10 +238,27 @@ const AppDetail = ({
               mt="6px"
               overflow={'auto'}
             >
-              <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'} mb={'16px'}>
-                {t('replicas_list')}
-              </Text>
-              <Pods dbName={dbName} dbType={dbDetail.dbType} />
+              <Flex alignItems={'center'} mb={'16px'}>
+                <Text fontSize={'16px'} fontWeight={500} color={'grayModern.900'}>
+                  {t('replicas_list')}
+                </Text>
+                <Box
+                  ml="8px"
+                  borderRadius="999px"
+                  fontSize="12px"
+                  fontWeight={500}
+                  bg="#E4E4E7"
+                  w={'27px'}
+                  display={'flex'}
+                  alignItems={'center'}
+                  justifyContent={'center'}
+                  h={'22px'}
+                >
+                  {podsCount}
+                </Box>
+              </Flex>
+
+              <Pods dbName={dbName} dbType={dbDetail.dbType} onPodCountChange={setPodsCount} />
             </Box>
           </Flex>
         ) : (

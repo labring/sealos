@@ -25,6 +25,7 @@ import { FieldErrors, useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 
@@ -70,6 +71,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  useEffect(() => {
+    if (!dbName) {
+      const hour = Math.floor(Math.random() * 10) + 14;
+      formHook.setValue('autoBackup.hour', hour.toString().padStart(2, '0'));
+    }
+  }, []);
+
   const generateYamlList = (data: DBEditType) => {
     return [
       ...(isEdit
@@ -86,6 +94,30 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     ];
   };
+
+  function getCpuCores(yamlString: string): number {
+    try {
+      const doc = yaml.load(yamlString) as any;
+      const cpuStr: string | undefined = doc?.spec?.componentSpecs?.[0]?.resources?.limits?.cpu;
+      if (!cpuStr) return 0;
+
+      if (cpuStr.endsWith('m')) {
+        const milli = parseInt(cpuStr.slice(0, -1), 10);
+        return milli / 1000;
+      }
+
+      return parseFloat(cpuStr);
+    } catch (err) {
+      console.error(err);
+      return 0;
+    }
+  }
+  const cpu = useMemo(() => {
+    if (yamlList.length > 1) {
+      return getCpuCores(yamlList[1].value);
+    }
+    return 0;
+  }, [yamlList]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
@@ -275,7 +307,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} allocatedStorage={allocatedStorage} pxVal={pxVal} />
+            <Form
+              formHook={formHook}
+              allocatedStorage={allocatedStorage}
+              pxVal={pxVal}
+              cpuCores={cpu}
+            />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
