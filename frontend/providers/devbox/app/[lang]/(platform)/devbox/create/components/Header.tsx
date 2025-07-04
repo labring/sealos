@@ -12,7 +12,6 @@ import { downLoadBlob } from '@/utils/tools';
 import { useGuideStore } from '@/stores/guide';
 import { useGlobalStore } from '@/stores/global';
 import type { YamlItemType } from '@/types/index';
-import { useTemplateStore } from '@/stores/template';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 
@@ -30,7 +29,6 @@ const Header = ({
   const router = useRouter();
   const t = useTranslations();
 
-  const { config } = useTemplateStore();
   const { lastRoute } = useGlobalStore();
   const { guideConfigDevbox } = useGuideStore();
 
@@ -46,12 +44,8 @@ const Header = ({
   const isClientSide = useClientSideValue(true);
 
   const handleBack = useCallback(() => {
-    if (config.lastRoute) {
-      router.replace(lastRoute);
-    } else {
-      router.replace(lastRoute);
-    }
-  }, [config.lastRoute, lastRoute, router]);
+    router.replace(lastRoute);
+  }, [lastRoute, router]);
 
   return (
     <>

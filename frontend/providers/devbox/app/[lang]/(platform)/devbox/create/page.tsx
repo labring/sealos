@@ -25,7 +25,6 @@ import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
 import { useGlobalStore } from '@/stores/global';
 import { useDevboxStore } from '@/stores/devbox';
-import { useTemplateStore } from '@/stores/template';
 
 import Form from './components/Form';
 import Yaml from './components/Yaml';
@@ -60,7 +59,6 @@ const DevboxCreatePage = () => {
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
   const [captureDevboxName, setCaptureDevboxName] = useState('');
-  const { updateTemplateModalConfig, config: templateConfig } = useTemplateStore();
   useEffect(() => {
     const name = searchParams.get('name');
     if (name) {
@@ -205,10 +203,7 @@ const DevboxCreatePage = () => {
       }
       addDevboxIDE('vscode', formData.name);
       toast.success(t(applySuccess));
-      updateTemplateModalConfig({
-        ...templateConfig,
-        lastRoute
-      });
+
       if (sourcePrice?.gpu) {
         refetchPrice();
       }

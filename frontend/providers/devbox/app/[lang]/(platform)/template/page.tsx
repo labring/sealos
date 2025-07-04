@@ -53,9 +53,9 @@ const TemplatePage = () => {
           <TabsContent value="public" className="h-full">
             <PublicTemplate search={search} />
           </TabsContent>
-          {/* <TabsContent value="private" className="h-full">
-              <PrivateTemplate search={search} />
-            </TabsContent> */}
+          <TabsContent value="private" className="h-full">
+            <PrivateTemplate search={search} />
+          </TabsContent>
         </Tabs>
       </div>
     </div>

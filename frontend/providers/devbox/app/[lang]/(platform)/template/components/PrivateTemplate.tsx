@@ -1,12 +1,12 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Box, Flex, Grid, TabPanel, Text } from '@chakra-ui/react';
 
 import { listPrivateTemplateRepository as listPrivateTemplateRepositoryApi } from '@/api/template';
-import MyIcon from '@/components/Icon';
+
 import TemplateCard from './TemplateCard';
-import SwitchPage from '@/components/SwitchPage';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Pagination } from '@/components/ui/pagination';
 
 export default function PrivateTemplate({ search }: { search: string }) {
   const [pageQueryBody, setPageQueryBody] = useState({
@@ -16,7 +16,7 @@ export default function PrivateTemplate({ search }: { search: string }) {
     totalPage: 0
   });
 
-  // reset query
+  // reset query when search changes
   useEffect(() => {
     if (!search) return;
     setPageQueryBody((prev) => ({
@@ -26,12 +26,13 @@ export default function PrivateTemplate({ search }: { search: string }) {
       totalPage: 0
     }));
   }, [search]);
-  // reset query
+
   const queryBody = {
     page: pageQueryBody.page,
     pageSize: pageQueryBody.pageSize,
     search
   };
+
   const listPrivateTemplateRepository = useQuery(
     ['template-repository-list', 'template-repository-private', queryBody],
     () => {
@@ -62,69 +63,46 @@ export default function PrivateTemplate({ search }: { search: string }) {
   const t = useTranslations();
   const privateTemplateRepositoryList =
     listPrivateTemplateRepository.data?.templateRepositoryList || [];
+
   return (
-    <TabPanel p={0} height={'full'}>
-      <Flex flex="1" direction={'column'} h={'full'}>
-        <Text color={'grayModern.600'} mb="16px" fontSize="18px" fontWeight={500}>
-          {t('my_templates')}
-        </Text>
-        <Box h={'0'} flex={1} overflow={'auto'} position={'relative'}>
-          <Grid
-            templateColumns="repeat(auto-fill, minmax(clamp(210px, 300px, 438px), 1fr));"
-            gap="20px"
-            position={'absolute'}
-            inset={0}
-            gridAutoRows={'max-content'}
-          >
-            {privateTemplateRepositoryList.map((tr) => (
-              <TemplateCard
-                key={tr.uid}
-                isPublic={tr.isPublic}
-                isDisabled={tr.templates.length === 0}
-                iconId={tr.iconId || ''}
-                templateRepositoryName={tr.name}
-                templateRepositoryDescription={tr.description}
-                templateRepositoryUid={tr.uid}
-                inPublicStore={false}
-                tags={tr.templateRepositoryTags.map((t) => t.tag)}
-              />
-            ))}
-          </Grid>
-          {privateTemplateRepositoryList.length === 0 && (
-            <Flex
-              justifyContent={'center'}
-              flex={1}
-              alignItems={'center'}
-              flexDirection={'column'}
-              gap={4}
-              h="full"
-            >
-              <MyIcon name="empty" w={'40px'} h={'40px'} color={'white'} />
-              <Box textAlign={'center'} color={'grayModern.600'}>
-                {t('no_template_repository_versions')}
-              </Box>
-            </Flex>
-          )}
-        </Box>
-        <Flex>
-          <SwitchPage
-            ml={'auto'}
-            mr={'0'}
-            pageSize={pageQueryBody.page}
-            totalPage={pageQueryBody.totalPage}
-            totalItem={pageQueryBody.totalItems}
-            currentPage={pageQueryBody.page}
-            setCurrentPage={(currentPage) => {
-              setPageQueryBody((page) => {
-                return {
-                  ...page,
-                  page: currentPage
-                };
-              });
-            }}
-          />
-        </Flex>
-      </Flex>
-    </TabPanel>
+    <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
+      <ScrollArea className="h-[calc(100vh-200px)] pr-2">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
+          {privateTemplateRepositoryList.map((tr) => (
+            <TemplateCard
+              key={tr.uid}
+              isPublic={tr.isPublic}
+              isDisabled={tr.templates.length === 0}
+              iconId={tr.iconId || ''}
+              templateRepositoryName={tr.name}
+              templateRepositoryDescription={tr.description}
+              templateRepositoryUid={tr.uid}
+              inPublicStore={false}
+              tags={tr.templateRepositoryTags.map((t) => t.tag)}
+            />
+          ))}
+        </div>
+
+        {privateTemplateRepositoryList.length === 0 && (
+          <div className="flex h-full flex-1 flex-col items-center justify-center gap-4">
+            <div className="text-center text-zinc-600">{t('no_template_repository_versions')}</div>
+          </div>
+        )}
+      </ScrollArea>
+
+      <Pagination
+        className="pr-2"
+        pageSize={pageQueryBody.pageSize}
+        totalPages={pageQueryBody.totalPage}
+        totalItems={pageQueryBody.totalItems}
+        currentPage={pageQueryBody.page}
+        onPageChange={(currentPage) => {
+          setPageQueryBody((page) => ({
+            ...page,
+            page: currentPage
+          }));
+        }}
+      />
+    </div>
   );
 }

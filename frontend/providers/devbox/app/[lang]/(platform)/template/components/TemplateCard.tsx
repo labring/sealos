@@ -82,7 +82,7 @@ const TemplateCard = ({
                 />
               </div>
               {/* name */}
-              <span className="font-medium">{templateRepositoryName}</span>
+              <span className="truncate font-medium">{templateRepositoryName}</span>
               {/* badge */}
               {inPublicStore ? (
                 tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
@@ -97,10 +97,10 @@ const TemplateCard = ({
                 <Badge
                   variant="outline"
                   className={cn(
-                    'rounded-full px-2 text-[10px]',
+                    'rounded-full px-2 text-xs/4 font-medium',
                     isPublic
                       ? 'border-green-200 bg-green-50 text-green-600'
-                      : 'border-[#F4B8FF] bg-[#FDF4FF] text-[#9E00FF]'
+                      : 'border-zinc-200 bg-zinc-50 text-zinc-600'
                   )}
                 >
                   {t(isPublic ? 'public' : 'private')}
