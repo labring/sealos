@@ -22,7 +22,13 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import { useTranslation } from 'next-i18next';
+import {
+  ThemeAppearance,
+  PrimaryColorsType,
+  LangType,
+  yowantLayoutConfig
+} from '@/constants/chat2db';
+import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -162,6 +168,16 @@ const DBList = ({
     },
     [refetchApps, setLoading, t, toast]
   );
+
+  const handleManageData = useCallback(() => {
+    const params = new URLSearchParams({
+      theme: ThemeAppearance.Light,
+      primaryColor: PrimaryColorsType.orange,
+      language: (i18n?.language as LangType) || (navigator.language as LangType),
+      hideAvatar: String(yowantLayoutConfig.hideAvatar)
+    });
+    router.push(`/db/manage?${params.toString()}`);
+  }, [router, i18n?.language]);
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
@@ -315,6 +331,20 @@ const DBList = ({
         cell: ({ row }) => (
           <Flex key={row.id}>
             <Button
+              mr={'10px'}
+              size={'sm'}
+              h={'32px'}
+              bg={'grayModern.150'}
+              color={'grayModern.900'}
+              _hover={{ color: 'brightBlue.600' }}
+              leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+              onClick={() => handleManageData()}
+              isDisabled={row.original.status.value !== DBStatusEnum.Running}
+            >
+              {t('manage_data')}
+            </Button>
+
+            <Button
               mr={'4px'}
               height={'32px'}
               size={'sm'}
@@ -348,7 +378,7 @@ const DBList = ({
                   w={'32px'}
                   h={'32px'}
                 >
-                  <MyIcon name={'more'} px={3} />
+                  <MyIcon name={'more'} px={3} transform="rotate(90deg)" />
                 </Button>
               }
               menuList={[
