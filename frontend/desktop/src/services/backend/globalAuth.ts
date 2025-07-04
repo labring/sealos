@@ -441,6 +441,12 @@ export const getGlobalToken = async ({
             userUid: result.user.uid
           });
         }
+
+        if (adClickData) {
+          await uploadConvertData(adClickData).catch((e) => {
+            console.log('Failed to upload AD click data: ', e);
+          });
+        }
       }
     } else {
       const result = await signInByPassword({
@@ -519,6 +525,7 @@ export const getGlobalToken = async ({
         provider,
         id: providerId
       });
+
       result && (user = result.user);
     }
   }
