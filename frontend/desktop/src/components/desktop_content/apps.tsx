@@ -74,8 +74,7 @@ const AppItem = ({
 
       setTimer(
         setTimeout(() => {
-          console.log('setIsDragging(true)');
-
+          console.log('entered drag state');
           setIsDragging(true);
           setTimer(null);
         }, 500)
@@ -83,11 +82,13 @@ const AppItem = ({
     };
 
     const handlePointerEnd = (e: PointerEvent) => {
+      console.log('left drag state');
       clearTimer();
       setIsDragging(false);
     };
 
     const handleDragEnd = (e: DragEvent) => {
+      console.log('left drag state');
       clearTimer();
       setIsDragging(false);
     };
@@ -116,7 +117,7 @@ const AppItem = ({
     const handlePointerMove = (e: PointerEvent) => {
       // Cancel holding detection if user moves the pointer
       if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 16) {
-        console.log('cancel holding');
+        console.log('cancelled drag detection');
         clearTimer();
         setIsDragging(false);
       }
@@ -269,17 +270,6 @@ const AppGridPagingContainer = ({
     (totalPages - 1) * (pageWidth + pageGap)
       ? (pageWidth + pageGap) * clampedCurrentPage
       : (pageWidth + pageGap) * clampedCurrentPage - dragDelta;
-
-  console.log({
-    pageWidth,
-    pageGap,
-    clampedCurrentPage,
-    dragDelta,
-    totalPages,
-    scrollPosition
-  });
-
-  console.log(scrollPosition, 'scrollPosition');
 
   const calculateItemsPerPage = useCallback(() => {
     if (!gridWrapperRef.current) return 8;
@@ -576,18 +566,13 @@ const PageSwitcher = ({
 };
 
 export default function Apps() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
-  const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
-  const { layoutConfig, authConfig } = useConfigStore();
-  const [draggedApp, setDraggedApp] = useState<TApp | null>(null);
+  const { layoutConfig } = useConfigStore();
   const [draggedFromFolder, setDraggedFromFolder] = useState(false);
-  const [moreAppsFolder, setMoreAppsFolder] = useState<TApp[]>([]);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
-  const [folderPosition, setFolderPosition] = useState({ top: 0, left: 0 });
 
-  const [isDraggingOutside, setIsDraggingOutside] = useState(false);
   const { openGuideModal } = useGuideModalStore();
   const desktopRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLDivElement>(null);
@@ -615,8 +600,7 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
-    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
+    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
@@ -632,6 +616,7 @@ export default function Apps() {
   const desktopPages = useMemo(() => {
     // One page desktop
     const firstPageApps = itemsPerPageInGrid > 0 ? normalApps.slice(0, itemsPerPageInGrid - 1) : [];
+    console.log([firstPageApps], 'desktop pages');
     return [firstPageApps];
   }, [normalApps, itemsPerPageInGrid]);
 
@@ -642,7 +627,11 @@ export default function Apps() {
       return folderApps.slice(start, end);
     };
 
-    return Array.from({ length: totalPagesInFolder }).map((_, index) => getPageInFolder(index));
+    const pages = Array.from({ length: totalPagesInFolder }).map((_, index) =>
+      getPageInFolder(index)
+    );
+    console.log(pages, 'folder pages');
+    return pages;
   }, [folderApps, itemsPerPageInFolder, totalPagesInFolder]);
 
   const { isDriverActive } = useGuideModalStore();
@@ -690,14 +679,9 @@ export default function Apps() {
 
     if (e.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
-      setFolderPosition({
-        top: rect.bottom + 10,
-        left: rect.left
-      });
     }
 
     setIsFolderOpen(true);
-    setMoreAppsFolder(moreApps);
   };
 
   const closeFolder = () => {
@@ -724,7 +708,6 @@ export default function Apps() {
     }
 
     e.dataTransfer.setData('application/json', JSON.stringify({ app, source }));
-    setDraggedApp(app);
 
     if (source === 'folder') {
       setDraggedFromFolder(true);
@@ -732,9 +715,7 @@ export default function Apps() {
   };
 
   const handleDragEnd = () => {
-    setDraggedApp(null);
     setDraggedFromFolder(false);
-    setIsDraggingOutside(false);
   };
 
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
@@ -753,7 +734,6 @@ export default function Apps() {
         if (isOutside) {
           closeFolder();
         }
-        setIsDraggingOutside(isOutside);
       }
     }
   };
@@ -787,15 +767,6 @@ export default function Apps() {
       if (data && data.app) {
         if (data.source === 'desktop') {
           updateAppDisplayType(data.app.key, 'more');
-
-          setMoreAppsFolder((prev) => {
-            const newApps = [...prev];
-            if (!newApps.some((app) => app.key === data.app.key)) {
-              const app = installedApps.find((a) => a.key === data.app.key);
-              if (app) newApps.push(app);
-            }
-            return newApps;
-          });
         }
       }
     } catch (error) {}
@@ -816,8 +787,6 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
-  console.log(normalApps, 'renderApps');
-
   const gradientIconStyle = {
     '.gradient-icon': {
       svg: {
@@ -831,13 +800,6 @@ export default function Apps() {
       }
     }
   };
-
-  // const openCostCenterApp = () => {
-  //   openDesktopApp({
-  //     appKey: 'system-costcenter',
-  //     pathname: '/'
-  //   });
-  // };
 
   const openReferralApp = () => {
     openDesktopApp({
