@@ -81,6 +81,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         state.setEnv('stripeEnabled', stripeE);
         stripeE && state.setStripe(data?.STRIPE_PUB || '');
         state.setEnv('wechatEnabled', !!data?.WECHAT_ENABLED);
+        state.setEnv('alipayEnabled', !!data?.ALIPAY_ENABLED);
       } catch (error) {
         console.error('get init config error');
       }
