@@ -63,7 +63,7 @@ const AppItem = ({
       }}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      draggable
+      // draggable
     >
       <Center
         w={{ base: '64px', md: '78px' }}
@@ -134,6 +134,7 @@ const AppGridPagingContainer = ({
   totalPages,
   currentPage,
   handleNavigation,
+  pageGap,
   onChange
 }: {
   children: ReactNode;
@@ -142,6 +143,7 @@ const AppGridPagingContainer = ({
   totalPages: number;
   currentPage: number;
   handleNavigation: boolean;
+  pageGap: number;
   onChange: (currentPage: number, pageSize: number) => void;
 }) => {
   const gridWrapperRef = useRef<HTMLDivElement>(null);
@@ -155,10 +157,12 @@ const AppGridPagingContainer = ({
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [dragDelta, setDragDelta] = useState(0);
 
+  const clampedCurrentPage = Math.min(Math.max(currentPage, 0), totalPages - 1);
   const scrollPosition =
-    pageWidth * currentPage - dragDelta > (totalPages - 1) * pageWidth
-      ? pageWidth * currentPage
-      : pageWidth * currentPage - dragDelta;
+    (pageWidth + pageGap) * clampedCurrentPage - dragDelta >
+    (totalPages - 1) * (pageWidth + pageGap)
+      ? (pageWidth + pageGap) * clampedCurrentPage
+      : (pageWidth + pageGap) * clampedCurrentPage - dragDelta;
 
   console.log(scrollPosition, 'scrollPosition');
 
@@ -171,15 +175,11 @@ const AppGridPagingContainer = ({
     return rows * columns!;
   }, [columns, gridGap, appHeight]);
 
-  const changePageInGrid = useCallback(
-    (pageIndex: number) => {
-      if (!gridWrapperRef.current) return;
+  const calculatePageWidth = useCallback(() => {
+    if (!gridWrapperRef.current) return 0;
 
-      const gridWidth = gridWrapperRef.current.scrollWidth / totalPages;
-      setPageWidth(gridWidth);
-    },
-    [totalPages]
-  );
+    return (gridWrapperRef.current.scrollWidth + pageGap) / totalPages - pageGap;
+  }, [totalPages, pageGap]);
 
   // Calculate items per page and scroll position on initial render and on screen size changes
   useEffect(() => {
@@ -202,29 +202,29 @@ const AppGridPagingContainer = ({
     };
   }, [columns, calculateItemsPerPage]);
 
-  // Change scroll position when currentPage changes and when screen size changes
+  // Calculate grid width on screen size changes
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
 
     const handleResize = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        changePageInGrid(currentPage);
+        setPageWidth(calculatePageWidth());
       }, 50);
     };
 
-    changePageInGrid(currentPage);
+    handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
     };
-  }, [currentPage, changePageInGrid, totalPages]);
+  }, [calculatePageWidth]);
 
   // Call onChange callback when something changes
   useEffect(() => {
-    onChange(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage, onChange]);
+    onChange(clampedCurrentPage, itemsPerPage);
+  }, [clampedCurrentPage, itemsPerPage, onChange]);
 
   // Keyboard pagination
   useEffect(() => {
@@ -304,6 +304,7 @@ const AppGridPagingContainer = ({
       h="full"
       w="full"
       transition="transform 0.2s ease-out"
+      gap={`${pageGap}px`}
       style={{
         transform: `translateX(-${scrollPosition}px)`
       }}
@@ -797,6 +798,7 @@ export default function Apps() {
           totalPages={1}
           currentPage={currentPageInGrid}
           handleNavigation={false}
+          pageGap={0}
           onChange={(currentPage, pageSize) => {
             setCurrentPageInGrid(currentPage);
             setItemsPerPageInGrid(pageSize);
@@ -860,6 +862,7 @@ export default function Apps() {
               totalPages={totalPagesInFolder}
               currentPage={currentPageInFolder}
               handleNavigation={isFolderOpen}
+              pageGap={240}
               onChange={(currentPage, pageSize) => {
                 setCurrentPageInFolder(currentPage);
                 setItemsPerPageInFolder(pageSize);
