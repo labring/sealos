@@ -115,8 +115,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       }
     }
 
-    const secretName = dbName + '-conn-credential';
-    body.data![dbTypeMap[dbType].passwordKey] = Buffer.from(newPassword).toString('base64');
+    // ensure secret exists and is writable
+    if (!body) {
+      throw new Error('Secret not found for updating password');
+    }
+    body.data = body.data ?? {};
+
+    const secretName = body.metadata?.name ?? `${dbName}-conn-credential`;
+    body.data[dbTypeMap[dbType].passwordKey] = Buffer.from(newPassword).toString('base64');
+
     const k8s_result = await k8sCore.replaceNamespacedSecret(secretName, namespace, body);
     if (k8s_result.response.statusCode !== 200) {
       throw new Error('Failed to patch secret!!!');

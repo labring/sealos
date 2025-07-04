@@ -161,10 +161,16 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   }, [applistCompleted, detailCompleted, router?.query?.guide, t]);
 
   const supportConnectDB = useMemo(() => {
-    return !!['postgresql', 'mongodb', 'apecloud-mysql', 'redis', 'milvus'].find(
-      (item) => item === db?.dbType
-    );
-  }, [db?.dbType]);
+    return !![
+      'postgresql',
+      'mongodb',
+      'apecloud-mysql',
+      'redis',
+      'milvus',
+      'kafka',
+      'clickhouse'
+    ].find((item) => item === db.dbType);
+  }, [db.dbType]);
 
   const { data: dbStatefulSet, refetch: refetchDBStatefulSet } = useQuery(
     ['getDBStatefulSetByName', db.dbName, db.dbType],
@@ -697,7 +703,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
             </HStack>
           </Flex>
 
-          {!['milvus', 'kafka'].includes(db.dbType) && (
+          {!['milvus'].includes(db.dbType) && (
             <Flex position={'relative'} fontSize={'base'} mt={'16px'} gap={'12px'}>
               {Object.entries(baseSecret).map(([name, value]) => (
                 <Box key={name} flex={1}>

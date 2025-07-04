@@ -16,12 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       'apps.kubeblocks.io',
       'v1alpha1',
       namespace,
-      'clusters',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      `clusterdefinition.kubeblocks.io/name`
+      'clusters'
     )) as {
       body: {
         items: KbPgClusterType[];

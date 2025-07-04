@@ -26,6 +26,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       dbType: DBType;
       mock?: string;
     };
+
+    console.log(`[getSecretByName] API called with:`, { dbName, dbType, mock });
+
     if (!dbName) {
       throw new Error('dbName is empty');
     }
@@ -40,12 +43,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req)
     });
 
+    console.log(`[getSecretByName] Got k8s client, namespace: ${namespace}`);
+
     const { username, password, host, port } = await fetchDBSecret(
       k8sCore,
       dbName,
       dbType,
       namespace
     );
+
+    console.log(`[getSecretByName] fetchDBSecret result:`, { username, password, host, port });
 
     const connectionInfo = buildConnectionInfo(dbType, username, password, host, port, namespace);
 
@@ -56,11 +63,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       port,
       ...connectionInfo
     };
-
+    console.log(`[getSecretByName] Final response data:`, data);
     jsonRes<SecretResponse>(res, {
       data
     });
   } catch (err: any) {
+    console.error(`[getSecretByName] Error:`, err);
     jsonRes(res, {
       code: 500,
       error: err
