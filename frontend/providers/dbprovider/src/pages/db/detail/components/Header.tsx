@@ -286,7 +286,7 @@ const Header = ({
   }, [toast, router, getDataSourceId, setDataSourceId, t, SystemEnv]);
 
   return (
-    <Flex h={'60px'} alignItems={'center'}>
+    <Flex h={'80px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
         <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
@@ -406,15 +406,108 @@ const Header = ({
         h={'32px'}
         fontSize={'12px'}
         variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'16px'} />}
+        borderRadius="md"
+        w={'40px'}
+        size="md"
+        leftIcon={<MyIcon name="delete" w="16px" h="16px" />}
         isLoading={loading}
         isDisabled={db.status.value === 'Updating'}
         _hover={{
-          color: '#FF324A'
+          bg: 'gray.200'
         }}
         onClick={onOpenDelModal}
+      />
+
+      <ButtonGroup
+        isAttached
+        size={'sm'}
+        variant={'outline'}
+        mr={3}
+        h={'40px'}
+        alignItems={'center'}
       >
-        {t('Delete')}
+        {db.status.value === 'Stopped' ? (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isLoading={loading}
+            onClick={handleStartApp}
+          >
+            {t('Continue')}
+          </Button>
+        ) : (
+          <Button
+            _hover={{
+              bg: 'gray.200'
+            }}
+            h={'40px'}
+            w={'88px'}
+            isLoading={loading}
+            isDisabled={db.status.value === 'Updating'}
+            onClick={onOpenPause(handlePauseApp)}
+          >
+            {t('Pause')}
+          </Button>
+        )}
+
+        {db.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isLoading={loading}
+            isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
+            onClick={() => {
+              if (db.source.hasSource && db.source.sourceType === 'sealaf') {
+                setUpdateAppName(db.dbName);
+                onOpenUpdateModal();
+              } else {
+                router.push(`/db/edit?name=${db.dbName}`);
+              }
+            }}
+          >
+            {t('update')}
+          </Button>
+        )}
+
+        {db.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isDisabled={db.status.value === 'Updating'}
+            onClick={openRestartConfirm(handleRestartApp)}
+            isLoading={loading}
+          >
+            {t('Restart')}
+          </Button>
+        )}
+      </ButtonGroup>
+
+      <Button
+        minW={'75px'}
+        h={'40px'}
+        fontSize={'12px'}
+        variant={'outline'}
+        bg={'black'}
+        color={'white'}
+        leftIcon={<MyIcon name="settings" w={'16px'} />}
+        isLoading={loading}
+        isDisabled={db.status.value !== 'Running'}
+        _hover={{
+          bg: 'gray.600'
+        }}
+        onClick={handleManageData}
+        alignItems={'center'}
+      >
+        {t('manage_data')}
       </Button>
 
       {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
