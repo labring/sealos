@@ -50,6 +50,16 @@ const AppItem = ({
   const { i18n } = useTranslation();
   const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
   const [isDragging, setIsDragging] = useState(false);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartY, setDragStartY] = useState(0);
+
+  const clearTimer = useCallback(() => {
+    if (timer) {
+      clearTimeout(timer);
+      setTimer(null);
+    }
+  }, [timer]);
 
   // Dispatch dragstart event after holding for 500ms
   useEffect(() => {
@@ -58,39 +68,27 @@ const AppItem = ({
     }
     const wrapper = wrapperRef.current;
 
-    let timer: NodeJS.Timeout | null = null;
-
-    let dragStartX = 0;
-    let dragStartY = 0;
-
-    console.log('effect run');
-
     const handlePointerDown = (e: PointerEvent) => {
-      dragStartX = e.screenX;
-      dragStartY = e.screenY;
+      setDragStartX(e.screenX);
+      setDragStartY(e.screenY);
 
-      timer = setTimeout(() => {
-        console.log('setIsDragging(true)');
+      setTimer(
+        setTimeout(() => {
+          console.log('setIsDragging(true)');
 
-        setIsDragging(true);
-      }, 500);
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      // Cancel holding detection if user moves the pointer
-      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 16) {
-        console.log('cancel holding');
-        clearTimeout(timer);
-        timer = null;
-        setIsDragging(false);
-      }
+          setIsDragging(true);
+          setTimer(null);
+        }, 500)
+      );
     };
 
     const handlePointerEnd = (e: PointerEvent) => {
+      clearTimer();
       setIsDragging(false);
     };
 
     const handleDragEnd = (e: DragEvent) => {
+      clearTimer();
       setIsDragging(false);
     };
 
@@ -99,25 +97,37 @@ const AppItem = ({
     };
 
     wrapper.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('pointermove', handlePointerMove);
     document.addEventListener('pointerup', handlePointerEnd);
     document.addEventListener('pointercancel', handlePointerEnd);
     document.addEventListener('dragend', handleDragEnd);
     wrapper.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      timer = null;
+      clearTimer();
       wrapper.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('pointerup', handlePointerEnd);
       document.removeEventListener('pointercancel', handlePointerEnd);
       document.removeEventListener('dragend', handleDragEnd);
       wrapper.removeEventListener('contextmenu', handleContextMenu);
     };
-  }, []);
+  }, [clearTimer]);
+
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      // Cancel holding detection if user moves the pointer
+      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 16) {
+        console.log('cancel holding');
+        clearTimer();
+        setIsDragging(false);
+      }
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [dragStartX, dragStartY, clearTimer, timer]);
 
   // Dispatch dragstart event when dragging
   useEffect(() => {
@@ -143,7 +153,11 @@ const AppItem = ({
       cursor={'pointer'}
       className={app.key}
       onClick={(e) => {
-        if (onClick) {
+        if (
+          onClick &&
+          !isDragging &&
+          Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) < 16
+        ) {
           onClick(e, app);
         }
       }}
@@ -152,9 +166,7 @@ const AppItem = ({
       draggable={isDragging}
       style={{
         touchAction: 'none',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        WebkitTouchCallout: 'none'
+        userSelect: 'none'
       }}
     >
       <Center
@@ -247,7 +259,9 @@ const AppGridPagingContainer = ({
 
   const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
+  const [dragStartX, setDragStartX] = useState(0);
 
   const clampedCurrentPage = Math.min(Math.max(currentPage, 0), totalPages - 1);
   const scrollPosition =
@@ -347,9 +361,6 @@ const AppGridPagingContainer = ({
   }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
 
   // Pointer drag pagination
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragDistance, setDragDistance] = useState(0);
-
   useEffect(() => {
     const wrapper = gridWrapperRef.current;
     if (!wrapper) return;
@@ -357,28 +368,23 @@ const AppGridPagingContainer = ({
     const handlePointerDown = (e: PointerEvent) => {
       if (!handleNavigation || !gridWrapperRef.current) return;
 
+      setIsDragging(true);
       setDragStartX(e.clientX);
-      setDragDistance(0);
-
-      gridWrapperRef.current.setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!handleNavigation || !gridWrapperRef.current?.hasPointerCapture(e.pointerId)) return;
+      if (!isDragging) return;
 
-      setDragDistance(e.clientX - dragStartX);
       setDragDelta(e.clientX - dragStartX);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-      if (!handleNavigation || !gridWrapperRef.current?.hasPointerCapture(e.pointerId)) return;
+      setIsDragging(false);
 
-      gridWrapperRef.current.releasePointerCapture(e.pointerId);
-
-      if (Math.abs(dragDistance) > 80) {
-        if (dragDistance < -80) {
+      if (Math.abs(dragDelta) > 80) {
+        if (dragDelta < -80) {
           onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
-        } else if (dragDistance > 80) {
+        } else if (dragDelta > 80) {
           onChange(Math.max(0, currentPage - 1), itemsPerPage);
         }
       }
@@ -397,7 +403,16 @@ const AppGridPagingContainer = ({
       wrapper.removeEventListener('pointerup', handlePointerUp);
       wrapper.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange, dragStartX, dragDistance]);
+  }, [
+    handleNavigation,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    onChange,
+    dragStartX,
+    dragDelta,
+    isDragging
+  ]);
 
   return (
     <Flex
