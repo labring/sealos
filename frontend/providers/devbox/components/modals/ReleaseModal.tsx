@@ -37,6 +37,7 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
 
   const { env } = useEnvStore();
 
+  // TODO: all form need to be react-hook-form
   const [tag, setTag] = useState('');
   const [loading, setLoading] = useState(false);
   const [tagError, setTagError] = useState(false);
@@ -156,8 +157,7 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
             </div>
             {/* tag  */}
             <div className="flex w-full flex-col items-start gap-2">
-              <Label htmlFor="tag">
-                <span className="text-red-500">*</span>
+              <Label htmlFor="tag" required>
                 {t('version_number')}
               </Label>
               <Input

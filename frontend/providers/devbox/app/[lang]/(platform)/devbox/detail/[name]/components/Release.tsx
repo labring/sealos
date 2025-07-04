@@ -44,7 +44,7 @@ import { Loading } from '@/components/ui/loading';
 import DevboxStatusTag from '@/components/StatusTag';
 import ReleaseModal from '@/components/modals/ReleaseModal';
 import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
-import CreateTemplateModal from '@/app/[lang]/(platform)/template/updateTemplate/CreateTemplateModal';
+import CreateTemplateDrawer from '@/components/modals/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/modals/CreateOrUpdateDrawer';
 import UpdateTemplateRepositoryModal from '@/app/[lang]/(platform)/template/updateTemplate/UpdateTemplateRepositoryModal';
 import AppSelectModal from '@/components/modals/AppSelectModal';
@@ -69,7 +69,7 @@ const Release = () => {
     | null
     | Awaited<ReturnType<typeof listPrivateTemplateRepository>>['templateRepositoryList'][number]
   >(null);
-  const [isCreateTemplateModalOpen, setIsCreateTemplateModalOpen] = useState(false);
+  const [isCreateTemplateDrawerOpen, setIsCreateTemplateDrawerOpen] = useState(false);
   const [isCreateOrUpdateTemplateDrawerOpen, setIsCreateOrUpdateTemplateDrawerOpen] =
     useState(false);
   const [isUpdateTemplateModalOpen, setIsUpdateTemplateModalOpen] = useState(false);
@@ -84,7 +84,7 @@ const Release = () => {
     {
       refetchInterval:
         devboxVersionList.length > 0 &&
-        !isCreateTemplateModalOpen &&
+        !isCreateTemplateDrawerOpen &&
         !isUpdateTemplateModalOpen &&
         !isCreateOrUpdateTemplateDrawerOpen &&
         (devboxVersionList[0].status.value === DevboxReleaseStatusEnum.Pending ||
@@ -211,7 +211,7 @@ const Release = () => {
       if (templateRepositoryList.length > 0) {
         setIsCreateOrUpdateTemplateDrawerOpen(true); // choose create or update
       } else {
-        setIsCreateTemplateModalOpen(true);
+        setIsCreateTemplateDrawerOpen(true);
       }
     },
     [templateRepositoryList.length]
@@ -341,6 +341,7 @@ const Release = () => {
           </TableBody>
         </Table>
       )}
+      {/* modals */}
       {!!devbox && (
         <ReleaseModal
           open={onOpenRelease}
@@ -368,14 +369,14 @@ const Release = () => {
         onClose={() => setOnOpenSelectApp(false)}
       />
       <ConfirmChild />
-      <CreateTemplateModal
-        isOpen={isCreateTemplateModalOpen}
-        onClose={() => setIsCreateTemplateModalOpen(false)}
+      <CreateTemplateDrawer
+        isOpen={isCreateTemplateDrawerOpen}
+        onClose={() => setIsCreateTemplateDrawerOpen(false)}
         devboxReleaseName={currentVersion?.name || ''}
       />
       {templateRepositoryList.length > 0 && (
         <CreateOrUpdateDrawer
-          onOpenCreate={() => setIsCreateTemplateModalOpen(true)}
+          onOpenCreate={() => setIsCreateTemplateDrawerOpen(true)}
           onOpenUpdate={(uid) => {
             const repo = templateRepositoryList.find((item) => item.uid === uid);
             setUpdateTemplateRepo(repo || null);

@@ -60,18 +60,7 @@ const CreateOrUpdateDrawer = ({
           </div>
         </div>
 
-        <DrawerFooter className="flex-row-reverse items-center justify-start gap-3 bg-zinc-50">
-          <Button
-            onClick={() => {
-              if (!selectedTemplateRepoUid) {
-                return toast.error(t('select_template_tips'));
-              }
-              onOpenUpdate(selectedTemplateRepoUid);
-              onClose();
-            }}
-          >
-            {t('confirm')}
-          </Button>
+        <DrawerFooter className="gap-3 bg-zinc-50">
           <Button
             variant="ghost"
             className="text-blue-600 hover:bg-transparent hover:text-blue-600"
@@ -82,6 +71,17 @@ const CreateOrUpdateDrawer = ({
           >
             <Plus className="h-4 w-4" />
             {t('create_template')}
+          </Button>
+          <Button
+            onClick={() => {
+              if (!selectedTemplateRepoUid) {
+                return toast.error(t('select_template_tips'));
+              }
+              onOpenUpdate(selectedTemplateRepoUid);
+              onClose();
+            }}
+          >
+            {t('confirm')}
           </Button>
         </DrawerFooter>
       </DrawerContent>
