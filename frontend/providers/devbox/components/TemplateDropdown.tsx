@@ -96,12 +96,20 @@ const TemplateButton = ({
 }: TemplateButtonProps) => {
   const locale = useLocale();
 
-  // TODO: this component need to be refactored
   return (
-    <Button
-      variant="outline"
-      className={cn('relative h-fit w-full bg-white p-4 hover:bg-zinc-50', className)}
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClick?.();
+        }
+      }}
+      className={cn(
+        'relative inline-flex h-fit w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border bg-white p-4 text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none hover:bg-zinc-50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        className
+      )}
     >
       <div className="flex w-full flex-col gap-2">
         <div className="flex items-center justify-center gap-2">
@@ -147,6 +155,6 @@ const TemplateButton = ({
         {!isActive && !isInMenu && <ChevronDown className="h-4 w-4 text-neutral-500" />}
         {isActive && <Check className="h-4 w-4 text-blue-600" />}
       </div>
-    </Button>
+    </div>
   );
 };
