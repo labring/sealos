@@ -1,0 +1,9 @@
+apiVersion: devbox.sealos.io/v1alpha1
+kind: ScheduledShutdown
+metadata:
+  labels:
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: scheduledshutdown-sample
+spec:
+  # TODO(user): Add fields here
