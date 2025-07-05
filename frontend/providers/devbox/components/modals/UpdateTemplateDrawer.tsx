@@ -10,15 +10,11 @@ import { versionSchema } from '@/utils/validate';
 import { updateTemplate, listTag } from '@/api/template';
 import { Tag, TagType } from '@/prisma/generated/client';
 
-import UpdateTemplateConfirmModal from './UpdateTemplateConfirmModal';
+import NameField from '@/components/template/NameField';
+import TagsField from '@/components/template/TagsField';
+import DescriptionField from '@/components/template/DescriptionField';
+import UpdateTemplateConfirmModal from '@/components/modals/UpdateTemplateConfirmModal';
 
-import {
-  Drawer,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle
-} from '@/components/ui/drawer';
 import {
   Form,
   FormControl,
@@ -27,14 +23,17 @@ import {
   FormLabel,
   FormMessage
 } from '@/components/ui/form';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle
+} from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface UpdateTemplateDrawerProps {
   isOpen: boolean;
@@ -183,26 +182,7 @@ const UpdateTemplateDrawer = ({
             </DrawerHeader>
             <div className="flex flex-col gap-5 p-6">
               {/* name */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="flex w-full flex-col gap-2 border-none bg-transparent p-0">
-                    <FormLabel required className="text-sm">
-                      {t('name')}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        disabled
-                        placeholder={t('input_template_name_placeholder')}
-                        className="h-10 bg-white"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <NameField form={form} disabled />
 
               {/* version */}
               <FormField
@@ -222,127 +202,10 @@ const UpdateTemplateDrawer = ({
               />
 
               {/* tags */}
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem className="flex w-full flex-col gap-2 border-none bg-transparent p-0">
-                    <FormLabel required className="text-sm">
-                      {t('tags')}
-                    </FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value.map((v) => v.value).join(',')}
-                        onValueChange={(value) => {
-                          const selectedTag = value.split(',').filter(Boolean);
-                          field.onChange(selectedTag.map((uid) => ({ value: uid })));
-                        }}
-                      >
-                        <SelectTrigger className="min-h-10 w-full">
-                          <SelectValue className="flex flex-wrap gap-2">
-                            {field.value.map((t) => {
-                              const tag = [
-                                ...tagListCollection[TagType.USE_CASE],
-                                ...tagListCollection[TagType.PROGRAMMING_LANGUAGE]
-                              ].find((tag) => tag.uid === t.value);
-                              return tag ? (
-                                <div
-                                  key={tag.uid}
-                                  className="flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5"
-                                >
-                                  <span className="text-xs/4 font-semibold text-zinc-900">
-                                    {tag.name}
-                                  </span>
-                                </div>
-                              ) : null;
-                            })}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent className="py-2">
-                          {/* use case */}
-                          <div className="flex w-full items-center gap-2.5 px-2 py-1.5">
-                            <span className="text-xs/4 font-medium text-zinc-500">
-                              {t('use_case')}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 px-4 py-3">
-                            {tagListCollection[TagType.USE_CASE].map((tag) => {
-                              const isSelected = field.value.some((t) => t.value === tag.uid);
-                              return (
-                                <div
-                                  key={tag.uid}
-                                  className="flex cursor-pointer items-center gap-3 px-2 py-1.5"
-                                  onClick={() => {
-                                    const newValue = isSelected
-                                      ? field.value.filter((t) => t.value !== tag.uid)
-                                      : [...field.value, { value: tag.uid }];
-                                    if (!isSelected && newValue.length > 3) return;
-                                    field.onChange(newValue);
-                                  }}
-                                >
-                                  <Checkbox checked={isSelected} />
-                                  <span className="text-sm text-zinc-900">{tag.name}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <Separator />
-                          {/* Language */}
-                          <div className="flex w-full items-center gap-2.5 px-2 py-1.5">
-                            <span className="text-xs/4 font-medium text-zinc-500">
-                              {t('programming_language')}
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 px-4 py-3">
-                            {tagListCollection[TagType.PROGRAMMING_LANGUAGE].map((tag) => {
-                              const isSelected = field.value.some((t) => t.value === tag.uid);
-                              return (
-                                <div
-                                  key={tag.uid}
-                                  className="flex cursor-pointer items-center gap-3 px-2 py-1.5"
-                                  onClick={() => {
-                                    const newValue = isSelected
-                                      ? field.value.filter((t) => t.value !== tag.uid)
-                                      : [...field.value, { value: tag.uid }];
-                                    if (!isSelected && newValue.length > 3) return;
-                                    field.onChange(newValue);
-                                  }}
-                                >
-                                  <Checkbox checked={isSelected} />
-                                  <span className="text-sm">{tag.name}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <span className="text-sm/5 font-normal text-zinc-500">
-                      {t('select_tag_tips')}
-                    </span>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <TagsField form={form} />
 
               {/* description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="flex w-full flex-col gap-2 border-none bg-transparent p-0">
-                    <FormLabel className="text-sm">{t('template_description')}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder={t('template_description_placeholder')}
-                        className="min-h-16 bg-white placeholder:text-sm/5"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <DescriptionField form={form} />
             </div>
           </Form>
           <DrawerFooter>
