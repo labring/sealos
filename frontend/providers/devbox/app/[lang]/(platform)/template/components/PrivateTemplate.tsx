@@ -1,10 +1,11 @@
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { listPrivateTemplateRepository as listPrivateTemplateRepositoryApi } from '@/api/template';
 
+import Empty from './Empty';
 import TemplateCard from './TemplateCard';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -60,7 +61,6 @@ export default function PrivateTemplate({ search }: { search: string }) {
     listPrivateTemplateRepository.isSuccess
   ]);
 
-  const t = useTranslations();
   const privateTemplateRepositoryList =
     listPrivateTemplateRepository.data?.templateRepositoryList || [];
 
@@ -83,11 +83,7 @@ export default function PrivateTemplate({ search }: { search: string }) {
           ))}
         </div>
 
-        {privateTemplateRepositoryList.length === 0 && (
-          <div className="flex h-full flex-1 flex-col items-center justify-center gap-4">
-            <div className="text-center text-zinc-600">{t('no_template_repository_versions')}</div>
-          </div>
-        )}
+        {privateTemplateRepositoryList.length === 0 && <Empty />}
       </ScrollArea>
 
       <Pagination

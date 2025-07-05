@@ -11,7 +11,7 @@ import {
   DrawerFooter
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import TemplateDropdown from '@/components/TemplateDropdown';
+import TemplateDropdown from '@/components/template/TemplateDropdown';
 
 import { Tag } from '@/prisma/generated/client';
 

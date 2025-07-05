@@ -20,9 +20,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import EditTemplateModal from '../updateTemplate/EditTemplateModal';
-import DeleteTemplateRepositoryModal from '../updateTemplate/DeleteTemplateRepositoryModal';
-import EditTemplateRepositoryModal from '../updateTemplate/EditTemplateRepositoryModal';
+import TemplateVersionControlDrawer from '@/components/modals/TemplateVersionControlDrawer';
+import EditTemplateRepositoryDrawer from '@/components/modals/EditTemplateRepositoryDrawer';
+import DeleteTemplateRepositoryModal from '@/components/modals/DeleteTemplateRepositoryModal';
 
 interface TemplateCardProps {
   isPublic?: boolean;
@@ -56,8 +56,8 @@ const TemplateCard = ({
     : t('no_description');
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isEditTemplateVersionOpen, setIsEditTemplateVersionOpen] = useState(false);
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
-  const [isEditRepositoryOpen, setIsEditRepositoryOpen] = useState(false);
 
   return (
     <>
@@ -65,7 +65,7 @@ const TemplateCard = ({
         className={cn(
           'relative flex w-full max-w-[375px] flex-col items-start border bg-white',
           isDisabled &&
-            'before:pointer-events-none before:absolute before:inset-0 before:bg-white before:opacity-30 before:content-[""]'
+            'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80'
         )}
       >
         {/* top */}
@@ -108,7 +108,7 @@ const TemplateCard = ({
               )}
             </div>
             {/* action */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-1">
               <Button
                 className="invisible opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100"
                 size="sm"
@@ -132,15 +132,15 @@ const TemplateCard = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setIsEditRepositoryOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsEditTemplateOpen(true)}>
                       <PencilLine className="h-4 w-4" />
                       {t('edit')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsEditTemplateOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsEditTemplateVersionOpen(true)}>
                       <GitFork className="h-4 w-4" />
                       {t('version_manage')}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setIsDeleteOpen(true)}>
+                    <DropdownMenuItem onClick={() => setIsDeleteOpen(true)} variant="destructive">
                       <Trash2 className="h-4 w-4" />
                       {t('delete')}
                     </DropdownMenuItem>
@@ -186,19 +186,19 @@ const TemplateCard = ({
         </div>
       </Card>
 
-      <EditTemplateModal
-        isOpen={isEditTemplateOpen}
+      <TemplateVersionControlDrawer
+        isOpen={isEditTemplateVersionOpen}
         templateRepositoryName={templateRepositoryName}
+        onClose={() => setIsEditTemplateVersionOpen(false)}
+        uid={templateRepositoryUid}
+      />
+      <EditTemplateRepositoryDrawer
+        open={isEditTemplateOpen}
         onClose={() => setIsEditTemplateOpen(false)}
         uid={templateRepositoryUid}
       />
-      <EditTemplateRepositoryModal
-        isOpen={isEditRepositoryOpen}
-        onClose={() => setIsEditRepositoryOpen(false)}
-        uid={templateRepositoryUid}
-      />
       <DeleteTemplateRepositoryModal
-        isOpen={isDeleteOpen}
+        open={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         templateRepositoryName={templateRepositoryName}
         uid={templateRepositoryUid}
