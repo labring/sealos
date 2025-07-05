@@ -4,22 +4,19 @@ import { useTranslations } from 'next-intl';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import { useUserStore } from '@/stores/user';
-import { useGlobalStore } from '@/stores/global';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
-  const { setLoading } = useGlobalStore();
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
 
+  // TODO: we need a new loading component
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
       try {
-        setLoading(true);
         if (isOutStandingPayment) {
           toast.error(t('start_outstanding_tips'));
-          setLoading(false);
           return;
         }
         await restartDevbox({ devboxName: devbox.name });
@@ -29,18 +26,15 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         console.error(error);
       }
       refetchDevboxData();
-      setLoading(false);
     },
-    [refetchDevboxData, setLoading, t, isOutStandingPayment]
+    [refetchDevboxData, t, isOutStandingPayment]
   );
 
   const handleStartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
       try {
-        setLoading(true);
         if (isOutStandingPayment) {
           toast.error(t('start_outstanding_tips'));
-          setLoading(false);
           return;
         }
         await startDevbox({ devboxName: devbox.name });
@@ -50,9 +44,8 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         console.error(error);
       }
       refetchDevboxData();
-      setLoading(false);
     },
-    [refetchDevboxData, setLoading, t, isOutStandingPayment]
+    [refetchDevboxData, t, isOutStandingPayment]
   );
 
   const handleGoToTerminal = useCallback(
