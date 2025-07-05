@@ -22,7 +22,7 @@ import { DevboxStatusMapType } from '@/types/devbox';
 import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
 
 import ToolboxDrawer from './modals/ToolboxDrawer';
-import JetBrainsGuideModal from './modals/JetbrainsGuideModal';
+import JetBrainsGuideDrawer from './modals/JetbrainsGuideDrawer';
 
 export interface JetBrainsGuideData {
   devboxName: string;
@@ -281,7 +281,7 @@ const IDEButton = ({
       )}
 
       {!!jetbrainsGuideData && (
-        <JetBrainsGuideModal
+        <JetBrainsGuideDrawer
           open={onOpenJetbrainsModal}
           onSuccess={() => {}}
           onClose={() => setOnOpenJetbrainsModal(false)}
