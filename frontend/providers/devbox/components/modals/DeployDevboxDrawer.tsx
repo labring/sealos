@@ -16,7 +16,7 @@ import {
   TableCell
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -40,7 +40,7 @@ interface DeployData {
   };
 }
 
-interface AppSelectModalProps {
+interface DeployDevboxDrawerProps {
   apps: AppListItemType[];
   devboxName: string;
   deployData: DeployData;
@@ -49,14 +49,14 @@ interface AppSelectModalProps {
   open: boolean;
 }
 
-export default function AppSelectModal({
+export default function DeployDevboxDrawer({
   apps,
   deployData,
   devboxName,
   onSuccess,
   onClose,
   open
-}: AppSelectModalProps) {
+}: DeployDevboxDrawerProps) {
   const t = useTranslations();
   const { env } = useEnvStore();
 
@@ -96,15 +96,15 @@ export default function AppSelectModal({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-w-[650px]">
-        <DialogHeader>
-          <DialogTitle>{t('deploy')}</DialogTitle>
-        </DialogHeader>
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="min-w-[650px]">
+        <DrawerHeader>
+          <DrawerTitle>{t('deploy')}</DrawerTitle>
+        </DrawerHeader>
 
-        <div className="flex w-full flex-col gap-5">
+        <div className="flex w-full flex-col gap-5 p-6">
           {/* create directly */}
-          <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-zinc-50 bg-[url('/plaid-background.svg')] bg-cover bg-center p-6">
+          <div className="flex h-32 w-full flex-col gap-3 rounded-lg border border-zinc-200 bg-white bg-[url('/images/plaid-background.svg')] bg-cover bg-center p-6">
             <div className="flex w-[400px] flex-col gap-3">
               <span className="text-lg/7 font-semibold">{t('create_directly')}</span>
               <Button onClick={handleCreate} className="w-fit">
@@ -117,7 +117,7 @@ export default function AppSelectModal({
           <div className="w-full">
             <Table className="table-fixed">
               <TableHeader>
-                <TableRow>
+                <TableRow className="[&>th]:bg-white">
                   <TableHead className="w-[175px]">{t('app_name')}</TableHead>
                   <TableHead>{t('current_image_name')}</TableHead>
                   <TableHead>{t('create_time')}</TableHead>
@@ -147,7 +147,7 @@ export default function AppSelectModal({
             </Table>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }
