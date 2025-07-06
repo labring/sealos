@@ -118,7 +118,7 @@ const TemplateCard = ({
                     name: templateRepositoryName,
                     iconId
                   });
-                  router.push(`/devbox/create?templateRepository${templateRepositoryUid}`);
+                  router.push(`/devbox/create?templateRepository=${templateRepositoryUid}`);
                 }}
                 disabled={isDisabled}
               >

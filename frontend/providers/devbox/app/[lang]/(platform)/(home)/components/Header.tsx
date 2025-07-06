@@ -32,7 +32,7 @@ export default function Header() {
   const handleCreateDevbox = () => {
     setGuide2(true);
     destroyDriver();
-    router.push('/devbox/create');
+    router.push('/template?tab=public');
   };
 
   return (

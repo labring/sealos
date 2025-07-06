@@ -23,7 +23,6 @@ import { useEnvStore } from '@/stores/env';
 import { useIDEStore } from '@/stores/ide';
 import { usePriceStore } from '@/stores/price';
 import { useGuideStore } from '@/stores/guide';
-import { useGlobalStore } from '@/stores/global';
 import { useDevboxStore } from '@/stores/devbox';
 
 import Form from './components/Form';
@@ -77,8 +76,6 @@ const DevboxCreatePage = () => {
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
-
-  const { lastRoute } = useGlobalStore();
 
   const formHook = useForm<DevboxEditTypeV2>({
     defaultValues: defaultDevboxEditValueV2
@@ -154,6 +151,7 @@ const DevboxCreatePage = () => {
     }
   );
   const { guideConfigDevbox } = useGuideStore();
+
   const submitSuccess = async (formData: DevboxEditTypeV2) => {
     if (!guideConfigDevbox) {
       return router.push('/devbox/detail/devbox-mock');

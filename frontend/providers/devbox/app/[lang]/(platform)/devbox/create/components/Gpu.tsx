@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { Icons } from '@/components/Icon';
 import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -87,7 +86,7 @@ export default function Gpu({
                       return (
                         <SelectItem key={item.type} value={item.type} disabled={inventory <= 0}>
                           <div className="flex items-center gap-3">
-                            <Icons name="nvidia" className="h-4 w-4" />
+                            {/* <Icons name="nvidia" className="h-4 w-4" /> */}
                             <span>{item.alias}</span>
                             <span className="text-gray-500">|</span>
                             <span className="text-gray-500">
