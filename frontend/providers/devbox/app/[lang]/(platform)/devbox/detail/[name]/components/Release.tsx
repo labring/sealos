@@ -47,7 +47,7 @@ import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
 import CreateTemplateDrawer from '@/components/modals/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/modals/CreateOrUpdateDrawer';
 import UpdateTemplateDrawer from '@/components/modals/UpdateTemplateDrawer';
-import AppSelectModal from '@/components/modals/AppSelectModal';
+import DeployDevboxDrawer from '@/components/modals/DeployDevboxDrawer';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -360,7 +360,7 @@ const Release = () => {
           onClose={() => setIsOpenEdit(false)}
         />
       )}
-      <AppSelectModal
+      <DeployDevboxDrawer
         open={!!onOpenSelectApp}
         apps={apps}
         devboxName={devbox?.name || ''}
