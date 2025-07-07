@@ -1,25 +1,29 @@
-import { useState } from 'react';
 import { FileClock, LayoutDashboard, LineChart } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
-const Sidebar = () => {
-  const [currentTab, setCurrentTab] = useState('overview');
+export type TabValue = 'overview' | 'monitor' | 'logs';
 
+interface SidebarProps {
+  currentTab: TabValue;
+  onTabChange: (tab: TabValue) => void;
+}
+
+const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
   const tabs = [
     {
       label: 'Overview',
-      value: 'overview',
+      value: 'overview' as TabValue,
       icon: <LayoutDashboard className="h-6 w-6" />
     },
     {
       label: 'Monitor',
-      value: 'monitor',
+      value: 'monitor' as TabValue,
       icon: <LineChart className="h-6 w-6" />
     },
     {
       label: 'Logs',
-      value: 'logs',
+      value: 'logs' as TabValue,
       icon: <FileClock className="h-6 w-6" />
     }
   ];
@@ -34,7 +38,7 @@ const Sidebar = () => {
               'flex w-15 cursor-pointer flex-col items-center gap-1 rounded-lg p-2 text-zinc-500 hover:bg-zinc-100',
               currentTab === tab.value && 'bg-zinc-100 text-zinc-900'
             )}
-            onClick={() => setCurrentTab(tab.value)}
+            onClick={() => onTabChange(tab.value)}
           >
             <span>{tab.icon}</span>
             <span className="text-xs font-medium">{tab.label}</span>
