@@ -309,7 +309,7 @@ const Release = () => {
         </Button>
       </div>
 
-      {devboxVersionList.length === 0 && !initialized ? (
+      {devboxVersionList.length === 0 && initialized ? (
         <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
           <div className="rounded-lg border border-dashed border-zinc-200 p-2">
             <ArrowBigUpDash className="h-6 w-6 text-zinc-400" />
