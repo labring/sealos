@@ -42,7 +42,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
   if (!devboxDetail) return null;
 
   return (
-    <div className="flex min-h-20 items-center justify-between gap-5 px-6">
+    <div className="flex min-h-20 w-full items-center justify-between gap-5">
       {/* left */}
       <div
         className="flex h-6 min-w-fit cursor-pointer items-center gap-3"
