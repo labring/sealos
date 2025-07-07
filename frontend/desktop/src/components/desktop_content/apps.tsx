@@ -13,7 +13,8 @@ import {
   ModalCloseButton,
   ModalBody,
   Center,
-  useBreakpointValue
+  useBreakpointValue,
+  GridProps
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import {
@@ -212,18 +213,23 @@ const AppItem = ({
 const AppGrid = ({
   children,
   gridGap,
-  appHeight
+  appHeight,
+  gridProps
 }: {
   children: ReactNode;
   gridGap?: number;
   appHeight?: number;
+  gridProps?: Omit<
+    GridProps,
+    'templateColumns' | 'templateRows' | 'gap' | 'flexGrow' | 'flexShrink' | 'flexBasis'
+  >;
 }) => {
   return (
     <Grid
+      {...gridProps}
       flexShrink={0}
       flexGrow={0}
       flexBasis={'100%'}
-      alignContent={'start'}
       overflow={'hidden'}
       gap={`${gridGap}px`}
       templateColumns={{
@@ -950,7 +956,14 @@ export default function Apps() {
               }}
             >
               {folderPages.map((page, pageIndex) => (
-                <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
+                <AppGrid
+                  key={pageIndex}
+                  gridGap={gridGap}
+                  appHeight={appHeight}
+                  gridProps={{
+                    alignContent: 'center'
+                  }}
+                >
                   {page.map((app, index) => (
                     <AppItem
                       key={index}
