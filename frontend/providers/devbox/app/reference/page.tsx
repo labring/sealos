@@ -40,12 +40,12 @@ export default function References() {
       preferredSecurityScheme: ['kubeconfigAuth', 'jwtAuth'],
       securitySchemes: {
         kubeconfigAuth: {
-          in: 'header',
+          in: 'header' as const,
           name: 'Authorization',
           value: encodeURIComponent(session?.kubeconfig || '')
         },
         jwtAuth: {
-          in: 'header',
+          in: 'header' as const,
           name: 'Authorization-Bearer',
           value: encodeURIComponent(devboxToken || session?.token || '')
         }
