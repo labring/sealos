@@ -309,6 +309,7 @@
   "select_at_least_1_tag": "请至少选择 1 个标签。",
   "select_existing_app": "更新一个现存的应用或者上线新应用...",
   "select_lest_than_3_tags": "请选择 3 个以内标签。",
+  "select_runtime": "选择运行时",
   "select_tag_tips": "最多选择三个标签",
   "select_template_tips": "选择您想更新的模板",
   "service": "服务",
