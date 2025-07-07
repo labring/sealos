@@ -18,17 +18,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-const ShutdownModal = ({
-  onSuccess,
-  onClose,
-  devbox,
-  open
-}: {
+interface ShutdownDialogPros {
   onSuccess: () => void;
   onClose: () => void;
   devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
   open: boolean;
-}) => {
+}
+
+const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros) => {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [shutdownMode, setShutdownMode] = useState<ShutdownModeType>('Stopped');
@@ -133,4 +130,4 @@ const ShutdownModal = ({
   );
 };
 
-export default ShutdownModal;
+export default ShutdownDialog;

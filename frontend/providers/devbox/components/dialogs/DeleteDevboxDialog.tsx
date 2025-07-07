@@ -17,19 +17,19 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-interface DeleteDevboxModalProps {
+interface DeleteDevboxDialogProps {
   devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
   onClose: () => void;
   onSuccess: () => void;
   refetchDevboxList: () => void;
 }
 
-const DeleteDevboxModal = ({
+const DeleteDevboxDialog = ({
   devbox,
   onClose,
   refetchDevboxList,
   onSuccess
-}: DeleteDevboxModalProps) => {
+}: DeleteDevboxDialogProps) => {
   const t = useTranslations();
   const { removeDevboxIDE } = useIDEStore();
 
@@ -114,4 +114,4 @@ const DeleteDevboxModal = ({
   );
 };
 
-export default DeleteDevboxModal;
+export default DeleteDevboxDialog;

@@ -18,11 +18,10 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-  DrawerClose,
   DrawerFooter
 } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import DeleteTemplateVersionModal from '@/components/modals/DeleteTemplateVersionModal';
+import DeleteTemplateVersionDialog from '@/components/dialogs/DeleteTemplateVersionDialog';
 
 import { listTemplate } from '@/api/template';
 
@@ -182,7 +181,7 @@ const TemplateVersionControlDrawer = ({
       </Drawer>
 
       {!!deletedTemplateVersion && (
-        <DeleteTemplateVersionModal
+        <DeleteTemplateVersionDialog
           isLasted={templateList.length <= 1}
           version={deletedTemplateVersion.name}
           template={templateRepositoryName}

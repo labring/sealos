@@ -27,7 +27,7 @@ export type CustomAccessModalParams = {
   customDomain: string;
 };
 
-const CustomAccessModal = dynamic(() => import('@/components/modals/CustomAccessModal'));
+const CustomAccessDrawer = dynamic(() => import('@/components/drawers/CustomAccessDrawer'));
 
 export default function Network({
   isEdit
@@ -208,7 +208,7 @@ export default function Network({
         </div>
       </div>
       {!!customAccessModalData && (
-        <CustomAccessModal
+        <CustomAccessDrawer
           {...customAccessModalData}
           onClose={() => setCustomAccessModalData(undefined)}
           onSuccess={(e) => {

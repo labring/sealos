@@ -17,17 +17,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { editDevboxVersion } from '@/api/devbox';
 import { DevboxVersionListItemType } from '@/types/devbox';
 
-const EditVersionDesModal = ({
-  version,
-  onClose,
-  open,
-  onSuccess
-}: {
+interface EditVersionDesDialogProps {
   version: DevboxVersionListItemType;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-}) => {
+}
+
+const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersionDesDialogProps) => {
   const t = useTranslations();
   const [loading, setLoading] = useState(false);
   const [inputValue, setInputValue] = useState(version.description);
@@ -80,4 +77,4 @@ const EditVersionDesModal = ({
   );
 };
 
-export default EditVersionDesModal;
+export default EditVersionDesDialog;

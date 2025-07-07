@@ -21,8 +21,8 @@ import { getSSHConnectionInfo } from '@/api/devbox';
 import { DevboxStatusMapType } from '@/types/devbox';
 import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
 
-import ToolboxDrawer from './modals/ToolboxDrawer';
-import JetBrainsGuideDrawer from './modals/JetbrainsGuideDrawer';
+import ToolboxDrawer from './drawers/ToolboxDrawer';
+import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
 
 export interface JetBrainsGuideData {
   devboxName: string;

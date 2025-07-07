@@ -30,9 +30,9 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
-import TemplateVersionControlDrawer from '@/components/modals/TemplateVersionControlDrawer';
-import EditTemplateRepositoryDrawer from '@/components/modals/EditTemplateRepositoryDrawer';
-import DeleteTemplateRepositoryModal from '@/components/modals/DeleteTemplateRepositoryModal';
+import TemplateVersionControlDrawer from '@/components/drawers/TemplateVersionControlDrawer';
+import EditTemplateRepositoryDrawer from '@/components/drawers/EditTemplateRepositoryDrawer';
+import DeleteTemplateRepositoryDialog from '@/components/dialogs/DeleteTemplateRepositoryDialog';
 
 interface TemplateCardProps {
   isPublic?: boolean;
@@ -238,7 +238,7 @@ const TemplateCard = ({
         onClose={() => setIsEditTemplateOpen(false)}
         uid={templateRepositoryUid}
       />
-      <DeleteTemplateRepositoryModal
+      <DeleteTemplateRepositoryDialog
         open={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         templateRepositoryName={templateRepositoryName}

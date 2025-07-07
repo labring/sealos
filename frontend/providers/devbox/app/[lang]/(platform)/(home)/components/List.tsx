@@ -40,11 +40,11 @@ import { Button } from '@/components/ui/button';
 import MonitorChart from '@/components/MonitorChart';
 import DevboxStatusTag from '@/components/StatusTag';
 import { Pagination } from '@/components/ui/pagination';
-import ReleaseModal from '@/components/modals/ReleaseModal';
-import ShutdownModal from '@/components/modals/ShutdownModal';
+import ReleaseModal from '@/components/dialogs/ReleaseDialog';
+import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const DeleteDevboxModal = dynamic(() => import('@/components/modals/DeleteDevboxModal'));
+const DeleteDevboxModal = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 
 const PAGE_SIZE = 10;
 
@@ -323,7 +323,7 @@ const DevboxList = ({
         />
       </div>
 
-      {/* modals */}
+      {/* dialogs */}
       {!!delDevbox && (
         <DeleteDevboxModal
           devbox={delDevbox}

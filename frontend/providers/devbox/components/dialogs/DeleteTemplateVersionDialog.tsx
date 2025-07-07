@@ -8,14 +8,13 @@ import { deleteTemplate } from '@/api/template';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-type DeleteTemplateVersionModalProps = {
+type DeleteTemplateVersionDialogProps = {
   uid: string;
   version: string;
   template: string;
@@ -24,14 +23,14 @@ type DeleteTemplateVersionModalProps = {
   onClose: () => void;
 };
 
-const DeleteTemplateVersionModal = ({
+const DeleteTemplateVersionDialog = ({
   uid,
   version,
   template,
   isLasted,
   open,
   onClose
-}: DeleteTemplateVersionModalProps) => {
+}: DeleteTemplateVersionDialogProps) => {
   const t = useTranslations();
   const queryClient = useQueryClient();
 
@@ -91,4 +90,4 @@ const DeleteTemplateVersionModal = ({
   );
 };
 
-export default DeleteTemplateVersionModal;
+export default DeleteTemplateVersionDialog;
