@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 import JSZip from 'jszip';
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Info, X } from 'lucide-react';
+import { ArrowLeft, Info, Loader2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 
@@ -15,17 +15,15 @@ import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 
-const Header = ({
-  title,
-  yamlList,
-  applyCb,
-  applyBtnText
-}: {
+interface HeaderProps {
   yamlList: YamlItemType[];
   applyCb: () => void;
   title: string;
   applyBtnText: string;
-}) => {
+  loading?: boolean;
+}
+
+const Header = ({ title, yamlList, applyCb, applyBtnText, loading = false }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
 
@@ -72,8 +70,10 @@ const Header = ({
               'driver-deploy-button h-10 min-w-30',
               isClientSide && !guideConfigDevbox && 'outline-1 outline-offset-2 outline-[#1C4EF5]'
             )}
+            disabled={loading}
             onClick={applyCb}
           >
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (
