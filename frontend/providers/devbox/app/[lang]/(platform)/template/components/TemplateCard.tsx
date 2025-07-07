@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Ellipsis, GitFork, PencilLine, Trash2, ChevronDown } from 'lucide-react';
+import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { useDevboxStore } from '@/stores/devbox';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
 import { listTemplate } from '@/api/template';
+import { useSearchParams } from 'next/navigation';
 
 import {
   DropdownMenu,
@@ -57,6 +58,8 @@ const TemplateCard = ({
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
 
   const { setStartedTemplate } = useDevboxStore();
 
@@ -141,7 +144,7 @@ const TemplateCard = ({
                     templateUid: selectedVersion,
                     description: templateRepositoryDescription
                   });
-                  router.push('/devbox/create');
+                  router.push(`/devbox/create${from ? `?from=${from}` : ''}`);
                 }}
                 disabled={isDisabled || !selectedVersion}
               >

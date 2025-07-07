@@ -34,6 +34,7 @@ export default function Header() {
   const handleCreateDevbox = () => {
     setGuide2(true);
     destroyDriver();
+    setLastRoute('/');
     router.push('/template?tab=public&from=home');
   };
 

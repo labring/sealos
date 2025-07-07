@@ -17,8 +17,12 @@ const Header = () => {
   const { lastRoute } = useGlobalStore();
 
   const handleBack = useCallback(() => {
-    router.replace(lastRoute);
-  }, [lastRoute, router]);
+    if (from === 'home') {
+      router.replace('/');
+    } else {
+      router.replace(lastRoute);
+    }
+  }, [from, lastRoute, router]);
 
   const title = useMemo(() => {
     return from === 'home' ? t('select_runtime') : t('devbox_template');
