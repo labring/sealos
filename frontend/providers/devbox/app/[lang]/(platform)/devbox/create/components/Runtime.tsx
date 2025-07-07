@@ -35,7 +35,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   const router = useRouter();
   const t = useTranslations();
   const { env } = useEnvStore();
-  const { startedTemplate } = useDevboxStore();
+  const { startedTemplate, devboxDetail } = useDevboxStore();
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
 
   const templateRepositoryUid = watch('templateRepositoryUid');
@@ -110,13 +110,15 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   };
 
   useEffect(() => {
-    if (!startedTemplate) {
+    if (!startedTemplate && !isEdit) {
       router.push('/template');
       return;
     }
 
-    setValue('templateRepositoryUid', startedTemplate.uid);
-  }, [startedTemplate, router, setValue]);
+    if (startedTemplate) {
+      setValue('templateRepositoryUid', startedTemplate.uid);
+    }
+  }, [startedTemplate, router, setValue, isEdit]);
 
   useEffect(() => {
     if (!templateListQuery.isSuccess || !templateList.length || !templateListQuery.isFetched)
@@ -140,7 +142,16 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     setValue
   ]);
 
-  if (!startedTemplate) return null;
+  if (!startedTemplate && !isEdit) return null;
+  if (isEdit && !devboxDetail) return null;
+
+  const displayTemplate = {
+    iconId: isEdit ? devboxDetail?.iconId || 'custom' : startedTemplate?.iconId || 'custom',
+    name: isEdit ? devboxDetail?.templateRepositoryName || '' : startedTemplate?.name || '',
+    description: isEdit
+      ? devboxDetail?.templateRepositoryDescription || ''
+      : startedTemplate?.description || ''
+  };
 
   return (
     <FormItem className="min-w-[700px]">
@@ -152,16 +163,16 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
               <Image
-                src={`/images/runtime/${startedTemplate.iconId}.svg`}
-                alt={startedTemplate.name}
+                src={`/images/runtime/${displayTemplate.iconId}.svg`}
+                alt={displayTemplate.name}
                 width={40}
                 height={40}
               />
             </div>
-            <div className="font-medium">{startedTemplate.name}</div>
+            <div className="font-medium">{displayTemplate.name}</div>
           </div>
           <div className="text-sm/5 text-zinc-500">
-            {startedTemplate.description || t('no_description')}
+            {displayTemplate.description || t('no_description')}
           </div>
         </div>
         <div className="flex h-10 items-center gap-2">

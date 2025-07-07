@@ -27,6 +27,7 @@ import { useDevboxStore } from '@/stores/devbox';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import Header from './components/Header';
+import { Loading } from '@/components/ui/loading';
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -224,6 +225,8 @@ const DevboxCreatePage = () => {
     toast.error(deepSearch(formHook.formState.errors));
   }, [formHook.formState.errors, t]);
 
+  if (isLoading) return <Loading />;
+
   return (
     <>
       <FormProvider {...formHook}>
@@ -231,7 +234,6 @@ const DevboxCreatePage = () => {
           <Header
             yamlList={yamlList}
             title={title}
-            loading={isLoading}
             applyBtnText={applyBtnText}
             applyCb={() =>
               formHook.handleSubmit(
