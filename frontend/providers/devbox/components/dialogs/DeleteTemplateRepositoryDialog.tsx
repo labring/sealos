@@ -13,19 +13,19 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-interface DeleteTemplateRepositoryModalProps {
+interface DeleteTemplateRepositoryDialogProps {
   uid: string;
   templateRepositoryName: string;
   open: boolean;
   onClose: () => void;
 }
 
-const DeleteTemplateRepositoryModal = ({
+const DeleteTemplateRepositoryDialog = ({
   uid,
   templateRepositoryName,
   open,
   onClose
-}: DeleteTemplateRepositoryModalProps) => {
+}: DeleteTemplateRepositoryDialogProps) => {
   const t = useTranslations();
   const queryClient = useQueryClient();
 
@@ -79,4 +79,4 @@ const DeleteTemplateRepositoryModal = ({
   );
 };
 
-export default DeleteTemplateRepositoryModal;
+export default DeleteTemplateRepositoryDialog;

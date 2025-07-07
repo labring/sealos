@@ -15,17 +15,17 @@ import { Button } from '@/components/ui/button';
 import { postAuthCname } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';
 
-export type CustomAccessModalParams = {
+export type CustomAccessDrawerParams = {
   publicDomain: string;
   customDomain: string;
 };
 
-const CustomAccessModal = ({
+const CustomAccessDrawer = ({
   publicDomain,
   customDomain,
   onClose,
   onSuccess
-}: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
+}: CustomAccessDrawerParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const ref = useRef<HTMLInputElement>(null);
   const t = useTranslations();
 
@@ -80,4 +80,4 @@ const CustomAccessModal = ({
   );
 };
 
-export default CustomAccessModal;
+export default CustomAccessDrawer;

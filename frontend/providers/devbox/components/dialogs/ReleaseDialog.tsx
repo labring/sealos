@@ -24,14 +24,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 
-interface ReleaseModalProps {
+interface ReleaseDialogProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) => {
+const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps) => {
   const t = useTranslations();
   const locale = useLocale();
 
@@ -198,4 +198,4 @@ const ReleaseModal = ({ onClose, onSuccess, devbox, open }: ReleaseModalProps) =
   );
 };
 
-export default ReleaseModal;
+export default ReleaseDialog;

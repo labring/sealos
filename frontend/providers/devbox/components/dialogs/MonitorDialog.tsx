@@ -5,7 +5,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 
 import { useDevboxStore } from '@/stores/devbox';
 
-const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => void }) => {
+interface MonitorDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const MonitorDialog = ({ onClose, isOpen }: MonitorDialogProps) => {
   const t = useTranslations();
   const { devboxDetail } = useDevboxStore();
 
@@ -41,4 +46,4 @@ const MonitorModal = ({ onClose, isOpen }: { isOpen: boolean; onClose: () => voi
   );
 };
 
-export default MonitorModal;
+export default MonitorDialog;

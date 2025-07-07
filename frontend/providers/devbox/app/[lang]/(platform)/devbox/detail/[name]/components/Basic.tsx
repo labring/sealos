@@ -13,7 +13,7 @@ import GPUItem from '@/components/GPUItem';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { JetBrainsGuideData } from '@/components/IDEButton';
-import SshConnectDrawer from '@/components/modals/SshConnectDrawer';
+import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 
 const Basic = () => {
   const t = useTranslations();

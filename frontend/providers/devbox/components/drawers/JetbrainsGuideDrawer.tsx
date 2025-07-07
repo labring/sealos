@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { JetBrainsGuideData } from '@/components/IDEButton';
-import SshConnectDrawer from '@/components/modals/SshConnectDrawer';
+import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Stepper, Step, StepIndicator } from '@/components/ui/stepper';
 

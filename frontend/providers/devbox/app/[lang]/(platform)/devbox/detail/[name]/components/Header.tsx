@@ -14,8 +14,8 @@ import IDEButton from '@/components/IDEButton';
 import { Button } from '@/components/ui/button';
 import DevboxStatusTag from '@/components/StatusTag';
 import { ButtonGroup } from '@/components/ui/button-group';
-import ShutdownModal from '@/components/modals/ShutdownModal';
-import DeleteDevboxModal from '@/components/modals/DeleteDevboxModal';
+import ShutdownModal from '@/components/dialogs/ShutdownDialog';
+import DeleteDevboxModal from '@/components/dialogs/DeleteDevboxDialog';
 
 interface HeaderProps {
   refetchDevboxDetail: () => void;
@@ -116,7 +116,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           }}
         />
       </div>
-      {/* modals */}
+      {/* dialogs */}
       {!!delDevbox && (
         <DeleteDevboxModal
           devbox={delDevbox}

@@ -4,7 +4,7 @@ import { ArrowUpRight, Settings } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { JetBrainsGuideData } from '@/components/IDEButton';
-import SshConnectDrawer from '@/components/modals/SshConnectDrawer';
+import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Stepper, Step, StepIndicator } from '@/components/ui/stepper';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 

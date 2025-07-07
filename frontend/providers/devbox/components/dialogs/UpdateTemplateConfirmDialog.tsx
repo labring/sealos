@@ -18,7 +18,7 @@ interface UpdateTemplateConfirmModalProps {
   template: string;
 }
 
-const UpdateTemplateConfirmModal = ({
+const UpdateTemplateConfirmDialog = ({
   open,
   onClose,
   onSuccess,
@@ -62,4 +62,4 @@ const UpdateTemplateConfirmModal = ({
   );
 };
 
-export default UpdateTemplateConfirmModal;
+export default UpdateTemplateConfirmDialog;

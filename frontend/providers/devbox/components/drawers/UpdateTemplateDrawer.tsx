@@ -13,7 +13,7 @@ import { Tag, TagType } from '@/prisma/generated/client';
 import NameField from '@/components/template/NameField';
 import TagsField from '@/components/template/TagsField';
 import DescriptionField from '@/components/template/DescriptionField';
-import UpdateTemplateConfirmModal from '@/components/modals/UpdateTemplateConfirmModal';
+import UpdateTemplateConfirmDialog from '@/components/dialogs/UpdateTemplateConfirmDialog';
 
 import {
   Form,
@@ -231,7 +231,7 @@ const UpdateTemplateDrawer = ({
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
-      <UpdateTemplateConfirmModal
+      <UpdateTemplateConfirmDialog
         open={showOverview}
         onClose={() => setShowOverview(false)}
         onSuccess={() => {

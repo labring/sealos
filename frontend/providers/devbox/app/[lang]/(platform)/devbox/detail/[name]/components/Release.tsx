@@ -42,12 +42,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
 import DevboxStatusTag from '@/components/StatusTag';
-import ReleaseModal from '@/components/modals/ReleaseModal';
-import EditVersionDesModal from '@/components/modals/EditVersionDesModal';
-import CreateTemplateDrawer from '@/components/modals/CreateTemplateDrawer';
-import CreateOrUpdateDrawer from '@/components/modals/CreateOrUpdateDrawer';
-import UpdateTemplateDrawer from '@/components/modals/UpdateTemplateDrawer';
-import DeployDevboxDrawer from '@/components/modals/DeployDevboxDrawer';
+import ReleaseModal from '@/components/dialogs/ReleaseDialog';
+import EditVersionDesModal from '@/components/dialogs/EditVersionDesDialog';
+import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';
+import CreateOrUpdateDrawer from '@/components/drawers/CreateOrUpdateDrawer';
+import UpdateTemplateDrawer from '@/components/drawers/UpdateTemplateDrawer';
+import DeployDevboxDrawer from '@/components/drawers/DeployDevboxDrawer';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -341,7 +341,7 @@ const Release = () => {
           </TableBody>
         </Table>
       )}
-      {/* modals */}
+      {/* dialogs */}
       {!!devbox && (
         <ReleaseModal
           open={onOpenRelease}
