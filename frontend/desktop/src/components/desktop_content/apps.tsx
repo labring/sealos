@@ -87,10 +87,6 @@ const AppItem = ({
       setIsDragging(false);
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-
     const handleDragEnd = (e: DragEvent) => {
       console.log('left drag state');
       clearTimer();
@@ -104,7 +100,6 @@ const AppItem = ({
     wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
     wrapper.addEventListener('pointerup', handlePointerEnd);
     wrapper.addEventListener('pointercancel', handlePointerEnd);
-    wrapper.addEventListener('touchstart', handleTouchStart);
     wrapper.addEventListener('dragend', handleDragEnd);
     wrapper.addEventListener('contextmenu', handleContextMenu);
 
@@ -113,7 +108,6 @@ const AppItem = ({
       wrapper.removeEventListener('pointerdown', handlePointerDown);
       wrapper.removeEventListener('pointerup', handlePointerEnd);
       wrapper.removeEventListener('pointercancel', handlePointerEnd);
-      wrapper.removeEventListener('touchstart', handleTouchStart);
       wrapper.removeEventListener('dragend', handleDragEnd);
       wrapper.removeEventListener('contextmenu', handleContextMenu);
     };
@@ -229,7 +223,7 @@ const AppGrid = ({
       flexShrink={0}
       flexGrow={0}
       flexBasis={'100%'}
-      alignContent={'center'}
+      alignContent={'start'}
       overflow={'hidden'}
       gap={`${gridGap}px`}
       templateColumns={{
@@ -586,7 +580,10 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
-  const appHeight = 128;
+  const appHeight = useBreakpointValue({
+    base: 128,
+    md: 160
+  });
   const gridGap = 8;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
@@ -608,8 +605,7 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
-    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
+    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
@@ -839,7 +835,7 @@ export default function Apps() {
         </defs>
       </svg>
       <Flex width={'full'} height={'full'} overflow={'hidden'} flexDirection={'column'}>
-        <Center>
+        <Center mx={'12px'}>
           <Center
             width={'fit-content'}
             borderRadius={'54px'}
@@ -873,39 +869,41 @@ export default function Apps() {
           </Center>
         </Center>
 
-        <AppGridPagingContainer
-          gridGap={gridGap}
-          appHeight={appHeight}
-          // One page desktop, other apps are in folder
-          totalPages={1}
-          currentPage={currentPageInGrid}
-          handleNavigation={false}
-          pageGap={0}
-          onChange={(currentPage, pageSize) => {
-            setCurrentPageInGrid(currentPage);
-            setItemsPerPageInGrid(pageSize);
-          }}
-        >
-          {desktopPages.map((page, pageIndex) => (
-            <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
-              {page.map((app, index) => (
-                <AppItem
-                  key={index}
-                  app={app}
-                  onClick={handleAppClick}
-                  onDragStart={(e) => handleDragStart(e, app, 'desktop')}
-                  onDragEnd={handleDragEnd}
-                />
-              ))}
+        <Box p={'12px'} pt={{ base: '12px', md: '32px', xl: '64px' }} w={'full'} h={'full'}>
+          <AppGridPagingContainer
+            gridGap={gridGap}
+            appHeight={appHeight!}
+            // One page desktop, other apps are in folder
+            totalPages={1}
+            currentPage={currentPageInGrid}
+            handleNavigation={false}
+            pageGap={0}
+            onChange={(currentPage, pageSize) => {
+              setCurrentPageInGrid(currentPage);
+              setItemsPerPageInGrid(pageSize);
+            }}
+          >
+            {desktopPages.map((page, pageIndex) => (
+              <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
+                {page.map((app, index) => (
+                  <AppItem
+                    key={index}
+                    app={app}
+                    onClick={handleAppClick}
+                    onDragStart={(e) => handleDragStart(e, app, 'desktop')}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))}
 
-              <MoreAppsFolder
-                apps={folderApps}
-                onClick={handleMoreAppsClick}
-                onDrop={handleMoreAppsDrop}
-              />
-            </AppGrid>
-          ))}
-        </AppGridPagingContainer>
+                <MoreAppsFolder
+                  apps={folderApps}
+                  onClick={handleMoreAppsClick}
+                  onDrop={handleMoreAppsDrop}
+                />
+              </AppGrid>
+            ))}
+          </AppGridPagingContainer>
+        </Box>
       </Flex>
 
       <Modal isOpen={isFolderOpen} onClose={closeFolder} size="xl" isCentered>
@@ -928,19 +926,19 @@ export default function Apps() {
           />
           <ModalBody
             py={{
-              base: '48px',
+              base: '36px',
               xl: '100px'
             }}
             px={{
-              base: '16px',
-              xl: '150px'
+              base: '12px',
+              xl: '100px'
             }}
             overflow="hidden"
             className="folder-modal-body"
           >
             <AppGridPagingContainer
               gridGap={gridGap}
-              appHeight={appHeight}
+              appHeight={appHeight!}
               totalPages={totalPagesInFolder}
               currentPage={currentPageInFolder}
               handleNavigation={isFolderOpen}

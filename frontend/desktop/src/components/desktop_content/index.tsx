@@ -246,7 +246,7 @@ export default function Desktop(props: any) {
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
-      <Flex height={'68px'} px="32px">
+      <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
         <Account />
       </Flex>
 
