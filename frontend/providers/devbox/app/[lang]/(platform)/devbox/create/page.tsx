@@ -108,14 +108,13 @@ const DevboxCreatePage = () => {
     const subscription = formHook.watch((value) => {
       if (value) {
         debouncedUpdateYaml(value as DevboxEditTypeV2, env);
-        debouncedUpdateYaml(value as DevboxEditTypeV2, env);
       }
     });
     return () => {
       subscription.unsubscribe();
       debouncedUpdateYaml.cancel();
     };
-  }, [formHook, debouncedUpdateYaml, env]);
+  }, [debouncedUpdateYaml, env, formHook]);
 
   const { refetch: refetchPrice } = useQuery(['init-price'], setSourcePrice, {
     enabled: !!sourcePrice?.gpu,
