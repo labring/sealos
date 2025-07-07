@@ -2,7 +2,6 @@
 
 import { toast } from 'sonner';
 import { debounce } from 'lodash';
-import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
@@ -28,9 +27,6 @@ import { useDevboxStore } from '@/stores/devbox';
 import Form from './components/Form';
 import Yaml from './components/Yaml';
 import Header from './components/Header';
-import { Loading } from '@/components/ui/loading';
-
-const ErrorModal = dynamic(() => import('@/components/modals/ErrorModal'));
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -47,7 +43,6 @@ const DevboxCreatePage = () => {
   const oldDevboxEditData = useRef<DevboxEditTypeV2>();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [yamlList, setYamlList] = useState<YamlItemType[]>([]);
 
   const tabType = searchParams.get('type') || 'form';
@@ -184,7 +179,7 @@ const DevboxCreatePage = () => {
         }
         if (!parsedNewYamlList) {
           // prevent empty yamlList
-          return setErrorMessage(t('submit_form_error'));
+          return toast.warning(t('submit_form_error'));
         }
         const patch = patchYamlList({
           parsedOldYamlList: parsedOldYamlList,
@@ -207,8 +202,10 @@ const DevboxCreatePage = () => {
       router.push(`/devbox/detail/${formData.name}`);
     } catch (error) {
       if (typeof error === 'string' && error.includes('402')) {
-        setErrorMessage(t('outstanding_tips'));
-      } else setErrorMessage(JSON.stringify(error));
+        toast.warning(applyError, {
+          description: t('outstanding_tips')
+        });
+      } else toast.warning(applyError, { description: JSON.stringify(error) });
     }
     setIsLoading(false);
   };
@@ -227,8 +224,6 @@ const DevboxCreatePage = () => {
     toast.error(deepSearch(formHook.formState.errors));
   }, [formHook.formState.errors, t]);
 
-  if (isLoading) return <Loading />;
-
   return (
     <>
       <FormProvider {...formHook}>
@@ -236,6 +231,7 @@ const DevboxCreatePage = () => {
           <Header
             yamlList={yamlList}
             title={title}
+            loading={isLoading}
             applyBtnText={applyBtnText}
             applyCb={() =>
               formHook.handleSubmit(
@@ -254,10 +250,6 @@ const DevboxCreatePage = () => {
         </div>
       </FormProvider>
       <ConfirmChild />
-
-      {!!errorMessage && (
-        <ErrorModal title={applyError} content={errorMessage} onClose={() => setErrorMessage('')} />
-      )}
     </>
   );
 };
