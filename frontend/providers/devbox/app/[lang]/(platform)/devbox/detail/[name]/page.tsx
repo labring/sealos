@@ -78,7 +78,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
         <div className="flex h-full flex-1 flex-col gap-2">
           <div className="flex h-full gap-2">
             <Basic />
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-1 flex-col gap-2">
               <LiveMonitoring />
               <Network />
             </div>
