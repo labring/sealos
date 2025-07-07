@@ -20,10 +20,9 @@ interface HeaderProps {
   applyCb: () => void;
   title: string;
   applyBtnText: string;
-  loading?: boolean;
 }
 
-const Header = ({ title, yamlList, applyCb, applyBtnText, loading = false }: HeaderProps) => {
+const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
 
@@ -70,10 +69,8 @@ const Header = ({ title, yamlList, applyCb, applyBtnText, loading = false }: Hea
               'driver-deploy-button h-10 min-w-30',
               isClientSide && !guideConfigDevbox && 'outline-1 outline-offset-2 outline-[#1C4EF5]'
             )}
-            disabled={loading}
             onClick={applyCb}
           >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (

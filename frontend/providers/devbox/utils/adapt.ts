@@ -53,8 +53,8 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
   };
 };
@@ -94,8 +94,8 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
       : ''
   };
@@ -117,6 +117,7 @@ export const adaptDevboxDetailV2 = ([
     templateName: template.name,
     templateRepositoryName: template.templateRepository.name,
     templateRepositoryUid: template.templateRepository.uid,
+    templateRepositoryDescription: template.templateRepository.description || '',
     templateConfig: JSON.stringify(devbox.spec.config),
     image: template.image,
     iconId: template.templateRepository.iconId || '',
@@ -147,8 +148,8 @@ export const adaptDevboxDetailV2 = ([
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
       : ''
   };

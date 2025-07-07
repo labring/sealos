@@ -54,7 +54,8 @@ export async function GET(req: NextRequest) {
             uid: true,
             iconId: true,
             name: true,
-            kind: true
+            kind: true,
+            description: true
           }
         },
         uid: true,

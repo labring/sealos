@@ -112,6 +112,7 @@ export interface DevboxDetailTypeV2 extends json2DevboxV2Data {
   iconId: string;
   templateName: string;
   templateRepositoryName: string;
+  templateRepositoryDescription: string | null;
   status: DevboxStatusMapType;
   usedCpu: MonitorDataResult;
   usedMemory: MonitorDataResult;
