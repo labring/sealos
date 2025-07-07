@@ -52,7 +52,11 @@ const DeleteTemplateRepositoryModal = ({
 
         <span className="text-sm/5">
           {t.rich('delete_template_prompt', {
-            name: (<span className="font-semibold">{templateRepositoryName}</span>) as any
+            name: (
+              <span className="font-semibold" key="template-name">
+                {templateRepositoryName}
+              </span>
+            ) as any
           })}
         </span>
 

@@ -8,11 +8,13 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
 import { Button } from '@/components/ui/button';
+import { useGlobalStore } from '@/stores/global';
 
 export default function Header() {
   const router = useRouter();
   const t = useTranslations();
 
+  const { setLastRoute } = useGlobalStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function Header() {
   const handleCreateDevbox = () => {
     setGuide2(true);
     destroyDriver();
-    router.push('/template?tab=public');
+    router.push('/template?tab=public&from=home');
   };
 
   return (

@@ -308,6 +308,7 @@
   "select_at_least_1_tag": "Please select at least 1 tag.",
   "select_existing_app": "Update an existing application or deploy a new application...",
   "select_lest_than_3_tags": "Please select no more than 3 tags.",
+  "select_runtime": "Select Runtime",
   "select_tag_tips": "Select up to 3 tags.",
   "select_template_tips": "Select the template you wish to update",
   "service": "Service",
