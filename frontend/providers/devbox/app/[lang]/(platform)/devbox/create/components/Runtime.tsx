@@ -5,6 +5,7 @@ import { PencilLine } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { useFormContext } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -14,6 +15,7 @@ import { useEnvStore } from '@/stores/env';
 import { listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
+import { useGlobalStore } from '@/stores/global';
 
 import {
   Select,
@@ -37,6 +39,9 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   const { env } = useEnvStore();
   const { startedTemplate, devboxDetail } = useDevboxStore();
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
+  const { setLastRoute } = useGlobalStore();
 
   const templateRepositoryUid = watch('templateRepositoryUid');
   const templateUid = watch('templateUid');
@@ -106,7 +111,9 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
 
   const handleChangeTemplate = () => {
     if (isEdit) return;
-    router.push('/template');
+    const name = searchParams.get('name');
+    if (name) return;
+    router.push(`/template${from ? `?from=${from}` : ''}`);
   };
 
   useEffect(() => {

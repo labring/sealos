@@ -2,7 +2,8 @@ import dayjs from 'dayjs';
 import JSZip from 'jszip';
 import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Info, Loader2, X } from 'lucide-react';
+import { ArrowLeft, Info, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 
@@ -25,8 +26,10 @@ interface HeaderProps {
 const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
+  const searchParams = useSearchParams();
+  const from = searchParams.get('from');
+  const name = searchParams.get('name');
 
-  const { lastRoute } = useGlobalStore();
   const { guideConfigDevbox } = useGuideStore();
 
   const handleExportYaml = useCallback(async () => {
@@ -41,8 +44,14 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const isClientSide = useClientSideValue(true);
 
   const handleBack = useCallback(() => {
-    router.replace(lastRoute);
-  }, [lastRoute, router]);
+    if (name) {
+      router.replace(`/devbox/detail/${name}`);
+    } else if (from === 'home') {
+      router.replace('/');
+    } else {
+      router.replace('/template');
+    }
+  }, [from, name, router]);
 
   return (
     <>
