@@ -6,6 +6,7 @@ import { ReactElement, useCallback, useState } from 'react';
 import LangSelectSimple from '../LangSelect/simple';
 import GithubComponent from '../account/github';
 import Iconfont from '../iconfont';
+import { Bell } from 'lucide-react';
 
 enum UserMenuKeys {
   LangSelect,
@@ -49,7 +50,20 @@ export default function Index(props: { userMenuStyleProps?: FlexProps }) {
       key: UserMenuKeys.Notification,
       button: <Iconfont iconName="icon-notifications" width={20} height={20}></Iconfont>,
       click: () => showDisclosure.onOpen(),
-      content: <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
+      content: (
+        <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount}>
+          <Center
+            {...baseItemStyle}
+            boxSize={'36px'}
+            cursor={'pointer'}
+            borderRadius={'full'}
+            border={'1px solid rgba(0, 0, 0, 0.05)'}
+            onClick={() => showDisclosure.onToggle()}
+          >
+            <Bell size={16} color={'#262626'} />
+          </Center>
+        </Notification>
+      )
     }
   ];
   return (
