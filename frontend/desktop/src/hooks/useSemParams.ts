@@ -49,6 +49,6 @@ export function useSemParams(): SemParams {
 
   return {
     adClickData,
-    semData
+    semData: semData.channel ? semData : undefined
   };
 }
