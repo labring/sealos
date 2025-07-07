@@ -77,7 +77,7 @@ const AppItem = ({
           console.log('entered drag state');
           setIsDragging(true);
           setTimer(null);
-        }, 500)
+        }, 250)
       );
     };
 
@@ -85,6 +85,10 @@ const AppItem = ({
       console.log('left drag state');
       clearTimer();
       setIsDragging(false);
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
     };
 
     const handleDragEnd = (e: DragEvent) => {
@@ -97,18 +101,20 @@ const AppItem = ({
       e.preventDefault();
     };
 
-    wrapper.addEventListener('pointerdown', handlePointerDown);
-    document.addEventListener('pointerup', handlePointerEnd);
-    document.addEventListener('pointercancel', handlePointerEnd);
-    document.addEventListener('dragend', handleDragEnd);
+    wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    wrapper.addEventListener('pointerup', handlePointerEnd);
+    wrapper.addEventListener('pointercancel', handlePointerEnd);
+    wrapper.addEventListener('touchstart', handleTouchStart);
+    wrapper.addEventListener('dragend', handleDragEnd);
     wrapper.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       clearTimer();
       wrapper.removeEventListener('pointerdown', handlePointerDown);
-      document.removeEventListener('pointerup', handlePointerEnd);
-      document.removeEventListener('pointercancel', handlePointerEnd);
-      document.removeEventListener('dragend', handleDragEnd);
+      wrapper.removeEventListener('pointerup', handlePointerEnd);
+      wrapper.removeEventListener('pointercancel', handlePointerEnd);
+      wrapper.removeEventListener('touchstart', handleTouchStart);
+      wrapper.removeEventListener('dragend', handleDragEnd);
       wrapper.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [clearTimer]);
@@ -116,27 +122,33 @@ const AppItem = ({
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
       // Cancel holding detection if user moves the pointer
-      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 16) {
+      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 0) {
         console.log('cancelled drag detection');
         clearTimer();
         setIsDragging(false);
       }
     };
 
-    document.addEventListener('pointermove', handlePointerMove);
+    if (timer) {
+      document.addEventListener('pointermove', handlePointerMove);
 
-    return () => {
-      document.removeEventListener('pointermove', handlePointerMove);
-    };
-  }, [dragStartX, dragStartY, clearTimer, timer]);
+      return () => {
+        document.removeEventListener('pointermove', handlePointerMove);
+      };
+    }
+  }, [dragStartX, dragStartY, clearTimer, timer, isDragging]);
 
   // Dispatch dragstart event when dragging
   useEffect(() => {
     if (isDragging) {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.effectAllowed = 'move';
+
+      // Breaks on mobile.
       const dragEvent = new DragEvent('dragstart', {
         bubbles: true,
         cancelable: true,
-        dataTransfer: new DataTransfer(),
+        dataTransfer,
         view: window
       });
 
@@ -260,7 +272,6 @@ const AppGridPagingContainer = ({
 
   const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
-  const [isDragging, setIsDragging] = useState(false);
   const [dragDelta, setDragDelta] = useState(0);
   const [dragStartX, setDragStartX] = useState(0);
 
@@ -358,18 +369,24 @@ const AppGridPagingContainer = ({
     const handlePointerDown = (e: PointerEvent) => {
       if (!handleNavigation || !gridWrapperRef.current) return;
 
-      setIsDragging(true);
       setDragStartX(e.clientX);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
+      if (e.pressure <= 0) return;
+
+      // Handles dragging outside of the wrapper
+      if (!wrapper.hasPointerCapture(e.pointerId)) {
+        wrapper.setPointerCapture(e.pointerId);
+      }
 
       setDragDelta(e.clientX - dragStartX);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
-      setIsDragging(false);
+      if (wrapper.hasPointerCapture(e.pointerId)) {
+        wrapper.releasePointerCapture(e.pointerId);
+      }
 
       if (Math.abs(dragDelta) > 80) {
         if (dragDelta < -80) {
@@ -393,16 +410,7 @@ const AppGridPagingContainer = ({
       wrapper.removeEventListener('pointerup', handlePointerUp);
       wrapper.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [
-    handleNavigation,
-    currentPage,
-    totalPages,
-    itemsPerPage,
-    onChange,
-    dragStartX,
-    dragDelta,
-    isDragging
-  ]);
+  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange, dragStartX, dragDelta]);
 
   return (
     <Flex
@@ -600,7 +608,8 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
