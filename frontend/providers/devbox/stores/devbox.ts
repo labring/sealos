@@ -27,6 +27,8 @@ type State = {
     uid: string;
     iconId: string | null;
     name: string;
+    templateUid?: string;
+    description?: string | null;
   };
   setStartedTemplate: (
     template:
@@ -34,6 +36,8 @@ type State = {
           uid: string;
           iconId: string | null;
           name: string;
+          templateUid?: string;
+          description?: string | null;
         }
       | undefined
   ) => void;
@@ -107,7 +111,9 @@ export const useDevboxStore = create<State>()(
             state.startedTemplate = {
               uid: templateRepository.uid,
               iconId: templateRepository.iconId,
-              name: templateRepository.name
+              name: templateRepository.name,
+              templateUid: templateRepository.templateUid,
+              description: templateRepository.description
             };
         });
       },

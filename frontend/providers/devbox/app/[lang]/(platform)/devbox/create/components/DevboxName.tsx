@@ -37,7 +37,7 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
           <FormLabel>{t('devbox_name')}</FormLabel>
           <FormControl>
             <Input
-              className="w-[400px]"
+              className="h-10 w-[400px]"
               disabled={isEdit}
               autoFocus={true}
               placeholder={t('enter_devbox_name')}

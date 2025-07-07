@@ -1,13 +1,15 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
+import { Ellipsis, GitFork, PencilLine, Trash2, ChevronDown } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { useDevboxStore } from '@/stores/devbox';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
+import { listTemplate } from '@/api/template';
 
 import {
   DropdownMenu,
@@ -19,6 +21,13 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 import TemplateVersionControlDrawer from '@/components/modals/TemplateVersionControlDrawer';
 import EditTemplateRepositoryDrawer from '@/components/modals/EditTemplateRepositoryDrawer';
@@ -58,6 +67,18 @@ const TemplateCard = ({
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isEditTemplateVersionOpen, setIsEditTemplateVersionOpen] = useState(false);
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<string>('');
+
+  const { data: templateVersions } = useQuery({
+    queryKey: ['template-versions', templateRepositoryUid],
+    queryFn: async () => {
+      const { templateList } = await listTemplate(templateRepositoryUid);
+      if (templateList.length > 0) {
+        setSelectedVersion(templateList[0].uid);
+      }
+      return templateList;
+    }
+  });
 
   return (
     <>
@@ -69,7 +90,7 @@ const TemplateCard = ({
         )}
       >
         {/* top */}
-        <div className="flex h-30 w-full flex-col items-start gap-2 px-4 pt-4 pb-2">
+        <div className="flex h-30 w-full flex-col items-start gap-2 px-4 pt-4">
           <div className="group flex items-center justify-between gap-2 self-stretch">
             <div className="flex items-center gap-2">
               {/* logo */}
@@ -116,11 +137,13 @@ const TemplateCard = ({
                   setStartedTemplate({
                     uid: templateRepositoryUid,
                     name: templateRepositoryName,
-                    iconId
+                    iconId,
+                    templateUid: selectedVersion,
+                    description: templateRepositoryDescription
                   });
-                  router.push(`/devbox/create?templateRepository=${templateRepositoryUid}`);
+                  router.push('/devbox/create');
                 }}
-                disabled={isDisabled}
+                disabled={isDisabled || !selectedVersion}
               >
                 {t('select')}
               </Button>
@@ -183,6 +206,21 @@ const TemplateCard = ({
                 })}
             </div>
           </div>
+        </div>
+        {/* bottom */}
+        <div className="borer-t w-full border-zinc-100">
+          <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+            <SelectTrigger className="w-full rounded-t-none rounded-b-xl border-x-0 border-t-1 border-b-0 text-sm text-zinc-900">
+              <SelectValue placeholder={t('select_version')} />
+            </SelectTrigger>
+            <SelectContent>
+              {templateVersions?.map((version) => (
+                <SelectItem key={version.uid} value={version.uid}>
+                  <span className="text-sm">{version.name}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 
