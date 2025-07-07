@@ -126,7 +126,8 @@ export async function POST(req: NextRequest) {
             uid: true,
             iconId: true,
             name: true,
-            kind: true
+            kind: true,
+            description: true
           }
         },
         uid: true,
