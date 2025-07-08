@@ -12,12 +12,15 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
 import UpdateModal from './UpdateModal';
+import { encryptCbcBrowser } from '@/api/encrypt';
 import {
   ThemeAppearance,
   PrimaryColorsType,
   LangType,
   yowantLayoutConfig
 } from '@/constants/chat2db';
+import { ca } from 'date-fns/locale';
+import language from 'react-syntax-highlighter/dist/esm/languages/hljs/1c';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -129,15 +132,38 @@ const Header = ({
     setLoading(false);
   }, [db, t, toast]);
 
-  const handlManageData = useCallback(() => {
-    const params = new URLSearchParams({
-      theme: ThemeAppearance.Dark,
-      primaryColor: PrimaryColorsType.orange,
-      language: (i18n?.language as LangType) || (navigator.language as LangType),
-      hideAvatar: String(yowantLayoutConfig.hideAvatar)
-    });
-    router.replace(`/db/manage?${params.toString()}`);
-  }, [router, i18n?.language]);
+  const handleManageData = useCallback(async () => {
+    const userStr = localStorage.getItem('session');
+    const orgId = '34';
+    const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+    const userObj = userStr ? JSON.parse(userStr) : null;
+    const userId = userObj?.user.id;
+    const userNS = userObj?.user.nsid;
+
+    const raw = `${userId}/${userNS}:${orgId}`;
+    console.log(raw);
+    try {
+      const encryptedKey = await encryptCbcBrowser(raw, secretKey);
+
+      const params = new URLSearchParams({
+        theme: ThemeAppearance.Light,
+        primaryColor: PrimaryColorsType.bw,
+        language: LangType.ZH_CN,
+        hideAvatar: String(yowantLayoutConfig.hideAvatar),
+        initialKey: encryptedKey
+      });
+      // const chat2dbURL = new URL(`https://chat2db.sealosbja.site/workspace?${params.toString()}`);
+      console.log(encryptedKey);
+      // router.push(chat2dbURL.toString());
+      router.push(`/db/manage?${params.toString()}`);
+    } catch (err) {
+      console.error(t('chat2db_redirect_failed'), err);
+      toast({
+        title: t('chat2db_redirect_failed'),
+        status: 'error'
+      });
+    }
+  }, [toast, router]);
 
   return (
     <Flex h={'80px'} alignItems={'center'}>
@@ -285,7 +311,7 @@ const Header = ({
         _hover={{
           bg: 'gray.600'
         }}
-        onClick={handlManageData}
+        onClick={handleManageData}
         alignItems={'center'}
       >
         {t('manage_data')}
