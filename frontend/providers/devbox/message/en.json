@@ -151,6 +151,7 @@
   "export_yaml": "Export YAML",
   "external_address": "Public Address",
   "external_debug_address": "Public Address",
+  "filter": "Filter",
   "framework": "Framework",
   "gpu": "GPU",
   "gpu_exceeds_quota": "Requested GPU exceeds your quota. Please contact admin.",
