@@ -143,6 +143,7 @@
   "create_db": "新建",
   "creation_time": "创建时间",
   "chat2db":"chat2db",
+  "chat2db_redirect_failed":"跳转 Chat2DB 失败",
   "current_connections": "当前连接数",
   "data_import": "数据导入",
   "data_migration_config": "数据迁移配置",
