@@ -144,6 +144,8 @@
   "create_db": "Create Database",
   "creation_time": "Creation Time",
   "current_connections": "Current Connections",
+  "chat2db":"chat2db",
+  "chat2db_redirect_failed":"Redirect to Chat2DB failed",
   "data_import": "Data Import",
   "data_migration_config": "Data Migration Settings",
   "database": "database",
