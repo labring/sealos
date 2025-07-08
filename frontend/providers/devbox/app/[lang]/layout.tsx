@@ -8,6 +8,7 @@ import IntlProvider from '@/components/providers/MyIntlProvider';
 import QueryProvider from '@/components/providers/MyQueryProvider';
 
 import './globals.css';
+import 'react-day-picker/style.css';
 import '@sealos/driver/src/driver.css';
 
 export const metadata: Metadata = {

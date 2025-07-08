@@ -61,7 +61,7 @@
     "nprogress": "^0.2.0",
     "prisma": "^5.10.2",
     "react": "^18",
-    "react-day-picker": "^8.8.2",
+    "react-day-picker": "^9.8.0",
     "react-dom": "^18",
     "react-hook-form": "^7.48.2",
     "react-i18next": "^14.1.2",
