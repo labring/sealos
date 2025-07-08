@@ -54,6 +54,16 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))'
         }
+      },
+      keyframes: {
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-4px)' },
+          '75%': { transform: 'translateX(4px)' }
+        }
+      },
+      animation: {
+        shake: 'shake 0.3s'
       }
       // NOTE：shadcn add these,but we don't need them and these influence the tailwindcss default design, remove and remove global related css
       // borderRadius: {

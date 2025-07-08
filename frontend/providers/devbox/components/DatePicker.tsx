@@ -1,18 +1,10 @@
 'use client';
 
-import {
-  Button,
-  ButtonGroup,
-  Divider,
-  Flex,
-  FlexProps,
-  Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
 import { useTranslation } from 'next-i18next';
@@ -23,7 +15,7 @@ import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 import { MySelect } from '@sealos/ui';
 import { Calendar, RefreshCw } from 'lucide-react';
 
-interface DatePickerProps extends FlexProps {
+interface DatePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   isDisabled?: boolean;
 }
 
@@ -33,10 +25,10 @@ interface RecentDate {
   compareValue: string;
 }
 
-const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
+const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
-  const { isOpen, onClose, onOpen } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
 
   const { startDateTime, endDateTime, setStartDateTime, setEndDateTime, timeZone, setTimeZone } =
     useDateTimeStore();
@@ -129,6 +121,9 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   const [toTimeShake, setToTimeShake] = useState(false);
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
+
+  const onClose = () => setIsOpen(false);
+  const onOpen = () => setIsOpen(true);
 
   const onSubmit = () => {
     if (fromDateError || fromTimeError || toDateError || toTimeError) {
@@ -293,46 +288,38 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
   };
 
   return (
-    <Flex
-      h={'32px'}
-      bg="grayModern.50"
-      gap={'10px'}
-      align={'center'}
-      px={'10px'}
-      justify={'space-between'}
-      border={'1px solid'}
-      borderColor={'grayModern.200'}
-      borderRadius="6px"
-      color={'grayModern.900'}
-      fontSize={'12px'}
+    <div
+      className={cn(
+        'flex h-8 items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-2.5 text-xs text-gray-900',
+        className
+      )}
       {...props}
     >
-      <Popover isOpen={isOpen} onClose={onClose}>
-        <PopoverTrigger>
-          <Flex cursor={'pointer'} alignItems={'center'} gap={'4px'} onClick={onOpen}>
-            <Text>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <Text>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</Text>
-            <Button variant={'unstyled'} isDisabled={isDisabled} minW={'fit-content'}>
-              <Calendar />
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <div className="flex cursor-pointer items-center gap-1" onClick={onOpen}>
+            <span>{format(startDateTime, 'y-MM-dd HH:mm:ss')}</span>
+            <span>{format(endDateTime, 'y-MM-dd HH:mm:ss')}</span>
+            <Button variant="ghost" size="icon" disabled={isDisabled} className="min-w-fit p-0">
+              <Calendar className="h-4 w-4" />
             </Button>
-          </Flex>
+          </div>
         </PopoverTrigger>
-        <PopoverContent zIndex={99} w={'fit-content'} borderRadius={'12px'}>
-          <Flex w={'402px'} height={'382px'}>
-            <Flex w={'242px'} flexDir={'column'}>
+        <PopoverContent className="w-[402px] p-0" align="start">
+          <div className="flex h-[382px]">
+            <div className="flex w-[242px] flex-col">
               <DayPicker
                 mode="range"
                 selected={selectedRange}
                 onSelect={handleRangeSelect}
                 locale={currentLang === 'zh' ? zhCN : enUS}
                 weekStartsOn={0}
+                className="p-3"
               />
-              <Divider />
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('start')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+              <Separator />
+              <div className="flex flex-col gap-1.5 px-4 pt-2">
+                <span className="mb-1 ml-0.5 text-xs text-gray-600">{t('start')}</span>
+                <div className="flex w-full justify-center gap-1">
                   <DatePickerInput
                     value={fromDateString}
                     onChange={(e) => handleFromChange(e.target.value, 'date')}
@@ -345,14 +332,12 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                     error={!!fromTimeError}
                     showError={fromTimeShake}
                   />
-                </Flex>
-              </Flex>
+                </div>
+              </div>
 
-              <Flex flexDir={'column'} gap={'5px'} px={'16px'} pt={'8px'} pb={'12px'}>
-                <Text fontSize={'12px'} color={'grayModern.600'} ml={'3px'} mb={'4px'}>
-                  {t('end')}
-                </Text>
-                <Flex w={'100%'} justify={'center'} gap={'4px'}>
+              <div className="flex flex-col gap-1.5 px-4 pt-2 pb-3">
+                <span className="mb-1 ml-0.5 text-xs text-gray-600">{t('end')}</span>
+                <div className="flex w-full justify-center gap-1">
                   <DatePickerInput
                     value={toDateString}
                     onChange={(e) => handleToChange(e.target.value, 'date')}
@@ -365,38 +350,31 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
                     error={!!toTimeError}
                     showError={toTimeShake}
                   />
-                </Flex>
-              </Flex>
-            </Flex>
-            <Divider orientation="vertical" flexShrink={0} />
-            <Flex flex={1}>
-              <Flex flexDir={'column'} gap={'4px'} p={'12px 8px'} w={'100%'}>
+                </div>
+              </div>
+            </div>
+            <Separator orientation="vertical" />
+            <div className="flex-1">
+              <div className="flex w-full flex-col gap-1 p-2">
                 {recentDateList.map((item) => (
                   <Button
-                    height={'32px'}
                     key={JSON.stringify(item.value)}
-                    variant={'ghost'}
-                    color={'grayModern.900'}
-                    fontSize={'12px'}
-                    fontWeight={'400'}
-                    justifyContent={'flex-start'}
-                    {...(recentDate.compareValue === item.compareValue && {
-                      bg: 'brightBlue.50',
-                      color: 'brightBlue.600'
-                    })}
-                    _hover={{
-                      bg: 'rgba(17, 24, 36, 0.05)'
-                    }}
+                    variant="ghost"
+                    className={cn(
+                      'h-8 justify-start text-xs font-normal text-gray-900',
+                      recentDate.compareValue === item.compareValue &&
+                        'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                    )}
                     onClick={() => handleRecentDateClick(item)}
                   >
                     {item.label}
                   </Button>
                 ))}
-              </Flex>
-            </Flex>
-          </Flex>
-          <Divider />
-          <Flex justify={'space-between'} pl={'12px'} alignItems={'center'} py={'8px'}>
+              </div>
+            </div>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between py-2 pl-3">
             <MySelect
               height="32px"
               width={'fit-content'}
@@ -411,34 +389,29 @@ const DatePicker = ({ isDisabled = false, ...props }: DatePickerProps) => {
               ]}
               onchange={(val: any) => setTimeZone(val)}
             />
-            <ButtonGroup variant="outline" spacing="2" px={'10px'}>
+            <div className="flex gap-2 px-2.5">
               <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
+                variant="outline"
+                size="sm"
+                className="border-gray-200"
                 onClick={() => {
                   setRecentDate(defaultRecentDate);
                   handleRecentDateClick(defaultRecentDate);
                 }}
               >
-                <RefreshCw name="refresh" color={'grayModern.500'} />
+                <RefreshCw className="h-4 w-4 text-gray-500" />
               </Button>
-              <Button
-                border={'1px solid'}
-                borderColor={'grayModern.250'}
-                borderRadius={'6px'}
-                onClick={() => onClose()}
-              >
+              <Button variant="outline" size="sm" className="border-gray-200" onClick={onClose}>
                 {t('Cancel')}
               </Button>
-              <Button onClick={() => onSubmit()} variant={'solid'}>
+              <Button size="sm" onClick={onSubmit}>
                 {t('Confirm')}
               </Button>
-            </ButtonGroup>
-          </Flex>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
-    </Flex>
+    </div>
   );
 };
 
@@ -452,24 +425,11 @@ interface DatePickerInputProps {
 const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputProps) => {
   return (
     <Input
-      backgroundColor={'white'}
-      w={'50%'}
-      {...(error && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' }
-      })}
-      {...(showError && {
-        borderColor: 'red.500',
-        _hover: { borderColor: 'red.500' },
-        animation: 'shake 0.3s'
-      })}
-      sx={{
-        '@keyframes shake': {
-          '0%, 100%': { transform: 'translateX(0)' },
-          '25%': { transform: 'translateX(-4px)' },
-          '75%': { transform: 'translateX(4px)' }
-        }
-      }}
+      className={cn(
+        'w-1/2 bg-white',
+        error && 'border-red-500 hover:border-red-500',
+        showError && 'animate-shake border-red-500 hover:border-red-500'
+      )}
       value={value}
       onChange={onChange}
     />
