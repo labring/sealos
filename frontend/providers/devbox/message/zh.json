@@ -152,6 +152,7 @@
   "export_yaml": "导出 YAML",
   "external_address": "公网地址",
   "external_debug_address": "公网调试地址",
+  "filter": "筛选",
   "framework": "框架",
   "gpu": "GPU",
   "gpu_exceeds_quota": "申请的 GPU 超出配额限制，请联系管理员",
