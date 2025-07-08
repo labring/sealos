@@ -19,6 +19,7 @@ import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState, useEffect } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
+import { encryptCbcBrowser } from '@/api/encrypt';
 import {
   ThemeAppearance,
   PrimaryColorsType,

@@ -102,6 +102,66 @@ export const json2CreateCluster = (
         break;
     }
 
+    if (dbType === DBTypeEnum.mongodb) {
+      // 我们只从 resources 里取 mongodb 这一项
+      console.log(data);
+
+      const mongoRes = resources['mongodb'];
+      if (!mongoRes) return [];
+      const mongoMeta = {
+        labels: {
+          'app.kubernetes.io/instance': data.dbName,
+          'app.kubernetes.io/version': data.dbVersion,
+          'helm.sh/chart': `mongodb-cluster-0.9.1` // ???
+        },
+        name: data.dbName,
+        namespace: getUserNamespace()
+      };
+
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata: mongoMeta,
+          spec: {
+            affinity: {
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode',
+              topologyKeys: ['kubernetes.io/hostname']
+            },
+
+            componentSpecs: [
+              {
+                componentDefRef: 'mongodb',
+                name: 'mongodb',
+                replicas: mongoRes.other?.replicas ?? data.replicas,
+                resources: mongoRes.cpuMemory,
+                ...(mongoRes.storage > 0
+                  ? {
+                      serviceVersion: '8.0.4', // ???
+                      volumeClaimTemplates: [
+                        {
+                          name: 'data',
+                          spec: {
+                            accessModes: ['ReadWriteOnce'],
+                            resources: {
+                              requests: {
+                                storage: `${mongoRes.storage}Gi`
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  : {})
+              }
+            ],
+            terminationPolicy
+          }
+        }
+      ];
+    }
+
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
