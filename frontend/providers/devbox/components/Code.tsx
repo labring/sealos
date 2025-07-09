@@ -35,6 +35,9 @@ const Code = ({ content, language, className }: CodeProps) => {
                     codeTagProps={{
                       style: {
                         fontFamily: 'var(--font-fira-code)',
+                        fontSize: '12px',
+                        lineHeight: '150%',
+                        fontWeight: 450,
                         margin: 0
                       }
                     }}

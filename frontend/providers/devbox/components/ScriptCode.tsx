@@ -31,7 +31,7 @@ const ScriptCode = ({
     <div
       className={cn(
         'relative flex max-h-[300px] w-full flex-col overflow-hidden rounded-lg border bg-white p-3',
-        oneLine && 'flex-row',
+        oneLine && 'flex-row pb-1',
         className
       )}
     >
@@ -40,10 +40,10 @@ const ScriptCode = ({
           <Button
             variant="ghost"
             onClick={() => setIsOpen(!isOpen)}
-            className="hover:text-zinc-80 h-fit px-0 hover:bg-white has-[>svg]:p-0"
+            className="hover:text-zinc-80 h-fit px-0 text-xs text-zinc-900 hover:bg-white has-[>svg]:p-0"
           >
             <ChevronRight
-              className={cn('h-4 w-4 text-zinc-400 transition-transform', {
+              className={cn('h-4 w-4 text-zinc-400 transition-transform duration-300', {
                 'rotate-90': isOpen
               })}
             />
@@ -67,7 +67,7 @@ const ScriptCode = ({
         )}
       </div>
       {!oneLine && isOpen && (
-        <div className="min-w-0 overflow-hidden">
+        <div className="min-w-0 overflow-x-auto">
           <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
         </div>
       )}

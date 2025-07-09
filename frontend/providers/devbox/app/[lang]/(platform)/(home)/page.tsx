@@ -30,7 +30,7 @@ export default function HomePage() {
   if (isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[calc(100vh-28px)] w-fit flex-col px-12">
+    <div className="flex h-[calc(100vh-28px)] min-w-fit flex-col px-12">
       <Header />
       {list.length === 0 ? <Empty /> : <List devboxList={list} refetchDevboxList={refetchList} />}
     </div>
