@@ -35,6 +35,7 @@ export default function PhoneCheckComponent() {
   const toast = useToast();
   const conf = useConfigStore();
   const [isLoading, setIsLoading] = useState(false);
+  const { captchaIsLoaded } = useScriptStore();
   const { signupData, clearSignupData, startTime, updateStartTime } = useSignupStore();
   const { setToken } = useSessionStore();
 
@@ -43,6 +44,95 @@ export default function PhoneCheckComponent() {
   const [canResend, setCanResend] = useState(getRemainTime() < 0);
 
   const [remainTime, setRemainTime] = useState(getRemainTime());
+
+  const sendCodeMutation = useMutation(
+    ({ id, captchaVerifyParam }: { id: string; captchaVerifyParam?: string }) =>
+      request.post<
+        any,
+        ApiResp<
+          | {
+              result: boolean;
+              code: string;
+            }
+          | undefined
+        >
+      >('/api/auth/phone/sms', {
+        id,
+        captchaVerifyParam
+      })
+  );
+
+  const handleCaptchaComplete = async (captchaVerifyParam: string) => {
+    try {
+      const state = useSignupStore.getState();
+      if (60_000 + state.startTime < new Date().getTime()) {
+        return {
+          captchaValid: false,
+          success: false
+        };
+      }
+      const signupData = state.signupData;
+      if (!signupData || signupData.providerType !== 'PHONE')
+        return {
+          captchaValid: false,
+          success: false
+        };
+
+      const res = await sendCodeMutation.mutateAsync({
+        id: signupData.providerId,
+        captchaVerifyParam
+      });
+
+      if (res.code === 200) {
+        if (res.message !== 'successfully') {
+          return {
+            captchaValid: true,
+            success: false
+          };
+        } else {
+          return {
+            captchaValid: true,
+            success: true
+          };
+        }
+      } else {
+        // boolean | undefined
+        if (res.data?.result !== true)
+          return {
+            captchaValid: false,
+            success: false
+          };
+        else
+          return {
+            captchaValid: true,
+            success: false
+          };
+      }
+    } catch (err) {
+      // @ts-ignore
+      if (err?.code === 409 && err?.data?.result === false) {
+        return {
+          captchaValid: false,
+          success: false
+        };
+      } else {
+        return {
+          captchaValid: true,
+          success: false
+        };
+      }
+    }
+  };
+
+  const handleCaptchaCallbackComplete = (success: boolean) => {
+    if (success) {
+      const state = useSignupStore.getState();
+      state.updateStartTime();
+    } else {
+      const message = t('common:get_code_failed') || 'Get code failed';
+      showError(message);
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -57,6 +147,7 @@ export default function PhoneCheckComponent() {
 
     return () => clearInterval(interval);
   }, [startTime]);
+
   const verifyMutation = useMutation({
     mutationFn: (data: { id: string; code: string }) =>
       request.post<any, ApiResp<{ token: string; needInit: boolean }>>('/api/auth/phone/verify', {
@@ -81,22 +172,20 @@ export default function PhoneCheckComponent() {
       }
     }
   });
-  const { captchaIsLoaded } = useScriptStore();
 
-  const sendCodeMutation = useMutation(({ id }: { id: string }) =>
-    request.post<any, ApiResp<any>>('/api/auth/phone/sms', {
-      id
-    })
-  );
   const captchaRef = useRef<TCaptchaInstance>(null);
+
   const onSubmit = async (force = false) => {
+    console.log('onSubmit: ', 'force, canResend, isLoading', force, canResend, isLoading);
     if ((!canResend || isLoading) && !force) return;
 
+    console.log('should try sending code');
     setIsLoading(true);
     try {
       if (!signupData || signupData.providerType !== 'PHONE') {
         throw new Error('No signup data found');
       }
+
       if (conf.authConfig?.captcha.enabled) {
         console.log('onsubmit', captchaRef.current);
         if (!captchaRef.current) {
@@ -135,11 +224,18 @@ export default function PhoneCheckComponent() {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
     if (captchaIsLoaded && startTime + 60_000 <= new Date().getTime()) {
-      setTimeout(() => onSubmit(true), 2000);
+      timeout = setTimeout(() => onSubmit(true), 2000);
     }
-  }, [captchaIsLoaded]);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [captchaIsLoaded, startTime]);
 
   const handleBack = () => {
     router.back();
@@ -151,6 +247,7 @@ export default function PhoneCheckComponent() {
       router.push('/');
     }
   }, []);
+
   return (
     <Flex minH="100vh" align="center" justify="center" bg={bg} w={'50%'} direction={'column'}>
       <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
@@ -262,7 +359,12 @@ export default function PhoneCheckComponent() {
             </Button>
           </Flex>
           {conf.authConfig?.captcha.enabled && (
-            <HiddenCaptchaComponent ref={captchaRef} showError={showError} />
+            <HiddenCaptchaComponent
+              ref={captchaRef}
+              showError={showError}
+              onCallbackComplete={handleCaptchaCallbackComplete}
+              onCaptchaComplete={handleCaptchaComplete}
+            />
           )}
         </Flex>
       </Stack>
