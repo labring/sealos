@@ -109,6 +109,7 @@
   "generate_invitation_link": "生成邀请链接",
   "get_code": "获取验证码",
   "get_code_failed": "获取验证码失败",
+  "get_code_too_frequent": "验证码获取过于频繁",
   "get_verification_amount": "获取验证金额",
   "gift_amount": "赠送 {{amount}} 余额.",
   "github": "Github",

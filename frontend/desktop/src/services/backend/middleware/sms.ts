@@ -250,6 +250,9 @@ export const sendSmsCodeGuard = createMiddleware<{ id: string; smsType: SmsType 
     if (!(await checkSendable({ smsType, id }))) {
       return jsonRes(res, {
         message: 'code already sent',
+        data: {
+          error: 'too_frequent'
+        },
         code: 409
       });
     }

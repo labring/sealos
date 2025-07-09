@@ -113,6 +113,7 @@
   "generate_invitation_link": "Generate invitation link",
   "get_code": "verification",
   "get_code_failed": "Get code failed",
+  "get_code_too_frequent": "Code request too frequent",
   "get_verification_amount": "Request",
   "gift_amount": "Reward {{amount}} balance.",
   "github": "Github",

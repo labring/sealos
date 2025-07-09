@@ -72,10 +72,17 @@ function OldSms({
     },
     onError(err) {
       getCodeMutation.reset();
-      toast({
-        status: 'error',
-        title: t('common:get_code_failed')
-      });
+      if ((err as ApiResp)?.data?.error === 'too_frequent') {
+        toast({
+          status: 'error',
+          title: t('common:get_code_too_frequent')
+        });
+      } else {
+        toast({
+          status: 'error',
+          title: t('common:get_code_failed')
+        });
+      }
     }
   });
 
@@ -92,7 +99,7 @@ function OldSms({
     if (!(await trigger('id'))) {
       toast({
         status: 'error',
-        title: t('common:get_code_failed')
+        title: t('common:invalid_phone_number')
       });
       return;
     }
