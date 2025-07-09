@@ -316,8 +316,8 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
             </span>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0" align="start">
-          <div className="flex h-[382px] w-80">
+        <PopoverContent className="w-105 p-0" align="start">
+          <div className="flex h-100 w-80">
             <div className="flex flex-col">
               <DayPicker
                 navLayout="around"
@@ -326,10 +326,6 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
                 onSelect={handleRangeSelect}
                 locale={currentLang === 'zh' ? zhCN : enUS}
                 weekStartsOn={0}
-                style={{
-                  width: '100%',
-                  height: '100%'
-                }}
               />
               <Separator className="bg-zinc-100" />
               {/* Start and End button */}
@@ -388,7 +384,7 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
               ))}
             </div>
           </div>
-          <Separator />
+          <Separator className="bg-zinc-100" />
           {/* bottom button group */}
           <div className="flex items-center justify-between p-2">
             <Select value={timeZone} onValueChange={setTimeZone}>
@@ -437,7 +433,7 @@ const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputP
   return (
     <Input
       className={cn(
-        'h-8 bg-white text-xs text-zinc-900',
+        'h-8 w-30 bg-white pl-2 text-xs text-zinc-900',
         error && 'border-red-500 hover:border-red-500',
         showError && 'animate-shake border-red-500 hover:border-red-500'
       )}
