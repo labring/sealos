@@ -413,9 +413,6 @@ const Header = ({
         leftIcon={<MyIcon name="delete" w="16px" h="16px" />}
         isLoading={loading}
         isDisabled={db.status.value === 'Updating'}
-        _hover={{
-          bg: 'gray.200'
-        }}
         onClick={onOpenDelModal}
       />
 
@@ -502,9 +499,6 @@ const Header = ({
         leftIcon={<MyIcon name="settings" w={'16px'} />}
         isLoading={loading}
         isDisabled={db.status.value !== 'Running'}
-        _hover={{
-          bg: 'gray.600'
-        }}
         onClick={handleManageData}
         alignItems={'center'}
       >
