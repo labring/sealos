@@ -64,14 +64,6 @@ export default function PhoneCheckComponent() {
 
   const handleCaptchaComplete = async (captchaVerifyParam: string) => {
     try {
-      const state = useSignupStore.getState();
-      if (60_000 + state.startTime < new Date().getTime()) {
-        return {
-          captchaValid: false,
-          success: false
-        };
-      }
-      const signupData = state.signupData;
       if (!signupData || signupData.providerType !== 'PHONE')
         return {
           captchaValid: false,
@@ -126,11 +118,17 @@ export default function PhoneCheckComponent() {
 
   const handleCaptchaCallbackComplete = (success: boolean) => {
     if (success) {
-      const state = useSignupStore.getState();
-      state.updateStartTime();
+      // Start countdown
+      setCanResend(false);
+      updateStartTime();
     } else {
-      const message = t('common:get_code_failed') || 'Get code failed';
-      showError(message);
+      toast({
+        title: t('common:get_code_failed'),
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+        position: 'top'
+      });
     }
   };
 
@@ -176,10 +174,8 @@ export default function PhoneCheckComponent() {
   const captchaRef = useRef<TCaptchaInstance>(null);
 
   const onSubmit = async (force = false) => {
-    console.log('onSubmit: ', 'force, canResend, isLoading', force, canResend, isLoading);
     if ((!canResend || isLoading) && !force) return;
 
-    console.log('should try sending code');
     setIsLoading(true);
     try {
       if (!signupData || signupData.providerType !== 'PHONE') {
@@ -199,17 +195,12 @@ export default function PhoneCheckComponent() {
         });
         if (result.code !== 200) {
           throw Error(result.message);
+        } else {
+          // Start countdown
+          setCanResend(false);
+          updateStartTime();
         }
       }
-      // const result = await sendCodeMutation.mutateAsync({
-      //   id: signupData.providerId
-      // });
-      // if (result.code !== 200) {
-      //   throw Error(result.message);
-      // }
-      // Start countdown
-      setCanResend(false);
-      updateStartTime();
     } catch (error) {
       console.error('Failed to send verification phone:', error);
       toast({
@@ -241,7 +232,7 @@ export default function PhoneCheckComponent() {
     router.back();
   };
   const bg = useColorModeValue('white', 'gray.700');
-  const { ErrorComponent, showError } = useCustomError();
+
   useEffect(() => {
     if (!signupData || signupData.providerType !== 'PHONE') {
       router.push('/');
@@ -361,7 +352,6 @@ export default function PhoneCheckComponent() {
           {conf.authConfig?.captcha.enabled && (
             <HiddenCaptchaComponent
               ref={captchaRef}
-              showError={showError}
               onCallbackComplete={handleCaptchaCallbackComplete}
               onCaptchaComplete={handleCaptchaComplete}
             />

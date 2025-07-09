@@ -37,6 +37,7 @@
   "bound": "已绑定",
   "business_license": "营业执照",
   "cancel": "取消",
+  "captcha_init_failed": "验证码加载失败",
   "change": "变更",
   "change_binding": "改绑",
   "changeemail": "修改电子邮箱",

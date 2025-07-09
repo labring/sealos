@@ -1,31 +1,22 @@
-import request from '@/services/request';
 import { useConfigStore } from '@/stores/config';
 import useScriptStore from '@/stores/script';
-import { ApiResp } from '@/types';
-import { Box, Button, ButtonProps, Link, LinkProps } from '@chakra-ui/react';
-import { delay } from 'lodash';
-import React, { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import { Button, useToast } from '@chakra-ui/react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { v4 } from 'uuid';
-import useSms from '../auth/useSms';
-import useSmsStateStore from '@/stores/captcha';
-import useCustomError from '../auth/useCustomError';
 import { useTranslation } from 'next-i18next';
-import { I18nCommonKey } from '@/types/i18next';
-import { jsonRes } from '@/services/backend/response';
-import { useSignupStore } from '@/stores/signup';
 export type TCaptchaInstance = {
   invoke: () => void;
 };
 type Props = {
-  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
   onCaptchaComplete: (captchaVerifyParam: string) => Promise<{
     captchaValid: boolean;
     success: boolean;
   }>;
   onCallbackComplete: (success: boolean) => void;
+  onInitError?: () => void;
 };
 const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
-  { showError, onCaptchaComplete, onCallbackComplete }: Props,
+  { onCaptchaComplete, onCallbackComplete, onInitError }: Props,
   ref
 ) {
   const captchaElementRef = useRef<HTMLDivElement>(null);
@@ -46,7 +37,8 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
   const [buttonId] = useState('captcha_button_pop');
   const [captchaId] = useState('captcha_' + v4().slice(0, 8));
   const { captchaIsLoaded } = useScriptStore();
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
+  const toast = useToast();
 
   // @ts-ignore
   const getInstance = (instance) => {
@@ -71,6 +63,19 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
       },
       onBizResultCallback(bizResult: boolean) {
         onCallbackComplete(bizResult);
+      },
+      onError(error: any) {
+        if (onInitError) {
+          onInitError();
+        } else {
+          toast({
+            title: t('common:captcha_init_failed'),
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+            position: 'top'
+          });
+        }
       },
       getInstance,
       slideStyle: {
