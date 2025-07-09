@@ -31,6 +31,7 @@ interface MonitorChartProps {
   type: keyof typeof map;
   data?: MonitorDataResult;
   isShowLabel?: boolean;
+  splitNumber?: number;
   className?: string;
   isShowText?: boolean;
 }
@@ -39,6 +40,7 @@ const MonitorChart = ({
   type,
   data,
   isShowLabel = false,
+  splitNumber = 2,
   className,
   isShowText = true
 }: MonitorChartProps) => {
@@ -86,7 +88,7 @@ const MonitorChart = ({
     yAxis: {
       type: 'value',
       boundaryGap: false,
-      splitNumber: 2,
+      splitNumber,
       max: 100,
       min: 0,
       axisLabel: {
