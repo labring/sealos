@@ -1,4 +1,4 @@
-import { subDays, subMinutes } from 'date-fns';
+import { subMinutes } from 'date-fns';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
@@ -13,7 +13,7 @@ type DateTimeState = {
   setRefreshInterval: (val: number) => void;
 };
 
-const useDateTimeStore = create<DateTimeState>()(
+export const useDateTimeStore = create<DateTimeState>()(
   immer((set, get) => ({
     startDateTime: subMinutes(new Date(), 30),
     endDateTime: new Date(),
@@ -25,5 +25,3 @@ const useDateTimeStore = create<DateTimeState>()(
     setRefreshInterval: (val) => set({ refreshInterval: val })
   }))
 );
-
-export default useDateTimeStore;
