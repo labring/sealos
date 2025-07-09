@@ -184,7 +184,12 @@ export default function Notification(props: NotificationProps) {
     <Box>
       <>{props.children}</>
 
-      <Popover isOpen={disclosure.isOpen} placement="bottom-end" isLazy>
+      <Popover
+        isOpen={disclosure.isOpen}
+        onClose={disclosure.onClose}
+        placement="bottom-end"
+        isLazy
+      >
         <PopoverTrigger>
           {/* Helps locating the popover */}
           <Box visibility={'hidden'}></Box>

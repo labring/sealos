@@ -15,7 +15,9 @@ import {
   VStack,
   Circle,
   HStack,
-  StackProps
+  StackProps,
+  Portal,
+  Button
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import CreateTeam from './CreateTeam';
@@ -30,16 +32,17 @@ import { TeamUserDto } from '@/types/user';
 import ReciveMessage from './ReciveMessage';
 import { nsListRequest, reciveMessageRequest, teamDetailsRequest } from '@/api/namespace';
 import { useTranslation } from 'next-i18next';
-import { CopyIcon, StorageIcon } from '@sealos/ui';
+import { AddIcon, CopyIcon, StorageIcon } from '@sealos/ui';
 import NsListItem from '@/components/team/NsListItem';
 import RenameTeam from './RenameTeam';
 import { Plus, Settings } from 'lucide-react';
 import useAppStore from '@/stores/app';
 
 export default function TeamCenter({
-  closeWorkspaceToggle,
-  ...props
-}: { closeWorkspaceToggle: () => void } & StackProps) {
+  isOpen,
+  onClose
+}: { isOpen: boolean; onClose: () => void } & StackProps) {
+  const createTeamDisclosure = useDisclosure();
   const session = useSessionStore((s) => s.session);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
   const { t } = useTranslation();
@@ -48,7 +51,6 @@ export default function TeamCenter({
   const default_nsid = user?.nsid || '';
   const userCrUid = user?.userCrUid || '';
   const k8s_username = user?.k8s_username || '';
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const { copyData } = useCopyData();
   const [nsid, setNsid] = useState(default_nsid);
   const [messageFilter, setMessageFilter] = useState<string[]>([]);
@@ -121,32 +123,12 @@ export default function TeamCenter({
 
   return (
     <>
-      <HStack
-        fontSize={'14px'}
-        px={'8px'}
-        alignItems={'center'}
-        cursor={'pointer'}
-        borderRadius={'4px'}
-        onClick={() => {
-          setMessageFilter([]);
-          onOpen();
-        }}
-        {...props}
-      >
-        <Center p={'6px 8px'} gap={'12px'}>
-          <Settings size={16} color={'#737373'} />
-          <Text>{t('common:manage_team')}</Text>
-        </Center>
-      </HStack>
-
       <Modal
         isOpen={isOpen}
-        onClose={() => {
-          closeWorkspaceToggle();
-          onClose();
-        }}
+        onClose={onClose}
         isCentered
         closeOnOverlayClick={false}
+        closeOnEsc={false}
       >
         <ModalOverlay />
         <ModalContent
@@ -221,22 +203,22 @@ export default function TeamCenter({
                   )}
                 </VStack>
                 <Divider bg={'#F4F4F5'} h="1px" my={'4px'} />
-                <Flex alignItems={'center'}>
-                  <CreateTeam>
-                    <Flex
-                      alignItems={'center'}
-                      gap={'8px'}
-                      py={'6px'}
-                      px={'8px'}
-                      height={'40px'}
-                      cursor={'pointer'}
-                    >
-                      <Plus size={20} color="#737373" />
-                      <Text fontSize="14px" fontWeight="400" color="#18181B">
-                        {t('common:create_workspace')}
-                      </Text>
-                    </Flex>
-                  </CreateTeam>
+
+                <Flex
+                  alignItems={'center'}
+                  gap={'8px'}
+                  py={'6px'}
+                  px={'8px'}
+                  height={'40px'}
+                  cursor={'pointer'}
+                  onClick={() => {
+                    createTeamDisclosure.onOpen();
+                  }}
+                >
+                  <Plus size={20} color="#737373" />
+                  <Text fontSize="14px" fontWeight="400" color="#18181B">
+                    {t('common:create_workspace')}
+                  </Text>
                 </Flex>
               </Box>
             </Stack>
@@ -340,7 +322,16 @@ export default function TeamCenter({
                     <Text color={'grayModern.600'} fontSize={'12px'}>
                       {t('common:noworkspacecreated')}
                     </Text>
-                    <CreateTeam textButton />
+                    <Button
+                      onClick={() => {
+                        createTeamDisclosure.onOpen();
+                      }}
+                      variant={'primary'}
+                      leftIcon={<AddIcon boxSize={'20px'} color={'white'} />}
+                      iconSpacing={'8px'}
+                    >
+                      {t('common:create_team')}
+                    </Button>
                   </VStack>
                 </Center>
               ) : null}
@@ -348,6 +339,8 @@ export default function TeamCenter({
           </ModalBody>
         </ModalContent>
       </Modal>
+
+      <CreateTeam isOpen={createTeamDisclosure.isOpen} onClose={createTeamDisclosure.onClose} />
     </>
   );
 }
