@@ -113,8 +113,9 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     }
   }
   const cpu = useMemo(() => {
-    if (yamlList.length > 1) {
-      return getCpuCores(yamlList[1].value);
+    const clusterYaml = yamlList.find((item) => item.filename === 'cluster.yaml');
+    if (clusterYaml) {
+      return getCpuCores(clusterYaml.value);
     }
     return 0;
   }, [yamlList]);
