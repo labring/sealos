@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 
-import { REFRESH_INTERVAL_OPTIONS, useDevboxStore } from '@/stores/devbox';
+import { useDateTimeStore } from '@/stores/date';
+import { REFRESH_INTERVAL_OPTIONS } from '@/constants/date';
 
 interface RefreshButtonProps {
   onRefresh: () => void;
@@ -20,7 +21,7 @@ interface RefreshButtonProps {
 
 export function RefreshButton({ onRefresh }: RefreshButtonProps) {
   const t = useTranslations();
-  const { refreshInterval, setRefreshInterval } = useDevboxStore();
+  const { refreshInterval, setRefreshInterval } = useDateTimeStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const lastErrorTime = useRef<number>(0);

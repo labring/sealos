@@ -52,18 +52,8 @@ type State = {
     mock?: boolean
   ) => Promise<DevboxDetailTypeV2>;
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>;
-  loadDetailMonitorData: (devboxName: string) => Promise<any>;
-  refreshInterval: number;
-  setRefreshInterval: (interval: number) => void;
+  loadDetailMonitorData: (devboxName: string, start?: number, end?: number) => Promise<any>;
 };
-
-export const REFRESH_INTERVAL_OPTIONS = [
-  { value: 1000, label: '1s' },
-  { value: 2000, label: '2s' },
-  { value: 5000, label: '5s' },
-  { value: 10000, label: '10s' },
-  { value: 0, label: 'close' }
-] as const;
 
 export const useDevboxStore = create<State>()(
   devtools(
@@ -193,7 +183,7 @@ export const useDevboxStore = create<State>()(
         });
         return 'success';
       },
-      loadDetailMonitorData: async (devboxName) => {
+      loadDetailMonitorData: async (devboxName, start, end) => {
         const pods = await getDevboxPodsByDevboxName(devboxName);
 
         const queryName = pods.length > 0 ? pods[0].podName : devboxName;
@@ -202,12 +192,16 @@ export const useDevboxStore = create<State>()(
           getDevboxMonitorData({
             queryKey: 'average_cpu',
             queryName: queryName,
-            step: '2m'
+            step: '2m',
+            start,
+            end
           }),
           getDevboxMonitorData({
             queryKey: 'average_memory',
             queryName: queryName,
-            step: '2m'
+            step: '2m',
+            start,
+            end
           })
         ]);
 
@@ -230,9 +224,7 @@ export const useDevboxStore = create<State>()(
           }
         });
         return 'success';
-      },
-      refreshInterval: 0,
-      setRefreshInterval: (interval: number) => set({ refreshInterval: interval })
+      }
     }))
   )
 );

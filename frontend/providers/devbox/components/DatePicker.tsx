@@ -8,7 +8,7 @@ import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDa
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 
 import { cn } from '@/lib/utils';
-import useDateTimeStore from '@/stores/date';
+import { useDateTimeStore } from '@/stores/date';
 import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 
 import {
@@ -444,8 +444,15 @@ const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputP
 };
 
 const getDateRange = (value: string): DateRange => {
-  const { startTime: from, endTime: to } = parseTimeRange(value);
-  return { from, to };
+  try {
+    const { startTime: from, endTime: to } = parseTimeRange(value);
+    return { from, to };
+  } catch (error) {
+    // If parsing fails, return a safe default of last 30 minutes
+    const now = new Date();
+    const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+    return { from: thirtyMinutesAgo, to: now };
+  }
 };
 
 export default DatePicker;

@@ -3,6 +3,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 
 import { useDevboxStore } from '@/stores/devbox';
+import { useDateTimeStore } from '@/stores/date';
 
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
@@ -11,11 +12,16 @@ import { RefreshButton } from '@/components/RefreshButton';
 const Monitor = () => {
   const params = useParams();
   const t = useTranslations();
+  const { startDateTime, endDateTime } = useDateTimeStore();
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
 
   const handleRefresh = async () => {
     if (!params?.name) return;
-    await loadDetailMonitorData(params.name as string);
+    await loadDetailMonitorData(
+      params.name as string,
+      startDateTime.getTime(),
+      endDateTime.getTime()
+    );
   };
 
   return (
