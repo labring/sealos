@@ -178,7 +178,7 @@ const DevboxList = ({
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex flex-shrink-0 items-center justify-end gap-2">
+            <div className="flex items-center justify-start gap-2">
               <IDEButton
                 devboxName={item.name}
                 sshPort={item.sshPort}
@@ -289,7 +289,11 @@ const DevboxList = ({
           {/* table header */}
           <div className="flex h-10 items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500">
             {table.getFlatHeaders().map((header) => (
-              <div key={header.id} style={{ width: header.getSize() }}>
+              <div
+                key={header.id}
+                style={{ width: header.getSize() }}
+                className="flex-shrink-0 flex-grow-1"
+              >
                 {flexRender(header.column.columnDef.header, header.getContext())}
               </div>
             ))}
@@ -305,7 +309,7 @@ const DevboxList = ({
                 <div
                   key={cell.id}
                   style={{ width: cell.column.getSize() }}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 flex-grow-1"
                 >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </div>

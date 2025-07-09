@@ -123,7 +123,7 @@ const SshConnectDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent className="min-w-[600px]">
+      <DrawerContent className="min-w-[450px]">
         <DrawerHeader>
           <DrawerTitle>{t('jetbrains_guide_config_ssh')}</DrawerTitle>
         </DrawerHeader>
@@ -162,7 +162,7 @@ const SshConnectDrawer = ({
                   <StepIndicator>1</StepIndicator>
                   <div className="flex flex-col gap-3">
                     <span className="text-sm/5 font-semibold">Run Script</span>
-                    <div className="flex flex-col gap-4">
+                    <div className="flex w-[366px] flex-col gap-4">
                       <div className="flex flex-col gap-3">
                         <div
                           className="flex cursor-pointer flex-col items-center justify-center gap-6 rounded-xl border border-zinc-900 bg-white px-4 py-6 shadow-sm hover:bg-muted/50"
@@ -195,7 +195,7 @@ const SshConnectDrawer = ({
 
                 <Step>
                   <StepIndicator>2</StepIndicator>
-                  <div className="flex w-full min-w-0 flex-col gap-3">
+                  <div className="flex w-[366px] min-w-0 flex-col gap-3">
                     <span className="text-sm/5 font-semibold">{t('verify_connection')}</span>
                     <ScriptCode
                       oneLine
@@ -213,7 +213,7 @@ const SshConnectDrawer = ({
               <Stepper orientation="vertical">
                 <Step>
                   <StepIndicator>1</StepIndicator>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex w-[366px] flex-col gap-3">
                     <div className="text-sm/5 text-zinc-900">
                       {t.rich('jetbrains_guide_download_private_key', {
                         blue: (chunks) => <span className="text-blue-600">{chunks}</span>
@@ -241,7 +241,7 @@ const SshConnectDrawer = ({
 
                 <Step>
                   <StepIndicator>2</StepIndicator>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex w-[366px] flex-col gap-3">
                     <span className="text-sm/5 text-zinc-900">
                       {t('jetbrains_guide_move_to_path')}
                     </span>
@@ -261,7 +261,7 @@ const SshConnectDrawer = ({
 
                 <Step>
                   <StepIndicator>3</StepIndicator>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex w-[366px] flex-col gap-3">
                     <div className="text-sm/5 text-zinc-900">
                       {t.rich('jetbrains_guide_modified_config', {
                         blue: (chunks) => <span className="text-blue-600">{chunks}</span>
@@ -278,7 +278,7 @@ const SshConnectDrawer = ({
 
                 <Step>
                   <StepIndicator>4</StepIndicator>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex w-[366px] flex-col gap-3">
                     <div className="text-sm/5 text-zinc-900">
                       {t.rich('jetbrains_guide_modified_file', {
                         blue: (chunks) => <span className="text-blue-600">{chunks}</span>
@@ -299,7 +299,7 @@ const SshConnectDrawer = ({
 
                 <Step>
                   <StepIndicator>5</StepIndicator>
-                  <div className="flex flex-col gap-3">
+                  <div className="flex w-[366px] flex-col gap-3">
                     <div className="text-sm/5 text-zinc-900">{t('jetbrains_guide_command')}</div>
                     <ScriptCode
                       oneLine={true}
