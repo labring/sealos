@@ -259,13 +259,13 @@ td.rdp-selected.rdp-range_start.rdp-range_end {
 }
 
 td.rdp-day {
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   & button {
     font-size: 12px;
     font-weight: 400;
-    width: 30px;
-    height: 30px;
+    width: 34px;
+    height: 34px;
   }
 }
 th.rdp-weekday {

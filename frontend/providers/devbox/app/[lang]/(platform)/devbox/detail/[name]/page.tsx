@@ -89,11 +89,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
           </>
         );
       case 'monitor':
-        return (
-          <div className="flex-1">
-            <Monitor />
-          </div>
-        );
+        return <Monitor />;
       case 'logs':
         return <Logs />;
       default:
