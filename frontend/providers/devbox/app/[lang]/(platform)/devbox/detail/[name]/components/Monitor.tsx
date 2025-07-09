@@ -1,15 +1,22 @@
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import { useParams } from 'next/navigation';
 
 import { useDevboxStore } from '@/stores/devbox';
 
 import DatePicker from '@/components/DatePicker';
 import MonitorChart from '@/components/MonitorChart';
-import { generateMockMonitorData } from '@/constants/mock';
+import { RefreshButton } from '@/components/RefreshButton';
 
 const Monitor = () => {
+  const params = useParams();
   const t = useTranslations();
-  const { devboxDetail } = useDevboxStore();
+  const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
+
+  const handleRefresh = async () => {
+    if (!params?.name) return;
+    await loadDetailMonitorData(params.name as string);
+  };
 
   return (
     <div className="flex h-full flex-col items-start gap-2">
@@ -18,6 +25,7 @@ const Monitor = () => {
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
           <DatePicker />
+          <RefreshButton onRefresh={handleRefresh} />
         </div>
         <span className="text-sm/5 text-neutral-500">
           {t('update Time')}&ensp;

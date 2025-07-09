@@ -53,7 +53,17 @@ type State = {
   ) => Promise<DevboxDetailTypeV2>;
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>;
   loadDetailMonitorData: (devboxName: string) => Promise<any>;
+  refreshInterval: number;
+  setRefreshInterval: (interval: number) => void;
 };
+
+export const REFRESH_INTERVAL_OPTIONS = [
+  { value: 1000, label: '1s' },
+  { value: 2000, label: '2s' },
+  { value: 5000, label: '5s' },
+  { value: 10000, label: '10s' },
+  { value: 0, label: 'close' }
+] as const;
 
 export const useDevboxStore = create<State>()(
   devtools(
@@ -220,7 +230,9 @@ export const useDevboxStore = create<State>()(
           }
         });
         return 'success';
-      }
+      },
+      refreshInterval: 0,
+      setRefreshInterval: (interval: number) => set({ refreshInterval: interval })
     }))
   )
 );
