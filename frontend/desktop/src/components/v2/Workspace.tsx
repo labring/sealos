@@ -18,7 +18,8 @@ import {
   PopoverHeader,
   PopoverBody,
   Img,
-  Icon
+  Icon,
+  Portal
 } from '@chakra-ui/react';
 // import { ClawCloudIcon } from '../icons';
 import { useMemo, useState } from 'react';
@@ -137,6 +138,7 @@ export default function Workspace() {
                     p={'10px 16px'}
                     gap="4px"
                     alignItems={'center'}
+                    tabIndex={0}
                   >
                     <Text color={'#18181B'} fontSize={'16px'}>
                       {selectedRegion?.displayName}
@@ -158,66 +160,68 @@ export default function Workspace() {
                     <ChevronDownIcon ml="auto" boxSize={'16px'} />
                   </Flex>
                 </PopoverTrigger>
-                <PopoverContent
-                  bg="white"
-                  width={'352px'}
-                  border="0.5px solid #E4E4E7"
-                  boxShadow="0px 8px 24px -10px rgba(0, 0, 0, 0.2)"
-                  borderRadius="12px"
-                  outline={'none'}
-                  p="8px"
-                >
-                  <Text color="#71717A" my={'6px'} mx="4px" fontSize={'14px'}>
-                    {t('common:region')}
-                  </Text>
-                  <Stack gap={'8px'} p="0">
-                    {regionList.map((region) => (
-                      <Flex
-                        key={region.uid}
-                        width={'full'}
-                        height="48px"
-                        borderRadius="8px"
-                        borderWidth="1px"
-                        p={'14px 16px'}
-                        gap="4px"
-                        alignItems={'center'}
-                        onClick={() => {
-                          setSelectedRegionUid(region.uid);
-                        }}
-                        bg={'white'}
-                        _hover={{
-                          bg: '#FAFAFA'
-                        }}
-                      >
-                        <Text color={'#18181B'} fontSize={'16px'}>
-                          {region?.displayName}
-                        </Text>
-                        <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
-                        {region?.description.provider &&
-                          [
-                            'volcano_engine',
-                            'alibaba_cloud',
-                            'tencent_cloud',
-                            'google_cloud'
-                          ].includes(region?.description.provider) && (
-                            <Img
-                              src={`/images/cloud_providers/${region?.description.provider}.svg`}
-                            ></Img>
+                <Portal>
+                  <PopoverContent
+                    bg="white"
+                    width={'352px'}
+                    border="0.5px solid #E4E4E7"
+                    boxShadow="0px 8px 24px -10px rgba(0, 0, 0, 0.2)"
+                    borderRadius="12px"
+                    outline={'none'}
+                    p="8px"
+                  >
+                    <Text color="#71717A" my={'6px'} mx="4px" fontSize={'14px'}>
+                      {t('common:region')}
+                    </Text>
+                    <Stack gap={'8px'} p="0">
+                      {regionList.map((region) => (
+                        <Flex
+                          key={region.uid}
+                          width={'full'}
+                          height="48px"
+                          borderRadius="8px"
+                          borderWidth="1px"
+                          p={'14px 16px'}
+                          gap="4px"
+                          alignItems={'center'}
+                          onClick={() => {
+                            setSelectedRegionUid(region.uid);
+                          }}
+                          bg={'white'}
+                          _hover={{
+                            bg: '#FAFAFA'
+                          }}
+                        >
+                          <Text color={'#18181B'} fontSize={'16px'}>
+                            {region?.displayName}
+                          </Text>
+                          <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
+                          {region?.description.provider &&
+                            [
+                              'volcano_engine',
+                              'alibaba_cloud',
+                              'tencent_cloud',
+                              'google_cloud'
+                            ].includes(region?.description.provider) && (
+                              <Img
+                                src={`/images/cloud_providers/${region?.description.provider}.svg`}
+                              ></Img>
+                            )}
+                          <Text fontSize={'12px'} color={'#52525B'}>
+                            {t(region?.description?.provider as I18nCloudProvidersKey, {
+                              ns: 'cloudProviders'
+                            })}
+                          </Text>
+                          {region.uid === selectedRegionUid && (
+                            <Icon ml={'auto'} boxSize={'16px'}>
+                              <Check color={'#2563EB'} />
+                            </Icon>
                           )}
-                        <Text fontSize={'12px'} color={'#52525B'}>
-                          {t(region?.description?.provider as I18nCloudProvidersKey, {
-                            ns: 'cloudProviders'
-                          })}
-                        </Text>
-                        {region.uid === selectedRegionUid && (
-                          <Icon ml={'auto'} boxSize={'16px'}>
-                            <Check color={'#2563EB'} />
-                          </Icon>
-                        )}
-                      </Flex>
-                    ))}
-                  </Stack>
-                </PopoverContent>
+                        </Flex>
+                      ))}
+                    </Stack>
+                  </PopoverContent>
+                </Portal>
               </Popover>
             </FormControl>
             <FormControl mt={'8px'}>
