@@ -41,166 +41,298 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 export const json2CreateCluster = (
   rawData: Partial<DBEditType> = {},
   backupInfo?: BackupItemType,
-  options?: {
-    storageClassName?: string;
-  }
-) => {
+  options?: { storageClassName?: string }
+): string => {
+  /* ---------------------------------------------------------------------- */
+  /* 0. 数据准备                                                              */
+  /* ---------------------------------------------------------------------- */
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
-  const resources = distributeResources(data);
-
-  const metadata = {
-    // finalizers: ['cluster.kubeblocks.io/finalizer'],
-    labels: {
-      ...data.labels,
-      'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion
-      // [crLabelKey]: data.dbName
-    },
-
-    name: data.dbName,
-    namespace: getUserNamespace()
-  };
-
+  const resources = distributeResources(data); // 拆分 CPU / 内存 / 存储
   const storageClassName =
     options?.storageClassName || StorageClassName
       ? { storageClassName: options?.storageClassName || StorageClassName }
       : {};
 
-  function createDBObject(dbType: DBType) {
-    // Special circumstances process here
-    let terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
+  /* ---------------------------------------------------------------------- */
+  /* 1. 通用元数据 helpers                                                   */
+  /* ---------------------------------------------------------------------- */
+  const baseLabels = {
+    ...data.labels,
+    'clusterdefinition.kubeblocks.io/name': data.dbType,
+    'clusterversion.kubeblocks.io/name': data.dbVersion
+  };
 
-    switch (dbType) {
-      case DBTypeEnum.postgresql:
-      case DBTypeEnum.mysql:
-      case DBTypeEnum.mongodb:
-      case DBTypeEnum.redis:
-        terminationPolicy = data.terminationPolicy;
-        break;
-      default:
-        break;
-    }
+  const terminationPolicy =
+    backupInfo?.name &&
+    ![DBTypeEnum.postgresql, DBTypeEnum.mysql, DBTypeEnum.mongodb, DBTypeEnum.redis].includes(
+      data.dbType as DBTypeEnum
+    )
+      ? 'WipeOut'
+      : data.terminationPolicy;
 
-    if (dbType === DBTypeEnum.mongodb) {
-      const mongoRes = resources['mongodb'];
-      if (!mongoRes) return [];
-      const mongoMeta = {
-        labels: {
-          'app.kubernetes.io/instance': data.dbName,
-          'app.kubernetes.io/version': data.dbVersion,
-          'helm.sh/chart': `mongodb-cluster-0.9.1` // ???
-        },
-        name: data.dbName,
-        namespace: getUserNamespace()
-      };
-
-      return [
-        {
-          apiVersion: 'apps.kubeblocks.io/v1alpha1',
-          kind: 'Cluster',
-          metadata: mongoMeta,
-          spec: {
-            affinity: {
-              podAntiAffinity: 'Preferred',
-              tenancy: 'SharedNode',
-              topologyKeys: ['kubernetes.io/hostname']
-            },
-
-            componentSpecs: [
-              {
-                componentDefRef: 'mongodb',
-                name: 'mongodb',
-                replicas: mongoRes.other?.replicas ?? data.replicas,
-                resources: mongoRes.cpuMemory,
-                ...(mongoRes.storage > 0
-                  ? {
-                      serviceVersion: '8.0.4', // ???
-                      volumeClaimTemplates: [
-                        {
-                          name: 'data',
-                          spec: {
-                            accessModes: ['ReadWriteOnce'],
-                            resources: {
-                              requests: {
-                                storage: `${mongoRes.storage}Gi`
-                              }
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  : {})
-              }
-            ],
-            terminationPolicy
-          }
-        }
-      ];
-    }
+  function buildMySQLYaml() {
+    const mysqlRes = resources['mysql'];
+    if (!mysqlRes) return [];
 
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
-        metadata,
+        metadata: {
+          labels: baseLabels,
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
         spec: {
           affinity: {
-            // nodeLabels: {},
             podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode'
-            // topologyKeys: ['kubernetes.io/hostname']
           },
-          clusterDefinitionRef: dbType,
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
-            return {
-              componentDefRef: key,
-              disableExploter: true,
-              enableLogs: ['running'],
-              // monitor: true,
-              name: key,
-              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
-              resources: resourceData.cpuMemory,
-              serviceAccountName: data.dbName,
-              switchPolicy: {
-                type: 'Noop'
-              },
-              ...(resourceData.storage > 0
-                ? {
-                    volumeClaimTemplates: [
-                      {
-                        name: 'data',
-                        spec: {
-                          accessModes: ['ReadWriteOnce'],
-                          resources: {
-                            requests: {
-                              storage: `${resourceData.storage}Gi`
-                            }
-                          }
-                          // ...storageClassName
-                        }
-                      }
-                    ]
+          clusterDefinitionRef: data.dbType, // apecloud-mysql
+          clusterVersionRef: data.dbVersion, // ac-mysql-8.0.30
+          componentSpecs: [
+            {
+              componentDefRef: 'mysql',
+              disableExporter: true,
+              enabledLogs: ['auditlog', 'error', 'general', 'slow'],
+              name: 'mysql',
+              replicas: mysqlRes.other?.replicas ?? data.replicas,
+              resources: mysqlRes.cpuMemory,
+              serviceAccountName: `kb-${data.dbName}`,
+              ...(mysqlRes.storage > 0 && {
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${mysqlRes.storage}Gi` } }
+                    }
                   }
-                : {})
-            };
-          }),
-          resources: {
-            cpu: '0',
-            memeory: '0'
-          },
-          storage: {
-            size: '0'
-          },
+                ]
+              })
+            }
+          ],
+          resources: { cpu: '0', memory: '0' },
+          storage: { size: '0' },
           terminationPolicy
-          // tolerations: []
         }
       }
     ];
   }
 
+  function buildPostgresYaml() {
+    const pgRes = resources['postgresql'];
+    if (!pgRes) return [];
+
+    return [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata: {
+          labels: baseLabels,
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode'
+          },
+          clusterDefinitionRef: DBTypeEnum.postgresql,
+          clusterVersionRef: data.dbVersion,
+          componentSpecs: [
+            {
+              componentDefRef: 'postgresql',
+              name: 'postgresql',
+              replicas: pgRes.other?.replicas ?? data.replicas,
+              resources: pgRes.cpuMemory,
+              serviceAccountName: `kb-${data.dbName}`,
+              enabledLogs: ['running'],
+              ...(pgRes.storage > 0 && {
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${pgRes.storage}Gi` } },
+                      ...storageClassName
+                    }
+                  }
+                ]
+              })
+            }
+          ],
+          resources: { cpu: '0', memory: '0' },
+          storage: { size: '0' },
+          terminationPolicy
+        }
+      }
+    ];
+  }
+
+  function buildMongoYaml() {
+    const mongoRes = resources['mongodb'];
+    if (!mongoRes) return [];
+
+    return [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': data.dbName,
+            'app.kubernetes.io/version': data.dbVersion,
+            'helm.sh/chart': 'mongodb-cluster-0.9.1'
+          },
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode',
+            topologyKeys: ['kubernetes.io/hostname']
+          },
+          componentSpecs: [
+            {
+              componentDefRef: 'mongodb',
+              name: 'mongodb',
+              replicas: mongoRes.other?.replicas ?? data.replicas,
+              resources: mongoRes.cpuMemory,
+              ...(mongoRes.storage > 0 && {
+                serviceVersion: '8.0.4',
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${mongoRes.storage}Gi` } }
+                    }
+                  }
+                ]
+              })
+            }
+          ],
+          terminationPolicy
+        }
+      }
+    ];
+  }
+
+  function buildRedisYaml() {
+    /* 1️⃣ 主/从和 Sentinel 两套资源 ----------------------------------------- */
+    const redisRes = resources['redis']; // 主/从节点
+    const sentinelRes = resources['redis-sentinel'] ?? { // 如果 distributeResources 专门划分了 sentinel
+      cpuMemory: {
+        limits: { cpu: '200m', memory: '256Mi' },
+        requests: { cpu: '200m', memory: '256Mi' }
+      },
+      storage: 20, // 默认 20 Gi
+      other: { replicas: 3 }
+    };
+
+    if (!redisRes) return []; // 没有主/从资源就不生成
+
+    /* 2️⃣ 通用元数据 ------------------------------------------------------- */
+    const metaLabels = {
+      'app.kubernetes.io/instance': data.dbName,
+      'app.kubernetes.io/version': data.dbVersion, // 7.2.7
+      'clusterdefinition.kubeblocks.io/name': 'redis',
+      'clusterversion.kubeblocks.io/name': '', // 与模板保持一致
+      'helm.sh/chart': 'redis-cluster-0.9.0',
+      ...data.labels // 允许自定义覆写
+    };
+
+    /* 3️⃣ YAML 对象 -------------------------------------------------------- */
+    const redisObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels: metaLabels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['kubernetes.io/hostname']
+        },
+        clusterDefinitionRef: 'redis',
+        componentSpecs: [
+          /* 主/从 redis 组件 ------------------------------------------------ */
+          {
+            componentDef: 'redis-7', // 注意：是 componentDef 不是 componentDefRef
+            name: 'redis',
+            replicas: redisRes.other?.replicas ?? data.replicas, // 2
+            enabledLogs: ['running'],
+            env: [{ name: 'CUSTOM_SENTINEL_MASTER_NAME', value: data.dbName }],
+            resources: redisRes.cpuMemory,
+            serviceVersion: data.dbVersion, // 7.2.7
+            switchPolicy: { type: 'Noop' },
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${redisRes.storage}Gi` } },
+                  ...storageClassName
+                }
+              }
+            ]
+          },
+
+          /* Sentinel 组件 --------------------------------------------------- */
+          {
+            componentDef: 'redis-sentinel-7',
+            name: 'redis-sentinel',
+            replicas: sentinelRes.other?.replicas ?? 3,
+            resources: sentinelRes.cpuMemory,
+            serviceVersion: data.dbVersion,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${sentinelRes.storage}Gi` } },
+                  ...storageClassName
+                }
+              }
+            ]
+          }
+        ],
+        terminationPolicy: terminationPolicy, // Delete / WipeOut
+        topology: 'replication' // 按模板保留
+      }
+    };
+
+    return [redisObj];
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* 3. 总路由：根据 dbType 选择生成函数                                     */
+  /* ---------------------------------------------------------------------- */
+  function createDBObject(dbType: DBType) {
+    switch (dbType) {
+      case DBTypeEnum.mysql:
+      case 'apecloud-mysql': // 若枚举值不是字符串可再加一层映射
+        return buildMySQLYaml();
+      case DBTypeEnum.postgresql:
+        return buildPostgresYaml();
+      case DBTypeEnum.mongodb:
+        return buildMongoYaml();
+      case DBTypeEnum.redis:
+        return buildRedisYaml();
+      default:
+        throw new Error(`json2CreateCluster: unsupported dbType ${dbType}`);
+    }
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* 4. 把对象数组 → YAML 字符串                                             */
+  /* ---------------------------------------------------------------------- */
   return createDBObject(data.dbType)
-    .map((item) => yaml.dump(item))
+    .map((obj) => yaml.dump(obj))
     .join('\n---\n');
 };
 
