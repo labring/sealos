@@ -8,7 +8,7 @@ interface SignupState {
 }
 
 export const useInitWorkspaceStore = create<SignupState>((set) => ({
-  workspaceName: '',
+  workspaceName: 'My Workspace',
   selectedRegionUid: '',
   setSelectedRegionUid(selectedRegionUid) {
     set({ selectedRegionUid });
