@@ -45,6 +45,7 @@ export default function Workspace() {
   const provider = useSessionStore((s) => s.lastSigninProvier);
   const { workspaceName, setWorkspaceName, setSelectedRegionUid, selectedRegionUid } =
     useInitWorkspaceStore();
+  const [workspaceNameFieldDirty, setWorkspaceNameFieldDirty] = useState(false);
   const { setInitGuide } = useGuideModalStore();
   const { cloudConfig } = useConfigStore();
   const { token } = useSessionStore();
@@ -236,6 +237,12 @@ export default function Workspace() {
                 borderRadius={'8px'}
                 onChange={(e) => {
                   setWorkspaceName(e.target.value.trim());
+                }}
+                onFocus={() => {
+                  if (!workspaceNameFieldDirty) {
+                    setWorkspaceNameFieldDirty(true);
+                    setWorkspaceName('');
+                  }
                 }}
               />
             </FormControl>
