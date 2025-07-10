@@ -212,7 +212,7 @@ export default function Workspace() {
                               ns: 'cloudProviders'
                             })}
                           </Text>
-                          {region.uid === selectedRegionUid && (
+                          {region.uid === selectedRegion?.uid && (
                             <Icon ml={'auto'} boxSize={'16px'}>
                               <Check color={'#2563EB'} />
                             </Icon>
