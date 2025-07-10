@@ -56,19 +56,7 @@ export const json2CreateCluster = (
       'clusterversion.kubeblocks.io/name': data.dbVersion
       // [crLabelKey]: data.dbName
     },
-    // annotations: {
-    //   ...(backupInfo?.name
-    //     ? {
-    //         [BACKUP_LABEL_KEY]: JSON.stringify({
-    //           [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
-    //             name: backupInfo.name,
-    //             namespace: backupInfo.namespace,
-    //             connectionPassword: backupInfo.connectionPassword
-    //           }
-    //         })
-    //       }
-    //     : {})
-    // },
+
     name: data.dbName,
     namespace: getUserNamespace()
   };
@@ -94,9 +82,6 @@ export const json2CreateCluster = (
     }
 
     if (dbType === DBTypeEnum.mongodb) {
-      // 我们只从 resources 里取 mongodb 这一项
-      console.log(data);
-
       const mongoRes = resources['mongodb'];
       if (!mongoRes) return [];
       const mongoMeta = {
@@ -201,9 +186,9 @@ export const json2CreateCluster = (
             };
           }),
           resources: {
-            cpu: '0'
+            cpu: '0',
+            memeory: '0'
           },
-          memory: '0',
           storage: {
             size: '0'
           },
