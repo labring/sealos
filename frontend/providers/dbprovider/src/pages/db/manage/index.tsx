@@ -20,7 +20,7 @@ export default function ManageDataPage() {
       hideAvatar: String(hideAvatar ?? true)
     });
 
-    setSrc(`https://chat2db.sealosbja.site/workspace?${p.toString()}`);
+    setSrc(`https://chat2dbclient.sealosbja.site/workspace?${p.toString()}`);
   }, [router.isReady, router.query]);
 
   if (!router.isReady || !src) return null;
