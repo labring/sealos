@@ -18,7 +18,7 @@ import "fmt"
 
 func (w WechatPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
 	tradeNO := GetRandomString(32)
-	codeURL, err := WechatPay(amount, user, tradeNO, describe, "")
+	codeURL, err := WechatPay(amount/10000, user, tradeNO, describe, "")
 	if err != nil {
 		return "", "", err
 	}
@@ -32,7 +32,7 @@ func (w WechatPayment) GetPaymentDetails(sessionID string) (string, int64, error
 	}
 	switch *orderResp.TradeState {
 	case StatusSuccess:
-		return PaymentSuccess, *orderResp.Amount.Total, nil
+		return PaymentSuccess, *orderResp.Amount.Total * 10000, nil
 	case StatusProcessing:
 		return PaymentProcessing, 0, nil
 	case StatusNotPay:

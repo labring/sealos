@@ -219,8 +219,7 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err != nil {
 			return fmt.Errorf("get user discount failed: %w", err)
 		}
-		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
-		payAmount := orderAmount * 10000
+		payAmount := orderAmount
 		isFirstRecharge, gift := getFirstRechargeDiscount(payAmount, userDiscount)
 		paymentRaw := pkgtypes.PaymentRaw{
 			UserUID:         userUID,
@@ -320,7 +319,7 @@ func (r *PaymentReconciler) reconcileNewPayment(payment *accountv1.Payment) erro
 	if err != nil {
 		return fmt.Errorf("get payment Interface failed: %w", err)
 	}
-	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount/10000, payment.Spec.UserID, fmt.Sprintf(env.GetEnvWithDefault("PAY_DESCRIBE_FORMAT", `sealos cloud pay [domain="%s"]`), r.domain))
+	tradeNO, codeURL, err := payHandler.CreatePayment(payment.Spec.Amount, payment.Spec.UserID, fmt.Sprintf(env.GetEnvWithDefault("PAY_DESCRIBE_FORMAT", `sealos cloud pay [domain="%s"]`), r.domain))
 	if err != nil {
 		return fmt.Errorf("get tradeNO and codeURL failed: %w", err)
 	}

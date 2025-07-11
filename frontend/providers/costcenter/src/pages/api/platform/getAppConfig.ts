@@ -11,6 +11,7 @@ export type Response = {
   STRIPE_ENABLED: boolean;
   STRIPE_PUB: string;
   WECHAT_ENABLED: boolean;
+  ALIPAY_ENABLED: boolean;
   CURRENCY: 'shellCoin' | 'cny' | 'usd';
   INVOICE_ENABLED: boolean;
   GPU_ENABLED: boolean;
@@ -57,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         STRIPE_ENABLED: global.AppConfig.costCenter.recharge.payMethods.stripe.enabled,
         STRIPE_PUB: global.AppConfig.costCenter.recharge.payMethods.stripe.publicKey,
         WECHAT_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.wechat?.enabled || false,
+        ALIPAY_ENABLED: global.AppConfig.costCenter.recharge?.payMethods?.alipay?.enabled || false,
         CURRENCY: global.AppConfig.costCenter.currencyType,
         INVOICE_ENABLED: global.AppConfig.costCenter?.invoice?.enabled || false,
         GPU_ENABLED: global.AppConfig.costCenter?.gpuEnabled || false
