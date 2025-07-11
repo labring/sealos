@@ -23,25 +23,32 @@ func NewAlipayPayment() (*AlipayPayment, error) {
 	if err != nil {
 		return nil, fmt.Errorf("alipay client init failed: %v", err)
 	}
-	err = client.LoadAliPayPublicKey(os.Getenv(account.AlipayPublicKey))
-	if err != nil {
-		return nil, fmt.Errorf("load alipay public key failed: %v", err)
+	//err = client.LoadAliPayPublicKey(os.Getenv(account.AlipayPublicKey))
+	//if err != nil {
+	//	return nil, fmt.Errorf("load alipay public key failed: %v", err)
+	//}
+	if err = client.LoadAppCertPublicKey(os.Getenv(account.AlipayAppCertPublicKey)); err != nil {
+		return nil, fmt.Errorf("load appCertPublicKey failed: %v", err)
+	}
+	if err = client.LoadAliPayRootCert(os.Getenv(account.AlipayRootCert)); err != nil {
+		return nil, fmt.Errorf("load alipayRootCert failed: %v", err)
+	}
+	if err = client.LoadAlipayCertPublicKey(os.Getenv(account.AlipayCertPublicKey)); err != nil {
+		return nil, fmt.Errorf("load alipayCertPublicKey failed: %v", err)
 	}
 	return &AlipayPayment{client: client}, nil
 }
 
 // CreatePayment 创建支付，返回支付URL和订单号
-func (a *AlipayPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
-	var p = alipay.TradeWapPay{}
+func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
+	var p = alipay.TradePagePay{}
 	p.Subject = "sealos_cloud_pay"
 	p.OutTradeNo = uuid.NewString()
 	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // 金额单位分转元
-	fmt.Printf("total amount: %s, amount: %d \n", p.TotalAmount, amount)
 	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
-	//p.QRPayMode = "1"
-	//p.TimeExpire
-
-	url, err := a.client.TradeWapPay(p)
+	p.QRPayMode = "2"
+	p.TimeoutExpress = "10m"
+	url, err := a.client.TradePagePay(p)
 	if err != nil {
 		return "", "", err
 	}
