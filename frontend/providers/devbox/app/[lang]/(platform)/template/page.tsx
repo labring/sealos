@@ -31,13 +31,13 @@ const TemplatePage = () => {
         <Tabs defaultValue={defaultTab} className="flex flex-col">
           <div className="flex items-center justify-between gap-4">
             <TabsList variant="ghost" className="w-fit">
-              <TabsTrigger value="public" variant="ghost">
-                <LayoutTemplate className="h-4 w-4" />
-                <span>{t('all_templates')}</span>
+              <TabsTrigger value="public" variant="ghost" className="p-2">
+                <LayoutTemplate className="!h-5 !w-5" />
+                <span className="text-base">{t('all_templates')}</span>
               </TabsTrigger>
-              <TabsTrigger value="private" variant="ghost">
-                <User className="h-4 w-4" />
-                <span>{t('my_templates')}</span>
+              <TabsTrigger value="private" variant="ghost" className="p-2">
+                <User className="!h-5 !w-5" />
+                <span className="text-base">{t('my_templates')}</span>
               </TabsTrigger>
             </TabsList>
             <div className="flex items-center pr-2">
