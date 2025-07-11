@@ -257,6 +257,7 @@ export default function Account() {
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount}>
             <Center
               {...baseItemStyle}
+              tabIndex={0}
               boxSize={'36px'}
               cursor={'pointer'}
               borderRadius={'full'}
