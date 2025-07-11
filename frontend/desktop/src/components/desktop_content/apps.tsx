@@ -22,7 +22,6 @@ import {
   MouseEvent,
   MouseEventHandler,
   ReactNode,
-  use,
   useCallback,
   useEffect,
   useMemo,
@@ -50,106 +49,6 @@ const AppItem = ({
 
   const { i18n } = useTranslation();
   const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
-  const [isDragging, setIsDragging] = useState(false);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartY, setDragStartY] = useState(0);
-
-  const clearTimer = useCallback(() => {
-    if (timer) {
-      clearTimeout(timer);
-      setTimer(null);
-    }
-  }, [timer]);
-
-  // Dispatch dragstart event after holding for 500ms
-  useEffect(() => {
-    if (!wrapperRef.current) {
-      return;
-    }
-    const wrapper = wrapperRef.current;
-
-    const handlePointerDown = (e: PointerEvent) => {
-      setDragStartX(e.screenX);
-      setDragStartY(e.screenY);
-
-      setTimer(
-        setTimeout(() => {
-          console.log('entered drag state');
-          setIsDragging(true);
-          setTimer(null);
-        }, 250)
-      );
-    };
-
-    const handlePointerEnd = (e: PointerEvent) => {
-      console.log('left drag state');
-      clearTimer();
-      setIsDragging(false);
-    };
-
-    const handleDragEnd = (e: DragEvent) => {
-      console.log('left drag state');
-      clearTimer();
-      setIsDragging(false);
-    };
-
-    const handleContextMenu = (e: Event) => {
-      e.preventDefault();
-    };
-
-    wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    wrapper.addEventListener('pointerup', handlePointerEnd);
-    wrapper.addEventListener('pointercancel', handlePointerEnd);
-    wrapper.addEventListener('dragend', handleDragEnd);
-    wrapper.addEventListener('contextmenu', handleContextMenu);
-
-    return () => {
-      clearTimer();
-      wrapper.removeEventListener('pointerdown', handlePointerDown);
-      wrapper.removeEventListener('pointerup', handlePointerEnd);
-      wrapper.removeEventListener('pointercancel', handlePointerEnd);
-      wrapper.removeEventListener('dragend', handleDragEnd);
-      wrapper.removeEventListener('contextmenu', handleContextMenu);
-    };
-  }, [clearTimer]);
-
-  useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      // Cancel holding detection if user moves the pointer
-      if (timer && Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 0) {
-        console.log('cancelled drag detection');
-        clearTimer();
-        setIsDragging(false);
-      }
-    };
-
-    if (timer) {
-      document.addEventListener('pointermove', handlePointerMove);
-
-      return () => {
-        document.removeEventListener('pointermove', handlePointerMove);
-      };
-    }
-  }, [dragStartX, dragStartY, clearTimer, timer, isDragging]);
-
-  // Dispatch dragstart event when dragging
-  useEffect(() => {
-    if (isDragging) {
-      const dataTransfer = new DataTransfer();
-      dataTransfer.effectAllowed = 'move';
-
-      // Breaks on mobile.
-      const dragEvent = new DragEvent('dragstart', {
-        bubbles: true,
-        cancelable: true,
-        dataTransfer,
-        view: window
-      });
-
-      wrapperRef.current?.dispatchEvent(dragEvent);
-    }
-  }, [isDragging]);
 
   return (
     <Flex
@@ -157,25 +56,7 @@ const AppItem = ({
       flexDirection={'column'}
       justifyContent={'flex-start'}
       alignItems={'center'}
-      userSelect="none"
-      cursor={'pointer'}
       className={app.key}
-      onClick={(e) => {
-        if (
-          onClick &&
-          !isDragging &&
-          Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) < 16
-        ) {
-          onClick(e, app);
-        }
-      }}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      draggable={isDragging}
-      style={{
-        touchAction: 'none',
-        userSelect: 'none'
-      }}
     >
       <Center
         w={{ base: '64px', md: '78px' }}
@@ -186,6 +67,19 @@ const AppItem = ({
         transition="transform 0.2s ease"
         overflow={'hidden'}
         _hover={{ transform: 'scale(1.05)' }}
+        cursor={'pointer'}
+        style={{
+          touchAction: 'none',
+          userSelect: 'none'
+        }}
+        onClick={(e) => {
+          if (onClick) {
+            onClick(e, app);
+          }
+        }}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        draggable
       >
         <Image
           w={app.key.startsWith('user-') ? '60px' : '100%'}
@@ -193,6 +87,7 @@ const AppItem = ({
           src={app?.icon}
           fallbackSrc={fallbackIcon}
           draggable={false}
+          pointerEvents={'none'}
           alt="app logo"
         />
       </Center>
@@ -203,6 +98,10 @@ const AppItem = ({
         fontWeight={500}
         textAlign={'center'}
         lineHeight={'18px'}
+        style={{
+          touchAction: 'none',
+          userSelect: 'none'
+        }}
       >
         {app?.i18n?.[i18n?.language]?.name ? app?.i18n?.[i18n?.language]?.name : app?.name}
       </Text>
@@ -230,7 +129,6 @@ const AppGrid = ({
       flexShrink={0}
       flexGrow={0}
       flexBasis={'100%'}
-      overflow={'hidden'}
       gap={`${gridGap}px`}
       templateColumns={{
         base: 'repeat(4, 1fr)',
@@ -274,6 +172,7 @@ const AppGridPagingContainer = ({
   const [itemsPerPage, setItemsPerPage] = useState(8);
   const [dragDelta, setDragDelta] = useState(0);
   const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartY, setDragStartY] = useState(0);
 
   const clampedCurrentPage = Math.min(Math.max(currentPage, 0), totalPages - 1);
   const scrollPosition =
@@ -369,22 +268,30 @@ const AppGridPagingContainer = ({
     const handlePointerDown = (e: PointerEvent) => {
       if (!handleNavigation || !gridWrapperRef.current) return;
 
-      setDragStartX(e.clientX);
+      console.log('pointer down', e.screenX, e.screenY);
+
+      setDragStartX(e.screenX);
+      setDragStartY(e.screenY);
     };
 
     const handlePointerMove = (e: PointerEvent) => {
       if (e.pressure <= 0) return;
 
       // Handles dragging outside of the wrapper
-      if (!wrapper.hasPointerCapture(e.pointerId)) {
+      // Prevents the pointer from being captured by the wrapper when *clicking* on the icons
+      if (
+        !wrapper.hasPointerCapture(e.pointerId) &&
+        Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 32
+      ) {
         wrapper.setPointerCapture(e.pointerId);
       }
 
-      setDragDelta(e.clientX - dragStartX);
+      setDragDelta(e.screenX - dragStartX);
     };
 
     const handlePointerUp = (e: PointerEvent) => {
       if (wrapper.hasPointerCapture(e.pointerId)) {
+        console.log('release pointer capture');
         wrapper.releasePointerCapture(e.pointerId);
       }
 
@@ -410,7 +317,16 @@ const AppGridPagingContainer = ({
       wrapper.removeEventListener('pointerup', handlePointerUp);
       wrapper.removeEventListener('pointercancel', handlePointerUp);
     };
-  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange, dragStartX, dragDelta]);
+  }, [
+    handleNavigation,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    onChange,
+    dragStartX,
+    dragStartY,
+    dragDelta
+  ]);
 
   return (
     <Flex
@@ -514,7 +430,6 @@ const MoreAppsFolder = ({
                     bg="white"
                     borderRadius={'10px'}
                     boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
-                    draggable={false}
                   >
                     <Image
                       width="100%"
@@ -523,6 +438,7 @@ const MoreAppsFolder = ({
                       fallbackSrc={fallbackIcon}
                       objectFit="contain"
                       alt="app icon"
+                      draggable={false}
                     />
                   </Box>
                 ))
@@ -537,6 +453,7 @@ const MoreAppsFolder = ({
                       borderRadius="10px"
                       border={'1px dashed rgba(0, 0, 0, 0.10)'}
                       bg="white"
+                      draggable={false}
                     />
                   ))}
           </Grid>
@@ -611,7 +528,9 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
+
+    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
