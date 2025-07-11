@@ -1,7 +1,3 @@
-/**
- * 浏览器端使用 AES-256-CBC 加密
- * 返回值：Base64(IV + ciphertext)，可直接作为 Chat2DB 的 key 参数
- */
 export async function encryptCbcBrowser(plainText: string, key: string): Promise<string> {
   if (key.length !== 32) {
     throw new Error('Key must be exactly 32 characters (256 bits)');

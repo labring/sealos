@@ -15,12 +15,12 @@ export default function ManageDataPage() {
     const p = new URLSearchParams({
       key: initialKey as string,
       theme: (theme as string) ?? 'light',
-      primaryColor: (primaryColor as string) ?? 'orange',
+      primaryColor: (primaryColor as string) ?? 'bw',
       language: (language as string) ?? navigator.language,
       hideAvatar: String(hideAvatar ?? true)
     });
 
-    setSrc(`https://chat2db.sealosbja.site/workspace?${p.toString()}`);
+    setSrc(`https://chat2dbclient.sealosbja.site/workspace?${p.toString()}`);
   }, [router.isReady, router.query]);
 
   if (!router.isReady || !src) return null;
