@@ -164,11 +164,12 @@ const AppGridPagingContainer = ({
 }) => {
   const gridWrapperRef = useRef<HTMLDivElement>(null);
 
-  const columns = useBreakpointValue({
-    base: 2,
-    sm: 3,
-    lg: 5
-  });
+  const columns =
+    useBreakpointValue({
+      base: 2,
+      sm: 3,
+      lg: 5
+    }) ?? 2;
 
   const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -189,7 +190,7 @@ const AppGridPagingContainer = ({
     const height = gridWrapperRef.current.clientHeight;
     const rows = Math.floor((height + gridGap) / (appHeight + gridGap));
 
-    return rows * columns!;
+    return rows * columns;
   }, [columns, gridGap, appHeight]);
 
   const calculatePageWidth = useCallback(() => {
@@ -235,6 +236,7 @@ const AppGridPagingContainer = ({
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearTimeout(debounceTimer);
     };
   }, [calculatePageWidth]);
 
@@ -505,10 +507,11 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
-  const appHeight = useBreakpointValue({
-    base: 114,
-    md: 146
-  });
+  const appHeight =
+    useBreakpointValue({
+      base: 114,
+      md: 146
+    }) ?? 114;
   const gridGap = 10;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
@@ -797,7 +800,7 @@ export default function Apps() {
         <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer
             gridGap={gridGap}
-            appHeight={appHeight!}
+            appHeight={appHeight}
             // One page desktop, other apps are in folder
             totalPages={1}
             currentPage={currentPageInGrid}
