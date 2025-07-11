@@ -436,13 +436,13 @@ export default function AccountCenter(props: AccountCenterProps) {
                   ) : pageState === PageState.PHONE_UNBIND ? (
                     <PhoneUnBind onClose={resetPageState} />
                   ) : pageState === PageState.PHONE_CHANGE_BIND ? (
-                    <PhoneChange onClose={resetPageState} />
+                    <PhoneChange onClose={resetPageState} oldId={providerState.PHONE.id} />
                   ) : pageState === PageState.EMAIL_BIND ? (
                     <EmailBind onClose={resetPageState} />
                   ) : pageState === PageState.EMAIL_UNBIND ? (
                     <EmailUnBind onClose={resetPageState} />
                   ) : pageState === PageState.EMAIL_CHANGE_BIND ? (
-                    <EmailChange onClose={resetPageState} />
+                    <EmailChange onClose={resetPageState} oldId={providerState.EMAIL.id} />
                   ) : pageState === PageState.REALNAME_AUTH ? (
                     <RealNameAuthForm onFormSuccess={resetPageState} />
                   ) : null}

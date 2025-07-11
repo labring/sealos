@@ -35,13 +35,25 @@ enum PageState {
   VERIFY_OLD,
   VERIFY_NEW
 }
-function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: string) => void }) {
+function OldSms({
+  smsType,
+  onSuccess,
+  oldId
+}: {
+  smsType: SmsType;
+  onSuccess?: (uid: string) => void;
+  oldId: string;
+}) {
   const { t } = useTranslation();
   const { toast } = useCustomToast({ status: 'error' });
   const { register, handleSubmit, trigger, getValues, reset, formState } = useForm<{
     id: string;
     verifyCode: string;
-  }>();
+  }>({
+    defaultValues: {
+      id: oldId
+    }
+  });
   const { seconds, startTimer, isRunning } = useTimer({
     duration: 60,
     step: 1
@@ -60,12 +72,20 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
     },
     onError(err) {
       getCodeMutation.reset();
-      toast({
-        status: 'error',
-        title: t('common:get_code_failed')
-      });
+      if ((err as ApiResp)?.data?.error === 'too_frequent') {
+        toast({
+          status: 'error',
+          title: t('common:get_code_too_frequent')
+        });
+      } else {
+        toast({
+          status: 'error',
+          title: t('common:get_code_failed')
+        });
+      }
     }
   });
+
   const remainTime = 60 - seconds;
   const getCode: MouseEventHandler = async (e) => {
     e.preventDefault();
@@ -79,7 +99,7 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
     if (!(await trigger('id'))) {
       toast({
         status: 'error',
-        title: t('common:get_code_failed')
+        title: t('common:invalid_phone_number')
       });
       return;
     }
@@ -138,10 +158,13 @@ function OldSms({ smsType, onSuccess }: { smsType: SmsType; onSuccess?: (uid: st
             </FormLabel>
             <SettingInputGroup>
               <SettingInput
-                {...register('id', smsIdValid(smsType))}
+                {...register('id', {
+                  ...smsIdValid(smsType)
+                })}
                 flex={'1'}
                 type={smsType === 'email' ? 'email' : 'tel'}
                 autoComplete={smsType}
+                disabled
               ></SettingInput>
               <SettingInputRightElement>
                 {
@@ -361,8 +384,9 @@ function NewSms({
     </form>
   );
 }
+
 const smsChangeGen = (smsType: SmsType) =>
-  function SmsChangeCore({ onClose }: { onClose: () => void }) {
+  function SmsChangeCore({ onClose, oldId }: { onClose: () => void; oldId: string }) {
     const [pageState, setPageState] = useState<PageState>(PageState.VERIFY_OLD);
     const [codeUid, setCodeUid] = useState('');
     return pageState === PageState.VERIFY_OLD ? (
@@ -372,6 +396,7 @@ const smsChangeGen = (smsType: SmsType) =>
           setCodeUid(uid);
           setPageState(PageState.VERIFY_NEW);
         }}
+        oldId={oldId}
       />
     ) : (
       <NewSms
