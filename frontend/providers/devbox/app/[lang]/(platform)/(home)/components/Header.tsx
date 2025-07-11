@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { BookOpen, LayoutTemplate, Plus } from 'lucide-react';
 
 import { useRouter } from '@/i18n';
@@ -12,6 +12,7 @@ import { useGlobalStore } from '@/stores/global';
 
 export default function Header() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations();
 
   const { setLastRoute } = useGlobalStore();
@@ -38,6 +39,14 @@ export default function Header() {
     router.push('/template?tab=public&from=home');
   };
 
+  const handleGotoDocs = () => {
+    if (locale === 'zh') {
+      window.open('https://sealos.run/docs/overview/intro', '_blank');
+    } else {
+      window.open('https://sealos.io/docs/overview/intro', '_blank');
+    }
+  };
+
   return (
     <div className="flex h-24 w-full flex-shrink-0 items-center justify-between">
       {/* left side */}
@@ -45,9 +54,11 @@ export default function Header() {
         <div className="flex items-center">
           <span className="text-2xl/8 font-semibold">DevBox</span>
         </div>
-        <div className="flex items-center gap-2 text-blue-600">
+        <div
+          className="flex cursor-pointer items-center gap-2 text-blue-600"
+          onClick={handleGotoDocs}
+        >
           <BookOpen className="h-4 w-4" />
-          {/* TODO: add docs link */}
           <span className="text-sm/5 font-medium">{t('docs')}</span>
         </div>
       </div>
