@@ -44,7 +44,7 @@ func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string
 	var p = alipay.TradePagePay{}
 	p.Subject = "sealos_cloud_pay"
 	p.OutTradeNo = uuid.NewString()
-	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // 金额单位分转元
+	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // 金额单位转元
 	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
 	p.QRPayMode = "2"
 	p.TimeoutExpress = "10m"
@@ -52,7 +52,6 @@ func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string
 	if err != nil {
 		return "", "", err
 	}
-	fmt.Println(url.String())
 	return p.OutTradeNo, url.String(), nil
 }
 

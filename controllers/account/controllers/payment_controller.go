@@ -219,7 +219,6 @@ func (r *PaymentReconciler) reconcilePayment(payment *accountv1.Payment) error {
 		if err != nil {
 			return fmt.Errorf("get user discount failed: %w", err)
 		}
-		//1¥ = 100WechatPayAmount; 1 WechatPayAmount = 10000 SealosAmount
 		payAmount := orderAmount
 		isFirstRecharge, gift := getFirstRechargeDiscount(payAmount, userDiscount)
 		paymentRaw := pkgtypes.PaymentRaw{
