@@ -60,9 +60,10 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
           alt="signin-bg"
           fill={'cover'}
           w={'50%'}
+          display={{ base: 'none', md: 'block' }}
         />
 
-        <VStack w={'50%'} position={'relative'}>
+        <VStack w="full" position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
             {layoutConfig?.version === 'cn' && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}

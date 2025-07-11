@@ -240,9 +240,9 @@ export default function PhoneCheckComponent() {
   }, []);
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} w={'50%'} direction={'column'}>
+    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
       <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
-        <Flex rounded="lg" p={8} w={'480px'} gap={'16px'} flexDirection={'column'}>
+        <Flex rounded="lg" p={8} gap={'16px'} flexDirection={'column'}>
           <Box>
             <MailCheck size={'32px'} color="#ADBDCE"></MailCheck>
           </Box>
@@ -269,10 +269,10 @@ export default function PhoneCheckComponent() {
                 <PinInputField
                   key={index}
                   placeholder=""
-                  mr="8px"
-                  boxSize={'56px'}
-                  fontSize={'20px'}
-                  borderRadius={'12px'}
+                  mr={{ base: '4px', lg: '8px' }}
+                  boxSize={{ base: '40px', lg: '56px' }}
+                  fontSize={{ base: '16px', lg: '20px' }}
+                  borderRadius={{ base: '8px', lg: '12px' }}
                 />
               ))}
             </PinInput>

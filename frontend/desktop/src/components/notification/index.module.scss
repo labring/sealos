@@ -1,26 +1,4 @@
-.bg {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 998;
-}
-
 .container {
-  width: 360px;
-  height: 524px;
-  background: #fff;
-  box-shadow: 0px 4px 12px 0px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(50px);
-  border-radius: 12px;
-  border: 0.5px solid #e4e4e7;
-  z-index: 999;
-  position: absolute;
-  top: 54px;
-  right: 60px;
-  color: #000000;
-
   &[data-show='true'] {
     display: block;
   }

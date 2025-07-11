@@ -12,77 +12,205 @@ import {
   ModalContent,
   ModalCloseButton,
   ModalBody,
-  Center
+  Center,
+  useBreakpointValue,
+  GridProps
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  DragEventHandler,
+  MouseEvent,
+  MouseEventHandler,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { useAppDisplayConfigStore } from '@/stores/appDisplayConfig';
 import styles from './index.module.scss';
 import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
 
-export default function Apps() {
-  const { t, i18n } = useTranslation();
-  const { installedApps, openApp, openDesktopApp } = useAppStore();
-  const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
-  const logo = useConfigStore().layoutConfig?.logo || '/logo.svg';
-  const { layoutConfig, authConfig } = useConfigStore();
-  const [draggedApp, setDraggedApp] = useState<TApp | null>(null);
-  const [draggedFromFolder, setDraggedFromFolder] = useState(false);
-  const [moreAppsFolder, setMoreAppsFolder] = useState<TApp[]>([]);
-  const [isFolderOpen, setIsFolderOpen] = useState(false);
-  const [folderPosition, setFolderPosition] = useState({ top: 0, left: 0 });
+const AppItem = ({
+  app,
+  onClick,
+  onDragStart,
+  onDragEnd
+}: {
+  app: TApp;
+  onClick?: (e: MouseEvent<HTMLDivElement>, app: TApp) => void;
+  onDragStart?: DragEventHandler<HTMLDivElement>;
+  onDragEnd?: DragEventHandler<HTMLDivElement>;
+}) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const [isDraggingOutside, setIsDraggingOutside] = useState(false);
-  const { openGuideModal } = useGuideModalStore();
-  const desktopRef = useRef<HTMLDivElement>(null);
-  const folderRef = useRef<HTMLDivElement>(null);
-  const folderIconRef = useRef<HTMLDivElement>(null);
-  const modalContentRef = useRef<HTMLDivElement>(null);
+  const { i18n } = useTranslation();
+  const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
 
-  // grid value
-  const gridMX = 0;
-  const gridMT = 46;
-  const gridSpacing = 48;
-  const appWidth = 120;
-  const appHeight = 128;
-  const pageButton = 12;
+  return (
+    <Flex
+      ref={wrapperRef}
+      flexDirection={'column'}
+      justifyContent={'flex-start'}
+      alignItems={'center'}
+      className={app.key}
+    >
+      <Center
+        w={{ base: '64px', sm: '78px' }}
+        h={{ base: '64px', sm: '78px' }}
+        borderRadius={{ base: '18px', md: '24px' }}
+        border={'1px solid rgba(0, 0, 0, 0.05)'}
+        boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+        transition="transform 0.2s ease"
+        overflow={'hidden'}
+        _hover={{ transform: 'scale(1.05)' }}
+        cursor={'pointer'}
+        style={{
+          touchAction: 'none',
+          userSelect: 'none'
+        }}
+        onClick={(e) => {
+          if (onClick) {
+            onClick(e, app);
+          }
+        }}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        draggable
+      >
+        <Image
+          w={app.key.startsWith('user-') ? '60px' : '100%'}
+          h={app.key.startsWith('user-') ? '60px' : '100%'}
+          src={app?.icon}
+          fallbackSrc={fallbackIcon}
+          draggable={false}
+          pointerEvents={'none'}
+          alt="app logo"
+        />
+      </Center>
+      <Text
+        mt="12px"
+        color={'primary'}
+        fontSize={'14px'}
+        fontWeight={500}
+        textAlign={'center'}
+        lineHeight={'normal'}
+        style={{
+          touchAction: 'none',
+          userSelect: 'none'
+        }}
+      >
+        {app?.i18n?.[i18n?.language]?.name ? app?.i18n?.[i18n?.language]?.name : app?.name}
+      </Text>
+    </Flex>
+  );
+};
 
-  const [currentPage, setCurrentPage] = useState(0);
+const AppGrid = ({
+  children,
+  gridGap,
+  appHeight,
+  gridProps
+}: {
+  children: ReactNode;
+  gridGap?: number;
+  appHeight?: number;
+  gridProps?: Omit<
+    GridProps,
+    'templateColumns' | 'templateRows' | 'gap' | 'flexGrow' | 'flexShrink' | 'flexBasis'
+  >;
+}) => {
+  return (
+    <Grid
+      {...gridProps}
+      flexShrink={0}
+      flexGrow={0}
+      flexBasis={'100%'}
+      gap={`${gridGap}px`}
+      templateColumns={{
+        base: 'repeat(2, 1fr)',
+        sm: 'repeat(3, 1fr)',
+        lg: 'repeat(5, 1fr)'
+      }}
+      templateRows={`repeat(auto-fill, ${appHeight}px)`}
+      className="apps-container"
+    >
+      {children}
+    </Grid>
+  );
+};
 
-  const calculateAppsPerPage = () => {
-    console.log(modalContentRef, 'modalContentRef');
+const AppGridPagingContainer = ({
+  children,
+  gridGap,
+  appHeight,
+  totalPages,
+  currentPage,
+  handleNavigation,
+  pageGap,
+  onChange
+}: {
+  children: ReactNode;
+  gridGap: number;
+  appHeight: number;
+  totalPages: number;
+  currentPage: number;
+  handleNavigation: boolean;
+  pageGap: number;
+  onChange: (currentPage: number, pageSize: number) => void;
+}) => {
+  const gridWrapperRef = useRef<HTMLDivElement>(null);
 
-    if (!modalContentRef.current) return 10;
+  const columns =
+    useBreakpointValue({
+      base: 2,
+      sm: 3,
+      lg: 5
+    }) ?? 2;
 
-    const modalWidth = modalContentRef.current.clientWidth;
-    const modalHeight = modalContentRef.current.clientHeight;
+  const [pageWidth, setPageWidth] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(8);
+  const [dragDelta, setDragDelta] = useState(0);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartY, setDragStartY] = useState(0);
 
-    const availableHeight = modalHeight - 120 * 2 - 64;
-    const isXl = modalWidth >= 1280;
-    const columnsPerRow = isXl ? 5 : Math.floor((modalWidth - 80 * 2) / appWidth);
+  const clampedCurrentPage = Math.min(Math.max(currentPage, 0), totalPages - 1);
+  const scrollPosition =
+    (pageWidth + pageGap) * clampedCurrentPage - dragDelta >
+    (totalPages - 1) * (pageWidth + pageGap)
+      ? (pageWidth + pageGap) * clampedCurrentPage
+      : (pageWidth + pageGap) * clampedCurrentPage - dragDelta;
 
-    const rowsPerPage = Math.floor(availableHeight / appHeight);
+  const calculateItemsPerPage = useCallback(() => {
+    if (!gridWrapperRef.current) return 8;
 
-    return Math.max(columnsPerRow * rowsPerPage, 1);
-  };
+    const height = gridWrapperRef.current.clientHeight;
+    const rows = Math.floor((height + gridGap) / (appHeight + gridGap));
 
-  const [appsPerPage, setAppsPerPage] = useState(10);
+    return rows * columns;
+  }, [columns, gridGap, appHeight]);
 
+  const calculatePageWidth = useCallback(() => {
+    if (!gridWrapperRef.current) return 0;
+
+    return (gridWrapperRef.current.scrollWidth + pageGap) / totalPages - pageGap;
+  }, [totalPages, pageGap]);
+
+  // Calculate items per page and scroll position on initial render and on screen size changes
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
 
     const handleResize = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
-        console.log('handleResize');
-        if (isFolderOpen && modalContentRef.current) {
-          console.log('calculateAppsPerPage');
-          setAppsPerPage(calculateAppsPerPage());
-        }
+        setItemsPerPage(calculateItemsPerPage());
       }, 200);
     };
+
+    handleResize();
 
     window.addEventListener('resize', handleResize);
 
@@ -90,19 +218,308 @@ export default function Apps() {
       window.removeEventListener('resize', handleResize);
       clearTimeout(debounceTimer);
     };
-  }, [isFolderOpen]);
+  }, [columns, calculateItemsPerPage]);
 
-  const totalPages = Math.ceil(moreAppsFolder.length / appsPerPage);
+  // Calculate grid width on screen size changes
+  useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
 
-  const getCurrentPageApps = () => {
-    const start = currentPage * appsPerPage;
-    const end = start + appsPerPage;
-    return moreAppsFolder.slice(start, end);
+    const handleResize = () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        setPageWidth(calculatePageWidth());
+      }, 50);
+    };
+
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(debounceTimer);
+    };
+  }, [calculatePageWidth]);
+
+  // Call onChange callback when something changes
+  useEffect(() => {
+    onChange(clampedCurrentPage, itemsPerPage);
+  }, [clampedCurrentPage, itemsPerPage, onChange]);
+
+  // Keyboard pagination
+  useEffect(() => {
+    const handleKeyboardPagination = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        onChange(Math.max(0, currentPage - 1), itemsPerPage);
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
+      }
+    };
+
+    if (handleNavigation) {
+      document.addEventListener('keydown', handleKeyboardPagination);
+
+      return () => {
+        document.removeEventListener('keydown', handleKeyboardPagination);
+      };
+    }
+  }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
+
+  // Pointer drag pagination
+  useEffect(() => {
+    const wrapper = gridWrapperRef.current;
+    if (!wrapper) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!gridWrapperRef.current) return;
+
+      setDragStartX(e.screenX);
+      setDragStartY(e.screenY);
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pressure <= 0) return;
+
+      // Handles dragging outside of the wrapper
+      // Prevents the pointer from being captured by the wrapper when *clicking* on the icons
+      if (
+        !wrapper.hasPointerCapture(e.pointerId) &&
+        Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 48
+      ) {
+        wrapper.setPointerCapture(e.pointerId);
+      }
+
+      setDragDelta(e.screenX - dragStartX);
+    };
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (wrapper.hasPointerCapture(e.pointerId)) {
+        wrapper.releasePointerCapture(e.pointerId);
+      }
+
+      if (Math.abs(dragDelta) > 96) {
+        if (dragDelta < -96) {
+          onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
+        } else if (dragDelta > 96) {
+          onChange(Math.max(0, currentPage - 1), itemsPerPage);
+        }
+      }
+
+      setDragDelta(0);
+    };
+
+    if (handleNavigation) {
+      wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
+      wrapper.addEventListener('pointermove', handlePointerMove);
+      wrapper.addEventListener('pointerup', handlePointerUp);
+      wrapper.addEventListener('pointercancel', handlePointerUp);
+
+      return () => {
+        wrapper.removeEventListener('pointerdown', handlePointerDown);
+        wrapper.removeEventListener('pointermove', handlePointerMove);
+        wrapper.removeEventListener('pointerup', handlePointerUp);
+        wrapper.removeEventListener('pointercancel', handlePointerUp);
+      };
+    }
+  }, [
+    handleNavigation,
+    currentPage,
+    totalPages,
+    itemsPerPage,
+    onChange,
+    dragStartX,
+    dragStartY,
+    dragDelta
+  ]);
+
+  return (
+    <Flex
+      ref={gridWrapperRef}
+      h="full"
+      w="full"
+      transition="transform 0.2s ease-out"
+      gap={`${pageGap}px`}
+      style={{
+        transform: `translateX(-${scrollPosition}px)`
+      }}
+    >
+      {children}
+    </Flex>
+  );
+};
+
+const MoreAppsFolder = ({
+  apps,
+  onClick,
+  onDrop
+}: {
+  apps: TApp[];
+  onClick?: MouseEventHandler<HTMLDivElement>;
+  onDrop?: DragEventHandler<HTMLDivElement>;
+}) => {
+  const folderIconRef = useRef<HTMLDivElement>(null);
+
+  const fallbackIcon = useConfigStore().layoutConfig?.logo || '/logo.svg';
+
+  const handleDragOverFolder = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    if (folderIconRef.current) {
+      folderIconRef.current.classList.add(styles.folderPulse);
+    }
   };
 
-  const handlePageChange = (pageIndex: number) => {
-    setCurrentPage(pageIndex);
+  const handleDragLeaveFolder = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    if (folderIconRef.current) {
+      folderIconRef.current.classList.remove(styles.folderPulse);
+    }
   };
+
+  const handleDropOnFolder = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    if (folderIconRef.current) {
+      folderIconRef.current.classList.remove(styles.folderPulse);
+    }
+  };
+
+  return (
+    <Center alignItems={'flex-start'}>
+      <Flex
+        flexDirection={'column'}
+        alignItems={'center'}
+        w={{ base: '84px', sm: '108px' }}
+        h={{ base: '84px', sm: '108px' }}
+        userSelect="none"
+        cursor={'pointer'}
+        className="more-apps-folder"
+        onClick={onClick}
+      >
+        <Box
+          w="100%"
+          h="100%"
+          ref={folderIconRef}
+          borderRadius={{ base: '16px', md: '24px' }}
+          backgroundColor={'#EDEDED'}
+          position="relative"
+          transition="all 0.3s ease"
+          _hover={{ transform: 'scale(1.05)' }}
+          onDragOver={handleDragOverFolder}
+          onDragLeave={handleDragLeaveFolder}
+          onDrop={(e) => {
+            handleDropOnFolder(e);
+
+            if (onDrop) {
+              onDrop(e);
+            }
+          }}
+        >
+          <Grid
+            templateColumns="repeat(2, 1fr)"
+            templateRows="repeat(2, 1fr)"
+            width="100%"
+            height="100%"
+            p={{ base: '12px', sm: '16px' }}
+            gap={{ base: '6px', sm: '10px' }}
+          >
+            {apps.length > 0
+              ? apps.slice(0, 4).map((app, idx) => (
+                  <Box
+                    key={idx}
+                    width={{ base: '28px', sm: '32px' }}
+                    height={{ base: '28px', sm: '32px' }}
+                    overflow="hidden"
+                    bg="white"
+                    borderRadius={{ base: '8px', sm: '10px' }}
+                    border={'1px solid rgba(0, 0, 0, 0.05)'}
+                    boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
+                  >
+                    <Image
+                      width="100%"
+                      height="100%"
+                      src={app?.icon}
+                      fallbackSrc={fallbackIcon}
+                      objectFit="contain"
+                      alt="app icon"
+                      draggable={false}
+                    />
+                  </Box>
+                ))
+              : Array(4)
+                  .fill(null)
+                  .map((_, idx) => (
+                    <Box
+                      key={idx}
+                      width="100%"
+                      height="100%"
+                      overflow="hidden"
+                      borderRadius="10px"
+                      border={'1px dashed rgba(0, 0, 0, 0.10)'}
+                      bg="white"
+                      draggable={false}
+                    />
+                  ))}
+          </Grid>
+        </Box>
+      </Flex>
+    </Center>
+  );
+};
+
+const PageSwitcher = ({
+  pages,
+  current,
+  onChange
+}: {
+  pages: number;
+  current: number;
+  onChange: (target: number) => void;
+}) => {
+  return (
+    <Flex justifyContent="center" alignItems="center" gap="8px">
+      {Array.from({ length: pages }).map((_, index) => (
+        <Box
+          key={index}
+          w="12px"
+          h="12px"
+          borderRadius="50%"
+          bg={index === current ? 'gray.400' : 'gray.200'}
+          cursor="pointer"
+          onClick={() => onChange(index)}
+          _hover={{ bg: index === current ? 'gray.400' : 'gray.300' }}
+        />
+      ))}
+    </Flex>
+  );
+};
+
+export default function Apps() {
+  const { t } = useTranslation();
+  const { installedApps, openApp, openDesktopApp } = useAppStore();
+  const { appDisplayConfigs, updateAppDisplayType } = useAppDisplayConfigStore();
+  const { layoutConfig } = useConfigStore();
+  const [draggedFromFolder, setDraggedFromFolder] = useState(false);
+  const [isFolderOpen, setIsFolderOpen] = useState(false);
+
+  const { openGuideModal } = useGuideModalStore();
+  const desktopRef = useRef<HTMLDivElement>(null);
+  const folderRef = useRef<HTMLDivElement>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+
+  const appHeight =
+    useBreakpointValue({
+      base: 114,
+      md: 146
+    }) ?? 114;
+  const gridGap = 10;
+
+  const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
+  const [currentPageInGrid, setCurrentPageInGrid] = useState(0);
+
+  const [itemsPerPageInFolder, setItemsPerPageInFolder] = useState(0);
+  const [totalPagesInFolder, setTotalPagesInFolder] = useState(0);
+  const [currentPageInFolder, setCurrentPageInFolder] = useState(0);
 
   const getAppDisplayType = useCallback(
     (app: TApp): displayType => {
@@ -111,7 +528,7 @@ export default function Apps() {
     [appDisplayConfigs]
   );
 
-  const renderApps = useMemo(() => {
+  const normalApps = useMemo(() => {
     return installedApps.filter((app) => getAppDisplayType(app) === 'normal');
   }, [installedApps, getAppDisplayType]);
 
@@ -119,9 +536,40 @@ export default function Apps() {
     return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
+  // Placed on desktop, but there's not enough space to show these apps on desktop
+  const dynamicApps = useMemo(() => {
+    if (itemsPerPageInGrid === 0) return [];
+    return normalApps.slice(itemsPerPageInGrid - 1);
+  }, [normalApps, itemsPerPageInGrid]);
+
+  const folderApps = useMemo(() => {
+    return [...dynamicApps, ...moreApps];
+  }, [dynamicApps, moreApps]);
+
+  const desktopPages = useMemo(() => {
+    // One page desktop
+    const firstPageApps = itemsPerPageInGrid > 0 ? normalApps.slice(0, itemsPerPageInGrid - 1) : [];
+    console.log([firstPageApps], 'desktop pages');
+    return [firstPageApps];
+  }, [normalApps, itemsPerPageInGrid]);
+
+  const folderPages = useMemo(() => {
+    const getPageInFolder = (pageIndex: number) => {
+      const start = pageIndex * itemsPerPageInFolder;
+      const end = start + itemsPerPageInFolder;
+      return folderApps.slice(start, end);
+    };
+
+    const pages = Array.from({ length: totalPagesInFolder }).map((_, index) =>
+      getPageInFolder(index)
+    );
+    console.log(pages, 'folder pages');
+    return pages;
+  }, [folderApps, itemsPerPageInFolder, totalPagesInFolder]);
+
   const { isDriverActive } = useGuideModalStore();
 
-  const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
+  const handleAppClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     console.log(item, 'item', isDriverActive);
     if (isDriverActive) {
       const guidedElements = [
@@ -159,31 +607,19 @@ export default function Apps() {
     }
   };
 
-  const handleFolderClick = (e: MouseEvent<HTMLDivElement>) => {
+  const handleMoreAppsClick = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
 
     if (e.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
-      setFolderPosition({
-        top: rect.bottom + 10,
-        left: rect.left
-      });
     }
 
     setIsFolderOpen(true);
-    setMoreAppsFolder(moreApps);
-
-    // 文件夹打开时手动触发一次计算
-    setTimeout(() => {
-      if (modalContentRef.current) {
-        setAppsPerPage(calculateAppsPerPage());
-      }
-    }, 0);
   };
 
   const closeFolder = () => {
     setIsFolderOpen(false);
-    setCurrentPage(0);
+    setCurrentPageInFolder(0);
   };
 
   const handleDragStart = (
@@ -191,8 +627,20 @@ export default function Apps() {
     app: TApp,
     source: 'desktop' | 'folder'
   ) => {
+    // these apps are not allowed to be dragged
+    const notDraggableApps = [
+      'system-devbox',
+      'system-applaunchpad',
+      'system-template',
+      'system-dbprovider'
+    ];
+    if (notDraggableApps.includes(app.key)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
     e.dataTransfer.setData('application/json', JSON.stringify({ app, source }));
-    setDraggedApp(app);
 
     if (source === 'folder') {
       setDraggedFromFolder(true);
@@ -200,13 +648,7 @@ export default function Apps() {
   };
 
   const handleDragEnd = () => {
-    setDraggedApp(null);
     setDraggedFromFolder(false);
-    setIsDraggingOutside(false);
-
-    if (folderIconRef.current) {
-      folderIconRef.current.classList.remove(styles.folderPulse);
-    }
   };
 
   const handleDrag = (e: React.DragEvent<HTMLDivElement>) => {
@@ -225,58 +667,12 @@ export default function Apps() {
         if (isOutside) {
           closeFolder();
         }
-        setIsDraggingOutside(isOutside);
       }
     }
   };
 
-  const handleDragOverFolder = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    if (folderIconRef.current) {
-      folderIconRef.current.classList.add(styles.folderPulse);
-    }
-  };
-
-  const handleDragLeaveFolder = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    if (folderIconRef.current) {
-      folderIconRef.current.classList.remove(styles.folderPulse);
-    }
-  };
-
-  const handleDropOnFolder = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    if (folderIconRef.current) {
-      folderIconRef.current.classList.remove(styles.folderPulse);
-    }
-
-    try {
-      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
-        e.dataTransfer.getData('application/json')
-      );
-
-      if (data && data.app) {
-        if (data.source === 'desktop') {
-          updateAppDisplayType(data.app.key, 'more');
-
-          setMoreAppsFolder((prev) => {
-            const newApps = [...prev];
-            if (!newApps.some((app) => app.key === data.app.key)) {
-              const app = installedApps.find((a) => a.key === data.app.key);
-              if (app) newApps.push(app);
-            }
-            return newApps;
-          });
-        }
-      }
-    } catch (error) {}
-  };
-
-  const handleDropOnDesktop = (e: React.DragEvent<HTMLDivElement>) => {
-    console.log('handleDropOnDesktop');
+  const handleDesktopDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    console.log('handleDesktopDrop');
 
     e.preventDefault();
 
@@ -286,6 +682,7 @@ export default function Apps() {
       );
 
       if (data && data.app) {
+        console.log(data.source, 'data.source', isFolderOpen, 'isFolderOpen');
         if (data.source === 'folder' && !isFolderOpen) {
           updateAppDisplayType(data.app.key, 'normal');
           console.log('将应用移动到桌面:', data.app.name);
@@ -294,6 +691,21 @@ export default function Apps() {
     } catch (error) {}
   };
 
+  const handleMoreAppsDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    try {
+      const data: { app: TApp; source: 'desktop' | 'folder' } = JSON.parse(
+        e.dataTransfer.getData('application/json')
+      );
+
+      if (data && data.app) {
+        if (data.source === 'desktop') {
+          updateAppDisplayType(data.app.key, 'more');
+        }
+      }
+    } catch (error) {}
+  };
+
+  // Close folder when clicking outside
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (folderRef.current && !folderRef.current.contains(e.target as Node) && isFolderOpen) {
@@ -308,8 +720,6 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
-  console.log(renderApps, 'renderApps');
-
   const gradientIconStyle = {
     '.gradient-icon': {
       svg: {
@@ -323,13 +733,6 @@ export default function Apps() {
       }
     }
   };
-
-  // const openCostCenterApp = () => {
-  //   openDesktopApp({
-  //     appKey: 'system-costcenter',
-  //     pathname: '/'
-  //   });
-  // };
 
   const openReferralApp = () => {
     openDesktopApp({
@@ -347,8 +750,8 @@ export default function Apps() {
       zIndex={1}
       ref={desktopRef}
       onDragOver={(e) => e.preventDefault()}
-      onDrop={handleDropOnDesktop}
-      px={'100px'}
+      onDrag={handleDrag}
+      onDrop={handleDesktopDrop}
       sx={gradientIconStyle}
     >
       <svg width="0" height="0" style={{ position: 'absolute' }}>
@@ -359,8 +762,8 @@ export default function Apps() {
           </linearGradient>
         </defs>
       </svg>
-      <Flex width={'full'} height={'full'} overflow={'auto'} flexDirection={'column'}>
-        <Center>
+      <Flex width={'full'} height={'full'} overflow={'hidden'} flexDirection={'column'}>
+        <Center mx={'12px'}>
           <Center
             width={'fit-content'}
             borderRadius={'54px'}
@@ -394,144 +797,43 @@ export default function Apps() {
           </Center>
         </Center>
 
-        <Grid
-          overflow={'hidden'}
-          flex={1}
-          mt={`${gridMT}px`}
-          mx={`${gridMX}px`}
-          gap={`${gridSpacing}px`}
-          templateColumns={`repeat(auto-fill, minmax(${appWidth}px, 1fr))`}
-          templateRows={`repeat(auto-fit, ${appHeight}px)`}
-          className="apps-container"
-        >
-          {renderApps.map((item: TApp, index) => (
-            <Flex
-              draggable={
-                ![
-                  'system-devbox',
-                  'system-applaunchpad',
-                  'system-template',
-                  'system-dbprovider'
-                ].includes(item.key)
-              }
-              flexDirection={'column'}
-              justifyContent={'center'}
-              alignItems={'center'}
-              key={index}
-              userSelect="none"
-              cursor={'pointer'}
-              onClick={(e) => handleDoubleClick(e, item)}
-              className={item.key}
-              onDragStart={(e) => handleDragStart(e, item, 'desktop')}
-              onDragEnd={handleDragEnd}
-            >
-              <Center
-                w="78px"
-                h="78px"
-                borderRadius={'24px'}
-                border={'1px solid rgba(0, 0, 0, 0.05)'}
-                boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
-                transition="transform 0.2s ease"
-                overflow={'hidden'}
-                _hover={{ transform: 'scale(1.05)' }}
-              >
-                <Image
-                  w={item.key.startsWith('user-') ? '60px' : '100%'}
-                  h={item.key.startsWith('user-') ? '60px' : '100%'}
-                  src={item?.icon}
-                  fallbackSrc={logo}
-                  draggable={false}
-                  alt="app logo"
+        <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
+          <AppGridPagingContainer
+            gridGap={gridGap}
+            appHeight={appHeight}
+            // One page desktop, other apps are in folder
+            totalPages={1}
+            currentPage={currentPageInGrid}
+            handleNavigation={false}
+            pageGap={0}
+            onChange={(currentPage, pageSize) => {
+              setCurrentPageInGrid(currentPage);
+              setItemsPerPageInGrid(pageSize);
+            }}
+          >
+            {desktopPages.map((page, pageIndex) => (
+              <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
+                {page.map((app, index) => (
+                  <AppItem
+                    key={index}
+                    app={app}
+                    onClick={handleAppClick}
+                    onDragStart={(e) => handleDragStart(e, app, 'desktop')}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))}
+
+                <MoreAppsFolder
+                  apps={folderApps}
+                  onClick={handleMoreAppsClick}
+                  onDrop={handleMoreAppsDrop}
                 />
-              </Center>
-              <Text
-                mt="12px"
-                color={'primary'}
-                fontSize={'14px'}
-                fontWeight={500}
-                textAlign={'center'}
-                lineHeight={'18px'}
-              >
-                {item?.i18n?.[i18n?.language]?.name
-                  ? item?.i18n?.[i18n?.language]?.name
-                  : item?.name}
-              </Text>
-            </Flex>
-          ))}
-          <Center>
-            <Flex
-              flexDirection={'column'}
-              alignItems={'center'}
-              w="106px"
-              h="108px"
-              userSelect="none"
-              cursor={'pointer'}
-              className="more-apps-folder"
-              onClick={handleFolderClick}
-            >
-              <Box
-                w="100%"
-                h="100%"
-                ref={folderIconRef}
-                borderRadius={'24px'}
-                backgroundColor={'#EDEDED'}
-                position="relative"
-                transition="all 0.3s ease"
-                _hover={{ transform: 'scale(1.05)' }}
-                onDragOver={handleDragOverFolder}
-                onDragLeave={handleDragLeaveFolder}
-                onDrop={handleDropOnFolder}
-              >
-                <Grid
-                  templateColumns="repeat(2, 1fr)"
-                  templateRows="repeat(2, 1fr)"
-                  width="100%"
-                  height="100%"
-                  p="16px"
-                  gap="10px"
-                >
-                  {moreApps.length > 0
-                    ? moreApps.slice(0, 4).map((app, idx) => (
-                        <Box
-                          key={idx}
-                          width="32px"
-                          height="32px"
-                          overflow="hidden"
-                          bg="white"
-                          borderRadius={'10px'}
-                          boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
-                          draggable={false}
-                          // onDragStart={(e) => handleDragStart(e, app, 'folder')}
-                        >
-                          <Image
-                            width="100%"
-                            height="100%"
-                            src={app?.icon}
-                            fallbackSrc={logo}
-                            objectFit="contain"
-                            alt="app icon"
-                          />
-                        </Box>
-                      ))
-                    : Array(4)
-                        .fill(null)
-                        .map((_, idx) => (
-                          <Box
-                            key={idx}
-                            width="100%"
-                            height="100%"
-                            overflow="hidden"
-                            borderRadius="10px"
-                            border={'1px dashed rgba(0, 0, 0, 0.10)'}
-                            bg="white"
-                          />
-                        ))}
-                </Grid>
-              </Box>
-            </Flex>
-          </Center>
-        </Grid>
+              </AppGrid>
+            ))}
+          </AppGridPagingContainer>
+        </Box>
       </Flex>
+
       <Modal isOpen={isFolderOpen} onClose={closeFolder} size="xl" isCentered>
         <ModalOverlay bg="rgba(0, 0, 0, 0.3)" backdropFilter="blur(2px)" />
         <ModalContent
@@ -551,94 +853,59 @@ export default function Apps() {
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
           <ModalBody
-            py={'100px'}
+            py={{
+              base: '36px',
+              xl: '100px'
+            }}
             px={{
-              base: '80px',
-              xl: '150px'
+              base: '12px',
+              xl: '100px'
             }}
             overflow="hidden"
             className="folder-modal-body"
           >
-            <Grid
-              templateColumns={{
-                base: `repeat(auto-fill, ${appWidth}px)`,
-                xl: `repeat(5, 1fr)`
+            <AppGridPagingContainer
+              gridGap={gridGap}
+              appHeight={appHeight!}
+              totalPages={totalPagesInFolder}
+              currentPage={currentPageInFolder}
+              handleNavigation={isFolderOpen}
+              pageGap={240}
+              onChange={(currentPage, pageSize) => {
+                setCurrentPageInFolder(currentPage);
+                setItemsPerPageInFolder(pageSize);
+                setTotalPagesInFolder(Math.ceil(moreApps.length / pageSize));
               }}
-              templateRows={`repeat(auto-fit, ${appHeight}px)`}
-              columnGap={'30px'}
-              rowGap={'64px'}
-              justifyContent="center"
             >
-              {getCurrentPageApps().map((app, index) => (
-                <Flex
-                  key={index}
-                  flexDirection="column"
-                  alignItems="center"
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, app, 'folder')}
-                  onDrag={handleDrag}
-                  onDragEnd={handleDragEnd}
-                  onClick={(e) => handleDoubleClick(e, app)}
-                  cursor="pointer"
-                  className={app.key}
+              {folderPages.map((page, pageIndex) => (
+                <AppGrid
+                  key={pageIndex}
+                  gridGap={gridGap}
+                  appHeight={appHeight}
+                  gridProps={{
+                    alignContent: 'center'
+                  }}
                 >
-                  <Center
-                    w="78px"
-                    h="78px"
-                    borderRadius="24px"
-                    border="1px solid rgba(0, 0, 0, 0.05)"
-                    boxShadow="0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)"
-                    overflow="hidden"
-                    transition="transform 0.2s ease"
-                    _hover={{ transform: 'scale(1.05)' }}
-                  >
-                    <Image
-                      w={app.key.startsWith('user-') ? '60px' : '78px'}
-                      h={app.key.startsWith('user-') ? '60px' : '78px'}
-                      src={app?.icon}
-                      fallbackSrc={logo}
-                      alt="app logo"
+                  {page.map((app, index) => (
+                    <AppItem
+                      key={index}
+                      app={app}
+                      onClick={handleAppClick}
+                      onDragStart={(e) => handleDragStart(e, app, 'folder')}
+                      onDragEnd={handleDragEnd}
                     />
-                  </Center>
-                  <Text
-                    mt="12px"
-                    color="primary"
-                    fontSize="14px"
-                    fontWeight={500}
-                    textAlign="center"
-                    noOfLines={1}
-                    lineHeight={'18px'}
-                  >
-                    {app?.i18n?.[i18n?.language]?.name
-                      ? app?.i18n?.[i18n?.language]?.name
-                      : app?.name}
-                  </Text>
-                </Flex>
+                  ))}
+                </AppGrid>
               ))}
-            </Grid>
+            </AppGridPagingContainer>
 
-            <Flex
-              justifyContent="center"
-              alignItems="center"
-              position="absolute"
-              bottom="16px"
-              left="0"
-              right="0"
-              gap="8px"
-            >
-              {Array.from({ length: totalPages }).map((_, index) => (
-                <Box
-                  key={index}
-                  w="6px"
-                  h="6px"
-                  borderRadius="50%"
-                  bg={index === currentPage ? 'gray.400' : 'gray.200'}
-                  cursor="pointer"
-                  onClick={() => handlePageChange(index)}
-                  _hover={{ bg: index === currentPage ? 'gray.400' : 'gray.300' }}
-                />
-              ))}
-            </Flex>
+            <Box position="absolute" bottom="16px" left="0" right="0">
+              <PageSwitcher
+                pages={totalPagesInFolder}
+                current={currentPageInFolder}
+                onChange={(page) => setCurrentPageInFolder(page)}
+              />
+            </Box>
           </ModalBody>
         </ModalContent>
       </Modal>

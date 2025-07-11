@@ -63,6 +63,31 @@ export default function AppWindow(props: {
     }
   };
 
+  const handleMinimize = () => {
+    updateOpenedAppInfo({
+      ...wnapp,
+      size: 'minimize',
+      cacheSize: wnapp.size
+    });
+  };
+
+  const handleMaximizeRestore = () => {
+    setPosition({ x: 0, y: 0 });
+    updateOpenedAppInfo({
+      ...wnapp,
+      size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
+      cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
+    });
+  };
+
+  const handleClose = () => {
+    updateOpenedAppInfo({
+      ...wnapp,
+      isShow: false
+    });
+    closeAppById(currentAppPid);
+  };
+
   return (
     <Draggable
       onStart={() => {
@@ -101,12 +126,6 @@ export default function AppWindow(props: {
           onDoubleClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            updateOpenedAppInfo({
-              ...wnapp,
-              size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
-              cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
-            });
-            setPosition({ x: 0, y: 0 });
           }}
         >
           <Flex ml="16px" alignItems={'center'} fontSize={'12px'} fontWeight={400}>
@@ -144,11 +163,12 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                updateOpenedAppInfo({
-                  ...wnapp,
-                  size: 'minimize',
-                  cacheSize: wnapp.size
-                });
+                handleMinimize();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleMinimize();
               }}
             >
               <Image
@@ -164,12 +184,12 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                setPosition({ x: 0, y: 0 });
-                updateOpenedAppInfo({
-                  ...wnapp,
-                  size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
-                  cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
-                });
+                handleMaximizeRestore();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleMaximizeRestore();
               }}
             >
               <Image
@@ -186,11 +206,12 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                updateOpenedAppInfo({
-                  ...wnapp,
-                  isShow: false
-                });
-                closeAppById(currentAppPid);
+                handleClose();
+              }}
+              onTouchEnd={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleClose();
               }}
             >
               <Image

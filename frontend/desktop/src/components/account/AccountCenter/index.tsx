@@ -207,6 +207,7 @@ export default function AccountCenter(props: AccountCenterProps) {
               {pageState === PageState.INDEX ? (
                 <VStack
                   w={'420px'}
+                  maxW={'100%'}
                   alignItems={'stretch'}
                   fontSize={'14px'}
                   fontWeight={500}
@@ -423,6 +424,7 @@ export default function AccountCenter(props: AccountCenterProps) {
               ) : (
                 <VStack
                   w={'420px'}
+                  maxW={'100%'}
                   alignItems={'stretch'}
                   fontSize={'14px'}
                   fontWeight={400}
