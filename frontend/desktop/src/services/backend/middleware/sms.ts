@@ -162,7 +162,7 @@ export const filterCaptcha = async (
   const { captchaVerifyParam } = req.body as { captchaVerifyParam?: string };
   if (!captchaVerifyParam)
     return jsonRes(res, {
-      message: 'captchaVerifyParam  is invalid',
+      message: 'captchaVerifyParam is not provided',
       code: 400
     });
   const result = await captchaReq({
@@ -170,7 +170,7 @@ export const filterCaptcha = async (
   });
   if (!result?.verifyResult)
     return jsonRes(res, {
-      message: 'captchaVerifyParam is invalid',
+      message: 'captcha verification failed',
       data: {
         result: !!result?.verifyResult,
         code: result?.verifyCode || ''
