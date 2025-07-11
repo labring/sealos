@@ -97,6 +97,7 @@ func (r *shim) Setup() error {
 		if err = r.server.RegisterImageService(conn); err != nil {
 			return shimError("failed to register image service: %v", err)
 		}
+		r.server.RegisterRuntimeService()
 	}
 	return nil
 }

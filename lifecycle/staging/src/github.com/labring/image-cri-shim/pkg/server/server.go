@@ -50,6 +50,8 @@ type Options struct {
 type Server interface {
 	RegisterImageService(conn *grpc.ClientConn) error
 
+	RegisterRuntimeService()
+
 	Chown(uid, gid int) error
 
 	Chmod(mode os.FileMode) error
@@ -85,6 +87,10 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 	})
 
 	return nil
+}
+
+func (s *server) RegisterRuntimeService() {
+	k8sv1api.RegisterRuntimeServiceServer(s.server, &v1RuntimeService{})
 }
 
 func (s *server) Start() error {
