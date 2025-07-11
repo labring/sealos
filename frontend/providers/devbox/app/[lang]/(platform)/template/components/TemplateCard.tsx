@@ -202,7 +202,7 @@ const TemplateCard = ({
                     >
                       <div className="flex items-center gap-1.5">
                         <div
-                          className="h-2 w-2 rounded-full"
+                          className="h-1.5 w-1.5 rounded-full"
                           style={{ backgroundColor: tagStyle.color }}
                         />
                         <span className="text-xs/4 font-medium text-zinc-600">
