@@ -130,99 +130,109 @@ export default function Workspace() {
             <FormControl>
               <FormLabel>{t('v2:choose_a_region')}</FormLabel>
               <Popover>
-                <PopoverTrigger>
-                  <Flex
-                    width={'full'}
-                    height="40px"
-                    borderRadius="8px"
-                    borderWidth="1px"
-                    p={'10px 16px'}
-                    gap="4px"
-                    alignItems={'center'}
-                    tabIndex={0}
-                  >
-                    <Text color={'#18181B'} fontSize={'16px'}>
-                      {selectedRegion?.displayName}
-                    </Text>
-                    <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
-                    {selectedRegion?.description.provider &&
-                      ['volcano_engine', 'alibaba_cloud', 'tencent_cloud', 'google_cloud'].includes(
-                        selectedRegion?.description.provider
-                      ) && (
-                        <Img
-                          src={`/images/cloud_providers/${selectedRegion?.description.provider}.svg`}
-                        ></Img>
-                      )}
-                    <Text fontSize={'12px'} color={'#3F3F46'}>
-                      {t(selectedRegion?.description?.provider as I18nCloudProvidersKey, {
-                        ns: 'cloudProviders'
-                      })}
-                    </Text>
-                    <ChevronDownIcon ml="auto" boxSize={'16px'} />
-                  </Flex>
-                </PopoverTrigger>
-                <Portal>
-                  <PopoverContent
-                    bg="white"
-                    width={'352px'}
-                    border="0.5px solid #E4E4E7"
-                    boxShadow="0px 8px 24px -10px rgba(0, 0, 0, 0.2)"
-                    borderRadius="12px"
-                    outline={'none'}
-                    p="8px"
-                  >
-                    <Text color="#71717A" my={'6px'} mx="4px" fontSize={'14px'}>
-                      {t('common:region')}
-                    </Text>
-                    <Stack gap={'8px'} p="0">
-                      {regionList.map((region) => (
-                        <Flex
-                          key={region.uid}
-                          width={'full'}
-                          height="48px"
-                          borderRadius="8px"
-                          borderWidth="1px"
-                          p={'14px 16px'}
-                          gap="4px"
-                          alignItems={'center'}
-                          onClick={() => {
-                            setSelectedRegionUid(region.uid);
-                          }}
-                          bg={'white'}
-                          _hover={{
-                            bg: '#FAFAFA'
-                          }}
-                        >
-                          <Text color={'#18181B'} fontSize={'16px'}>
-                            {region?.displayName}
-                          </Text>
-                          <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
-                          {region?.description.provider &&
-                            [
-                              'volcano_engine',
-                              'alibaba_cloud',
-                              'tencent_cloud',
-                              'google_cloud'
-                            ].includes(region?.description.provider) && (
-                              <Img
-                                src={`/images/cloud_providers/${region?.description.provider}.svg`}
-                              ></Img>
-                            )}
-                          <Text fontSize={'12px'} color={'#52525B'}>
-                            {t(region?.description?.provider as I18nCloudProvidersKey, {
-                              ns: 'cloudProviders'
-                            })}
-                          </Text>
-                          {region.uid === selectedRegion?.uid && (
-                            <Icon ml={'auto'} boxSize={'16px'}>
-                              <Check color={'#2563EB'} />
-                            </Icon>
+                {({ isOpen, onClose }) => (
+                  <>
+                    <PopoverTrigger>
+                      <Flex
+                        cursor={'pointer'}
+                        width={'full'}
+                        height="40px"
+                        borderRadius="8px"
+                        borderWidth="1px"
+                        p={'10px 16px'}
+                        gap="4px"
+                        alignItems={'center'}
+                        tabIndex={0}
+                      >
+                        <Text color={'#18181B'} fontSize={'16px'}>
+                          {selectedRegion?.displayName}
+                        </Text>
+                        <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
+                        {selectedRegion?.description.provider &&
+                          [
+                            'volcano_engine',
+                            'alibaba_cloud',
+                            'tencent_cloud',
+                            'google_cloud'
+                          ].includes(selectedRegion?.description.provider) && (
+                            <Img
+                              src={`/images/cloud_providers/${selectedRegion?.description.provider}.svg`}
+                            ></Img>
                           )}
-                        </Flex>
-                      ))}
-                    </Stack>
-                  </PopoverContent>
-                </Portal>
+                        <Text fontSize={'12px'} color={'#3F3F46'}>
+                          {t(selectedRegion?.description?.provider as I18nCloudProvidersKey, {
+                            ns: 'cloudProviders'
+                          })}
+                        </Text>
+                        <ChevronDownIcon ml="auto" boxSize={'16px'} />
+                      </Flex>
+                    </PopoverTrigger>
+                    <Portal>
+                      <PopoverContent
+                        bg="white"
+                        width={'352px'}
+                        border="0.5px solid #E4E4E7"
+                        boxShadow="0px 8px 24px -10px rgba(0, 0, 0, 0.2)"
+                        borderRadius="12px"
+                        outline={'none'}
+                        p="8px"
+                      >
+                        <Text color="#71717A" my={'6px'} mx="4px" fontSize={'14px'}>
+                          {t('common:region')}
+                        </Text>
+                        <Stack gap={'8px'} p="0">
+                          {regionList.map((region) => (
+                            <Flex
+                              cursor={'pointer'}
+                              key={region.uid}
+                              width={'full'}
+                              height="48px"
+                              borderRadius="8px"
+                              borderWidth="1px"
+                              p={'14px 16px'}
+                              gap="4px"
+                              alignItems={'center'}
+                              onClick={() => {
+                                setSelectedRegionUid(region.uid);
+                                onClose();
+                              }}
+                              bg={'white'}
+                              _hover={{
+                                bg: '#FAFAFA'
+                              }}
+                            >
+                              <Text color={'#18181B'} fontSize={'16px'}>
+                                {region?.displayName}
+                              </Text>
+                              <Box mx={'12px'} border={'1px solid #E4E4E7'} h={'16px'}></Box>
+                              {region?.description.provider &&
+                                [
+                                  'volcano_engine',
+                                  'alibaba_cloud',
+                                  'tencent_cloud',
+                                  'google_cloud'
+                                ].includes(region?.description.provider) && (
+                                  <Img
+                                    src={`/images/cloud_providers/${region?.description.provider}.svg`}
+                                  ></Img>
+                                )}
+                              <Text fontSize={'12px'} color={'#52525B'}>
+                                {t(region?.description?.provider as I18nCloudProvidersKey, {
+                                  ns: 'cloudProviders'
+                                })}
+                              </Text>
+                              {region.uid === selectedRegion?.uid && (
+                                <Icon ml={'auto'} boxSize={'16px'}>
+                                  <Check color={'#2563EB'} />
+                                </Icon>
+                              )}
+                            </Flex>
+                          ))}
+                        </Stack>
+                      </PopoverContent>
+                    </Portal>
+                  </>
+                )}
               </Popover>
             </FormControl>
             <FormControl mt={'8px'}>
