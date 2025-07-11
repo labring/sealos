@@ -36,7 +36,7 @@ export default function Header() {
     setGuide2(true);
     destroyDriver();
     setLastRoute('/');
-    router.push('/template?tab=public&from=home');
+    router.push('/template?tab=public&title=select_runtime');
   };
 
   const handleGotoDocs = () => {
