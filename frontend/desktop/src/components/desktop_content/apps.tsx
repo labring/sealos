@@ -59,9 +59,9 @@ const AppItem = ({
       className={app.key}
     >
       <Center
-        w={{ base: '64px', md: '78px' }}
-        h={{ base: '64px', md: '78px' }}
-        borderRadius={{ base: '20px', md: '24px' }}
+        w={{ base: '64px', sm: '78px' }}
+        h={{ base: '64px', sm: '78px' }}
+        borderRadius={{ base: '18px', md: '24px' }}
         border={'1px solid rgba(0, 0, 0, 0.05)'}
         boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
         transition="transform 0.2s ease"
@@ -97,7 +97,7 @@ const AppItem = ({
         fontSize={'14px'}
         fontWeight={500}
         textAlign={'center'}
-        lineHeight={'18px'}
+        lineHeight={'normal'}
         style={{
           touchAction: 'none',
           userSelect: 'none'
@@ -131,8 +131,9 @@ const AppGrid = ({
       flexBasis={'100%'}
       gap={`${gridGap}px`}
       templateColumns={{
-        base: 'repeat(4, 1fr)',
-        md: 'repeat(5, 1fr)'
+        base: 'repeat(2, 1fr)',
+        sm: 'repeat(3, 1fr)',
+        lg: 'repeat(5, 1fr)'
       }}
       templateRows={`repeat(auto-fill, ${appHeight}px)`}
       className="apps-container"
@@ -164,8 +165,9 @@ const AppGridPagingContainer = ({
   const gridWrapperRef = useRef<HTMLDivElement>(null);
 
   const columns = useBreakpointValue({
-    base: 4,
-    md: 5
+    base: 2,
+    sm: 3,
+    lg: 5
   });
 
   const [pageWidth, setPageWidth] = useState(0);
@@ -386,8 +388,8 @@ const MoreAppsFolder = ({
       <Flex
         flexDirection={'column'}
         alignItems={'center'}
-        w={{ base: '64px', md: '78px' }}
-        h={{ base: '64px', md: '78px' }}
+        w={{ base: '84px', sm: '108px' }}
+        h={{ base: '84px', sm: '108px' }}
         userSelect="none"
         cursor={'pointer'}
         className="more-apps-folder"
@@ -397,7 +399,7 @@ const MoreAppsFolder = ({
           w="100%"
           h="100%"
           ref={folderIconRef}
-          borderRadius={{ base: '20px', md: '24px' }}
+          borderRadius={{ base: '16px', md: '24px' }}
           backgroundColor={'#EDEDED'}
           position="relative"
           transition="all 0.3s ease"
@@ -417,18 +419,19 @@ const MoreAppsFolder = ({
             templateRows="repeat(2, 1fr)"
             width="100%"
             height="100%"
-            p="4px"
-            gap="4px"
+            p={{ base: '12px', sm: '16px' }}
+            gap={{ base: '6px', sm: '10px' }}
           >
             {apps.length > 0
               ? apps.slice(0, 4).map((app, idx) => (
                   <Box
                     key={idx}
-                    width={{ base: '26px', md: '30px' }}
-                    height={{ base: '26px', md: '30px' }}
+                    width={{ base: '28px', sm: '32px' }}
+                    height={{ base: '28px', sm: '32px' }}
                     overflow="hidden"
                     bg="white"
-                    borderRadius={'10px'}
+                    borderRadius={{ base: '8px', sm: '10px' }}
+                    border={'1px solid rgba(0, 0, 0, 0.05)'}
                     boxShadow={'0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)'}
                   >
                     <Image
@@ -504,10 +507,10 @@ export default function Apps() {
   const modalContentRef = useRef<HTMLDivElement>(null);
 
   const appHeight = useBreakpointValue({
-    base: 128,
-    md: 160
+    base: 114,
+    md: 146
   });
-  const gridGap = 8;
+  const gridGap = 10;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
   const [currentPageInGrid, setCurrentPageInGrid] = useState(0);
@@ -528,9 +531,7 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
-
-    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
+    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
@@ -794,7 +795,7 @@ export default function Apps() {
           </Center>
         </Center>
 
-        <Box p={'12px'} pt={{ base: '12px', md: '32px', xl: '64px' }} w={'full'} h={'full'}>
+        <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer
             gridGap={gridGap}
             appHeight={appHeight!}
