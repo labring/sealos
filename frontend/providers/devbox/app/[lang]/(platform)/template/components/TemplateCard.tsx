@@ -87,14 +87,14 @@ const TemplateCard = ({
     <>
       <Card
         className={cn(
-          'relative flex w-full max-w-[375px] flex-col items-start border bg-white',
+          'group relative flex w-full max-w-[375px] flex-col items-start border bg-white',
           isDisabled &&
             'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80'
         )}
       >
         {/* top */}
-        <div className="flex h-30 w-full flex-col items-start gap-2 px-4 pt-4">
-          <div className="group flex items-center justify-between gap-2 self-stretch">
+        <div className="flex w-full flex-col items-start gap-2 px-4 pt-4 pb-3">
+          <div className="flex items-center justify-between gap-2 self-stretch">
             <div className="flex items-center gap-2">
               {/* logo */}
               <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
@@ -187,13 +187,18 @@ const TemplateCard = ({
             <div className="flex gap-1">
               {tags
                 .filter((tag) => tag.name !== 'official')
+                .sort((a, b) => {
+                  if (a.type === 'USE_CASE' && b.type === 'PROGRAMMING_LANGUAGE') return -1;
+                  if (a.type === 'PROGRAMMING_LANGUAGE' && b.type === 'USE_CASE') return 1;
+                  return a.type.localeCompare(b.type);
+                })
                 .map((tag) => {
                   const tagStyle = tagColorMap[tag.type] || defaultTagColor;
                   return (
                     <Badge
                       key={tag.uid}
                       variant="outline"
-                      className="rounded-md border-none bg-zinc-100 px-2"
+                      className="rounded-md border-none bg-zinc-100 px-2 py-1"
                     >
                       <div className="flex items-center gap-1.5">
                         <div

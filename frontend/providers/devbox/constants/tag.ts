@@ -1,17 +1,14 @@
 import { TagType } from '@/prisma/generated/client';
 
-export const tagColorMap: Record<TagType, { color: string; bgColor: string }> = {
+export const tagColorMap: Record<TagType, { color: string }> = {
   [TagType.PROGRAMMING_LANGUAGE]: {
-    color: '#0EA5E9',
-    bgColor: '#F0F9FF'
+    color: '#84CC16'
   },
   [TagType.USE_CASE]: {
-    color: '#8B5CF6',
-    bgColor: '#F5F3FF'
+    color: '#60A5FA'
   },
   [TagType.OFFICIAL_CONTENT]: {
-    color: '#10B981',
-    bgColor: '#ECFDF5'
+    color: '#10B981'
   }
 };
 
