@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { downLoadBlob } from '@/utils/tools';
 import { useGuideStore } from '@/stores/guide';
-import { useGlobalStore } from '@/stores/global';
 import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
@@ -27,7 +26,6 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const router = useRouter();
   const t = useTranslations();
   const searchParams = useSearchParams();
-  const from = searchParams.get('from');
   const name = searchParams.get('name');
 
   const { guideConfigDevbox } = useGuideStore();
@@ -46,12 +44,10 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const handleBack = useCallback(() => {
     if (name) {
       router.replace(`/devbox/detail/${name}`);
-    } else if (from === 'home') {
-      router.replace('/');
     } else {
-      router.replace('/template');
+      router.push('/template?title=select_runtime');
     }
-  }, [from, name, router]);
+  }, [name, router]);
 
   return (
     <>
