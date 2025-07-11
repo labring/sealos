@@ -246,8 +246,6 @@ const AppGridPagingContainer = ({
   // Keyboard pagination
   useEffect(() => {
     const handleKeyboardPagination = (e: KeyboardEvent) => {
-      if (!handleNavigation) return;
-
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         onChange(Math.max(0, currentPage - 1), itemsPerPage);
       } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -255,11 +253,13 @@ const AppGridPagingContainer = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyboardPagination);
+    if (handleNavigation) {
+      document.addEventListener('keydown', handleKeyboardPagination);
 
-    return () => {
-      document.removeEventListener('keydown', handleKeyboardPagination);
-    };
+      return () => {
+        document.removeEventListener('keydown', handleKeyboardPagination);
+      };
+    }
   }, [handleNavigation, currentPage, totalPages, itemsPerPage, onChange]);
 
   // Pointer drag pagination
@@ -268,9 +268,7 @@ const AppGridPagingContainer = ({
     if (!wrapper) return;
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (!handleNavigation || !gridWrapperRef.current) return;
-
-      console.log('pointer down', e.screenX, e.screenY);
+      if (!gridWrapperRef.current) return;
 
       setDragStartX(e.screenX);
       setDragStartY(e.screenY);
@@ -283,7 +281,7 @@ const AppGridPagingContainer = ({
       // Prevents the pointer from being captured by the wrapper when *clicking* on the icons
       if (
         !wrapper.hasPointerCapture(e.pointerId) &&
-        Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 32
+        Math.hypot(e.screenX - dragStartX, e.screenY - dragStartY) > 48
       ) {
         wrapper.setPointerCapture(e.pointerId);
       }
@@ -293,14 +291,13 @@ const AppGridPagingContainer = ({
 
     const handlePointerUp = (e: PointerEvent) => {
       if (wrapper.hasPointerCapture(e.pointerId)) {
-        console.log('release pointer capture');
         wrapper.releasePointerCapture(e.pointerId);
       }
 
-      if (Math.abs(dragDelta) > 80) {
-        if (dragDelta < -80) {
+      if (Math.abs(dragDelta) > 96) {
+        if (dragDelta < -96) {
           onChange(Math.min(totalPages - 1, currentPage + 1), itemsPerPage);
-        } else if (dragDelta > 80) {
+        } else if (dragDelta > 96) {
           onChange(Math.max(0, currentPage - 1), itemsPerPage);
         }
       }
@@ -308,17 +305,19 @@ const AppGridPagingContainer = ({
       setDragDelta(0);
     };
 
-    wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
-    wrapper.addEventListener('pointermove', handlePointerMove);
-    wrapper.addEventListener('pointerup', handlePointerUp);
-    wrapper.addEventListener('pointercancel', handlePointerUp);
+    if (handleNavigation) {
+      wrapper.addEventListener('pointerdown', handlePointerDown, { passive: true });
+      wrapper.addEventListener('pointermove', handlePointerMove);
+      wrapper.addEventListener('pointerup', handlePointerUp);
+      wrapper.addEventListener('pointercancel', handlePointerUp);
 
-    return () => {
-      wrapper.removeEventListener('pointerdown', handlePointerDown);
-      wrapper.removeEventListener('pointermove', handlePointerMove);
-      wrapper.removeEventListener('pointerup', handlePointerUp);
-      wrapper.removeEventListener('pointercancel', handlePointerUp);
-    };
+      return () => {
+        wrapper.removeEventListener('pointerdown', handlePointerDown);
+        wrapper.removeEventListener('pointermove', handlePointerMove);
+        wrapper.removeEventListener('pointerup', handlePointerUp);
+        wrapper.removeEventListener('pointercancel', handlePointerUp);
+      };
+    }
   }, [
     handleNavigation,
     currentPage,
