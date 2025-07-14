@@ -320,15 +320,35 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		http.Error(rw, "Only GET requests are supported", http.StatusMethodNotAllowed)
 		return fmt.Errorf("Unsupported HTTP method: %s", req.Method)
 	}
-	sourcePod := req.URL.Query().Get("source")
-	destPod := req.URL.Query().Get("dest")
-	destPortStr := req.URL.Query().Get("port")
+
+	// Get query parameters
+	name := req.URL.Query().Get("name")
+	ns := req.URL.Query().Get("ns")
+	typeParam := req.URL.Query().Get("type")
 	limitStr := req.URL.Query().Get("limit")
 	minutesAgoStr := req.URL.Query().Get("min")
 
-	if sourcePod == "" || destPod == "" || destPortStr == "" {
-		http.Error(rw, "Missing required parameters: source_pod, dest_pod, dest_port", http.StatusBadRequest)
+	// Validate required parameters
+	if name == "" || ns == "" || typeParam == "" {
+		http.Error(rw, "Missing required parameters: name, ns, type", http.StatusBadRequest)
 		return fmt.Errorf("Missing required parameters")
+	}
+
+	// Format pod name as "ns/name"
+	podName := fmt.Sprintf("%s/%s", ns, name)
+
+	// Determine label based on type parameter
+	var label string
+	switch typeParam {
+	case "devbox":
+		label = "k8s:app.kubernetes.io/part-of=devbox"
+	case "applaunchpad":
+		label = "cloud.sealos.io/app-deploy-manager"
+	case "database":
+		label = "k8s:app.kubernetes.io/managed-by=kubeblocks"
+	default:
+		http.Error(rw, fmt.Sprintf("Unsupported type: %s", typeParam), http.StatusBadRequest)
+		return fmt.Errorf("Unsupported type: %s", typeParam)
 	}
 
 	limit := uint64(100)
@@ -339,7 +359,7 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		}
 	}
 
-	minutesAgo := int64(10)
+	minutesAgo := int64(10000)
 	if minutesAgoStr != "" {
 		parsedMinutes, err := strconv.ParseInt(minutesAgoStr, 10, 64)
 		if err == nil && parsedMinutes > 0 {
@@ -360,6 +380,7 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// Create flow request with pod name and label
 	flowsRequest := &observer.GetFlowsRequest{
 		Number: limit,
 		First:  false,
@@ -367,12 +388,13 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		Since:  sinceProto,
 		Whitelist: []*pb.FlowFilter{
 			{
-				SourcePod:       []string{sourcePod},
-				DestinationPod:  []string{destPod},
-				DestinationPort: []string{destPortStr},
+				SourcePod:   []string{podName},
+				SourceLabel: []string{label},
 			},
 		},
 	}
+
+	fmt.Printf("Querying flows for pod: %s with label: %s\n", podName, label)
 
 	stream, err := vl.observerClient.GetFlows(ctx, flowsRequest)
 	if err != nil {
@@ -380,7 +402,35 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		return err
 	}
 
-	var flows []SimplifiedFlow
+	var inboundFlows []map[string]interface{}
+	var outboundFlows []map[string]interface{}
+
+	// 统计结构
+	type FlowStats struct {
+		Total      int            `json:"total"`
+		Protocols  map[string]int `json:"protocols"`
+		Verdicts   map[string]int `json:"verdicts"`
+		Ports      map[uint32]int `json:"ports"`
+		Endpoints  map[string]int `json:"endpoints"`
+		BytesCount int64          `json:"bytes_count"`
+	}
+
+	var stats struct {
+		Inbound  FlowStats `json:"inbound"`
+		Outbound FlowStats `json:"outbound"`
+	}
+
+	// 初始化统计数据
+	stats.Inbound.Protocols = make(map[string]int)
+	stats.Inbound.Verdicts = make(map[string]int)
+	stats.Inbound.Ports = make(map[uint32]int)
+	stats.Inbound.Endpoints = make(map[string]int)
+
+	stats.Outbound.Protocols = make(map[string]int)
+	stats.Outbound.Verdicts = make(map[string]int)
+	stats.Outbound.Ports = make(map[uint32]int)
+	stats.Outbound.Endpoints = make(map[string]int)
+
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
@@ -391,8 +441,9 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 			return err
 		}
 
-		if resp.GetFlow() != nil {
-			flow := resp.GetFlow()
+		flow := resp.GetFlow()
+		if flow != nil {
+			// Extract protocol information
 			protocol := "UNKNOWN"
 			var srcPort, dstPort uint32
 
@@ -405,35 +456,110 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 					protocol = "UDP"
 					srcPort = flow.GetL4().GetUDP().GetSourcePort()
 					dstPort = flow.GetL4().GetUDP().GetDestinationPort()
+				} else if flow.GetL4().GetICMPv4() != nil {
+					protocol = "ICMPv4"
+				} else if flow.GetL4().GetICMPv6() != nil {
+					protocol = "ICMPv6"
 				}
 			}
 
-			simplifiedFlow := SimplifiedFlow{
-				Time:      resp.GetTime().AsTime().Format(time.RFC3339),
-				SourcePod: flow.GetSource().GetPodName(),
-				DestPod:   flow.GetDestination().GetPodName(),
-				SrcPort:   srcPort,
-				DstPort:   dstPort,
-				Protocol:  protocol,
-				Verdict:   flow.GetVerdict().String(),
+			// Build detailed flow information
+			flowDetail := map[string]interface{}{
+				"time": resp.GetTime().AsTime().Format(time.RFC3339),
+				"source": map[string]interface{}{
+					"pod":      flow.GetSource().GetPodName(),
+					"port":     srcPort,
+					"labels":   flow.GetSource().GetLabels(),
+					"identity": flow.GetSource().GetIdentity(),
+				},
+				"destination": map[string]interface{}{
+					"pod":      flow.GetDestination().GetPodName(),
+					"port":     dstPort,
+					"labels":   flow.GetDestination().GetLabels(),
+					"identity": flow.GetDestination().GetIdentity(),
+				},
+				"protocol":  protocol,
+				"verdict":   flow.GetVerdict().String(),
+				"direction": flow.GetTrafficDirection().String(),
+				"node_name": resp.GetNodeName(),
 			}
-			flows = append(flows, simplifiedFlow)
+
+			// 根据流量方向分类
+			isInbound := false
+
+			// 判断是否为入站流量
+			if flow.GetDestination().GetPodName() == podName ||
+				strings.Contains(flow.GetDestination().GetPodName(), name) {
+				isInbound = true
+			}
+
+			// 更新相应的统计信息
+			if isInbound {
+				stats.Inbound.Total++
+				stats.Inbound.Protocols[protocol]++
+				stats.Inbound.Verdicts[flow.GetVerdict().String()]++
+				stats.Inbound.Ports[dstPort]++
+				stats.Inbound.Endpoints[flow.GetSource().GetPodName()]++
+				inboundFlows = append(inboundFlows, flowDetail)
+			} else {
+				stats.Outbound.Total++
+				stats.Outbound.Protocols[protocol]++
+				stats.Outbound.Verdicts[flow.GetVerdict().String()]++
+				stats.Outbound.Ports[dstPort]++
+				stats.Outbound.Endpoints[flow.GetDestination().GetPodName()]++
+				outboundFlows = append(outboundFlows, flowDetail)
+			}
+
+			// Add L7 protocol info if available
+			if flow.GetL7() != nil {
+				l7 := flow.GetL7()
+				l7Info := map[string]interface{}{
+					"type": l7.GetType().String(),
+				}
+
+				if http := l7.GetHttp(); http != nil {
+					l7Info["http"] = map[string]interface{}{
+						"method": http.GetMethod(),
+						"url":    http.GetUrl(),
+						"code":   http.GetCode(),
+					}
+				} else if dns := l7.GetDns(); dns != nil {
+					l7Info["dns"] = map[string]interface{}{
+						"query": dns.GetQuery(),
+					}
+				}
+
+				flowDetail["l7"] = l7Info
+			}
 		}
 	}
 
-	jsonResponse, err := json.Marshal(map[string]interface{}{
-		"flows": flows,
-		"count": len(flows),
-		"query_params": map[string]interface{}{
-			"source_pod":  sourcePod,
-			"dest_pod":    destPod,
-			"dest_port":   destPortStr,
+	// Prepare and send JSON response
+	response := map[string]interface{}{
+		"status": "success",
+		"query": map[string]interface{}{
+			"pod":         podName,
+			"label":       label,
 			"limit":       limit,
-			"minutes_ago": minutesAgo,
 			"since":       since.Format(time.RFC3339),
+			"minutes_ago": minutesAgo,
 		},
-	})
+		"stats": stats,
+		"flows": map[string]interface{}{
+			"inbound": map[string]interface{}{
+				"count": len(inboundFlows),
+				"data":  inboundFlows,
+			},
+			"outbound": map[string]interface{}{
+				"count": len(outboundFlows),
+				"data":  outboundFlows,
+			},
+		},
+		"total_flows": stats.Inbound.Total + stats.Outbound.Total,
+		"timestamp":   time.Now().Format(time.RFC3339),
+	}
 
+	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Unable to generate JSON response: %v", err), http.StatusInternalServerError)
 		return err
@@ -444,7 +570,7 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 }
 
 func (vl *VLogsServer) initGrpcClient() error {
-	conn, err := grpc.Dial("hubble-relay.kube-system.svc.cluster.local:80", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("127.0.0.1:4245", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Hubble: %v", err)
 	}
