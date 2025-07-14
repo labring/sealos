@@ -39,7 +39,7 @@ const LiveMonitoring = () => {
             {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%
           </span>
           <MonitorChart
-            type="purple"
+            type="green"
             data={devboxDetail?.usedMemory}
             isShowText={false}
             className="w-full"

@@ -175,7 +175,7 @@ const UpdateTemplateDrawer = ({
   return (
     <>
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DrawerContent className="w-[450px]">
+        <DrawerContent>
           <Form {...form}>
             <DrawerHeader>
               <DrawerTitle>{t('update_template')}</DrawerTitle>

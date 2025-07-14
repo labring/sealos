@@ -68,7 +68,7 @@ const Monitor = () => {
           </div>
           <div className="h-full p-8">
             <MonitorChart
-              type="blue"
+              type="green"
               data={devboxDetail?.usedMemory}
               isShowText={false}
               splitNumber={4}

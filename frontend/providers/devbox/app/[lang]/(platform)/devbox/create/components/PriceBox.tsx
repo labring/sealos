@@ -1,11 +1,9 @@
+import Image from 'next/image';
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-// TODO： need to trash this component
-import { CurrencySymbol } from '@sealos/ui';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -31,7 +29,6 @@ interface PriceBoxProps {
 
 const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   const t = useTranslations();
-  const { env } = useEnvStore();
   const { sourcePrice } = usePriceStore();
 
   const priceList: {
@@ -116,7 +113,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <CurrencySymbol type={env.currencySymbol} />
+              <Image src={'/images/coin.svg'} alt="currency" width={16} height={16} />
               &nbsp;
               {item.value}
             </div>

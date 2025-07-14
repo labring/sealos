@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useRouter } from '@/i18n';
 import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';
 import { checkReady } from '@/api/platform';
@@ -24,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 const Network = () => {
   const locale = useLocale();
   const t = useTranslations();
+  const router = useRouter();
 
   const { env } = useEnvStore();
   const { copyData } = useCopyData();
@@ -196,13 +198,16 @@ const Network = () => {
     }
   ];
 
+  const handleManage = () => {
+    router.push(`/devbox/create?name=${devboxDetail?.name}`);
+  };
+
   return (
     <div className="flex h-full w-full flex-col items-center gap-3 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
-        {/* TODO: add button logic */}
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handleManage}>
           {t('manage')}
         </Button>
       </div>

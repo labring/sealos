@@ -5,7 +5,6 @@ import { ArrowUpRight, OctagonAlert, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { JetBrainsGuideData } from '@/components/IDEButton';
@@ -128,7 +127,7 @@ const JetBrainsGuideDrawer = ({ open, onClose, jetbrainsGuideData }: JetBrainsGu
 
   return (
     <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="min-w-[450px]">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{t('use_jetbrains')}</DrawerTitle>
         </DrawerHeader>

@@ -123,7 +123,7 @@ const SshConnectDrawer = ({
 
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent className="min-w-[450px]">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{t('jetbrains_guide_config_ssh')}</DrawerTitle>
         </DrawerHeader>

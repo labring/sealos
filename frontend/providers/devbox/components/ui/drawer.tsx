@@ -63,7 +63,7 @@ function DrawerContent({
         data-slot="drawer-content"
         data-direction={direction}
         className={cn(
-          'fixed z-50 m-3 flex h-full flex-col rounded-2xl bg-zinc-50 shadow-lg duration-300',
+          'fixed z-50 m-3 flex h-full min-w-[450px] flex-col rounded-2xl bg-zinc-50 shadow-lg duration-300',
           // Top drawer styles
           direction === 'top' && 'inset-x-0 top-0 animate-in border-b slide-in-from-top',
           // Bottom drawer styles
