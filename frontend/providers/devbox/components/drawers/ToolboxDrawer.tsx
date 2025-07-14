@@ -30,7 +30,7 @@ const ToolboxDrawer = ({ open, onClose, jetbrainsGuideData }: ToolboxModalProps)
 
   return (
     <Drawer open={open} onOpenChange={(open) => !open && onClose()} direction="right">
-      <DrawerContent className="w-[450px]">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{t('use_jetbrains_toolbox')}</DrawerTitle>
         </DrawerHeader>

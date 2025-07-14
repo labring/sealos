@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Basic = () => {
   const t = useTranslations();
@@ -147,7 +148,14 @@ const Basic = () => {
               >
                 {devboxDetail?.status.value === 'Running' ? (
                   <div className="flex items-center gap-1">
-                    <span className="truncate text-sm/5 text-zinc-900">{sshConnectCommand}</span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="cursor-pointer truncate text-sm text-zinc-900">
+                          {sshConnectCommand}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">{sshConnectCommand}</TooltipContent>
+                    </Tooltip>
                     <Copy
                       className="h-4 w-4 cursor-pointer text-neutral-500"
                       onClick={() => copyData(sshConnectCommand)}

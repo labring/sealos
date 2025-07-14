@@ -98,7 +98,7 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
 
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DrawerContent className="w-[450px]">
+      <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{t('create_template')}</DrawerTitle>
         </DrawerHeader>
