@@ -117,6 +117,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
               )}
             >
               <CurrencySymbol type={env.currencySymbol} />
+              &nbsp;
               {item.value}
             </div>
           </div>

@@ -287,7 +287,7 @@ const DevboxList = ({
       <div className="flex h-full w-full flex-col justify-between">
         <div className="flex flex-col gap-3">
           {/* table header */}
-          <div className="flex h-10 items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500">
+          <div className="flex h-10 items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
             {table.getFlatHeaders().map((header) => (
               <div
                 key={header.id}
@@ -302,7 +302,7 @@ const DevboxList = ({
           {table.getRowModel().rows.map((row) => (
             <div
               key={row.id}
-              className="flex h-18 items-center rounded-xl border-[0.5px] bg-white px-6 transition-colors"
+              className="flex h-18 items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
               data-id={row.original.id}
             >
               {row.getVisibleCells().map((cell) => (

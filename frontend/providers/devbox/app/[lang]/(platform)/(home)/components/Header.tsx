@@ -15,7 +15,7 @@ export default function Header() {
   const locale = useLocale();
   const t = useTranslations();
 
-  const { setLastRoute } = useGlobalStore();
+  const { setLastRoute, setHeaderTitle } = useGlobalStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   useEffect(() => {
@@ -29,6 +29,7 @@ export default function Header() {
   }, [guide2, router, t, isClientSide]);
 
   const handleGotoTemplate = () => {
+    setHeaderTitle('devbox_template');
     router.push('/template?tab=public');
   };
 
@@ -36,7 +37,8 @@ export default function Header() {
     setGuide2(true);
     destroyDriver();
     setLastRoute('/');
-    router.push('/template?tab=public&title=select_runtime');
+    setHeaderTitle('select_runtime');
+    router.push('/template?tab=public');
   };
 
   const handleGotoDocs = () => {

@@ -50,7 +50,7 @@ const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
             <div
               key={file.filename}
               className={cn(
-                'flex h-10 cursor-pointer items-center px-5 py-6 text-zinc-500',
+                'flex h-10 cursor-pointer items-center bg-white px-5 py-6 text-zinc-500',
                 index === selectedIndex && 'bg-gray-100 text-zinc-900',
                 index === 0 && 'rounded-t-xl',
                 index === yamlList.length - 1 && 'rounded-b-xl'
@@ -68,7 +68,7 @@ const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
 
       {/* right side */}
       {!!yamlList[selectedIndex] && (
-        <Card className="flex h-[calc(100vh-200px)] flex-col gap-5 overflow-hidden p-8">
+        <Card className="flex h-[calc(100vh-200px)] w-full flex-col gap-5 overflow-hidden p-8">
           {/* header */}
           <div className="flex items-center justify-between">
             <h3 className="text-xl/7 font-medium">{yamlList[selectedIndex].filename}</h3>
@@ -82,7 +82,7 @@ const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
             </Button>
           </div>
           {/* content */}
-          <ScrollArea className="flex-1">
+          <ScrollArea className="w-full">
             <Code content={yamlList[selectedIndex].value} language="yaml" />
           </ScrollArea>
         </Card>

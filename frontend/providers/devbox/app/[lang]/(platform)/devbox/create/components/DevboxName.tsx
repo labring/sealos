@@ -10,7 +10,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/comp
 
 export default function DevboxName({ isEdit }: { isEdit: boolean }) {
   const t = useTranslations();
-  const { control } = useFormContext<DevboxEditTypeV2>();
+  const { control, trigger } = useFormContext<DevboxEditTypeV2>();
   const { fields: networks, update: updateNetworks } = useFieldArray({
     control,
     name: 'networks'
@@ -42,7 +42,7 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
               autoFocus={true}
               placeholder={t('enter_devbox_name')}
               {...field}
-              onBlur={(e) => {
+              onBlur={async (e) => {
                 const lowercaseValue = e.target.value.toLowerCase();
                 field.onChange(lowercaseValue);
                 networks.forEach((network, i) => {
@@ -51,6 +51,7 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
                     networkName: `${lowercaseValue}-${nanoid()}`
                   });
                 });
+                await trigger('name');
               }}
             />
           </FormControl>

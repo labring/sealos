@@ -55,7 +55,7 @@ const tabsTriggerVariants = cva(
       variant: {
         default: [
           'rounded-md border border-transparent',
-          'data-[state=active]:bg-background data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-sm',
+          'data-[state=active]:bg-white data-[state=active]:font-medium data-[state=active]:text-foreground data-[state=active]:shadow-sm',
           'dark:text-muted-foreground dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 dark:data-[state=active]:text-foreground'
         ],
         underline: [
