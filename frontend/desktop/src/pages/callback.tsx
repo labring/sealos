@@ -73,20 +73,20 @@ export default function Callback() {
               const token = data.data?.token;
               setToken(token);
               const needInit = data.data.needInit;
-              const method =
-                provider === 'GITHUB' ? 'github' : provider === 'GOOGLE' ? 'gmail' : 'unknown';
 
               if (needInit) {
                 gtmLoginSuccess({
                   user_type: 'new',
-                  method
+                  method: 'oauth2',
+                  oauth2Provider: provider
                 });
                 await router.push('/workspace');
                 return;
               }
               gtmLoginSuccess({
-                user_type: 'returning',
-                method
+                user_type: 'existing',
+                method: 'oauth2',
+                oauth2Provider: provider
               });
               const regionTokenRes = await getRegionToken();
               if (regionTokenRes?.data) {
