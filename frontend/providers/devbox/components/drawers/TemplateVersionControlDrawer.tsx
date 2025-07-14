@@ -74,7 +74,7 @@ const TemplateVersionControlDrawer = ({
 
   const columns: TableColumn[] = [
     {
-      title: t('version'),
+      title: t('version_name'),
       key: 'name',
       render: (item) => {
         return <span className="max-w-[100px] truncate whitespace-nowrap">{item.name}</span>;
@@ -95,7 +95,7 @@ const TemplateVersionControlDrawer = ({
       }
     },
     {
-      title: t('control'),
+      title: '',
       key: 'control',
       minWidth: 'unset',
       render: (item) => (
@@ -127,7 +127,7 @@ const TemplateVersionControlDrawer = ({
           <div className="flex h-full flex-col items-center p-6">
             {/* table */}
             {templateList.length > 0 && (
-              <div className="overflow-hidden rounded-lg border border-gray-200">
+              <div className="w-full overflow-hidden rounded-lg border border-gray-200">
                 <Table className="bg-white [&_td]:border-r last:[&_td]:border-r-0 [&_th]:border-r last:[&_th]:border-r-0 [&_tr]:border-b">
                   <TableHeader>
                     <TableRow>

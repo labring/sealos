@@ -15,7 +15,7 @@ const map = {
   },
   green: {
     backgroundColor: 'rgba(214, 245, 241, 0.3)',
-    lineColor: '#00A9A6'
+    lineColor: '#00D1B5'
   },
   deepBlue: {
     backgroundColor: 'rgba(47, 112, 237, 0.3)',

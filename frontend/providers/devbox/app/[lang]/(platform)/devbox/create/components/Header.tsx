@@ -45,7 +45,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
     if (name) {
       router.replace(`/devbox/detail/${name}`);
     } else {
-      router.push('/template?title=select_runtime');
+      router.push('/template');
     }
   }, [name, router]);
 
