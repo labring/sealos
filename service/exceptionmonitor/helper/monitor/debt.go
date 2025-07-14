@@ -2,8 +2,6 @@ package monitor
 
 import (
 	"context"
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,13 +17,4 @@ func checkDebt(namespace string) (bool, string, error) {
 	}
 	return false, "debt-limit0", nil
 
-}
-
-func checkOwnerDebt(namespace string) (bool, string, error) {
-	owner, err := notification.GetNSOwner(namespace)
-	if err != nil {
-		return false, "", err
-	}
-	ownerNamespace := "ns-" + owner
-	return checkDebt(ownerNamespace)
 }
