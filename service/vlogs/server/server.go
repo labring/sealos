@@ -444,7 +444,7 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 }
 
 func (vl *VLogsServer) initGrpcClient() error {
-	conn, err := grpc.Dial("localhost:4245", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("hubble-relay.kube-system.svc.cluster.local:80", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Hubble: %v", err)
 	}
