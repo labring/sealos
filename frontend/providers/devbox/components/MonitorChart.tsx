@@ -93,6 +93,12 @@ const MonitorChart = ({
       min: 0,
       axisLabel: {
         show: isShowLabel
+      },
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: '#EBEBEB'
+        }
       }
     },
     grid: {
