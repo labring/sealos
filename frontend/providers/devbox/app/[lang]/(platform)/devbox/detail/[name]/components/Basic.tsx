@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import { Copy, Download, Settings } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
@@ -84,7 +85,10 @@ const Basic = () => {
       {
         type: 'double' as const,
         items: [
-          { title: t('create_time'), value: devboxDetail?.createTime },
+          {
+            title: t('create_time'),
+            value: dayjs(devboxDetail?.createTime).format('YYYY-MM-DD HH:mm')
+          },
           { title: t('start_time'), value: devboxDetail?.upTime }
         ]
       },
