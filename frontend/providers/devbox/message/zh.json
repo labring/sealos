@@ -137,6 +137,8 @@
     "next": "下一步",
     "quit_guide": "退出指南",
     "release_prepare": "点击\"发布\"准备部署您的应用程序",
+    "select_runtime": "选择运行时",
+    "select_runtime_tip": "从多种模板中进行选择，或者自行创建。",
     "still_here": "我们还在这里！",
     "view_details": "查看详情并将应用程序部署到生产环境"
   },

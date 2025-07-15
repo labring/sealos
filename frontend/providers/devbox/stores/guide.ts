@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface GuideState {
   guide2: boolean;
+  guide3: boolean;
   guideConfigDevbox: boolean;
   guideIDE: boolean;
   manageAndDeploy: boolean;
@@ -13,6 +14,7 @@ interface GuideState {
   currentGuideApp: string;
   isGuideEnabled: boolean;
   setGuide2: (completed: boolean) => void;
+  setGuide3: (completed: boolean) => void;
   setguideConfigDevbox: (completed: boolean) => void;
   setguideIDE: (completed: boolean) => void;
   setManageAndDeploy: (completed: boolean) => void;
@@ -28,6 +30,7 @@ export const useGuideStore = create<GuideState>()(
   persist(
     (set) => ({
       guide2: true,
+      guide3: true,
       guideConfigDevbox: true,
       guideIDE: true,
       manageAndDeploy: true,
@@ -38,6 +41,7 @@ export const useGuideStore = create<GuideState>()(
       isGuideEnabled: true,
 
       setGuide2: (completed: boolean) => set({ guide2: completed }),
+      setGuide3: (completed: boolean) => set({ guide3: completed }),
       setguideConfigDevbox: (completed: boolean) => set({ guideConfigDevbox: completed }),
       setguideIDE: (completed: boolean) => set({ guideIDE: completed }),
       setManageAndDeploy: (completed: boolean) => set({ manageAndDeploy: completed }),
@@ -49,6 +53,7 @@ export const useGuideStore = create<GuideState>()(
       resetGuideState: (completed: boolean) =>
         set({
           guide2: completed,
+          guide3: completed,
           guideConfigDevbox: completed,
           guideIDE: completed,
           manageAndDeploy: completed,

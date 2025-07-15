@@ -51,9 +51,8 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
 
   return (
     <>
-      {/* TODO: We need fix guide style code later */}
       {!guideConfigDevbox && isClientSide && (
-        <div className="flex h-14 w-full items-center justify-center gap-3 border-y border-[#BFDBFE] bg-[#EFF6FF] text-[16px] font-medium text-[#2563EB]">
+        <div className="flex min-h-14 w-full items-center justify-center gap-3 border-y border-blue-200 bg-blue-50 font-medium text-blue-600">
           <Info size={16} />
           {t('driver.create_app_header')}
         </div>
@@ -72,15 +71,15 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
           <Button
             className={cn(
               'driver-deploy-button h-10 min-w-30',
-              isClientSide && !guideConfigDevbox && 'outline-1 outline-offset-2 outline-[#1C4EF5]'
+              isClientSide && !guideConfigDevbox && 'outline-2 outline-offset-2 outline-blue-600'
             )}
             onClick={applyCb}
           >
             {t(applyBtnText)}
           </Button>
           {isClientSide && !guideConfigDevbox && (
-            <div className="absolute top-[54px] right-[35%] z-[1000] w-[250px] rounded-xl bg-[#2563EB] p-4 text-white">
-              <div className="flex items-center justify-between">
+            <div className="absolute top-34 right-18 z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+              <div className="mb-2 flex items-center justify-between">
                 <p className="text-sm font-semibold">{t('driver.configure_devbox')}</p>
                 <div
                   className="ml-auto cursor-pointer"
@@ -88,22 +87,23 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >
-                  <X width={'16px'} height={'16px'} />
+                  <X className="h-4 w-4 text-[#7CA1F3]" strokeWidth={2} />
                 </div>
               </div>
-              <p className="mt-2 text-start text-sm font-normal whitespace-normal text-[#FFFFFFCC]">
+              <p className="text-start text-sm font-normal whitespace-normal text-white">
                 {t('driver.adjust_resources_as_needed')}
               </p>
               <div className="mt-4 flex items-center justify-between">
-                <p className="text-[13px] font-medium">3/5</p>
-                <div
-                  className="flex h-8 w-[86px] cursor-pointer items-center justify-center rounded-lg bg-white/20 text-sm font-medium text-white"
+                <p className="text-[13px] font-medium">4/5</p>
+                <Button
+                  size={'sm'}
+                  className="bg-white/20 text-sm font-medium text-white hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     applyCb();
                   }}
                 >
                   {t('driver.next')}
-                </div>
+                </Button>
               </div>
               <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-t-[10px] border-r-8 border-l-8 border-t-[#2563EB] border-r-transparent border-l-transparent" />
             </div>

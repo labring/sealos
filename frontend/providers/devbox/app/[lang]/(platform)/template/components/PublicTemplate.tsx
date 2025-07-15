@@ -1,11 +1,16 @@
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
+import { useRouter } from '@/i18n';
+import { useGuideStore } from '@/stores/guide';
 import { Tag, TagType } from '@/prisma/generated/client';
 import { useTagSelectorStore } from '@/stores/tagSelector';
 import { listTag, listTemplateRepository as listTemplateRepositoryApi } from '@/api/template';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { useDevboxStore } from '@/stores/devbox';
+import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -25,21 +30,10 @@ const PublicTemplate = ({ search }: { search: string }) => {
     a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0
   );
 
-  let tagListCollection = tags.reduce(
-    (acc, tag) => {
-      if (!acc[tag.type]) {
-        acc[tag.type] = [];
-      }
-      acc[tag.type].push(tag);
-      return acc;
-    },
-    {
-      [TagType.OFFICIAL_CONTENT]: [],
-      [TagType.USE_CASE]: [],
-      [TagType.PROGRAMMING_LANGUAGE]: []
-    } as Record<TagType, Tag[]>
-  );
-
+  const t = useTranslations();
+  const { guide3, setGuide3 } = useGuideStore();
+  const { setStartedTemplate } = useDevboxStore();
+  const router = useRouter();
   const [pageQueryBody, setPageQueryBody] = useState({
     page: 1,
     pageSize: 30,
@@ -95,6 +89,46 @@ const PublicTemplate = ({ search }: { search: string }) => {
       );
     }
   );
+  const templateRepositoryList = useMemo(
+    () => listTemplateRepository.data?.templateRepositoryList || [],
+    [listTemplateRepository.data]
+  );
+
+  const isClientSide = useClientSideValue(true);
+  useEffect(() => {
+    if (!guide3 && isClientSide && templateRepositoryList.length > 0) {
+      startDriver(
+        startGuide3(t, () => {
+          const first = templateRepositoryList[0];
+          setStartedTemplate({
+            uid: first.uid,
+            name: first.name,
+            iconId: first.iconId || '',
+            templateUid: first.templates?.[0]?.uid || '',
+            description: first.description
+          });
+          setGuide3(true);
+          destroyDriver();
+          router.push('/devbox/create');
+        })
+      );
+    }
+  }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router]);
+
+  let tagListCollection = tags.reduce(
+    (acc, tag) => {
+      if (!acc[tag.type]) {
+        acc[tag.type] = [];
+      }
+      acc[tag.type].push(tag);
+      return acc;
+    },
+    {
+      [TagType.OFFICIAL_CONTENT]: [],
+      [TagType.USE_CASE]: [],
+      [TagType.PROGRAMMING_LANGUAGE]: []
+    } as Record<TagType, Tag[]>
+  );
 
   useEffect(() => {
     if (listTemplateRepository.isSuccess && listTemplateRepository.data) {
@@ -107,9 +141,6 @@ const PublicTemplate = ({ search }: { search: string }) => {
       }));
     }
   }, [listTemplateRepository.data, listTemplateRepository.isSuccess]);
-
-  const templateRepositoryList = listTemplateRepository.data?.templateRepositoryList || [];
-  const t = useTranslations();
 
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
@@ -127,8 +158,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
       </div>
 
       {/* right content */}
-      <div className="flex flex-1 flex-col">
-        <ScrollArea className="h-[calc(100vh-200px)] pr-2">
+      <div className="flex flex-1 flex-col !overflow-visible">
+        <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
             {templateRepositoryList.map((tr) => (
               <TemplateCard
