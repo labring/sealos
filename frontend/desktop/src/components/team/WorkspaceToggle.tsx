@@ -104,13 +104,14 @@ export default function WorkspaceToggle() {
                   textTransform={'capitalize'}
                   maxW={{
                     base: '30px',
-                    xs: 'fit-content'
+                    xs: '80px',
+                    sm: 'fit-content'
                   }}
                   overflow={'hidden'}
                   textOverflow={'ellipsis'}
                   whiteSpace={'nowrap'}
                 >
-                  {namespace?.teamName}1231321
+                  {namespace?.teamName}
                 </Text>
                 <Center
                   transform={isOpen ? 'rotate(-90deg)' : 'rotate(0deg)'}
