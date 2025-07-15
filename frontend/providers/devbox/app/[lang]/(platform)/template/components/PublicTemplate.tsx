@@ -161,7 +161,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
       <div className="flex flex-1 flex-col !overflow-visible">
         <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
-            {templateRepositoryList.map((tr) => (
+            {templateRepositoryList.map((tr, idx) => (
               <TemplateCard
                 key={tr.uid}
                 iconId={tr.iconId || ''}
@@ -170,6 +170,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
                 templateRepositoryUid={tr.uid}
                 tags={tr.templateRepositoryTags.map((t) => t.tag)}
                 isPublic
+                forceHover={idx === 0}
               />
             ))}
           </div>
