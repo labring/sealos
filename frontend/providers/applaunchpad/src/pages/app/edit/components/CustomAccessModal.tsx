@@ -33,7 +33,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname } from '@/api/platform';
-import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG, SEALOS_USER_DOMAINS } from '@/store/static';
+import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
@@ -168,7 +168,8 @@ const CustomAccessModal = ({
                       setCustomDomain(e.target.value);
                     }
                   }}
-                  bg={'myWhite.500'}
+                  bg={'#F7F8FA'}
+                  borderColor={'#E8EBF0'}
                   style={{
                     pointerEvents: processPhase !== 'INPUT_DOMAIN' ? 'none' : 'auto'
                   }}
@@ -182,7 +183,9 @@ const CustomAccessModal = ({
                         size={'sm'}
                         colorScheme={'red'}
                         variant={'outline'}
-                        bg={'red.50'}
+                        bg={'#FEF3F2'}
+                        boxShadow={'0px 0px 0px 0.5px #FECDCA'}
+                        color={'#D92D20'}
                         borderRadius={'full'}
                         px={2}
                       >
@@ -192,9 +195,10 @@ const CustomAccessModal = ({
                     {processPhase === 'SUCCESS' && (
                       <Tag
                         size={'sm'}
-                        colorScheme={'green'}
                         variant={'outline'}
-                        bg={'green.50'}
+                        bg={'#EDFBF3'}
+                        boxShadow={'0px 0px 0px 0.5px #A6EDC3'}
+                        color={'#039855'}
                         borderRadius={'full'}
                         px={2}
                       >
@@ -323,14 +327,14 @@ const CustomAccessModal = ({
           {processPhase === 'SUCCESS' && (
             <ModalFooter>
               <Alert
-                status="success"
                 variant="subtle"
                 borderRadius={'lg'}
                 w={'100%'}
                 borderWidth={1}
-                borderColor={'green.600'}
+                borderColor={'#039855'}
+                bg={'#EDFBF3'}
               >
-                <AlertDescription textColor={'green.600'} fontWeight={'medium'} w={'full'}>
+                <AlertDescription textColor={'#059669'} fontWeight={'medium'} w={'full'}>
                   <Flex alignItems={'center'} justifyContent={'center'} gap={2}>
                     <CheckCircle size={16} />
                     {t('domain-verification-success')}
