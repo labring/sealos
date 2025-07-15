@@ -8,23 +8,20 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
 import { Button } from '@/components/ui/button';
-import { useGlobalStore } from '@/stores/global';
 
 export default function Header() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
 
-  const { setLastRoute, setHeaderTitle } = useGlobalStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
 
   const handleCreateDevbox = useCallback((): void => {
     setGuide2(true);
     destroyDriver();
-    setHeaderTitle('select_runtime');
     router.push('/template?tab=public');
-  }, [setGuide2, setLastRoute, setHeaderTitle, router]);
+  }, [setGuide2, router]);
 
   useEffect(() => {
     if (!guide2 && isClientSide) {
@@ -33,7 +30,6 @@ export default function Header() {
   }, [guide2, isClientSide, handleCreateDevbox, t]);
 
   const handleGotoTemplate = () => {
-    setHeaderTitle('devbox_template');
     router.push('/template?tab=public');
   };
 

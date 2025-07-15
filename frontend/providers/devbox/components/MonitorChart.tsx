@@ -32,6 +32,7 @@ interface MonitorChartProps {
   data?: MonitorDataResult;
   isShowLabel?: boolean;
   splitNumber?: number;
+  maxValue?: number;
   className?: string;
   isShowText?: boolean;
 }
@@ -41,6 +42,7 @@ const MonitorChart = ({
   data,
   isShowLabel = false,
   splitNumber = 2,
+  maxValue = 100,
   className,
   isShowText = true
 }: MonitorChartProps) => {
@@ -89,10 +91,12 @@ const MonitorChart = ({
       type: 'value',
       boundaryGap: false,
       splitNumber,
-      max: 100,
+      max: maxValue,
       min: 0,
+      interval: maxValue / splitNumber,
       axisLabel: {
-        show: isShowLabel
+        show: isShowLabel,
+        formatter: '{value}'
       },
       splitLine: {
         show: true,
@@ -115,16 +119,17 @@ const MonitorChart = ({
         type: 'line'
       },
       appendToBody: true,
+      borderRadius: 6,
       formatter: (params: any[]) => {
         const xValue = params[0]?.axisValue;
         const yValue = params[0]?.value;
         return `
           <div>
             <div style="font-size: 12px; margin-bottom: 6px; font-weight: 500; color: #09090B;">
-              ${xValue}
+              ${xValue || '2025-07-15 10:00'}
             </div>
             <div style="display: flex; align-items: center; font-size: 12px; font-weight: 500;">
-              <span style="display: inline-block; width: 8px; height: 8px; background-color: ${map[type].lineColor}; margin-right: 8px; border-radius: 1px;"></span>
+              <span style="display: inline-block; width: 8px; height: 8px; background-color: ${map[type].lineColor}; margin-right: 8px; border-radius: 2px;"></span>
               <span style="color: #09090B;">${yValue || 0}%</span>
             </div>
           </div>

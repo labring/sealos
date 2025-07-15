@@ -77,14 +77,14 @@ export function RefreshButton({ onRefresh }: RefreshButtonProps) {
         onClick={handleRefresh}
         disabled={isRefreshing || isPaused}
         size="lg"
-        className="font-normal"
+        className="rounded-lg rounded-r-none font-normal"
       >
         {isRefreshing && <RefreshCw className="h-4 w-4 animate-spin" />}
         {isPaused ? t('paused') : t('refresh')}
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button size="lg" variant="outline" className="rounded-l-none border-l-0">
+          <Button size="lg" variant="outline" className="rounded-lg rounded-l-none border-l-0">
             <ChevronDown className="h-4 w-4 text-neutral-500" />
           </Button>
         </DropdownMenuTrigger>
