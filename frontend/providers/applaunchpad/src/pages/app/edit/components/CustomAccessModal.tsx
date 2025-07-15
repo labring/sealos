@@ -1,11 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   ModalBody,
   ModalCloseButton,
   BoxProps,
   Flex,
-  useTheme,
   Input,
   ModalFooter,
   Button,
@@ -24,18 +23,14 @@ import {
   TableContainer,
   Td,
   Table,
-  TableCaption,
   Tr,
   Thead,
   Tbody,
-  Tfoot,
   useDisclosure,
   Alert,
   AlertDescription
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
-import { CopyIcon, Tip } from '@sealos/ui';
-import { InfoOutlineIcon } from '@chakra-ui/icons';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname } from '@/api/platform';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
@@ -56,7 +51,6 @@ const CustomAccessModal = ({
   onClose,
   onSuccess
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
-  const theme = useTheme();
   const { t } = useTranslation();
 
   const notBoundDisclosure = useDisclosure();
@@ -80,6 +74,16 @@ const CustomAccessModal = ({
     },
     errorToast: 'Custom Domain Error'
   });
+
+  useEffect(() => {
+    if (processPhase === 'VERIFY_DOMAIN') {
+      const interval = setInterval(() => {
+        authCNAME(undefined);
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [processPhase, authCNAME]);
 
   const titleStyles: BoxProps = {
     fontWeight: 'bold',
