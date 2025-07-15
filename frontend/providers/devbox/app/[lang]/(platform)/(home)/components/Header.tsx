@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { BookOpen, LayoutTemplate, Plus } from 'lucide-react';
 
@@ -18,26 +18,22 @@ export default function Header() {
   const { setLastRoute, setHeaderTitle } = useGlobalStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
+
+  const handleCreateDevbox = useCallback((): void => {
+    setGuide2(true);
+    destroyDriver();
+    setHeaderTitle('select_runtime');
+    router.push('/template?tab=public');
+  }, [setGuide2, setLastRoute, setHeaderTitle, router]);
+
   useEffect(() => {
     if (!guide2 && isClientSide) {
-      startDriver(
-        startGuide2(t, () => {
-          router.push('/devbox/create');
-        })
-      );
+      startDriver(startGuide2(t, handleCreateDevbox));
     }
-  }, [guide2, router, t, isClientSide]);
+  }, [guide2, isClientSide, handleCreateDevbox, t]);
 
   const handleGotoTemplate = () => {
     setHeaderTitle('devbox_template');
-    router.push('/template?tab=public');
-  };
-
-  const handleCreateDevbox = () => {
-    setGuide2(true);
-    destroyDriver();
-    setLastRoute('/');
-    setHeaderTitle('select_runtime');
     router.push('/template?tab=public');
   };
 
@@ -65,13 +61,12 @@ export default function Header() {
         </div>
       </div>
       {/* right side */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 !overflow-visible">
         <Button variant="outline" className="h-10 w-auto" onClick={handleGotoTemplate}>
           <LayoutTemplate className="h-4 w-4" />
           <span className="leading-5"> {t('scan_templates')}</span>
         </Button>
-        {/* NOTE: About guide we should test it */}
-        <Button className="h-10" onClick={handleCreateDevbox}>
+        <Button className="list-create-app-button h-10" onClick={handleCreateDevbox}>
           <Plus className="h-4 w-4" />
           <span className="leading-5">{t('create_devbox')}</span>
         </Button>

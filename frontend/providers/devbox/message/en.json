@@ -132,10 +132,12 @@
     "create_tip": "Create a new devbox from templates or scratch",
     "find_guide_tip": "You can always find your way back to this guide in the top navigation bar. Happy exploring!",
     "got_it": "Got it",
-    "manage_deploy": "Manage and deploy",
+    "manage_deploy": "Manage And Deploy",
     "next": "Next",
     "quit_guide": "Explore More Guides",
     "release_prepare": "Click 'Release' to prepare your application for deployment",
+    "select_runtime": "Select Runtime",
+    "select_runtime_tip": "Choose from a wide range of templates or build your own.",
     "still_here": "We're still here!",
     "view_details": "View details and launch the application to production environment"
   },

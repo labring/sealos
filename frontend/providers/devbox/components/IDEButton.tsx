@@ -20,10 +20,12 @@ import { useGuideStore } from '@/stores/guide';
 import { IDEType, useIDEStore } from '@/stores/ide';
 import { getSSHConnectionInfo } from '@/api/devbox';
 import { DevboxStatusMapType } from '@/types/devbox';
-import { quitGuideDriverObj, startDriver, startManageAndDeploy } from '@/hooks/driver';
+import { destroyDriver, startDriver, startConnectIDE } from '@/hooks/driver';
 
 import ToolboxDrawer from './drawers/ToolboxDrawer';
 import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { usePathname } from '@/i18n';
 
 export interface JetBrainsGuideData {
   devboxName: string;
@@ -80,6 +82,9 @@ const IDEButton = memo(
 
     const handleGotoIDE = useCallback(
       async (currentIDE: IDEType = 'cursor') => {
+        setguideIDE(true);
+        destroyDriver();
+
         setLoading(true);
 
         // TODO: Add a reminder: If you haven't opened it for a long time, please check whether the corresponding IDE is installed.
@@ -129,176 +134,137 @@ const IDEButton = memo(
       [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
     );
 
-    const { guideIDE, setguideIDE } = useGuideStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    const { guideIDE, setguideIDE } = useGuideStore();
+    const isClientSide = useClientSideValue(true);
+    const pathname = usePathname();
     useEffect(() => {
-      if (!guideIDE && isGuide) {
-        setIsMenuOpen(true);
+      if (!guideIDE && isClientSide && pathname.includes('/devbox/detail')) {
+        startDriver(startConnectIDE(t, handleGotoIDE));
       }
-    }, [guideIDE, isGuide, t]);
+    }, [guideIDE, isClientSide, t, pathname]);
 
     return (
-      <div className={cn('flex min-w-fit', className)}>
-        {/* left button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="secondary"
-              className="w-25 rounded-r-none px-2"
-              onClick={() => handleGotoIDE(currentIDE)}
-              disabled={status.value !== 'Running' || loading}
-              {...leftButtonProps}
-            >
-              <div className="flex w-full items-center justify-center gap-1.5">
-                <Image
-                  width={18}
-                  height={18}
-                  alt={currentIDE}
-                  src={`/images/ide/${currentIDE}.svg`}
-                />
-                <span>{ideObj[currentIDE]?.label}</span>
-              </div>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>{t('ide_tooltip')}</p>
-          </TooltipContent>
-        </Tooltip>
+      <div className="!overflow-visible">
+        <div className={cn('ide-button flex min-w-fit', className)}>
+          {/* left button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                className="w-25 rounded-r-none px-2"
+                onClick={() => handleGotoIDE(currentIDE)}
+                disabled={status.value !== 'Running' || loading}
+                {...leftButtonProps}
+              >
+                <div className="flex w-full items-center justify-center gap-1.5">
+                  <Image
+                    width={18}
+                    height={18}
+                    alt={currentIDE}
+                    src={`/images/ide/${currentIDE}.svg`}
+                  />
+                  <span>{ideObj[currentIDE]?.label}</span>
+                </div>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>{t('ide_tooltip')}</p>
+            </TooltipContent>
+          </Tooltip>
 
-        {/* right button */}
-        <DropdownMenu open={isGuide || isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="secondary"
-              className="rounded-l-none"
-              disabled={status.value !== 'Running' || loading}
-              {...rightButtonProps}
-            >
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="p-1.5" align="end">
-            {menuItems.map((item) =>
-              item.group ? (
-                <div key={item.value} className="flex gap-1">
-                  {item.options?.map((option, index) => (
-                    <div key={option.value} className="flex items-center">
-                      <DropdownMenuItem
-                        className={cn(
-                          'w-[110px] text-zinc-600',
-                          index === 0 && 'pr-1 pl-2',
-                          index === 1 && 'pr-2 text-zinc-600',
-                          currentIDE === option.value && 'text-zinc-900'
-                        )}
-                        onClick={() => {
-                          updateDevboxIDE(option.value, devboxName);
-                          handleGotoIDE(option.value);
-                        }}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <Image
-                            width={18}
-                            height={18}
-                            alt={option.value}
-                            src={`/images/ide/${option.value}.svg`}
-                          />
-                          <span className="whitespace-nowrap">{option.menuLabel}</span>
-                          {currentIDE === option.value && (
-                            <Check className="h-4 w-4 text-blue-600" />
+          {/* right button */}
+          <DropdownMenu open={isGuide || isMenuOpen} onOpenChange={setIsMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="secondary"
+                className="rounded-l-none"
+                disabled={status.value !== 'Running' || loading}
+                {...rightButtonProps}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="p-1.5" align="end">
+              {menuItems.map((item) =>
+                item.group ? (
+                  <div key={item.value} className="flex gap-1">
+                    {item.options?.map((option, index) => (
+                      <div key={option.value} className="flex items-center">
+                        <DropdownMenuItem
+                          className={cn(
+                            'w-[110px] text-zinc-600',
+                            index === 0 && 'pr-1 pl-2',
+                            index === 1 && 'pr-2 text-zinc-600',
+                            currentIDE === option.value && 'text-zinc-900'
                           )}
-                        </div>
-                      </DropdownMenuItem>
-                      {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <DropdownMenuItem
-                  key={item.value}
-                  className={cn(
-                    'h-9 justify-between text-zinc-600',
-                    currentIDE === item.value && 'text-zinc-900'
-                  )}
-                  onClick={() => {
-                    updateDevboxIDE(item.value, devboxName);
-                    handleGotoIDE(item.value);
-                  }}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Image
-                      width={18}
-                      height={18}
-                      alt={item.value}
-                      src={`/images/ide/${item.value}.svg`}
-                    />
-                    <span>{item?.menuLabel}</span>
+                          onClick={() => {
+                            updateDevboxIDE(option.value, devboxName);
+                            handleGotoIDE(option.value);
+                          }}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <Image
+                              width={18}
+                              height={18}
+                              alt={option.value}
+                              src={`/images/ide/${option.value}.svg`}
+                            />
+                            <span className="whitespace-nowrap">{option.menuLabel}</span>
+                            {currentIDE === option.value && (
+                              <Check className="h-4 w-4 text-blue-600" />
+                            )}
+                          </div>
+                        </DropdownMenuItem>
+                        {index === 0 && <div className="ml-1 h-3 w-0.5 bg-gray-200"></div>}
+                      </div>
+                    ))}
                   </div>
-                  {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
-                </DropdownMenuItem>
-              )
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                ) : (
+                  <DropdownMenuItem
+                    key={item.value}
+                    className={cn(
+                      'h-9 justify-between text-zinc-600',
+                      currentIDE === item.value && 'text-zinc-900'
+                    )}
+                    onClick={() => {
+                      updateDevboxIDE(item.value, devboxName);
+                      handleGotoIDE(item.value);
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Image
+                        width={18}
+                        height={18}
+                        alt={item.value}
+                        src={`/images/ide/${item.value}.svg`}
+                      />
+                      <span>{item?.menuLabel}</span>
+                    </div>
+                    {currentIDE === item.value && <Check className="h-4 w-4 text-blue-600" />}
+                  </DropdownMenuItem>
+                )
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* NOTE: the follow code is not test and refactored */}
-        {!guideIDE && isGuide && (
-          <div className="absolute -top-1.5 -left-[104px] z-[99] h-[280px] w-60 rounded-xl border-2 border-[#2563EB]">
-            <div className="absolute top-1/2 left-[105%] w-[250px] rounded-xl bg-[#2563EB] p-3 text-white">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white">{t('driver.code_in_ide')}</span>
-                <div
-                  className="ml-auto cursor-pointer"
-                  onClick={() => {
-                    startDriver(quitGuideDriverObj(t));
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </div>
-              </div>
-              <p className="mt-2 text-sm font-normal text-[#FFFFFFCC]">{t('driver.choose_ide')}</p>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="text-[13px] font-medium">4/5</span>
-                <button
-                  className="h-8 cursor-pointer rounded-lg bg-white/20 px-2 text-sm font-medium text-white"
-                  onClick={() => {
-                    setguideIDE(true);
-                    startDriver(startManageAndDeploy(t));
-                  }}
-                >
-                  {t('driver.next')}
-                </button>
-              </div>
-              <div className="absolute top-5 -left-[18px] h-0 w-0 border-t-8 border-r-[10px] border-b-8 border-l-8 border-t-transparent border-r-[#2563EB] border-b-transparent border-l-transparent" />
-            </div>
-          </div>
-        )}
-
-        {!guideIDE && isGuide && (
-          <div
-            className="fixed inset-0 z-[98] cursor-pointer bg-black/50"
-            onClick={() => {
-              setguideIDE(true);
-              startDriver(startManageAndDeploy(t));
-            }}
-          />
-        )}
-
-        {!!jetbrainsGuideData && (
-          <JetBrainsGuideDrawer
-            open={onOpenJetbrainsModal}
-            onSuccess={() => {}}
-            onClose={() => setOnOpenJetbrainsModal(false)}
-            jetbrainsGuideData={jetbrainsGuideData}
-          />
-        )}
-        {!!jetbrainsGuideData && (
-          <ToolboxDrawer
-            open={onOpenToolboxDrawer}
-            onClose={() => setOnOpenToolboxDrawer(false)}
-            jetbrainsGuideData={jetbrainsGuideData}
-          />
-        )}
+          {!!jetbrainsGuideData && (
+            <JetBrainsGuideDrawer
+              open={onOpenJetbrainsModal}
+              onSuccess={() => {}}
+              onClose={() => setOnOpenJetbrainsModal(false)}
+              jetbrainsGuideData={jetbrainsGuideData}
+            />
+          )}
+          {!!jetbrainsGuideData && (
+            <ToolboxDrawer
+              open={onOpenToolboxDrawer}
+              onClose={() => setOnOpenToolboxDrawer(false)}
+              jetbrainsGuideData={jetbrainsGuideData}
+            />
+          )}
+        </div>
       </div>
     );
   },

@@ -1,17 +1,25 @@
 import Image from 'next/image';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
+import { listTemplate } from '@/api/template';
+import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
 import { type Tag as TTag } from '@/prisma/generated/client';
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
-import { listTemplate } from '@/api/template';
-import { useSearchParams } from 'next/navigation';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,17 +30,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
 
 import TemplateVersionControlDrawer from '@/components/drawers/TemplateVersionControlDrawer';
 import EditTemplateRepositoryDrawer from '@/components/drawers/EditTemplateRepositoryDrawer';
 import DeleteTemplateRepositoryDialog from '@/components/dialogs/DeleteTemplateRepositoryDialog';
+import { destroyDriver } from '@/hooks/driver';
 
 interface TemplateCardProps {
   isPublic?: boolean;
@@ -62,7 +64,7 @@ const TemplateCard = ({
   const from = searchParams.get('from');
 
   const { setStartedTemplate } = useDevboxStore();
-
+  const { setGuide3 } = useGuideStore();
   const description = templateRepositoryDescription
     ? templateRepositoryDescription
     : t('no_description');
@@ -82,6 +84,19 @@ const TemplateCard = ({
       return templateList;
     }
   });
+
+  const handleSelectTemplate = () => {
+    setStartedTemplate({
+      uid: templateRepositoryUid,
+      name: templateRepositoryName,
+      iconId,
+      templateUid: selectedVersion,
+      description: templateRepositoryDescription
+    });
+    setGuide3(true);
+    destroyDriver();
+    router.push(`/devbox/create${from ? `?from=${from}` : ''}`);
+  };
 
   return (
     <>
@@ -136,16 +151,7 @@ const TemplateCard = ({
               <Button
                 className="invisible opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100"
                 size="sm"
-                onClick={() => {
-                  setStartedTemplate({
-                    uid: templateRepositoryUid,
-                    name: templateRepositoryName,
-                    iconId,
-                    templateUid: selectedVersion,
-                    description: templateRepositoryDescription
-                  });
-                  router.push(`/devbox/create${from ? `?from=${from}` : ''}`);
-                }}
+                onClick={handleSelectTemplate}
                 disabled={isDisabled || !selectedVersion}
               >
                 {t('select')}
