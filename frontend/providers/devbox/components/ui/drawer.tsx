@@ -88,7 +88,7 @@ function DrawerContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="drawer-close"
-            className="absolute top-4 right-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
+            className="absolute top-4 right-4 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
           >
             <XIcon className="size-5 text-neutral-500" />
             <span className="sr-only">Close</span>

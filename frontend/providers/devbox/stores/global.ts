@@ -19,8 +19,6 @@ type State = {
   setLoading: (val: boolean) => void;
   lastRoute: string;
   setLastRoute: (val: string) => void;
-  headerTitle: 'select_runtime' | 'devbox_template';
-  setHeaderTitle: (val: 'select_runtime' | 'devbox_template') => void;
 };
 // TODO: this hook need to be refactored
 export const useGlobalStore = create<State>()(
@@ -42,12 +40,6 @@ export const useGlobalStore = create<State>()(
       setLastRoute(val) {
         set((state) => {
           state.lastRoute = val;
-        });
-      },
-      headerTitle: 'devbox_template',
-      setHeaderTitle(val) {
-        set((state) => {
-          state.headerTitle = val;
         });
       }
     }))

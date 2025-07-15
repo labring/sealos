@@ -47,8 +47,8 @@ export default function TemplateDropdown({
           tags={selectedTemplateRepository?.templateRepositoryTags.map((t) => t.tag) || []}
         />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-84 p-2">
-        <span className="flex items-center pb-1.5 text-xs/4 font-medium text-zinc-500">
+      <PopoverContent align="start" className="w-100 rounded-xl p-2">
+        <span className="flex items-center py-1.5 text-xs/4 font-medium text-zinc-500">
           {t('template')}
         </span>
         <div className="flex flex-col gap-2">
@@ -95,6 +95,7 @@ const TemplateButton = ({
   className
 }: TemplateButtonProps) => {
   const locale = useLocale();
+  const t = useTranslations();
 
   return (
     <div
@@ -107,7 +108,7 @@ const TemplateButton = ({
         }
       }}
       className={cn(
-        'relative inline-flex h-fit w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border bg-white p-4 text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none hover:bg-zinc-50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+        'relative inline-flex h-fit w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border bg-white p-4 text-sm font-medium whitespace-nowrap shadow-xs transition-all outline-none hover:bg-zinc-50 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
         className
       )}
     >
@@ -121,7 +122,9 @@ const TemplateButton = ({
             {/* name */}
             <span className="font-medium">{title}</span>
             {/* description */}
-            <span className="h-5 truncate text-sm/5 font-normal text-zinc-500">{description}</span>
+            <span className="h-5 truncate text-sm/5 font-normal text-zinc-500">
+              {description || t('no_description')}
+            </span>
           </div>
         </div>
         {/* TODO: tag color need to be supported */}

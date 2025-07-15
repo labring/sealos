@@ -18,9 +18,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
 import { parseTemplateConfig } from '@/utils/tools';
 import { DevboxVersionListItemType } from '@/types/devbox';
+import { startDriver, startguideRelease } from '@/hooks/driver';
+import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
 import { getTemplateConfig, listPrivateTemplateRepository } from '@/api/template';
@@ -42,15 +45,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loading } from '@/components/ui/loading';
 import DevboxStatusTag from '@/components/StatusTag';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import EditVersionDesModal from '@/components/dialogs/EditVersionDesDialog';
 import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';
 import CreateOrUpdateDrawer from '@/components/drawers/CreateOrUpdateDrawer';
 import UpdateTemplateDrawer from '@/components/drawers/UpdateTemplateDrawer';
 import DeployDevboxDrawer from '@/components/drawers/DeployDevboxDrawer';
-import { startDriver, startguideRelease } from '@/hooks/driver';
-import { useClientSideValue } from '@/hooks/useClientSideValue';
-import { useGuideStore } from '@/stores/guide';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -259,7 +260,7 @@ const Release = () => {
         title: '',
         key: 'control',
         render: (item: DevboxVersionListItemType) => (
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center justify-end gap-2">
             <Button
               className="guide-online-button text-accent-foreground"
               variant="outline"
