@@ -1,2 +1,3 @@
 server:
   addr: ":8428"
+  target: "hubble-relay.kube-system.svc.cluster.local:80"

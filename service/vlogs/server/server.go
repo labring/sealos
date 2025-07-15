@@ -42,7 +42,7 @@ func NewVLogsServer(config *Config) (*VLogsServer, error) {
 		username: config.Server.Username,
 		password: config.Server.Password,
 	}
-	err := vl.initGrpcClient()
+	err := vl.initGrpcClient(config.Server.Target)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,6 @@ func (vl *VLogsServer) authenticate(req *http.Request) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("bad request (%s)", err)
 	}
-
 	err = auth.Authenticate(namespace, kubeConfig)
 	if err != nil {
 		return "", fmt.Errorf("authentication failed (%s)", err)
@@ -320,24 +319,19 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		http.Error(rw, "Only GET requests are supported", http.StatusMethodNotAllowed)
 		return fmt.Errorf("Unsupported HTTP method: %s", req.Method)
 	}
-
-	// Get query parameters
 	name := req.URL.Query().Get("name")
 	ns := req.URL.Query().Get("ns")
 	typeParam := req.URL.Query().Get("type")
 	limitStr := req.URL.Query().Get("limit")
 	minutesAgoStr := req.URL.Query().Get("min")
 
-	// Validate required parameters
 	if name == "" || ns == "" || typeParam == "" {
 		http.Error(rw, "Missing required parameters: name, ns, type", http.StatusBadRequest)
 		return fmt.Errorf("Missing required parameters")
 	}
 
-	// Format pod name as "ns/name"
 	podName := fmt.Sprintf("%s/%s", ns, name)
 
-	// Determine label based on type parameter
 	var label string
 	switch typeParam {
 	case "devbox":
@@ -367,20 +361,12 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		}
 	}
 
-	if vl.observerClient == nil {
-		if err := vl.initGrpcClient(); err != nil {
-			http.Error(rw, fmt.Sprintf("Hubble client not initialized: %v", err), http.StatusInternalServerError)
-			return err
-		}
-	}
-
 	since := time.Now().Add(-time.Duration(minutesAgo) * time.Minute)
 	sinceProto := timestamppb.New(since)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Create flow request with pod name and label
 	flowsRequest := &observer.GetFlowsRequest{
 		Number: limit,
 		First:  false,
@@ -405,7 +391,6 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 	var inboundFlows []map[string]interface{}
 	var outboundFlows []map[string]interface{}
 
-	// 统计结构
 	type FlowStats struct {
 		Total      int            `json:"total"`
 		Protocols  map[string]int `json:"protocols"`
@@ -420,7 +405,6 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		Outbound FlowStats `json:"outbound"`
 	}
 
-	// 初始化统计数据
 	stats.Inbound.Protocols = make(map[string]int)
 	stats.Inbound.Verdicts = make(map[string]int)
 	stats.Inbound.Ports = make(map[uint32]int)
@@ -443,7 +427,6 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 
 		flow := resp.GetFlow()
 		if flow != nil {
-			// Extract protocol information
 			protocol := "UNKNOWN"
 			var srcPort, dstPort uint32
 
@@ -484,16 +467,13 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 				"node_name": resp.GetNodeName(),
 			}
 
-			// 根据流量方向分类
 			isInbound := false
 
-			// 判断是否为入站流量
 			if flow.GetDestination().GetPodName() == podName ||
 				strings.Contains(flow.GetDestination().GetPodName(), name) {
 				isInbound = true
 			}
 
-			// 更新相应的统计信息
 			if isInbound {
 				stats.Inbound.Total++
 				stats.Inbound.Protocols[protocol]++
@@ -510,7 +490,6 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 				outboundFlows = append(outboundFlows, flowDetail)
 			}
 
-			// Add L7 protocol info if available
 			if flow.GetL7() != nil {
 				l7 := flow.GetL7()
 				l7Info := map[string]interface{}{
@@ -534,7 +513,6 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 		}
 	}
 
-	// Prepare and send JSON response
 	response := map[string]interface{}{
 		"status": "success",
 		"query": map[string]interface{}{
@@ -569,8 +547,8 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 	return nil
 }
 
-func (vl *VLogsServer) initGrpcClient() error {
-	conn, err := grpc.Dial("127.0.0.1:4245", grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (vl *VLogsServer) initGrpcClient(target string) error {
+	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("Failed to connect to Hubble: %v", err)
 	}
