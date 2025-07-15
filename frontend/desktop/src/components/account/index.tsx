@@ -14,6 +14,7 @@ import {
   MenuItem,
   MenuList,
   Text,
+  useBreakpointValue,
   useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
@@ -71,6 +72,10 @@ export default function Account() {
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
+  const linksCollapsed = useBreakpointValue({
+    base: true,
+    md: false
+  });
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -124,7 +129,7 @@ export default function Account() {
   return (
     <Box position={'relative'} flex={1}>
       <Flex alignItems={'center'} height={'100%'} zIndex={3}>
-        <Flex alignItems={'center'}>
+        <Flex alignItems={'center'} flexGrow={1}>
           <Center
             draggable={false}
             mr={'12px'}
@@ -159,69 +164,71 @@ export default function Account() {
           <WorkspaceToggle />
         </Flex>
 
-        <Flex gap={'4px'} ml={'auto'}>
-          {layoutConfig?.version === 'cn' && (
-            <Center
-              mr={'12px'}
-              borderRadius={'8px'}
-              bg={
-                'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-              }
-              h={'36px'}
-              px={'12px'}
-              py={'8px'}
-              color="#2563EB"
-              fontSize={'14px'}
-              fontWeight={'500'}
-              cursor={'pointer'}
-              onClick={openCostCenterApp}
-            >
-              <Text>{t('common:balance')}</Text>
-              <Divider orientation="vertical" mx={'12px'} />
-              <CurrencySymbol />
-              <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
-            </Center>
-          )}
+        {!linksCollapsed && (
+          <Flex gap={'4px'} ml={'auto'}>
+            {layoutConfig?.version === 'cn' && (
+              <Center
+                mr={'12px'}
+                borderRadius={'8px'}
+                bg={
+                  'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
+                }
+                h={'36px'}
+                px={'12px'}
+                py={'8px'}
+                color="#2563EB"
+                fontSize={'14px'}
+                fontWeight={'500'}
+                cursor={'pointer'}
+                onClick={openCostCenterApp}
+              >
+                <Text>{t('common:balance')}</Text>
+                <Divider orientation="vertical" mx={'12px'} />
+                <CurrencySymbol />
+                <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
+              </Center>
+            )}
 
-          <Center
-            className="guide-button"
-            cursor={'pointer'}
-            {...baseItemStyle}
-            px={'8px'}
-            borderRadius={'8px'}
-            onClick={() => {
-              openGuideModal();
-              setInitGuide(false);
-            }}
-          >
-            {t('common:guide')}
-          </Center>
-
-          {layoutConfig?.common.docsUrl && (
             <Center
-              {...baseItemStyle}
-              cursor={'pointer'}
-              borderRadius={'8px'}
-              px={'8px'}
-              onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-            >
-              {t('common:doc')}
-            </Center>
-          )}
-
-          {layoutConfig?.version === 'cn' && (
-            <Center
+              className="guide-button"
               cursor={'pointer'}
               {...baseItemStyle}
               px={'8px'}
               borderRadius={'8px'}
-              border={'1px solid transparent'}
-              onClick={openWorkOrderApp}
+              onClick={() => {
+                openGuideModal();
+                setInitGuide(false);
+              }}
             >
-              {t('v2:support')}
+              {t('common:guide')}
             </Center>
-          )}
-        </Flex>
+
+            {layoutConfig?.common.docsUrl && (
+              <Center
+                {...baseItemStyle}
+                cursor={'pointer'}
+                borderRadius={'8px'}
+                px={'8px'}
+                onClick={() => window.open(layoutConfig?.common?.docsUrl)}
+              >
+                {t('common:doc')}
+              </Center>
+            )}
+
+            {layoutConfig?.version === 'cn' && (
+              <Center
+                cursor={'pointer'}
+                {...baseItemStyle}
+                px={'8px'}
+                borderRadius={'8px'}
+                border={'1px solid transparent'}
+                onClick={openWorkOrderApp}
+              >
+                {t('v2:support')}
+              </Center>
+            )}
+          </Flex>
+        )}
 
         <Flex
           ml={'20px'}
@@ -247,17 +254,19 @@ export default function Account() {
 
           {/* <ThemeToggle /> */}
 
-          <Center
-            {...baseItemStyle}
-            boxSize={'36px'}
-            cursor={'pointer'}
-            borderRadius={'full'}
-            border={'1px solid rgba(0, 0, 0, 0.05)'}
-            onClick={() => showDisclosure.onOpen()}
-          >
-            <Bell size={16} color={'#262626'} />
-          </Center>
-          <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount} />
+          <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount}>
+            <Center
+              {...baseItemStyle}
+              tabIndex={0}
+              boxSize={'36px'}
+              cursor={'pointer'}
+              borderRadius={'full'}
+              border={'1px solid rgba(0, 0, 0, 0.05)'}
+              onClick={() => showDisclosure.onToggle()}
+            >
+              <Bell size={16} color={'#262626'} />
+            </Center>
+          </Notification>
 
           <Menu>
             <MenuButton height={'36px'} width={'36px'}>
