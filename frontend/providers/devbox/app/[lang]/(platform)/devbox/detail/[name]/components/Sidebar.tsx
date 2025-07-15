@@ -14,17 +14,17 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
     {
       label: 'Overview',
       value: 'overview' as TabValue,
-      icon: <LayoutDashboard className="h-6 w-6" />
+      icon: <LayoutDashboard className="h-6 w-6" strokeWidth={1.33} />
     },
     {
       label: 'Monitor',
       value: 'monitor' as TabValue,
-      icon: <LineChart className="h-6 w-6" />
+      icon: <LineChart className="h-6 w-6" strokeWidth={1.33} />
     },
     {
       label: 'Logs',
       value: 'logs' as TabValue,
-      icon: <FileClock className="h-6 w-6" />
+      icon: <FileClock className="h-6 w-6" strokeWidth={1.33} />
     }
   ];
 

@@ -1,7 +1,9 @@
 'use client';
 
-import { useFormContext } from 'react-hook-form';
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useFormContext } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 
 import { useRouter } from '@/i18n';
 import { obj2Query } from '@/utils/tools';
@@ -26,10 +28,21 @@ interface FormProps {
 
 const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations();
   const { watch } = useFormContext<DevboxEditTypeV2>();
 
   const { devboxList } = useDevboxStore();
+
+  useEffect(() => {
+    console.log('searchParams', searchParams.get('scrollTo'));
+    if (searchParams.get('scrollTo') === 'network') {
+      const el = document.getElementById('network');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [searchParams]);
 
   const handleTabChange = (value: string) => {
     if (value === 'yaml') {
@@ -76,7 +89,9 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           <Memory />
         </div>
         {/* Network */}
-        <Network isEdit={isEdit} />
+        <div id="network">
+          <Network isEdit={isEdit} />
+        </div>
       </div>
     </div>
   );
