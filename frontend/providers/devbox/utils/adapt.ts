@@ -76,7 +76,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
         ? devboxStatusMap[devbox.status.phase]
         : devboxStatusMap.Pending,
     sshPort: devbox.status?.network.nodePort || 65535,
-    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     usedCpu: {
@@ -124,7 +124,7 @@ export const adaptDevboxDetailV2 = ([
     status,
     sshPort: devbox.status?.network.nodePort || 65535,
     isPause: devbox.status?.phase === 'Stopped',
-    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     gpu: {

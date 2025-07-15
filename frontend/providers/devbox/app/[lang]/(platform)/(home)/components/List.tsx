@@ -10,6 +10,7 @@ import {
   SquareTerminal,
   Trash2
 } from 'lucide-react';
+import dayjs from 'dayjs';
 import {
   getCoreRowModel,
   getPaginationRowModel,
@@ -168,7 +169,11 @@ const DevboxList = ({
         size: 150,
         cell: ({ row }) => {
           const item = row.original;
-          return <span className="text-sm text-zinc-600">{item.createTime}</span>;
+          return (
+            <span className="text-sm text-zinc-600">
+              {dayjs(item.createTime).format('YYYY/MM/DD HH:mm')}
+            </span>
+          );
         }
       },
       {
