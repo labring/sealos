@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"context"
+
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,5 +18,4 @@ func checkDebt(namespace string) (bool, string, error) {
 		return true, "", err
 	}
 	return false, "debt-limit0", nil
-
 }
