@@ -65,6 +65,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
       iconId: string | null;
     };
     uid: string;
+    name: string;
   }
 ]): DevboxListItemTypeV2 => {
   return {

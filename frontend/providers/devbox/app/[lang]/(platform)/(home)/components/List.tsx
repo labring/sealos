@@ -107,8 +107,7 @@ const DevboxList = ({
                       <p className="text-sm/5 font-medium">
                         {item.template.templateRepository.iconId}
                       </p>
-                      {/* TODO: we need change devboxListType */}
-                      <p className="text-xs/5 text-zinc-500">{'test'}</p>
+                      <p className="text-xs/5 text-zinc-500">{item.template.name}</p>
                     </div>
                   </div>
                 </TooltipContent>

@@ -159,6 +159,7 @@ export interface DevboxListItemTypeV2 {
       iconId: string | null;
     };
     uid: string;
+    name: string;
   };
   status: DevboxStatusMapType;
   createTime: string;
