@@ -360,7 +360,7 @@ export const startguideRelease = (t: any, nextStep?: () => void): Config => ({
       element: '.guide-release-button',
       popover: {
         side: 'top',
-        align: 'start',
+        align: 'end',
         borderRadius: '12px 12px 12px 12px',
         PopoverBody: (
           <div className="w-[250px] rounded-xl bg-blue-600 p-3 text-white">

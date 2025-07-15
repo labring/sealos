@@ -45,6 +45,7 @@ interface TemplateCardProps {
   templateRepositoryDescription: string | null;
   templateRepositoryUid: string;
   tags: TTag[];
+  forceHover?: boolean;
 }
 
 const TemplateCard = ({
@@ -55,7 +56,8 @@ const TemplateCard = ({
   templateRepositoryUid,
   isDisabled = false,
   inPublicStore = true,
-  tags
+  tags,
+  forceHover = false
 }: TemplateCardProps) => {
   const router = useRouter();
   const locale = useLocale();
@@ -64,7 +66,7 @@ const TemplateCard = ({
   const from = searchParams.get('from');
 
   const { setStartedTemplate } = useDevboxStore();
-  const { setGuide3 } = useGuideStore();
+  const { setGuide3, guide3 } = useGuideStore();
   const description = templateRepositoryDescription
     ? templateRepositoryDescription
     : t('no_description');
@@ -104,7 +106,8 @@ const TemplateCard = ({
         className={cn(
           'group relative flex w-full max-w-[375px] flex-col items-start border bg-white hover:border-zinc-900',
           isDisabled &&
-            'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80'
+            'pointer-events-none cursor-not-allowed select-none before:absolute before:inset-0 before:z-10 before:bg-white/10 [&_*]:cursor-not-allowed [&_*]:opacity-80',
+          forceHover && !guide3 && 'border-zinc-900'
         )}
       >
         {/* top */}

@@ -296,23 +296,23 @@ const Release = () => {
     [t, handleDeploy, openConfirm, handleDelDevboxVersion, handleConvertToRuntime]
   );
 
-  const { guideRelease, setguideRelease } = useGuideStore();
+  const { guideRelease, setguideRelease, guideIDE } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   const handleOpenRelease = useCallback(() => {
     setguideRelease(true);
     setOnOpenRelease(true);
   }, [setOnOpenRelease, setguideRelease]);
   useEffect(() => {
-    if (!guideRelease && isClientSide) {
+    if (!guideRelease && guideIDE && isClientSide) {
       startDriver(startguideRelease(t, handleOpenRelease));
     }
-  }, [guideRelease, handleOpenRelease, isClientSide, t]);
+  }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
   if (!initialized || isLoading) return <Loading />;
 
   return (
     <div className="flex h-full w-full flex-col items-center gap-4 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
-      <div className="flex w-full items-center justify-between">
+      <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
           <ArrowBigUpDash className="h-4 w-4 text-neutral-500" />

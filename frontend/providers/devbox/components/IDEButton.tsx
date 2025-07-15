@@ -79,6 +79,7 @@ const IDEButton = memo(
     const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
 
     const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
+    const { guideIDE, setguideIDE } = useGuideStore();
 
     const handleGotoIDE = useCallback(
       async (currentIDE: IDEType = 'cursor') => {
@@ -131,19 +132,18 @@ const IDEButton = memo(
           setLoading(false);
         }
       },
-      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort]
+      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setguideIDE]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const { guideIDE, setguideIDE } = useGuideStore();
     const isClientSide = useClientSideValue(true);
     const pathname = usePathname();
     useEffect(() => {
       if (!guideIDE && isClientSide && pathname.includes('/devbox/detail')) {
         startDriver(startConnectIDE(t, handleGotoIDE));
       }
-    }, [guideIDE, isClientSide, t, pathname]);
+    }, [guideIDE, isClientSide, t, pathname, handleGotoIDE]);
 
     return (
       <div className="!overflow-visible">
