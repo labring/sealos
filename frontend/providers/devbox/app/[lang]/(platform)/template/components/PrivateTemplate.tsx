@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -64,6 +65,9 @@ export default function PrivateTemplate({ search }: { search: string }) {
   const privateTemplateRepositoryList =
     listPrivateTemplateRepository.data?.templateRepositoryList || [];
 
+  const hasFilter = !!search;
+  const t = useTranslations();
+
   return (
     <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
       <ScrollArea className="h-[calc(100vh-200px)] pr-2">
@@ -83,7 +87,9 @@ export default function PrivateTemplate({ search }: { search: string }) {
           ))}
         </div>
 
-        {privateTemplateRepositoryList.length === 0 && <Empty />}
+        {privateTemplateRepositoryList.length === 0 && (
+          <Empty description={hasFilter ? t('no_search_template_tip') : t('no_template_action')} />
+        )}
       </ScrollArea>
 
       <Pagination

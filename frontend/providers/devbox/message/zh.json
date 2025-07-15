@@ -246,6 +246,7 @@
   "no_available_versions": "没有可用版本",
   "no_description": "暂无简介",
   "no_network": "暂无网络配置",
+  "no_search_template_tip": "没有找到相关模板",
   "no_template_action": "您可以前往 DevBox 详情页面，选择一个版本，然后点击  「转换为模板」  以创建模板",
   "no_template_repository_versions": "暂无可用模板",
   "no_template_versions": "暂无版本",

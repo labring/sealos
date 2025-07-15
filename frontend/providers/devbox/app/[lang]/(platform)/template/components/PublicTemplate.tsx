@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 import TemplateCard from './TemplateCard';
 import { Pagination } from '@/components/ui/pagination';
+import Empty from './Empty';
 
 const PublicTemplate = ({ search }: { search: string }) => {
   const { selectedTagList, getSelectedTagList, resetTags } = useTagSelectorStore();
@@ -142,6 +143,8 @@ const PublicTemplate = ({ search }: { search: string }) => {
     }
   }, [listTemplateRepository.data, listTemplateRepository.isSuccess]);
 
+  const hasFilter = !!search || selectedTagList.size > 0;
+
   return (
     <div className="flex h-[calc(100vh-200px)] gap-3">
       {/* left sidebar */}
@@ -174,6 +177,11 @@ const PublicTemplate = ({ search }: { search: string }) => {
               />
             ))}
           </div>
+          {templateRepositoryList.length === 0 && (
+            <Empty
+              description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
+            />
+          )}
         </ScrollArea>
         <Pagination
           className="pr-2"
