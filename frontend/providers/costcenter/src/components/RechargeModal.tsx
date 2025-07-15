@@ -1,6 +1,7 @@
 import vector from '@/assert/Vector.svg';
 import stripe_icon from '@/assert/bi_stripe.svg';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
+import alipay_icon from '@/assert/ic_baseline-alipay.svg'
 import CurrencySymbol from '@/components/CurrencySymbol';
 import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
@@ -121,6 +122,58 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
         </Box>
       </Flex>
     </Flex>
+  );
+}
+function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: string }) {
+  const { t } = useTranslation();
+  return (
+      <Flex
+          flexDirection="column"
+          px="37px"
+          justify={'center'}
+          align={'center'}
+          m={'auto'}
+          display={'flex'}
+          justifyContent={'center'}
+          alignItems={'center'}
+          position={'relative'}
+      >
+        <Flex
+            width={'267px'}
+            height={'295px'}
+            direction={'column'}
+            align="center"
+            justify={'space-between'}
+        >
+          <Text color="#7B838B" mb="8px" textAlign="center">
+            {t('Scan with Alipay')}
+          </Text>
+          {props.complete === 2 && !!props.codeURL ? (
+              <QRCodeSVG
+                  size={185}
+                  value={props.codeURL}
+                  style={{ margin: '0 auto' }}
+                  imageSettings={{
+                    // 二维码中间的logo图片
+                    src: alipay_icon.src,
+                    height: 40,
+                    width: 40,
+                    excavate: true // 中间图片所在的位置是否镂空
+                  }}
+              />
+          ) : (
+              <Box>waiting...</Box>
+          )}
+          <Box mt="8px">
+            <Text color="#717D8A" fontSize="12px" fontWeight="normal">
+              {t('Order Number')}： {props.tradeNO || ''}
+            </Text>
+            <Text color="#717D8A" fontSize="12px">
+              {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
+            </Text>
+          </Box>
+        </Flex>
+      </Flex>
   );
 }
 const BonusBox = (props: {
@@ -267,8 +320,8 @@ const RechargeModal = forwardRef(
 
     // 整个流程跑通需要状态管理, 0 初始态， 1 创建支付单， 2 支付中, 3 支付成功
     const [complete, setComplete] = useState<0 | 1 | 2 | 3>(0);
-    // 0 是微信，1 是stripe
-    const [payType, setPayType] = useState<'wechat' | 'stripe'>('wechat');
+    // 0 是微信，1 是stripe, 2 是支付宝
+    const [payType, setPayType] = useState<'wechat' | 'stripe' | 'alipay'>('wechat');
     // 计费详情
     const [detail, setDetail] = useState(false);
     const [paymentName, setPaymentName] = useState('');
@@ -323,7 +376,7 @@ const RechargeModal = forwardRef(
       return ratio;
     };
     const { isProcess, setRechargeStatus, resetProcess } = useRechargeStore();
-    const { stripeEnabled, wechatEnabled } = useEnvStore();
+    const { stripeEnabled, wechatEnabled, alipayEnabled } = useEnvStore();
     const createPaymentRes = useMutation(
       () =>
         request.post<any, ApiResp<Payment>>('/api/account/payment', {
@@ -407,7 +460,11 @@ const RechargeModal = forwardRef(
       setComplete(1);
       createPaymentRes.mutate();
     };
-
+    const handleAlipayConfirm = () => {
+      setPayType('alipay');
+      setComplete(1);
+      createPaymentRes.mutate();
+    };
     const handleStripeConfirm = () => {
       setPayType('stripe');
       if (amount < 10) {
@@ -627,6 +684,21 @@ const RechargeModal = forwardRef(
                         </Text>
                       </Button>
                     )}
+                    {alipayEnabled && (
+                      <Button
+                        variant="solid"
+                        w="full"
+                        h="auto"
+                        py="14px"
+                        px="34px"
+                        onClick={() => handleAlipayConfirm()}
+                      >
+                        <Img src={alipay_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
+                        <Text fontSize={'14px'} fontWeight={500}>
+                          {t('pay with alipay')}
+                        </Text>
+                      </Button>
+                    )}
                   </Flex>
                 </Flex>
               </>
@@ -663,6 +735,12 @@ const RechargeModal = forwardRef(
                     codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
                   />
+                ) : payType === 'alipay' ? (
+                    <AlipayPayment
+                        complete={complete}
+                        codeURL={!isPreviousData ? data?.data?.codeURL : undefined}
+                        tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}
+                    />
                 ) : (
                   <StripeForm
                     tradeNO={!isPreviousData ? data?.data?.tradeNO : undefined}

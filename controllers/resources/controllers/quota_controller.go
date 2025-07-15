@@ -248,7 +248,7 @@ func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	checkEventPredicate := func(obj client.Object) bool {
 		eventObj, ok := obj.(*corev1.Event)
-		if !ok || (eventObj.Reason != "FailedCreate" && eventObj.Reason != "Devbox is exceeded quota") || !strings.Contains(eventObj.Message, "exceeded quota") {
+		if !ok || (eventObj.Reason != "FailedCreate" && eventObj.Reason != "Devbox is exceeded quota") || !strings.Contains(eventObj.Message, "exceeded quota") || strings.Contains(eventObj.Message, "debt-limit0") {
 			return false
 		}
 

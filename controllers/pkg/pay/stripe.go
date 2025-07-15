@@ -46,7 +46,7 @@ func init() {
 }
 
 func (s StripePayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
-	session, err := CreateCheckoutSession(amount, Currency, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
+	session, err := CreateCheckoutSession(amount/10000, Currency, DefaultURL+os.Getenv(stripeSuccessPostfix), DefaultURL+os.Getenv(stripeCancelPostfix))
 	if err != nil {
 		return "", "", err
 	}
@@ -60,7 +60,7 @@ func (s StripePayment) GetPaymentDetails(sessionID string) (string, int64, error
 	}
 	switch ses.Status {
 	case stripe.CheckoutSessionStatusComplete:
-		return PaymentSuccess, ses.AmountTotal, nil
+		return PaymentSuccess, ses.AmountTotal * 10000, nil
 	case stripe.CheckoutSessionStatusExpired:
 		return PaymentExpired, 0, nil
 	case stripe.CheckoutSessionStatusOpen:
