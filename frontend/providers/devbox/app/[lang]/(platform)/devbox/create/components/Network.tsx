@@ -47,10 +47,53 @@ export default function Network({
   const t = useTranslations();
 
   const appendNetworks = () => {
+    const currentNetworks = getValues('networks');
+    const config = getValues('templateConfig');
+    const parsedConfig = JSON.parse(config as string) as {
+      appPorts: [{ port: number; name: string; protocol: string }];
+    };
+
+    // Get default ports from template config
+    const defaultPorts = parsedConfig.appPorts.map((port) => port.port);
+
+    // If no ports exist, use the first unused default port
+    if (currentNetworks.length === 0) {
+      _appendNetworks({
+        networkName: '',
+        portName: nanoid(),
+        port: defaultPorts[0] || 3000, // Fallback to 3000 if no default ports
+        protocol: 'HTTP' as ProtocolType,
+        openPublicDomain: false,
+        publicDomain: '',
+        customDomain: ''
+      });
+      return;
+    }
+
+    // Get all used ports
+    const usedPorts = new Set(currentNetworks.map((network) => network.port));
+
+    // Try to find an unused default port first
+    const unusedDefaultPort = defaultPorts.find((port) => !usedPorts.has(port));
+    if (unusedDefaultPort) {
+      _appendNetworks({
+        networkName: '',
+        portName: nanoid(),
+        port: unusedDefaultPort,
+        protocol: 'HTTP' as ProtocolType,
+        openPublicDomain: false,
+        publicDomain: '',
+        customDomain: ''
+      });
+      return;
+    }
+
+    // If all default ports are used, increment from the last port
+    const lastPort = currentNetworks[currentNetworks.length - 1].port;
     _appendNetworks({
       networkName: '',
       portName: nanoid(),
-      port: 8080,
+      port: lastPort + 1,
       protocol: 'HTTP' as ProtocolType,
       openPublicDomain: false,
       publicDomain: '',
