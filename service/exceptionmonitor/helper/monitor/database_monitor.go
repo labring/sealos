@@ -26,8 +26,7 @@ var (
 		Version:  "v1",
 		Resource: "resourcequotas",
 	}
-	debtNamespace = "account-system"
-	userGVR       = schema.GroupVersionResource{
+	userGVR = schema.GroupVersionResource{
 		Group:    "user.sealos.io",
 		Version:  "v1",
 		Resource: "users",
