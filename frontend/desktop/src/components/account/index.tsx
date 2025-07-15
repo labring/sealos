@@ -131,6 +131,10 @@ export default function Account() {
       <Flex alignItems={'center'} height={'100%'} zIndex={3}>
         <Flex alignItems={'center'} flexGrow={1}>
           <Center
+            display={{
+              base: 'none',
+              sm: 'block'
+            }}
             draggable={false}
             mr={'12px'}
             boxSize={'36px'}
