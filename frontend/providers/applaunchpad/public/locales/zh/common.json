@@ -347,5 +347,42 @@
   "remarks": "备注",
   "set_remarks_placeholder": "设置备注以帮助更轻松地识别此应用或服务。",
   "remark_updated_successfully": "备注更新成功",
-  "update_remark_failed": "更新备注失败"
+  "update_remark_failed": "更新备注失败",
+  "domain-requires-registration-tip-1": "在当前可用区绑定域名需通过 ",
+  "domain-requires-registration-tip-2": " 完成备案。",
+  "infrastructure": {
+    "providers": {
+      "alibaba": {
+        "name": "阿里云"
+      },
+      "volcano": {
+        "name": "火山引擎"
+      },
+      "tencent": {
+        "name": "腾讯云"
+      }
+    }
+  },
+  "domain-registration-provider-link-text": "备案入口",
+  "domain-registration-query-link-text": "备案查询",
+  "domain-verification-needed": "待验证",
+  "domain-verified": "验证通过",
+  "domain-verification-input-save": "保存",
+  "domain-verification-refresh": "刷新",
+  "domain-verification-input-edit": "编辑",
+  "domain-verification-dns-records": "DNS 记录",
+  "domain-verification-dns-records-tip-1": "请到您的域名服务商处，添加该域名的 CNAME 解析到 ",
+  "domain-verification-dns-records-tip-2": "，解析生效后即可绑定自定义域名。",
+  "domain-verification-dns-records-type": "类型",
+  "domain-verification-dns-records-ttl": "TTL",
+  "domain-verification-dns-records-value": "值",
+  "domain-verification-dns-records-type-cname": "CNAME",
+  "domain-verification-dns-records-ttl-auto": "自动",
+  "domain-verification-dns-records-docs-link-text": "查看文档",
+  "domain-verification-success": "您的域名已成功绑定。",
+  "domain-not-bound-modal-title": "域名未绑定",
+  "domain-not-bound-modal-warning": "DNS 记录尚未生效，因此您的域名未完成绑定。关闭此弹窗需重新输入域名。",
+  "domain-not-bound-modal-description": "您确定要关闭这个弹窗吗？",
+  "domain-not-bound-modal-cancel": "取消",
+  "domain-not-bound-modal-confirm": "确认"
 }

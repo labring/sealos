@@ -33,7 +33,7 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname } from '@/api/platform';
-import { SEALOS_USER_DOMAINS } from '@/store/static';
+import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG, SEALOS_USER_DOMAINS } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
@@ -85,11 +85,6 @@ const CustomAccessModal = ({
     }
   }, [processPhase, authCNAME]);
 
-  const titleStyles: BoxProps = {
-    fontWeight: 'bold',
-    mb: 2
-  };
-
   const tableCellStyles: BoxProps = {
     textTransform: 'none',
     borderColor: 'gray.200',
@@ -99,10 +94,6 @@ const CustomAccessModal = ({
   };
 
   const completePublicDomain = useMemo(() => `${publicDomain}.${domain}`, [publicDomain, domain]);
-
-  const cnameTips = useMemo(() => {
-    return SEALOS_USER_DOMAINS.map((item) => `${publicDomain}.${item.name}`).join(` ${t('or')} `);
-  }, [publicDomain, t]);
 
   return (
     <>
@@ -127,37 +118,44 @@ const CustomAccessModal = ({
           <ModalBody>
             <ModalCloseButton />
 
-            <Box {...titleStyles}>{t('Custom Domain')}</Box>
+            <Box fontWeight={'bold'} mb={2}>
+              {t('Custom Domain')}
+            </Box>
 
             {/* Tips */}
-            <Stack>
-              <Text>
-                Domain binding for this availability zone requires{' '}
-                <Text as={'b'}>Alibaba Cloud</Text> registration.
-              </Text>
+            {REQUIRES_DOMAIN_REG && (
+              <Stack>
+                <Text>
+                  {t('domain-requires-registration-tip-1')}
+                  <Text as={'b'}>
+                    {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
+                  </Text>
+                  {t('domain-requires-registration-tip-2')}
+                </Text>
 
-              <Stack direction={'row'} height={'24px'}>
-                <Link
-                  as={NextLink}
-                  target="_blank"
-                  color={'brightBlue.600'}
-                  href="https://beian.aliyun.com/pcContainer/selfEntity"
-                >
-                  Filling Entry
-                </Link>
+                <Stack direction={'row'} height={'24px'}>
+                  <Link
+                    as={NextLink}
+                    target="_blank"
+                    color={'brightBlue.600'}
+                    href="https://beian.aliyun.com/pcContainer/selfEntity"
+                  >
+                    {t('domain-registration-provider-link-text')}
+                  </Link>
 
-                <Divider orientation="vertical" />
+                  <Divider orientation="vertical" />
 
-                <Link
-                  as={NextLink}
-                  target="_blank"
-                  color={'brightBlue.600'}
-                  href="https://beian.miit.gov.cn/#/Integrated/index"
-                >
-                  Filling Qurey
-                </Link>
+                  <Link
+                    as={NextLink}
+                    target="_blank"
+                    color={'brightBlue.600'}
+                    href="https://beian.miit.gov.cn/#/Integrated/index"
+                  >
+                    {t('domain-registration-query-link-text')}
+                  </Link>
+                </Stack>
               </Stack>
-            </Stack>
+            )}
 
             {/* Your Domain */}
             <Stack direction={'row'} mt={4}>
@@ -188,7 +186,7 @@ const CustomAccessModal = ({
                         borderRadius={'full'}
                         px={2}
                       >
-                        Verification Needed
+                        {t('domain-verification-needed')}
                       </Tag>
                     )}
                     {processPhase === 'SUCCESS' && (
@@ -201,7 +199,7 @@ const CustomAccessModal = ({
                         px={2}
                       >
                         <CheckCircle size={14} />
-                        <Text ml={1}>Verified</Text>
+                        <Text ml={1}>{t('domain-verified')}</Text>
                       </Tag>
                     )}
                   </InputRightElement>
@@ -215,7 +213,7 @@ const CustomAccessModal = ({
                     setProcessPhase('VERIFY_DOMAIN');
                   }}
                 >
-                  Save
+                  {t('domain-verification-input-save')}
                 </Button>
               ) : (
                 <>
@@ -226,7 +224,7 @@ const CustomAccessModal = ({
                     onClick={authCNAME}
                     isLoading={isLoading}
                   >
-                    Refresh
+                    {t('domain-verification-refresh')}
                   </Button>
                   <Button
                     variant={'secondary'}
@@ -237,7 +235,7 @@ const CustomAccessModal = ({
                     }}
                     disabled={isLoading}
                   >
-                    Edit
+                    {t('domain-verification-input-edit')}
                   </Button>
                 </>
               )}
@@ -255,13 +253,13 @@ const CustomAccessModal = ({
                 borderColor={'gray.400'}
               >
                 <Text fontSize={'16px'} fontWeight={'semibold'}>
-                  DNS Records
+                  {t('domain-verification-dns-records')}
                 </Text>
 
                 <Text mt={2}>
-                  Please add a CNAME record for your domain pointing
-                  to pxgxodpbmdih.usw.sealos.io with your DNS provider. Once the DNS update takes
-                  effect, you can bind your custom domain.
+                  {t('domain-verification-dns-records-tip-1')}
+                  <Text as={'b'}>{completePublicDomain}</Text>
+                  {t('domain-verification-dns-records-tip-2')}
                 </Text>
 
                 <TableContainer mt={4} borderRadius={'lg'} borderWidth={1} borderColor={'gray.200'}>
@@ -269,21 +267,21 @@ const CustomAccessModal = ({
                     <Thead color={'gray.500'} borderBottomWidth={1} borderColor={'gray.200'}>
                       <Tr>
                         <Th {...tableCellStyles} borderRightWidth={1}>
-                          Type
+                          {t('domain-verification-dns-records-type')}
                         </Th>
                         <Th {...tableCellStyles} borderRightWidth={1}>
-                          TTL
+                          {t('domain-verification-dns-records-ttl')}
                         </Th>
-                        <Th {...tableCellStyles}>Value</Th>
+                        <Th {...tableCellStyles}>{t('domain-verification-dns-records-value')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       <Tr>
                         <Td {...tableCellStyles} borderRightWidth={1}>
-                          CNAME
+                          {t('domain-verification-dns-records-type-cname')}
                         </Td>
                         <Td {...tableCellStyles} borderRightWidth={1}>
-                          Auto
+                          {t('domain-verification-dns-records-ttl-auto')}
                         </Td>
                         <Td {...tableCellStyles}>
                           <Flex alignItems={'center'} justifyContent={'space-between'} gap={2}>
@@ -315,7 +313,7 @@ const CustomAccessModal = ({
                     gap={2}
                   >
                     <BookOpen size={16} />
-                    <Text>Refer to documentation</Text>
+                    <Text>{t('domain-verification-dns-records-docs-link-text')}</Text>
                   </Link>
                 </Stack>
               </Stack>
@@ -335,7 +333,7 @@ const CustomAccessModal = ({
                 <AlertDescription textColor={'green.600'} fontWeight={'medium'} w={'full'}>
                   <Flex alignItems={'center'} justifyContent={'center'} gap={2}>
                     <CheckCircle size={16} />
-                    Your domain has been successfully bound
+                    {t('domain-verification-success')}
                   </Flex>
                 </AlertDescription>
               </Alert>

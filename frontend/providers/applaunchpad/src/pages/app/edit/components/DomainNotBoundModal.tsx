@@ -13,6 +13,7 @@ import {
   Flex
 } from '@chakra-ui/react';
 import { TriangleAlert } from 'lucide-react';
+import { useTranslation } from 'next-i18next';
 
 export function DomainNotBoundModal({
   isOpen,
@@ -23,6 +24,8 @@ export function DomainNotBoundModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
@@ -32,26 +35,25 @@ export function DomainNotBoundModal({
             <Text color={'orange.400'}>
               <TriangleAlert size={20} />
             </Text>
-            <Text>Domain Not Bound</Text>
+            <Text>{t('domain-not-bound-modal-title')}</Text>
           </Flex>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Alert status="warning" variant="subtle" borderRadius={'lg'}>
             <AlertDescription textColor={'orange.600'}>
-              DNS records are not active yet, so your domain isn&apos;t bound. Closing the pop-up
-              requires re-entering the domain.
+              {t('domain-not-bound-modal-warning')}
             </AlertDescription>
           </Alert>
 
-          <Text mt={2}>Are you sure you want to close the pop-up?</Text>
+          <Text mt={2}>{t('domain-not-bound-modal-description')}</Text>
         </ModalBody>
 
         <ModalFooter>
           <Button variant={'outline'} mr={3} onClick={onClose}>
-            Cancel
+            {t('domain-not-bound-modal-cancel')}
           </Button>
-          <Button onClick={onConfirm}>Confirm</Button>
+          <Button onClick={onConfirm}>{t('domain-not-bound-modal-confirm')}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>

@@ -347,5 +347,42 @@
   "remarks": "Remarks",
   "set_remarks_placeholder": "Set remarks to help identify this app or service more easily.",
   "remark_updated_successfully": "Remark updated successfully",
-  "update_remark_failed": "Update remark failed"
+  "update_remark_failed": "Update remark failed",
+  "domain-requires-registration-tip-1": "Domain binding for this availability zone requires ",
+  "domain-requires-registration-tip-2": " registration.",
+  "infrastructure": {
+    "providers": {
+      "alibaba": {
+        "name": "Alibaba Cloud"
+      },
+      "volcano": {
+        "name": "Volcano Engine"
+      },
+      "tencent": {
+        "name": "Tencent Cloud"
+      }
+    }
+  },
+  "domain-registration-provider-link-text": "Filling Entry",
+  "domain-registration-query-link-text": "Filling Query",
+  "domain-verification-needed": "Verification Needed",
+  "domain-verified": "Verified",
+  "domain-verification-input-save": "Save",
+  "domain-verification-refresh": "Refresh",
+  "domain-verification-input-edit": "Edit",
+  "domain-verification-dns-records": "DNS Records",
+  "domain-verification-dns-records-tip-1": "Please add a CNAME record for your domain pointing to ",
+  "domain-verification-dns-records-tip-2": " with your DNS provider. Once the DNS update takes effect, you can bind your custom domain.",
+  "domain-verification-dns-records-type": "Type",
+  "domain-verification-dns-records-ttl": "TTL",
+  "domain-verification-dns-records-value": "Value",
+  "domain-verification-dns-records-type-cname": "CNAME",
+  "domain-verification-dns-records-ttl-auto": "Auto",
+  "domain-verification-dns-records-docs-link-text": "Refer to documentation",
+  "domain-verification-success": "Your domain has been successfully bound.",
+  "domain-not-bound-modal-title": "Domain Not Bound",
+  "domain-not-bound-modal-warning": "DNS records are not active yet, so your domain isn't bound. Closing the pop-up requires re-entering the domain.",
+  "domain-not-bound-modal-description": "Are you sure you want to close the pop-up?",
+  "domain-not-bound-modal-cancel": "Cancel",
+  "domain-not-bound-modal-confirm": "Confirm"
 }
