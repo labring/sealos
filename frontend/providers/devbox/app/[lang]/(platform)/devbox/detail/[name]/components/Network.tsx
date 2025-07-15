@@ -95,9 +95,12 @@ const Network = () => {
         const address = `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
-            <TooltipTrigger>
-              <div className="cursor-pointer hover:underline" onClick={() => copyData(address)}>
-                {address}
+            <TooltipTrigger asChild>
+              <div
+                className="flex cursor-pointer break-all hover:underline"
+                onClick={() => copyData(address)}
+              >
+                {address.replace('.svc.cluster.local', '')}
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">{t('copy')}</TooltipContent>
@@ -182,7 +185,7 @@ const Network = () => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className="guide-network-address cursor-pointer text-sm/5 hover:underline"
+                  className="guide-network-address cursor-pointer text-sm/5 break-words hover:underline"
                   onClick={() => window.open(`https://${address}`, '_blank')}
                 >
                   https://{address}
@@ -217,7 +220,7 @@ const Network = () => {
           <TableHeader>
             <TableRow>
               {networkColumn.map((column) => (
-                <TableHead key={column.key} style={{ minWidth: column.width }}>
+                <TableHead key={column.key} style={{ maxWidth: column.width }}>
                   {column.title}
                 </TableHead>
               ))}

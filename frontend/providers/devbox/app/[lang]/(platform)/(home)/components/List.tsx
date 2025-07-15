@@ -78,11 +78,10 @@ const DevboxList = ({
       {
         accessorKey: 'name',
         header: t('name'),
-        size: 250,
         cell: ({ row }) => {
           const item = row.original;
           return (
-            <div className="flex cursor-pointer items-center gap-2">
+            <div className="flex min-w-fit cursor-pointer items-center gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
@@ -122,7 +121,6 @@ const DevboxList = ({
       {
         accessorKey: 'status',
         header: t('status'),
-        size: 140,
         cell: ({ row }) => {
           const item = row.original;
           return (
