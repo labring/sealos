@@ -75,19 +75,18 @@ export default function EmailCheckComponent() {
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
       setToken(globalToken);
-      const method = 'email';
       if (result.data?.needInit) {
         gtmLoginSuccess({
           user_type: 'new',
-          method
+          method: 'email'
         });
         await router.push('/workspace');
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
           gtmLoginSuccess({
-            user_type: 'returning',
-            method
+            user_type: 'existing',
+            method: 'email'
           });
           await sessionConfig(regionTokenRes.data);
           await router.replace('/');

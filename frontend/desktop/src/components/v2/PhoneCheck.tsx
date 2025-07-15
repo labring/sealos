@@ -28,6 +28,7 @@ import { HiddenCaptchaComponent, TCaptchaInstance } from '../signin/Captcha';
 import { useConfigStore } from '@/stores/config';
 import useCustomError from '../signin/auth/useCustomError';
 import useScriptStore from '@/stores/script';
+import { gtmLoginSuccess } from '@/utils/gtm';
 
 export default function PhoneCheckComponent() {
   const router = useRouter();
@@ -160,8 +161,16 @@ export default function PhoneCheckComponent() {
       if (!globalToken) throw Error();
       setToken(globalToken);
       if (result.data?.needInit) {
+        gtmLoginSuccess({
+          user_type: 'new',
+          method: 'phone'
+        });
         await router.push('/workspace');
       } else {
+        gtmLoginSuccess({
+          user_type: 'existing',
+          method: 'phone'
+        });
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
           await sessionConfig(regionTokenRes.data);
