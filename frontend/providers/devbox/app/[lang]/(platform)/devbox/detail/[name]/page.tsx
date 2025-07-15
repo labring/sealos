@@ -98,7 +98,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-28px)] min-w-[1600px] flex-col px-6">
+    <div className="flex h-[calc(100vh-28px)] flex-col px-6">
       <Header refetchDevboxDetail={refetch} />
       <div className="flex h-full gap-2">
         <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} />
