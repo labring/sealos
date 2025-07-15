@@ -49,6 +49,17 @@ func NewVLogsServer(config *Config) (*VLogsServer, error) {
 	return vl, nil
 }
 
+func (vl *VLogsServer) initGrpcClient(target string) error {
+	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("Failed to connect to Hubble: %v", err)
+	}
+	vl.grpcConn = conn
+	vl.observerClient = observer.NewObserverClient(conn)
+	log.Println("Connected to Hubble service")
+	return nil
+}
+
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	query, err := vl.queryConvert(req)
 	if err != nil {
@@ -379,41 +390,13 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 			},
 		},
 	}
-
-	fmt.Printf("Querying flows for pod: %s with label: %s\n", podName, label)
-
 	stream, err := vl.observerClient.GetFlows(ctx, flowsRequest)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Failed to call GetFlows: %v", err), http.StatusInternalServerError)
 		return err
 	}
 
-	var inboundFlows []map[string]interface{}
-	var outboundFlows []map[string]interface{}
-
-	type FlowStats struct {
-		Total      int            `json:"total"`
-		Protocols  map[string]int `json:"protocols"`
-		Verdicts   map[string]int `json:"verdicts"`
-		Ports      map[uint32]int `json:"ports"`
-		Endpoints  map[string]int `json:"endpoints"`
-		BytesCount int64          `json:"bytes_count"`
-	}
-
-	var stats struct {
-		Inbound  FlowStats `json:"inbound"`
-		Outbound FlowStats `json:"outbound"`
-	}
-
-	stats.Inbound.Protocols = make(map[string]int)
-	stats.Inbound.Verdicts = make(map[string]int)
-	stats.Inbound.Ports = make(map[uint32]int)
-	stats.Inbound.Endpoints = make(map[string]int)
-
-	stats.Outbound.Protocols = make(map[string]int)
-	stats.Outbound.Verdicts = make(map[string]int)
-	stats.Outbound.Ports = make(map[uint32]int)
-	stats.Outbound.Endpoints = make(map[string]int)
+	var flows []map[string]interface{}
 
 	for {
 		resp, err := stream.Recv()
@@ -424,120 +407,53 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 			http.Error(rw, fmt.Sprintf("Error receiving stream data: %v", err), http.StatusInternalServerError)
 			return err
 		}
-
 		flow := resp.GetFlow()
 		if flow != nil {
-			protocol := "UNKNOWN"
-			var srcPort, dstPort uint32
+			srcPod := flow.GetSource().GetPodName()
+			dstPod := flow.GetDestination().GetPodName()
+			if srcPod == "" || dstPod == "" {
+				continue
+			}
 
+			var srcPort, dstPort uint32
 			if flow.GetL4() != nil {
 				if flow.GetL4().GetTCP() != nil {
-					protocol = "TCP"
 					srcPort = flow.GetL4().GetTCP().GetSourcePort()
 					dstPort = flow.GetL4().GetTCP().GetDestinationPort()
 				} else if flow.GetL4().GetUDP() != nil {
-					protocol = "UDP"
 					srcPort = flow.GetL4().GetUDP().GetSourcePort()
 					dstPort = flow.GetL4().GetUDP().GetDestinationPort()
-				} else if flow.GetL4().GetICMPv4() != nil {
-					protocol = "ICMPv4"
-				} else if flow.GetL4().GetICMPv6() != nil {
-					protocol = "ICMPv6"
 				}
 			}
 
-			// Build detailed flow information
-			flowDetail := map[string]interface{}{
-				"time": resp.GetTime().AsTime().Format(time.RFC3339),
+			// Get timestamp
+			timestamp := ""
+			if flow.GetTime() != nil {
+				t := flow.GetTime().AsTime()
+				timestamp = t.Format("Jan 2 15:04:05.000")
+			}
+
+			// Create structured flow information
+			flowInfo := map[string]interface{}{
+				"timestamp": timestamp,
 				"source": map[string]interface{}{
-					"pod":      flow.GetSource().GetPodName(),
-					"port":     srcPort,
-					"labels":   flow.GetSource().GetLabels(),
-					"identity": flow.GetSource().GetIdentity(),
+					"namespace": flow.GetSource().GetNamespace(),
+					"pod":       srcPod,
+					"port":      srcPort,
+					"identity":  flow.GetSource().GetIdentity(),
 				},
 				"destination": map[string]interface{}{
-					"pod":      flow.GetDestination().GetPodName(),
-					"port":     dstPort,
-					"labels":   flow.GetDestination().GetLabels(),
-					"identity": flow.GetDestination().GetIdentity(),
+					"namespace": flow.GetDestination().GetNamespace(),
+					"pod":       dstPod,
+					"port":      dstPort,
+					"identity":  flow.GetDestination().GetIdentity(),
 				},
-				"protocol":  protocol,
-				"verdict":   flow.GetVerdict().String(),
-				"direction": flow.GetTrafficDirection().String(),
-				"node_name": resp.GetNodeName(),
 			}
-
-			isInbound := false
-
-			if flow.GetDestination().GetPodName() == podName ||
-				strings.Contains(flow.GetDestination().GetPodName(), name) {
-				isInbound = true
-			}
-
-			if isInbound {
-				stats.Inbound.Total++
-				stats.Inbound.Protocols[protocol]++
-				stats.Inbound.Verdicts[flow.GetVerdict().String()]++
-				stats.Inbound.Ports[dstPort]++
-				stats.Inbound.Endpoints[flow.GetSource().GetPodName()]++
-				inboundFlows = append(inboundFlows, flowDetail)
-			} else {
-				stats.Outbound.Total++
-				stats.Outbound.Protocols[protocol]++
-				stats.Outbound.Verdicts[flow.GetVerdict().String()]++
-				stats.Outbound.Ports[dstPort]++
-				stats.Outbound.Endpoints[flow.GetDestination().GetPodName()]++
-				outboundFlows = append(outboundFlows, flowDetail)
-			}
-
-			if flow.GetL7() != nil {
-				l7 := flow.GetL7()
-				l7Info := map[string]interface{}{
-					"type": l7.GetType().String(),
-				}
-
-				if http := l7.GetHttp(); http != nil {
-					l7Info["http"] = map[string]interface{}{
-						"method": http.GetMethod(),
-						"url":    http.GetUrl(),
-						"code":   http.GetCode(),
-					}
-				} else if dns := l7.GetDns(); dns != nil {
-					l7Info["dns"] = map[string]interface{}{
-						"query": dns.GetQuery(),
-					}
-				}
-
-				flowDetail["l7"] = l7Info
-			}
+			flows = append(flows, flowInfo)
 		}
 	}
 
-	response := map[string]interface{}{
-		"status": "success",
-		"query": map[string]interface{}{
-			"pod":         podName,
-			"label":       label,
-			"limit":       limit,
-			"since":       since.Format(time.RFC3339),
-			"minutes_ago": minutesAgo,
-		},
-		"stats": stats,
-		"flows": map[string]interface{}{
-			"inbound": map[string]interface{}{
-				"count": len(inboundFlows),
-				"data":  inboundFlows,
-			},
-			"outbound": map[string]interface{}{
-				"count": len(outboundFlows),
-				"data":  outboundFlows,
-			},
-		},
-		"total_flows": stats.Inbound.Total + stats.Outbound.Total,
-		"timestamp":   time.Now().Format(time.RFC3339),
-	}
-
-	jsonResponse, err := json.Marshal(response)
+	jsonResponse, err := json.Marshal(flows)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Unable to generate JSON response: %v", err), http.StatusInternalServerError)
 		return err
@@ -545,25 +461,4 @@ func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) err
 
 	rw.Write(jsonResponse)
 	return nil
-}
-
-func (vl *VLogsServer) initGrpcClient(target string) error {
-	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return fmt.Errorf("Failed to connect to Hubble: %v", err)
-	}
-	vl.grpcConn = conn
-	vl.observerClient = observer.NewObserverClient(conn)
-	log.Println("Connected to Hubble service")
-	return nil
-}
-
-type SimplifiedFlow struct {
-	Time      string `json:"time"`
-	SourcePod string `json:"source_pod"`
-	DestPod   string `json:"destination_pod"`
-	SrcPort   uint32 `json:"source_port,omitempty"`
-	DstPort   uint32 `json:"destination_port,omitempty"`
-	Protocol  string `json:"protocol,omitempty"`
-	Verdict   string `json:"verdict,omitempty"`
 }
