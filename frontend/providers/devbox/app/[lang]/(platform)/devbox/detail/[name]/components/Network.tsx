@@ -199,7 +199,7 @@ const Network = () => {
   ];
 
   const handleManage = () => {
-    router.push(`/devbox/create?name=${devboxDetail?.name}`);
+    router.push(`/devbox/create?name=${devboxDetail?.name}&scrollTo=network`);
   };
 
   return (

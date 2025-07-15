@@ -25,7 +25,7 @@ export function Pagination({
   return (
     <div
       className={cn(
-        'flex items-center justify-between gap-2.5 py-3 text-sm/5 text-zinc-500',
+        'flex items-center justify-between gap-2.5 pt-2 text-sm/5 text-zinc-500',
         className
       )}
     >
