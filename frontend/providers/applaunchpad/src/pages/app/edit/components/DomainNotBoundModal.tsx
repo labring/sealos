@@ -59,3 +59,5 @@ export function DomainNotBoundModal({
     </Modal>
   );
 }
+
+export default DomainNotBoundModal;
