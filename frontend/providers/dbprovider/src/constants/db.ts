@@ -228,10 +228,10 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
@@ -512,3 +512,28 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'apecloud-mysql',
   'redis'
 ];
+
+const DB_TYPE_MAP: Record<string, string> = {
+  mysql: 'MySQL',
+  clickhouse: 'ClickHouse',
+  mongodb: 'MongoDB',
+  snowflake: 'Snowflake',
+  h2: 'H2',
+  oracle: 'Oracle',
+  postgresql: 'PostgreSQL',
+  dm: 'DM',
+  oceanbase: 'OceanBase',
+  hive: 'HIVE',
+  kingbase: 'Kingbase',
+  redis: 'Redis',
+  opengauss: 'OpenGauss',
+  sqlserver: 'SQLServer',
+  sqlite: 'SQLite',
+  db2: 'DB2',
+  duckdb: 'DuckDB',
+  gaussdb: 'GaussDB'
+};
+
+export function mapDBType(dbType: string): string {
+  return DB_TYPE_MAP[dbType.toLowerCase()] ?? dbType;
+}

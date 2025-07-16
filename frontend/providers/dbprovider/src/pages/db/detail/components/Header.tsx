@@ -7,7 +7,7 @@ import {
 } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { defaultDBDetail } from '@/constants/db';
+import { defaultDBDetail, mapDBType } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType, DBType } from '@/types/db';
 import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
@@ -19,13 +19,11 @@ import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState, useEffect } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
-import { encryptCbcBrowser } from '@/api/encrypt';
 import {
   ThemeAppearance,
   PrimaryColorsType,
   LangType,
   yowantLayoutConfig,
-  mapDBType
 } from '@/constants/chat2db';
 import { ConnectionInfo } from './AppBaseInfo';
 import { generateLoginUrl } from '@/services/chat2db/user';
