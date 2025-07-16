@@ -1,7 +1,7 @@
 import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { defaultDBDetail } from '@/constants/db';
+import { defaultDBDetail, mapDBType } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType } from '@/types/db';
 import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
@@ -12,23 +12,25 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
 import UpdateModal from './UpdateModal';
-import { encryptCbcBrowser } from '@/api/encrypt';
 import {
   ThemeAppearance,
   PrimaryColorsType,
   LangType,
   yowantLayoutConfig
 } from '@/constants/chat2db';
-import { ca } from 'date-fns/locale';
-import language from 'react-syntax-highlighter/dist/esm/languages/hljs/1c';
+import { ConnectionInfo } from './AppBaseInfo';
+import { generateLoginUrl } from '@/services/chat2db/user';
+import { createDatasource } from '@/services/chat2db/datasource';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
   db = defaultDBDetail,
+  conn,
   isLargeScreen = true,
   setShowSlider
 }: {
   db: DBDetailType;
+  conn: ConnectionInfo | null;
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
 }) => {
@@ -136,26 +138,51 @@ const Header = ({
     const userStr = localStorage.getItem('session');
     const orgId = '34';
     const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+    const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
     const userObj = userStr ? JSON.parse(userStr) : null;
     const userId = userObj?.user.id;
-    const userNS = userObj?.user.nsid;
-
-    const raw = `${userId}/${userNS}:${orgId}`;
-    console.log(raw);
-    try {
-      const encryptedKey = await encryptCbcBrowser(raw, secretKey);
-
-      const params = new URLSearchParams({
-        theme: ThemeAppearance.Light,
-        primaryColor: PrimaryColorsType.bw,
-        language: LangType.ZH_CN,
-        hideAvatar: String(yowantLayoutConfig.hideAvatar),
-        initialKey: encryptedKey
+    // const userNS = userObj?.user.nsid; // 不再需要 userNS
+    if (!conn) {
+      return toast({
+        title: 'Connection info not ready',
+        status: 'error'
       });
-      // const chat2dbURL = new URL(`https://chat2db.sealosbja.site/workspace?${params.toString()}`);
-      console.log(encryptedKey);
-      // router.push(chat2dbURL.toString());
-      router.push(`/db/manage?${params.toString()}`);
+    }
+    const { host, port, connection, username, password, dbType, dbName } = conn;
+
+    const payload = {
+      environmentId: 1 as 1 | 2,
+      storageType: 'LOCAL' as 'LOCAL' | 'CLOUD',
+      host: host,
+      port: String(port),
+      user: username,
+      password: password,
+      url: connection,
+      type: mapDBType(dbType)
+    };
+
+    try {
+      const url = await generateLoginUrl({
+        userId,
+        orgId,
+        secretKey,
+        ui: {
+          theme: ThemeAppearance.Light,
+          primaryColor: PrimaryColorsType.bw,
+          language: LangType.ZH_CN,
+          hideAvatar: yowantLayoutConfig.hideAvatar
+        }
+      });
+
+      try {
+        console.log(111);
+
+        await createDatasource(payload, apiKey);
+      } catch (err) {
+        console.log(err);
+      }
+
+      router.push(url);
     } catch (err) {
       console.error(t('chat2db_redirect_failed'), err);
       toast({

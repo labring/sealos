@@ -13,7 +13,7 @@ import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
 import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
-import type { DBDetailType } from '@/types/db';
+import type { DBDetailType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -98,7 +98,23 @@ const CopyBox = ({
   );
 };
 
-const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
+export interface ConnectionInfo {
+  host: string;
+  port: number | string;
+  connection: string;
+  username: string;
+  password: string;
+  dbType: DBType;
+  dbName: string;
+}
+
+const AppBaseInfo = ({
+  db = defaultDBDetail,
+  onConnReady
+}: {
+  db: DBDetailType;
+  onConnReady?: (info: ConnectionInfo) => void;
+}) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { SystemEnv } = useEnvStore();
@@ -254,6 +270,19 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     ],
     [db]
   );
+
+  useEffect(() => {
+    if (!secret) return;
+    onConnReady?.({
+      host: secret.host,
+      port: secret.port,
+      connection: secret.connection,
+      username: secret.username,
+      password: secret.password,
+      dbType: db.dbType,
+      dbName: db.dbName
+    });
+  }, [secret, db, onConnReady]);
 
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
