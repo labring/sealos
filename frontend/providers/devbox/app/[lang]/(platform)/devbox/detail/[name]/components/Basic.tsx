@@ -122,7 +122,7 @@ const Basic = () => {
   ]);
 
   return (
-    <div className="flex max-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white shadow-xs">
+    <div className="flex min-w-[450px] flex-col items-start rounded-xl border-[0.5px] bg-white shadow-xs">
       {/* top:basic,ssh config*/}
       <div className="flex w-full flex-shrink-0 flex-grow-1 flex-col items-start gap-4 p-6">
         {/* title */}

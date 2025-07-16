@@ -206,7 +206,7 @@ const Network = () => {
   };
 
   return (
-    <div className="flex h-full w-full flex-col items-center gap-3 self-stretch rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-full flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>

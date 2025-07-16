@@ -140,7 +140,7 @@ const DevboxList = ({
             <MonitorChart
               type="blue"
               data={item.usedCpu || generateMockMonitorData(item.name)}
-              className="h-9"
+              className="h-9 w-55"
             />
           );
         }
@@ -155,7 +155,7 @@ const DevboxList = ({
             <MonitorChart
               type="green"
               data={item.usedMemory || generateMockMonitorData(item.name)}
-              className="h-9"
+              className="h-9 w-55"
             />
           );
         }

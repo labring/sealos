@@ -103,7 +103,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       <div className="flex h-full gap-2">
         <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} />
         {/* right side */}
-        <div className="flex h-full flex-1 flex-col gap-2">{renderContent()}</div>
+        <div className="flex h-full w-full flex-col gap-2">{renderContent()}</div>
       </div>
     </div>
   );
