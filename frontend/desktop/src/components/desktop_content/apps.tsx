@@ -14,7 +14,8 @@ import {
   ModalBody,
   Center,
   useBreakpointValue,
-  GridProps
+  GridProps,
+  FlexProps
 } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import {
@@ -162,9 +163,11 @@ const AppGridPagingContainer = ({
   currentPage,
   handleNavigation,
   pageGap,
-  onChange
+  onChange,
+  dragContainerProps
 }: {
   children: ReactNode;
+  dragContainerProps?: FlexProps;
   gridGap: number;
   appHeight: number;
   columns: number;
@@ -174,7 +177,8 @@ const AppGridPagingContainer = ({
   pageGap: number;
   onChange: (currentPage: number, pageSize: number) => void;
 }) => {
-  const gridWrapperRef = useRef<HTMLDivElement>(null);
+  const dragContainerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -190,18 +194,18 @@ const AppGridPagingContainer = ({
       : (pageWidth + pageGap) * clampedCurrentPage - dragDelta;
 
   const calculateItemsPerPage = useCallback(() => {
-    if (!gridWrapperRef.current) return 8;
+    if (!gridContainerRef.current) return 8;
 
-    const height = gridWrapperRef.current.clientHeight;
+    const height = gridContainerRef.current.clientHeight;
     const rows = Math.floor((height + gridGap) / (appHeight + gridGap));
 
     return rows * columns;
   }, [columns, gridGap, appHeight]);
 
   const calculatePageWidth = useCallback(() => {
-    if (!gridWrapperRef.current) return 0;
+    if (!gridContainerRef.current) return 0;
 
-    return (gridWrapperRef.current.scrollWidth + pageGap) / totalPages - pageGap;
+    return (gridContainerRef.current.scrollWidth + pageGap) / totalPages - pageGap;
   }, [totalPages, pageGap]);
 
   // Calculate items per page and scroll position on initial render and on screen size changes
@@ -271,11 +275,11 @@ const AppGridPagingContainer = ({
 
   // Pointer drag pagination
   useEffect(() => {
-    const wrapper = gridWrapperRef.current;
+    const wrapper = dragContainerRef.current;
     if (!wrapper) return;
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (!gridWrapperRef.current) return;
+      if (!dragContainerRef.current) return;
 
       setDragStartX(e.screenX);
       setDragStartY(e.screenY);
@@ -337,17 +341,19 @@ const AppGridPagingContainer = ({
   ]);
 
   return (
-    <Flex
-      ref={gridWrapperRef}
-      h="full"
-      w="full"
-      transition="transform 0.2s ease-out"
-      gap={`${pageGap}px`}
-      style={{
-        transform: `translateX(-${scrollPosition}px)`
-      }}
-    >
-      {children}
+    <Flex ref={dragContainerRef} w="full" h="full" {...dragContainerProps}>
+      <Flex
+        ref={gridContainerRef}
+        h="full"
+        w="full"
+        transition="transform 0.2s ease-out"
+        gap={`${pageGap}px`}
+        style={{
+          transform: `translateX(-${scrollPosition}px)`
+        }}
+      >
+        {children}
+      </Flex>
     </Flex>
   );
 };
@@ -885,26 +891,26 @@ export default function Apps() {
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <ModalBody
-            pt={{
-              base: '112.5px',
-              sm: '124.5px'
-            }}
-            pb={{
-              base: '112.5px',
-              sm: '144.5px'
-            }}
-            px={{
-              base: '31.5px',
-              sm: '60px',
-              md: '64px',
-              lg: '82px',
-              xl: '90px'
-            }}
-            overflow="hidden"
-            className="folder-modal-body"
-          >
+          <ModalBody p="0">
             <AppGridPagingContainer
+              dragContainerProps={{
+                pt: {
+                  base: '112.5px',
+                  sm: '124.5px'
+                },
+                pb: {
+                  base: '112.5px',
+                  sm: '144.5px'
+                },
+                px: {
+                  base: '31.5px',
+                  sm: '60px',
+                  md: '64px',
+                  lg: '82px',
+                  xl: '90px'
+                },
+                overflow: 'hidden'
+              }}
               gridGap={gridGap}
               appHeight={appHeight.max}
               columns={columns}
@@ -942,7 +948,14 @@ export default function Apps() {
               ))}
             </AppGridPagingContainer>
 
-            <Box position="absolute" bottom="32px" left="0" right="0">
+            <Box
+              position="absolute"
+              w="fit-content"
+              bottom="32px"
+              left="0"
+              right="0"
+              marginInline={'auto'}
+            >
               <PageSwitcher
                 pages={totalPagesInFolder}
                 current={currentPageInFolder}
