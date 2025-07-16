@@ -158,9 +158,11 @@ const Release = () => {
         }
       };
       setDeployData(transformData);
+
+      // Check apps first
       const apps = await getAppsByDevboxId(devbox.id);
 
-      // when: there is no app,create a new app
+      // If no apps, create directly
       if (apps.length === 0) {
         const tempFormDataStr = encodeURIComponent(JSON.stringify(transformData));
         sealosApp.runEvents('openDesktopApp', {
@@ -172,13 +174,11 @@ const Release = () => {
             formData: tempFormDataStr
           }
         });
+        return;
       }
 
-      // when: there have apps,show the app select modal
-      if (apps.length >= 1) {
-        setApps(apps);
-        setOnOpenSelectApp(true);
-      }
+      // If has apps, show the drawer
+      setOnOpenSelectApp(true);
     },
     [devbox, env.ingressDomain, env.namespace, env.registryAddr]
   );
@@ -380,14 +380,17 @@ const Release = () => {
           onClose={() => setIsOpenEdit(false)}
         />
       )}
-      <DeployDevboxDrawer
-        open={!!onOpenSelectApp}
-        apps={apps}
-        devboxName={devbox?.name || ''}
-        deployData={deployData}
-        onSuccess={() => setOnOpenSelectApp(false)}
-        onClose={() => setOnOpenSelectApp(false)}
-      />
+      {!!devbox && (
+        <DeployDevboxDrawer
+          open={!!onOpenSelectApp}
+          devboxId={devbox.id}
+          devboxName={devbox.name}
+          deployData={deployData}
+          onSuccess={() => setOnOpenSelectApp(false)}
+          onClose={() => setOnOpenSelectApp(false)}
+        />
+      )}
+
       <ConfirmChild />
       <CreateTemplateDrawer
         isOpen={isCreateTemplateDrawerOpen}

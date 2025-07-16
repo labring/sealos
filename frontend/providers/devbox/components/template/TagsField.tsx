@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 import { useQuery } from '@tanstack/react-query';
 
@@ -16,6 +16,7 @@ interface TagsFieldProps {
 
 const TagsField = ({ form }: TagsFieldProps) => {
   const t = useTranslations();
+  const locale = useLocale();
 
   const tagsQuery = useQuery(['template-repository-tags'], listTag, {
     staleTime: Infinity,
@@ -66,7 +67,9 @@ const TagsField = ({ form }: TagsFieldProps) => {
                         key={tag.uid}
                         className="flex items-center gap-1 rounded-full bg-zinc-100 px-2.5 py-0.5"
                       >
-                        <span className="text-xs/4 font-semibold text-zinc-900">{tag.name}</span>
+                        <span className="text-xs/4 font-semibold text-zinc-900">
+                          {locale === 'zh' ? tag.zhName : tag.enName}
+                        </span>
                       </div>
                     ) : null;
                   })}
@@ -95,7 +98,9 @@ const TagsField = ({ form }: TagsFieldProps) => {
                         }}
                       >
                         <Checkbox checked={isSelected} />
-                        <span className="text-sm text-zinc-900">{tag.name}</span>
+                        <span className="text-sm text-zinc-900">
+                          {locale === 'zh' ? tag.zhName : tag.enName}
+                        </span>
                       </div>
                     );
                   })}
@@ -115,7 +120,7 @@ const TagsField = ({ form }: TagsFieldProps) => {
                     return (
                       <div
                         key={tag.uid}
-                        className="flex cursor-pointer items-center gap-3 px-2 py-1.5"
+                        className="flex h-fit cursor-pointer items-center gap-3 px-2 py-1.5"
                         onClick={() => {
                           const newValue = isSelected
                             ? field.value.filter((t: { value: string }) => t.value !== tag.uid)
@@ -125,7 +130,7 @@ const TagsField = ({ form }: TagsFieldProps) => {
                         }}
                       >
                         <Checkbox checked={isSelected} />
-                        <span className="text-sm">{tag.name}</span>
+                        <span className="text-sm">{locale === 'zh' ? tag.zhName : tag.enName}</span>
                       </div>
                     );
                   })}

@@ -3,9 +3,11 @@ import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
 import { ArrowUpRight } from 'lucide-react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { useQuery } from '@tanstack/react-query';
 
 import { useEnvStore } from '@/stores/env';
 import { AppListItemType } from '@/types/app';
+import { getAppsByDevboxId } from '@/api/devbox';
 
 import {
   Table,
@@ -17,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Loading } from '@/components/ui/loading';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -41,8 +44,8 @@ interface DeployData {
 }
 
 interface DeployDevboxDrawerProps {
-  apps: AppListItemType[];
   devboxName: string;
+  devboxId: string;
   deployData: DeployData;
   onSuccess: () => void;
   onClose: () => void;
@@ -50,15 +53,24 @@ interface DeployDevboxDrawerProps {
 }
 
 export default function DeployDevboxDrawer({
-  apps,
   deployData,
   devboxName,
+  devboxId,
   onSuccess,
   onClose,
   open
 }: DeployDevboxDrawerProps) {
   const t = useTranslations();
   const { env } = useEnvStore();
+
+  const { data: apps, isLoading } = useQuery(
+    ['apps', devboxId],
+    () => getAppsByDevboxId(devboxId),
+    {
+      refetchInterval: 3000,
+      enabled: open
+    }
+  );
 
   const handleCreate = useCallback(() => {
     const tempFormData = { ...deployData, appName: `${deployData.appName}-${nanoid()}` };
@@ -115,36 +127,40 @@ export default function DeployDevboxDrawer({
           </div>
           <span className="leading-6">{t('update_matched_apps_notes')}</span>
           <div className="w-full">
-            <Table className="table-fixed">
-              <TableHeader>
-                <TableRow className="[&>th]:bg-white">
-                  <TableHead className="w-[175px]">{t('app_name')}</TableHead>
-                  <TableHead>{t('current_image_name')}</TableHead>
-                  <TableHead>{t('create_time')}</TableHead>
-                  <TableHead></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {apps.map((item) => (
-                  <TableRow key={item.name}>
-                    <TableCell className="w-[175px] truncate text-black">{item.name}</TableCell>
-                    <TableCell>
-                      {item.imageName.startsWith(
-                        `${env.registryAddr}/${env.namespace}/${devboxName}`
-                      )
-                        ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
-                        : '-'}
-                    </TableCell>
-                    <TableCell>{item.createTime}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="secondary" onClick={() => handleUpdate(item)}>
-                        {t('to_update')}
-                      </Button>
-                    </TableCell>
+            {isLoading ? (
+              <Loading />
+            ) : (
+              <Table className="table-fixed">
+                <TableHeader>
+                  <TableRow className="[&>th]:bg-white">
+                    <TableHead className="w-[175px]">{t('app_name')}</TableHead>
+                    <TableHead>{t('current_image_name')}</TableHead>
+                    <TableHead>{t('create_time')}</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {apps?.map((item) => (
+                    <TableRow key={item.name}>
+                      <TableCell className="w-[175px] truncate text-black">{item.name}</TableCell>
+                      <TableCell>
+                        {item.imageName.startsWith(
+                          `${env.registryAddr}/${env.namespace}/${devboxName}`
+                        )
+                          ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
+                          : '-'}
+                      </TableCell>
+                      <TableCell>{item.createTime}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="secondary" onClick={() => handleUpdate(item)}>
+                          {t('to_update')}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </div>
       </DrawerContent>
