@@ -57,6 +57,9 @@ const AppItem = ({
       justifyContent={'flex-start'}
       alignItems={'center'}
       className={app.key}
+      w="fit-content"
+      h="fit-content"
+      maxW="100%"
     >
       <Center
         w={{ base: '64px', sm: '78px' }}
@@ -68,6 +71,7 @@ const AppItem = ({
         overflow={'hidden'}
         _hover={{ transform: 'scale(1.05)' }}
         cursor={'pointer'}
+        flexShrink={0}
         style={{
           touchAction: 'none',
           userSelect: 'none'
@@ -98,6 +102,9 @@ const AppItem = ({
         fontWeight={500}
         textAlign={'center'}
         lineHeight={'normal'}
+        flexShrink={0}
+        maxW="100%"
+        wordBreak="break-word"
         style={{
           touchAction: 'none',
           userSelect: 'none'
@@ -112,12 +119,16 @@ const AppItem = ({
 const AppGrid = ({
   children,
   gridGap,
+  rows,
   appHeight,
+  columns,
   gridProps
 }: {
   children: ReactNode;
   gridGap?: number;
-  appHeight?: number;
+  rows: number;
+  appHeight: number;
+  columns: number;
   gridProps?: Omit<
     GridProps,
     'templateColumns' | 'templateRows' | 'gap' | 'flexGrow' | 'flexShrink' | 'flexBasis'
@@ -129,13 +140,12 @@ const AppGrid = ({
       flexShrink={0}
       flexGrow={0}
       flexBasis={'100%'}
-      gap={`${gridGap}px`}
-      templateColumns={{
-        base: 'repeat(2, 1fr)',
-        sm: 'repeat(3, 1fr)',
-        lg: 'repeat(5, 1fr)'
-      }}
-      templateRows={`repeat(auto-fill, ${appHeight}px)`}
+      gap={`${gridGap ?? 0}px`}
+      templateColumns={`repeat(${columns}, 1fr)`}
+      templateRows={`repeat(${rows}, minmax(${appHeight}px, auto))`}
+      justifyItems={'center'}
+      alignContent={'space-between'}
+      justifyContent={'space-between'}
       className="apps-container"
     >
       {children}
@@ -147,6 +157,7 @@ const AppGridPagingContainer = ({
   children,
   gridGap,
   appHeight,
+  columns,
   totalPages,
   currentPage,
   handleNavigation,
@@ -156,6 +167,7 @@ const AppGridPagingContainer = ({
   children: ReactNode;
   gridGap: number;
   appHeight: number;
+  columns: number;
   totalPages: number;
   currentPage: number;
   handleNavigation: boolean;
@@ -163,13 +175,6 @@ const AppGridPagingContainer = ({
   onChange: (currentPage: number, pageSize: number) => void;
 }) => {
   const gridWrapperRef = useRef<HTMLDivElement>(null);
-
-  const columns =
-    useBreakpointValue({
-      base: 2,
-      sm: 3,
-      lg: 5
-    }) ?? 2;
 
   const [pageWidth, setPageWidth] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -477,12 +482,12 @@ const PageSwitcher = ({
   onChange: (target: number) => void;
 }) => {
   return (
-    <Flex justifyContent="center" alignItems="center" gap="8px">
+    <Flex justifyContent="center" alignItems="center" gap="11px">
       {Array.from({ length: pages }).map((_, index) => (
         <Box
           key={index}
-          w="12px"
-          h="12px"
+          w="10px"
+          h="10px"
           borderRadius="50%"
           bg={index === current ? 'gray.400' : 'gray.200'}
           cursor="pointer"
@@ -507,11 +512,27 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
-  const appHeight =
+  // min = 1 line app name
+  // max = 2 lines app name
+  const appHeight = useBreakpointValue({
+    base: {
+      min: 94,
+      max: 112
+    },
+    md: {
+      min: 108,
+      max: 126
+    }
+  }) ?? {
+    min: 94,
+    max: 112
+  };
+  const columns =
     useBreakpointValue({
-      base: 114,
-      md: 146
-    }) ?? 114;
+      base: 2,
+      sm: 3,
+      lg: 5
+    }) ?? 2;
   const gridGap = 10;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
@@ -533,7 +554,8 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
+    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
@@ -800,7 +822,8 @@ export default function Apps() {
         <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer
             gridGap={gridGap}
-            appHeight={appHeight}
+            appHeight={appHeight.max}
+            columns={columns}
             // One page desktop, other apps are in folder
             totalPages={1}
             currentPage={currentPageInGrid}
@@ -812,7 +835,13 @@ export default function Apps() {
             }}
           >
             {desktopPages.map((page, pageIndex) => (
-              <AppGrid key={pageIndex} gridGap={gridGap} appHeight={appHeight}>
+              <AppGrid
+                key={pageIndex}
+                gridGap={gridGap}
+                rows={itemsPerPageInGrid / columns}
+                appHeight={appHeight.min}
+                columns={columns}
+              >
                 {page.map((app, index) => (
                   <AppItem
                     key={index}
@@ -839,34 +868,46 @@ export default function Apps() {
         <ModalContent
           ref={modalContentRef}
           maxH={'90vh'}
-          maxW={'90vw'}
-          height={'720px'}
-          borderRadius="16px"
+          maxW={'min(90vw, 1240px)'}
+          height={'min(calc(100vh - 80px), 720px)'}
+          borderRadius="32px"
           boxShadow="0 4px 20px rgba(0, 0, 0, 0.15)"
           border="1px solid rgba(0, 0, 0, 0.05)"
           p="0"
         >
           <ModalCloseButton
-            top="16px"
-            right="24px"
+            top="40px"
+            right="40px"
+            padding={'12.5px'}
+            size={'20px'}
+            border={'1.25px solid #E4E4E7'}
+            borderRadius={'full'}
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
           <ModalBody
-            py={{
-              base: '36px',
-              xl: '100px'
+            pt={{
+              base: '112.5px',
+              sm: '124.5px'
+            }}
+            pb={{
+              base: '112.5px',
+              sm: '144.5px'
             }}
             px={{
-              base: '12px',
-              xl: '100px'
+              base: '31.5px',
+              sm: '60px',
+              md: '64px',
+              lg: '82px',
+              xl: '90px'
             }}
             overflow="hidden"
             className="folder-modal-body"
           >
             <AppGridPagingContainer
               gridGap={gridGap}
-              appHeight={appHeight!}
+              appHeight={appHeight.max}
+              columns={columns}
               totalPages={totalPagesInFolder}
               currentPage={currentPageInFolder}
               handleNavigation={isFolderOpen}
@@ -881,7 +922,9 @@ export default function Apps() {
                 <AppGrid
                   key={pageIndex}
                   gridGap={gridGap}
-                  appHeight={appHeight}
+                  rows={itemsPerPageInFolder / columns}
+                  appHeight={appHeight.min}
+                  columns={columns}
                   gridProps={{
                     alignContent: 'center'
                   }}
@@ -899,7 +942,7 @@ export default function Apps() {
               ))}
             </AppGridPagingContainer>
 
-            <Box position="absolute" bottom="16px" left="0" right="0">
+            <Box position="absolute" bottom="32px" left="0" right="0">
               <PageSwitcher
                 pages={totalPagesInFolder}
                 current={currentPageInFolder}
