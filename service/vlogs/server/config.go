@@ -12,10 +12,13 @@ type Config struct {
 }
 
 type ServeConfig struct {
+	//victoria vlogs
 	ListenAddress string `yaml:"addr"`
 	Path          string `yaml:"path"`
 	Username      string `yaml:"username"`
 	Password      string `yaml:"password"`
+	//hubble
+	Target string `yaml:"target"`
 }
 
 func InitConfig(configPath string) (*Config, error) {

@@ -2,23 +2,35 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/labring/sealos/service/pkg/api"
 	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/vlogs/request"
+
+	pb "github.com/cilium/cilium/api/v1/flow"
+	observer "github.com/cilium/cilium/api/v1/observer"
 )
 
 type VLogsServer struct {
-	path     string
-	username string
-	password string
+	path           string
+	username       string
+	password       string
+	observerClient observer.ObserverClient
+	grpcConn       *grpc.ClientConn
 }
 
 const modeTrue = "true"
@@ -30,7 +42,22 @@ func NewVLogsServer(config *Config) (*VLogsServer, error) {
 		username: config.Server.Username,
 		password: config.Server.Password,
 	}
+	err := vl.initGrpcClient(config.Server.Target)
+	if err != nil {
+		return nil, err
+	}
 	return vl, nil
+}
+
+func (vl *VLogsServer) initGrpcClient(target string) error {
+	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("Failed to connect to Hubble: %v", err)
+	}
+	vl.grpcConn = conn
+	vl.observerClient = observer.NewObserverClient(conn)
+	log.Println("Connected to Hubble service")
+	return nil
 }
 
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -53,6 +80,8 @@ func (vl *VLogsServer) queryConvert(req *http.Request) (func(rw http.ResponseWri
 		return vl.queryLogsByParams, nil
 	case "/queryPodList":
 		return vl.queryPodList, nil
+	case "/queryFlows":
+		return vl.queryFlows, nil
 	default:
 		return nil, fmt.Errorf("unknown url path")
 	}
@@ -63,7 +92,6 @@ func (vl *VLogsServer) authenticate(req *http.Request) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("bad request (%s)", err)
 	}
-
 	err = auth.Authenticate(namespace, kubeConfig)
 	if err != nil {
 		return "", fmt.Errorf("authentication failed (%s)", err)
@@ -294,4 +322,143 @@ func (v *VLogsQuery) generateNumberQuery(req *api.VlogsRequest) {
 		builder.WriteString(item)
 		v.query += builder.String()
 	}
+}
+
+func (vl *VLogsServer) queryFlows(rw http.ResponseWriter, req *http.Request) error {
+	rw.Header().Set("Content-Type", "application/json")
+	if req.Method != http.MethodGet {
+		http.Error(rw, "Only GET requests are supported", http.StatusMethodNotAllowed)
+		return fmt.Errorf("Unsupported HTTP method: %s", req.Method)
+	}
+	name := req.URL.Query().Get("name")
+	ns := req.URL.Query().Get("ns")
+	typeParam := req.URL.Query().Get("type")
+	limitStr := req.URL.Query().Get("limit")
+	minutesAgoStr := req.URL.Query().Get("min")
+
+	if name == "" || ns == "" || typeParam == "" {
+		http.Error(rw, "Missing required parameters: name, ns, type", http.StatusBadRequest)
+		return fmt.Errorf("Missing required parameters")
+	}
+
+	podName := fmt.Sprintf("%s/%s", ns, name)
+
+	var label string
+	switch typeParam {
+	case "devbox":
+		label = "k8s:app.kubernetes.io/part-of=devbox"
+	case "applaunchpad":
+		label = "cloud.sealos.io/app-deploy-manager"
+	case "database":
+		label = "k8s:app.kubernetes.io/managed-by=kubeblocks"
+	default:
+		http.Error(rw, fmt.Sprintf("Unsupported type: %s", typeParam), http.StatusBadRequest)
+		return fmt.Errorf("Unsupported type: %s", typeParam)
+	}
+
+	limit := uint64(100)
+	if limitStr != "" {
+		parsedLimit, err := strconv.ParseUint(limitStr, 10, 64)
+		if err == nil && parsedLimit > 0 {
+			limit = parsedLimit
+		}
+	}
+
+	minutesAgo := int64(10000)
+	if minutesAgoStr != "" {
+		parsedMinutes, err := strconv.ParseInt(minutesAgoStr, 10, 64)
+		if err == nil && parsedMinutes > 0 {
+			minutesAgo = parsedMinutes
+		}
+	}
+
+	since := time.Now().Add(-time.Duration(minutesAgo) * time.Minute)
+	sinceProto := timestamppb.New(since)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	flowsRequest := &observer.GetFlowsRequest{
+		Number: limit,
+		First:  false,
+		Follow: false,
+		Since:  sinceProto,
+		Whitelist: []*pb.FlowFilter{
+			{
+				SourcePod:   []string{podName},
+				SourceLabel: []string{label},
+			},
+		},
+	}
+	stream, err := vl.observerClient.GetFlows(ctx, flowsRequest)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Failed to call GetFlows: %v", err), http.StatusInternalServerError)
+		return err
+	}
+
+	var flows []map[string]interface{}
+
+	for {
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			http.Error(rw, fmt.Sprintf("Error receiving stream data: %v", err), http.StatusInternalServerError)
+			return err
+		}
+		flow := resp.GetFlow()
+		if flow != nil {
+			srcPod := flow.GetSource().GetPodName()
+			dstPod := flow.GetDestination().GetPodName()
+			if srcPod == "" || dstPod == "" {
+				continue
+			}
+
+			var srcPort, dstPort uint32
+			if flow.GetL4() != nil {
+				if flow.GetL4().GetTCP() != nil {
+					srcPort = flow.GetL4().GetTCP().GetSourcePort()
+					dstPort = flow.GetL4().GetTCP().GetDestinationPort()
+				} else if flow.GetL4().GetUDP() != nil {
+					srcPort = flow.GetL4().GetUDP().GetSourcePort()
+					dstPort = flow.GetL4().GetUDP().GetDestinationPort()
+				}
+			}
+
+			// Get timestamp
+			timestamp := ""
+			if flow.GetTime() != nil {
+				t := flow.GetTime().AsTime()
+				timestamp = t.Format("Jan 2 15:04:05.000")
+			}
+
+			// Create structured flow information
+			flowInfo := map[string]interface{}{
+				"timestamp": timestamp,
+				"source": map[string]interface{}{
+					"namespace": flow.GetSource().GetNamespace(),
+					"pod":       srcPod,
+					"port":      srcPort,
+					"identity":  flow.GetSource().GetIdentity(),
+				},
+				"destination": map[string]interface{}{
+					"namespace": flow.GetDestination().GetNamespace(),
+					"pod":       dstPod,
+					"port":      dstPort,
+					"identity":  flow.GetDestination().GetIdentity(),
+				},
+			}
+			flows = append(flows, flowInfo)
+		}
+	}
+
+	jsonResponse, err := json.Marshal(flows)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Unable to generate JSON response: %v", err), http.StatusInternalServerError)
+		return err
+	}
+
+	rw.Write(jsonResponse)
+	return nil
 }
