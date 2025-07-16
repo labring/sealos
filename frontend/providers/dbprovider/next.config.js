@@ -2,6 +2,14 @@
 const { i18n } = require('./next-i18next.config');
 const path = require('path');
 const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/open/enterprise/:path*',
+        destination: 'https://chat2dbgateway.sealosbja.site/api/open/enterprise/:path*'
+      }
+    ];
+  },
   i18n,
   output: 'standalone',
   reactStrictMode: false,

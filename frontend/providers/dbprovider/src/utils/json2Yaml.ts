@@ -27,6 +27,7 @@ import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { distributeResources } from './database';
+import { log } from 'console';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -43,9 +44,6 @@ export const json2CreateCluster = (
   backupInfo?: BackupItemType,
   options?: { storageClassName?: string }
 ): string => {
-  /* ---------------------------------------------------------------------- */
-  /* 0. 数据准备                                                              */
-  /* ---------------------------------------------------------------------- */
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data); // 拆分 CPU / 内存 / 存储
   const storageClassName =
@@ -53,9 +51,6 @@ export const json2CreateCluster = (
       ? { storageClassName: options?.storageClassName || StorageClassName }
       : {};
 
-  /* ---------------------------------------------------------------------- */
-  /* 1. 通用元数据 helpers                                                   */
-  /* ---------------------------------------------------------------------- */
   const baseLabels = {
     ...data.labels,
     'clusterdefinition.kubeblocks.io/name': data.dbType,
@@ -143,19 +138,20 @@ export const json2CreateCluster = (
           componentSpecs: [
             {
               componentDefRef: 'postgresql',
+              disableExporter: true,
+              enabledLogs: ['running'],
               name: 'postgresql',
               replicas: pgRes.other?.replicas ?? data.replicas,
               resources: pgRes.cpuMemory,
               serviceAccountName: `kb-${data.dbName}`,
-              enabledLogs: ['running'],
+              switchPolicy: { type: 'Noop' },
               ...(pgRes.storage > 0 && {
                 volumeClaimTemplates: [
                   {
                     name: 'data',
                     spec: {
                       accessModes: ['ReadWriteOnce'],
-                      resources: { requests: { storage: `${pgRes.storage}Gi` } },
-                      ...storageClassName
+                      resources: { requests: { storage: `${pgRes.storage}Gi` } }
                     }
                   }
                 ]
@@ -173,7 +169,6 @@ export const json2CreateCluster = (
   function buildMongoYaml() {
     const mongoRes = resources['mongodb'];
     if (!mongoRes) return [];
-
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -181,7 +176,7 @@ export const json2CreateCluster = (
         metadata: {
           labels: {
             'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/version': data.dbVersion,
+            'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
             'helm.sh/chart': 'mongodb-cluster-0.9.1'
           },
           name: data.dbName,
@@ -220,9 +215,8 @@ export const json2CreateCluster = (
   }
 
   function buildRedisYaml() {
-    /* 1️⃣ 主/从和 Sentinel 两套资源 ----------------------------------------- */
     const redisRes = resources['redis']; // 主/从节点
-    const sentinelRes = resources['redis-sentinel'] ?? { // 如果 distributeResources 专门划分了 sentinel
+    const sentinelRes = resources['redis-sentinel'] ?? {
       cpuMemory: {
         limits: { cpu: '200m', memory: '256Mi' },
         requests: { cpu: '200m', memory: '256Mi' }
@@ -231,19 +225,17 @@ export const json2CreateCluster = (
       other: { replicas: 3 }
     };
 
-    if (!redisRes) return []; // 没有主/从资源就不生成
+    if (!redisRes) return [];
 
-    /* 2️⃣ 通用元数据 ------------------------------------------------------- */
     const metaLabels = {
       'app.kubernetes.io/instance': data.dbName,
-      'app.kubernetes.io/version': data.dbVersion, // 7.2.7
+      'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
       'clusterdefinition.kubeblocks.io/name': 'redis',
-      'clusterversion.kubeblocks.io/name': '', // 与模板保持一致
+      'clusterversion.kubeblocks.io/name': '',
       'helm.sh/chart': 'redis-cluster-0.9.0',
-      ...data.labels // 允许自定义覆写
+      ...data.labels
     };
 
-    /* 3️⃣ YAML 对象 -------------------------------------------------------- */
     const redisObj = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Cluster',
@@ -260,62 +252,245 @@ export const json2CreateCluster = (
         },
         clusterDefinitionRef: 'redis',
         componentSpecs: [
-          /* 主/从 redis 组件 ------------------------------------------------ */
           {
-            componentDef: 'redis-7', // 注意：是 componentDef 不是 componentDefRef
+            componentDef: 'redis-7',
             name: 'redis',
-            replicas: redisRes.other?.replicas ?? data.replicas, // 2
+            replicas: redisRes.other?.replicas ?? data.replicas,
             enabledLogs: ['running'],
-            env: [{ name: 'CUSTOM_SENTINEL_MASTER_NAME', value: data.dbName }],
+            env: [{ name: 'CUSTOM_SENTINEL_MASTER_NAME' }],
             resources: redisRes.cpuMemory,
-            serviceVersion: data.dbVersion, // 7.2.7
+            serviceVersion: data.dbVersion.split('-').pop() || '',
             switchPolicy: { type: 'Noop' },
             volumeClaimTemplates: [
               {
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${redisRes.storage}Gi` } },
-                  ...storageClassName
+                  resources: { requests: { storage: `${redisRes.storage}Gi` } }
                 }
               }
             ]
           },
 
-          /* Sentinel 组件 --------------------------------------------------- */
           {
             componentDef: 'redis-sentinel-7',
             name: 'redis-sentinel',
             replicas: sentinelRes.other?.replicas ?? 3,
             resources: sentinelRes.cpuMemory,
-            serviceVersion: data.dbVersion,
+            serviceVersion: data.dbVersion.split('-').pop() || '',
             volumeClaimTemplates: [
               {
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${sentinelRes.storage}Gi` } },
-                  ...storageClassName
+                  resources: { requests: { storage: `${sentinelRes.storage}Gi` } }
                 }
               }
             ]
           }
         ],
-        terminationPolicy: terminationPolicy, // Delete / WipeOut
-        topology: 'replication' // 按模板保留
+        terminationPolicy: terminationPolicy,
+        topology: 'replication'
       }
     };
 
     return [redisObj];
   }
 
-  /* ---------------------------------------------------------------------- */
-  /* 3. 总路由：根据 dbType 选择生成函数                                     */
-  /* ---------------------------------------------------------------------- */
+  function buildClickhouseYaml() {
+    const zkRes = resources['zookeeper'];
+    if (!zkRes) return [];
+
+    const chRes = resources['clickhouse'] || {
+      cpuMemory: {
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '1', memory: '1Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+
+    const keeperRes = resources['ch-keeper'] || {
+      cpuMemory: {
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '1', memory: '1Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+
+    const labels = {
+      'clusterdefinition.kubeblocks.io/name': 'clickhouse',
+      'clusterversion.kubeblocks.io/name': '',
+      ...data.labels
+    };
+
+    const clickhouseObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['cluster']
+        },
+        clusterDefinitionRef: 'clickhouse',
+        componentSpecs: [
+          {
+            componentDefRef: 'zookeeper',
+            disableExporter: true,
+            name: 'zookeeper',
+            replicas: zkRes.other?.replicas ?? 1,
+            resources: {
+              limits: { ...zkRes.cpuMemory.limits },
+              requests: { ...zkRes.cpuMemory.requests }
+            },
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${zkRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            componentDefRef: 'clickhouse',
+            disableExporter: true,
+            name: 'clickhouse',
+            replicas: chRes.other?.replicas ?? 1,
+            resources: {
+              limits: { ...chRes.cpuMemory.limits },
+              requests: { ...chRes.cpuMemory.requests }
+            },
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${chRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            componentDefRef: 'ch-keeper',
+            disableExporter: true,
+            name: 'ch-keeper',
+            replicas: keeperRes.other?.replicas ?? 1,
+            resources: keeperRes.cpuMemory,
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${keeperRes.storage}Gi` } }
+                }
+              }
+            ]
+          }
+        ],
+        resources: { cpu: '0', memory: '0' },
+        storage: { size: '0' },
+        terminationPolicy
+      }
+    };
+
+    return [clickhouseObj];
+  }
+
+  function buildKafkaYaml() {
+    const combineRes = (resources as any)['kafka-combine'] || {
+      cpuMemory: {
+        limits: { cpu: '500m', memory: '512Mi' },
+        requests: { cpu: '500m', memory: '512Mi' }
+      },
+      storage: 0,
+      other: { replicas: 1 }
+    };
+
+    const exporterRes = resources['kafka-exporter'] || {
+      cpuMemory: {
+        limits: { cpu: '500m', memory: '1Gi' },
+        requests: { cpu: '100m', memory: '256Mi' }
+      },
+      storage: 0,
+      other: { replicas: 1 }
+    };
+
+    const labels = {
+      'app.kubernetes.io/instance': data.dbName,
+      'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '', // 3.3.2
+      'clusterdefinition.kubeblocks.io/name': 'kafka',
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      'helm.sh/chart': 'kafka-cluster-0.9.0',
+      ...data.labels
+    };
+
+    const kafkaObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['kubernetes.io/hostname']
+        },
+        clusterDefinitionRef: 'kafka',
+        clusterVersionRef: data.dbVersion,
+        componentSpecs: [
+          {
+            componentDef: 'kafka-combine',
+            name: 'kafka-combine',
+            replicas: combineRes.other.replicas,
+            env: [{ name: 'KB_BROKER_DIRECT_POD_ACCESS', value: 'true' }],
+            monitor: true,
+            resources: combineRes.cpuMemory,
+            serviceVersion: data.dbVersion.split('-').pop() || '',
+            services: [
+              {
+                name: 'advertised-listener',
+                podService: true,
+                serviceType: 'ClusterIP'
+              }
+            ]
+          },
+          {
+            componentDef: 'kafka-exporter',
+            name: 'kafka-exporter',
+            replicas: exporterRes.other?.replicas ?? 1,
+            monitor: true,
+            resources: exporterRes.cpuMemory,
+            serviceVersion: '1.6.0'
+          }
+        ],
+        terminationPolicy,
+        topology: 'combined_monitor'
+      }
+    };
+    return [kafkaObj];
+  }
+
   function createDBObject(dbType: DBType) {
     switch (dbType) {
       case DBTypeEnum.mysql:
-      case 'apecloud-mysql': // 若枚举值不是字符串可再加一层映射
+      case 'apecloud-mysql':
         return buildMySQLYaml();
       case DBTypeEnum.postgresql:
         return buildPostgresYaml();
@@ -323,14 +498,15 @@ export const json2CreateCluster = (
         return buildMongoYaml();
       case DBTypeEnum.redis:
         return buildRedisYaml();
+      case DBTypeEnum.clickhouse:
+        return buildClickhouseYaml();
+      case DBTypeEnum.kafka:
+        return buildKafkaYaml();
       default:
         throw new Error(`json2CreateCluster: unsupported dbType ${dbType}`);
     }
   }
 
-  /* ---------------------------------------------------------------------- */
-  /* 4. 把对象数组 → YAML 字符串                                             */
-  /* ---------------------------------------------------------------------- */
   return createDBObject(data.dbType)
     .map((obj) => yaml.dump(obj))
     .join('\n---\n');
