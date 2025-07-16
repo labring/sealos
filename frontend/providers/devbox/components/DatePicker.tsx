@@ -374,7 +374,7 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
                   key={JSON.stringify(item.value)}
                   variant="ghost"
                   className={cn(
-                    'h-8 w-31 justify-start rounded p-2 text-xs font-normal text-zinc-900',
+                    'h-9 w-31 justify-start rounded p-2 text-sm font-normal text-zinc-900',
                     recentDate.compareValue === item.compareValue && 'bg-blue-50 text-blue-600'
                   )}
                   onClick={() => handleRecentDateClick(item)}

@@ -207,20 +207,24 @@ const TagItem = ({ tag }: { tag: Tag }) => {
 
   if (!tag) return null;
 
+  const isSelected = selectedTagList.has(tag.uid);
+  const toggleSelection = () => {
+    setSelectedTag(tag.uid, !isSelected);
+  };
+
   return (
     <div
       className={cn(
         'flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2 py-1',
-        selectedTagList.has(tag.uid) && 'bg-[rgba(0,0,0,0.04)]'
+        isSelected && 'bg-[rgba(0,0,0,0.04)]'
       )}
+      onClick={toggleSelection}
     >
       <Checkbox
         id={tag.uid}
         className="border-zinc-900"
-        checked={selectedTagList.has(tag.uid)}
-        onCheckedChange={(checked) => {
-          setSelectedTag(tag.uid, checked as boolean);
-        }}
+        checked={isSelected}
+        onCheckedChange={toggleSelection}
       />
       <Label htmlFor={tag.uid} className="w-full cursor-pointer text-sm text-zinc-900">
         {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
