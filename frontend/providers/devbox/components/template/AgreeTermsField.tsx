@@ -4,7 +4,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { useEnvStore } from '@/stores/env';
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { FormControl, FormField, FormItem } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 
 interface AgreeTermsFieldProps {
   form: UseFormReturn<any>;
@@ -38,6 +38,7 @@ const AgreeTermsField = ({ form }: AgreeTermsFieldProps) => {
               </span>
             </div>
           </FormControl>
+          <FormMessage />
         </FormItem>
       )}
     />

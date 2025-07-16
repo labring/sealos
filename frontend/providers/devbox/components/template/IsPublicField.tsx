@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { UseFormReturn } from 'react-hook-form';
 
-import { FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Switch } from '@/components/ui/switch';
 
 interface IsPublicFieldProps {
@@ -33,6 +33,7 @@ const IsPublicField = ({ form }: IsPublicFieldProps) => {
           <span className="text-sm/5 font-normal text-zinc-500">
             {t('set_template_to_public_tips')}
           </span>
+          <FormMessage />
         </FormItem>
       )}
     />
