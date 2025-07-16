@@ -96,7 +96,14 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   );
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        setTag('');
+        setReleaseDes('');
+        onClose();
+      }}
+    >
       <DialogContent className="min-w-[450px]">
         <DialogHeader>
           <DialogTitle>{t('release_version')}</DialogTitle>
@@ -173,6 +180,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
               value={releaseDes}
               onChange={(e) => setReleaseDes(e.target.value)}
               placeholder={t('enter_version_description')}
+              className="w-[462px]"
             />
           </div>
         </div>

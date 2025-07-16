@@ -22,7 +22,7 @@ const DescriptionField = ({ form }: DescriptionFieldProps) => {
             <Textarea
               {...field}
               placeholder={t('template_description_placeholder')}
-              className="min-h-16 bg-white placeholder:text-sm/5"
+              className="min-h-16 w-[462px] bg-white placeholder:text-sm/5"
             />
           </FormControl>
           <FormMessage />

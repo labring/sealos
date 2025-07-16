@@ -17,6 +17,7 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
   });
 
   // TODO： we need to adjust zod logic in form
+  console.log('isEdit', isEdit);
 
   return (
     <FormField
@@ -37,11 +38,11 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
           <FormLabel>{t('devbox_name')}</FormLabel>
           <FormControl>
             <Input
+              {...field}
               className="h-10 w-[400px]"
               disabled={isEdit}
               autoFocus={true}
               placeholder={t('enter_devbox_name')}
-              {...field}
               onBlur={async (e) => {
                 const lowercaseValue = e.target.value.toLowerCase();
                 field.onChange(lowercaseValue);
