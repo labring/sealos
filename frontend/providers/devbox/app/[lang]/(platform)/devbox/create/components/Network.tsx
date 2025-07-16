@@ -194,7 +194,7 @@ export default function Network({
                               });
                             }}
                           >
-                            <SelectTrigger className="rounded-r-none">
+                            <SelectTrigger className="w-27 rounded-r-none">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -206,7 +206,7 @@ export default function Network({
                             </SelectContent>
                           </Select>
                           <div className="flex h-10 flex-shrink-0 flex-grow-1 items-center rounded-r-md border border-l-0 px-3 py-2">
-                            <div className="mr-2 flex-1 truncate text-sm/5 text-muted-foreground select-all">
+                            <div className="mr-2 min-w-48 flex-1 truncate text-sm/5 text-muted-foreground select-all">
                               {network.customDomain ? network.customDomain : network.publicDomain!}
                             </div>
                             <Button
