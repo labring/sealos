@@ -553,8 +553,7 @@ export default function Apps() {
   }, [installedApps, getAppDisplayType]);
 
   const moreApps = useMemo(() => {
-    const apps = installedApps.filter((app) => getAppDisplayType(app) === 'more');
-    return [...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps, ...apps];
+    return installedApps.filter((app) => getAppDisplayType(app) === 'more');
   }, [installedApps, getAppDisplayType]);
 
   // Placed on desktop, but there's not enough space to show these apps on desktop
