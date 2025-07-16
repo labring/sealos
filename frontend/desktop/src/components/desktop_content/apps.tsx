@@ -102,10 +102,11 @@ const AppItem = ({
         fontSize={'14px'}
         fontWeight={500}
         textAlign={'center'}
-        lineHeight={'normal'}
+        lineHeight={'18px'}
         flexShrink={0}
         maxW="100%"
         wordBreak="break-word"
+        noOfLines={2}
         style={{
           touchAction: 'none',
           userSelect: 'none'
@@ -520,19 +521,11 @@ export default function Apps() {
 
   // min = 1 line app name
   // max = 2 lines app name
-  const appHeight = useBreakpointValue({
-    base: {
-      min: 94,
-      max: 112
-    },
-    md: {
-      min: 108,
-      max: 126
-    }
-  }) ?? {
-    min: 94,
-    max: 112
-  };
+  const appHeight =
+    useBreakpointValue({
+      base: 112,
+      md: 126
+    }) ?? 112;
   const columns =
     useBreakpointValue({
       base: 2,
@@ -828,7 +821,7 @@ export default function Apps() {
         <Box p={'12px'} pt={{ base: '56px', sm: '48px' }} w={'full'} h={'full'}>
           <AppGridPagingContainer
             gridGap={gridGap}
-            appHeight={appHeight.max}
+            appHeight={appHeight}
             columns={columns}
             // One page desktop, other apps are in folder
             totalPages={1}
@@ -845,7 +838,7 @@ export default function Apps() {
                 key={pageIndex}
                 gridGap={gridGap}
                 rows={itemsPerPageInGrid / columns}
-                appHeight={appHeight.min}
+                appHeight={appHeight}
                 columns={columns}
               >
                 {page.map((app, index) => (
@@ -912,7 +905,7 @@ export default function Apps() {
                 overflow: 'hidden'
               }}
               gridGap={gridGap}
-              appHeight={appHeight.max}
+              appHeight={appHeight}
               columns={columns}
               totalPages={totalPagesInFolder}
               currentPage={currentPageInFolder}
@@ -929,7 +922,7 @@ export default function Apps() {
                   key={pageIndex}
                   gridGap={gridGap}
                   rows={itemsPerPageInFolder / columns}
-                  appHeight={appHeight.min}
+                  appHeight={appHeight}
                   columns={columns}
                   gridProps={{
                     alignContent: 'center'
