@@ -36,7 +36,6 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   const { devboxList } = useDevboxStore();
 
   useEffect(() => {
-    console.log('searchParams', searchParams.get('scrollTo'));
     if (searchParams.get('scrollTo') === 'network') {
       const el = document.getElementById('network');
       if (el) {

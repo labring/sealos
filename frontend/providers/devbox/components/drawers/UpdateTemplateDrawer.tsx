@@ -164,11 +164,9 @@ const UpdateTemplateDrawer = ({
 
   const onSubmit = (data: FormData) => {
     if (templateRepository.templates.findIndex((d) => data.version === d.name) > -1) {
-      console.log('test');
       setShowOverview(true);
       return;
     }
-    console.log('test2');
     return submit(data);
   };
 
@@ -222,7 +220,6 @@ const UpdateTemplateDrawer = ({
             <Button
               disabled={form.formState.isSubmitting}
               onClick={() => {
-                console.log('test3');
                 form.handleSubmit(onSubmit)();
               }}
             >

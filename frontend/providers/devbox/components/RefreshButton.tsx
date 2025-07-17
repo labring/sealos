@@ -22,7 +22,6 @@ interface RefreshButtonProps {
 export function RefreshButton({ onRefresh }: RefreshButtonProps) {
   const t = useTranslations();
   const { refreshInterval, setRefreshInterval } = useDateTimeStore();
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const lastErrorTime = useRef<number>(0);
   const errorCount = useRef<number>(0);
@@ -33,7 +32,6 @@ export function RefreshButton({ onRefresh }: RefreshButtonProps) {
   const handleRefresh = useCallback(async () => {
     if (isPaused) return;
 
-    setIsRefreshing(true);
     try {
       await onRefresh();
       errorCount.current = 0;
@@ -55,8 +53,6 @@ export function RefreshButton({ onRefresh }: RefreshButtonProps) {
           errorCount.current = 0;
         }, PAUSE_DURATION);
       }
-    } finally {
-      setIsRefreshing(false);
     }
   }, [isPaused, onRefresh, t]);
 
@@ -75,11 +71,10 @@ export function RefreshButton({ onRefresh }: RefreshButtonProps) {
       <Button
         variant="outline"
         onClick={handleRefresh}
-        disabled={isRefreshing || isPaused}
+        disabled={isPaused}
         size="lg"
         className="rounded-lg rounded-r-none font-normal"
       >
-        {isRefreshing && <RefreshCw className="h-4 w-4 animate-spin" />}
         {isPaused ? t('paused') : t('refresh')}
       </Button>
       <DropdownMenu>

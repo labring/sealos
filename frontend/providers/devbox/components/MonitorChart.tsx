@@ -48,7 +48,7 @@ const MonitorChart = ({
 }: MonitorChartProps) => {
   const { screenWidth } = useGlobalStore();
   const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('HH:mm') : '')) ||
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('YYYY-MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
   const yData = data?.yData || new Array(30).fill('');
 

@@ -17,7 +17,6 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
   });
 
   // TODO： we need to adjust zod logic in form
-  console.log('isEdit', isEdit);
 
   return (
     <FormField

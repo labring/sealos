@@ -124,7 +124,14 @@ const TemplateCard = ({
                 />
               </div>
               {/* name */}
-              <span className="truncate font-medium">{templateRepositoryName}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-30 cursor-pointer truncate font-medium">
+                    {templateRepositoryName}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">{templateRepositoryName}</TooltipContent>
+              </Tooltip>
               {/* badge */}
               {inPublicStore ? (
                 tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
