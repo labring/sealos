@@ -153,26 +153,13 @@ func (c *Cockroach) GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.Use
 	}
 	activeSteps, firstRechargeSteps := cloneMap(cfg.DefaultDiscountSteps), cloneMap(cfg.FirstRechargeDiscountSteps)
 	if firstRechargeSteps != nil {
-		var firstRechargeTime time.Time
-		if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).
-			Order("created_at ASC").Limit(1).Select("created_at").Scan(&firstRechargeTime).Error; err != nil {
-			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-				return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge time: %v", err)
-			}
+		payments, err := c.getActivePayments(ops, types.ActivityTypeFirstRecharge)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
 		}
-		if !firstRechargeTime.IsZero() {
-			if firstRechargeTime.After(time.Date(2024, 12, 0, 0, 0, 0, 0, time.UTC)) {
-				payments, err := c.getActivePayments(ops, types.ActivityTypeFirstRecharge)
-				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-					return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
-				}
-				if len(payments) != 0 {
-					for i := range payments {
-						delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
-					}
-				}
-			} else {
-				firstRechargeSteps = map[int64]int64{}
+		if len(payments) != 0 {
+			for i := range payments {
+				delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
 			}
 		}
 	}
@@ -193,6 +180,19 @@ func (c *Cockroach) GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.Use
 		FirstRechargeSteps: firstRechargeSteps,
 	}, nil
 }
+
+//func (c *Cockroach) determineRechargeRecord(ops *types.UserQueryOpts) (bool, error) {
+//	userUid, err := c.GetUserUID(ops)
+//	if err != nil {
+//		return false, fmt.Errorf("failed to get user uid: %v", err)
+//	}
+//	var paymentCount int64
+//	if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw: types.PaymentRaw{UserUID: userUid}}).
+//		Count(&paymentCount).Error; err != nil {
+//		return false, fmt.Errorf("failed to get payment count: %v", err)
+//	}
+//	return paymentCount > 0, nil
+//}
 
 func (c *Cockroach) GetAccountConfig() (types.AccountConfig, error) {
 	if c.accountConfig == nil {
