@@ -84,9 +84,14 @@ export default function WorkspaceToggle() {
                 tabIndex={0}
               >
                 {namespace?.id && (
-                  <Box boxSize={'24px'}>
+                  <Box
+                    boxSize={{
+                      base: '20px',
+                      sm: '24px'
+                    }}
+                  >
                     <BoringAvatar
-                      size={24}
+                      size={'100%'}
                       name={namespace?.id}
                       colors={['#ff9e9e', '#b4f8cc', '#4294ff', '#ffe5f0', '#03e2db']}
                     />
@@ -97,9 +102,16 @@ export default function WorkspaceToggle() {
                   fontSize={'14px'}
                   fontWeight={'500'}
                   textTransform={'capitalize'}
+                  maxW={{
+                    base: '30px',
+                    xs: '80px',
+                    sm: 'fit-content'
+                  }}
+                  overflow={'hidden'}
+                  textOverflow={'ellipsis'}
+                  whiteSpace={'nowrap'}
                 >
                   {namespace?.teamName}
-                  {/* {namespace?.nstype === NSType.Private ? t('common:default_team') : namespace?.teamName} */}
                 </Text>
                 <Center
                   transform={isOpen ? 'rotate(-90deg)' : 'rotate(0deg)'}

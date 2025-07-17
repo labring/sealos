@@ -102,27 +102,18 @@ export default function EmailCheckComponent() {
         cfToken
       })
   );
-  const onSubmit = async (force = false) => {
-    if ((!canResend || isLoading) && !force) return;
 
+  const sendCode = async (cfToken?: string) => {
     setIsLoading(true);
     const oldTime = startTime;
     updateStartTime();
     setCanResend(false);
+
     try {
       if (!signupData || signupData.providerType !== 'EMAIL') {
         throw new Error('No signup data found');
       }
-      let cfToken;
-      const turnstileConfig = authConfig?.turnstile;
-      if (!!turnstileConfig?.enabled && turnstileConfig.cloudflare.siteKey) {
-        // console.log('sitekey', authConfig?.turnstile.cloudflare.siteKey);
-        cfToken = await turnstileRef.current?.getResponsePromise();
-        // console.log('onsubmit cfToken', cfToken);
-        if (!cfToken) {
-          throw Error('get token error');
-        }
-      }
+
       const result = await sendCodeMutation.mutateAsync({
         id: signupData.providerId,
         cfToken
@@ -130,8 +121,6 @@ export default function EmailCheckComponent() {
       if (result.code !== 200) {
         throw Error(result.message);
       }
-      // Start countdown
-      // updateStartTime();
     } catch (error) {
       // rollout
       setStartTime(oldTime);
@@ -146,15 +135,34 @@ export default function EmailCheckComponent() {
         position: 'top'
       });
     } finally {
-      turnstileRef.current?.reset();
       setIsLoading(false);
     }
   };
-  useEffect(() => {
+
+  const onSubmit = async (force = false) => {
+    if ((!canResend || isLoading) && !force) return;
+
+    if (authConfig?.turnstile.enabled) {
+      turnstileRef.current?.reset();
+    } else {
+      sendCode();
+    }
+  };
+
+  const onTurnstileSuccess = (cfToken: string) => {
     if (startTime + 60_000 <= new Date().getTime()) {
+      sendCode(cfToken);
+    }
+  };
+
+  // Trigger code send when page loaded.
+  // If turnstile is enabled, it will be triggered by onSuccess callback and we do not need to manually trigger it.
+  useEffect(() => {
+    if (startTime + 60_000 <= new Date().getTime() && !authConfig?.turnstile.enabled) {
       onSubmit(true);
     }
   }, []);
+
   const handleBack = () => {
     router.back();
   };
@@ -170,9 +178,24 @@ export default function EmailCheckComponent() {
           <Text fontWeight="600" fontSize="24px" lineHeight="31px" color="#000000" mt={'8px'}>
             {t('v2:check_your_email')}
           </Text>
-          <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
-            {t('v2:verification_message', { email: signupData?.providerId || '' })}
-          </Text>
+
+          {!!authConfig?.turnstile.enabled && (
+            <Turnstile
+              options={{
+                size: 'normal'
+              }}
+              ref={turnstileRef}
+              siteKey={authConfig?.turnstile.cloudflare.siteKey}
+              onSuccess={onTurnstileSuccess}
+            />
+          )}
+
+          {remainTime > 0 && (
+            <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
+              {t('v2:verification_message', { email: signupData?.providerId || '' })}
+            </Text>
+          )}
+
           <FormControl id="verificationCode">
             <FormLabel></FormLabel>
             <PinInput
@@ -236,7 +259,7 @@ export default function EmailCheckComponent() {
                   >
                     {t('v2:request_new_link')}
                   </Text>
-                ) : (
+                ) : remainTime > 0 ? (
                   <Text
                     fontWeight="400"
                     fontSize="14px"
@@ -248,6 +271,8 @@ export default function EmailCheckComponent() {
                   >
                     {t('v2:can_request_new_link', { countdown: Math.floor(remainTime / 1000) })}
                   </Text>
+                ) : (
+                  <></>
                 )}
               </Box>
             </Flex>
@@ -269,15 +294,6 @@ export default function EmailCheckComponent() {
           </Flex>
         </Flex>
       </Stack>
-      {!!authConfig?.turnstile.enabled && (
-        <Turnstile
-          options={{
-            size: 'invisible'
-          }}
-          ref={turnstileRef}
-          siteKey={authConfig?.turnstile.cloudflare.siteKey}
-        />
-      )}
     </Flex>
   );
 }
