@@ -1,15 +1,15 @@
 package pay
 
 import (
-	"github.com/labring/sealos/controllers/pkg/account"
 	"os"
 	"time"
 
-	//"strings"
+	"github.com/labring/sealos/controllers/pkg/account"
+
 	"testing"
 )
 
-func setupEnv_alipay() {
+func setupenvAlipay() {
 	const (
 		envAppID            = ""
 		envPrivateKey       = ""
@@ -72,7 +72,7 @@ func TestCreatePaymentIntegration(t *testing.T) {
 
 // Full E2E Test: Payment → Inquiries → Refunds
 func TestSandbox_EndToEnd(t *testing.T) {
-	setupEnv_alipay()
+	setupenvAlipay()
 	ap, err := NewAlipayPayment()
 	if err != nil {
 		t.Fatalf("NewAlipayPayment() failed: %v", err)

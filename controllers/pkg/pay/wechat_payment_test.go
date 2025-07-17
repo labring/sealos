@@ -2,14 +2,15 @@ package pay
 
 import (
 	"fmt"
-	"github.com/labring/sealos/controllers/pkg/account"
 	"log"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/account"
 )
 
-func setupEnv_wechatPayment() {
+func setupenvWechatpayment() {
 	// configure the environment variables of wechat pay
 	const (
 		envWechatPrivateKey           = ""
@@ -60,7 +61,7 @@ func setupEnv_wechatPayment() {
 }
 
 func TestWechatPayment_PaymentAndRefund(t *testing.T) {
-	setupEnv_wechatPayment()
+	setupenvWechatpayment()
 	// initialize the wechat pay object
 	wechatPayment := WechatPayment{}
 

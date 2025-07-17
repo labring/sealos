@@ -17,9 +17,10 @@ package pay
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
-	"time"
 )
 
 func (w WechatPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
