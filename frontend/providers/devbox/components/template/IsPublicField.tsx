@@ -24,9 +24,6 @@ const IsPublicField = ({ form }: IsPublicFieldProps) => {
             <FormControl>
               <div className="flex items-center gap-2">
                 <Switch checked={field.value} onCheckedChange={field.onChange} />
-                <span className="text-sm text-zinc-900">
-                  {field.value ? t('enabled') : t('disabled')}
-                </span>
               </div>
             </FormControl>
           </div>
