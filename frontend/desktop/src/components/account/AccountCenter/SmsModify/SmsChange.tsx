@@ -168,14 +168,16 @@ function OldSms({
               ></SettingInput>
               <SettingInputRightElement>
                 {
-                  <Link
+                  <Button
+                    variant={'link'}
                     onClick={getCode}
                     color={'brightBlue.600'}
                     marginY={'auto'}
                     fontSize={'11px'}
+                    isDisabled={isRunning}
                   >
                     {t('common:get_code')}
-                  </Link>
+                  </Button>
                 }
               </SettingInputRightElement>
             </SettingInputGroup>
@@ -344,15 +346,17 @@ function NewSms({
               ></SettingInput>
               <SettingInputRightElement>
                 {
-                  <Link
+                  <Button
+                    variant={'link'}
                     onClick={getCode}
                     color={'brightBlue.600'}
                     marginY={'auto'}
                     fontSize={'11px'}
                     w={'60px'}
+                    isDisabled={isRunning}
                   >
                     {t('common:get_code')}
-                  </Link>
+                  </Button>
                 }
               </SettingInputRightElement>
             </SettingInputGroup>
