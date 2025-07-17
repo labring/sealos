@@ -1,6 +1,6 @@
 {
   "displayName": "Devbox",
-  "description": "用于 sailos/sealos 中云Devbox的辅助工具",
+  "description": "用于 sailos/sealos 中的DevBox云开发环境",
   "devbox.connectRemoteSSH.title": "Devbox: 连接远程 SSH",
   "devbox.refresh.title": "Devbox: 刷新",
   "devbox.create.title": "Devbox: 创建",
