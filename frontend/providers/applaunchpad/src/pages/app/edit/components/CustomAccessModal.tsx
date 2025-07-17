@@ -37,6 +37,7 @@ import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
+import { useCopyData } from '@/utils/tools';
 
 export type CustomAccessModalParams = {
   publicDomain: string;
@@ -52,6 +53,7 @@ const CustomAccessModal = ({
   onSuccess
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const { t } = useTranslation();
+  const { copyData } = useCopyData();
 
   const notBoundDisclosure = useDisclosure();
 
@@ -293,7 +295,7 @@ const CustomAccessModal = ({
                             <Link
                               color={'gray.500'}
                               onClick={() => {
-                                navigator.clipboard.writeText(completePublicDomain);
+                                copyData(completePublicDomain);
                               }}
                             >
                               <Copy size={16} />
