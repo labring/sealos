@@ -348,44 +348,44 @@
   "set_remarks_placeholder": "Set remarks to help identify this app or service more easily.",
   "remark_updated_successfully": "Remark updated successfully",
   "update_remark_failed": "Update remark failed",
-  "domain-requires-registration-tip-1": "Domain binding for this availability zone requires ",
-  "domain-requires-registration-tip-2": " registration.",
+  "domain_requires_registration_tip_1": "Domain binding for this availability zone requires ",
+  "domain_requires_registration_tip_2": " registration.",
   "infrastructure": {
     "providers": {
       "alibaba": {
         "name": "Alibaba Cloud",
-        "domain-reg-link": "https://beian.aliyun.com/pcContainer/selfEntity"
+        "domain_reg_link": "https://beian.aliyun.com/pcContainer/selfEntity"
       },
       "volcano": {
         "name": "Volcano Engine",
-        "domain-reg-link": "https://console.volcengine.com/beian/overview/"
+        "domain_reg_link": "https://console.volcengine.com/beian/overview/"
       },
       "tencent": {
         "name": "Tencent Cloud",
-        "domain-reg-link": "https://cloud.tencent.com/product/ba"
+        "domain_reg_link": "https://cloud.tencent.com/product/ba"
       }
     }
   },
-  "domain-registration-provider-link-text": "Filling Entry",
-  "domain-registration-query-link-text": "Filling Query",
-  "domain-verification-needed": "Verification Needed",
-  "domain-verified": "Verified",
-  "domain-verification-input-save": "Save",
-  "domain-verification-refresh": "Refresh",
-  "domain-verification-input-edit": "Edit",
-  "domain-verification-dns-records": "DNS Records",
-  "domain-verification-dns-records-tip-1": "Please add a CNAME record for your domain pointing to ",
-  "domain-verification-dns-records-tip-2": " with your DNS provider. Once the DNS update takes effect, you can bind your custom domain.",
-  "domain-verification-dns-records-type": "Type",
-  "domain-verification-dns-records-ttl": "TTL",
-  "domain-verification-dns-records-value": "Value",
-  "domain-verification-dns-records-type-cname": "CNAME",
-  "domain-verification-dns-records-ttl-auto": "Auto",
-  "domain-verification-dns-records-docs-link-text": "Refer to documentation",
-  "domain-verification-success": "Your domain has been successfully bound.",
-  "domain-not-bound-modal-title": "Domain Not Bound",
-  "domain-not-bound-modal-warning": "DNS records are not active yet, so your domain isn't bound. Closing the pop-up requires re-entering the domain.",
-  "domain-not-bound-modal-description": "Are you sure you want to close the pop-up?",
-  "domain-not-bound-modal-cancel": "Cancel",
-  "domain-not-bound-modal-confirm": "Confirm"
+  "domain_registration_provider_link_text": "Filling Entry",
+  "domain_registration_query_link_text": "Filling Query",
+  "domain_verification_needed": "Verification Needed",
+  "domain_verified": "Verified",
+  "domain_verification_input_save": "Save",
+  "domain_verification_refresh": "Refresh",
+  "domain_verification_input_edit": "Edit",
+  "domain_verification_dns_records": "DNS Records",
+  "domain_verification_dns_records_tip_1": "Please add a CNAME record for your domain pointing to ",
+  "domain_verification_dns_records_tip_2": " with your DNS provider. Once the DNS update takes effect, you can bind your custom domain.",
+  "domain_verification_dns_records_type": "Type",
+  "domain_verification_dns_records_ttl": "TTL",
+  "domain_verification_dns_records_value": "Value",
+  "domain_verification_dns_records_type_cname": "CNAME",
+  "domain_verification_dns_records_ttl_auto": "Auto",
+  "domain_verification_dns_records_docs_link_text": "Refer to documentation",
+  "domain_verification_success": "Your domain has been successfully bound.",
+  "domain_not_bound_modal_title": "Domain Not Bound",
+  "domain_not_bound_modal_warning": "DNS records are not active yet, so your domain isn't bound. Closing the pop-up requires re-entering the domain.",
+  "domain_not_bound_modal_description": "Are you sure you want to close the pop-up?",
+  "domain_not_bound_modal_cancel": "Cancel",
+  "domain_not_bound_modal_confirm": "Confirm"
 }

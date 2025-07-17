@@ -128,11 +128,11 @@ const CustomAccessModal = ({
             {REQUIRES_DOMAIN_REG && (
               <Stack>
                 <Text>
-                  {t('domain-requires-registration-tip-1')}
+                  {t('domain_requires_registration_tip_1')}
                   <Text as={'b'}>
                     {t('infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.name')}
                   </Text>
-                  {t('domain-requires-registration-tip-2')}
+                  {t('domain_requires_registration_tip_2')}
                 </Text>
 
                 <Stack direction={'row'} height={'24px'}>
@@ -141,10 +141,10 @@ const CustomAccessModal = ({
                     target="_blank"
                     color={'brightBlue.600'}
                     href={t(
-                      'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain-reg-link'
+                      'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain_reg_link'
                     )}
                   >
-                    {t('domain-registration-provider-link-text')}
+                    {t('domain_registration_provider_link_text')}
                   </Link>
 
                   <Divider orientation="vertical" />
@@ -155,7 +155,7 @@ const CustomAccessModal = ({
                     color={'brightBlue.600'}
                     href="https://beian.miit.gov.cn/#/Integrated/index"
                   >
-                    {t('domain-registration-query-link-text')}
+                    {t('domain_registration_query_link_text')}
                   </Link>
                 </Stack>
               </Stack>
@@ -193,7 +193,7 @@ const CustomAccessModal = ({
                         borderRadius={'full'}
                         px={2}
                       >
-                        {t('domain-verification-needed')}
+                        {t('domain_verification_needed')}
                       </Tag>
                     )}
                     {processPhase === 'SUCCESS' && (
@@ -207,7 +207,7 @@ const CustomAccessModal = ({
                         px={2}
                       >
                         <CheckCircle size={14} />
-                        <Text ml={1}>{t('domain-verified')}</Text>
+                        <Text ml={1}>{t('domain_verified')}</Text>
                       </Tag>
                     )}
                   </InputRightElement>
@@ -221,7 +221,7 @@ const CustomAccessModal = ({
                     setProcessPhase('VERIFY_DOMAIN');
                   }}
                 >
-                  {t('domain-verification-input-save')}
+                  {t('domain_verification_input_save')}
                 </Button>
               ) : (
                 <>
@@ -232,7 +232,7 @@ const CustomAccessModal = ({
                     onClick={authCNAME}
                     isLoading={isLoading}
                   >
-                    {t('domain-verification-refresh')}
+                    {t('domain_verification_refresh')}
                   </Button>
                   <Button
                     variant={'secondary'}
@@ -243,7 +243,7 @@ const CustomAccessModal = ({
                     }}
                     disabled={isLoading}
                   >
-                    {t('domain-verification-input-edit')}
+                    {t('domain_verification_input_edit')}
                   </Button>
                 </>
               )}
@@ -261,13 +261,13 @@ const CustomAccessModal = ({
                 borderColor={'gray.400'}
               >
                 <Text fontSize={'16px'} fontWeight={'semibold'}>
-                  {t('domain-verification-dns-records')}
+                  {t('domain_verification_dns_records')}
                 </Text>
 
                 <Text mt={2}>
-                  {t('domain-verification-dns-records-tip-1')}
+                  {t('domain_verification_dns_records_tip_1')}
                   <Text as={'b'}>{completePublicDomain}</Text>
-                  {t('domain-verification-dns-records-tip-2')}
+                  {t('domain_verification_dns_records_tip_2')}
                 </Text>
 
                 <TableContainer mt={4} borderRadius={'lg'} borderWidth={1} borderColor={'gray.200'}>
@@ -275,21 +275,21 @@ const CustomAccessModal = ({
                     <Thead color={'gray.500'} borderBottomWidth={1} borderColor={'gray.200'}>
                       <Tr>
                         <Th {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain-verification-dns-records-type')}
+                          {t('domain_verification_dns_records_type')}
                         </Th>
                         <Th {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain-verification-dns-records-ttl')}
+                          {t('domain_verification_dns_records_ttl')}
                         </Th>
-                        <Th {...tableCellStyles}>{t('domain-verification-dns-records-value')}</Th>
+                        <Th {...tableCellStyles}>{t('domain_verification_dns_records_value')}</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       <Tr>
                         <Td {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain-verification-dns-records-type-cname')}
+                          {t('domain_verification_dns_records_type_cname')}
                         </Td>
                         <Td {...tableCellStyles} borderRightWidth={1}>
-                          {t('domain-verification-dns-records-ttl-auto')}
+                          {t('domain_verification_dns_records_ttl_auto')}
                         </Td>
                         <Td {...tableCellStyles}>
                           <Flex alignItems={'center'} justifyContent={'space-between'} gap={2}>
@@ -321,7 +321,7 @@ const CustomAccessModal = ({
                     gap={2}
                   >
                     <BookOpen size={16} />
-                    <Text>{t('domain-verification-dns-records-docs-link-text')}</Text>
+                    <Text>{t('domain_verification_dns_records_docs_link_text')}</Text>
                   </Link>
                 </Stack>
               </Stack>
@@ -341,7 +341,7 @@ const CustomAccessModal = ({
                 <AlertDescription textColor={'#059669'} fontWeight={'medium'} w={'full'}>
                   <Flex alignItems={'center'} justifyContent={'center'} gap={2}>
                     <CheckCircle size={16} />
-                    {t('domain-verification-success')}
+                    {t('domain_verification_success')}
                   </Flex>
                 </AlertDescription>
               </Alert>

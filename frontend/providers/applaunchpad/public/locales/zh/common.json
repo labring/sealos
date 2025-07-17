@@ -348,44 +348,44 @@
   "set_remarks_placeholder": "设置备注以帮助更轻松地识别此应用或服务。",
   "remark_updated_successfully": "备注更新成功",
   "update_remark_failed": "更新备注失败",
-  "domain-requires-registration-tip-1": "在当前可用区绑定域名需通过 ",
-  "domain-requires-registration-tip-2": " 完成备案。",
+  "domain_requires_registration_tip_1": "在当前可用区绑定域名需通过 ",
+  "domain_requires_registration_tip_2": " 完成备案。",
   "infrastructure": {
     "providers": {
       "alibaba": {
         "name": "阿里云",
-        "domain-reg-link": "https://beian.aliyun.com/pcContainer/selfEntity"
+        "domain_reg_link": "https://beian.aliyun.com/pcContainer/selfEntity"
       },
       "volcano": {
         "name": "火山引擎",
-        "domain-reg-link": "https://console.volcengine.com/beian/overview/"
+        "domain_reg_link": "https://console.volcengine.com/beian/overview/"
       },
       "tencent": {
         "name": "腾讯云",
-        "domain-reg-link": "https://cloud.tencent.com/product/ba"
+        "domain_reg_link": "https://cloud.tencent.com/product/ba"
       }
     }
   },
-  "domain-registration-provider-link-text": "备案入口",
-  "domain-registration-query-link-text": "备案查询",
-  "domain-verification-needed": "待验证",
-  "domain-verified": "验证通过",
-  "domain-verification-input-save": "保存",
-  "domain-verification-refresh": "刷新",
-  "domain-verification-input-edit": "编辑",
-  "domain-verification-dns-records": "DNS 记录",
-  "domain-verification-dns-records-tip-1": "请到您的域名服务商处，添加该域名的 CNAME 解析到 ",
-  "domain-verification-dns-records-tip-2": "，解析生效后即可绑定自定义域名。",
-  "domain-verification-dns-records-type": "类型",
-  "domain-verification-dns-records-ttl": "TTL",
-  "domain-verification-dns-records-value": "值",
-  "domain-verification-dns-records-type-cname": "CNAME",
-  "domain-verification-dns-records-ttl-auto": "自动",
-  "domain-verification-dns-records-docs-link-text": "查看文档",
-  "domain-verification-success": "您的域名已成功绑定。",
-  "domain-not-bound-modal-title": "域名未绑定",
-  "domain-not-bound-modal-warning": "DNS 记录尚未生效，因此您的域名未完成绑定。关闭此弹窗需重新输入域名。",
-  "domain-not-bound-modal-description": "您确定要关闭这个弹窗吗？",
-  "domain-not-bound-modal-cancel": "取消",
-  "domain-not-bound-modal-confirm": "确认"
+  "domain_registration_provider_link_text": "备案入口",
+  "domain_registration_query_link_text": "备案查询",
+  "domain_verification_needed": "待验证",
+  "domain_verified": "验证通过",
+  "domain_verification_input_save": "保存",
+  "domain_verification_refresh": "刷新",
+  "domain_verification_input_edit": "编辑",
+  "domain_verification_dns_records": "DNS 记录",
+  "domain_verification_dns_records_tip_1": "请到您的域名服务商处，添加该域名的 CNAME 解析到 ",
+  "domain_verification_dns_records_tip_2": "，解析生效后即可绑定自定义域名。",
+  "domain_verification_dns_records_type": "类型",
+  "domain_verification_dns_records_ttl": "TTL",
+  "domain_verification_dns_records_value": "值",
+  "domain_verification_dns_records_type_cname": "CNAME",
+  "domain_verification_dns_records_ttl_auto": "自动",
+  "domain_verification_dns_records_docs_link_text": "查看文档",
+  "domain_verification_success": "您的域名已成功绑定。",
+  "domain_not_bound_modal_title": "域名未绑定",
+  "domain_not_bound_modal_warning": "DNS 记录尚未生效，因此您的域名未完成绑定。关闭此弹窗需重新输入域名。",
+  "domain_not_bound_modal_description": "您确定要关闭这个弹窗吗？",
+  "domain_not_bound_modal_cancel": "取消",
+  "domain_not_bound_modal_confirm": "确认"
 }

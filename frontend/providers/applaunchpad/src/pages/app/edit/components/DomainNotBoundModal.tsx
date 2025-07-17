@@ -35,25 +35,25 @@ export function DomainNotBoundModal({
             <Text color={'orange.400'}>
               <TriangleAlert size={20} />
             </Text>
-            <Text>{t('domain-not-bound-modal-title')}</Text>
+            <Text>{t('domain_not_bound_modal_title')}</Text>
           </Flex>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Alert status="warning" variant="subtle" borderRadius={'lg'}>
             <AlertDescription textColor={'orange.600'}>
-              {t('domain-not-bound-modal-warning')}
+              {t('domain_not_bound_modal_warning')}
             </AlertDescription>
           </Alert>
 
-          <Text mt={2}>{t('domain-not-bound-modal-description')}</Text>
+          <Text mt={2}>{t('domain_not_bound_modal_description')}</Text>
         </ModalBody>
 
         <ModalFooter>
           <Button variant={'outline'} mr={3} onClick={onClose}>
-            {t('domain-not-bound-modal-cancel')}
+            {t('domain_not_bound_modal_cancel')}
           </Button>
-          <Button onClick={onConfirm}>{t('domain-not-bound-modal-confirm')}</Button>
+          <Button onClick={onConfirm}>{t('domain_not_bound_modal_confirm')}</Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
