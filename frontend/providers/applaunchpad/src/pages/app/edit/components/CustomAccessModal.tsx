@@ -140,7 +140,9 @@ const CustomAccessModal = ({
                     as={NextLink}
                     target="_blank"
                     color={'brightBlue.600'}
-                    href="https://beian.aliyun.com/pcContainer/selfEntity"
+                    href={t(
+                      'infrastructure.providers.' + INFRASTRUCTURE_PROVIDER + '.domain-reg-link'
+                    )}
                   >
                     {t('domain-registration-provider-link-text')}
                   </Link>

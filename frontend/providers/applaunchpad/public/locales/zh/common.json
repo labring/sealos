@@ -353,13 +353,16 @@
   "infrastructure": {
     "providers": {
       "alibaba": {
-        "name": "阿里云"
+        "name": "阿里云",
+        "domain-reg-link": "https://beian.aliyun.com/pcContainer/selfEntity"
       },
       "volcano": {
-        "name": "火山引擎"
+        "name": "火山引擎",
+        "domain-reg-link": "https://console.volcengine.com/beian/overview/"
       },
       "tencent": {
-        "name": "腾讯云"
+        "name": "腾讯云",
+        "domain-reg-link": "https://cloud.tencent.com/product/ba"
       }
     }
   },
