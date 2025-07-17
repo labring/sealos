@@ -320,7 +320,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-full w-full flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-[30vh] w-full flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
@@ -342,24 +342,26 @@ const Release = () => {
           </div>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {releaseColumn.map((column) => (
-                <TableHead key={column.key}>{column.title}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {devboxVersionList.map((item) => (
-              <TableRow key={item.tag}>
+        <ScrollArea className="w-full">
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {releaseColumn.map((column) => (
-                  <TableCell key={`${item.tag}-${column.key}`}>{column.render(item)}</TableCell>
+                  <TableHead key={column.key}>{column.title}</TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {devboxVersionList.map((item) => (
+                <TableRow key={item.tag}>
+                  {releaseColumn.map((column) => (
+                    <TableCell key={`${item.tag}-${column.key}`}>{column.render(item)}</TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
       )}
       {/* dialogs */}
       {!!devbox && (

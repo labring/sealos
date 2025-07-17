@@ -16,6 +16,7 @@ import type {
   DevboxListItemTypeV2,
   DevboxVersionListItemType
 } from '@/types/devbox';
+import dayjs from 'dayjs';
 
 type State = {
   devboxList: DevboxListItemTypeV2[];
@@ -184,6 +185,8 @@ export const useDevboxStore = create<State>()(
         return 'success';
       },
       loadDetailMonitorData: async (devboxName, start, end) => {
+        console.log('start', dayjs(start).format('YYYY-MM-DD HH:mm:ss'));
+        console.log('end', dayjs(end).format('YYYY-MM-DD HH:mm:ss'));
         const pods = await getDevboxPodsByDevboxName(devboxName);
 
         const queryName = pods.length > 0 ? pods[0].podName : devboxName;
@@ -204,6 +207,8 @@ export const useDevboxStore = create<State>()(
             end
           })
         ]);
+        console.log('averageCpuData', averageCpuData);
+        console.log('averageMemoryData', averageMemoryData);
 
         set((state) => {
           if (state?.devboxDetail?.name === devboxName && state.devboxDetail?.isPause !== true) {

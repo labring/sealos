@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 
 interface DatePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   isDisabled?: boolean;
+  onClose?: () => void;
 }
 
 interface RecentDate {
@@ -33,7 +34,7 @@ interface RecentDate {
   compareValue: string;
 }
 
-const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps) => {
+const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePickerProps) => {
   const t = useTranslations();
   const currentLang = useLocale();
 
@@ -131,7 +132,10 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
 
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(initState);
 
-  const onClose = () => setIsOpen(false);
+  const handleClose = () => {
+    setIsOpen(false);
+    onClose?.();
+  };
   const onOpen = () => setIsOpen(true);
 
   const onSubmit = () => {
@@ -151,7 +155,7 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
     }
     selectedRange?.from && setStartDateTime(selectedRange.from);
     selectedRange?.to && setEndDateTime(selectedRange.to);
-    onClose();
+    handleClose();
   };
 
   const handleFromChange = (value: string, type: 'date' | 'time') => {
@@ -174,8 +178,6 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
       setFromTimeError(null);
       newDateTimeString = `${fromDateString} ${value}`;
     }
-
-    console.log(newDateTimeString);
 
     const date = parse(newDateTimeString, 'y-MM-dd HH:mm:ss', new Date());
 
@@ -408,7 +410,7 @@ const DatePicker = ({ isDisabled = false, className, ...props }: DatePickerProps
               >
                 <RefreshCw className="h-4 w-4 text-neutral-500" />
               </Button>
-              <Button variant="outline" className="h-8" onClick={onClose}>
+              <Button variant="outline" className="h-8" onClick={handleClose}>
                 {t('cancel')}
               </Button>
               <Button className="h-8" onClick={onSubmit}>

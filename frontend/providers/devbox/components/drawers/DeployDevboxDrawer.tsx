@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Loading } from '@/components/ui/loading';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -126,7 +127,7 @@ export default function DeployDevboxDrawer({
             </div>
           </div>
           <span className="leading-6">{t('update_matched_apps_notes')}</span>
-          <div className="w-full">
+          <ScrollArea className="h-[50vh] w-full">
             {isLoading ? (
               <Loading />
             ) : (
@@ -161,7 +162,7 @@ export default function DeployDevboxDrawer({
                 </TableBody>
               </Table>
             )}
-          </div>
+          </ScrollArea>
         </div>
       </DrawerContent>
     </Drawer>

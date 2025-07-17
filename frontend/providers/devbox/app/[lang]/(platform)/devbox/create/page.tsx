@@ -239,7 +239,7 @@ const DevboxCreatePage = () => {
   return (
     <>
       <FormProvider {...formHook}>
-        <div className="bg-grayModern-100 flex h-[calc(100vh-28px)] min-w-[1024px] flex-col items-center">
+        <div className="flex h-[calc(100vh-28px)] min-w-[1024px] flex-col items-center">
           <Header
             yamlList={yamlList}
             title={title}
@@ -251,7 +251,7 @@ const DevboxCreatePage = () => {
               )()
             }
           />
-          <div className="w-full px-5 pt-10 pb-20 md:px-10 lg:px-20">
+          <div className="w-full px-5 pt-10 pb-28 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
             ) : (

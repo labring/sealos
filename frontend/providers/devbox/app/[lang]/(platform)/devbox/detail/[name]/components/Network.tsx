@@ -40,6 +40,7 @@ const Network = () => {
         : [],
     retry: 5,
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+    refetchOnWindowFocus: 'always',
     onSuccess: (data) => {
       const hasUnready = data.some((item) => !item.ready);
       if (!hasUnready) {
@@ -92,7 +93,12 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const address = `http://${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
+        const map = {
+          HTTP: 'https://',
+          GRPC: 'grpcs://',
+          WS: 'wss://'
+        };
+        const address = `${map[item.protocol]} ${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>

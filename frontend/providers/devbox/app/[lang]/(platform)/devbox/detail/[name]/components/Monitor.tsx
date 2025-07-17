@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 
@@ -15,14 +16,18 @@ const Monitor = () => {
   const { startDateTime, endDateTime } = useDateTimeStore();
   const { devboxDetail, loadDetailMonitorData } = useDevboxStore();
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     if (!params?.name) return;
     await loadDetailMonitorData(
       params.name as string,
       startDateTime.getTime(),
       endDateTime.getTime()
     );
-  };
+  }, [params?.name, startDateTime, endDateTime, loadDetailMonitorData]);
+
+  useEffect(() => {
+    handleRefresh();
+  }, []);
 
   return (
     <div className="flex h-full flex-col items-start gap-2">
@@ -30,7 +35,7 @@ const Monitor = () => {
       <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
         <div className="flex items-center gap-4">
           <span className="text-lg/7 font-medium">{t('filter')}</span>
-          <DatePicker />
+          <DatePicker onClose={handleRefresh} />
           <RefreshButton onRefresh={handleRefresh} />
         </div>
         <span className="text-sm/5 text-neutral-500">
