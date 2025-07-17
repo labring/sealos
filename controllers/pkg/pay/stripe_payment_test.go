@@ -30,7 +30,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	const (
 //		APIKEY = ""
 //	)
-//	// 检查环境变量是否已设置
+//	// check that the environment variables are set
 //	if os.Getenv(StripeAPIKEY) == "" {
 //		err := os.Setenv(StripeAPIKEY, APIKEY)
 //		if err != nil {
@@ -38,7 +38,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //		}
 //	}
 //
-//	// 沙盒环境
+//	// sandboxEnvironment
 //	err := os.Setenv(StripeAPIKEY, "true")
 //	if err != nil {
 //		return
@@ -49,22 +49,22 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	setupEnv_stripe()
 //	stripe.Key = os.Getenv(StripeAPIKEY)
 //
-//	// 1. 创建支付意图
+//	// 1. create a payment intent
 //	piParams := &stripe.PaymentIntentParams{
 //		Amount:             stripe.Int64(2000), // 2000 分 = ¥20.00
 //		Currency:           stripe.String(string(stripe.CurrencyCNY)),
-//		PaymentMethodTypes: stripe.StringSlice([]string{"card"}), // 使用卡支付
+//		PaymentMethodTypes: stripe.StringSlice([]string{"card"}), // pay with a card
 //	}
 //	pi, err := paymentintent.New(piParams)
 //	if err != nil {
 //		t.Fatalf("failed to create a payment intent: %v", err)
 //	}
-//	t.Logf("PaymentIntent 创建成功，ID=%s", pi.ID)
+//	t.Logf("PaymentIntent the creation is successful，ID=%s", pi.ID)
 //
-//	// 2. 对该支付意图执行部分退款（示例：退款 1000 分）
+//	// 2. perform a partial refund for that payment intent
 //	refundParams := &stripe.RefundParams{
 //		PaymentIntent: stripe.String(pi.ID),
-//		Amount:        stripe.Int64(1000), // 退款 1000 分 = ¥10.00
+//		Amount:        stripe.Int64(1000), // refund 1000 cent = ¥10.00
 //	}
 //	r, err := refund.New(refundParams)
 //	if err != nil {

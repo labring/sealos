@@ -18,7 +18,7 @@ func setupEnv_alipay() {
 		envCertPublicKey    = ""
 	)
 
-	// 下面只有当这些变量都未被预先设置时才写入
+	// The following is only written if none of these variables are preset
 	if os.Getenv(account.AlipayAppID) == "" {
 		err := os.Setenv(account.AlipayAppID, envAppID)
 		if err != nil {
@@ -49,28 +49,28 @@ func setupEnv_alipay() {
 			return
 		}
 	}
-	// 沙盒环境
+	// sandboxEnvironment
 	err := os.Setenv(account.PayIsProduction, "true")
 	if err != nil {
 		return
 	}
 }
 
-// TestCreatePaymentIntegration 测试支付创建
+// TestCreatePaymentIntegration test payment creation
 func TestCreatePaymentIntegration(t *testing.T) {
 	ap, err := NewAlipayPayment()
 	if err != nil {
 		t.Skipf("Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v", err)
 	}
-	// 下单 1 元
-	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "单元测试创建支付")
+	// place an order of $1
+	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "unit tests create payments")
 	if err != nil {
 		t.Fatalf("CreatePayment() failed: %v", err)
 	}
 	t.Logf("CreatePayment success: tradeNo=%s, qrURL=%s", tradeNo, qrURL)
 }
 
-// 完整 E2E 测试：支付→查询→退款
+// Full E2E Test: Payment → Inquiries → Refunds
 func TestSandbox_EndToEnd(t *testing.T) {
 	setupEnv_alipay()
 	ap, err := NewAlipayPayment()
@@ -78,7 +78,7 @@ func TestSandbox_EndToEnd(t *testing.T) {
 		t.Fatalf("NewAlipayPayment() failed: %v", err)
 	}
 
-	// 下单
+	// place an order
 	const amount = 20_000
 	outTradeNo, qrURL, err := ap.CreatePayment(amount, "sandbox-user", "sandbox_environment_testing")
 	if err != nil {
@@ -90,7 +90,7 @@ func TestSandbox_EndToEnd(t *testing.T) {
 
 	time.Sleep(30 * time.Second)
 
-	// 查询支付状态
+	// check the status of your payment
 	status, _, err := ap.GetPaymentDetails(outTradeNo)
 	if err != nil {
 		t.Fatalf("GetPaymentDetails() failed: %v", err)
@@ -100,7 +100,7 @@ func TestSandbox_EndToEnd(t *testing.T) {
 	}
 	t.Logf("payment status：%s", status)
 
-	// 退款流程
+	// refund process
 	refundNo, refundFee, err := ap.RefundPayment(RefundOption{
 		OrderID: "sandbox-order-001",
 		TradeNo: outTradeNo,

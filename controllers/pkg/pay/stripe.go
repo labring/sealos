@@ -15,8 +15,8 @@
 package pay
 
 import (
+	"errors"
 	"fmt"
-	"github.com/stripe/stripe-go/v74/refund"
 	"os"
 	"strings"
 
@@ -83,9 +83,10 @@ func (s StripePayment) ExpireSession(sessionID string) error {
 	return nil
 }
 
-// RefundPayment 未通过测试，返回error
+// RefundPayment TODO
+// RefundPayment if the test fails an error is returned
 func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
-	params := &stripe.RefundParams{
+	/*params := &stripe.RefundParams{
 		Params: stripe.Params{
 			Metadata: map[string]string{
 				"order_id": opt.OrderID,
@@ -102,9 +103,7 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 	r, err := refund.New(params)
 	if err != nil {
 		return "", "", err
-	}
+	}*/
 
-	error := fmt.Errorf("it has not been tested and will not be available for the time being")
-
-	return r.ID, string(r.Status), error
+	return "", "", errors.New("暂未实现")
 }

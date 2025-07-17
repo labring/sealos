@@ -10,7 +10,7 @@ import (
 )
 
 func setupEnv_wechatPayment() {
-	// 微信支付的环境变量配置
+	// configure the environment variables of wechat pay
 	const (
 		envWechatPrivateKey           = ""
 		envMchID                      = ""
@@ -20,7 +20,7 @@ func setupEnv_wechatPayment() {
 		//envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
 	)
 
-	// 检查环境变量是否已设置
+	// check that the environment variables are set
 	if os.Getenv(MchID) == "" {
 		err := os.Setenv(MchID, envMchID)
 		if err != nil {
@@ -52,7 +52,7 @@ func setupEnv_wechatPayment() {
 		}
 	}
 
-	// 沙盒环境
+	// sandboxEnvironment
 	err := os.Setenv(account.PayIsProduction, "true")
 	if err != nil {
 		return
@@ -61,55 +61,55 @@ func setupEnv_wechatPayment() {
 
 func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	setupEnv_wechatPayment()
-	// 初始化微信支付对象
+	// initialize the wechat pay object
 	wechatPayment := WechatPayment{}
 
 	user := "test_user"
-	amount := int64(10000) // 支付金额，单位为“分”，例如10000分 = 100元
+	amount := int64(10000) // The amount to be paid is in "cents", e.g. 10,000 cents = 100 RMB
 	describe := "test_payouts"
 
-	// 创建支付订单
+	// create a payment order
 	tradeNo, codeURL, err := wechatPayment.CreatePayment(amount, user, describe)
 	if err != nil {
 		t.Fatalf("failed to create a payment order: %v", err)
 	}
 
-	// 打印支付订单信息
+	// print the payment order information
 	fmt.Printf("the payment order has been created successfully\n")
 	fmt.Printf("merchant order number %s\n", tradeNo)
 	fmt.Printf("payment qr code link %s\n", codeURL)
 
 	time.Sleep(40 * time.Second)
 
-	// 查询支付订单状态
+	// check the status of your payment order
 	status, paidAmount, err := wechatPayment.GetPaymentDetails(tradeNo)
 	if err != nil {
 		t.Fatalf("failed to query the payment order: %v", err)
 	}
 
-	// 打印支付订单状态
+	// print the status of the payment order
 	fmt.Printf("payment order status: %s\n", status)
 	fmt.Printf("payment amount %d cent\n", paidAmount)
 
-	// 判断支付是否成功
+	// determine whether the payment was successful
 	//if status != StatusSuccess {
 	//	t.Fatalf("The payment was unsuccessful and no refund can be made")
 	//}
 
-	// 进行退款操作
+	// make a refund
 	refundOption := RefundOption{
 		TradeNo: tradeNo,
-		OrderID: tradeNo, // 可以设置为与订单号相同
-		Amount:  amount,  // 退款金额
+		OrderID: tradeNo, // can be set to be the same as the order number
+		Amount:  amount,  // refund amount
 	}
 
-	// 调用退款方法
+	// invoke the refund method
 	refundNo, refundID, err := wechatPayment.RefundPayment(refundOption)
 	if err != nil {
 		t.Fatalf("refund failed: %v", err)
 	}
 
-	// 打印退款信息
+	// print the refund information
 	fmt.Printf("the refund was successful！\n")
 	fmt.Printf("merchant refund number: %s\n", refundNo)
 	fmt.Printf("wechat refund number: %s\n", refundID)

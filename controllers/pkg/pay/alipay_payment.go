@@ -38,12 +38,12 @@ func NewAlipayPayment() (*AlipayPayment, error) {
 	return &AlipayPayment{client}, nil
 }
 
-// CreatePayment 创建支付，返回支付URL和订单号
+// CreatePayment Create a payment and return the payment URL and order number
 func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
 	var p = alipay.TradePagePay{}
 	p.Subject = "sealos_cloud_pay"
 	p.OutTradeNo = uuid.NewString()
-	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // 金额单位转元
+	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // the unit of the amount is converted to a dollar
 	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
 	p.QRPayMode = "2"
 	p.TimeoutExpress = "10m"
@@ -54,7 +54,7 @@ func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string
 	return p.OutTradeNo, url.String(), nil
 }
 
-// GetPaymentDetails 查询支付状态
+// GetPaymentDetails check the status of your payment
 func (a *AlipayPayment) GetPaymentDetails(sessionID string) (string, int64, error) {
 	resp, err := a.client.TradeQuery(context.Background(), alipay.TradeQuery{
 		OutTradeNo: sessionID,
@@ -64,14 +64,14 @@ func (a *AlipayPayment) GetPaymentDetails(sessionID string) (string, int64, erro
 	}
 	amount, _ := strconv.ParseFloat(resp.TotalAmount, 64)
 	amountInt := int64(amount * 1_000_000)
-	// 状态映射
+	// state mapping
 	var status string
-	//  触发通知类型
-	//  通知类型	描述	默认开启
-	//  tradeStatus.TRADE_CLOSED	交易关闭	1
-	//  tradeStatus.TRADE_FINISHED	交易完结	1
-	//  tradeStatus.TRADE_SUCCESS	支付成功	1
-	//  tradeStatus.WAIT_BUYER_PAY	交易创建	0
+	//  the type of notification that is triggered
+	//  notification type	description	  it is enabled by default
+	//  tradeStatus.TRADE_CLOSED	transaction-closed	1
+	//  tradeStatus.TRADE_FINISHED	the-transaction-is-closed	1
+	//  tradeStatus.TRADE_SUCCESS	the-payment-was-successful	1
+	//  tradeStatus.WAIT_BUYER_PAY	deal-creation	0
 	switch resp.TradeStatus {
 	case "TRADE_SUCCESS":
 		status = PaymentSuccess
@@ -85,7 +85,7 @@ func (a *AlipayPayment) GetPaymentDetails(sessionID string) (string, int64, erro
 	return status, amountInt, nil
 }
 
-// ExpireSession 关闭订单
+// ExpireSession close the order
 func (a *AlipayPayment) ExpireSession(payment string) error {
 	_, err := a.client.TradeClose(context.Background(), alipay.TradeClose{
 		OutTradeNo: payment,
@@ -93,11 +93,11 @@ func (a *AlipayPayment) ExpireSession(payment string) error {
 	return err
 }
 
-// RefundPayment 退款
+// RefundPayment refund
 func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, error) {
 	ctx := context.Background()
 
-	// 查询订单获取打款时间
+	// query the order to get the payment time
 	qresp, err := a.client.TradeQuery(ctx, alipay.TradeQuery{
 		OutTradeNo: option.TradeNo,
 	})
@@ -105,7 +105,7 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 		return "", "", fmt.Errorf("failed to query Alipay order: %v", err)
 	}
 
-	// 用 SendPayDate 做时间校验
+	// use sendpaydate to verify the time
 	if qresp.SendPayDate == "" {
 		return "", "", fmt.Errorf("the payment time of order %s is unknown, and it is impossible to determine the refund time", option.TradeNo)
 	}
@@ -119,13 +119,13 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 
 	outRequestNo := uuid.NewString()
 
-	// 金额单位转换：option.Amount 单位为“分”，SDK 接口要求“元”，支持两位小数
+	// Amount Unit Conversion: option. The unit of Amount is "cent", and the SDK API requires "yuan" and supports two decimal places
 	refundAmt := fmt.Sprintf("%.2f", float64(option.Amount)/1_000_000)
 
 	req := alipay.TradeRefund{
-		OutTradeNo:   option.TradeNo, // 商户原订单号，与 TradeNo 二选一
-		OutRequestNo: outRequestNo,   // 本次退款请求号，保证幂等
-		RefundAmount: refundAmt,      // 本次退款金额，单位“元”，支持两位小数
+		OutTradeNo:   option.TradeNo, // Merchant's original order number, choose one of the two with TradeNo
+		OutRequestNo: outRequestNo,   // The number of this refund request, guaranteed idempotent
+		RefundAmount: refundAmt,      // The amount of this refund, in "yuan", supports two decimal places
 		RefundReason: fmt.Sprintf("refund for order %s", option.OrderID),
 	}
 
@@ -134,7 +134,7 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 		return "", "", fmt.Errorf("alipay TradeRefund error: %v", err)
 	}
 
-	// 响应解析：resp.RefundFee 为本次退款金额，单位“元”，字符串类型
-	// 也可以根据 resp.FundChange 或 resp.RefundStatus 做进一步判断
+	// Response parsing: resp. RefundFee is the amount of the refund, in yuan and string type
+	// It can also be used according to the resp. FundChange or resp. RefundStatus for further judgment
 	return outRequestNo, resp.RefundFee, nil
 }

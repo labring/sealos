@@ -55,13 +55,13 @@ func (w WechatPayment) ExpireSession(_ string) error {
 }
 
 func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error) {
-	// 查询订单，拿到 SuccessTime
+	// check the order and get SuccessTime
 	orderResp, err := QueryOrder(option.TradeNo)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to query wechat order: %v", err)
 	}
 	if orderResp.SuccessTime != nil {
-		// SuccessTime 格式一般是 RFC3339
+		// The SuccessTime format is generally RFC3339
 		paidAt, err := time.Parse(time.RFC3339, *orderResp.SuccessTime)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve the payment time: %v", err)
@@ -73,13 +73,13 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
 	}
 
-	// 生成商户退款单号
+	// generate a merchant refund number
 	refundNo := GetRandomString(32)
 	if refundNo == "" {
 		return "", "", fmt.Errorf("generate refundNo failed")
 	}
 
-	// 金额单位转换：option.Amount 是“分”，与 CreatePayment 保持一致（amount/10000）
+	// Amount Unit Conversion: option. Amount is the "cent", which is the same as CreatePayment (amount/10000)
 	refundAmt := option.Amount / 10000
 
 	ctx := context.Background()
@@ -99,7 +99,7 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		},
 	}
 
-	// 调用退款接口
+	// call the refund api
 	svc := refunddomestic.RefundsApiService{Client: client}
 	resp, _, err := svc.Create(ctx, req)
 	if err != nil {
@@ -109,6 +109,6 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		return refundNo, "", fmt.Errorf("empty refund response")
 	}
 
-	// 返回：商户退款单号 & 微信退款单号
+	// Return: Merchant Refund Number & WeChat Refund Number
 	return refundNo, *resp.RefundId, nil
 }
