@@ -179,9 +179,6 @@ export default function Network({
                             });
                           }}
                         />
-                        <span className="text-sm text-foreground">
-                          {network.openPublicDomain ? t('enabled') : t('disabled')}
-                        </span>
                       </div>
                       {network.openPublicDomain && (
                         <div className="flex items-center">
