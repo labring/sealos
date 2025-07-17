@@ -14,7 +14,13 @@
 
 package pay
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"github.com/wechatpay-apiv3/wechatpay-go/core"
+	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
+	"time"
+)
 
 func (w WechatPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
 	tradeNO := GetRandomString(32)
@@ -46,4 +52,63 @@ func (w WechatPayment) GetPaymentDetails(sessionID string) (string, int64, error
 
 func (w WechatPayment) ExpireSession(_ string) error {
 	return nil
+}
+
+func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error) {
+	// 查询订单，拿到 SuccessTime
+	orderResp, err := QueryOrder(option.TradeNo)
+	if err != nil {
+		return "", "", fmt.Errorf("查询微信订单失败: %v", err)
+	}
+	if orderResp.SuccessTime != nil {
+		// SuccessTime 格式一般是 RFC3339
+		paidAt, err := time.Parse(time.RFC3339, *orderResp.SuccessTime)
+		if err != nil {
+			return "", "", fmt.Errorf("解析支付时间失败: %v", err)
+		}
+		if time.Since(paidAt) > 365*24*time.Hour {
+			return "", "", fmt.Errorf("订单 %s 已超过一年退款期限，无法退款", option.TradeNo)
+		}
+	} else {
+		return "", "", fmt.Errorf("订单 %s 尚未支付或支付时间未知，无法退款", option.TradeNo)
+	}
+
+	// 生成商户退款单号
+	refundNo := GetRandomString(32)
+	if refundNo == "" {
+		return "", "", fmt.Errorf("generate refundNo failed")
+	}
+
+	// 金额单位转换：option.Amount 是“分”，与 CreatePayment 保持一致（amount/10000）
+	refundAmt := option.Amount / 10000
+
+	ctx := context.Background()
+	client, err := NewClient(ctx)
+	if err != nil {
+		return "", "", fmt.Errorf("new wechat pay client err: %v", err)
+	}
+
+	req := refunddomestic.CreateRequest{
+		OutTradeNo:  core.String(option.TradeNo),
+		OutRefundNo: core.String(refundNo),
+		Reason:      core.String(fmt.Sprintf("refund for order %s", option.OrderID)),
+		Amount: &refunddomestic.AmountReq{
+			Total:    core.Int64(refundAmt),
+			Refund:   core.Int64(refundAmt),
+			Currency: core.String("CNY"),
+		},
+	}
+
+	// 调用退款接口
+	svc := refunddomestic.RefundsApiService{Client: client}
+	resp, _, err := svc.Create(ctx, req)
+	if err != nil {
+		return refundNo, "", fmt.Errorf("call Refund API error: %v", err)
+	}
+	if resp == nil || resp.RefundId == nil {
+		return refundNo, "", fmt.Errorf("empty refund response")
+	}
+
+	// 返回：商户退款单号 & 微信退款单号
+	return refundNo, *resp.RefundId, nil
 }

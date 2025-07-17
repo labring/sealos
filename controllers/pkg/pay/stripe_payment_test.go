@@ -25,3 +25,50 @@ func TestCreateCheckoutSession(t *testing.T) {
 	}
 	t.Log(stripe.ID)
 }
+
+//func setupEnv_stripe() {
+//	const (
+//		APIKEY = ""
+//	)
+//	// 检查环境变量是否已设置
+//	if os.Getenv(StripeAPIKEY) == "" {
+//		err := os.Setenv(StripeAPIKEY, APIKEY)
+//		if err != nil {
+//			log.Fatalf("设置环境变量失败: %v", err)
+//		}
+//	}
+//
+//	// 沙盒环境
+//	err := os.Setenv(StripeAPIKEY, "true")
+//	if err != nil {
+//		return
+//	}
+//}
+
+//func TestStripsPayment_PaymentAndRefund(t *testing.T) {
+//	setupEnv_stripe()
+//	stripe.Key = os.Getenv(StripeAPIKEY)
+//
+//	// 1. 创建支付意图
+//	piParams := &stripe.PaymentIntentParams{
+//		Amount:             stripe.Int64(2000), // 2000 分 = ¥20.00
+//		Currency:           stripe.String(string(stripe.CurrencyCNY)),
+//		PaymentMethodTypes: stripe.StringSlice([]string{"card"}), // 使用卡支付
+//	}
+//	pi, err := paymentintent.New(piParams)
+//	if err != nil {
+//		t.Fatalf("创建支付意图失败: %v", err)
+//	}
+//	t.Logf("PaymentIntent 创建成功，ID=%s", pi.ID)
+//
+//	// 2. 对该支付意图执行部分退款（示例：退款 1000 分）
+//	refundParams := &stripe.RefundParams{
+//		PaymentIntent: stripe.String(pi.ID),
+//		Amount:        stripe.Int64(1000), // 退款 1000 分 = ¥10.00
+//	}
+//	r, err := refund.New(refundParams)
+//	if err != nil {
+//		t.Fatalf("退款失败: %v", err)
+//	}
+//	t.Logf("退款成功，Refund ID=%s，退款金额=%d", r.ID, r.Amount)
+//}
