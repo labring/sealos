@@ -15,6 +15,7 @@
 package pay
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -80,4 +81,29 @@ func (s StripePayment) ExpireSession(sessionID string) error {
 		return err
 	}
 	return nil
+}
+
+// RefundPayment TODO
+// RefundPayment if the test fails an error is returned
+func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
+	/*params := &stripe.RefundParams{
+		Params: stripe.Params{
+			Metadata: map[string]string{
+				"order_id": opt.OrderID,
+			},
+		},
+	}
+
+	params.Charge = stripe.String(opt.TradeNo)
+	// 如果指定了金额，则发起部分退款；否则为全额退款
+	if opt.Amount > 0 {
+		params.Amount = stripe.Int64(opt.Amount)
+	}
+
+	r, err := refund.New(params)
+	if err != nil {
+		return "", "", err
+	}*/
+
+	return "", "", errors.New("暂未实现")
 }

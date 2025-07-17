@@ -14,7 +14,14 @@
 
 package pay
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/wechatpay-apiv3/wechatpay-go/core"
+	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
+)
 
 func (w WechatPayment) CreatePayment(amount int64, user, describe string) (string, string, error) {
 	tradeNO := GetRandomString(32)
@@ -46,4 +53,63 @@ func (w WechatPayment) GetPaymentDetails(sessionID string) (string, int64, error
 
 func (w WechatPayment) ExpireSession(_ string) error {
 	return nil
+}
+
+func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error) {
+	// check the order and get SuccessTime
+	orderResp, err := QueryOrder(option.TradeNo)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to query wechat order: %v", err)
+	}
+	if orderResp.SuccessTime != nil {
+		// The SuccessTime format is generally RFC3339
+		paidAt, err := time.Parse(time.RFC3339, *orderResp.SuccessTime)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve the payment time: %v", err)
+		}
+		if time.Since(paidAt) > 365*24*time.Hour {
+			return "", "", fmt.Errorf("order %s has exceeded the one-year refund period and cannot be refunded", option.TradeNo)
+		}
+	} else {
+		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
+	}
+
+	// generate a merchant refund number
+	refundNo := GetRandomString(32)
+	if refundNo == "" {
+		return "", "", fmt.Errorf("generate refundNo failed")
+	}
+
+	// Amount Unit Conversion: option. Amount is the "cent", which is the same as CreatePayment (amount/10000)
+	refundAmt := option.Amount / 10000
+
+	ctx := context.Background()
+	client, err := NewClient(ctx)
+	if err != nil {
+		return "", "", fmt.Errorf("new wechat pay client err: %v", err)
+	}
+
+	req := refunddomestic.CreateRequest{
+		OutTradeNo:  core.String(option.TradeNo),
+		OutRefundNo: core.String(refundNo),
+		Reason:      core.String(fmt.Sprintf("refund for order %s", option.OrderID)),
+		Amount: &refunddomestic.AmountReq{
+			Total:    core.Int64(refundAmt),
+			Refund:   core.Int64(refundAmt),
+			Currency: core.String("CNY"),
+		},
+	}
+
+	// call the refund api
+	svc := refunddomestic.RefundsApiService{Client: client}
+	resp, _, err := svc.Create(ctx, req)
+	if err != nil {
+		return refundNo, "", fmt.Errorf("call Refund API error: %v", err)
+	}
+	if resp == nil || resp.RefundId == nil {
+		return refundNo, "", fmt.Errorf("empty refund response")
+	}
+
+	// Return: Merchant Refund Number & WeChat Refund Number
+	return refundNo, *resp.RefundId, nil
 }
