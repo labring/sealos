@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import { useMemo } from 'react';
+import { CurrencySymbol } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
@@ -113,7 +113,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <Image src={'/images/coin.svg'} alt="currency" width={16} height={16} />
+              <CurrencySymbol width={16} height={16} />
               &nbsp;
               {item.value}
             </div>
