@@ -154,7 +154,10 @@ const Basic = () => {
                   <div className="flex items-center gap-1">
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="cursor-pointer truncate text-sm text-zinc-900">
+                        <span
+                          className="cursor-pointer truncate text-sm text-zinc-900"
+                          onClick={() => copyData(sshConnectCommand)}
+                        >
                           {sshConnectCommand}
                         </span>
                       </TooltipTrigger>
