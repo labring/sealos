@@ -13,10 +13,10 @@ func setupEnv_wechatPayment() {
 	// 微信支付的环境变量配置
 	const (
 		envWechatPrivateKey           = ""
-		envMchID                      = "" // 替换为你的商户号
-		envMchCertificateSerialNumber = "" // 替换为你的商户证书序列号
-		envMchAPIv3Key                = "" // 替换为你的商户APIv3密钥
-		envAppID                      = "" // 替换为你的App ID
+		envMchID                      = ""
+		envMchCertificateSerialNumber = ""
+		envMchAPIv3Key                = ""
+		envAppID                      = ""
 		//envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
 	)
 
@@ -24,31 +24,31 @@ func setupEnv_wechatPayment() {
 	if os.Getenv(MchID) == "" {
 		err := os.Setenv(MchID, envMchID)
 		if err != nil {
-			log.Fatalf("设置微信商户号环境变量失败: %v", err)
+			log.Fatalf("Failed to set the environment variable of WeChat merchant account: %v", err)
 		}
 	}
 	if os.Getenv(WechatPrivateKey) == "" {
 		err := os.Setenv(WechatPrivateKey, envWechatPrivateKey)
 		if err != nil {
-			log.Fatalf("设置微信私钥环境变量失败: %v", err)
+			log.Fatalf("Failed to set the environment variable for WeChat private key: %v", err)
 		}
 	}
 	if os.Getenv(MchCertificateSerialNumber) == "" {
 		err := os.Setenv(MchCertificateSerialNumber, envMchCertificateSerialNumber)
 		if err != nil {
-			log.Fatalf("设置微信商户证书序列号环境变量失败: %v", err)
+			log.Fatalf("Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v", err)
 		}
 	}
 	if os.Getenv(MchAPIv3Key) == "" {
 		err := os.Setenv(MchAPIv3Key, envMchAPIv3Key)
 		if err != nil {
-			log.Fatalf("设置微信APIv3密钥环境变量失败: %v", err)
+			log.Fatalf("Failed to set the environment variable of the WeChat API v3 key: %v", err)
 		}
 	}
 	if os.Getenv(AppID) == "" {
 		err := os.Setenv(AppID, envAppID)
 		if err != nil {
-			log.Fatalf("设置微信AppID环境变量失败: %v", err)
+			log.Fatalf("Failed to set the WeChat AppID environment variable: %v", err)
 		}
 	}
 
@@ -64,40 +64,39 @@ func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	// 初始化微信支付对象
 	wechatPayment := WechatPayment{}
 
-	// 测试数据 - 请替换为实际的用户信息和支付金额
-	user := "test_user"    // 用户标识
+	user := "test_user"
 	amount := int64(10000) // 支付金额，单位为“分”，例如10000分 = 100元
-	describe := "测试支付"     // 支付描述
+	describe := "test_payouts"
 
-	// 1. 创建支付订单
+	// 创建支付订单
 	tradeNo, codeURL, err := wechatPayment.CreatePayment(amount, user, describe)
 	if err != nil {
-		t.Fatalf("创建支付订单失败: %v", err)
+		t.Fatalf("failed to create a payment order: %v", err)
 	}
 
 	// 打印支付订单信息
-	fmt.Printf("支付订单创建成功！\n")
-	fmt.Printf("商户订单号: %s\n", tradeNo)
-	fmt.Printf("支付二维码链接: %s\n", codeURL)
+	fmt.Printf("the payment order has been created successfully\n")
+	fmt.Printf("merchant order number %s\n", tradeNo)
+	fmt.Printf("payment qr code link %s\n", codeURL)
 
 	time.Sleep(40 * time.Second)
 
-	// 2. 查询支付订单状态
+	// 查询支付订单状态
 	status, paidAmount, err := wechatPayment.GetPaymentDetails(tradeNo)
 	if err != nil {
-		t.Fatalf("查询支付订单失败: %v", err)
+		t.Fatalf("failed to query the payment order: %v", err)
 	}
 
 	// 打印支付订单状态
-	fmt.Printf("支付订单状态: %s\n", status)
-	fmt.Printf("支付金额: %d 分\n", paidAmount)
+	fmt.Printf("payment order status: %s\n", status)
+	fmt.Printf("payment amount %d cent\n", paidAmount)
 
 	// 判断支付是否成功
 	//if status != StatusSuccess {
-	//	t.Fatalf("支付未成功，无法进行退款")
+	//	t.Fatalf("The payment was unsuccessful and no refund can be made")
 	//}
 
-	// 3. 进行退款操作
+	// 进行退款操作
 	refundOption := RefundOption{
 		TradeNo: tradeNo,
 		OrderID: tradeNo, // 可以设置为与订单号相同
@@ -107,11 +106,11 @@ func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	// 调用退款方法
 	refundNo, refundID, err := wechatPayment.RefundPayment(refundOption)
 	if err != nil {
-		t.Fatalf("退款失败: %v", err)
+		t.Fatalf("refund failed: %v", err)
 	}
 
 	// 打印退款信息
-	fmt.Printf("退款成功！\n")
-	fmt.Printf("商户退款单号: %s\n", refundNo)
-	fmt.Printf("微信退款单号: %s\n", refundID)
+	fmt.Printf("the refund was successful！\n")
+	fmt.Printf("merchant refund number: %s\n", refundNo)
+	fmt.Printf("wechat refund number: %s\n", refundID)
 }

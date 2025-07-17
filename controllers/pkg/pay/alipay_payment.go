@@ -102,19 +102,19 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 		OutTradeNo: option.TradeNo,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("查询支付宝订单失败: %v", err)
+		return "", "", fmt.Errorf("failed to query Alipay order: %v", err)
 	}
 
 	// 用 SendPayDate 做时间校验
 	if qresp.SendPayDate == "" {
-		return "", "", fmt.Errorf("订单 %s 支付时间未知，无法判断退款时效", option.TradeNo)
+		return "", "", fmt.Errorf("the payment time of order %s is unknown, and it is impossible to determine the refund time", option.TradeNo)
 	}
 	paidAt, err := time.ParseInLocation("2006-01-02 15:04:05", qresp.SendPayDate, time.Local)
 	if err != nil {
-		return "", "", fmt.Errorf("解析支付时间失败: %v", err)
+		return "", "", fmt.Errorf("failed to parse the payment time %v", err)
 	}
 	if time.Since(paidAt) > 365*24*time.Hour {
-		return "", "", fmt.Errorf("订单 %s 已超过一年退款期限，无法退款", option.TradeNo)
+		return "", "", fmt.Errorf("order %s has exceeded the one-year refund period and cannot be refunded", option.TradeNo)
 	}
 
 	outRequestNo := uuid.NewString()

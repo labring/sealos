@@ -34,7 +34,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	if os.Getenv(StripeAPIKEY) == "" {
 //		err := os.Setenv(StripeAPIKEY, APIKEY)
 //		if err != nil {
-//			log.Fatalf("设置环境变量失败: %v", err)
+//			log.Fatalf("failed to set environment variables: %v", err)
 //		}
 //	}
 //
@@ -57,7 +57,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	}
 //	pi, err := paymentintent.New(piParams)
 //	if err != nil {
-//		t.Fatalf("创建支付意图失败: %v", err)
+//		t.Fatalf("failed to create a payment intent: %v", err)
 //	}
 //	t.Logf("PaymentIntent 创建成功，ID=%s", pi.ID)
 //
@@ -68,7 +68,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	}
 //	r, err := refund.New(refundParams)
 //	if err != nil {
-//		t.Fatalf("退款失败: %v", err)
+//		t.Fatalf("refund failed: %v", err)
 //	}
-//	t.Logf("退款成功，Refund ID=%s，退款金额=%d", r.ID, r.Amount)
+//	t.Logf("the refund was successful，Refund ID=%s，refund amount=%d", r.ID, r.Amount)
 //}

@@ -58,19 +58,19 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 	// 查询订单，拿到 SuccessTime
 	orderResp, err := QueryOrder(option.TradeNo)
 	if err != nil {
-		return "", "", fmt.Errorf("查询微信订单失败: %v", err)
+		return "", "", fmt.Errorf("failed to query wechat order: %v", err)
 	}
 	if orderResp.SuccessTime != nil {
 		// SuccessTime 格式一般是 RFC3339
 		paidAt, err := time.Parse(time.RFC3339, *orderResp.SuccessTime)
 		if err != nil {
-			return "", "", fmt.Errorf("解析支付时间失败: %v", err)
+			return "", "", fmt.Errorf("failed to resolve the payment time: %v", err)
 		}
 		if time.Since(paidAt) > 365*24*time.Hour {
-			return "", "", fmt.Errorf("订单 %s 已超过一年退款期限，无法退款", option.TradeNo)
+			return "", "", fmt.Errorf("order %s has exceeded the one-year refund period and cannot be refunded", option.TradeNo)
 		}
 	} else {
-		return "", "", fmt.Errorf("订单 %s 尚未支付或支付时间未知，无法退款", option.TradeNo)
+		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
 	}
 
 	// 生成商户退款单号

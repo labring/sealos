@@ -83,7 +83,7 @@ func (s StripePayment) ExpireSession(sessionID string) error {
 	return nil
 }
 
-// RefundPayment 未通过测试
+// RefundPayment 未通过测试，返回error
 func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 	params := &stripe.RefundParams{
 		Params: stripe.Params{
@@ -104,5 +104,7 @@ func (s StripePayment) RefundPayment(opt RefundOption) (string, string, error) {
 		return "", "", err
 	}
 
-	return r.ID, string(r.Status), nil
+	error := fmt.Errorf("it has not been tested and will not be available for the time being")
+
+	return r.ID, string(r.Status), error
 }

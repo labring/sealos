@@ -60,14 +60,14 @@ func setupEnv_alipay() {
 func TestCreatePaymentIntegration(t *testing.T) {
 	ap, err := NewAlipayPayment()
 	if err != nil {
-		t.Skipf("跳过测试：NewAlipayPayment 失败，可能是沙盒配置不全：%v", err)
+		t.Skipf("Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v", err)
 	}
 	// 下单 1 元
 	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "单元测试创建支付")
 	if err != nil {
-		t.Fatalf("CreatePayment() 失败: %v", err)
+		t.Fatalf("CreatePayment() failed: %v", err)
 	}
-	t.Logf("CreatePayment 成功: tradeNo=%s, qrURL=%s", tradeNo, qrURL)
+	t.Logf("CreatePayment success: tradeNo=%s, qrURL=%s", tradeNo, qrURL)
 }
 
 // 完整 E2E 测试：支付→查询→退款
@@ -80,14 +80,13 @@ func TestSandbox_EndToEnd(t *testing.T) {
 
 	// 下单
 	const amount = 20_000
-	outTradeNo, qrURL, err := ap.CreatePayment(amount, "sandbox-user", "沙盒环境测试")
+	outTradeNo, qrURL, err := ap.CreatePayment(amount, "sandbox-user", "sandbox_environment_testing")
 	if err != nil {
 		t.Fatalf("CreatePayment() failed: %v", err)
 	}
-	t.Logf("下单成功：outTradeNo=%s, qrURL=%s", outTradeNo, qrURL)
+	t.Logf("the order was successfully placed：outTradeNo=%s, qrURL=%s", outTradeNo, qrURL)
 
-	t.Log("模拟支付完成")
-	//time.Sleep(1 * time.Minute)
+	t.Log("the simulated payment is complete")
 
 	time.Sleep(30 * time.Second)
 
@@ -99,7 +98,7 @@ func TestSandbox_EndToEnd(t *testing.T) {
 	if status != PaymentSuccess {
 		t.Fatalf("expected status %s, got %s", PaymentSuccess, status)
 	}
-	t.Logf("支付状态：%s", status)
+	t.Logf("payment status：%s", status)
 
 	// 退款流程
 	refundNo, refundFee, err := ap.RefundPayment(RefundOption{
@@ -110,5 +109,5 @@ func TestSandbox_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RefundPayment() failed: %v", err)
 	}
-	t.Logf("退款成功：refundNo=%s, refundFee=%s", refundNo, refundFee)
+	t.Logf("the refund was successful：refundNo=%s, refundFee=%s", refundNo, refundFee)
 }
