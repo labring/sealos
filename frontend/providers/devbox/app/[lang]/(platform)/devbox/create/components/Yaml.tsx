@@ -17,7 +17,6 @@ import { obj2Query, useCopyData } from '@/utils/tools';
 const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   const router = useRouter();
   const t = useTranslations();
-  // TODO: we need to transform hook to util
   const { copyData } = useCopyData();
   const searchParams = useSearchParams();
   const [selectedIndex, setSelectedIndex] = useState(0);

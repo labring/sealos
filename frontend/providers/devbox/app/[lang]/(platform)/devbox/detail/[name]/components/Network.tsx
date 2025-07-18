@@ -74,6 +74,12 @@ const Network = () => {
     [networkStatus]
   );
 
+  const protocolMap = {
+    HTTP: 'https://',
+    GRPC: 'grpcs://',
+    WS: 'wss://'
+  };
+
   const networkColumn: {
     title: string;
     dataIndex?: keyof NetworkType;
@@ -93,12 +99,7 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const map = {
-          HTTP: 'https://',
-          GRPC: 'grpcs://',
-          WS: 'wss://'
-        };
-        const address = `${map[item.protocol]} ${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
+        const address = `${protocolMap[item.protocol]} ${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -121,7 +122,6 @@ const Network = () => {
         if (!item.openPublicDomain) {
           return <div>-</div>;
         }
-        // TODO: about wss and other suffixes, deal it later.
         const address = item.customDomain || item.publicDomain;
         const displayAddress = `https://${address}`;
         return (
@@ -192,9 +192,10 @@ const Network = () => {
               <TooltipTrigger asChild>
                 <div
                   className="guide-network-address cursor-pointer text-sm/5 break-words hover:underline"
-                  onClick={() => window.open(`https://${address}`, '_blank')}
+                  onClick={() => window.open(`${protocolMap[item.protocol]}${address}`, '_blank')}
                 >
-                  https://{address}
+                  {protocolMap[item.protocol]}
+                  {address}
                 </div>
               </TooltipTrigger>
               <TooltipContent>
