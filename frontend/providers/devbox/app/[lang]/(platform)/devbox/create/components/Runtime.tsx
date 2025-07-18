@@ -39,7 +39,6 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   const { startedTemplate, devboxDetail } = useDevboxStore();
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
   const searchParams = useSearchParams();
-  const from = searchParams.get('from');
 
   const templateRepositoryUid = watch('templateRepositoryUid');
   const templateUid = watch('templateUid');
@@ -111,14 +110,14 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     if (isEdit) return;
     const name = searchParams.get('name');
     if (name) return;
-    router.push(`/template${from ? `?from=${from}` : ''}`);
+    router.push('/template');
   };
 
   useEffect(() => {
-    if (!startedTemplate && !isEdit) {
-      router.push('/template');
-      return;
-    }
+    // if (!startedTemplate && !isEdit) {
+    //   router.push('/template');
+    //   return;
+    // }
 
     if (startedTemplate) {
       setValue('templateRepositoryUid', startedTemplate.uid);

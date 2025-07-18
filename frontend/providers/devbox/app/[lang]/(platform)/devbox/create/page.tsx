@@ -36,7 +36,7 @@ const DevboxCreatePage = () => {
 
   const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
-  const { setDevboxDetail } = useDevboxStore();
+  const { setDevboxDetail, setStartedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
@@ -142,6 +142,7 @@ const DevboxCreatePage = () => {
     },
     {
       onSuccess(res) {
+        console.log('res', res);
         if (!res) {
           return;
         }
@@ -213,6 +214,7 @@ const DevboxCreatePage = () => {
       if (sourcePrice?.gpu) {
         refetchPrice();
       }
+      setStartedTemplate(undefined);
       router.push(`/devbox/detail/${formData.name}`);
     } catch (error) {
       if (typeof error === 'string' && error.includes('402')) {

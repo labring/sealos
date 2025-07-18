@@ -114,7 +114,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
         })
       );
     }
-  }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router]);
+  }, [guide3, isClientSide, templateRepositoryList, setGuide3, setStartedTemplate, router, t]);
 
   let tagListCollection = tags.reduce(
     (acc, tag) => {
