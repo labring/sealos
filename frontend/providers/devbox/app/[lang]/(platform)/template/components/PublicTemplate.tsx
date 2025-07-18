@@ -226,7 +226,14 @@ const TagItem = ({ tag }: { tag: Tag }) => {
         checked={isSelected}
         onCheckedChange={toggleSelection}
       />
-      <Label htmlFor={tag.uid} className="w-full cursor-pointer text-sm text-zinc-900">
+      <Label
+        htmlFor={tag.uid}
+        className="w-full cursor-pointer text-sm text-zinc-900"
+        onClick={(e) => {
+          e.preventDefault();
+          toggleSelection();
+        }}
+      >
         {tag[locale === 'zh' ? 'zhName' : 'enName'] || tag.name}
       </Label>
     </div>
