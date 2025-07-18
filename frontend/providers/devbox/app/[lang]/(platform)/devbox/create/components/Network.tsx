@@ -35,6 +35,7 @@ export default function Network({
   const { register, getValues, control } = useFormContext<DevboxEditTypeV2>();
   const [customAccessModalData, setCustomAccessModalData] = useState<CustomAccessModalParams>();
   const { env } = useEnvStore();
+
   const {
     fields: networks,
     update: updateNetworks,
