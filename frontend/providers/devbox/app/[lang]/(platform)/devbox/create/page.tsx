@@ -251,7 +251,7 @@ const DevboxCreatePage = () => {
               )()
             }
           />
-          <div className="w-full px-5 pt-10 pb-28 md:px-10 lg:px-20">
+          <div className="w-full px-5 pt-10 pb-30 md:px-10 lg:px-20">
             {tabType === 'form' ? (
               <Form isEdit={isEdit} countGpuInventory={countGpuInventory} />
             ) : (

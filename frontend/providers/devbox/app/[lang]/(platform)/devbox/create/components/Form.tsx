@@ -20,7 +20,6 @@ import QuotaBox from './QuotaBox';
 import DevboxName from './DevboxName';
 
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface FormProps {
   isEdit: boolean;
@@ -68,8 +67,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
           components={[
             {
               cpu: watch('cpu'),
-              memory: watch('memory'),
-              nodeports: devboxList.length
+              memory: watch('memory')
             }
           ]}
         />

@@ -99,7 +99,8 @@ const Network = () => {
       title: t('internal_debug_address'),
       key: 'internalAddress',
       render: (item: NetworkType) => {
-        const address = `${protocolMap[item.protocol]} ${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
+        const prefix = item.openPublicDomain ? protocolMap[item.protocol] : 'https://';
+        const address = `${prefix}${devboxDetail?.name}.${env.namespace}.svc.cluster.local:${item.port}`;
         return (
           <Tooltip>
             <TooltipTrigger asChild>
