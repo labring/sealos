@@ -17,7 +17,7 @@ const Code = ({ content, language, className }: CodeProps) => {
   const code = useMemo(() => '```' + language + '\n' + content + '```', [content, language]);
 
   return (
-    <ScrollArea className="h-full w-full min-w-0 pb-2">
+    <ScrollArea className="h-full w-full min-w-0">
       <div className={cn('w-full min-w-0 rounded-md bg-card text-card-foreground', className)}>
         <div className="relative w-full">
           <ReactMarkdown

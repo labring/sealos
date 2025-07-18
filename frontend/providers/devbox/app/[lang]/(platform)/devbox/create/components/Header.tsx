@@ -59,8 +59,13 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
       )}
       <div className="flex h-24 w-full items-center justify-between self-stretch border-b-1 px-10 py-8">
         {/* left side */}
-        <div className="flex cursor-pointer items-center gap-3">
-          <ArrowLeft className="h-6 w-6" onClick={handleBack} />
+        <div className="flex cursor-pointer items-center">
+          <div
+            className="flex h-12 w-12 cursor-pointer items-center justify-center"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </div>
           <p className="text-2xl/8 font-semibold">{t(title)}</p>
         </div>
         {/* right side */}

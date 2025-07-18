@@ -31,11 +31,10 @@ const ScriptCode = ({
     <div
       className={cn(
         'relative flex max-h-[300px] w-full flex-col overflow-hidden rounded-lg border bg-white p-3',
-        oneLine && 'flex-row pb-1',
         className
       )}
     >
-      <div className={cn('flex w-full items-center', !oneLine && 'justify-between')}>
+      <div className="flex w-full items-center justify-between">
         {!oneLine && (
           <Button
             variant="ghost"
@@ -55,16 +54,14 @@ const ScriptCode = ({
             <Code content={script} language={platform === 'Windows' ? 'powershell' : 'bash'} />
           </div>
         )}
-        {!oneLine && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => copyData(script)}
-            className="h-fit w-fit shrink-0 hover:bg-white hover:text-zinc-200"
-          >
-            <Copy className="h-4 w-4 text-zinc-400" />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => copyData(script)}
+          className="h-full w-fit shrink-0 hover:bg-white hover:text-zinc-200"
+        >
+          <Copy className="h-4 w-4 text-zinc-400" />
+        </Button>
       </div>
       {!oneLine && isOpen && (
         <div className="min-w-0 overflow-x-auto">
