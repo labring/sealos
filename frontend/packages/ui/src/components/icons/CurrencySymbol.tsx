@@ -23,7 +23,7 @@ export default function CurrencySymbol({
         r="9.74"
         fill="url(#paint0_linear_6527_5029)"
         stroke="url(#paint1_linear_6527_5029)"
-        stroke-width="0.52"
+        strokeWidth="0.52"
       />
       <circle cx="10.4999" cy="10.5" r="8.7366" fill="url(#paint2_linear_6527_5029)" />
       <path
@@ -57,9 +57,9 @@ export default function CurrencySymbol({
           width="10.2303"
           height="10.2303"
           filterUnits="userSpaceOnUse"
-          color-interpolation-filters="sRGB"
+          colorInterpolationFilters="sRGB"
         >
-          <feFlood flood-opacity="0" result="BackgroundImageFix" />
+          <feFlood floodOpacity="0" result="BackgroundImageFix" />
           <feColorMatrix
             in="SourceAlpha"
             type="matrix"
@@ -86,8 +86,8 @@ export default function CurrencySymbol({
           y2="19.5"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#F0F0F0" />
-          <stop offset="1" stop-color="#EBEBED" />
+          <stop stopColor="#F0F0F0" />
+          <stop offset="1" stopColor="#EBEBED" />
         </linearGradient>
         <linearGradient
           id="paint1_linear_6527_5029"
@@ -97,8 +97,8 @@ export default function CurrencySymbol({
           y2="3"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#2B3750" />
-          <stop offset="1" stop-color="#9AA4B9" />
+          <stop stopColor="#2B3750" />
+          <stop offset="1" stopColor="#9AA4B9" />
         </linearGradient>
         <linearGradient
           id="paint2_linear_6527_5029"
@@ -108,8 +108,8 @@ export default function CurrencySymbol({
           y2="18"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#D6D8DF" />
-          <stop offset="1" stop-color="#DADCE3" />
+          <stop stopColor="#D6D8DF" />
+          <stop offset="1" stopColor="#DADCE3" />
         </linearGradient>
         <linearGradient
           id="paint3_linear_6527_5029"
@@ -119,8 +119,8 @@ export default function CurrencySymbol({
           y2="8.50002"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#ABAFBF" />
-          <stop offset="1" stop-color="#B7BACC" />
+          <stop stopColor="#ABAFBF" />
+          <stop offset="1" stopColor="#B7BACC" />
         </linearGradient>
         <linearGradient
           id="paint4_linear_6527_5029"
@@ -130,8 +130,8 @@ export default function CurrencySymbol({
           y2="16"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#9DA1B3" />
-          <stop offset="1" stop-color="#535A73" />
+          <stop stopColor="#9DA1B3" />
+          <stop offset="1" stopColor="#535A73" />
         </linearGradient>
         <linearGradient
           id="paint5_linear_6527_5029"
@@ -141,8 +141,8 @@ export default function CurrencySymbol({
           y2="14.5"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#FCFCFC" />
-          <stop offset="1" stop-color="#DDDFE6" />
+          <stop stopColor="#FCFCFC" />
+          <stop offset="1" stopColor="#DDDFE6" />
         </linearGradient>
         <linearGradient
           id="paint6_linear_6527_5029"
@@ -152,8 +152,8 @@ export default function CurrencySymbol({
           y2="14.5"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#FCFCFC" />
-          <stop offset="1" stop-color="#DDDFE6" />
+          <stop stopColor="#FCFCFC" />
+          <stop offset="1" stopColor="#DDDFE6" />
         </linearGradient>
         <linearGradient
           id="paint7_linear_6527_5029"
@@ -163,8 +163,8 @@ export default function CurrencySymbol({
           y2="14.5"
           gradientUnits="userSpaceOnUse"
         >
-          <stop stop-color="#FCFCFC" />
-          <stop offset="1" stop-color="#DDDFE6" />
+          <stop stopColor="#FCFCFC" />
+          <stop offset="1" stopColor="#DDDFE6" />
         </linearGradient>
       </defs>
     </Icon>
