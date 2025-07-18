@@ -346,7 +346,7 @@ export const startConnectIDE = (t: any, nextStep?: () => void): Config => ({
 //   }
 // });
 
-export const startguideRelease = (t: any, nextStep?: () => void): Config => ({
+export const startGuideRelease = (t: any, nextStep?: () => void): Config => ({
   showProgress: true,
   allowClose: false,
   allowClickMaskNextStep: true,
@@ -429,7 +429,7 @@ export const startguideRelease = (t: any, nextStep?: () => void): Config => ({
     }
   },
   onDestroyed: () => {
-    useGuideStore.getState().setguideRelease(true);
+    useGuideStore.getState().setGuideRelease(true);
     startDriver(quitGuideDriverObj(t));
   }
 });
