@@ -15,7 +15,6 @@ import { useEnvStore } from '@/stores/env';
 import { listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
-import { useGlobalStore } from '@/stores/global';
 
 import {
   Select,
@@ -41,7 +40,6 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
   const searchParams = useSearchParams();
   const from = searchParams.get('from');
-  const { setLastRoute } = useGlobalStore();
 
   const templateRepositoryUid = watch('templateRepositoryUid');
   const templateUid = watch('templateUid');

@@ -11,7 +11,6 @@ import 'nprogress/nprogress.css';
 
 const RouteHandlerProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
-  const search = useSearchParams();
   const { setLastRoute } = useGlobalStore();
 
   useEffect(() => {

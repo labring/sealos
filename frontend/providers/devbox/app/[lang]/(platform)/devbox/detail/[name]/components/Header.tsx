@@ -45,7 +45,9 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
     <div className="flex min-h-20 w-full items-center justify-between gap-5">
       {/* left */}
       <div className="flex h-6 min-w-fit cursor-pointer items-center gap-3">
-        <ArrowLeft className="h-6 w-6" onClick={() => router.push('/')} />
+        <div className="flex h-12 w-12 items-center justify-center cursor-pointer" onClick={() => router.push('/')}>
+          <ArrowLeft className="h-6 w-6" />
+        </div>
         <div className="text-xl font-semibold">{devboxDetail.name}</div>
         <DevboxStatusTag
           status={devboxDetail.status}
