@@ -153,13 +153,37 @@ func (c *Cockroach) GetUserRechargeDiscount(ops *types.UserQueryOpts) (types.Use
 	}
 	activeSteps, firstRechargeSteps := cloneMap(cfg.DefaultDiscountSteps), cloneMap(cfg.FirstRechargeDiscountSteps)
 	if firstRechargeSteps != nil {
-		payments, err := c.getActivePayments(ops, types.ActivityTypeFirstRecharge)
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
+		var firstRechargeTime time.Time
+		if err := c.DB.Model(&types.Payment{}).Where(&types.Payment{PaymentRaw: types.PaymentRaw{UserUID: ops.UID}}).
+			Order("created_at ASC").Limit(1).Select("created_at").Scan(&firstRechargeTime).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge time: %v", err)
+			}
 		}
-		if len(payments) != 0 {
-			for i := range payments {
-				delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
+		if !firstRechargeTime.IsZero() {
+			if firstRechargeTime.After(time.Date(2025, 7, 18, 8, 40, 0, 0, time.UTC)) {
+				payments, err := c.getActivePayments(ops, types.ActivityTypeFirstRecharge)
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
+				}
+				if len(payments) != 0 {
+					for i := range payments {
+						delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
+					}
+				}
+			} else {
+				firstRechargeSteps = map[int64]int64{}
+			}
+		}
+		if len(firstRechargeSteps) > 0 {
+			payments, err := c.getActivePayments(ops, types.ActivityTypeFirstRecharge)
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return types.UserRechargeDiscount{}, fmt.Errorf("failed to get first recharge payments: %v", err)
+			}
+			if len(payments) != 0 {
+				for i := range payments {
+					delete(firstRechargeSteps, payments[i].Amount/BaseUnit)
+				}
 			}
 		}
 	}
