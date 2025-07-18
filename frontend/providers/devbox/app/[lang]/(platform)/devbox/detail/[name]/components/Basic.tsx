@@ -161,7 +161,7 @@ const Basic = () => {
                           {sshConnectCommand}
                         </span>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">{sshConnectCommand}</TooltipContent>
+                      <TooltipContent side="top">{sshConnectCommand}</TooltipContent>
                     </Tooltip>
                     <Copy
                       className="h-4 w-4 cursor-pointer text-neutral-500"

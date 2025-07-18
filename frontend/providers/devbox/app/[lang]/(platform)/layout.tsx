@@ -17,7 +17,6 @@ import { useGlobalStore } from '@/stores/global';
 import { getLangStore, setLangStore } from '@/utils/cookie';
 import { cleanSession, setSessionToSessionStorage } from '@/utils/user';
 
-import { Loading } from '@/components/ui/loading';
 import { Toaster } from '@/components/ui/sonner';
 import RouteHandlerProvider from '@/components/providers/MyRouteHandlerProvider';
 
@@ -34,7 +33,7 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
   const { setEnv, env } = useEnvStore();
   const { loadUserDebt } = useUserStore();
   const { setSourcePrice } = usePriceStore();
-  const { setScreenWidth, loading, setLastRoute } = useGlobalStore();
+  const { setScreenWidth, setLastRoute } = useGlobalStore();
 
   const [init, setInit] = useState(false);
   const [refresh, setRefresh] = useState(false);
@@ -142,8 +141,6 @@ export default function PlatformLayout({ children }: { children: React.ReactNode
 
     router.push(path);
   }, [router, searchParams]);
-
-  if (loading) return <Loading />;
 
   return (
     <RouteHandlerProvider>

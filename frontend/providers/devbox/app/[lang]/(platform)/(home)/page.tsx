@@ -26,7 +26,6 @@ export default function HomePage() {
     }
   }, [action, isClientSide, resetGuideState]);
 
-  // FIXME:The loading component experiences lag.
   if (isLoading) return <Loading />;
 
   return (

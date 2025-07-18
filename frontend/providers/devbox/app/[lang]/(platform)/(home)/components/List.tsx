@@ -352,19 +352,19 @@ const DevboxList = ({
           devbox={currentDevboxListItem}
         />
       )}
-
-      {/* TODO: modal open condition need to be changed */}
-      <ShutdownModal
-        open={!!onOpenShutdown && !!currentDevboxListItem}
-        onSuccess={() => {
-          refetchDevboxList();
-          setOnOpenShutdown(false);
-        }}
-        onClose={() => {
-          setOnOpenShutdown(false);
-        }}
-        devbox={currentDevboxListItem || ({} as DevboxListItemTypeV2)}
-      />
+      {!!currentDevboxListItem && (
+        <ShutdownModal
+          open={!!onOpenShutdown}
+          onSuccess={() => {
+            refetchDevboxList();
+            setOnOpenShutdown(false);
+          }}
+          onClose={() => {
+            setOnOpenShutdown(false);
+          }}
+          devbox={currentDevboxListItem}
+        />
+      )}
     </>
   );
 };
