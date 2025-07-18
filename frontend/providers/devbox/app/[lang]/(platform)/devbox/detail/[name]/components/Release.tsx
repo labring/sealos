@@ -67,7 +67,6 @@ const Release = () => {
   const [initialized, setInitialized] = useState(false);
   const [onOpenRelease, setOnOpenRelease] = useState(false);
   const [onOpenSelectApp, setOnOpenSelectApp] = useState(false);
-  const [apps, setApps] = useState<AppListItemType[]>([]);
   const [deployData, setDeployData] = useState<any>(null);
   const [currentVersion, setCurrentVersion] = useState<DevboxVersionListItemType | null>(null);
   const [updateTemplateRepo, setUpdateTemplateRepo] = useState<
@@ -321,7 +320,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[30vh] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-[40%] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
