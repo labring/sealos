@@ -16,8 +16,6 @@ export default function DevboxName({ isEdit }: { isEdit: boolean }) {
     name: 'networks'
   });
 
-  // TODO： we need to adjust zod logic in form
-
   return (
     <FormField
       control={control}
