@@ -53,25 +53,29 @@ const DevboxCreatePage = () => {
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
-  const [captureDevboxName, setCaptureDevboxName] = useState('');
+  const [captureFrom, setCaptureFrom] = useState('');
   const [captureScrollTo, setCaptureScrollTo] = useState('');
+  const [captureDevboxName, setCaptureDevboxName] = useState('');
   useEffect(() => {
     const name = searchParams.get('name');
+    const from = searchParams.get('from');
     const scrollTo = searchParams.get('scrollTo');
     if (name) {
       setCaptureDevboxName(name);
       router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
-      setCaptureDevboxName(name);
-      router.replace(`/devbox/create?name=${captureDevboxName}`, undefined);
-      if (scrollTo) {
-        setCaptureScrollTo(scrollTo);
-        router.replace(
-          `/devbox/create?name=${captureDevboxName}&scrollTo=${captureScrollTo}`,
-          undefined
-        );
+      if (from) {
+        setCaptureFrom(from);
+        router.replace(`/devbox/create?name=${captureDevboxName}&from=${captureFrom}`, undefined);
+        if (scrollTo) {
+          setCaptureScrollTo(scrollTo);
+          router.replace(
+            `/devbox/create?name=${captureDevboxName}&scrollTo=${captureScrollTo}`,
+            undefined
+          );
+        }
       }
     }
-  }, [searchParams, router, captureDevboxName, captureScrollTo]);
+  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);

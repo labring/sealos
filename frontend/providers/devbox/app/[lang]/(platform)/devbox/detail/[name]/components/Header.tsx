@@ -94,7 +94,7 @@ const Header = ({ refetchDevboxDetail }: HeaderProps) => {
           <Button
             variant="outline"
             size="lg"
-            onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}`)}
+            onClick={() => router.push(`/devbox/create?name=${devboxDetail.name}&from=detail`)}
           >
             {t('update')}
           </Button>

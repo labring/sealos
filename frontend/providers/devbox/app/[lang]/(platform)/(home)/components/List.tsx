@@ -215,7 +215,7 @@ const DevboxList = ({
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="flex h-9 cursor-pointer items-center rounded-md px-3 text-sm"
-                    onClick={() => router.push(`/devbox/create?name=${item.name}`)}
+                    onClick={() => router.push(`/devbox/create?name=${item.name}&from=list`)}
                   >
                     <PencilLine className="h-4 w-4 text-neutral-500" />
                     {t('update')}
