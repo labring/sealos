@@ -77,7 +77,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
     switch (currentTab) {
       case 'overview':
         return (
-          <>
+          <div className="flex h-full w-full flex-col gap-2">
             <div className="flex h-full w-full gap-2">
               <Basic />
               <div className="flex w-full flex-col gap-2">
@@ -86,7 +86,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
               </div>
             </div>
             <Release />
-          </>
+          </div>
         );
       case 'monitor':
         return <Monitor />;
@@ -103,7 +103,7 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
       <div className="flex h-full gap-2">
         <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} />
         {/* right side */}
-        <div className="flex h-full w-full flex-col gap-2">{renderContent()}</div>
+        {renderContent()}
       </div>
     </div>
   );

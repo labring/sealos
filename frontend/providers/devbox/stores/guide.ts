@@ -20,7 +20,7 @@ interface GuideState {
   setManageAndDeploy: (completed: boolean) => void;
   setGuide6: (completed: boolean) => void;
   setGuide7: (completed: boolean) => void;
-  setguideRelease: (completed: boolean) => void;
+  setGuideRelease: (completed: boolean) => void;
   setGuideEnabled: (enabled: boolean) => void;
   setCurrentGuideApp: (name: string) => void;
   resetGuideState: (completed: boolean) => void;
@@ -47,7 +47,7 @@ export const useGuideStore = create<GuideState>()(
       setManageAndDeploy: (completed: boolean) => set({ manageAndDeploy: completed }),
       setGuide6: (completed: boolean) => set({ guide6: completed }),
       setGuide7: (completed: boolean) => set({ guide7: completed }),
-      setguideRelease: (completed: boolean) => set({ guideRelease: completed }),
+      setGuideRelease: (completed: boolean) => set({ guideRelease: completed }),
       setGuideEnabled: (enabled) => set({ isGuideEnabled: enabled }),
       setCurrentGuideApp: (name: string) => set({ currentGuideApp: name }),
       resetGuideState: (completed: boolean) =>

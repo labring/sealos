@@ -22,7 +22,7 @@ import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
 import { parseTemplateConfig } from '@/utils/tools';
 import { DevboxVersionListItemType } from '@/types/devbox';
-import { startDriver, startguideRelease } from '@/hooks/driver';
+import { startDriver, startGuideRelease } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { delDevboxVersionByName, getAppsByDevboxId } from '@/api/devbox';
 import { devboxIdKey, DevboxReleaseStatusEnum } from '@/constants/devbox';
@@ -305,15 +305,15 @@ const Release = () => {
     [t, handleDeploy, openConfirm, handleDelDevboxVersion, handleConvertToRuntime]
   );
 
-  const { guideRelease, setguideRelease, guideIDE } = useGuideStore();
+  const { guideRelease, setGuideRelease, guideIDE } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   const handleOpenRelease = useCallback(() => {
-    setguideRelease(true);
+    setGuideRelease(true);
     setOnOpenRelease(true);
-  }, [setOnOpenRelease, setguideRelease]);
+  }, [setOnOpenRelease, setGuideRelease]);
   useEffect(() => {
     if (!guideRelease && guideIDE && isClientSide) {
-      startDriver(startguideRelease(t, handleOpenRelease));
+      startDriver(startGuideRelease(t, handleOpenRelease));
     }
   }, [guideRelease, handleOpenRelease, isClientSide, t, guideIDE]);
 
