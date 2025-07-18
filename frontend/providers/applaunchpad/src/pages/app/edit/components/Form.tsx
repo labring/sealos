@@ -989,7 +989,7 @@ const Form = ({
                                 onClick={() =>
                                   setCustomAccessModalData({
                                     publicDomain: network.publicDomain,
-                                    customDomain: network.customDomain,
+                                    currentCustomDomain: network.customDomain,
                                     domain: network.domain
                                   })
                                 }
@@ -1328,8 +1328,6 @@ const Form = ({
               ...networks[i],
               customDomain: e
             });
-
-            setCustomAccessModalData(undefined);
           }}
         />
       )}

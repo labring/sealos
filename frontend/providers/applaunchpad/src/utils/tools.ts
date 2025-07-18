@@ -32,25 +32,46 @@ export const useCopyData = () => {
   const { t } = useTranslation();
   return {
     copyData: (data: string, title: string = 'Copy Success') => {
-      try {
-        const textarea = document.createElement('textarea');
-        textarea.value = data;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        toast({
-          title: t(title),
-          status: 'success',
-          duration: 1000
-        });
-      } catch (error) {
-        console.error(error);
-        toast({
-          title: t('Copy Failed'),
-          status: 'error'
-        });
-      }
+      console.log('copyData', data);
+
+      navigator.permissions.query({ name: 'clipboard-write' as PermissionName }).then((result) => {
+        if (result.state === 'granted' || result.state === 'prompt') {
+          navigator.clipboard.writeText(data).then(
+            () => {
+              toast({
+                title: t(title),
+                status: 'success',
+                duration: 1000
+              });
+            },
+            (clipboardError) => {
+              console.error(clipboardError);
+
+              // Try execCommand copy if clipboard is not allowed or not supported
+              try {
+                const textarea = document.createElement('textarea');
+                textarea.value = data;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                toast({
+                  title: t(title),
+                  status: 'success',
+                  duration: 1000
+                });
+              } catch (error) {
+                // Both methods failed.
+                console.error(error);
+                toast({
+                  title: t('Copy Failed'),
+                  status: 'error'
+                });
+              }
+            }
+          );
+        }
+      });
     }
   };
 };
