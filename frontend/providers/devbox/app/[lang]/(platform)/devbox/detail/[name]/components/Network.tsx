@@ -93,7 +93,7 @@ const Network = () => {
       render: (item: NetworkType) => {
         return <span>{item.port}</span>;
       },
-      width: '85px'
+      width: '12%'
     },
     {
       title: t('internal_debug_address'),
@@ -114,11 +114,13 @@ const Network = () => {
             <TooltipContent side="bottom">{t('copy')}</TooltipContent>
           </Tooltip>
         );
-      }
+      },
+      width: '30%'
     },
     {
       title: t('external_debug_address'),
       key: 'externalAddress',
+      width: '50%',
       render: (item: NetworkType) => {
         if (!item.openPublicDomain) {
           return <div>-</div>;
@@ -224,30 +226,39 @@ const Network = () => {
       </div>
       {/* table */}
       {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {networkColumn.map((column) => (
-                <TableHead key={column.key} style={{ maxWidth: column.width }}>
-                  {column.title}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {devboxDetail.networks.map((network, index) => (
-              <TableRow key={`${network.port}-${index}`}>
+        <div className="w-full min-w-0">
+          <Table className="w-full table-fixed">
+            <TableHeader>
+              <TableRow>
                 {networkColumn.map((column) => (
-                  <TableCell key={`${network.port}-${column.key}`}>
-                    {column.render
-                      ? column.render(network as NetworkType)
-                      : network[column.dataIndex as keyof NetworkType]}
-                  </TableCell>
+                  <TableHead
+                    key={column.key}
+                    style={{ width: column.width }}
+                    className="px-4 break-words whitespace-normal"
+                  >
+                    {column.title}
+                  </TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {devboxDetail.networks.map((network, index) => (
+                <TableRow key={`${network.port}-${index}`}>
+                  {networkColumn.map((column) => (
+                    <TableCell
+                      key={`${network.port}-${column.key}`}
+                      className="px-4 break-words whitespace-normal"
+                    >
+                      {column.render
+                        ? column.render(network as NetworkType)
+                        : network[column.dataIndex as keyof NetworkType]}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       ) : (
         <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
           <div className="rounded-lg border border-dashed border-zinc-200 p-2">
