@@ -311,6 +311,7 @@ const Release = () => {
     setGuideRelease(true);
     setOnOpenRelease(true);
   }, [setOnOpenRelease, setGuideRelease]);
+
   useEffect(() => {
     if (!guideRelease && guideIDE && isClientSide) {
       startDriver(startGuideRelease(t, handleOpenRelease));
@@ -320,7 +321,7 @@ const Release = () => {
   if (!initialized || isLoading) return <Loading />;
 
   return (
-    <div className="flex h-[30vh] w-full flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-[30vh] flex-col items-center gap-4 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       <div className="flex w-full items-center justify-between !overflow-visible">
         <span className="text-lg/7 font-medium">{t('version_history')}</span>
         <Button className="guide-release-button" onClick={handleOpenRelease} variant="outline">
