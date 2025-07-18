@@ -27,6 +27,7 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const t = useTranslations();
   const searchParams = useSearchParams();
   const name = searchParams.get('name');
+  const from = searchParams.get('from') as 'list' | 'detail';
 
   const { guideConfigDevbox } = useGuideStore();
 
@@ -43,11 +44,15 @@ const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
 
   const handleBack = useCallback(() => {
     if (name) {
-      router.replace(`/devbox/detail/${name}`);
+      if (from === 'detail') {
+        router.replace(`/devbox/detail/${name}`);
+      } else if (from === 'list') {
+        router.replace(`/`);
+      }
     } else {
       router.push('/template');
     }
-  }, [name, router]);
+  }, [name, router, from]);
 
   return (
     <>
