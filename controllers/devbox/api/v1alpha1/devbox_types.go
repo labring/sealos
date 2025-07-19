@@ -24,7 +24,16 @@ import (
 const (
 	// FinalizerName is the finalizer for Devbox
 	FinalizerName = "devbox.sealos.io/finalizer"
-	DevBoxPartOf  = "devbox"
+
+	// Annotate the devbox pod with the devbox init
+	AnnotationInit = "devbox.sealos.io/init"
+	// Annotate the devbox pod with the storage limit
+	AnnotationStorageLimit = "devbox.sealos.io/storage-limit"
+	// Annotate the devbox pod with the devbox part of
+	AnnotationContentID = "devbox.sealos.io/content-id"
+
+	// Label the devbox pod with the devbox part of
+	LabelDevBoxPartOf = "devbox"
 )
 
 type DevboxState string
@@ -124,6 +133,10 @@ type DevboxSpec struct {
 	// +kubebuilder:validation:Required
 	Config Config `json:"config"`
 
+	// +kubebuilder:validation:Optional
+	// devbox storage limit, `storageLimit` will be used to generate the devbox pod label.
+	StorageLimit string `json:"storageLimit,omitempty"`
+
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
 
@@ -153,28 +166,13 @@ type NetworkStatus struct {
 type CommitStatus string
 
 const (
+	CommitStatusUnset   CommitStatus = "Unset"
 	CommitStatusSuccess CommitStatus = "Success"
 	CommitStatusFailed  CommitStatus = "Failed"
 	CommitStatusUnknown CommitStatus = "Unknown"
 	CommitStatusPending CommitStatus = "Pending"
+	CommitStatusSkipped CommitStatus = "Skipped"
 )
-
-type CommitHistory struct {
-	// Image is the image of the commit
-	Image string `json:"image"`
-	// Time is the time when the commit is created
-	Time metav1.Time `json:"time"`
-	// Pod is the pod name
-	Pod string `json:"pod"`
-	// status will be set based on expectedStatus after devbox pod delete or stop. if expectedStatus is still pending, it means the pod is not running successfully, so we need to set it to `failed`
-	Status CommitStatus `json:"status"`
-	// predicatedStatus default `pending`, will be set to `success` if pod status is running successfully.
-	PredicatedStatus CommitStatus `json:"predicatedStatus"`
-	// Node is the node name
-	Node string `json:"node"`
-	// ContainerID is the container id
-	ContainerID string `json:"containerID"`
-}
 
 type DevboxPhase string
 
@@ -197,19 +195,48 @@ const (
 	DevboxPhaseUnknown DevboxPhase = "Unknown"
 )
 
+type CommitRecord struct {
+	// ContainerID is the container id
+	ContainerID string `json:"containerID"`
+
+	// ContentID is the content id
+	ContentID string `json:"contentID"`
+
+	// Image is the image of the commit
+	Image string `json:"image"`
+
+	// Node is the node name
+	Node string `json:"node"`
+
+	// GenerateTime is the time when the commit is generated
+	GenerateTime metav1.Time `json:"generateTime"`
+
+	// ScheduleTime is the time when the commit is scheduled
+	ScheduleTime metav1.Time `json:"scheduleTime"`
+
+	// CommitTime is the time when the commit is created
+	CommitTime metav1.Time `json:"commitTime"`
+
+	// CommitStatus is the status of the commit
+	// +kubebuilder:validation:Enum=Skipped;Success;Failed;Unknown;Pending;Unset
+	// +kubebuilder:default=Unset
+	CommitStatus CommitStatus `json:"commitStatus"`
+}
+
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
-	Network NetworkStatus `json:"network"`
+	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional
-	CommitHistory []*CommitHistory `json:"commitHistory"`
+	Node string `json:"node"`
+	// +kubebuilder:validation:Optional
+	State DevboxState `json:"state"`
+	// CommitRecords is the records of the devbox commits
+	CommitRecords []*CommitRecord `json:"commitRecords"`
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
-
 	// +kubebuilder:validation:Optional
-	State corev1.ContainerState `json:"state"`
-	// +kubebuilder:validation:Optional
-	LastTerminationState corev1.ContainerState `json:"lastState"`
+	Network NetworkStatus `json:"network"`
 }
 
 // +kubebuilder:object:root=true

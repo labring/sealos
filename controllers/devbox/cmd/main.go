@@ -49,6 +49,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
 	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/daemon"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -88,11 +89,14 @@ func main() {
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
+	var enablePodStorageLimitMatcher bool
 	// config qps and burst
 	var configQPS int
 	var configBurst int
 	// config restart predicate duration
 	var restartPredicateDuration time.Duration
+	// devbox node label
+	var devboxNodeLabel string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -120,11 +124,14 @@ func main() {
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
+	flag.BoolVar(&enablePodStorageLimitMatcher, "enable-pod-storage-limit-matcher", false, "If set, pod storage limit matcher will be enabled")
 	// config qps and burst
 	flag.IntVar(&configQPS, "config-qps", 50, "The qps of the config")
 	flag.IntVar(&configBurst, "config-burst", 100, "The burst of the config")
 	// config restart predicate duration
 	flag.DurationVar(&restartPredicateDuration, "restart-predicate-duration", 2*time.Hour, "Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.")
+	// devbox node label
+	flag.StringVar(&devboxNodeLabel, "devbox-node-label", "devbox.sealos.io/node", "The label of the devbox node")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -235,6 +242,9 @@ func main() {
 	if enablePodEphemeralStorageMatcher {
 		podMatchers = append(podMatchers, matcher.EphemeralStorageMatcher{})
 	}
+	if enablePodStorageLimitMatcher {
+		podMatchers = append(podMatchers, matcher.StorageLimitMatcher{})
+	}
 
 	if err = (&controller.DevboxReconciler{
 		Client:              mgr.GetClient(),
@@ -255,6 +265,16 @@ func main() {
 		RestartPredicateDuration: restartPredicateDuration,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
+		os.Exit(1)
+	}
+
+	daemon := daemon.DevboxDaemon{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("devbox-daemon"),
+	}
+	if err = daemon.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create daemon", "daemon", "Devbox")
 		os.Exit(1)
 	}
 

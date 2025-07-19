@@ -50,6 +50,7 @@ import (
 // DevboxReconciler reconciles a Devbox object
 type DevboxReconciler struct {
 	CommitImageRegistry string
+	DevboxNodeLabel     string
 
 	RequestRate      resource.RequestRate
 	EphemeralStorage resource.EphemeralStorage
@@ -86,7 +87,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
-		PartOf:    devboxv1alpha1.DevBoxPartOf,
+		PartOf:    devboxv1alpha1.LabelDevBoxPartOf,
 	})
 
 	if devbox.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -119,8 +120,25 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
+	if devbox.Status.Node == "" {
+		devbox.Status.Node = r.GetNodeName()
+		if err := r.Status().Update(ctx, devbox); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	}
+
+	if len(devbox.Status.CommitRecords) == 0 {
+		logger.Info("no commit records, skip, wait for daemon component to create first commit record")
+		return ctrl.Result{}, nil
+	}
+
+	// update devbox status, init history and network type
 	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
-	_ = r.Status().Update(ctx, devbox)
+	err := r.Status().Update(ctx, devbox)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
 
 	// create or update secret
 	logger.Info("syncing secret")
@@ -225,128 +243,77 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
-
-	var podList corev1.PodList
-	if err := r.List(ctx, &podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
-		return err
-	}
-	// only one pod is allowed, if more than one pod found, return error
-	if len(podList.Items) > 1 {
-		// remove finalizer and delete them
-		for _, pod := range podList.Items {
-			if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
-				if err := r.Update(ctx, &pod); err != nil {
-					logger.Error(err, "remove finalizer failed")
-				}
-			}
-			if err := r.Delete(ctx, &pod); err != nil {
-				logger.Error(err, "delete pod failed")
-			}
-		}
-		return fmt.Errorf("more than one pod found")
-	}
-	logger.Info("pod list", "length", len(podList.Items))
-
 	// update devbox status after pod is created or updated
+	var deferUpdateDevboxStatus bool = true
 	defer func() {
-		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			logger.Info("update devbox status after pod synced")
-			latestDevbox := &devboxv1alpha1.Devbox{}
-			if err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
-				logger.Error(err, "get latest devbox failed")
-				return err
+		if deferUpdateDevboxStatus {
+			if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				logger.Info("update devbox status after pod synced")
+				latestDevbox := &devboxv1alpha1.Devbox{}
+				if err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
+					logger.Error(err, "get latest devbox failed")
+					return err
+				}
+				// update devbox status with latestDevbox status
+				logger.Info("updating devbox status")
+				return r.Status().Update(ctx, latestDevbox)
+			}); err != nil {
+				logger.Error(err, "sync pod failed")
+				r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
+				return
 			}
-			// update devbox status with latestDevbox status
-			logger.Info("updating devbox status")
-			logger.Info("merge commit history", "devbox", devbox.Status.CommitHistory, "latestDevbox", latestDevbox.Status.CommitHistory)
-			devbox.Status.Phase = helper.GenerateDevboxPhase(devbox, podList)
-			helper.UpdateDevboxStatus(devbox, latestDevbox)
-			return r.Status().Update(ctx, latestDevbox)
-		}); err != nil {
-			logger.Error(err, "sync pod failed")
-			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
-			return
+			logger.Info("update devbox status success")
+			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 		}
-		logger.Info("update devbox status success")
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
 	}()
 
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
-		nextCommitHistory := r.generateNextCommitHistory(devbox)
-		expectPod := r.generateDevboxPod(devbox, nextCommitHistory)
-
+		// get pod
+		podList := &corev1.PodList{}
+		if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+			return err
+		}
 		switch len(podList.Items) {
 		case 0:
-			logger.Info("create pod")
-			logger.Info("next commit history", "commit", nextCommitHistory)
-			err := r.createPod(ctx, devbox, expectPod, nextCommitHistory)
-			if err != nil && helper.IsExceededQuotaError(err) {
-				logger.Info("devbox is exceeded quota, change devbox state to Stopped")
-				r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Devbox is exceeded quota", "Devbox is exceeded quota")
-				devbox.Spec.State = devboxv1alpha1.DevboxStateStopped
-				_ = r.Update(ctx, devbox)
-				return nil
+			var pod *corev1.Pod
+			// check last devbox status
+			switch lastHistory.CommitStatus {
+			case devboxv1alpha1.CommitStatusUnset:
+				// create a new pod with default image, with new content id
+				pod = r.generateDevboxPod(devbox,
+					helper.WithPodImage(devbox.Spec.Image),
+					helper.WithPodContentIDFromLatestHistory(devbox),
+				)
+				if err := r.Create(ctx, pod); err != nil {
+					return err
+				}
+			case devboxv1alpha1.CommitStatusSkipped:
+			case devboxv1alpha1.CommitStatusFailed:
+			case devboxv1alpha1.CommitStatusSuccess:
+			case devboxv1alpha1.CommitStatusPending:
+			case devboxv1alpha1.CommitStatusUnknown:
 			}
-			if err != nil {
-				logger.Error(err, "create pod failed")
+		case 1:
+			// update pod
+			pod := &podList.Items[0]
+			if err := r.Update(ctx, pod); err != nil {
 				return err
 			}
-			return nil
-		case 1:
-			pod := &podList.Items[0]
-			// check pod container size, if it is 0, it means the pod is not running, return an error
-			if len(pod.Status.ContainerStatuses) == 0 {
-				return fmt.Errorf("pod container size is 0")
-			}
-			devbox.Status.State = pod.Status.ContainerStatuses[0].State
-			// update commit predicated status by pod status, this should be done once find a pod
-			helper.UpdatePredicatedCommitStatus(devbox, pod)
-			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
-			if !pod.DeletionTimestamp.IsZero() {
-				logger.Info("pod has been deleted")
-				return r.handlePodDeleted(ctx, devbox, pod)
-			}
-			switch matcher.PodMatchExpectations(expectPod, pod, r.PodMatchers...) {
-			case true:
-				// pod match expectations
-				logger.Info("pod match expectations")
-				switch pod.Status.Phase {
-				case corev1.PodPending, corev1.PodRunning:
-					// pod is running or pending, do nothing here
-					logger.Info("pod is running or pending")
-					// update commit history status by pod status
-					helper.UpdateCommitHistory(devbox, pod, false)
-					return nil
-				case corev1.PodFailed, corev1.PodSucceeded:
-					// pod failed or succeeded, we need delete pod and remove finalizer
-					logger.Info("pod failed or succeeded, recreate pod")
-					return r.deletePod(ctx, devbox, pod)
+		default:
+			// remove finalizer and delete them
+			for _, pod := range podList.Items {
+				if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
+					if err := r.Update(ctx, &pod); err != nil {
+						logger.Error(err, "remove finalizer failed")
+					}
 				}
-			case false:
-				// pod not match expectations, delete pod anyway
-				logger.Info("pod not match expectations, recreate pod")
-				return r.deletePod(ctx, devbox, pod)
 			}
+			deferUpdateDevboxStatus = false
+			return fmt.Errorf("more than one pod found")
 		}
-	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
-		switch len(podList.Items) {
-		case 0:
-			return nil
-		case 1:
-			pod := &podList.Items[0]
-			// update state to empty since devbox is stopped
-			devbox.Status.State = corev1.ContainerState{}
-			// update commit predicated status by pod status, this should be done once find a pod
-			helper.UpdatePredicatedCommitStatus(devbox, pod)
-			// pod has been deleted, handle it, next reconcile will create a new pod, and we will update commit history status by predicated status
-			if !pod.DeletionTimestamp.IsZero() {
-				return r.handlePodDeleted(ctx, devbox, pod)
-			}
-			// we need delete pod because devbox state is stopped
-			// we don't care about the pod status, just delete it
-			return r.deletePod(ctx, devbox, pod)
-		}
+	case devboxv1alpha1.DevboxStateStopped:
+	case devboxv1alpha1.DevboxStateShutdown:
 	}
 	return nil
 }
@@ -449,10 +416,7 @@ func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1
 	logger.Info("creating pod",
 		"podName", expectPod.Name,
 		"namespace", expectPod.Namespace,
-		"nextCommitHistory", nextCommitHistory)
-
-	nextCommitHistory.Status = devboxv1alpha1.CommitStatusPending
-	nextCommitHistory.PredicatedStatus = devboxv1alpha1.CommitStatusPending
+	)
 
 	if expectPod.Name == "" {
 		return fmt.Errorf("pod name cannot be empty")
@@ -462,8 +426,6 @@ func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1
 		logger.Error(err, "failed to create pod")
 		return err
 	}
-
-	devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, nextCommitHistory)
 	return nil
 }
 
@@ -479,11 +441,6 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 		logger.Error(err, "delete pod failed")
 		return err
 	}
-	// update commit history status because pod has been deleted
-	if len(pod.Status.ContainerStatuses) != 0 {
-		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
-	}
-	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
 
@@ -494,11 +451,6 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv
 		logger.Error(err, "remove finalizer failed")
 		return err
 	}
-	// update commit history status because pod has been deleted
-	if len(pod.Status.ContainerStatuses) != 0 {
-		devbox.Status.LastTerminationState = pod.Status.ContainerStatuses[0].State
-	}
-	helper.UpdateCommitHistory(devbox, pod, true)
 	return nil
 }
 
@@ -534,9 +486,9 @@ func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj clie
 	return client.IgnoreNotFound(err)
 }
 
-func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) *corev1.Pod {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts ...helper.DevboxPodOptions) *corev1.Pod {
 	objectMeta := metav1.ObjectMeta{
-		Name:        nextCommitHistory.Pod,
+		Name:        devbox.Name,
 		Namespace:   devbox.Namespace,
 		Labels:      helper.GeneratePodLabels(devbox),
 		Annotations: helper.GeneratePodAnnotations(devbox),
@@ -547,15 +499,6 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
 	envs := devbox.Spec.Config.Env
-	envs = append(envs, helper.GenerateDevboxEnvVars(devbox, nextCommitHistory)...)
-
-	//get image name
-	var imageName string
-	if r.DebugMode {
-		imageName = devbox.Spec.Image
-	} else {
-		imageName = helper.GetLastSuccessCommitImageName(devbox)
-	}
 
 	volumes := devbox.Spec.Config.Volumes
 	volumes = append(volumes, helper.GenerateSSHVolume(devbox))
@@ -566,7 +509,6 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 	containers := []corev1.Container{
 		{
 			Name:         devbox.ObjectMeta.Name,
-			Image:        imageName,
 			Env:          envs,
 			Ports:        ports,
 			VolumeMounts: volumeMounts,
@@ -609,18 +551,12 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, next
 	// set controller reference and finalizer
 	_ = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme)
 	controllerutil.AddFinalizer(expectPod, devboxv1alpha1.FinalizerName)
-	return expectPod
-}
 
-func (r *DevboxReconciler) generateNextCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
-	now := time.Now()
-	return &devboxv1alpha1.CommitHistory{
-		Image:            r.generateImageName(devbox),
-		Time:             metav1.Time{Time: now},
-		Pod:              devbox.Name + "-" + rand.String(5),
-		Status:           devboxv1alpha1.CommitStatusPending,
-		PredicatedStatus: devboxv1alpha1.CommitStatusPending,
+	for _, opt := range opts {
+		opt(expectPod)
 	}
+
+	return expectPod
 }
 
 func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
