@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/drawer';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 import NameField from '@/components/template/NameField';
 import TagsField from '@/components/template/TagsField';
@@ -108,6 +109,7 @@ const CreateTemplateDrawer = ({ isOpen, onClose, devboxReleaseName }: CreateTemp
             <VersionField form={form} />
             <TagsField form={form} />
             <DescriptionField form={form} />
+            <Separator />
             <div className="flex flex-col items-center gap-3">
               <IsPublicField form={form} />
               <AgreeTermsField form={form} />

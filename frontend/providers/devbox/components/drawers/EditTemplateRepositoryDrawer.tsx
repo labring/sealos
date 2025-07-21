@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import NameField from '@/components/template/NameField';
 import TagsField from '@/components/template/TagsField';
 import IsPublicField from '@/components/template/IsPublicField';
+import AgreeTermsField from '@/components/template/AgreeTermsField';
 import DescriptionField from '@/components/template/DescriptionField';
 
 import { getTemplateRepository, updateTemplateRepository } from '@/api/template';
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/drawer';
 import { Form } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 const tagSchema = z.object({
   value: z.string().min(1)
@@ -140,10 +142,14 @@ const EditTemplateRepositoryDrawer = ({
             </DrawerHeader>
 
             <div className="flex flex-col gap-5 p-6">
-              <NameField form={form} disabled />
-              <IsPublicField form={form} />
+              <NameField form={form} />
               <TagsField form={form} />
               <DescriptionField form={form} />
+              <Separator />
+              <div className="flex flex-col items-center gap-3">
+                <IsPublicField form={form} />
+                <AgreeTermsField form={form} />
+              </div>
             </div>
           </form>
         </Form>
