@@ -30,7 +30,7 @@ const Monitor = () => {
   }, []);
 
   return (
-    <div className="flex h-full flex-col items-start gap-2">
+    <div className="flex h-full flex-1 flex-col items-start gap-2">
       {/* title */}
       <div className="flex w-full items-center justify-between rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
         <div className="flex items-center gap-4">
