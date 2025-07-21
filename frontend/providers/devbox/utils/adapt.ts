@@ -162,26 +162,10 @@ export const adaptDevboxVersionListItem = (
     id: devboxRelease.metadata?.uid || '',
     name: devboxRelease.metadata.name || 'devbox-release-default',
     devboxName: devboxRelease.spec.devboxName || 'devbox',
-    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    createTime: devboxRelease.metadata.creationTimestamp,
     tag: devboxRelease.spec.newTag || 'v1.0.0',
     status:
       devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
-        ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Pending,
-    description: devboxRelease.spec.notes || 'release notes'
-  };
-};
-export const adaptDevboxVersionListItemV2 = (
-  devboxRelease: KBDevboxReleaseType
-): DevboxVersionListItemType => {
-  return {
-    id: devboxRelease.metadata?.uid || '',
-    name: devboxRelease.metadata.name || 'devbox-release-default',
-    devboxName: devboxRelease.spec.devboxName || 'devbox',
-    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    tag: devboxRelease.spec.newTag || 'v1.0.0',
-    status:
-      devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
         : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'

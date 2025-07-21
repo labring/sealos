@@ -8,6 +8,7 @@ import {
   PencilLine,
   Trash2
 } from 'lucide-react';
+import dayjs from 'dayjs';
 import { toast } from 'sonner';
 import { customAlphabet } from 'nanoid';
 import { useTranslations } from 'next-intl';
@@ -16,7 +17,6 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useEnvStore } from '@/stores/env';
-import { AppListItemType } from '@/types/app';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useGuideStore } from '@/stores/guide';
 import { useDevboxStore } from '@/stores/devbox';
@@ -238,7 +238,9 @@ const Release = () => {
       {
         title: t('create_time'),
         key: 'createTime',
-        render: (item: DevboxVersionListItemType) => <span>{item.createTime}</span>
+        render: (item: DevboxVersionListItemType) => (
+          <span>{dayjs(item.createTime).format('YYYY-MM-DD HH:mm')}</span>
+        )
       },
       {
         title: t('version_description'),
