@@ -133,7 +133,7 @@ export default function Account() {
           <Center
             display={{
               base: 'none',
-              sm: 'block'
+              sm: 'flex'
             }}
             draggable={false}
             mr={'12px'}

@@ -1,6 +1,6 @@
 {
-  "name": "sealos-desktop-sdk",
-  "version": "0.1.14",
+  "name": "@zjy365/sealos-desktop-sdk",
+  "version": "0.1.18",
   "description": "sealos desktop sdk",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -46,7 +46,7 @@
     }
   },
   "keywords": [],
-  "author": "lizhenq2009@gmail.com",
+  "author": "3161362058@qq.com",
   "license": "ISC",
   "devDependencies": {
     "@kubernetes/client-node": "^0.18.1",
