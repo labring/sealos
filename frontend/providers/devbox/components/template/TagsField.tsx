@@ -48,13 +48,7 @@ const TagsField = ({ form }: TagsFieldProps) => {
             {t('tags')}
           </FormLabel>
           <FormControl>
-            <Select
-              value={field.value.map((v: { value: string }) => v.value).join(',')}
-              onValueChange={(value) => {
-                const selectedTag = value.split(',').filter(Boolean);
-                field.onChange(selectedTag.map((uid) => ({ value: uid })));
-              }}
-            >
+            <Select value="placeholder" onValueChange={() => {}}>
               <SelectTrigger className="min-h-10 w-full">
                 <SelectValue className="flex flex-wrap gap-2">
                   {field.value.map((t: { value: string }) => {
