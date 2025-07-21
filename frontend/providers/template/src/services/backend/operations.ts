@@ -36,56 +36,6 @@ export async function getInstance(api: CustomObjectsApi, namespace: string, inst
   return result.body as TemplateInstanceType;
 }
 
-export async function getAppLaunchpad(api: AppsV1Api, namespace: string, instanceName: string) {
-  const labelSelectorKey = `${templateDeployKey}=${instanceName}`;
-
-  const response = await Promise.allSettled([
-    api.listNamespacedDeployment(
-      namespace,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      labelSelectorKey
-    ),
-    api.listNamespacedStatefulSet(
-      namespace,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      labelSelectorKey
-    )
-  ]);
-
-  const apps = response
-    .filter((item) => item.status === 'fulfilled')
-    .map((item: any) => item?.value?.body?.items)
-    .filter((item) => item)
-    .flat();
-
-  const data = apps.map(adaptAppListItem);
-  return data;
-}
-
-export async function getDatabases(api: CustomObjectsApi, namespace: string, instanceName: string) {
-  const labelSelectorKey = `${templateDeployKey}=${instanceName}`;
-
-  const result = await api.listNamespacedCustomObject(
-    'apps.kubeblocks.io',
-    'v1alpha1',
-    namespace,
-    'clusters',
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    labelSelectorKey
-  );
-
-  return ((result.body as any)?.items as DBListItemType[]) ?? [];
-}
-
 export async function getObjectStorage(
   api: CustomObjectsApi,
   namespace: string,
@@ -187,46 +137,6 @@ export async function getCertIssuers(
     ...item,
     kind: item.kind ? item.kind : result.body.kind.replace('List', '')
   }));
-}
-
-export async function getCertIssuersInApp(
-  api: CustomObjectsApi,
-  namespace: string,
-  appName: string
-) {
-  const result = await api.listNamespacedCustomObject(
-    'cert-manager.io',
-    'v1',
-    namespace,
-    'issuers',
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `${appDeployKey}=${appName}`
-  );
-
-  return (result.body as any).items;
-}
-
-export async function getCertificatesInApp(
-  api: CustomObjectsApi,
-  namespace: string,
-  appName: string
-) {
-  const result = await api.listNamespacedCustomObject(
-    'cert-manager.io',
-    'v1',
-    namespace,
-    'certificates',
-    undefined,
-    undefined,
-    undefined,
-    undefined,
-    `${appDeployKey}=${appName}`
-  );
-
-  return (result.body as any).items;
 }
 
 export async function getAppCRs(api: CustomObjectsApi, namespace: string, instanceName: string) {
@@ -677,6 +587,154 @@ export async function deleteService(api: CoreV1Api, namespace: string, resourceN
   await api.deleteNamespacedService(resourceName, namespace);
 }
 
+export async function deleteHorizontalPodAutoscaler(
+  api: AutoscalingV2Api,
+  namespace: string,
+  resourceName: string
+) {
+  await api.deleteNamespacedHorizontalPodAutoscaler(resourceName, namespace);
+}
+
+export async function deleteDatabaseBackup(
+  api: CustomObjectsApi,
+  namespace: string,
+  resourceName: string
+) {
+  const group = 'dataprotection.kubeblocks.io';
+  const version = 'v1alpha1';
+  const plural = 'backups';
+
+  await api.deleteNamespacedCustomObject(group, version, namespace, plural, resourceName);
+}
+
+export async function deleteDeployment(api: AppsV1Api, namespace: string, resourceName: string) {
+  await api.deleteNamespacedDeployment(resourceName, namespace);
+}
+
+export async function deleteStatefulSet(api: AppsV1Api, namespace: string, resourceName: string) {
+  await api.deleteNamespacedStatefulSet(resourceName, namespace);
+}
+
+export async function deleteCustomResource(
+  api: CustomObjectsApi,
+  namespace: string,
+  instanceName: string,
+  kind: string,
+  group: string,
+  version: string
+) {
+  const plural = pluralize.plural(kind.toLocaleLowerCase());
+  await api.deleteNamespacedCustomObject(group, version, namespace, plural, instanceName);
+}
+
+export async function deleteObjectStorage(
+  api: CustomObjectsApi,
+  namespace: string,
+  resourceName: string
+) {
+  await api.deleteNamespacedCustomObject(
+    'objectstorage.sealos.io',
+    'v1',
+    namespace,
+    'objectstoragebuckets',
+    resourceName
+  );
+}
+
+export async function deletePrometheusRule(
+  api: CustomObjectsApi,
+  namespace: string,
+  resourceName: string
+) {
+  await api.deleteNamespacedCustomObject(
+    'monitoring.coreos.com',
+    'v1',
+    namespace,
+    'prometheusrules',
+    resourceName
+  );
+}
+
+export async function deletePrometheus(
+  api: CustomObjectsApi,
+  namespace: string,
+  resourceName: string
+) {
+  await api.deleteNamespacedCustomObject(
+    'monitoring.coreos.com',
+    'v1',
+    namespace,
+    'prometheuses',
+    resourceName
+  );
+}
+
+export async function deleteServiceMonitor(
+  api: CustomObjectsApi,
+  namespace: string,
+  resourceName: string
+) {
+  await api.deleteNamespacedCustomObject(
+    'monitoring.coreos.com',
+    'v1',
+    namespace,
+    'servicemonitors',
+    resourceName
+  );
+}
+
+export async function deleteProbe(api: CustomObjectsApi, namespace: string, resourceName: string) {
+  await api.deleteNamespacedCustomObject(
+    'monitoring.coreos.com',
+    'v1',
+    namespace,
+    'probes',
+    resourceName
+  );
+}
+
+// App level operations
+
+export async function getCertIssuersInApp(
+  api: CustomObjectsApi,
+  namespace: string,
+  appName: string
+) {
+  const result = await api.listNamespacedCustomObject(
+    'cert-manager.io',
+    'v1',
+    namespace,
+    'issuers',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${appDeployKey}=${appName}`
+  );
+
+  return (result.body as any).items;
+}
+
+export async function getCertificatesInApp(
+  api: CustomObjectsApi,
+  namespace: string,
+  appName: string
+) {
+  const result = await api.listNamespacedCustomObject(
+    'cert-manager.io',
+    'v1',
+    namespace,
+    'certificates',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    `${appDeployKey}=${appName}`
+  );
+
+  return (result.body as any).items;
+}
+
 export async function deleteServicesInApp(api: CoreV1Api, namespace: string, appName: string) {
   await api.deleteCollectionNamespacedService(
     namespace,
@@ -722,47 +780,40 @@ export async function deletePersistentVolumeClaimsInApp(
   );
 }
 
-export async function deleteHorizontalPodAutoscaler(
-  api: AutoscalingV2Api,
-  namespace: string,
-  resourceName: string
-) {
-  await api.deleteNamespacedHorizontalPodAutoscaler(resourceName, namespace);
+// Resource with dependents
+
+export async function getAppLaunchpad(api: AppsV1Api, namespace: string, instanceName: string) {
+  const labelSelectorKey = `${templateDeployKey}=${instanceName}`;
+
+  const response = await Promise.allSettled([
+    api.listNamespacedDeployment(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelectorKey
+    ),
+    api.listNamespacedStatefulSet(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      labelSelectorKey
+    )
+  ]);
+
+  const apps = response
+    .filter((item) => item.status === 'fulfilled')
+    .map((item: any) => item?.value?.body?.items)
+    .filter((item) => item)
+    .flat();
+
+  const data = apps;
+  return data;
 }
 
-export async function deleteDatabaseBackup(
-  api: CustomObjectsApi,
-  namespace: string,
-  resourceName: string
-) {
-  const group = 'dataprotection.kubeblocks.io';
-  const version = 'v1alpha1';
-  const plural = 'backups';
-
-  await api.deleteNamespacedCustomObject(group, version, namespace, plural, resourceName);
-}
-
-export async function deleteDeployment(api: AppsV1Api, namespace: string, resourceName: string) {
-  await api.deleteNamespacedDeployment(resourceName, namespace);
-}
-
-export async function deleteStatefulSet(api: AppsV1Api, namespace: string, resourceName: string) {
-  await api.deleteNamespacedStatefulSet(resourceName, namespace);
-}
-
-export async function deleteCustomResource(
-  api: CustomObjectsApi,
-  namespace: string,
-  instanceName: string,
-  kind: string,
-  group: string,
-  version: string
-) {
-  const plural = pluralize.plural(kind.toLocaleLowerCase());
-  await api.deleteNamespacedCustomObject(group, version, namespace, plural, instanceName);
-}
-
-// ! ======================= TODO: delete dependent resources
 export async function deleteAppLaunchpad(
   apis: Awaited<ReturnType<typeof getK8s>>,
   namespace: string,
@@ -807,6 +858,24 @@ export async function deleteAppLaunchpad(
       });
     }
   });
+}
+
+export async function getDatabases(api: CustomObjectsApi, namespace: string, instanceName: string) {
+  const labelSelectorKey = `${templateDeployKey}=${instanceName}`;
+
+  const result = await api.listNamespacedCustomObject(
+    'apps.kubeblocks.io',
+    'v1alpha1',
+    namespace,
+    'clusters',
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    labelSelectorKey
+  );
+
+  return ((result.body as any)?.items as DBListItemType[]) ?? [];
 }
 
 export async function deleteDatabase(
