@@ -227,7 +227,7 @@ const Release = () => {
         title: t('version_number'),
         key: 'tag',
         render: (item: DevboxVersionListItemType) => (
-          <span className="text-zinc-900">{item.tag}</span>
+          <div className="max-w-50 truncate text-zinc-900">{item.tag}</div>
         )
       },
       {

@@ -11,6 +11,16 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
   const t = useTranslations();
 
+  const refetchThreeTimes = useCallback(() => {
+    refetchDevboxData();
+    setTimeout(() => {
+      refetchDevboxData();
+      setTimeout(() => {
+        refetchDevboxData();
+      }, 3000);
+    }, 3000);
+  }, [refetchDevboxData]);
+
   // TODO: we need a new loading component
   const handleRestartDevbox = useCallback(
     async (devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2) => {
@@ -25,9 +35,9 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         toast.error(typeof error === 'string' ? error : error.message || t('restart_error'));
         console.error(error);
       }
-      refetchDevboxData();
+      refetchThreeTimes();
     },
-    [refetchDevboxData, t, isOutStandingPayment]
+    [refetchThreeTimes, t, isOutStandingPayment]
   );
 
   const handleStartDevbox = useCallback(
@@ -43,9 +53,9 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         toast.error(typeof error === 'string' ? error : error.message || t('start_error'));
         console.error(error);
       }
-      refetchDevboxData();
+      refetchThreeTimes();
     },
-    [refetchDevboxData, t, isOutStandingPayment]
+    [refetchThreeTimes, t, isOutStandingPayment]
   );
 
   const handleGoToTerminal = useCallback(

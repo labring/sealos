@@ -349,6 +349,7 @@
   "submit_release_failed": "The release request failed to be submitted",
   "submit_release_successful": "The release request was successfully submitted and is being released...",
   "tag_format_error": "Tag format error",
+  "tag_length_error": "No more than 50 characters.",
   "tag_required": "Need to input tag",
   "tags": "Tags",
   "tags_enum": {
