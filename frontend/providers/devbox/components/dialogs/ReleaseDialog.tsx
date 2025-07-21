@@ -5,8 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
-import { useConfirm } from '@/hooks/useConfirm';
-import { versionSchema } from '@/utils/validate';
+import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2 } from '@/types/devbox';
 import { releaseDevbox, shutdownDevbox, startDevbox } from '@/api/devbox';
 
@@ -37,21 +36,35 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
 
   const { env } = useEnvStore();
 
-  // TODO: all form need to be react-hook-form
   const [tag, setTag] = useState('');
   const [loading, setLoading] = useState(false);
-  const [tagError, setTagError] = useState(false);
+  const [tagError, setTagError] = useState<string | null>(null);
   const [releaseDes, setReleaseDes] = useState('');
   const [isAutoStart, setIsAutoStart] = useState(devbox.status.value === 'Running');
 
+  const validateTag = (value: string) => {
+    if (!value) {
+      return t('tag_required');
+    }
+    const result = versionSchema.safeParse(value);
+    if (!result.success) {
+      return result.error.issues[0].message === versionErrorEnum.INVALID_VERSION
+        ? t('tag_format_error')
+        : t('tag_length_error');
+    }
+    return null;
+  };
+
+  const handleTagChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTag(value);
+    setTagError(validateTag(value));
+  };
+
   const handleSubmit = () => {
-    const tagResult = versionSchema.safeParse(tag);
-    if (!tag) {
-      setTagError(true);
-    } else if (versionSchema.safeParse(tag).success === false) {
-      toast.error(t('tag_format_error'));
-    } else {
-      setTagError(false);
+    const error = validateTag(tag);
+    setTagError(error);
+    if (!error) {
       handleReleaseDevbox(isAutoStart);
     }
   };
@@ -101,6 +114,7 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       onOpenChange={() => {
         setTag('');
         setReleaseDes('');
+        setTagError(null);
         onClose();
       }}
     >
@@ -162,15 +176,19 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
             <Label htmlFor="tag" required>
               {t('version_number')}
             </Label>
-            <Input
-              placeholder={t('enter_version_number')}
-              id="tag"
-              value={tag}
-              onChange={(e) => setTag(e.target.value)}
-              className={cn('mb-2', tagError && 'border-red-500')}
-            />
-            {/* TODO: ugly logic */}
-            {tagError && <div className="text-sm text-red-500">{t('tag_required')}</div>}
+            <div className="w-full">
+              <Input
+                placeholder={t('enter_version_number')}
+                id="tag"
+                value={tag}
+                onChange={handleTagChange}
+                maxLength={50}
+                className={cn(tagError && 'border-red-500')}
+              />
+              <div className="mt-1 flex justify-between">
+                <div className="text-sm text-red-500">{tagError}</div>
+              </div>
+            </div>
           </div>
           {/* description */}
           <div className="flex w-full flex-col items-start gap-2">

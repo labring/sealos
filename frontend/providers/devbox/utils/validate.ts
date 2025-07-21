@@ -5,6 +5,7 @@ export enum versionErrorEnum {
 export const versionSchema = z
   .string()
   .min(1)
+  .max(50)
   .regex(/[\w][\w.-]{0,127}/, {
     message: versionErrorEnum.INVALID_VERSION
   });

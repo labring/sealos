@@ -350,6 +350,7 @@
   "submit_release_failed": "发版请求提交失败",
   "submit_release_successful": "发版请求提交成功，正在发版中......",
   "tag_format_error": "版本号格式错误",
+  "tag_length_error": "最大不超过 50 个字符",
   "tag_required": "需要填写版本号",
   "tags": "标签",
   "tags_enum": {
