@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
-import { FC, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import NameField from '@/components/template/NameField';
@@ -10,7 +10,6 @@ import TagsField from '@/components/template/TagsField';
 import IsPublicField from '@/components/template/IsPublicField';
 import DescriptionField from '@/components/template/DescriptionField';
 
-import { TemplateVersionState } from '@/constants/template';
 import { getTemplateRepository, updateTemplateRepository } from '@/api/template';
 
 import {
@@ -27,14 +26,6 @@ const tagSchema = z.object({
   value: z.string().min(1)
 });
 
-const versionSchema = z.object({
-  name: z.string(),
-  uid: z.string(),
-  state: z.nativeEnum(TemplateVersionState)
-});
-
-type VersionType = z.infer<typeof versionSchema>;
-
 interface EditTemplateRepositoryDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -42,11 +33,11 @@ interface EditTemplateRepositoryDrawerProps {
   uid: string;
 }
 
-const EditTemplateRepositoryDrawer: FC<EditTemplateRepositoryDrawerProps> = ({
+const EditTemplateRepositoryDrawer = ({
   open,
   onClose,
   uid
-}) => {
+}: EditTemplateRepositoryDrawerProps) => {
   const t = useTranslations();
   const formSchema = z.object({
     name: z.string().min(1, t('input_template_name_placeholder')),
@@ -104,7 +95,6 @@ const EditTemplateRepositoryDrawer: FC<EditTemplateRepositoryDrawerProps> = ({
           value: tag.uid
         }))
       );
-
       setValue('name', templateRepository.name);
       setValue('description', templateRepository.description || '');
       setValue('isPublic', templateRepository.isPublic);
