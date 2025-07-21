@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 
+	"github.com/google/uuid"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +52,7 @@ import (
 type DevboxReconciler struct {
 	CommitImageRegistry string
 	DevboxNodeLabel     string
+	NodeName            string
 
 	RequestRate      resource.RequestRate
 	EphemeralStorage resource.EphemeralStorage
@@ -119,17 +121,33 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, nil
 	}
-
-	if devbox.Status.Node == "" {
-		devbox.Status.Node = r.GetNodeName()
-		if err := r.Status().Update(ctx, devbox); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
+	// init devbox status content id
+	if devbox.Status.ContentID == "" {
+		devbox.Status.ContentID = uuid.New().String()
 	}
-
-	if len(devbox.Status.CommitRecords) == 0 {
-		logger.Info("no commit records, skip, wait for daemon component to create first commit record")
+	// init devbox status commit record
+	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
+			ContentID:    devbox.Status.ContentID,
+			Node:         "",
+			Image:        devbox.Spec.Image,
+			GenerateTime: metav1.Now(),
+		}
+	}
+	// schedule devbox to node, update devbox status and create a new commit record
+	// and filter out the devbox that are not in the current node
+	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
+		// set up devbox node and content id, new a record for the devbox
+		devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
+		if err := r.Status().Update(ctx, devbox); err != nil {
+			logger.Info("try to schedule devbox to node failed")
+			return ctrl.Result{}, nil
+		}
+		logger.Info("devbox scheduled to node", "node", r.NodeName)
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
+		return ctrl.Result{}, nil
+	} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
+		logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
 		return ctrl.Result{}, nil
 	}
 
@@ -267,53 +285,48 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		}
 	}()
 
+	podList := &corev1.PodList{}
+	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
+		return err
+	}
 	switch devbox.Spec.State {
 	case devboxv1alpha1.DevboxStateRunning:
 		// get pod
-		podList := &corev1.PodList{}
-		if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
-			return err
-		}
 		switch len(podList.Items) {
 		case 0:
-			var pod *corev1.Pod
 			// check last devbox status
-			switch lastHistory.CommitStatus {
-			case devboxv1alpha1.CommitStatusUnset:
-				// create a new pod with default image, with new content id
-				pod = r.generateDevboxPod(devbox,
-					helper.WithPodImage(devbox.Spec.Image),
-					helper.WithPodContentIDFromLatestHistory(devbox),
-				)
-				if err := r.Create(ctx, pod); err != nil {
-					return err
-				}
-			case devboxv1alpha1.CommitStatusSkipped:
-			case devboxv1alpha1.CommitStatusFailed:
-			case devboxv1alpha1.CommitStatusSuccess:
-			case devboxv1alpha1.CommitStatusPending:
-			case devboxv1alpha1.CommitStatusUnknown:
+			currentRecord := devbox.Status.CommitRecords[devbox.Status.ContentID]
+			if currentRecord == nil {
+				return fmt.Errorf("current record is nil")
 			}
-		case 1:
-			// update pod
-			pod := &podList.Items[0]
-			if err := r.Update(ctx, pod); err != nil {
+			// create a new pod with default image, with new content id
+			pod := r.generateDevboxPod(devbox,
+				helper.WithPodImage(currentRecord.Image),
+				helper.WithPodContentID(currentRecord.ContentID),
+			)
+			if err := r.Create(ctx, pod); err != nil {
 				return err
 			}
+		case 1:
+			// skip if pod is already created
+			return nil
 		default:
-			// remove finalizer and delete them
+			// more than one pod found, remove finalizer and delete them
 			for _, pod := range podList.Items {
-				if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
-					if err := r.Update(ctx, &pod); err != nil {
-						logger.Error(err, "remove finalizer failed")
-					}
-				}
+				r.deletePod(ctx, devbox, &pod)
 			}
 			deferUpdateDevboxStatus = false
+			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
+			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
 			return fmt.Errorf("more than one pod found")
 		}
-	case devboxv1alpha1.DevboxStateStopped:
-	case devboxv1alpha1.DevboxStateShutdown:
+	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
+		if len(podList.Items) > 0 {
+			for _, pod := range podList.Items {
+				r.deletePod(ctx, devbox, &pod)
+			}
+		}
+		return nil
 	}
 	return nil
 }
@@ -405,26 +418,6 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
 		devbox.Status.Network.NodePort = nodePort
 		return r.Status().Update(ctx, devbox)
-	}
-	return nil
-}
-
-// create a new pod, add predicated status to nextCommitHistory
-func (r *DevboxReconciler) createPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, expectPod *corev1.Pod, nextCommitHistory *devboxv1alpha1.CommitHistory) error {
-	logger := log.FromContext(ctx)
-
-	logger.Info("creating pod",
-		"podName", expectPod.Name,
-		"namespace", expectPod.Namespace,
-	)
-
-	if expectPod.Name == "" {
-		return fmt.Errorf("pod name cannot be empty")
-	}
-
-	if err := r.Create(ctx, expectPod); err != nil {
-		logger.Error(err, "failed to create pod")
-		return err
 	}
 	return nil
 }
@@ -557,11 +550,6 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts
 	}
 
 	return expectPod
-}
-
-func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
-	now := time.Now()
-	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
 type ControllerRestartPredicate struct {

@@ -166,12 +166,9 @@ type NetworkStatus struct {
 type CommitStatus string
 
 const (
-	CommitStatusUnset   CommitStatus = "Unset"
 	CommitStatusSuccess CommitStatus = "Success"
 	CommitStatusFailed  CommitStatus = "Failed"
-	CommitStatusUnknown CommitStatus = "Unknown"
 	CommitStatusPending CommitStatus = "Pending"
-	CommitStatusSkipped CommitStatus = "Skipped"
 )
 
 type DevboxPhase string
@@ -202,7 +199,7 @@ type CommitRecord struct {
 	// ContentID is the content id
 	ContentID string `json:"contentID"`
 
-	// Image is the image of the commit
+	// Image is the image of the that devbox is running on
 	Image string `json:"image"`
 
 	// Node is the node name
@@ -214,6 +211,9 @@ type CommitRecord struct {
 	// ScheduleTime is the time when the commit is scheduled
 	ScheduleTime metav1.Time `json:"scheduleTime"`
 
+	// UpdateTime is the time when the commit is updated
+	UpdateTime metav1.Time `json:"updateTime"`
+
 	// CommitTime is the time when the commit is created
 	CommitTime metav1.Time `json:"commitTime"`
 
@@ -223,16 +223,17 @@ type CommitRecord struct {
 	CommitStatus CommitStatus `json:"commitStatus"`
 }
 
+// CommitRecordMap is a map of commit records, key is the commit id
+type CommitRecordMap map[string]*CommitRecord
+
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
 	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional
-	Node string `json:"node"`
-	// +kubebuilder:validation:Optional
 	State DevboxState `json:"state"`
 	// CommitRecords is the records of the devbox commits
-	CommitRecords []*CommitRecord `json:"commitRecords"`
+	CommitRecords CommitRecordMap `json:"commitRecords"`
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
 	// +kubebuilder:validation:Optional

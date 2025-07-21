@@ -15,7 +15,6 @@
 package helper
 
 import (
-	"sort"
 	"strings"
 
 	"crypto/ed25519"
@@ -26,7 +25,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	"github.com/google/uuid"
@@ -56,18 +54,6 @@ func WithPodContentID(contentID string) DevboxPodOptions {
 	}
 }
 
-func WithPodContentIDFromLatestHistory(devbox *devboxv1alpha1.Devbox) DevboxPodOptions {
-	return func(pod *corev1.Pod) {
-		if pod.Annotations == nil {
-			pod.Annotations = make(map[string]string)
-		}
-		latestHistory := GetLatestHistory(devbox)
-		if latestHistory != nil && latestHistory.CommitStatus != devboxv1alpha1.CommitStatusSkipped {
-			pod.Annotations[devboxv1alpha1.AnnotationContentID] = latestHistory.ContentID
-		}
-	}
-}
-
 func WithPodAnnotations(annotations map[string]string) DevboxPodOptions {
 	return func(pod *corev1.Pod) {
 		if pod.Annotations == nil {
@@ -92,37 +78,6 @@ func WithPodLabels(labels map[string]string) DevboxPodOptions {
 
 func NewContentID() string {
 	return uuid.New().String()
-}
-
-func NewInitHistory() *devboxv1alpha1.History {
-	return &devboxv1alpha1.History{
-		ContentID:    NewContentID(),
-		CommitStatus: devboxv1alpha1.CommitStatusUnset,
-		GenerateTime: metav1.Now(),
-	}
-}
-
-func GetLatestHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.History {
-	// todo: if history is empty, return nil, fix this in the future
-	if len(devbox.Status.History) == 0 {
-		return nil
-	}
-	sort.Slice(devbox.Status.History, func(i, j int) bool {
-		return devbox.Status.History[i].GenerateTime.Time.After(devbox.Status.History[j].GenerateTime.Time)
-	})
-	return devbox.Status.History[0]
-}
-
-func GetLatestUsableHistoryContentID(devbox *devboxv1alpha1.Devbox) string {
-	sort.Slice(devbox.Status.History, func(i, j int) bool {
-		return devbox.Status.History[i].GenerateTime.Time.After(devbox.Status.History[j].GenerateTime.Time)
-	})
-	for _, history := range devbox.Status.History {
-		if history.CommitStatus == devboxv1alpha1.CommitStatusSuccess {
-			return history.ContentID
-		}
-	}
-	return ""
 }
 
 func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {

@@ -47,9 +47,8 @@ import (
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
 	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
-	"github.com/labring/sealos/controllers/devbox/internal/daemon"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -67,7 +66,6 @@ func init() {
 
 func main() {
 	var metricsAddr string
-	var enableLeaderElection bool
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
@@ -100,9 +98,6 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
@@ -198,8 +193,8 @@ func main() {
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "b6694722.sealos.io",
+		LeaderElection:         false,
+		// LeaderElectionID:       "b6694722.sealos.io",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -263,40 +258,21 @@ func main() {
 		PodMatchers:              podMatchers,
 		DebugMode:                debugMode,
 		RestartPredicateDuration: restartPredicateDuration,
+		NodeName:                 nodes.GetNodeName(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
 	}
 
-	daemon := daemon.DevboxDaemon{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("devbox-daemon"),
-	}
-	if err = daemon.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create daemon", "daemon", "Devbox")
-		os.Exit(1)
-	}
-
-	if err = (&controller.DevBoxReleaseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Registry: &registry.Client{
-			Username: registryUser,
-			Password: registryPassword,
-		},
+	if err = (&controller.DevboxDaemonReconciler{
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		Recorder:            mgr.GetEventRecorderFor("devbox-daemon-controller"),
+		CommitImageRegistry: registryAddr,
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DevBoxRelease")
+		setupLog.Error(err, "unable to create controller", "controller", "DevboxDaemon")
 		os.Exit(1)
 	}
-	//if err = (&controller.OperationRequestReconciler{
-	//	CommitImageRegistry: registryAddr,
-	//	Client:              mgr.GetClient(),
-	//	Scheme:              mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "OperationRequest")
-	//	os.Exit(1)
-	//}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
