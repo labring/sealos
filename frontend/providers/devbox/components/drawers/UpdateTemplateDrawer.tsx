@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
+import { useForm, UseFormReturn } from 'react-hook-form';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
@@ -192,7 +192,11 @@ const UpdateTemplateDrawer = ({
                       {t('version')}
                     </FormLabel>
                     <FormControl>
-                      <VersionSelect templateList={templateRepository.templates} />
+                      <VersionSelect
+                        templateList={templateRepository.templates}
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -241,21 +245,32 @@ const UpdateTemplateDrawer = ({
   );
 };
 
-const VersionSelect = ({ templateList }: { templateList: { uid: string; name: string }[] }) => {
+const VersionSelect = ({
+  templateList,
+  value,
+  onChange
+}: {
+  templateList: { uid: string; name: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
-
-  const { setValue, watch } = useForm();
   const t = useTranslations();
 
+  useEffect(() => {
+    if (value) {
+      setInputValue(value);
+    }
+  }, [value]);
+
   const handleVersionSelect = (version: string) => {
-    setInputValue(version);
-    setValue('version', version);
+    onChange(version);
     setIsOpen(false);
   };
 
   const handleCreateVersion = () => {
-    setValue('version', inputValue);
+    onChange(inputValue);
     setIsOpen(false);
   };
 
@@ -268,7 +283,7 @@ const VersionSelect = ({ templateList }: { templateList: { uid: string; name: st
           aria-expanded={isOpen}
           className="h-10 w-full justify-between bg-white"
         >
-          <span className="truncate">{watch('version')}</span>
+          <span className="truncate">{value || t('select_version')}</span>
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
