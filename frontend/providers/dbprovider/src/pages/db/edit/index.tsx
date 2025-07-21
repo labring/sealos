@@ -28,6 +28,13 @@ import Yaml from './components/Yaml';
 import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
+import { getDBSecret, getDBServiceByName } from '@/api/db';
+import { DBTypeSecretMap } from '@/constants/db';
+import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
+import { syncAuthUser } from '@/services/chat2db/user';
+import { createDatasource } from '@/services/chat2db/datasource';
+import type { DBType } from '@/types/db';
+import { mapDBType } from '@/constants/chat2db';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -44,6 +51,7 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [forceUpdate, setForceUpdate] = useState(false);
   const [allocatedStorage, setAllocatedStorage] = useState(1);
+  const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail, dbDetail } = useDBStore();
@@ -95,6 +103,23 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     ];
   };
 
+  function injectDatasourceId(yamlList: YamlItemType[], dsId: number): YamlItemType[] {
+    if (!dsId) return yamlList;
+    const next = yamlList.map((item) => {
+      if (item.filename === 'cluster.yaml') {
+        const doc: any = yaml.load(item.value) || {};
+        doc.metadata = doc.metadata || {};
+        doc.metadata.labels = {
+          ...(doc.metadata.labels || {}),
+          'chat2db.io/id': dsId
+        };
+        console.log(doc);
+        return { ...item, value: yaml.dump(doc) };
+      }
+    });
+    return next.filter(Boolean) as YamlItemType[];
+  }
+
   function getCpuCores(yamlString: string): number {
     try {
       const doc = yaml.load(yamlString) as any;
@@ -140,9 +165,62 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
   const { createCompleted } = useGuideStore();
 
+  const supportConnect = ['postgresql', 'mongodb', 'apecloud-mysql', 'redis'].includes(
+    formHook.getValues('dbType')
+  );
+
+  const { data: secret } = useQuery(
+    ['secret', dbName],
+    () => (dbName ? getDBSecret({ dbName, dbType: formHook.getValues('dbType') }) : null),
+    { enabled: !!dbName && supportConnect }
+  );
+
+  useEffect(() => {
+    if (!secret) return;
+    setConnInfo({
+      host: secret.host,
+      port: secret.port,
+      connection: secret.connection,
+      username: secret.username,
+      password: secret.password,
+      dbType: formHook.getValues('dbType') as DBType,
+      dbName: formHook.getValues('dbName')
+    });
+  }, [secret, formHook]);
+
+  async function waitForSecret(dbName: string, dbType: string, max = 120_000) {
+    const interval = 2_000;
+    const deadline = Date.now() + max;
+
+    while (Date.now() < deadline) {
+      try {
+        const sec = await getDBSecret({ dbName, dbType: dbType as DBType });
+        if (sec) return sec;
+      } catch (_) {}
+      await new Promise((r) => setTimeout(r, interval));
+    }
+    throw new Error('Secret not ready within timeout');
+  }
+
   const submitSuccess = async (formData: DBEditType) => {
     if (!createCompleted) {
       return router.push('/db/detail?name=hello-db&guide=true');
+    }
+    const API_KEY = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY;
+    const userStr = localStorage.getItem('session');
+    const userObj = userStr ? JSON.parse(userStr) : null;
+    const userNS = userObj?.user.nsid;
+    const userId = userObj?.user.id;
+    const userKey = `${userId}/${userNS}`;
+    const payload = {
+      uid: userKey
+    };
+
+    try {
+      const result = await syncAuthUser(API_KEY as string, payload);
+      console.log('syn with author', result);
+    } catch (e) {
+      console.log(e);
     }
 
     const needMongoAdapter =
@@ -153,18 +231,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       needMongoAdapter && (await adapterMongoHaConfig({ name: formData.dbName }));
     } catch (err) {}
     try {
-      // quote check
-      // const quoteCheckRes = checkQuotaAllow(formData, oldDBEditData.current);
-      // if (quoteCheckRes) {
-      //   setIsLoading(false);
-      //   return toast({
-      //     status: 'warning',
-      //     title: t(quoteCheckRes),
-      //     duration: 5000,
-      //     isClosable: true
-      //   });
-      // }
-
       await createDB({ dbForm: formData, isEdit });
 
       track({
@@ -226,6 +292,47 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     }
     setIsLoading(false);
+    let sec = secret;
+    if (!sec) {
+      try {
+        sec = await waitForSecret(formData.dbName, formData.dbType);
+      } catch (e) {
+        toast({ title: 'Secret timeout', status: 'warning' });
+      }
+    }
+    console.log(sec);
+    if (sec) {
+      try {
+        await createDatasource(
+          {
+            alias: formData.dbName,
+            environmentId: 2,
+            storageType: 'CLOUD',
+            host: sec.host,
+            port: String(sec.port),
+            user: sec.username,
+            password: sec.password,
+            url: sec.connection,
+            type: mapDBType(formData.dbType)
+          },
+          API_KEY as string,
+          userKey
+        );
+      } catch (error) {
+        // console.log('create data source', error)
+        const id = (error as { data?: any }).data;
+        console.log(id);
+        if (id) {
+          setYamlList((old) => injectDatasourceId(old, id));
+        }
+        if (isEdit && id) {
+          const clusterItem = injectDatasourceId(yamlList, id).find(
+            (i) => i.filename === 'cluster.yaml'
+          );
+          await applyYamlList([clusterItem!.value], 'update');
+        }
+      }
+    }
   };
 
   const submitError = (err: FieldErrors<DBEditType>) => {

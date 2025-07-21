@@ -1,28 +1,47 @@
-/**
- * Chat2DB – 数据源管理接口封装
- */
-
 import { GET, POST } from '@/services/request';
-import { DatasourceForm, DatasourceItem, DatasourceListResp } from '@/constants/chat2db';
+import {
+  DatasourceForm,
+  DatasourceItem,
+  DatasourceListResp,
+  DatasourceDelete,
+  CreateApiResponse
+} from '@/constants/chat2db';
 
-/* ---------- 1. 创建数据源 ---------- */
-export function createDatasource(data: Omit<DatasourceForm, 'id'>) {
-  return POST<number>('/api/open/enterprise/create_data_source_a', data);
-}
-
-/* ---------- 2. 更新数据源 ---------- */
-export function updateDatasource(data: DatasourceForm) {
-  return POST<number>('/api/open/enterprise/update_data_source_a', data);
-}
-
-/* ---------- 3. 删除数据源 ---------- */
-export function deleteDatasource(id: number) {
-  return POST<void>('/api/open/enterprise/delete_data_source_a', undefined, {
-    params: { id }
+export function createDatasource(
+  data: Omit<DatasourceForm, 'id'>,
+  apiKey: string,
+  userKey: string
+) {
+  return POST<CreateApiResponse>('/api/proxy/create_data_source_a', data, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      auth_user: userKey,
+      'Time-Zone': 'Asia/Shanghai',
+      'Content-Type': 'application/json'
+    }
   });
 }
 
-/* ---------- 4. 获取数据源列表 ---------- */
+export function updateDatasource(data: DatasourceForm, apiKey: string) {
+  return POST<number>('/api/proxy/update_data_source_a', data, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Time-Zone': 'Asia/Shanghai',
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
+export function deleteDatasource(id: number, apiKey: string) {
+  return POST<void>(`/api/proxy/delete_data_source_a?id=${id}`, undefined, {
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Time-Zone': 'Asia/Shanghai',
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 export function getDatasourceList() {
   return GET<DatasourceListResp>('/api/open/enterprise/get_datasource_list_a');
 }

@@ -94,7 +94,6 @@ export const json2CreateCluster = (
     }
 
     if (dbType === DBTypeEnum.mongodb) {
-      // 我们只从 resources 里取 mongodb 这一项
       console.log(data);
 
       const mongoRes = resources['mongodb'];
@@ -103,7 +102,8 @@ export const json2CreateCluster = (
         labels: {
           'app.kubernetes.io/instance': data.dbName,
           'app.kubernetes.io/version': data.dbVersion,
-          'helm.sh/chart': `mongodb-cluster-0.9.1` // ???
+          'helm.sh/chart': `mongodb-cluster-0.9.1`,
+          'chat2db.io/id': '1'
         },
         name: data.dbName,
         namespace: getUserNamespace()

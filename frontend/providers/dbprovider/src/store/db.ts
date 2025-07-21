@@ -12,6 +12,8 @@ type State = {
   loadDBDetail: (name: string, isFetchConfigMap?: boolean) => Promise<DBDetailType>;
   dbPods: PodDetailType[];
   intervalLoadPods: (dbName: string) => Promise<null>;
+  dataSourceId?: any;
+  setDataSourceId: (data: any) => void;
 };
 
 const getDiskOverflowStatus = async (dbName: string, dbType: string): Promise<boolean> => {
@@ -79,7 +81,12 @@ export const useDBStore = create<State>()(
           });
           return null;
         });
-      }
+      },
+      dataSourceId: undefined,
+      setDataSourceId: (data: any) =>
+        set((state) => {
+          state.dataSourceId = data;
+        })
     }))
   )
 );

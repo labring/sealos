@@ -10,6 +10,7 @@ export interface IUrlParams extends ILayoutState {
 
 export interface GenerateLoginUrlOpts {
   userId: string;
+  userNS: string;
   orgId: string;
   secretKey: string;
   ui?: {
@@ -151,6 +152,10 @@ export interface SqlResult {
 
 export type ExecuteSqlResp = SqlResult[];
 
+export interface UserInfo {
+  uid: string;
+}
+
 export type DbType =
   | 'MYSQL'
   | 'POSTGRESQL'
@@ -172,17 +177,27 @@ export type DbType =
   | 'GAUSSDB';
 
 export interface DatasourceForm {
-  id?: number; // 更新时必填
-  alias: string;
-  environmentId: 1 | 2; // 1: LOCAL  2: CLOUD
+  id?: number | string;
+  alias?: string;
+  environmentId: 1 | 2;
   storageType: 'LOCAL' | 'CLOUD';
   host: string;
   port: string;
   user: string;
   password: string;
   url: string;
-  type: DbType;
-  authenticationType?: '1' | '2'; // 1=账号密码 2=其它
+  type: string;
+  authenticationType?: '1' | '2';
+}
+
+export interface CreateApiResponse {
+  success: boolean;
+  errorCode: string | null;
+  errorMessage: string | null;
+  errorDetail: string | null;
+  solutionLink: string | null;
+  data: number;
+  traceId: string | null;
 }
 
 export interface DatasourceItem {
@@ -201,6 +216,10 @@ export interface DatasourceListResp {
   pageSize: number;
   total: number;
   hasNextPage: boolean;
+}
+
+export interface DatasourceDelete {
+  id: number;
 }
 
 export interface ColumnAlias {
@@ -226,13 +245,42 @@ export interface TableCommentExt {
 
 export type TableCommentType = 'TABLE';
 
-/** 请求体结构 */
 export interface SaveTableCommentPayload {
   dataSourceId: number;
   databaseName: string;
   schemaName?: string;
   tableName: string;
-  refresh?: boolean; // 是否刷新
+  refresh?: boolean;
   tableCommentExt: TableCommentExt;
   type: TableCommentType;
+}
+
+const DB_TYPE_MAP: Record<string, string> = {
+  mysql: 'MySQL',
+  clickhouse: 'ClickHouse',
+  mongodb: 'MongoDB',
+  snowflake: 'Snowflake',
+  h2: 'H2',
+  oracle: 'Oracle',
+  postgresql: 'PostgreSQL',
+  dm: 'DM',
+  oceanbase: 'OceanBase',
+  hive: 'HIVE',
+  kingbase: 'Kingbase',
+  redis: 'Redis',
+  opengauss: 'OpenGauss',
+  sqlserver: 'SQLServer',
+  sqlite: 'SQLite',
+  db2: 'DB2',
+  duckdb: 'DuckDB',
+  gaussdb: 'GaussDB'
+};
+
+/**
+ * 转换函数
+ * @param dbType 本地小写字符串，如 'mysql'
+ * @returns 接口要求的名称；若无映射则原样返回
+ */
+export function mapDBType(dbType: string): string {
+  return DB_TYPE_MAP[dbType.toLowerCase()] ?? dbType;
 }

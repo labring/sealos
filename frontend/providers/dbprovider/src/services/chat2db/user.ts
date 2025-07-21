@@ -1,12 +1,12 @@
 import { GET, POST } from '@/services/request';
 import { encryptCbcBrowser } from '@/api/encrypt';
-import { GenerateLoginUrlOpts } from '@/constants/chat2db';
+import { GenerateLoginUrlOpts, UserInfo } from '@/constants/chat2db';
 
 const CHAT2DB_BASE = process.env.NEXT_PUBLIC_CHAT2DB_BASE;
 
 export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<string> {
-  const { userId, orgId, secretKey, ui = {} } = opts;
-  const raw = `${userId}:${orgId}`;
+  const { userId, userNS, orgId, secretKey, ui = {} } = opts;
+  const raw = `${userId}/${userNS}:${orgId}`;
   const key = await encryptCbcBrowser(raw, secretKey);
 
   const p = new URLSearchParams({
@@ -23,14 +23,11 @@ export function logout() {
   return POST('/api/oauth/logout_a');
 }
 
-export function syncAuthUser(key: string) {
-  /**
-   * 该接口要求 `application/x-www-form-urlencoded`
-   * 用 POST 的第三个参数覆写 header
-   */
-  return POST('/api/open/enterprise/sync_auth_user', new URLSearchParams({ key }), {
+export function syncAuthUser(apiKey: string, data: UserInfo) {
+  return POST(`/api/proxy/sync_auth_user_a`, data, {
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      Authorization: `Bearer ${apiKey}`,
+      'Time-Zone': 'Asia/Shanghai'
     }
   });
 }

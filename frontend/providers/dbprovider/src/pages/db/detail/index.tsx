@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
 import { useMemo, useRef, useState } from 'react';
-import AppBaseInfo from './components/AppBaseInfo';
+import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';
 import Monitor from './components/Monitor';
@@ -130,6 +130,7 @@ const AppDetail = ({
   const { dbDetail, loadDBDetail } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
   const [podsCount, setPodsCount] = useState(0);
+  const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
 
   useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
@@ -165,7 +166,12 @@ const AppDetail = ({
       overflowX={'auto'}
     >
       <Box>
-        <Header db={dbDetail} setShowSlider={setShowSlider} isLargeScreen={isLargeScreen} />
+        <Header
+          db={dbDetail}
+          conn={connInfo}
+          setShowSlider={setShowSlider}
+          isLargeScreen={isLargeScreen}
+        />
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>
         <Flex
@@ -228,7 +234,7 @@ const AppDetail = ({
         </Flex>
         {listType === TabEnum.Overview ? (
           <Flex boxSize={'full'} flex={1} flexDirection={'column'}>
-            <AppBaseInfo db={dbDetail} />
+            <AppBaseInfo db={dbDetail} onConnReady={(info) => setConnInfo(info)} />
             <Box
               flex={'1 0 200px'}
               bg={'white'}

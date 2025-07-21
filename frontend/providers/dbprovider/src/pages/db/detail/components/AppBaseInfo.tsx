@@ -13,7 +13,7 @@ import { startDriver, detailDriverObj } from '@/hooks/driver';
 import useEnvStore from '@/store/env';
 import { useGuideStore } from '@/store/guide';
 import { SOURCE_PRICE } from '@/store/static';
-import type { DBDetailType } from '@/types/db';
+import type { DBDetailType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { json2NetworkService } from '@/utils/json2Yaml';
 import { printMemory, useCopyData } from '@/utils/tools';
@@ -49,6 +49,7 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { updateDatasource } from '@/services/chat2db/datasource';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -98,7 +99,23 @@ const CopyBox = ({
   );
 };
 
-const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
+export interface ConnectionInfo {
+  host: string;
+  port: number | string;
+  connection: string;
+  username: string;
+  password: string;
+  dbType: DBType;
+  dbName: string;
+}
+
+const AppBaseInfo = ({
+  db = defaultDBDetail,
+  onConnReady
+}: {
+  db: DBDetailType;
+  onConnReady?: (info: ConnectionInfo) => void;
+}) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { SystemEnv } = useEnvStore();
@@ -255,6 +272,19 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     [db]
   );
 
+  useEffect(() => {
+    if (!secret) return;
+    onConnReady?.({
+      host: secret.host,
+      port: secret.port,
+      connection: secret.connection,
+      username: secret.username,
+      password: secret.password,
+      dbType: db.dbType,
+      dbName: db.dbName
+    });
+  }, [secret, db, onConnReady]);
+
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
     const commandMap = {
@@ -337,6 +367,8 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   };
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
+    const datasourceId = dbStatefulSet?.metadata?.labels?.['chat2db.io/id'];
+    const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY;
     try {
       onClose();
       await editPassword({
@@ -356,6 +388,27 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
         title: typeof error === 'string' ? error : t('edit_password_failed'),
         status: 'error'
       });
+    }
+    try {
+      if (secret) {
+        await updateDatasource(
+          {
+            id: datasourceId,
+            alias: db.dbName,
+            environmentId: 2,
+            storageType: 'CLOUD',
+            host: secret.host,
+            port: secret.port,
+            user: secret.username,
+            password: secret.password,
+            url: secret.connection,
+            type: db.dbType
+          },
+          apiKey as string
+        );
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
