@@ -32,12 +32,7 @@ async function deleteResourcesBatch<T>(
   }
 }
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // ! ===== Validate against schema!
   const instanceName = req.query['instance-name'] as string;
-
-  // const client = await getK8s({
-  //   kubeconfig: await authSession(req.headers)
-  // });
 
   const kubeConfig = await authSession(req.headers).catch((error) => {
     if (error === ResponseCode.UNAUTHORIZED) {
@@ -50,113 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ message: ResponseMessages[ResponseCode.UNAUTHORIZED] });
   }
 
-  console.log('kubeConfig', kubeConfig);
-
   const k8s = await getK8s({
     kubeconfig: kubeConfig
   });
-
-  // ! ======================= For testing
-  if (req.method === 'GET') {
-    const data = {
-      Instance: await operations
-        .getInstance(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      AppLaunchpad: await operations
-        .getAppLaunchpad(k8s.k8sApp, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      Databases: await operations
-        .getDatabases(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      ObjectStorage: await operations
-        .getObjectStorage(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      CronJobs: await operations.getCronJobs(k8s.k8sBatch, k8s.namespace, instanceName as string),
-      Secrets: await operations.getSecrets(k8s.k8sCore, k8s.namespace, instanceName as string),
-      Jobs: await operations.getJobs(k8s.k8sBatch, k8s.namespace, instanceName as string),
-      CertIssuers: await operations
-        .getCertIssuers(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      AppCRs: await operations
-        .getAppCRs(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      Roles: await operations.getRoles(k8s.k8sAuth, k8s.namespace, instanceName as string),
-      RoleBindings: await operations
-        .getRoleBindings(k8s.k8sAuth, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      ServiceAccounts: await operations
-        .getServiceAccounts(k8s.k8sCore, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      ConfigMaps: await operations
-        .getConfigMaps(k8s.k8sCore, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      PrometheusRules: await operations
-        .getPrometheusRules(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      Prometheuses: await operations
-        .getPrometheuses(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      PersistentVolumeClaims: await operations
-        .getPersistentVolumeClaims(k8s.k8sCore, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      ServiceMonitors: await operations
-        .getServiceMonitors(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      Probes: await operations
-        .getProbes(k8s.k8sCustomObjects, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        }),
-      Services: await operations
-        .getServices(k8s.k8sCore, k8s.namespace, instanceName as string)
-        .catch((err) => {
-          console.log('err', err);
-          return null;
-        })
-    };
-
-    res.status(200).json({ data });
-  }
 
   if (req.method === 'DELETE') {
     // Instance
@@ -171,6 +62,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (error?.body?.code !== 404) {
         throw new Error(error?.message || 'An error occurred whilst deleting instance.');
       }
+
+      return res.status(404).json({ message: ResponseMessages[ResponseCode.NOT_FOUND] });
     }
 
     // AppLaunchpad
@@ -299,7 +192,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       'An error occurred whilst deleting Services.'
     );
 
-    return res.status(200).json({});
+    return res.status(200).json({
+      message: 'Success'
+    });
   }
 
   res.status(405).json({ message: 'Method not allowed' });
