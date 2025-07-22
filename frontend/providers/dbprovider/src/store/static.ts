@@ -20,7 +20,19 @@ export let DBVersionMap: DBVersionMapType = {
     { id: 'postgresql-12.14.0', label: 'postgresql-12.14.0' },
     { id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }
   ],
-  [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0', label: 'mongodb-5.0' }],
+  // [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0', label: 'mongodb-5.0' }],
+  [DBTypeEnum.mongodb]: [
+    { id: 'mongodb-4.0.28', label: 'mongodb-4.0.28' },
+    { id: 'mongodb-4.2.24', label: 'mongodb-4.2.24' },
+    { id: 'mongodb-4.4.29', label: 'mongodb-4.4.29' },
+    { id: 'mongodb-5.0.28', label: 'mongodb-5.0.28' },
+    { id: 'mongodb-5.0.30', label: 'mongodb-5.0.30' },
+    { id: 'mongodb-6.0.16', label: 'mongodb-6.0.16' },
+    { id: 'mongodb-6.0.20', label: 'mongodb-6.0.20' },
+    { id: 'mongodb-7.0.12', label: 'mongodb-7.0.12' },
+    { id: 'mongodb-7.0.16', label: 'mongodb-7.0.16' },
+    { id: 'mongodb-8.0.4', label: 'mongodb-8.0.4' }
+  ],
   [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }],
   [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }],
   [DBTypeEnum.kafka]: [{ id: 'kafka-3.3.2', label: 'kafka-3.3.2' }],

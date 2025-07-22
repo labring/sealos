@@ -31,7 +31,6 @@ import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { generateLoginUrl } from '@/services/chat2db/user';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -127,32 +126,32 @@ const DBList = ({
     [refetchApps, setLoading, t, toast]
   );
 
-  const handleManageData = useCallback(async () => {
-    const userStr = localStorage.getItem('session');
-    const orgId = '34';
-    const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
-    const userObj = userStr ? JSON.parse(userStr) : null;
-    const userId = userObj?.user.id;
-    try {
-      const url = await generateLoginUrl({
-        userId,
-        orgId,
-        secretKey,
-        ui: {
-          theme: ThemeAppearance.Light,
-          primaryColor: PrimaryColorsType.bw,
-          language: LangType.ZH_CN,
-          hideAvatar: yowantLayoutConfig.hideAvatar
-        }
-      });
-      router.push(url);
-    } catch (err) {
-      toast({
-        title: t('chat2db_redirect_failed'),
-        status: 'error'
-      });
-    }
-  }, [router, t, toast]);
+  // const handleManageData = useCallback(async () => {
+  //   const userStr = localStorage.getItem('session');
+  //   const orgId = '34';
+  //   const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+  //   const userObj = userStr ? JSON.parse(userStr) : null;
+  //   const userId = userObj?.user.id;
+  //   try {
+  //     const url = await generateLoginUrl({
+  //       userId,
+  //       orgId,
+  //       secretKey,
+  //       ui: {
+  //         theme: ThemeAppearance.Light,
+  //         primaryColor: PrimaryColorsType.bw,
+  //         language: LangType.ZH_CN,
+  //         hideAvatar: yowantLayoutConfig.hideAvatar
+  //       }
+  //     });
+  //     router.push(url);
+  //   } catch (err) {
+  //     toast({
+  //       title: t('chat2db_redirect_failed'),
+  //       status: 'error'
+  //     });
+  //   }
+  // }, [router, t, toast]);
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [
@@ -220,7 +219,7 @@ const DBList = ({
               color={'grayModern.900'}
               _hover={{ color: 'brightBlue.600' }}
               leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-              onClick={() => handleManageData()}
+              // onClick={() => handleManageData()}
               isDisabled={row.original.status.value !== DBStatusEnum.Running}
             >
               {t('manage_data')}
