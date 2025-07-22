@@ -174,8 +174,8 @@ export const emailSmsReq = async (email: string) => {
 `;
   };
   const subjectMap = {
-    zh: '【sealos】验证码',
-    en: '【sealos】Verification Code'
+    zh: '【Sealos】验证码',
+    en: '【Sealos】Verification Code'
   } as const;
   const htmlMap = {
     zh: getLocalizedContent({
