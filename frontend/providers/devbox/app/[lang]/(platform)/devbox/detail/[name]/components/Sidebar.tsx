@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { FileClock, LayoutDashboard, LineChart } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -10,19 +11,21 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
+  const t = useTranslations();
+
   const tabs = [
     {
-      label: 'Overview',
+      label: t('overview_tab'),
       value: 'overview' as TabValue,
       icon: <LayoutDashboard className="h-6 w-6" strokeWidth={1.33} />
     },
     {
-      label: 'Monitor',
+      label: t('monitor_tab'),
       value: 'monitor' as TabValue,
       icon: <LineChart className="h-6 w-6" strokeWidth={1.33} />
     },
     {
-      label: 'Logs',
+      label: t('logs_tab'),
       value: 'logs' as TabValue,
       icon: <FileClock className="h-6 w-6" strokeWidth={1.33} />
     }
