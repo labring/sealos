@@ -107,8 +107,8 @@ export const json2CreateCluster = (
             podAntiAffinity: 'Preferred',
             tenancy: 'SharedNode'
           },
-          clusterDefinitionRef: data.dbType, // apecloud-mysql
-          clusterVersionRef: data.dbVersion, // ac-mysql-8.0.30
+          clusterDefinitionRef: data.dbType,
+          clusterVersionRef: data.dbVersion,
           componentSpecs: [
             {
               componentDefRef: 'mysql',
@@ -199,19 +199,16 @@ export const json2CreateCluster = (
         kind: 'Cluster',
         metadata: {
           labels: {
-            'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
-            'helm.sh/chart': 'mongodb-cluster-0.9.1'
+            'clusterversion.kubeblocks.io/name': data.dbVersion
           },
           name: data.dbName,
           namespace: getUserNamespace()
         },
         spec: {
-          affinity: {
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
-          },
+          terminationPolicy,
+          clusterDef: 'mongodb',
+          topology: 'replicaset',
+
           componentSpecs: [
             {
               componentDefRef: 'mongodb',
@@ -231,8 +228,7 @@ export const json2CreateCluster = (
                 ]
               })
             }
-          ],
-          terminationPolicy
+          ]
         }
       }
     ];
@@ -307,7 +303,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${sentinelRes.storage}Gi` } }
+                  resources: { requests: { storage: `1Gi` } }
                 }
               }
             ]
@@ -345,7 +341,7 @@ export const json2CreateCluster = (
 
     const labels = {
       'clusterdefinition.kubeblocks.io/name': 'clickhouse',
-      'clusterversion.kubeblocks.io/name': '',
+      'clusterversion.kubeblocks.io/name': data.dbVersion.split('-').pop(),
       ...data.labels
     };
 
@@ -435,34 +431,153 @@ export const json2CreateCluster = (
   }
 
   function buildKafkaYaml() {
-    const combineRes = (resources as any)['kafka-combine'] || {
+    console.log(resources);
+    const brokerRes = resources['kafka-broker'] || {
       cpuMemory: {
-        limits: { cpu: '500m', memory: '512Mi' },
-        requests: { cpu: '500m', memory: '512Mi' }
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
       },
-      storage: 0,
+      storage: 1,
       other: { replicas: 1 }
     };
 
     const exporterRes = resources['kafka-exporter'] || {
       cpuMemory: {
-        limits: { cpu: '500m', memory: '1Gi' },
-        requests: { cpu: '100m', memory: '256Mi' }
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 1,
+      other: { replicas: 1 }
+    };
+
+    const serverRes = resources['kafka-server'] || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '1Gi' },
+        requests: { cpu: '0.1', memory: '0.2Gi' }
       },
       storage: 0,
       other: { replicas: 1 }
     };
 
+    const kafkaObj = {
+      apiVersion: 'apps.kubeblocks.io/v1',
+      kind: 'Cluster',
+      metadata: {
+        labels: {
+          'clusterversion.kubeblocks.io/name': data.dbVersion
+        },
+        name: data.dbName || 'kafka-separated-cluster',
+        namespace: getUserNamespace()
+      },
+      spec: {
+        terminationPolicy,
+        clusterDef: 'kafka',
+        topology: 'separated_monitor',
+        componentSpecs: [
+          /* ----- kafka-broker --------------------------------------------- */
+          {
+            name: 'kafka-broker',
+            replicas: data.replicas,
+            resources: brokerRes.cpuMemory,
+            env: [
+              {
+                name: 'KB_KAFKA_BROKER_HEAP',
+                value: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64'
+              },
+              {
+                name: 'KB_KAFKA_CONTROLLER_HEAP',
+                value: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64'
+              },
+              { name: 'KB_BROKER_DIRECT_POD_ACCESS', value: 'true' }
+            ],
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  storageClassName: '',
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${brokerRes.storage}Gi` } }
+                }
+              },
+              {
+                name: 'metadata',
+                spec: {
+                  storageClassName: '',
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${brokerRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          /* ----- kafka-controller ----------------------------------------- */
+          {
+            name: 'kafka-controller',
+            replicas: data.replicas,
+            resources: {
+              limits: { ...exporterRes.cpuMemory.limits },
+              request: { ...exporterRes.cpuMemory.requests }
+            },
+            volumeClaimTemplates: [
+              {
+                name: 'metadata',
+                spec: {
+                  storageClassName: '',
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${serverRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          /* ----- kafka-exporter ------------------------------------------- */
+          {
+            name: 'kafka-exporter',
+            replicas: data.replicas,
+            resources: exporterRes.cpuMemory
+          }
+        ]
+      }
+    };
+
+    /* 4️⃣ 返回数组，外层 yaml.dump 会序列化 --------------------------------- */
+    return [kafkaObj];
+  }
+
+  function buildMilvusYaml() {
+    const milvusRes = (resources['milvus'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
+    const etcdRes = (resources['etcd'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
+    const minioRes = (resources['minio'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
     const labels = {
-      'app.kubernetes.io/instance': data.dbName,
-      'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '', // 3.3.2
-      'clusterdefinition.kubeblocks.io/name': 'kafka',
-      'clusterversion.kubeblocks.io/name': data.dbVersion,
-      'helm.sh/chart': 'kafka-cluster-0.9.0',
+      'clusterversion.kubeblocks.io/name': `milvus-${data.dbVersion}`, // e.g. milvus-2.3.2
       ...data.labels
     };
 
-    const kafkaObj = {
+    const milvusObj = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Cluster',
       metadata: {
@@ -471,44 +586,74 @@ export const json2CreateCluster = (
         namespace: getUserNamespace()
       },
       spec: {
+        topology: 'standalone',
+        clusterDefinitionRef: 'milvus',
+        terminationPolicy,
         affinity: {
           podAntiAffinity: 'Preferred',
           tenancy: 'SharedNode',
           topologyKeys: ['kubernetes.io/hostname']
         },
-        clusterDefinitionRef: 'kafka',
-        clusterVersionRef: data.dbVersion,
+        tolerations: [
+          {
+            key: 'kb-data',
+            operator: 'Equal',
+            value: 'true',
+            effect: 'NoSchedule'
+          }
+        ],
         componentSpecs: [
           {
-            componentDef: 'kafka-combine',
-            name: 'kafka-combine',
-            replicas: combineRes.other.replicas,
-            env: [{ name: 'KB_BROKER_DIRECT_POD_ACCESS', value: 'true' }],
-            monitor: true,
-            resources: combineRes.cpuMemory,
-            serviceVersion: data.dbVersion.split('-').pop() || '',
-            services: [
+            name: 'milvus',
+            disableExporter: true,
+            serviceAccountName: `kb-${data.dbName}`,
+            replicas: data.replicas ?? 1,
+            resources: milvusRes.cpuMemory,
+            volumeClaimTemplates: [
               {
-                name: 'advertised-listener',
-                podService: true,
-                serviceType: 'ClusterIP'
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${milvusRes.storage}Gi` } }
+                }
               }
             ]
           },
+
           {
-            componentDef: 'kafka-exporter',
-            name: 'kafka-exporter',
-            replicas: exporterRes.other?.replicas ?? 1,
-            monitor: true,
-            resources: exporterRes.cpuMemory,
-            serviceVersion: '1.6.0'
+            name: 'etcd',
+            replicas: data.replicas,
+            resources: etcdRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${etcdRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            name: 'minio',
+            replicas: data.replicas,
+            resources: minioRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${minioRes.storage}Gi` } }
+                }
+              }
+            ]
           }
-        ],
-        terminationPolicy,
-        topology: 'combined_monitor'
+        ]
       }
     };
-    return [kafkaObj];
+
+    return [milvusObj];
   }
 
   function createDBObject(dbType: DBType) {
@@ -526,6 +671,8 @@ export const json2CreateCluster = (
         return buildClickhouseYaml();
       case DBTypeEnum.kafka:
         return buildKafkaYaml();
+      case DBTypeEnum.milvus:
+        return buildMilvusYaml();
       default:
         throw new Error(`json2CreateCluster: unsupported dbType ${dbType}`);
     }

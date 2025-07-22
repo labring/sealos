@@ -497,7 +497,7 @@ const Header = ({
         leftIcon={<MyIcon name="settings" w={'16px'} />}
         isLoading={loading}
         isDisabled={db.status.value !== 'Running'}
-        onClick={handleManageData}
+        // onClick={handleManageData}
         alignItems={'center'}
       >
         {t('manage_data')}
