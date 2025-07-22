@@ -1,5 +1,5 @@
 {
-  "name": "@zjy365/sealos-desktop-sdk",
+  "name": "sealos-desktop-sdk",
   "version": "0.1.18",
   "description": "sealos desktop sdk",
   "scripts": {
@@ -46,7 +46,6 @@
     }
   },
   "keywords": [],
-  "author": "3161362058@qq.com",
   "license": "ISC",
   "devDependencies": {
     "@kubernetes/client-node": "^0.18.1",
