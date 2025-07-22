@@ -48,7 +48,26 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 	if version == "" {
 		version = k.getKubeVersion()
 	}
-	imagePull := fmt.Sprintf("kubeadm config images pull --cri-socket unix://%s  --kubernetes-version %s %s", k.cluster.GetImageEndpoint(), version, vlogToStr(k.klogLevel))
+	initConfigPath := k.getInitMasterKubeadmConfigFilePath()
+	joinMasterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinMasterKubeadmFileName)
+	joinNodeConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultJoinNodeKubeadmFileName)
+	updateClusterConfigPath := path.Join(k.pathResolver.ConfigsPath(), defaultUpdateKubeadmFileName)
+	if !file.IsExist(initConfigPath) && !file.IsExist(joinMasterConfigPath) && !file.IsExist(joinNodeConfigPath) && !file.IsExist(updateClusterConfigPath) {
+		return fmt.Errorf("kubeadm config files not found, please check if the kubeadm configs are generated")
+	}
+	configFiles := []string{
+		initConfigPath,
+		joinMasterConfigPath,
+		joinNodeConfigPath,
+		updateClusterConfigPath,
+	}
+	var configFlag string
+	for _, configFile := range configFiles {
+		if file.IsExist(configFile) {
+			configFlag = fmt.Sprintf("--config %s ", configFile)
+		}
+	}
+	imagePull := fmt.Sprintf("kubeadm config images pull %s  --kubernetes-version %s %s", configFlag, version, vlogToStr(k.klogLevel))
 	err := k.sshCmdAsync(hostAndPort, imagePull)
 	if err != nil {
 		return fmt.Errorf("master pull image failed, error: %s", err.Error())
