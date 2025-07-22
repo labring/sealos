@@ -19,8 +19,8 @@ import {
   yowantLayoutConfig
 } from '@/constants/chat2db';
 import { ConnectionInfo } from './AppBaseInfo';
-import { generateLoginUrl } from '@/services/chat2db/user';
-import { createDatasource } from '@/services/chat2db/datasource';
+// import { generateLoginUrl } from '@/services/chat2db/user';
+// import { createDatasource } from '@/services/chat2db/datasource';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -134,63 +134,63 @@ const Header = ({
     setLoading(false);
   }, [db, t, toast]);
 
-  const handleManageData = useCallback(async () => {
-    const userStr = localStorage.getItem('session');
-    const orgId = '34';
-    const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
-    const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
-    const userObj = userStr ? JSON.parse(userStr) : null;
-    const userId = userObj?.user.id;
-    // const userNS = userObj?.user.nsid; // 不再需要 userNS
-    if (!conn) {
-      return toast({
-        title: 'Connection info not ready',
-        status: 'error'
-      });
-    }
-    const { host, port, connection, username, password, dbType, dbName } = conn;
+  // //   const handleManageData = useCallback(async () => {
+  // //     const userStr = localStorage.getItem('session');
+  // //     const orgId = '34';
+  // //     const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+  // //     const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
+  // //     const userObj = userStr ? JSON.parse(userStr) : null;
+  // //     const userId = userObj?.user.id;
+  // //     // const userNS = userObj?.user.nsid; // 不再需要 userNS
+  // //     if (!conn) {
+  // //       return toast({
+  // //         title: 'Connection info not ready',
+  // //         status: 'error'
+  // //       });
+  // //     }
+  // //     const { host, port, connection, username, password, dbType, dbName } = conn;
 
-    const payload = {
-      environmentId: 1 as 1 | 2,
-      storageType: 'LOCAL' as 'LOCAL' | 'CLOUD',
-      host: host,
-      port: String(port),
-      user: username,
-      password: password,
-      url: connection,
-      type: mapDBType(dbType)
-    };
+  // //     const payload = {
+  // //       environmentId: 1 as 1 | 2,
+  // //       storageType: 'LOCAL' as 'LOCAL' | 'CLOUD',
+  // //       host: host,
+  // //       port: String(port),
+  // //       user: username,
+  // //       password: password,
+  // //       url: connection,
+  // //       type: mapDBType(dbType)
+  // //     };
 
-    try {
-      const url = await generateLoginUrl({
-        userId,
-        orgId,
-        secretKey,
-        ui: {
-          theme: ThemeAppearance.Light,
-          primaryColor: PrimaryColorsType.bw,
-          language: LangType.ZH_CN,
-          hideAvatar: yowantLayoutConfig.hideAvatar
-        }
-      });
+  // //     // try {
+  // //     //   const url = await generateLoginUrl({
+  // //     //     userId,
+  // //     //     orgId,
+  // //     //     secretKey,
+  // //     //     ui: {
+  // //     //       theme: ThemeAppearance.Light,
+  // //     //       primaryColor: PrimaryColorsType.bw,
+  // //     //       language: LangType.ZH_CN,
+  // //     //       hideAvatar: yowantLayoutConfig.hideAvatar
+  // //     //     }
+  // //     //   });
 
-      try {
-        console.log(111);
+  // //     //   try {
+  // //     //     console.log(111);
 
-        await createDatasource(payload, apiKey);
-      } catch (err) {
-        console.log(err);
-      }
+  // //     //     await createDatasource(payload, apiKey);
+  // //     //   } catch (err) {
+  // //     //     console.log(err);
+  // //     //   }
 
-      router.push(url);
-    } catch (err) {
-      console.error(t('chat2db_redirect_failed'), err);
-      toast({
-        title: t('chat2db_redirect_failed'),
-        status: 'error'
-      });
-    }
-  }, [toast, router]);
+  // //   //     router.push(url);
+  // //   //   } catch (err) {
+  // //   //     console.error(t('chat2db_redirect_failed'), err);
+  // //   //     toast({
+  // //   //       title: t('chat2db_redirect_failed'),
+  // //   //       status: 'error'
+  // //   //     });
+  // //   //   }
+  // //   // }, [toast, router]);
 
   return (
     <Flex h={'80px'} alignItems={'center'}>
@@ -333,7 +333,7 @@ const Header = ({
         leftIcon={<MyIcon name="settings" w={'16px'} />}
         isLoading={loading}
         isDisabled={db.status.value !== 'Running'}
-        onClick={handleManageData}
+        // onClick={handleManageData}
         alignItems={'center'}
       >
         {t('manage_data')}
