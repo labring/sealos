@@ -4,6 +4,7 @@ import { ResponseCode, ResponseMessages } from '@/types/response';
 import { NextApiRequest, NextApiResponse } from 'next';
 import * as operations from '@/services/backend/operations';
 import { jsonRes } from '@/services/backend/response';
+import { deleteInstanceSchemas } from '@/types/apis';
 
 // Helper function to delete resources with error handling
 async function deleteResourcesBatch<T>(
@@ -33,7 +34,16 @@ async function deleteResourcesBatch<T>(
   }
 }
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const instanceName = req.query['instanceName'] as string;
+  // Parse parameters
+  const params = deleteInstanceSchemas.pathParams.safeParse(req.query);
+  if (!params.success) {
+    return jsonRes(res, {
+      code: 400,
+      message: 'Invalid request parameters',
+      error: params.error
+    });
+  }
+  const instanceName = params.data.instanceName;
 
   const kubeConfig = await authSession(req.headers).catch((error) => {
     if (error === ResponseCode.UNAUTHORIZED) {
