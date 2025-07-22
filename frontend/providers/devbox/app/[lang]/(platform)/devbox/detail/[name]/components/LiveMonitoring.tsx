@@ -13,7 +13,7 @@ const LiveMonitoring = () => {
     <div className="flex h-50 flex-col items-start gap-5 rounded-xl border-[0.5px] bg-white p-6 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
-        <span className="text-lg/7 font-medium">Live Monitoring</span>
+        <span className="text-lg/7 font-medium">{t('live_monitoring')}</span>
         <span className="text-sm/5 text-neutral-400">
           {t('update Time')}&ensp;
           {dayjs().format('HH:mm')}

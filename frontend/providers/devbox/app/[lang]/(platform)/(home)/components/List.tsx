@@ -112,7 +112,14 @@ const DevboxList = ({
                   </div>
                 </TooltipContent>
               </Tooltip>
-              <span className="text-sm/1 font-medium">{item.name}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="max-w-20 truncate text-sm font-medium">{item.name}</span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start" sideOffset={1} className="max-w-40">
+                  <span className="text-sm break-words">{item.name}</span>
+                </TooltipContent>
+              </Tooltip>
             </div>
           );
         }

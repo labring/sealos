@@ -161,7 +161,7 @@ const SshConnectDrawer = ({
                 <Step>
                   <StepIndicator>1</StepIndicator>
                   <div className="flex flex-col gap-3">
-                    <span className="text-sm/5 font-semibold">Run Script</span>
+                    <span className="text-sm/5 font-semibold">{t('run_script')}</span>
                     <div className="flex w-[366px] flex-col gap-4">
                       <div className="flex flex-col gap-3">
                         <div
