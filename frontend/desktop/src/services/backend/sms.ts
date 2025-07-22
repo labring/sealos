@@ -147,7 +147,7 @@ export const emailSmsReq = async (email: string) => {
     <div class="card-container" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;margin: 0 auto;display: table;table-layout: auto;width: 100%;max-width: 540px;background-color: #ffffff;">
       <div class="header-container" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;display: table-caption;width: 100%;max-width: 540px;align-items: center;gap: 20px;padding-left: 44px;padding-right: 44px;padding-top: 44px;padding-bottom: 50px;">
         <div class="logo-container" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;display: table-cell;vertical-align: middle;width: 48px;height: 48px;padding-right: 20px;line-height: 1;">
-          <img src="https://sealos.io/favicon.ico" width="48" height="48" alt="Sealos Logo" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;">
+          <img src="https://objectstorageapi.usw.sealos.io/3n31wssp-sealos-assets/sealos-logo@128.png" width="48" height="48" alt="Sealos Logo" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;">
         </div>
         <div class="header-content" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: normal;display: table-cell;vertical-align: middle;">
           <h1 class="header-title" style="box-sizing: border-box;font-family: system-ui, sans-serif;font-weight: 600;margin: 0;padding: 0;color: #000000;font-size: 20px;line-height: 1;margin-bottom: 4px;">${content.heading}</h1>
