@@ -67,8 +67,8 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
-	// +kubebuilder:validation:Optional
-	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
+	// // +kubebuilder:validation:Optional
+	// ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
 }
 
 type Config struct {
@@ -99,12 +99,10 @@ type Config struct {
 	ReleaseArgs []string `json:"releaseArgs,omitempty"`
 
 	// TODO: in v1alpha2 api we need fix the port and app port into one field and create a new type for it.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={{name:"devbox-ssh-port",containerPort:22,protocol:TCP}}
-	Ports []corev1.ContainerPort `json:"ports,omitempty"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={{name:"devbox-app-port",port:8080,protocol:TCP}}
-	AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// Ports []corev1.ContainerPort `json:"ports,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
@@ -193,33 +191,33 @@ const (
 )
 
 type CommitRecord struct {
-	// ContainerID is the container id
-	ContainerID string `json:"containerID"`
-
-	// ContentID is the content id
-	ContentID string `json:"contentID"`
-
 	// Image is the image of the that devbox is running on
+	// +kubebuilder:validation:Optional
 	Image string `json:"image"`
 
 	// Node is the node name
+	// +kubebuilder:validation:Optional
 	Node string `json:"node"`
 
 	// GenerateTime is the time when the commit is generated
+	// +kubebuilder:validation:Optional
 	GenerateTime metav1.Time `json:"generateTime"`
 
 	// ScheduleTime is the time when the commit is scheduled
+	// +kubebuilder:validation:Optional
 	ScheduleTime metav1.Time `json:"scheduleTime"`
 
 	// UpdateTime is the time when the commit is updated
+	// +kubebuilder:validation:Optional
 	UpdateTime metav1.Time `json:"updateTime"`
 
 	// CommitTime is the time when the commit is created
+	// +kubebuilder:validation:Optional
 	CommitTime metav1.Time `json:"commitTime"`
 
 	// CommitStatus is the status of the commit
-	// +kubebuilder:validation:Enum=Skipped;Success;Failed;Unknown;Pending;Unset
-	// +kubebuilder:default=Unset
+	// +kubebuilder:validation:Enum=Success;Failed;Pending
+	// +kubebuilder:default=Pending
 	CommitStatus CommitStatus `json:"commitStatus"`
 }
 

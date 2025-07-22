@@ -242,10 +242,11 @@ func main() {
 	}
 
 	if err = (&controller.DevboxReconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("devbox-controller"),
+
 		CommitImageRegistry: registryAddr,
-		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
 		RequestRate: utilresource.RequestRate{
 			CPU:    requestCPURate,
 			Memory: requestMemoryRate,
@@ -265,9 +266,10 @@ func main() {
 	}
 
 	if err = (&controller.DevboxDaemonReconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
-		Recorder:            mgr.GetEventRecorderFor("devbox-daemon-controller"),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("devbox-daemon-controller"),
+
 		CommitImageRegistry: registryAddr,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DevboxDaemon")

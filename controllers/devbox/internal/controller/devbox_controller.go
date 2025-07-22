@@ -121,18 +121,22 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, nil
 	}
+	// init devbox status network type
+	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
 	// init devbox status content id
 	if devbox.Status.ContentID == "" {
 		devbox.Status.ContentID = uuid.New().String()
 	}
 	// init devbox status commit record
 	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
+		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha1.CommitRecord)
 		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
-			ContentID:    devbox.Status.ContentID,
 			Node:         "",
 			Image:        devbox.Spec.Image,
+			CommitStatus: devboxv1alpha1.CommitStatusPending,
 			GenerateTime: metav1.Now(),
 		}
+
 	}
 	// schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
@@ -140,22 +144,14 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// set up devbox node and content id, new a record for the devbox
 		devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
 		if err := r.Status().Update(ctx, devbox); err != nil {
-			logger.Info("try to schedule devbox to node failed")
+			logger.Info("try to schedule devbox to node failed", "error", err)
 			return ctrl.Result{}, nil
 		}
 		logger.Info("devbox scheduled to node", "node", r.NodeName)
 		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
-		return ctrl.Result{}, nil
 	} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
 		logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
 		return ctrl.Result{}, nil
-	}
-
-	// update devbox status, init history and network type
-	devbox.Status.Network.Type = devbox.Spec.NetworkSpec.Type
-	err := r.Status().Update(ctx, devbox)
-	if err != nil {
-		return ctrl.Result{}, err
 	}
 
 	// create or update secret
@@ -302,7 +298,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			// create a new pod with default image, with new content id
 			pod := r.generateDevboxPod(devbox,
 				helper.WithPodImage(currentRecord.Image),
-				helper.WithPodContentID(currentRecord.ContentID),
+				helper.WithPodContentID(devbox.Status.ContentID),
 			)
 			if err := r.Create(ctx, pod); err != nil {
 				return err
@@ -333,14 +329,14 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 
 func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	var servicePorts []corev1.ServicePort
-	for _, port := range devbox.Spec.Config.Ports {
-		servicePorts = append(servicePorts, corev1.ServicePort{
-			Name:       port.Name,
-			Port:       port.ContainerPort,
-			TargetPort: intstr.FromInt32(port.ContainerPort),
-			Protocol:   port.Protocol,
-		})
-	}
+	// for _, port := range devbox.Spec.Config.Ports {
+	// 	servicePorts = append(servicePorts, corev1.ServicePort{
+	// 		Name:       port.Name,
+	// 		Port:       port.ContainerPort,
+	// 		TargetPort: intstr.FromInt32(port.ContainerPort),
+	// 		Protocol:   port.Protocol,
+	// 	})
+	// }
 	if len(servicePorts) == 0 {
 		//use the default value
 		servicePorts = []corev1.ServicePort{
@@ -487,7 +483,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts
 		Annotations: helper.GeneratePodAnnotations(devbox),
 	}
 
-	ports := devbox.Spec.Config.Ports
+	// ports := devbox.Spec.Config.Ports
 	// TODO: add extra ports to pod, currently not support
 	// ports = append(ports, devbox.Spec.NetworkSpec.ExtraPorts...)
 
@@ -501,9 +497,9 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts
 
 	containers := []corev1.Container{
 		{
-			Name:         devbox.ObjectMeta.Name,
-			Env:          envs,
-			Ports:        ports,
+			Name: devbox.ObjectMeta.Name,
+			Env:  envs,
+			// Ports:        ports,
 			VolumeMounts: volumeMounts,
 
 			WorkingDir: helper.GetWorkingDir(devbox),

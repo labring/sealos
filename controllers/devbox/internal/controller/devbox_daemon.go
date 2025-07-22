@@ -12,8 +12,8 @@ import (
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -68,6 +68,12 @@ func (r *DevboxDaemonReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		return ctrl.Result{}, errors.New("current record is nil")
 	}
 	if pod.DeletionTimestamp != nil {
+		defer func() {
+			controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
+			if err := r.Update(ctx, pod); err != nil {
+				logger.Error(err, "remove finalizer failed")
+			}
+		}()
 		logger.Info("Devbox pod is deleted", "podName", pod.Name, "namespace", pod.Namespace)
 		switch devbox.Spec.State {
 		case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
@@ -89,7 +95,7 @@ func (r *DevboxDaemonReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			// after commit, we need to update the devbox status node to empty, create a new content id and new record
 			devbox.Status.ContentID = uuid.New().String()
 			devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
-				ContentID:    devbox.Status.ContentID,
+				CommitStatus: devboxv1alpha1.CommitStatusPending,
 				Node:         "",
 				Image:        r.generateImageName(devbox),
 				GenerateTime: metav1.Now(),
@@ -185,6 +191,6 @@ func (p *DevboxPodPredicate) Generic(e event.GenericEvent) bool {
 
 func (r *DevboxDaemonReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Pod{}, builder.WithPredicates(&DevboxPodPredicate{})).
+		For(&corev1.Pod{}).
 		Complete(r)
 }

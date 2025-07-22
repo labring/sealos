@@ -27,8 +27,6 @@ patches:
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
 #- path: patches/cainjection_in_devboxes.yaml
-#- path: patches/cainjection_in_devboxreleases.yaml
-#- path: patches/cainjection_in_operationrequests.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section
