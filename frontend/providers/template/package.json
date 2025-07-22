@@ -8,7 +8,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@sealos/driver": "workspace:^",
     "@chakra-ui/anatomy": "^2.2.1",
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/next-js": "^2.1.5",
@@ -25,6 +24,8 @@
     "@next/bundle-analyzer": "^14.1.3",
     "@next/font": "13.5.9",
     "@replit/codemirror-vscode-keymap": "^6.0.2",
+    "@scalar/api-reference-react": "^0.6.23",
+    "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "axios": "^1.5.1",
@@ -32,7 +33,6 @@
     "cron-parser": "^4.9.0",
     "croner": "^8.1.0",
     "cronstrue": "^2.32.0",
-    "lucide-react": "^0.476.0",
     "dayjs": "^1.11.10",
     "echarts": "^5.4.3",
     "fast-json-patch": "^3.1.1",
@@ -44,6 +44,7 @@
     "js-yaml": "^4.1.0",
     "jszip": "^3.10.1",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.476.0",
     "nanoid": "^4.0.2",
     "next": "13.5.9",
     "next-i18next": "^15.3.0",
@@ -64,6 +65,8 @@
     "sealos-desktop-sdk": "workspace:^",
     "sharp": "^0.32.6",
     "swiper": "^11.0.7",
+    "zod": "^4.0.5",
+    "zod-openapi": "^4.2.4",
     "zustand": "^4.4.1"
   },
   "devDependencies": {
