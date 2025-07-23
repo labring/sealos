@@ -31,7 +31,7 @@
     "@emotion/styled": "^11.11.0",
     "@hookform/resolvers": "^3.9.0",
     "@kubernetes/client-node": "^0.18.1",
-    "@marsidev/react-turnstile": "^0.5.3",
+    "@marsidev/react-turnstile": "^1.1.0",
     "@prisma/client": "^5.10.2",
     "@sealos/driver": "workspace:^",
     "@sealos/ui": "workspace:^",
