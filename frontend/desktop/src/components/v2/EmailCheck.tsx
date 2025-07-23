@@ -182,7 +182,9 @@ export default function EmailCheckComponent() {
           {!!authConfig?.turnstile.enabled && (
             <Turnstile
               options={{
-                size: 'normal'
+                size: 'normal',
+                refreshExpired: 'never',
+                refreshTimeout: 'never'
               }}
               ref={turnstileRef}
               siteKey={authConfig?.turnstile.cloudflare.siteKey}
