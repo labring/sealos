@@ -37,6 +37,7 @@ export default function EmailCheckComponent() {
   const { signupData, clearSignupData, startTime, updateStartTime, setStartTime } =
     useSignupStore();
   const { setToken } = useSessionStore();
+  const [pinValue, setPinValue] = useState('');
   useEffect(() => {
     if (!signupData) {
       router.push('/signin');
@@ -143,6 +144,11 @@ export default function EmailCheckComponent() {
   const onSubmit = async (force = false) => {
     if ((!canResend || isLoading) && !force) return;
 
+    // Clear error state
+    verifyMutation.reset();
+    // Clear input field
+    setPinValue('');
+
     if (authConfig?.turnstile.enabled) {
       turnstileRef.current?.reset();
     } else {
@@ -205,6 +211,8 @@ export default function EmailCheckComponent() {
               placeholder=""
               focusBorderColor="#18181B"
               autoFocus
+              value={pinValue}
+              onChange={setPinValue}
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
                 console.log('Verification code:', value);
@@ -224,10 +232,28 @@ export default function EmailCheckComponent() {
             </PinInput>
           </FormControl>
 
-          {isLoading && <Text>{t('v2:sending_code')}</Text>}
+          {isLoading && (
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:sending_code')}
+            </Text>
+          )}
 
           {verifyMutation.isLoading ? (
-            <Text>{t('v2:verifying')}</Text>
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:verifying')}
+            </Text>
           ) : (
             <Flex>
               {verifyMutation.isError && (
