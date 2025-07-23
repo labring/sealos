@@ -172,7 +172,14 @@ export default function AccountCenter(props: AccountCenterProps) {
           icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
         />
       )}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          resetPageState();
+          onClose();
+        }}
+        isCentered
+      >
         <ModalOverlay />
         <ModalContent
           borderRadius={'12px'}
