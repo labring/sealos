@@ -3088,12 +3088,6 @@ spec:
                       description: CommitTime is the time when the commit is created
                       format: date-time
                       type: string
-                    containerID:
-                      description: ContainerID is the container id
-                      type: string
-                    contentID:
-                      description: ContentID is the content id
-                      type: string
                     generateTime:
                       description: GenerateTime is the time when the commit is generated
                       format: date-time
@@ -3115,7 +3109,6 @@ spec:
                       type: string
                   required:
                   - commitStatus
-                  - contentID
                   type: object
                 description: CommitRecords is the records of the devbox commits
                 type: object

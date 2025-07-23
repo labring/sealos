@@ -62,8 +62,10 @@ type DevboxReconciler struct {
 	DebugMode bool
 
 	client.Client
-	Scheme                   *runtime.Scheme
-	Recorder                 record.EventRecorder
+	Scheme              *runtime.Scheme
+	Recorder            record.EventRecorder
+	StateChangeRecorder record.EventRecorder
+
 	RestartPredicateDuration time.Duration
 }
 
@@ -136,7 +138,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			CommitStatus: devboxv1alpha1.CommitStatusPending,
 			GenerateTime: metav1.Now(),
 		}
-
 	}
 	// schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
@@ -163,7 +164,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
-
 	// create service if network type is NodePort
 	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
 		logger.Info("syncing service")
@@ -178,6 +178,15 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		logger.Info("sync service success")
 		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync service success", "Sync service success")
 	}
+
+	// sync devbox state
+	logger.Info("syncing devbox state")
+	if err := r.syncDevboxState(ctx, devbox); err != nil {
+		logger.Error(err, "sync devbox state failed")
+		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync devbox state failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+	logger.Info("sync devbox state success")
 
 	// create or update pod
 	logger.Info("syncing pod")
@@ -414,6 +423,19 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
 		devbox.Status.Network.NodePort = nodePort
 		return r.Status().Update(ctx, devbox)
+	}
+	return nil
+}
+
+// sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
+func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+	logger := log.FromContext(ctx)
+	if devbox.Spec.State != devbox.Status.State {
+		logger.Info("devbox state changing",
+			"from", devbox.Status.State,
+			"to", devbox.Spec.State,
+			"devbox", devbox.Name)
+		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
 	}
 	return nil
 }

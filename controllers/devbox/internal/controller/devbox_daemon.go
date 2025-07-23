@@ -14,9 +14,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -93,6 +91,7 @@ func (r *DevboxDaemonReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			// todo: implement this: call commit controller to commit the devbox
 			// containerd.Commit(ctx, devboxName, currentRecord.CommitID)
 			// after commit, we need to update the devbox status node to empty, create a new content id and new record
+			// todo: consider the case commit failed
 			devbox.Status.ContentID = uuid.New().String()
 			devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
 				CommitStatus: devboxv1alpha1.CommitStatusPending,
@@ -134,59 +133,6 @@ func (r *DevboxDaemonReconciler) getDevboxNameFromPod(pod *corev1.Pod) string {
 		return ""
 	}
 	return pod.Labels[label.AppName]
-}
-
-// DevboxPodPredicate filters events to only process devbox pods
-type DevboxPodPredicate struct {
-	predicate.Funcs
-}
-
-func (p *DevboxPodPredicate) Create(e event.CreateEvent) bool {
-	if pod, ok := e.Object.(*corev1.Pod); ok {
-		// Check if this is a devbox pod
-		if pod.Labels != nil {
-			if partOf, exists := pod.Labels[label.AppPartOf]; exists && partOf == devboxv1alpha1.LabelDevBoxPartOf {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (p *DevboxPodPredicate) Update(e event.UpdateEvent) bool {
-	if pod, ok := e.ObjectNew.(*corev1.Pod); ok {
-		// Check if this is a devbox pod
-		if pod.Labels != nil {
-			if partOf, exists := pod.Labels[label.AppPartOf]; exists && partOf == devboxv1alpha1.LabelDevBoxPartOf {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (p *DevboxPodPredicate) Delete(e event.DeleteEvent) bool {
-	if pod, ok := e.Object.(*corev1.Pod); ok {
-		// Check if this is a devbox pod
-		if pod.Labels != nil {
-			if partOf, exists := pod.Labels[label.AppPartOf]; exists && partOf == devboxv1alpha1.LabelDevBoxPartOf {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func (p *DevboxPodPredicate) Generic(e event.GenericEvent) bool {
-	if pod, ok := e.Object.(*corev1.Pod); ok {
-		// Check if this is a devbox pod
-		if pod.Labels != nil {
-			if partOf, exists := pod.Labels[label.AppPartOf]; exists && partOf == devboxv1alpha1.LabelDevBoxPartOf {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (r *DevboxDaemonReconciler) SetupWithManager(mgr ctrl.Manager) error {

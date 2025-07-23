@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -26,6 +27,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 
 	corev1 "k8s.io/api/core/v1"
@@ -241,11 +243,15 @@ func main() {
 		podMatchers = append(podMatchers, matcher.StorageLimitMatcher{})
 	}
 
+	commitBroadcaster := record.NewBroadcaster()
+
 	if err = (&controller.DevboxReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("devbox-controller"),
-
+		StateChangeRecorder: commitBroadcaster.NewRecorder(
+			mgr.GetScheme(),
+			corev1.EventSource{Component: "devbox-controller", Host: nodes.GetNodeName()}),
 		CommitImageRegistry: registryAddr,
 		RequestRate: utilresource.RequestRate{
 			CPU:    requestCPURate,
@@ -265,11 +271,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.DevboxDaemonReconciler{
+	commitHandler := controller.StateChangeHandler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("devbox-daemon-controller"),
+		Recorder: mgr.GetEventRecorderFor("commit-handler"),
+	}
+	watcher := commitBroadcaster.StartEventWatcher(func(event *corev1.Event) {
+		commitHandler.Handle(context.Background(), event)
+	})
+	defer watcher.Stop()
 
+	if err = (&controller.DevboxDaemonReconciler{
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		Recorder:            mgr.GetEventRecorderFor("devbox-daemon-controller"),
 		CommitImageRegistry: registryAddr,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DevboxDaemon")
