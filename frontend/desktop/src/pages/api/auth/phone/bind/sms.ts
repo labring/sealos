@@ -1,6 +1,6 @@
 import { filterAccessToken } from '@/services/backend/middleware/access';
 import { ErrorHandler } from '@/services/backend/middleware/error';
-import { filterCf, filterPhoneParams, sendSmsCodeGuard } from '@/services/backend/middleware/sms';
+import { filterPhoneParams, sendSmsCodeGuard } from '@/services/backend/middleware/sms';
 import { cnVersionMiddleware } from '@/services/backend/middleware/version';
 import { sendPhoneCodeSvc } from '@/services/backend/svc/sms';
 import { enablePhoneSms } from '@/services/enable';
