@@ -33,6 +33,7 @@ async function deleteResourcesBatch<T>(
     }
   }
 }
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Parse parameters
   const params = deleteInstanceSchemas.pathParams.safeParse(req.query);
@@ -45,20 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const instanceName = params.data.instanceName;
 
-  const kubeConfig = await authSession(req.headers).catch((error) => {
-    if (error === ResponseCode.UNAUTHORIZED) {
-      return jsonRes(res, {
-        code: ResponseCode.UNAUTHORIZED,
-        message: ResponseMessages[ResponseCode.UNAUTHORIZED]
-      });
-    }
-
-    return jsonRes(res, {
-      code: ResponseCode.SERVER_ERROR,
-      message: ResponseMessages[ResponseCode.SERVER_ERROR]
-    });
-  });
-
+  const kubeConfig = await authSession(req.headers).catch(() => null);
   if (!kubeConfig) {
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
@@ -68,7 +56,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const k8s = await getK8s({
     kubeconfig: kubeConfig
-  });
+  }).catch(() => null);
+
+  if (!k8s) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
+  }
 
   if (req.method === 'DELETE') {
     try {
