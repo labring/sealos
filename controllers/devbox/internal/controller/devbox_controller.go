@@ -132,6 +132,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// init devbox status commit record
 	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
 		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha1.CommitRecord)
+		devbox.Status.State = devboxv1alpha1.DevboxStateRunning
 		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
 			Node:         "",
 			Image:        devbox.Spec.Image,
@@ -291,6 +292,9 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 		case 1:
 			// skip if pod is already created
+			if !podList.Items[0].DeletionTimestamp.IsZero() {
+				return r.handlePodDeleted(ctx, &podList.Items[0])
+			}
 			return nil
 		default:
 			// more than one pod found, remove finalizer and delete them
@@ -432,7 +436,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1
 	return nil
 }
 
-func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
+func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
 	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
 	if err := r.Update(ctx, pod); err != nil {

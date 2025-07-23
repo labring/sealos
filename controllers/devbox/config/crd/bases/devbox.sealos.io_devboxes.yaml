@@ -3014,6 +3014,7 @@ spec:
                 default: false
                 type: boolean
               state:
+                default: Running
                 enum:
                 - Running
                 - Stopped
@@ -3134,6 +3135,7 @@ spec:
               phase:
                 type: string
               state:
+                default: Running
                 type: string
             required:
             - commitRecords

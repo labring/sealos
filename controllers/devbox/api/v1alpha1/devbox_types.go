@@ -114,6 +114,7 @@ type Config struct {
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
+	// +kubebuilder:default=Running
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
@@ -229,6 +230,7 @@ type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
 	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=Running
 	State DevboxState `json:"state"`
 	// CommitRecords is the records of the devbox commits
 	CommitRecords CommitRecordMap `json:"commitRecords"`

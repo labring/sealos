@@ -8,19 +8,11 @@ rules:
   - ""
   resources:
   - events
-  verbs:
-  - '*'
-  - create
-  - patch
-- apiGroups:
-  - ""
-  resources:
   - pods
+  - secrets
+  - services
   verbs:
   - '*'
-  - get
-  - list
-  - watch
 - apiGroups:
   - ""
   resources:
@@ -29,13 +21,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  - services
-  verbs:
-  - '*'
 - apiGroups:
   - devbox.sealos.io
   resources:

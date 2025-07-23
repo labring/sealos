@@ -278,6 +278,8 @@ func main() {
 		Recorder:            mgr.GetEventRecorderFor("state-change-handler"),
 		Committer:           &commit.CommitterImpl{},
 		CommitImageRegistry: registryAddr,
+		NodeName:            nodes.GetNodeName(),
+		Logger:              ctrl.Log.WithName("state-change-handler"),
 	}
 	watcher := stateChangeBroadcaster.StartEventWatcher(func(event *corev1.Event) {
 		stateChangeHandler.Handle(context.Background(), event)
