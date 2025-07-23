@@ -241,7 +241,7 @@ export default function Network({
               </div>
               <Separator />
               {/* Add Port Button when last port */}
-              {i === networks.length - 1 && networks.length < 5 && (
+              {i === networks.length - 1 && networks.length < 15 && (
                 <AppendNetworksButton onClick={() => appendNetworks()} />
               )}
             </div>
