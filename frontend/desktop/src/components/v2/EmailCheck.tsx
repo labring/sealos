@@ -106,7 +106,6 @@ export default function EmailCheckComponent() {
   const sendCode = async (cfToken?: string) => {
     setIsLoading(true);
     const oldTime = startTime;
-    updateStartTime();
     setCanResend(false);
 
     try {
@@ -120,6 +119,8 @@ export default function EmailCheckComponent() {
       });
       if (result.code !== 200) {
         throw Error(result.message);
+      } else {
+        updateStartTime();
       }
     } catch (error) {
       // rollout
@@ -222,6 +223,8 @@ export default function EmailCheckComponent() {
               ))}
             </PinInput>
           </FormControl>
+
+          {isLoading && <Text>{t('v2:sending_code')}</Text>}
 
           {verifyMutation.isLoading ? (
             <Text>{t('v2:verifying')}</Text>

@@ -91,6 +91,7 @@
   "register": "Register",
   "remember_me": "Remember me",
   "request_new_link": "Resend it",
+  "sending_code": "Sending verification code...",
   "settings": "Settings",
   "show_me": "Show me",
   "sign_in": "Sign in",
