@@ -11,15 +11,13 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     if (!enablePhoneSms()) {
       throw new Error('SMS is not enabled');
     }
-    await filterCf(req, res, async () => {
-      await filterAccessToken(req, res, () =>
-        filterPhoneParams(req, res, ({ phoneNumbers: phone }) =>
-          sendSmsCodeGuard({
-            id: phone,
-            smsType: 'phone_bind'
-          })(req, res, () => sendPhoneCodeSvc(phone, 'phone_bind')(res))
-        )
-      );
-    });
+    await filterAccessToken(req, res, () =>
+      filterPhoneParams(req, res, ({ phoneNumbers: phone }) =>
+        sendSmsCodeGuard({
+          id: phone,
+          smsType: 'phone_bind'
+        })(req, res, () => sendPhoneCodeSvc(phone, 'phone_bind')(res))
+      )
+    );
   });
 });

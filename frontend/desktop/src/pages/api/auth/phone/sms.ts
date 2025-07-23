@@ -14,7 +14,6 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
     if (!enablePhoneSms()) {
       throw new Error('SMS is not enabled');
     }
-    // await filterCf(req, res, async () => {
     await filterCaptcha(req, res, () =>
       filterPhoneParams(req, res, ({ phoneNumbers: phone }) =>
         sendSmsCodeGuard({
@@ -23,6 +22,5 @@ export default ErrorHandler(async function handler(req: NextApiRequest, res: Nex
         })(req, res, () => sendPhoneCodeSvc(phone, 'phone_login')(res))
       )
     );
-    // });
   });
 });
