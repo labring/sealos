@@ -90,8 +90,8 @@ const DevboxDetailPage = ({ params }: { params: { name: string } }) => {
         );
       case 'monitor':
         return <Monitor />;
-      case 'logs':
-        return <Logs />;
+      // case 'logs':
+      //   return <Logs />;
       default:
         return null;
     }

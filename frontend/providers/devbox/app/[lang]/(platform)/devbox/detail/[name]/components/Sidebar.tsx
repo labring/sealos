@@ -23,12 +23,12 @@ const Sidebar = ({ currentTab, onTabChange }: SidebarProps) => {
       label: t('monitor_tab'),
       value: 'monitor' as TabValue,
       icon: <LineChart className="h-6 w-6" strokeWidth={1.33} />
-    },
-    {
-      label: t('logs_tab'),
-      value: 'logs' as TabValue,
-      icon: <FileClock className="h-6 w-6" strokeWidth={1.33} />
     }
+    // {
+    //   label: t('logs_tab'),
+    //   value: 'logs' as TabValue,
+    //   icon: <FileClock className="h-6 w-6" strokeWidth={1.33} />
+    // }
   ];
 
   return (
