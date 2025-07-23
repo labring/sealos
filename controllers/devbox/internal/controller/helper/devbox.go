@@ -76,6 +76,12 @@ func WithPodLabels(labels map[string]string) DevboxPodOptions {
 	}
 }
 
+func WithPodNodeName(nodeName string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		pod.Spec.NodeName = nodeName
+	}
+}
+
 func NewContentID() string {
 	return uuid.New().String()
 }

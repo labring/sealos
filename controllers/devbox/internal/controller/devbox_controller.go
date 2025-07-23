@@ -181,10 +181,10 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	// sync devbox state
 	logger.Info("syncing devbox state")
-	if err := r.syncDevboxState(ctx, devbox); err != nil {
-		logger.Error(err, "sync devbox state failed")
-		r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync devbox state failed", "%v", err)
-		return ctrl.Result{}, err
+	if stateChanged := r.syncDevboxState(ctx, devbox); stateChanged {
+		logger.Info("devbox state changed, wait for state change handler to handle the event, requeue after 5 seconds", "from", devbox.Status.State, "to", devbox.Spec.State)
+		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 	}
 	logger.Info("sync devbox state success")
 
@@ -266,30 +266,6 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 
 func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
-	// update devbox status after pod is created or updated
-	var deferUpdateDevboxStatus bool = true
-	defer func() {
-		if deferUpdateDevboxStatus {
-			if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-				logger.Info("update devbox status after pod synced")
-				latestDevbox := &devboxv1alpha1.Devbox{}
-				if err := r.Client.Get(ctx, client.ObjectKey{Namespace: devbox.Namespace, Name: devbox.Name}, latestDevbox); err != nil {
-					logger.Error(err, "get latest devbox failed")
-					return err
-				}
-				// update devbox status with latestDevbox status
-				logger.Info("updating devbox status")
-				return r.Status().Update(ctx, latestDevbox)
-			}); err != nil {
-				logger.Error(err, "sync pod failed")
-				r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync pod failed", "%v", err)
-				return
-			}
-			logger.Info("update devbox status success")
-			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync pod success", "Sync pod success")
-		}
-	}()
-
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
@@ -308,6 +284,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			pod := r.generateDevboxPod(devbox,
 				helper.WithPodImage(currentRecord.Image),
 				helper.WithPodContentID(devbox.Status.ContentID),
+				helper.WithPodNodeName(currentRecord.Node),
 			)
 			if err := r.Create(ctx, pod); err != nil {
 				return err
@@ -320,7 +297,6 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			for _, pod := range podList.Items {
 				r.deletePod(ctx, devbox, &pod)
 			}
-			deferUpdateDevboxStatus = false
 			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
 			return fmt.Errorf("more than one pod found")
@@ -428,7 +404,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 }
 
 // sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
-func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha1.Devbox) bool {
 	logger := log.FromContext(ctx)
 	if devbox.Spec.State != devbox.Status.State {
 		logger.Info("devbox state changing",
@@ -436,8 +412,9 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 			"to", devbox.Spec.State,
 			"devbox", devbox.Name)
 		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
+		return true
 	}
-	return nil
+	return false
 }
 
 func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
@@ -592,7 +569,7 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
-		For(&devboxv1alpha1.Devbox{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&devboxv1alpha1.Devbox{}).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

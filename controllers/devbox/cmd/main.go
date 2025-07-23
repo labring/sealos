@@ -47,6 +47,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
@@ -243,13 +244,13 @@ func main() {
 		podMatchers = append(podMatchers, matcher.StorageLimitMatcher{})
 	}
 
-	commitBroadcaster := record.NewBroadcaster()
+	stateChangeBroadcaster := record.NewBroadcaster()
 
 	if err = (&controller.DevboxReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("devbox-controller"),
-		StateChangeRecorder: commitBroadcaster.NewRecorder(
+		StateChangeRecorder: stateChangeBroadcaster.NewRecorder(
 			mgr.GetScheme(),
 			corev1.EventSource{Component: "devbox-controller", Host: nodes.GetNodeName()}),
 		CommitImageRegistry: registryAddr,
@@ -271,25 +272,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	commitHandler := controller.StateChangeHandler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("commit-handler"),
-	}
-	watcher := commitBroadcaster.StartEventWatcher(func(event *corev1.Event) {
-		commitHandler.Handle(context.Background(), event)
-	})
-	defer watcher.Stop()
-
-	if err = (&controller.DevboxDaemonReconciler{
+	stateChangeHandler := controller.StateChangeHandler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
-		Recorder:            mgr.GetEventRecorderFor("devbox-daemon-controller"),
+		Recorder:            mgr.GetEventRecorderFor("state-change-handler"),
+		Committer:           &commit.CommitterImpl{},
 		CommitImageRegistry: registryAddr,
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DevboxDaemon")
-		os.Exit(1)
 	}
+	watcher := stateChangeBroadcaster.StartEventWatcher(func(event *corev1.Event) {
+		stateChangeHandler.Handle(context.Background(), event)
+	})
+	defer watcher.Stop()
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
