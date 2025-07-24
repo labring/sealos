@@ -140,20 +140,24 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			GenerateTime: metav1.Now(),
 		}
 	}
-	// schedule devbox to node, update devbox status and create a new commit record
+
+	// todo: implement the schedule logic to replace the current logic
+	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
-	if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
-		// set up devbox node and content id, new a record for the devbox
-		devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
-		if err := r.Status().Update(ctx, devbox); err != nil {
-			logger.Info("try to schedule devbox to node failed", "error", err)
+	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
+			// set up devbox node and content id, new a record for the devbox
+			devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
+			if err := r.Status().Update(ctx, devbox); err != nil {
+				logger.Info("try to schedule devbox to node failed", "error", err)
+				return ctrl.Result{}, nil
+			}
+			logger.Info("devbox scheduled to node", "node", r.NodeName)
+			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
+		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
+			logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
 			return ctrl.Result{}, nil
 		}
-		logger.Info("devbox scheduled to node", "node", r.NodeName)
-		r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
-	} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
-		logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
-		return ctrl.Result{}, nil
 	}
 
 	// create or update secret
@@ -299,7 +303,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 		default:
 			// more than one pod found, remove finalizer and delete them
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, devbox, &pod)
+				r.deletePod(ctx, &pod)
 			}
 			logger.Error(fmt.Errorf("more than one pod found"), "more than one pod found")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
@@ -308,7 +312,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
 		if len(podList.Items) > 0 {
 			for _, pod := range podList.Items {
-				r.deletePod(ctx, devbox, &pod)
+				r.deletePod(ctx, &pod)
 			}
 		}
 		return nil
@@ -421,7 +425,7 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 	return false
 }
 
-func (r *DevboxReconciler) deletePod(ctx context.Context, devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) error {
+func (r *DevboxReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
 	// remove finalizer and delete pod
 	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
