@@ -3,76 +3,119 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { KbPgClusterType } from '@/types/cluster';
-import { DBEditType, BackupItemType } from '@/types/db';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2ResourceOps } from '@/utils/json2Yaml';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from '../../backup/updatePolicy';
 import { updateTerminationPolicyApi } from '../../createDB';
+import { ResponseCode, ResponseMessages } from '@/types/response';
+import { updateDatabaseSchemas } from '@/types/apis';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const kubeconfig = await authSession(req).catch(() => null);
+
+  if (!kubeconfig) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
+  }
+
+  const k8s = await getK8s({
+    kubeconfig
+  }).catch(() => null);
+
+  if (!k8s) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
+  }
+
   if (req.method === 'PATCH') {
     try {
-      const { dbForm } = req.body as {
-        dbForm: DBEditType;
-      };
+      const pathParamsParseResult = updateDatabaseSchemas.pathParams.safeParse(req.query);
+      if (!pathParamsParseResult.success) {
+        return jsonRes(res, {
+          code: 400,
+          message: 'Invalid request params.',
+          error: pathParamsParseResult.error.issues
+        });
+      }
 
-      const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
-        kubeconfig: await authSession(req)
-      });
+      const bodyParseResult = updateDatabaseSchemas.body.safeParse(req.body);
+      if (!bodyParseResult.success) {
+        return jsonRes(res, {
+          code: 400,
+          message: 'Invalid request body.',
+          error: bodyParseResult.error.issues
+        });
+      }
 
-      const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
+      const reqPathParams = pathParamsParseResult.data;
+      const reqBody = bodyParseResult.data;
+
+      const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
         'apps.kubeblocks.io',
         'v1alpha1',
-        namespace,
+        k8s.namespace,
         'clusters',
-        dbForm.dbName
+        reqPathParams.databaseName
       )) as {
         body: KbPgClusterType;
       };
-      const { cpu, memory, replicas, storage, terminationPolicy } = adaptDBDetail(body);
+      const existingDatabase = adaptDBDetail(body);
+      const mergedDatabase = {
+        ...existingDatabase,
+        ...reqBody.dbForm
+      };
 
       const opsRequests = [];
 
-      if (cpu !== dbForm.cpu || memory !== dbForm.memory) {
-        const verticalScalingYaml = json2ResourceOps(dbForm, 'VerticalScaling');
+      if (
+        existingDatabase.cpu !== mergedDatabase.cpu ||
+        existingDatabase.memory !== mergedDatabase.memory
+      ) {
+        const verticalScalingYaml = json2ResourceOps(mergedDatabase, 'VerticalScaling');
         opsRequests.push(verticalScalingYaml);
       }
 
-      if (replicas !== dbForm.replicas) {
-        const horizontalScalingYaml = json2ResourceOps(dbForm, 'HorizontalScaling');
+      if (existingDatabase.replicas !== mergedDatabase.replicas) {
+        const horizontalScalingYaml = json2ResourceOps(mergedDatabase, 'HorizontalScaling');
         opsRequests.push(horizontalScalingYaml);
       }
 
-      if (dbForm.storage > storage) {
-        const volumeExpansionYaml = json2ResourceOps(dbForm, 'VolumeExpansion');
+      if (mergedDatabase.storage > existingDatabase.storage) {
+        const volumeExpansionYaml = json2ResourceOps(mergedDatabase, 'VolumeExpansion');
         opsRequests.push(volumeExpansionYaml);
       }
 
+      console.log({ opsRequests });
+
       if (opsRequests.length > 0) {
-        await applyYamlList(opsRequests, 'create');
+        await k8s.applyYamlList(opsRequests, 'create');
       }
 
-      if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+      if (BackupSupportedDBTypeList.includes(mergedDatabase.dbType) && mergedDatabase?.autoBackup) {
         const autoBackup = convertBackupFormToSpec({
-          autoBackup: dbForm?.autoBackup,
-          dbType: dbForm.dbType
+          autoBackup: mergedDatabase?.autoBackup,
+          dbType: mergedDatabase.dbType
         });
 
         await updateBackupPolicyApi({
-          dbName: dbForm.dbName,
-          dbType: dbForm.dbType,
+          dbName: mergedDatabase.dbName,
+          dbType: mergedDatabase.dbType,
           autoBackup,
-          k8sCustomObjects,
-          namespace
+          k8sCustomObjects: k8s.k8sCustomObjects,
+          namespace: k8s.namespace
         });
 
-        if (terminationPolicy !== dbForm.terminationPolicy) {
+        if (existingDatabase.terminationPolicy !== mergedDatabase.terminationPolicy) {
           await updateTerminationPolicyApi({
-            dbName: dbForm.dbName,
-            terminationPolicy: dbForm.terminationPolicy,
-            k8sCustomObjects,
-            namespace
+            dbName: mergedDatabase.dbName,
+            terminationPolicy: mergedDatabase.terminationPolicy,
+            k8sCustomObjects: k8s.k8sCustomObjects,
+            namespace: k8s.namespace
           });
         }
       }
