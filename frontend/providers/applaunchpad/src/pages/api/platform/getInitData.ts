@@ -27,7 +27,8 @@ export const defaultAppConfig: AppConfigType = {
     infrastructure: {
       provider: 'alibaba',
       requiresDomainReg: false,
-      domainRegLink: 'http://localhost:3000'
+      domainRegQueryLink: 'http://localhost:3000',
+      domainBindingDocumentationLink: null
     },
     meta: {
       title: 'Sealos Desktop App Demo',
@@ -106,7 +107,9 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
     DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
     INFRASTRUCTURE_PROVIDER: AppConfig.launchpad.infrastructure.provider,
     REQUIRES_DOMAIN_REG: AppConfig.launchpad.infrastructure.requiresDomainReg,
-    DOMAIN_REG_LINK: AppConfig.launchpad.infrastructure.domainRegLink,
+    DOMAIN_REG_QUERY_LINK: AppConfig.launchpad.infrastructure.domainRegQueryLink,
+    DOMAIN_BINDING_DOCUMENTATION_LINK:
+      AppConfig.launchpad.infrastructure.domainBindingDocumentationLink,
     SHOW_EVENT_ANALYZE: AppConfig.launchpad.eventAnalyze.enabled,
     FORM_SLIDER_LIST_CONFIG: AppConfig.launchpad.appResourceFormSliderConfig,
     guideEnabled: AppConfig.common.guideEnabled,

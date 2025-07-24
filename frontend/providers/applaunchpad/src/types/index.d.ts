@@ -43,7 +43,8 @@ export type AppConfigType = {
     infrastructure: {
       provider: string;
       requiresDomainReg: boolean;
-      domainRegLink: string;
+      domainRegQueryLink: string;
+      domainBindingDocumentationLink: string | null;
     };
     meta: {
       title: string;
@@ -90,7 +91,8 @@ export type EnvResponse = {
   DOMAIN_PORT: string;
   INFRASTRUCTURE_PROVIDER: string;
   REQUIRES_DOMAIN_REG: boolean;
-  DOMAIN_REG_LINK: string;
+  DOMAIN_REG_QUERY_LINK: string;
+  DOMAIN_BINDING_DOCUMENTATION_LINK: string | null;
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;

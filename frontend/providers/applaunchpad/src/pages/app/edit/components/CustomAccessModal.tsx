@@ -33,7 +33,12 @@ import {
 import { useTranslation } from 'next-i18next';
 import { useRequest } from '@/hooks/useRequest';
 import { postAuthCname } from '@/api/platform';
-import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG } from '@/store/static';
+import {
+  DOMAIN_BINDING_DOCUMENTATION_LINK,
+  DOMAIN_REG_QUERY_LINK,
+  INFRASTRUCTURE_PROVIDER,
+  REQUIRES_DOMAIN_REG
+} from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
@@ -177,7 +182,7 @@ const CustomAccessModal = ({
                     as={NextLink}
                     target="_blank"
                     color={'brightBlue.600'}
-                    href="https://beian.miit.gov.cn/#/Integrated/index"
+                    href={DOMAIN_REG_QUERY_LINK}
                   >
                     {t('domain_registration_query_link_text')}
                   </Link>
@@ -355,20 +360,22 @@ const CustomAccessModal = ({
                 </TableContainer>
 
                 {/* Refer to docs */}
-                <Stack direction={'row'} mt={4}>
-                  <Link
-                    as={NextLink}
-                    target="_blank"
-                    color={'brightBlue.600'}
-                    href="docs"
-                    display={'flex'}
-                    alignItems={'center'}
-                    gap={2}
-                  >
-                    <BookOpen size={16} />
-                    <Text>{t('domain_verification_dns_records_docs_link_text')}</Text>
-                  </Link>
-                </Stack>
+                {DOMAIN_BINDING_DOCUMENTATION_LINK && (
+                  <Stack direction={'row'} mt={4}>
+                    <Link
+                      as={NextLink}
+                      target="_blank"
+                      href={DOMAIN_BINDING_DOCUMENTATION_LINK}
+                      color={'brightBlue.600'}
+                      display={'flex'}
+                      alignItems={'center'}
+                      gap={2}
+                    >
+                      <BookOpen size={16} />
+                      <Text>{t('domain_verification_dns_records_docs_link_text')}</Text>
+                    </Link>
+                  </Stack>
+                )}
               </Stack>
             )}
           </ModalBody>
