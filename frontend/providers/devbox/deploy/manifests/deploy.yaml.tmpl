@@ -40,19 +40,19 @@ spec:
           imagePullPolicy: Always
           env:
             - name: REGION_UID
-              value: { { .regionUid } } # -nsealos cm desktop-frontend-config ->regionUid
+              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
-              value: { { .databaseUrl } } # -nsealos cm desktop-frontend-config ->database->global + devbox
+              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
           command: ['/bin/bash', '-c', '/app/providers/devbox/init-database.sh']
       containers:
         - name: devbox-frontend
           env:
             - name: SEALOS_DOMAIN
-              value: { { .cloudDomain } }
+              value: {{ .cloudDomain }}
             - name: INGRESS_SECRET
               value: wildcard-cert
             - name: REGISTRY_ADDR
-              value: { { .registryAddr } }
+              value: {{ .registryAddr }}
             - name: DEVBOX_AFFINITY_ENABLE
               value: 'true'
             - name: MONITOR_URL
@@ -64,7 +64,7 @@ spec:
             - name: ROOT_RUNTIME_NAMESPACE
               value: devbox-system
             - name: INGRESS_DOMAIN
-              value: { { .cloudDomain } }
+              value: {{ .cloudDomain }}
             - name: CURRENCY_SYMBOL
               value: usd #  'shellCoin' | 'cny' | 'usd'
             - name: GPU_ENABLE
@@ -74,11 +74,11 @@ spec:
             - name: RETAG_SVC_URL
               value: http://devbox-service.devbox-system.svc.cluster.local:8092
             - name: JWT_SECRET
-              value: { { .jwtSecret } } # -nsealos cm desktop-frontend-config ->jwt->Internal
+              value: {{ .jwtSecret }} # -nsealos cm desktop-frontend-config ->jwt->Internal
             - name: REGION_UID
-              value: { { .regionUid } } # -nsealos cm desktop-frontend-config ->regionUid
+              value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
-              value: { { .databaseUrl } } # -nsealos cm desktop-frontend-config ->database->global + devbox
+              value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
