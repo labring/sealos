@@ -9,6 +9,7 @@ export const SuccessResponseSchema = z.object({
 });
 
 const NetworkSchema = z.object({
+  serviceName: z.string().optional(),
   networkName: z.string().default(''),
   portName: z.string().default(nanoid()),
   port: z.number().default(80),
@@ -49,7 +50,10 @@ const SecretSchema = z.object({
 const ConfigMapSchema = z
   .object({
     mountPath: z.string(),
-    value: z.string()
+    value: z.string(),
+    key: z.string(),
+    volumeName: z.string(),
+    subPath: z.string().optional()
   })
   .array()
   .default([]);
@@ -111,13 +115,13 @@ export const CreateAppRequestSchema = z.object({
 });
 
 export const GetAppByAppNameQuerySchema = z.object({
-  appName: z.string().min(1, { message: 'appName 不能为空' })
+  appName: z.string().min(1, { message: 'appName cannot be empty' })
 });
 
 export const GetAppByAppNameResponseSchema = z.array(z.any()).nullable();
 
 export const DeleteAppByNameQuerySchema = z.object({
-  name: z.string().min(1, { message: '应用名称不能为空' })
+  name: z.string().min(1, { message: 'appName cannot be empty' })
 });
 
 export const DeleteAppByNameResponseSchema = z.object({

@@ -19,9 +19,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const { appName } = parseResult.data;
-
+    console.log('appName', appName);
     const response = await GetAppByAppName({ appName, req });
-
+    console.log('response', response);
     // Check for errors other than 404
     const responseData = response
       .map((item) => {
@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
       .filter((item) => item)
       .flat() as DeployKindsType[];
+    console.log('responseData', responseData);
 
     const data = await adaptAppDetail(responseData, {
       SEALOS_DOMAIN: global.AppConfig.cloud.domain,
@@ -43,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       data: filteredData
     });
   } catch (err: any) {
+    console.log('err', err);
     jsonRes(res, {
       code: 500,
       error: err
