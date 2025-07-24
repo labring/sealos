@@ -76,14 +76,12 @@ const CustomAccessModal = ({
       });
 
       return {
-        error: result.error,
+        error: result?.error,
         customDomain,
         silent
       };
     },
     onSuccess: (data) => {
-      console.log(data);
-
       if (data?.error) {
         if (!data?.silent) {
           toast({
@@ -197,7 +195,8 @@ const CustomAccessModal = ({
                   value={customDomain}
                   onChange={(e) => {
                     if (processPhase === 'INPUT_DOMAIN') {
-                      setCustomDomain(e.target.value);
+                      const normalizedDomain = e.target.value.trim().toLowerCase();
+                      setCustomDomain(normalizedDomain);
                     }
                   }}
                   bg={'#F7F8FA'}
@@ -243,15 +242,31 @@ const CustomAccessModal = ({
               </InputGroup>
 
               {processPhase === 'INPUT_DOMAIN' ? (
-                <Button
-                  height={'32px'}
-                  onClick={() => {
-                    setProcessPhase('VERIFY_DOMAIN');
-                    authCNAME(true);
-                  }}
-                >
-                  {t('domain_verification_input_save')}
-                </Button>
+                <>
+                  {currentCustomDomain && (
+                    <Button
+                      variant={'outline'}
+                      height={'32px'}
+                      onClick={() => {
+                        setCustomDomain('');
+                        onSuccess('');
+                        onClose();
+                      }}
+                    >
+                      {t('domain_verification_input_clear')}
+                    </Button>
+                  )}
+
+                  <Button
+                    height={'32px'}
+                    onClick={() => {
+                      setProcessPhase('VERIFY_DOMAIN');
+                      authCNAME(true);
+                    }}
+                  >
+                    {t('domain_verification_input_save')}
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button

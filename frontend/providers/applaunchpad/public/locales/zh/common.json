@@ -252,6 +252,7 @@
   "domain_verification_dns_records_value": "值",
   "domain_verification_input_edit": "编辑",
   "domain_verification_input_save": "保存",
+  "domain_verification_input_clear": "解绑",
   "domain_verification_needed": "待验证",
   "domain_verification_refresh": "刷新",
   "domain_verification_success": "您的域名已成功绑定。",

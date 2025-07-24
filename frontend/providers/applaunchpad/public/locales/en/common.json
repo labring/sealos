@@ -252,6 +252,7 @@
   "domain_verification_dns_records_value": "Value",
   "domain_verification_input_edit": "Edit",
   "domain_verification_input_save": "Save",
+  "domain_verification_input_clear": "Unbind",
   "domain_verification_needed": "Verification Needed",
   "domain_verification_refresh": "Refresh",
   "domain_verification_success": "Your domain has been successfully bound.",
