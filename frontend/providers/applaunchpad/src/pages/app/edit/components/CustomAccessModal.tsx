@@ -37,7 +37,8 @@ import { INFRASTRUCTURE_PROVIDER, REQUIRES_DOMAIN_REG } from '@/store/static';
 import NextLink from 'next/link';
 import { BookOpen, CheckCircle, Copy } from 'lucide-react';
 import { DomainNotBoundModal } from './DomainNotBoundModal';
-import { useCopyData } from '@/utils/tools';
+import { getErrText, useCopyData } from '@/utils/tools';
+import { useToast } from '@/hooks/useToast';
 
 export type CustomAccessModalParams = {
   publicDomain: string;
@@ -54,6 +55,7 @@ const CustomAccessModal = ({
 }: CustomAccessModalParams & { onClose: () => void; onSuccess: (e: string) => void }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
+  const { toast } = useToast();
 
   const notBoundDisclosure = useDisclosure();
 
@@ -63,18 +65,42 @@ const CustomAccessModal = ({
   const [customDomain, setCustomDomain] = useState(currentCustomDomain);
 
   const { mutate: authCNAME, isLoading } = useRequest({
-    mutationFn: async () => {
-      await postAuthCname({
+    mutationFn: async (silent: boolean) => {
+      const result = await postAuthCname({
         publicDomain: completePublicDomain,
         customDomain: customDomain
+      }).catch((error) => {
+        return {
+          error
+        };
       });
-      return customDomain;
+
+      return {
+        error: result.error,
+        customDomain,
+        silent
+      };
     },
     onSuccess: (data) => {
-      onSuccess(data);
+      console.log(data);
+
+      if (data?.error) {
+        if (!data?.silent) {
+          toast({
+            title:
+              t('domain_cname_verify_failed_toast') +
+              ': ' +
+              (data?.error?.error?.message ?? data?.error?.message ?? data?.error),
+            status: 'error'
+          });
+        }
+
+        return;
+      }
+
+      onSuccess(data.customDomain);
       setProcessPhase('SUCCESS');
-    },
-    errorToast: 'Custom Domain Error'
+    }
   });
 
   useEffect(() => {
@@ -115,17 +141,17 @@ const CustomAccessModal = ({
         lockFocusAcrossFrames={false}
       >
         <ModalOverlay />
-        <ModalContent maxH={'90vh'} maxW={'90vw'} width={'530px'}>
+        <ModalContent maxH={'90vh'} maxW={'90vw'} width={'587px'}>
           <ModalHeader>{t('Custom Domain')}</ModalHeader>
           <ModalBody>
             <ModalCloseButton />
 
             <Box fontWeight={'bold'} mb={2}>
-              {t('Custom Domain')}
+              {t('custom_domain_input_title')}
             </Box>
 
             {/* Tips */}
-            {REQUIRES_DOMAIN_REG && (
+            {REQUIRES_DOMAIN_REG ? (
               <Stack>
                 <Text>
                   {t('domain_requires_registration_tip_1')}
@@ -159,6 +185,8 @@ const CustomAccessModal = ({
                   </Link>
                 </Stack>
               </Stack>
+            ) : (
+              <Text>{t('domain_input_tip')}</Text>
             )}
 
             {/* Your Domain */}
@@ -219,6 +247,7 @@ const CustomAccessModal = ({
                   height={'32px'}
                   onClick={() => {
                     setProcessPhase('VERIFY_DOMAIN');
+                    authCNAME(true);
                   }}
                 >
                   {t('domain_verification_input_save')}
@@ -229,7 +258,7 @@ const CustomAccessModal = ({
                     variant={'secondary'}
                     height={'32px'}
                     fontWeight={'normal'}
-                    onClick={authCNAME}
+                    onClick={() => authCNAME(false)}
                     isLoading={isLoading}
                   >
                     {t('domain_verification_refresh')}
@@ -291,15 +320,16 @@ const CustomAccessModal = ({
                         <Td {...tableCellStyles} borderRightWidth={1}>
                           {t('domain_verification_dns_records_ttl_auto')}
                         </Td>
-                        <Td {...tableCellStyles}>
+                        <Td
+                          {...tableCellStyles}
+                          cursor={'pointer'}
+                          onClick={() => {
+                            copyData(completePublicDomain);
+                          }}
+                        >
                           <Flex alignItems={'center'} justifyContent={'space-between'} gap={2}>
                             <Text>{completePublicDomain}</Text>
-                            <Link
-                              color={'gray.500'}
-                              onClick={() => {
-                                copyData(completePublicDomain);
-                              }}
-                            >
+                            <Link color={'gray.500'}>
                               <Copy size={16} />
                             </Link>
                           </Flex>
