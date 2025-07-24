@@ -21,7 +21,7 @@ const LiveMonitoring = () => {
       </div>
       {/* chart */}
       <div className="flex min-h-[100px] w-full gap-5">
-        <div className="flex w-[20vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
+        <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('cpu')}:&nbsp;
             {devboxDetail?.usedCpu?.yData[devboxDetail?.usedCpu?.yData?.length - 1]}%
@@ -33,7 +33,7 @@ const LiveMonitoring = () => {
             className="w-full"
           />
         </div>
-        <div className="flex w-[20vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
+        <div className="flex w-[18vw] flex-shrink-0 flex-grow-1 flex-col gap-2">
           <span className="text-sm/5 text-zinc-700">
             {t('memory')}:&nbsp;
             {devboxDetail?.usedMemory?.yData[devboxDetail?.usedMemory?.yData?.length - 1]}%

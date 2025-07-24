@@ -20,6 +20,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const Network = () => {
@@ -216,7 +217,7 @@ const Network = () => {
   };
 
   return (
-    <div className="flex h-full flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
+    <div className="flex h-full max-h-[400px] flex-col items-center gap-3 rounded-xl border-[0.5px] bg-white px-6 py-5 shadow-xs">
       {/* title */}
       <div className="flex w-full items-center justify-between">
         <span className="text-lg/7 font-medium text-accent-foreground">{t('network')}</span>
@@ -226,7 +227,7 @@ const Network = () => {
       </div>
       {/* table */}
       {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
-        <div className="w-full min-w-0">
+        <ScrollArea className="w-full min-w-0 pr-2">
           <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>
@@ -258,7 +259,7 @@ const Network = () => {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </ScrollArea>
       ) : (
         <div className="flex h-full w-[300px] flex-col items-center justify-center gap-3">
           <div className="rounded-lg border border-dashed border-zinc-200 p-2">
