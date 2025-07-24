@@ -15,9 +15,10 @@
 package pay
 
 type RefundOption struct {
-	OrderID string `json:"order_id"`
-	TradeNo string `json:"trade_no"`
-	Amount  int64  `json:"amount"`
+	OrderID  string `json:"order_id"`
+	RefundID string `json:"refund_id"`
+	TradeNo  string `json:"trade_no"`
+	Amount   int64  `json:"amount"`
 }
 
 type Interface interface {

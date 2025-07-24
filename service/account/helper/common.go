@@ -43,6 +43,8 @@ const (
 	AdminFlushDebtResourceStatus = "/flush-debt-resource-status"
 	AdminSuspendUserTraffic      = "/suspend-user-traffic"
 	AdminResumeUserTraffic       = "/resume-user-traffic"
+
+	AdminRefundForms = "/refund-forms"
 )
 
 const (

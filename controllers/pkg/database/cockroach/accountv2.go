@@ -889,6 +889,15 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	return HandleUpdateResult(result, types.Account{}.TableName())
 }
 
+func (c *Cockroach) UpdateWithAccount(
+	userUID uuid.UUID,
+	isDeduction, add, isActive bool,
+	amount int64,
+	db *gorm.DB,
+) error {
+	return c.updateWithAccount(userUID, isDeduction, add, isActive, amount, db)
+}
+
 func HandleUpdateResult(result *gorm.DB, entityName string) error {
 	if result.Error != nil {
 		return fmt.Errorf("failed to update %s: %w", entityName, result.Error)
@@ -1711,7 +1720,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 func (c *Cockroach) InitTables() error {
 	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
-		types.CardInfo{}, types.PaymentOrder{},
+		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
 		types.UserTimeRangeTraffic{})
@@ -1784,6 +1793,17 @@ func (c *Cockroach) InitTables() error {
 			}
 		}
 	}
+
+	// 增加状态列
+	if !c.DB.Migrator().HasColumn(&types.Payment{}, "status") {
+		fmt.Println("add column status to payment")
+		// 注意：IF NOT EXISTS 避免重复报错
+		sql := `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'PAID';`
+		if err := c.DB.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to add payment.status column: %v", err)
+		}
+	}
+
 	return nil
 }
 

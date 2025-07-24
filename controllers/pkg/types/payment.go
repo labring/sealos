@@ -24,9 +24,10 @@ type PaymentRaw struct {
 	ActivityType ActivityType `gorm:"type:text;column:activityType"`
 	Message      string       `gorm:"type:text;not null"`
 	//TODO 初始化判断 新加字段
-	CardUID      *uuid.UUID   `gorm:"type:uuid"`
-	Type         PaymentType  `gorm:"type:text"` // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
-	ChargeSource ChargeSource `gorm:"type:text"`
+	CardUID      *uuid.UUID    `gorm:"type:uuid"`
+	Type         PaymentType   `gorm:"type:text"` // 交易类型: AccountRecharge, Subscription，UpgradeSubscription...
+	ChargeSource ChargeSource  `gorm:"type:text"`
+	Status       PaymentStatus `gorm:"type:text;column:status;not null"`
 }
 
 type ChargeSource string
@@ -45,12 +46,19 @@ type PaymentOrder struct {
 }
 
 type (
+	PaymentStatus      string
 	PaymentOrderStatus string
 	CardPaymentStatus  string
 	PaymentType        string
 )
 
 const (
+	PaymentStatusO        PaymentStatus = "NORMAL"
+	PaymentStatusRefunded PaymentStatus = "REFUNDED"
+)
+
+const (
+	// PaymentOrderStatusPending TODO will delete
 	PaymentOrderStatusPending PaymentOrderStatus = "PENDING"
 	PaymentOrderStatusSuccess PaymentOrderStatus = "SUCCESS"
 	PaymentOrderStatusFailed  PaymentOrderStatus = "FAILED"
@@ -217,4 +225,20 @@ type CaptureResponse struct {
 func (c *CaptureResponse) Raw() []byte {
 	data, _ := json.Marshal(c)
 	return data
+}
+
+type PaymentRefund struct {
+	TradeNo string `json:"tradeNo" gorm:"type:uuid;not null"`
+	ID      string `json:"Id" gorm:"type:string;not null"`           //外键 跟payment关联
+	Method  string `json:"method" gorm:"type:varchar(255);not null"` // 退款方式
+	//OutTradeNo   string    `json:"outTradeNo" gorm:"type:uuid"`
+	RefundNo     string    `json:"refundNo" gorm:"type:string;not null"`
+	RefundAmount int64     `json:"refundAmount" gorm:"type:float;not null"`
+	DeductAmount int64     `json:"deductAmount" gorm:"type:float;not null"` // 从 account的 balance里面扣款
+	CreatedAt    time.Time `json:"createdAt" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	RefundReason string    `json:"refundReason" gorm:"type:text"`
+}
+
+func (PaymentRefund) TableName() string {
+	return "PaymentRefund"
 }
