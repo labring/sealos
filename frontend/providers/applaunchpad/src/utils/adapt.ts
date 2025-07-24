@@ -43,6 +43,7 @@ import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import type { EnvResponse } from '@/types';
 import { lauchpadRemarkKey } from '@/constants/account';
+import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -236,6 +237,10 @@ export const adaptAppDetail = async (
   }
 ): Promise<AppDetailType> => {
   const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
+
+  const allServices = configs
+    .filter((item) => item.kind === YamlKindEnum.Service)
+    .map((item) => item as V1Service);
 
   const allServicePorts = allServices.flatMap((service) => service.spec?.ports || []);
 
@@ -432,8 +437,8 @@ export const adaptAppDetail = async (
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
         const isCustomDomain =
-          !domain.endsWith(envs.SEALOS_DOMAIN) &&
-          !envs.SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
+          !domain.endsWith(SEALOS_DOMAIN) &&
+          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
         return {
           serviceName: service?.metadata?.name || '',
@@ -450,10 +455,10 @@ export const adaptAppDetail = async (
             : domain.split('.')[0],
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
-            ? envs.SEALOS_DOMAIN
+            ? SEALOS_DOMAIN
             : item?.nodePort
             ? domain
-            : domain.split('.').slice(1).join('.') || envs.SEALOS_DOMAIN
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec

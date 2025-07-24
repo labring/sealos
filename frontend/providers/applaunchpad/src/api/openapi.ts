@@ -3,12 +3,9 @@ import { createDocument } from 'zod-openapi';
 import {
   CreateAppRequestSchema,
   SuccessResponseSchema,
-  GetAppByAppNameQuerySchema,
   GetAppByAppNameResponseSchema,
-  DeleteAppByNameQuerySchema,
   DeleteAppByNameResponseSchema,
   GetAppsResponseSchema,
-  GetAppPodsByAppNameQuerySchema,
   GetAppPodsByAppNameResponseSchema
 } from '../constants/schema';
 
@@ -53,7 +50,7 @@ export const openApiDocument = (sealosDomain: string) =>
       }
     ],
     paths: {
-      '/api/v1alpha/createApp': {
+      '/api/v1/createApp': {
         post: {
           summary: 'Create a new application',
           description: 'Create a new application with the specified configuration',
@@ -92,7 +89,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1alpha/getApps': {
+      '/api/v1/getApps': {
         get: {
           summary: 'Get all applications',
           description: 'Retrieve a list of all applications for the current user',
@@ -118,7 +115,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1alpha/getAppByAppName': {
+      '/api/v1/getAppByAppName': {
         get: {
           summary: 'Get application by name',
           description: 'Retrieve application details by application name',
@@ -163,7 +160,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1alpha/delAppByName': {
+      '/api/v1/delAppByName': {
         delete: {
           summary: 'Delete application',
           description: 'Delete an application by its name',
@@ -206,7 +203,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1alpha/getAppPodsByAppName': {
+      '/api/v1/getAppPodsByAppName': {
         get: {
           summary: 'Get application pods',
           description: 'Retrieve all pods for a specific application by name',
