@@ -3,6 +3,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { BookOpen, LayoutTemplate, Plus } from 'lucide-react';
 
 import { useRouter } from '@/i18n';
+import { useEnvStore } from '@/stores/env';
 import { useGuideStore } from '@/stores/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
@@ -13,7 +14,7 @@ export default function Header() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations();
-
+  const { env } = useEnvStore();
   const { guide2, setGuide2 } = useGuideStore();
   const isClientSide = useClientSideValue(true);
 
@@ -35,9 +36,9 @@ export default function Header() {
 
   const handleGotoDocs = () => {
     if (locale === 'zh') {
-      window.open('https://sealos.run/docs/overview/intro', '_blank');
+      window.open(env.documentUrlZH, '_blank');
     } else {
-      window.open('https://sealos.io/docs/overview/intro', '_blank');
+      window.open(env.documentUrlEN, '_blank');
     }
   };
 

@@ -47,6 +47,10 @@ spec:
       containers:
         - name: devbox-frontend
           env:
+            - name: DOCUMENT_URL_ZH
+              value: https://sealos.run/docs/overview/intro
+            - name: DOCUMENT_URL_EN
+              value: https://sealos.io/docs/overview/intro
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: INGRESS_SECRET
