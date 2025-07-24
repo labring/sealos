@@ -24,7 +24,16 @@ import (
 const (
 	// FinalizerName is the finalizer for Devbox
 	FinalizerName = "devbox.sealos.io/finalizer"
-	DevBoxPartOf  = "devbox"
+
+	// Annotate the devbox pod with the devbox init
+	AnnotationInit = "devbox.sealos.io/init"
+	// Annotate the devbox pod with the storage limit
+	AnnotationStorageLimit = "devbox.sealos.io/storage-limit"
+	// Annotate the devbox pod with the devbox part of
+	AnnotationContentID = "devbox.sealos.io/content-id"
+
+	// Label the devbox pod with the devbox part of
+	LabelDevBoxPartOf = "devbox"
 )
 
 type DevboxState string
@@ -58,8 +67,8 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
-	// +kubebuilder:validation:Optional
-	ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
+	// // +kubebuilder:validation:Optional
+	// ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
 }
 
 type Config struct {
@@ -90,12 +99,10 @@ type Config struct {
 	ReleaseArgs []string `json:"releaseArgs,omitempty"`
 
 	// TODO: in v1alpha2 api we need fix the port and app port into one field and create a new type for it.
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={{name:"devbox-ssh-port",containerPort:22,protocol:TCP}}
-	Ports []corev1.ContainerPort `json:"ports,omitempty"`
-	// +kubebuilder:validation:Optional
-	// +kubebuilder:default={{name:"devbox-app-port",port:8080,protocol:TCP}}
-	AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// Ports []corev1.ContainerPort `json:"ports,omitempty"`
+	// // +kubebuilder:validation:Optional
+	// AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
@@ -107,6 +114,7 @@ type Config struct {
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
+	// +kubebuilder:default=Running
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
 	Resource corev1.ResourceList `json:"resource"`
@@ -123,6 +131,10 @@ type DevboxSpec struct {
 
 	// +kubebuilder:validation:Required
 	Config Config `json:"config"`
+
+	// +kubebuilder:validation:Optional
+	// devbox storage limit, `storageLimit` will be used to generate the devbox pod label.
+	StorageLimit string `json:"storageLimit,omitempty"`
 
 	// +kubebuilder:validation:Required
 	NetworkSpec NetworkSpec `json:"network,omitempty"`
@@ -155,26 +167,8 @@ type CommitStatus string
 const (
 	CommitStatusSuccess CommitStatus = "Success"
 	CommitStatusFailed  CommitStatus = "Failed"
-	CommitStatusUnknown CommitStatus = "Unknown"
 	CommitStatusPending CommitStatus = "Pending"
 )
-
-type CommitHistory struct {
-	// Image is the image of the commit
-	Image string `json:"image"`
-	// Time is the time when the commit is created
-	Time metav1.Time `json:"time"`
-	// Pod is the pod name
-	Pod string `json:"pod"`
-	// status will be set based on expectedStatus after devbox pod delete or stop. if expectedStatus is still pending, it means the pod is not running successfully, so we need to set it to `failed`
-	Status CommitStatus `json:"status"`
-	// predicatedStatus default `pending`, will be set to `success` if pod status is running successfully.
-	PredicatedStatus CommitStatus `json:"predicatedStatus"`
-	// Node is the node name
-	Node string `json:"node"`
-	// ContainerID is the container id
-	ContainerID string `json:"containerID"`
-}
 
 type DevboxPhase string
 
@@ -197,19 +191,53 @@ const (
 	DevboxPhaseUnknown DevboxPhase = "Unknown"
 )
 
+type CommitRecord struct {
+	// Image is the image of the that devbox is running on
+	// +kubebuilder:validation:Optional
+	Image string `json:"image"`
+
+	// Node is the node name
+	// +kubebuilder:validation:Optional
+	Node string `json:"node"`
+
+	// GenerateTime is the time when the commit is generated
+	// +kubebuilder:validation:Optional
+	GenerateTime metav1.Time `json:"generateTime"`
+
+	// ScheduleTime is the time when the commit is scheduled
+	// +kubebuilder:validation:Optional
+	ScheduleTime metav1.Time `json:"scheduleTime"`
+
+	// UpdateTime is the time when the commit is updated
+	// +kubebuilder:validation:Optional
+	UpdateTime metav1.Time `json:"updateTime"`
+
+	// CommitTime is the time when the commit is created
+	// +kubebuilder:validation:Optional
+	CommitTime metav1.Time `json:"commitTime"`
+
+	// CommitStatus is the status of the commit
+	// +kubebuilder:validation:Enum=Success;Failed;Pending
+	// +kubebuilder:default=Pending
+	CommitStatus CommitStatus `json:"commitStatus"`
+}
+
+// CommitRecordMap is a map of commit records, key is the commit id
+type CommitRecordMap map[string]*CommitRecord
+
 // DevboxStatus defines the observed state of Devbox
 type DevboxStatus struct {
 	// +kubebuilder:validation:Optional
-	Network NetworkStatus `json:"network"`
+	ContentID string `json:"contentID"`
 	// +kubebuilder:validation:Optional
-	CommitHistory []*CommitHistory `json:"commitHistory"`
+	// +kubebuilder:default=Running
+	State DevboxState `json:"state"`
+	// CommitRecords is the records of the devbox commits
+	CommitRecords CommitRecordMap `json:"commitRecords"`
 	// +kubebuilder:validation:Optional
 	Phase DevboxPhase `json:"phase"`
-
 	// +kubebuilder:validation:Optional
-	State corev1.ContainerState `json:"state"`
-	// +kubebuilder:validation:Optional
-	LastTerminationState corev1.ContainerState `json:"lastState"`
+	Network NetworkStatus `json:"network"`
 }
 
 // +kubebuilder:object:root=true

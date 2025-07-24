@@ -15,26 +15,13 @@
 apiVersion: devbox.sealos.io/v1alpha1
 kind: Devbox
 metadata:
-  labels:
-    app.kubernetes.io/name: devbox
-    app.kubernetes.io/managed-by: kustomize
-  name: devbox-gpu-sample
+  name: devbox-sample
 spec:
   state: Running
-  runtimeClassName: nvidia
+  image: busybox:latest
+  config: {}
   resource:
     cpu: 2
     memory: 4000Mi
-    nvidia.com/gpu: 1
-  runtimeRef:
-    name: go-1-22-5-2024-11-12-0651
-    namespace: devbox-system
-  nodeSelector:
-    nvidia.com/gpu.product: Tesla-P40
   network:
     type: NodePort
-    extraPorts:
-      - containerPort: 443
-        name: 'https'
-      - containerPort: 80
-        name: 'http'

@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"os"
@@ -26,6 +27,7 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,9 +47,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
-	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
 	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	// +kubebuilder:scaffold:imports
 )
@@ -66,7 +69,6 @@ func init() {
 
 func main() {
 	var metricsAddr string
-	var enableLeaderElection bool
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
@@ -88,17 +90,17 @@ func main() {
 	var enablePodEnvMatcher bool
 	var enablePodPortMatcher bool
 	var enablePodEphemeralStorageMatcher bool
+	var enablePodStorageLimitMatcher bool
 	// config qps and burst
 	var configQPS int
 	var configBurst int
 	// config restart predicate duration
 	var restartPredicateDuration time.Duration
+	// devbox node label
+	var devboxNodeLabel string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
@@ -120,11 +122,14 @@ func main() {
 	flag.BoolVar(&enablePodEnvMatcher, "enable-pod-env-matcher", true, "If set, pod env matcher will be enabled")
 	flag.BoolVar(&enablePodPortMatcher, "enable-pod-port-matcher", true, "If set, pod port matcher will be enabled")
 	flag.BoolVar(&enablePodEphemeralStorageMatcher, "enable-pod-ephemeral-storage-matcher", false, "If set, pod ephemeral storage matcher will be enabled")
+	flag.BoolVar(&enablePodStorageLimitMatcher, "enable-pod-storage-limit-matcher", false, "If set, pod storage limit matcher will be enabled")
 	// config qps and burst
 	flag.IntVar(&configQPS, "config-qps", 50, "The qps of the config")
 	flag.IntVar(&configBurst, "config-burst", 100, "The burst of the config")
 	// config restart predicate duration
 	flag.DurationVar(&restartPredicateDuration, "restart-predicate-duration", 2*time.Hour, "Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.")
+	// devbox node label
+	flag.StringVar(&devboxNodeLabel, "devbox-node-label", "devbox.sealos.io/node", "The label of the devbox node")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -191,8 +196,8 @@ func main() {
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "b6694722.sealos.io",
+		LeaderElection:         false,
+		// LeaderElectionID:       "b6694722.sealos.io",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
@@ -235,12 +240,20 @@ func main() {
 	if enablePodEphemeralStorageMatcher {
 		podMatchers = append(podMatchers, matcher.EphemeralStorageMatcher{})
 	}
+	if enablePodStorageLimitMatcher {
+		podMatchers = append(podMatchers, matcher.StorageLimitMatcher{})
+	}
+
+	stateChangeBroadcaster := record.NewBroadcaster()
 
 	if err = (&controller.DevboxReconciler{
-		Client:              mgr.GetClient(),
-		Scheme:              mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("devbox-controller"),
+		StateChangeRecorder: stateChangeBroadcaster.NewRecorder(
+			mgr.GetScheme(),
+			corev1.EventSource{Component: "devbox-controller", Host: nodes.GetNodeName()}),
 		CommitImageRegistry: registryAddr,
-		Recorder:            mgr.GetEventRecorderFor("devbox-controller"),
 		RequestRate: utilresource.RequestRate{
 			CPU:    requestCPURate,
 			Memory: requestMemoryRate,
@@ -253,30 +266,25 @@ func main() {
 		PodMatchers:              podMatchers,
 		DebugMode:                debugMode,
 		RestartPredicateDuration: restartPredicateDuration,
+		NodeName:                 nodes.GetNodeName(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
 	}
 
-	if err = (&controller.DevBoxReleaseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Registry: &registry.Client{
-			Username: registryUser,
-			Password: registryPassword,
-		},
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DevBoxRelease")
-		os.Exit(1)
+	stateChangeHandler := controller.StateChangeHandler{
+		Client:              mgr.GetClient(),
+		Scheme:              mgr.GetScheme(),
+		Recorder:            mgr.GetEventRecorderFor("state-change-handler"),
+		Committer:           &commit.CommitterImpl{},
+		CommitImageRegistry: registryAddr,
+		NodeName:            nodes.GetNodeName(),
+		Logger:              ctrl.Log.WithName("state-change-handler"),
 	}
-	//if err = (&controller.OperationRequestReconciler{
-	//	CommitImageRegistry: registryAddr,
-	//	Client:              mgr.GetClient(),
-	//	Scheme:              mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "OperationRequest")
-	//	os.Exit(1)
-	//}
+	watcher := stateChangeBroadcaster.StartEventWatcher(func(event *corev1.Event) {
+		stateChangeHandler.Handle(context.Background(), event)
+	})
+	defer watcher.Stop()
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

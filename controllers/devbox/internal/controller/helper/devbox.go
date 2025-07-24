@@ -15,8 +15,6 @@
 package helper
 
 import (
-	"fmt"
-	"sort"
 	"strings"
 
 	"crypto/ed25519"
@@ -29,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/ptr"
 
+	"github.com/google/uuid"
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
@@ -37,6 +36,55 @@ import (
 const (
 	DevBoxPartOf = "devbox"
 )
+
+type DevboxPodOptions func(pod *corev1.Pod)
+
+func WithPodImage(image string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		pod.Spec.Containers[0].Image = image
+	}
+}
+
+func WithPodContentID(contentID string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+		pod.Annotations[devboxv1alpha1.AnnotationContentID] = contentID
+	}
+}
+
+func WithPodAnnotations(annotations map[string]string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		if pod.Annotations == nil {
+			pod.Annotations = make(map[string]string)
+		}
+		for k, v := range annotations {
+			pod.Annotations[k] = v
+		}
+	}
+}
+
+func WithPodLabels(labels map[string]string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		if pod.Labels == nil {
+			pod.Labels = make(map[string]string)
+		}
+		for k, v := range labels {
+			pod.Labels[k] = v
+		}
+	}
+}
+
+func WithPodNodeName(nodeName string) DevboxPodOptions {
+	return func(pod *corev1.Pod) {
+		pod.Spec.NodeName = nodeName
+	}
+}
+
+func NewContentID() string {
+	return uuid.New().String()
+}
 
 func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	labels := make(map[string]string)
@@ -64,6 +112,7 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox) map[string]string {
 			annotations[k] = v
 		}
 	}
+	annotations[devboxv1alpha1.AnnotationStorageLimit] = devbox.Spec.StorageLimit
 	return annotations
 }
 
@@ -101,26 +150,6 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 	return devboxv1alpha1.DevboxPhaseUnknown
 }
 
-func MergeCommitHistory(devbox *devboxv1alpha1.Devbox, latestDevbox *devboxv1alpha1.Devbox) []*devboxv1alpha1.CommitHistory {
-	res := make([]*devboxv1alpha1.CommitHistory, 0)
-	historyMap := make(map[string]*devboxv1alpha1.CommitHistory)
-	for _, c := range latestDevbox.Status.CommitHistory {
-		historyMap[c.Pod] = c
-	}
-	// up coming commit history will be added to the latest devbox
-	for _, c := range devbox.Status.CommitHistory {
-		historyMap[c.Pod] = c
-	}
-	for _, c := range historyMap {
-		res = append(res, c)
-	}
-	// sort commit history by time in descending order
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].Time.After(res[j].Time.Time)
-	})
-	return res
-}
-
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
@@ -137,153 +166,6 @@ func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	}
 	sshPublicKey := ssh.MarshalAuthorizedKey(publicKey)
 	return sshPublicKey, privateKey, nil
-}
-
-func UpdatePredicatedCommitStatus(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod) {
-	for i, c := range devbox.Status.CommitHistory {
-		if c.Pod == pod.Name {
-			devbox.Status.CommitHistory[i].PredicatedStatus = PredicateCommitStatus(pod)
-			break
-		}
-	}
-}
-
-// UpdateDevboxStatus updates the devbox status, including phase, pod phase, last terminated state and commit history, maybe we need update more fields in the future
-// TODO: move this function to devbox types.go
-func UpdateDevboxStatus(current, latest *devboxv1alpha1.Devbox) {
-	latest.Status.Phase = current.Status.Phase
-	latest.Status.State = current.Status.State
-	latest.Status.LastTerminationState = current.Status.LastTerminationState
-	latest.Status.CommitHistory = MergeCommitHistory(current, latest)
-}
-
-func UpdateCommitHistory(devbox *devboxv1alpha1.Devbox, pod *corev1.Pod, updateStatus bool) {
-	// update commit history, if devbox commit history missed the pod, we need add it
-	found := false
-	for i, c := range devbox.Status.CommitHistory {
-		if c.Pod == pod.Name {
-			found = true
-			if updateStatus {
-				devbox.Status.CommitHistory[i].Status = devbox.Status.CommitHistory[i].PredicatedStatus
-			}
-			if len(pod.Status.ContainerStatuses) > 0 {
-				devbox.Status.CommitHistory[i].Node = pod.Spec.NodeName
-				devbox.Status.CommitHistory[i].ContainerID = pod.Status.ContainerStatuses[0].ContainerID
-			}
-			break
-		}
-	}
-	if !found {
-		newCommitHistory := &devboxv1alpha1.CommitHistory{
-			Pod:              pod.Name,
-			PredicatedStatus: PredicateCommitStatus(pod),
-		}
-		if len(pod.Status.ContainerStatuses) > 0 {
-			newCommitHistory.ContainerID = pod.Status.ContainerStatuses[0].ContainerID
-			newCommitHistory.Node = pod.Spec.NodeName
-		}
-		if updateStatus {
-			newCommitHistory.Status = newCommitHistory.PredicatedStatus
-		}
-		devbox.Status.CommitHistory = append(devbox.Status.CommitHistory, newCommitHistory)
-	}
-}
-
-func podContainerID(pod *corev1.Pod) string {
-	if len(pod.Status.ContainerStatuses) > 0 {
-		return pod.Status.ContainerStatuses[0].ContainerID
-	}
-	return ""
-}
-func PredicateCommitStatus(pod *corev1.Pod) devboxv1alpha1.CommitStatus {
-	if podContainerID(pod) == "" {
-		return devboxv1alpha1.CommitStatusPending
-	}
-	return devboxv1alpha1.CommitStatusSuccess
-}
-
-func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) []corev1.EnvVar {
-	// if devbox.Spec.Squash is true, and devbox.Status.CommitHistory has success commit history, we need to set SEALOS_COMMIT_IMAGE_SQUASH to true
-	doSquash := false
-	if devbox.Spec.Squash && len(devbox.Status.CommitHistory) > 0 {
-		for _, commit := range devbox.Status.CommitHistory {
-			if commit.Status == devboxv1alpha1.CommitStatusSuccess {
-				doSquash = true
-				break
-			}
-		}
-	}
-
-	return []corev1.EnvVar{
-		{
-			Name:  "SEALOS_COMMIT_ON_STOP",
-			Value: "true",
-		},
-		{
-			Name:  "SEALOS_COMMIT_IMAGE_NAME",
-			Value: nextCommitHistory.Image,
-		},
-		{
-			Name:  "SEALOS_COMMIT_IMAGE_SQUASH",
-			Value: fmt.Sprintf("%v", doSquash),
-		},
-		{
-			Name:  "SEALOS_DEVBOX_NAME",
-			Value: devbox.Namespace + "-" + devbox.Name,
-		},
-		{
-			Name: "SEALOS_DEVBOX_POD_UID",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "metadata.uid",
-				},
-			},
-		},
-	}
-}
-
-func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
-	if len(devbox.Status.CommitHistory) == 0 {
-		return nil
-	}
-	// Sort commit history by time in descending order
-	sort.Slice(devbox.Status.CommitHistory, func(i, j int) bool {
-		return devbox.Status.CommitHistory[i].Time.After(devbox.Status.CommitHistory[j].Time.Time)
-	})
-
-	for _, commit := range devbox.Status.CommitHistory {
-		if commit.Status == devboxv1alpha1.CommitStatusSuccess {
-			return commit
-		}
-	}
-	return nil
-}
-
-func GetLastPredicatedSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
-	if len(devbox.Status.CommitHistory) == 0 {
-		return nil
-	}
-	// Sort commit history by time in descending order
-	sort.Slice(devbox.Status.CommitHistory, func(i, j int) bool {
-		return devbox.Status.CommitHistory[i].Time.After(devbox.Status.CommitHistory[j].Time.Time)
-	})
-	for _, commit := range devbox.Status.CommitHistory {
-		if commit.PredicatedStatus == devboxv1alpha1.CommitStatusSuccess {
-			return commit
-		}
-	}
-	return nil
-}
-
-func GetLastSuccessCommitImageName(devbox *devboxv1alpha1.Devbox) string {
-	if len(devbox.Status.CommitHistory) == 0 {
-		return devbox.Spec.Image
-	}
-	commit := GetLastSuccessCommitHistory(devbox)
-	if commit == nil {
-		return devbox.Spec.Image
-	}
-	return commit.Image
 }
 
 func GenerateSSHVolumeMounts() []corev1.VolumeMount {
