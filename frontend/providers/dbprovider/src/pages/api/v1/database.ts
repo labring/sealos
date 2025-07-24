@@ -3,58 +3,84 @@ import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { KbPgClusterType } from '@/types/cluster';
-import { DBEditType, BackupItemType } from '@/types/db';
 import { convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from '../backup/updatePolicy';
+import { createDatabaseSchemas } from '@/types/apis';
+import { ResponseCode, ResponseMessages } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const kubeconfig = await authSession(req).catch(() => null);
+
+  if (!kubeconfig) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
+  }
+
+  const k8s = await getK8s({
+    kubeconfig
+  }).catch(() => null);
+
+  if (!k8s) {
+    return jsonRes(res, {
+      code: ResponseCode.UNAUTHORIZED,
+      message: ResponseMessages[ResponseCode.UNAUTHORIZED]
+    });
+  }
+
   if (req.method === 'POST') {
     try {
-      const { dbForm, backupInfo } = req.body as {
-        dbForm: DBEditType;
-        backupInfo?: BackupItemType;
-      };
+      const bodyParseResult = createDatabaseSchemas.body.safeParse(req.body);
+      if (!bodyParseResult.success) {
+        return jsonRes(res, {
+          code: 400,
+          message: 'Invalid request body.',
+          error: bodyParseResult.error.issues
+        });
+      }
 
-      const { k8sCustomObjects, namespace, applyYamlList } = await getK8s({
-        kubeconfig: await authSession(req)
-      });
+      const reqBody = bodyParseResult.data;
 
-      const account = json2Account(dbForm);
-      const cluster = json2CreateCluster(dbForm, backupInfo, {
+      const account = json2Account(reqBody.dbForm);
+      const cluster = json2CreateCluster(reqBody.dbForm, reqBody.backupInfo, {
         storageClassName: process.env.STORAGE_CLASSNAME
       });
 
-      await applyYamlList([account, cluster], 'create');
-      const { body } = (await k8sCustomObjects.getNamespacedCustomObject(
+      await k8s.applyYamlList([account, cluster], 'create');
+      const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
         'apps.kubeblocks.io',
         'v1alpha1',
-        namespace,
+        k8s.namespace,
         'clusters',
-        dbForm.dbName
+        reqBody.dbForm.dbName
       )) as {
         body: KbPgClusterType;
       };
       const dbUid = body.metadata.uid;
 
-      const updateAccountYaml = json2Account(dbForm, dbUid);
+      const updateAccountYaml = json2Account(reqBody.dbForm, dbUid);
 
-      await applyYamlList([updateAccountYaml], 'replace');
+      await k8s.applyYamlList([updateAccountYaml], 'replace');
 
       try {
-        if (BackupSupportedDBTypeList.includes(dbForm.dbType) && dbForm?.autoBackup) {
+        if (
+          BackupSupportedDBTypeList.includes(reqBody.dbForm.dbType) &&
+          reqBody.dbForm?.autoBackup
+        ) {
           const autoBackup = convertBackupFormToSpec({
-            autoBackup: dbForm?.autoBackup,
-            dbType: dbForm.dbType
+            autoBackup: reqBody.dbForm?.autoBackup,
+            dbType: reqBody.dbForm.dbType
           });
 
           await updateBackupPolicyApi({
-            dbName: dbForm.dbName,
-            dbType: dbForm.dbType,
+            dbName: reqBody.dbForm.dbName,
+            dbType: reqBody.dbForm.dbType,
             autoBackup,
-            k8sCustomObjects,
-            namespace
+            k8sCustomObjects: k8s.k8sCustomObjects,
+            namespace: k8s.namespace
           });
         }
       } catch (err: any) {
