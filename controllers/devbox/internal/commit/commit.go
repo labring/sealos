@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
+
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
@@ -95,6 +97,47 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	}
 
 	return container.ID(), nil
+}
+
+// DeleteContainerDirectly delete container directly
+func (c *CommitterImpl) DeleteContainerDirectly(ctx context.Context, containerName string) error {
+	// 1. load container
+	container, err := c.containerdClient.LoadContainer(ctx, containerName)
+	if err != nil {
+		return fmt.Errorf("failed to load container: %v", err)
+	}
+
+	// 2. get and stop task
+	task, err := container.Task(ctx, nil)
+	if err == nil {
+		log.Printf("Stopping task for container: %s", containerName)
+
+		// force kill task (avoid waiting problem)
+		err = task.Kill(ctx, 9) // SIGKILL
+		if err != nil {
+			log.Printf("Warning: failed to send SIGKILL: %v", err)
+		} else {
+			log.Printf("Sent SIGKILL to task")
+		}
+
+		// delete task after short wait
+		log.Printf("Deleting task...")
+		_, err = task.Delete(ctx, client.WithProcessKill)
+		if err != nil {
+			log.Printf("Warning: failed to delete task: %v", err)
+		} else {
+			log.Printf("Task deleted for container: %s", containerName)
+		}
+	}
+
+	// 3. delete container (include snapshot)
+	err = container.Delete(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete container: %v", err)
+	}
+
+	log.Printf("Container deleted: %s", containerName)
+	return nil
 }
 
 // Commit commit container to image
