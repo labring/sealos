@@ -2,6 +2,7 @@ import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { deleteAppByName } from '@/services/backend/appService';
+import { createK8sContext } from '@/services/backend';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -10,7 +11,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       throw new Error('deploy name is empty');
     }
 
-    await deleteAppByName({ name, req });
+    const k8s = await createK8sContext(req);
+    await deleteAppByName(name, k8s);
 
     jsonRes(res, {
       message: 'successfully deleted'

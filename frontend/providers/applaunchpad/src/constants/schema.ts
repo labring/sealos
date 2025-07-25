@@ -121,7 +121,7 @@ export const GetAppByAppNameQuerySchema = z.object({
 export const GetAppByAppNameResponseSchema = z.array(z.any()).nullable();
 
 export const DeleteAppByNameQuerySchema = z.object({
-  name: z.string().min(1, { message: 'appName cannot be empty' })
+  appName: z.string().min(1, { message: 'appName cannot be empty' })
 });
 
 export const DeleteAppByNameResponseSchema = z.object({

@@ -6,14 +6,12 @@ import {
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getAppByName, deleteAppByName, createApp } from '@/services/backend/appService';
+import { getAppByName, deleteAppByName, createApp, createK8sContext } from '@/services/backend';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType } from '@/types/app';
 import { filterUnusedKeys } from '@/utils/tools';
 
-// Helper function to process app response data
 async function processAppResponse(response: PromiseSettledResult<any>[]) {
-  // Check for errors other than 404
   const responseData = response
     .map((item: any) => {
       if (item.status === 'fulfilled') return item.value.body;
@@ -47,7 +45,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
       const { appName } = parseResult.data;
 
-      const response = await getAppByName({ appName, req });
+      const k8s = await createK8sContext(req);
+
+      try {
+        await k8s.getDeployApp(appName);
+      } catch (error: any) {
+        return jsonRes(res, {
+          code: 404,
+          error: `App ${appName} not found`
+        });
+      }
+
+      const response = await getAppByName(appName, k8s);
       const filteredData = await processAppResponse(response);
 
       jsonRes(res, {
@@ -75,10 +84,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
       }
 
-      await createApp({ appForm, req });
+      const k8s = await createK8sContext(req);
+      await createApp(appForm, k8s);
 
       // Get application details after creation
-      const response = await getAppByName({ appName: appForm.appName, req });
+      const response = await getAppByName(appForm.appName, k8s);
       const filteredData = await processAppResponse(response);
 
       jsonRes(res, {
@@ -87,6 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     } else if (method === 'DELETE') {
       // Handle DELETE request - delete app by name
       const parseResult = DeleteAppByNameQuerySchema.safeParse(req.query);
+      console.log(req.query, 'req.query');
 
       if (!parseResult.success) {
         return jsonRes(res, {
@@ -95,9 +106,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
         });
       }
 
-      const { name } = parseResult.data;
+      const { appName } = parseResult.data;
 
-      await deleteAppByName({ name, req });
+      const k8s = await createK8sContext(req);
+
+      try {
+        await k8s.getDeployApp(appName);
+      } catch (error: any) {
+        return jsonRes(res, {
+          code: 404,
+          error: `App ${appName} not found`
+        });
+      }
+
+      await deleteAppByName(appName, k8s);
 
       jsonRes(res, {
         message: 'successfully deleted'
