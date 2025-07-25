@@ -272,16 +272,29 @@ func main() {
 		os.Exit(1)
 	}
 
+	committer := &commit.CommitterImpl{}
+
 	stateChangeHandler := controller.StateChangeHandler{
 		Client:              mgr.GetClient(),
 		Scheme:              mgr.GetScheme(),
 		Recorder:            mgr.GetEventRecorderFor("state-change-handler"),
-		Committer:           &commit.CommitterImpl{},
+		Committer:           committer,
 		CommitImageRegistry: registryAddr,
 		NodeName:            nodes.GetNodeName(),
 		Logger:              ctrl.Log.WithName("state-change-handler"),
 	}
+
+	// 添加调试日志
+	setupLog.Info("StateChangeHandler initialized",
+		"nodeName", nodes.GetNodeName(),
+		"registryAddr", registryAddr)
+
 	watcher := stateChangeBroadcaster.StartEventWatcher(func(event *corev1.Event) {
+		setupLog.Info("Event received by watcher",
+			"event", event.Name,
+			"eventSourceHost", event.Source.Host,
+			"eventType", event.Type,
+			"eventReason", event.Reason)
 		stateChangeHandler.Handle(context.Background(), event)
 	})
 	defer watcher.Stop()

@@ -32,6 +32,14 @@ type StateChangeHandler struct {
 
 // todo: handle state change event
 func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) error {
+	h.Logger.Info("StateChangeHandler.Handle called",
+		"event", event.Name,
+		"eventSourceHost", event.Source.Host,
+		"handlerNodeName", h.NodeName,
+		"eventType", event.Type,
+		"eventReason", event.Reason,
+		"eventMessage", event.Message)
+
 	if event.Source.Host != h.NodeName {
 		h.Logger.Info("event source host is not the node name, skip", "event", event)
 		return nil
@@ -55,9 +63,10 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		case devboxv1alpha1.DevboxStateShutdown:
 			// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 			// step 1: do commit
-			targetImage := devbox.Status.CommitRecords[devbox.Status.ContentID].Image
-			h.Logger.Info("commit devbox", "devbox", devbox.Name, "targetImage", targetImage)
-			if err := h.Committer.Commit(ctx, devbox.Name, targetImage); err != nil {
+			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
+			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
+			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
+			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
@@ -72,7 +81,8 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 			devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
 				CommitStatus: devboxv1alpha1.CommitStatusPending,
 				Node:         "",
-				Image:        h.generateImageName(devbox),
+				BaseImage:    commitImage,
+				CommitImage:  h.generateImageName(devbox),
 				GenerateTime: metav1.Now(),
 			}
 			h.Logger.Info("update devbox status from running to shutdown", "devbox", devbox.Name)
@@ -94,9 +104,10 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		case devboxv1alpha1.DevboxStateShutdown:
 			// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 			// step 1: do commit
-			targetImage := devbox.Status.CommitRecords[devbox.Status.ContentID].Image
-			h.Logger.Info("commit devbox", "devbox", devbox.Name, "targetImage", targetImage)
-			if err := h.Committer.Commit(ctx, devbox.Name, targetImage); err != nil {
+			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
+			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
+			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
+			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
@@ -111,7 +122,8 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 			devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
 				CommitStatus: devboxv1alpha1.CommitStatusPending,
 				Node:         "",
-				Image:        h.generateImageName(devbox),
+				BaseImage:    commitImage,
+				CommitImage:  h.generateImageName(devbox),
 				GenerateTime: metav1.Now(),
 			}
 			h.Logger.Info("update devbox status from stopped to shutdown", "devbox", devbox.Name)

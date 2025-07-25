@@ -3077,6 +3077,14 @@ spec:
               commitRecords:
                 additionalProperties:
                   properties:
+                    baseImage:
+                      description: BaseImage is the image of the that devbox is running
+                        on
+                      type: string
+                    commitImage:
+                      description: CommitImage is the image of the that devbox is
+                        committed to
+                      type: string
                     commitStatus:
                       default: Pending
                       description: CommitStatus is the status of the commit
@@ -3092,10 +3100,6 @@ spec:
                     generateTime:
                       description: GenerateTime is the time when the commit is generated
                       format: date-time
-                      type: string
-                    image:
-                      description: Image is the image of the that devbox is running
-                        on
                       type: string
                     node:
                       description: Node is the node name

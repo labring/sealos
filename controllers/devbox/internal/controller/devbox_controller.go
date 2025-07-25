@@ -135,7 +135,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		devbox.Status.State = devboxv1alpha1.DevboxStateRunning
 		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
 			Node:         "",
-			Image:        devbox.Spec.Image,
+			BaseImage:    devbox.Spec.Image,
+			CommitImage:  r.generateImageName(devbox),
 			CommitStatus: devboxv1alpha1.CommitStatusPending,
 			GenerateTime: metav1.Now(),
 		}
@@ -287,7 +288,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			}
 			// create a new pod with default image, with new content id
 			pod := r.generateDevboxPod(devbox,
-				helper.WithPodImage(currentRecord.Image),
+				helper.WithPodImage(currentRecord.BaseImage),
 				helper.WithPodContentID(devbox.Status.ContentID),
 				helper.WithPodNodeName(currentRecord.Node),
 			)
@@ -414,14 +415,26 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 // sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
 func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha1.Devbox) bool {
 	logger := log.FromContext(ctx)
+	logger.Info("syncDevboxState called",
+		"devbox", devbox.Name,
+		"specState", devbox.Spec.State,
+		"statusState", devbox.Status.State,
+		"nodeName", r.NodeName)
+
 	if devbox.Spec.State != devbox.Status.State {
 		logger.Info("devbox state changing",
 			"from", devbox.Status.State,
 			"to", devbox.Spec.State,
 			"devbox", devbox.Name)
+		logger.Info("recording state change event",
+			"devbox", devbox.Name,
+			"nodeName", r.NodeName)
 		r.StateChangeRecorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox state changed", "Devbox state changed from %s to %s", devbox.Status.State, devbox.Spec.State)
 		return true
 	}
+	logger.Info("devbox state unchanged",
+		"devbox", devbox.Name,
+		"state", devbox.Spec.State)
 	return false
 }
 
@@ -448,6 +461,11 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, pod *corev1.Pod
 		return err
 	}
 	return nil
+}
+
+func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
+	now := time.Now()
+	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
 func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {

@@ -68,7 +68,7 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
 	// // +kubebuilder:validation:Optional
-	// ExtraPorts []corev1.ContainerPort `json:"extraPorts"`
+	// ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
 }
 
 type Config struct {
@@ -192,9 +192,13 @@ const (
 )
 
 type CommitRecord struct {
-	// Image is the image of the that devbox is running on
+	// BaseImage is the image of the that devbox is running on
 	// +kubebuilder:validation:Optional
-	Image string `json:"image"`
+	BaseImage string `json:"baseImage"`
+
+	// CommitImage is the image of the that devbox is committed to
+	// +kubebuilder:validation:Optional
+	CommitImage string `json:"commitImage"`
 
 	// Node is the node name
 	// +kubebuilder:validation:Optional
