@@ -12,7 +12,6 @@ import { ResponseCode, ResponseMessages } from '@/types/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
-
   if (!kubeconfig) {
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
@@ -20,10 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
-  const k8s = await getK8s({
-    kubeconfig
-  }).catch(() => null);
-
+  const k8s = await getK8s({ kubeconfig }).catch(() => null);
   if (!k8s) {
     return jsonRes(res, {
       code: ResponseCode.UNAUTHORIZED,
