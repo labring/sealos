@@ -2426,6 +2426,9 @@ importers:
       '@replit/codemirror-vscode-keymap':
         specifier: ^6.0.2
         version: 6.0.2(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.3.2)(@codemirror/language@6.9.3)(@codemirror/lint@6.8.5)(@codemirror/search@6.5.5)(@codemirror/state@6.3.2)(@codemirror/view@6.22.1)
+      '@scalar/api-reference-react':
+        specifier: ^0.6.23
+        version: 0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
@@ -2546,6 +2549,12 @@ importers:
       swiper:
         specifier: ^11.0.7
         version: 11.0.7
+      zod:
+        specifier: ^4.0.5
+        version: 4.0.5
+      zod-openapi:
+        specifier: ^5.2.0
+        version: 5.2.0(zod@4.0.5)
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
@@ -9964,6 +9973,61 @@ packages:
   /@rushstack/eslint-patch@1.6.0:
     resolution: {integrity: sha512-2/U3GXA6YiPYQDLGwtGlnNgKYBSwCFIHf8Y9LUY5VATHdtbLlU0Y1R3QoBnT0aB4qv/BEiVVsj7LJXoQCgJ2vA==}
 
+  /@scalar/api-client@2.3.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-hEuDEBEBuwaZg8dCFALjc5u5udVXiUN3GjlbAE3rAG9bl3BeaVxQIGhFxmeWPxWsZmM5XfWlXWQxrARwAu50oA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@headlessui/tailwindcss': 0.2.2(tailwindcss@3.4.1)
+      '@headlessui/vue': 1.7.23(vue@3.5.13)
+      '@scalar/components': 0.13.53(typescript@5.2.2)
+      '@scalar/draggable': 0.1.11(typescript@5.2.2)
+      '@scalar/icons': 0.3.2(typescript@5.2.2)
+      '@scalar/import': 0.3.19(@hyperjump/browser@1.3.0)
+      '@scalar/oas-utils': 0.2.136(@hyperjump/browser@1.3.0)
+      '@scalar/object-utils': 1.1.13
+      '@scalar/openapi-parser': 0.10.16
+      '@scalar/openapi-types': 0.2.1
+      '@scalar/postman-to-openapi': 0.2.9(@hyperjump/browser@1.3.0)
+      '@scalar/snippetz': 0.2.19
+      '@scalar/themes': 0.10.3
+      '@scalar/types': 0.1.11
+      '@scalar/use-codemirror': 0.11.98(typescript@5.2.2)
+      '@scalar/use-hooks': 0.1.45(typescript@5.2.2)
+      '@scalar/use-toasts': 0.7.9(typescript@5.2.2)
+      '@scalar/use-tooltip': 1.0.6(typescript@5.2.2)
+      '@vueuse/core': 10.11.1(vue@3.5.13)
+      '@vueuse/integrations': 11.3.0(axios@1.6.2)(focus-trap@7.6.4)(fuse.js@7.0.0)(nprogress@0.2.0)(vue@3.5.13)
+      focus-trap: 7.6.4
+      fuse.js: 7.0.0
+      microdiff: 1.5.0
+      nanoid: 5.1.5
+      pretty-bytes: 6.1.1
+      pretty-ms: 8.0.0
+      shell-quote: 1.8.2
+      type-fest: 4.40.1
+      vue: 3.5.13(typescript@5.2.2)
+      vue-router: 4.5.1(vue@3.5.13)
+      whatwg-mimetype: 4.0.0
+      yaml: 2.7.1
+      zod: 3.23.8
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
   /@scalar/api-client@2.3.26(@hyperjump/browser@1.3.0)(axios@1.7.3)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
     resolution: {integrity: sha512-hEuDEBEBuwaZg8dCFALjc5u5udVXiUN3GjlbAE3rAG9bl3BeaVxQIGhFxmeWPxWsZmM5XfWlXWQxrARwAu50oA==}
     engines: {node: '>=18'}
@@ -10019,6 +10083,33 @@ packages:
       - universal-cookie
     dev: false
 
+  /@scalar/api-reference-react@0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-jTBQ9y7J94Ln1i//7x1fHD3FJSBI+Cncqlh/1WGEPeaIOEZ6leEiSD9odWebf71EvkqFSQ8YSuDHB79KgMpqDA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+    dependencies:
+      '@scalar/api-reference': 1.28.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
+      '@scalar/types': 0.1.11
+      react: 18.2.0
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
   /@scalar/api-reference-react@0.6.23(@hyperjump/browser@1.3.0)(axios@1.7.3)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
     resolution: {integrity: sha512-jTBQ9y7J94Ln1i//7x1fHD3FJSBI+Cncqlh/1WGEPeaIOEZ6leEiSD9odWebf71EvkqFSQ8YSuDHB79KgMpqDA==}
     engines: {node: '>=18'}
@@ -10028,6 +10119,51 @@ packages:
       '@scalar/api-reference': 1.28.26(@hyperjump/browser@1.3.0)(axios@1.7.3)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
       '@scalar/types': 0.1.11
       react: 18.2.0
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
+  /@scalar/api-reference@1.28.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-DIE43vZx7gXPnxNUqKDC3ZlPZZNU/gNQYLsUShibhT8R6owvvwAefOithTNgmpHD3xf43VugeuzD5b0RXwpFTA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@floating-ui/vue': 1.1.6(vue@3.5.13)
+      '@headlessui/vue': 1.7.23(vue@3.5.13)
+      '@scalar/api-client': 2.3.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
+      '@scalar/code-highlight': 0.0.27
+      '@scalar/components': 0.13.53(typescript@5.2.2)
+      '@scalar/icons': 0.3.2(typescript@5.2.2)
+      '@scalar/oas-utils': 0.2.136(@hyperjump/browser@1.3.0)
+      '@scalar/openapi-parser': 0.10.16
+      '@scalar/openapi-types': 0.2.1
+      '@scalar/snippetz': 0.2.19
+      '@scalar/themes': 0.10.3
+      '@scalar/types': 0.1.11
+      '@scalar/use-hooks': 0.1.45(typescript@5.2.2)
+      '@scalar/use-toasts': 0.7.9(typescript@5.2.2)
+      '@unhead/vue': 1.11.20(vue@3.5.13)
+      '@vueuse/core': 10.11.1(vue@3.5.13)
+      flatted: 3.3.3
+      fuse.js: 7.0.0
+      github-slugger: 2.0.0
+      microdiff: 1.5.0
+      nanoid: 5.1.5
+      vue: 3.5.13(typescript@5.2.2)
+      zod: 3.23.8
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -12175,6 +12311,59 @@ packages:
       '@types/web-bluetooth': 0.0.20
       '@vueuse/metadata': 11.3.0
       '@vueuse/shared': 11.3.0(vue@3.5.13)
+      vue-demi: 0.14.10(vue@3.5.13)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
+    dev: false
+
+  /@vueuse/integrations@11.3.0(axios@1.6.2)(focus-trap@7.6.4)(fuse.js@7.0.0)(nprogress@0.2.0)(vue@3.5.13):
+    resolution: {integrity: sha512-5fzRl0apQWrDezmobchoiGTkGw238VWESxZHazfhP3RM7pDSiyXy18QbfYkILoYNTd23HPAfQTJpkUc5QbkwTw==}
+    peerDependencies:
+      async-validator: ^4
+      axios: ^1
+      change-case: ^5
+      drauu: ^0.4
+      focus-trap: ^7
+      fuse.js: ^7
+      idb-keyval: ^6
+      jwt-decode: ^4
+      nprogress: ^0.2
+      qrcode: ^1.5
+      sortablejs: ^1
+      universal-cookie: ^7
+    peerDependenciesMeta:
+      async-validator:
+        optional: true
+      axios:
+        optional: true
+      change-case:
+        optional: true
+      drauu:
+        optional: true
+      focus-trap:
+        optional: true
+      fuse.js:
+        optional: true
+      idb-keyval:
+        optional: true
+      jwt-decode:
+        optional: true
+      nprogress:
+        optional: true
+      qrcode:
+        optional: true
+      sortablejs:
+        optional: true
+      universal-cookie:
+        optional: true
+    dependencies:
+      '@vueuse/core': 11.3.0(vue@3.5.13)
+      '@vueuse/shared': 11.3.0(vue@3.5.13)
+      axios: 1.6.2
+      focus-trap: 7.6.4
+      fuse.js: 7.0.0
+      nprogress: 0.2.0
       vue-demi: 0.14.10(vue@3.5.13)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -28038,6 +28227,15 @@ packages:
       zod: 3.23.8
     dev: false
 
+  /zod-openapi@5.2.0(zod@4.0.5):
+    resolution: {integrity: sha512-f1bxel2MR5L5sxG9KNNAUs6Eh76VHrrF0pN06+W21MtO2f6oOaWkfY16r9rjTsXV9M3YmRITh++//Ur37GzUZg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      zod: ^3.25.74 || ^4.0.0
+    dependencies:
+      zod: 4.0.5
+    dev: false
+
   /zod-to-json-schema@3.24.5(zod@3.23.8):
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
@@ -28052,6 +28250,10 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  /zod@4.0.5:
+    resolution: {integrity: sha512-/5UuuRPStvHXu7RS+gmvRf4NXrNxpSllGwDnCBcJZtQsKrviYXm54yDGV2KYNLT5kq0lHGcl7lqWJLgSaG+tgA==}
     dev: false
 
   /zrender@5.4.4:
