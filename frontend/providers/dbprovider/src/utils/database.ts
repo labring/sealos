@@ -211,45 +211,64 @@ export function distributeResources(data: {
         }
       };
     case DBTypeEnum.redis:
-      // Please ref RedisHAConfig in  /constants/db.ts
-      let rsRes = RedisHAConfig(data.replicas > 1);
+      const redisResource = getPercentResource(1);
+      const sentinelResource = allocateCM(cpu * 0.5, memory * 0.5);
+      const sentinelStorage = Math.round(data.storage * 0.5);
       return {
         redis: {
-          cpuMemory: getPercentResource(1),
-          storage: Math.max(data.storage - 1, 1)
+          cpuMemory: redisResource,
+          storage: data.storage
         },
         'redis-sentinel': {
-          cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
-          storage: rsRes.storage,
+          cpuMemory: sentinelResource,
+          storage: sentinelStorage,
           other: {
-            replicas: rsRes.replicas
+            replicas: 3
           }
         }
       };
     case DBTypeEnum.kafka:
+      const brokerResource = {
+        cpuMemory: getPercentResource(0.5),
+        storage: Math.max(Math.round(data.storage * 0.5), 1)
+      };
       const quarterResource = {
         cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+        storage: Math.max(Math.round(data.storage * 0.25), 1)
       };
       return {
-        'kafka-server': quarterResource,
-        'kafka-broker': quarterResource,
+        'kafka-broker': brokerResource,
         controller: quarterResource,
         'kafka-exporter': quarterResource
       };
     case DBTypeEnum.milvus:
       return {
         milvus: {
-          cpuMemory: getPercentResource(0.4),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
         },
         etcd: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         },
         minio: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        }
+      };
+    case DBTypeEnum.clickhouse:
+      return {
+        clickhouse: {
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
+        },
+        'ch-keeper': {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        },
+        zookeeper: {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         }
       };
     default:

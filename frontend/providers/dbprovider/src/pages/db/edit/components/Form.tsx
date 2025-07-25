@@ -68,13 +68,26 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
     [DBTypeEnum.mongodb, t('occupy', { comp: 'MongoDB', num: '100%' })],
     [DBTypeEnum.mysql, t('occupy', { comp: 'MySQL', num: '100%' })],
     [DBTypeEnum.redis, `${t('occupy', { comp: 'Redis', num: '100%' })}, ${t('ha_desc')}`],
-    [DBTypeEnum.kafka, `Controller, broker, exporter, server${t('each', { perc: '25%' })}`],
+    [
+      DBTypeEnum.kafka,
+      `${t('occupy', { comp: 'kafka-broker', num: '50%' })}, ${t('occupy', {
+        comp: 'controller',
+        num: '25%'
+      })}, ${t('occupy', { comp: 'kafka-expoter', num: '25%' })}`
+    ],
     [
       DBTypeEnum.milvus,
-      `${t('occupy', { comp: 'Etcd', num: '30%' })}, ${t('occupy', {
+      `${t('occupy', { comp: 'Etcd', num: '25%' })}, ${t('occupy', {
         comp: 'milvus',
-        num: '40%'
-      })}, ${t('occupy', { comp: 'minio', num: '30%' })}`
+        num: '50%'
+      })}, ${t('occupy', { comp: 'minio', num: '25%' })}`
+    ],
+    [
+      DBTypeEnum.clickhouse,
+      `${t('occupy', { comp: 'ClickHouse', num: '50%' })}, ${t('occupy', {
+        comp: 'ch-keeper',
+        num: '25%'
+      })}, ${t('occupy', { comp: 'zookeeper', num: '25%' })}`
     ]
   ]);
 
@@ -157,7 +170,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
                         <Td w="190px">{keyName}</Td>
                         <Td>{value.cpuMemory.limits.cpu}</Td>
                         <Td>{value.cpuMemory.limits.memory}</Td>
-                        <Td>{value.storage} G</Td>
+                        <Td>{value.storage + ' G'}</Td>
                         <Td>{value.other?.replicas ?? data.replicas}</Td>
                       </Tr>
                     );
@@ -285,7 +298,10 @@ const Form = ({
         [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.milvus:
-        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
+        break;
+      case DBTypeEnum.clickhouse:
+        minStorageChange = 4;
         break;
       default:
         break;

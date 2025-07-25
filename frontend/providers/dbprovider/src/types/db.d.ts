@@ -71,7 +71,6 @@ export type DBComponentsName =
   | 'redis'
   | 'redis-sentinel'
   | 'kafka'
-  | 'kafka-server'
   | 'kafka-broker'
   | 'controller'
   | 'kafka-exporter'

@@ -163,7 +163,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       //     isClosable: true
       //   });
       // }
-
       await createDB({ dbForm: formData, isEdit });
       toast({
         title: t(applySuccess),
