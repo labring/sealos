@@ -18,10 +18,10 @@ import {
   useColorMode,
   useDisclosure
 } from '@chakra-ui/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RegionToggle from '../region/RegionToggle';
 import WorkspaceToggle from '../team/WorkspaceToggle';
 import useAppStore from '@/stores/app';
@@ -38,11 +38,9 @@ import {
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
-import { getAmount } from '@/api/auth';
-import Decimal from 'decimal.js';
-import { CopyIcon, CurrencySymbol } from '@sealos/ui';
+import { CopyIcon } from '@sealos/ui';
 import { useGuideModalStore } from '@/stores/guideModal';
-import { formatMoney } from '@/utils/format';
+import SecondaryLinks from '../SecondaryLinks';
 
 const baseItemStyle = {
   minW: '36px',
@@ -72,10 +70,6 @@ export default function Account() {
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
   const onAmount = useCallback((amount: number) => setNotificationAmount(amount), []);
   const [showNsId, setShowNsId] = useState(false);
-  const linksCollapsed = useBreakpointValue({
-    base: true,
-    md: false
-  });
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
@@ -85,40 +79,12 @@ export default function Account() {
     setToken('');
   };
 
-  const openWorkOrderApp = () => {
-    const workorder = installedApps.find((t) => t.key === 'system-workorder');
-    if (!workorder) return;
-    openApp(workorder);
-  };
-
-  const openCostCenterApp = () => {
-    openDesktopApp({
-      appKey: 'system-costcenter',
-      pathname: '/'
-    });
-  };
-
   const openReferralApp = () => {
     openDesktopApp({
       appKey: 'system-invite',
       pathname: '/'
     });
   };
-
-  const { data } = useQuery({
-    queryKey: ['getAmount', { userId: user?.userCrUid }],
-    queryFn: getAmount,
-    enabled: !!user,
-    staleTime: 60 * 1000
-  });
-
-  const balance = useMemo(() => {
-    let realBalance = new Decimal(data?.data?.balance || 0);
-    if (data?.data?.deductionBalance) {
-      realBalance = realBalance.minus(new Decimal(data.data.deductionBalance));
-    }
-    return realBalance.toNumber();
-  }, [data]);
 
   useEffect(() => {
     if (initGuide) {
@@ -127,9 +93,9 @@ export default function Account() {
   }, [initGuide, openGuideModal]);
 
   return (
-    <Box position={'relative'} flex={1}>
-      <Flex alignItems={'center'} height={'100%'} zIndex={3}>
-        <Flex alignItems={'center'} flexGrow={1}>
+    <Box position={'relative'} flex={1} w={'full'}>
+      <Flex alignItems={'center'} height={'100%'} zIndex={3} w={'full'}>
+        <Flex alignItems={'center'} flex={'1 1 auto'} minW={0}>
           <Center
             display={{
               base: 'none',
@@ -168,72 +134,6 @@ export default function Account() {
           <WorkspaceToggle />
         </Flex>
 
-        {!linksCollapsed && (
-          <Flex gap={'4px'} ml={'auto'}>
-            {layoutConfig?.version === 'cn' && (
-              <Center
-                mr={'12px'}
-                borderRadius={'8px'}
-                bg={
-                  'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-                }
-                h={'36px'}
-                px={'12px'}
-                py={'8px'}
-                color="#2563EB"
-                fontSize={'14px'}
-                fontWeight={'500'}
-                cursor={'pointer'}
-                onClick={openCostCenterApp}
-              >
-                <Text>{t('common:balance')}</Text>
-                <Divider orientation="vertical" mx={'12px'} />
-                <CurrencySymbol />
-                <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
-              </Center>
-            )}
-
-            <Center
-              className="guide-button"
-              cursor={'pointer'}
-              {...baseItemStyle}
-              px={'8px'}
-              borderRadius={'8px'}
-              onClick={() => {
-                openGuideModal();
-                setInitGuide(false);
-              }}
-            >
-              {t('common:guide')}
-            </Center>
-
-            {layoutConfig?.common.docsUrl && (
-              <Center
-                {...baseItemStyle}
-                cursor={'pointer'}
-                borderRadius={'8px'}
-                px={'8px'}
-                onClick={() => window.open(layoutConfig?.common?.docsUrl)}
-              >
-                {t('common:doc')}
-              </Center>
-            )}
-
-            {layoutConfig?.version === 'cn' && (
-              <Center
-                cursor={'pointer'}
-                {...baseItemStyle}
-                px={'8px'}
-                borderRadius={'8px'}
-                border={'1px solid transparent'}
-                onClick={openWorkOrderApp}
-              >
-                {t('v2:support')}
-              </Center>
-            )}
-          </Flex>
-        )}
-
         <Flex
           ml={'20px'}
           gap={'12px'}
@@ -257,6 +157,8 @@ export default function Account() {
           )} */}
 
           {/* <ThemeToggle /> */}
+
+          <SecondaryLinks />
 
           <Notification key={'notification'} disclosure={showDisclosure} onAmount={onAmount}>
             <Center
@@ -375,23 +277,7 @@ export default function Account() {
                     </Text>
                   </Flex>
                 </MenuItem> */}
-                <MenuItem
-                  _focus={{ bg: 'transparent' }}
-                  py="6px"
-                  px="8px"
-                  borderRadius="8px"
-                  _hover={{ bg: '#F4F4F5' }}
-                  onClick={openCostCenterApp}
-                >
-                  <Flex alignItems="center" gap="8px">
-                    <Center w="20px" h="20px">
-                      <CreditCard size={16} color="#737373" />
-                    </Center>
-                    <Text fontSize="14px" fontWeight="400">
-                      {t('common:billing')}
-                    </Text>
-                  </Flex>
-                </MenuItem>
+
                 {layoutConfig?.version === 'cn' && (
                   <MenuItem
                     mt="0px"
