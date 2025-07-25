@@ -1,40 +1,57 @@
-import type { NextApiRequest } from 'next';
-import { getK8s } from './kubernetes';
-import { authSession } from './auth';
-import { appDeployKey } from '@/constants/app';
+import { appDeployKey, pauseKey, minReplicasKey, maxReplicasKey } from '@/constants/app';
 import { formData2Yamls } from '@/pages/app/edit';
 import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
+import { UserQuotaItemType } from '@/types/user';
+import { json2HPA } from '@/utils/deployYaml2Json';
+import {
+  PatchUtils,
+  KubeConfig,
+  KubernetesObjectApi,
+  CoreV1Api,
+  AppsV1Api,
+  AutoscalingV2Api,
+  NetworkingV1Api,
+  CustomObjectsApi,
+  Metrics,
+  Exec,
+  V1Deployment,
+  V1StatefulSet,
+  KubernetesObject,
+  User
+} from '@kubernetes/client-node';
 
-export interface AppServiceParams {
-  appName: string;
-  req: NextApiRequest;
-}
-
-export interface DeleteAppParams {
-  name: string;
-  req: NextApiRequest;
-}
-
-export interface CreateAppParams {
-  appForm: AppEditType;
-  req: NextApiRequest;
+export interface K8sContext {
+  kc: KubeConfig;
+  apiClient: KubernetesObjectApi;
+  k8sCore: CoreV1Api;
+  k8sApp: AppsV1Api;
+  k8sAutoscaling: AutoscalingV2Api;
+  k8sNetworkingApp: NetworkingV1Api;
+  k8sCustomObjects: CustomObjectsApi;
+  metricsClient: Metrics;
+  k8sExec: Exec;
+  kube_user: User | null;
+  namespace: string;
+  applyYamlList: (yamlList: string[], type: 'create' | 'replace') => Promise<KubernetesObject[]>;
+  getDeployApp: (appName: string) => Promise<V1Deployment | V1StatefulSet>;
+  getUserQuota: () => Promise<UserQuotaItemType[]>;
+  getUserBalance: () => Promise<number>;
 }
 
 /**
  * Get application details by application name
- * @param params Parameters containing application name and request object
+ * @param appName Application name
+ * @param k8s Kubernetes context containing clients and configuration
  * @returns Promise<PromiseSettledResult<any>[]> Query results of application-related resources
  */
-export async function getAppByName({ appName, req }: AppServiceParams) {
-  const { k8sApp, k8sCore, k8sNetworkingApp, k8sAutoscaling, namespace } = await getK8s({
-    kubeconfig: await authSession(req.headers)
-  });
+export async function getAppByName(appName: string, k8s: K8sContext) {
+  const { k8sApp, k8sCore, k8sNetworkingApp, k8sAutoscaling, namespace } = k8s;
 
   const response = await Promise.allSettled([
     k8sApp.readNamespacedDeployment(appName, namespace),
     k8sApp.readNamespacedStatefulSet(appName, namespace),
-    k8sCore.readNamespacedConfigMap(appName, namespace).catch((err) => {
+    k8sCore.readNamespacedConfigMap(appName, namespace).catch((err: any) => {
       // This .catch will prevent unhandledRejection
       // Need to re-throw the error to let Promise.allSettled correctly identify it as rejection
       return Promise.reject(err);
@@ -48,8 +65,8 @@ export async function getAppByName({ appName, req }: AppServiceParams) {
         undefined,
         `${appDeployKey}=${appName}`
       )
-      .then((res) => ({
-        body: res.body.items.map((item) => ({
+      .then((res: any) => ({
+        body: res.body.items.map((item: any) => ({
           ...item,
           apiVersion: res.body.apiVersion, // item does not contain apiversion and kind
           kind: 'Service'
@@ -64,8 +81,8 @@ export async function getAppByName({ appName, req }: AppServiceParams) {
         undefined,
         `${appDeployKey}=${appName}`
       )
-      .then((res) => ({
-        body: res.body.items.map((item) => ({
+      .then((res: any) => ({
+        body: res.body.items.map((item: any) => ({
           ...item,
           apiVersion: res.body.apiVersion, // item does not contain apiversion and kind
           kind: 'Ingress'
@@ -80,17 +97,15 @@ export async function getAppByName({ appName, req }: AppServiceParams) {
 
 /**
  * Create a new application with the provided configuration
- * @param params Parameters containing application form data and request object
+ * @param appForm Application form data
+ * @param k8s Kubernetes context containing clients and configuration
  */
-export async function createApp({ appForm, req }: CreateAppParams) {
-  // Load environment configuration
+export async function createApp(appForm: AppEditType, k8s: K8sContext) {
   serverLoadInitData();
 
-  const { applyYamlList } = await getK8s({
-    kubeconfig: await authSession(req.headers)
-  });
+  const { applyYamlList } = k8s;
 
-  appForm.networks = appForm.networks.map((network) => ({
+  appForm.networks = appForm.networks.map((network: any) => ({
     ...network,
     domain: global.AppConfig.cloud.domain
   }));
@@ -102,16 +117,209 @@ export async function createApp({ appForm, req }: CreateAppParams) {
 }
 
 /**
- * Delete application and its related resources by application name
- * @param params Parameters containing application name and request object
+ * Start an application by restoring its replicas and HPA configuration
+ * @param appName Application name
+ * @param k8s Kubernetes context containing clients and configuration
  */
-export async function deleteAppByName({ name, req }: DeleteAppParams) {
-  const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } =
-    await getK8s({
-      kubeconfig: await authSession(req.headers)
-    });
+export async function startApp(appName: string, k8s: K8sContext) {
+  const { apiClient, getDeployApp, applyYamlList, namespace, k8sNetworkingApp } = k8s;
 
-  // delete Certificate
+  const app = await getDeployApp(appName);
+
+  if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
+    throw new Error('app data error');
+  }
+
+  if (!app.metadata.annotations[pauseKey]) {
+    throw new Error('app is running');
+  }
+
+  const pauseData: {
+    target: string;
+    value: string;
+  } = JSON.parse(app.metadata.annotations[pauseKey]);
+
+  delete app.metadata.annotations[pauseKey];
+  app.spec.replicas = app.metadata.annotations[minReplicasKey]
+    ? +app.metadata.annotations[minReplicasKey]
+    : 1;
+
+  const requestQueue: Promise<any>[] = [apiClient.replace(app)];
+  if (pauseData.target) {
+    const hpaYaml = json2HPA({
+      appName,
+      hpa: {
+        use: true,
+        target: pauseData.target,
+        value: pauseData.value,
+        minReplicas: app.metadata.annotations[minReplicasKey]
+          ? app.metadata.annotations[minReplicasKey]
+          : '1',
+        maxReplicas: app.metadata.annotations[maxReplicasKey]
+          ? app.metadata.annotations[maxReplicasKey]
+          : '2'
+      }
+    } as unknown as AppEditType);
+
+    requestQueue.push(applyYamlList([hpaYaml], 'create'));
+  }
+
+  try {
+    const { body: ingress } = await k8sNetworkingApp.listNamespacedIngress(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${appDeployKey}=${appName}`
+    );
+    if (ingress?.items?.length > 0) {
+      for (const ingressItem of ingress.items) {
+        if (ingressItem?.metadata?.name) {
+          const patchData: Record<string, any> = {};
+          if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'pause') {
+            patchData.metadata = {
+              annotations: {
+                'kubernetes.io/ingress.class': 'nginx'
+              }
+            };
+          }
+          if (ingressItem.spec?.ingressClassName === 'pause') {
+            patchData.spec = {
+              ingressClassName: 'nginx'
+            };
+          }
+
+          if (Object.keys(patchData).length > 0) {
+            requestQueue.push(
+              k8sNetworkingApp.patchNamespacedIngress(
+                ingressItem.metadata.name,
+                namespace,
+                patchData,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+              )
+            );
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    if (error?.statusCode !== 404) {
+      return Promise.reject('无法读取到ingress');
+    }
+  }
+
+  await Promise.all(requestQueue);
+}
+
+/**
+ * Pause an application by setting replicas to 0 and storing current configuration
+ * @param appName Application name
+ * @param k8s Kubernetes context containing clients and configuration
+ */
+export async function pauseApp(appName: string, k8s: K8sContext) {
+  const { apiClient, k8sAutoscaling, getDeployApp, namespace, k8sNetworkingApp } = k8s;
+
+  const app = await getDeployApp(appName);
+  if (!app.metadata?.name || !app?.metadata?.annotations || !app.spec) {
+    throw new Error('app data error');
+  }
+
+  const restartAnnotations: Record<string, string> = {
+    target: '',
+    value: ''
+  };
+
+  const requestQueue: Promise<any>[] = [];
+  try {
+    const { body: hpa } = await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(
+      appName,
+      namespace
+    );
+
+    restartAnnotations.target = hpa?.spec?.metrics?.[0]?.resource?.name || 'cpu';
+    restartAnnotations.value = `${
+      hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
+    }`;
+
+    requestQueue.push(k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace));
+  } catch (error: any) {
+    if (error?.statusCode !== 404) {
+      return Promise.reject('not found hpa');
+    }
+  }
+
+  try {
+    const { body: ingress } = await k8sNetworkingApp.listNamespacedIngress(
+      namespace,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      `${appDeployKey}=${appName}`
+    );
+    if (ingress?.items?.length > 0) {
+      for (const ingressItem of ingress.items) {
+        if (ingressItem?.metadata?.name) {
+          const patchData: Record<string, any> = {};
+          if (ingressItem.metadata?.annotations?.['kubernetes.io/ingress.class'] === 'nginx') {
+            patchData.metadata = {
+              annotations: {
+                'kubernetes.io/ingress.class': 'pause'
+              }
+            };
+          }
+          if (ingressItem.spec?.ingressClassName === 'nginx') {
+            patchData.spec = {
+              ingressClassName: 'pause'
+            };
+          }
+
+          if (Object.keys(patchData).length > 0) {
+            requestQueue.push(
+              k8sNetworkingApp.patchNamespacedIngress(
+                ingressItem.metadata.name,
+                namespace,
+                patchData,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_MERGE_PATCH } }
+              )
+            );
+          }
+        }
+      }
+    }
+  } catch (error: any) {
+    if (error?.statusCode !== 404) {
+      return Promise.reject('无法读取到ingress');
+    }
+  }
+
+  app.metadata.annotations[pauseKey] = JSON.stringify(restartAnnotations);
+  app.spec.replicas = 0;
+
+  requestQueue.push(apiClient.replace(app));
+
+  await Promise.all(requestQueue);
+}
+
+/**
+ * Delete application and its related resources by application name
+ * @param name Application name
+ * @param k8s Kubernetes context containing clients and configuration
+ */
+export async function deleteAppByName(name: string, k8s: K8sContext) {
+  const { k8sApp, k8sCore, k8sAutoscaling, k8sNetworkingApp, namespace, k8sCustomObjects } = k8s;
+
   const certificatesList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',
     'v1',
@@ -133,7 +341,6 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
     )
   );
 
-  // delete Issuer
   const issuersList = (await k8sCustomObjects.listNamespacedCustomObject(
     'cert-manager.io',
     'v1',
@@ -156,7 +363,6 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
   );
 
   const delIssuerAndCert = await Promise.allSettled([...delCertList, ...delIssuerList]);
-  /* find not 404 error */
   delIssuerAndCert.forEach((item) => {
     console.log(item, 'delIssuerAndCert err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
@@ -166,9 +372,7 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
     }
   });
 
-  /* delete all sources */
   const delDependent = await Promise.allSettled([
-    // delete service
     k8sCore.deleteCollectionNamespacedService(
       namespace,
       undefined,
@@ -178,9 +382,8 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
       undefined,
       `${appDeployKey}=${name}`
     ),
-    k8sCore.deleteNamespacedConfigMap(name, namespace), // delete configMap
-    k8sCore.deleteNamespacedSecret(name, namespace), // delete secret
-    // delete Ingress
+    k8sCore.deleteNamespacedConfigMap(name, namespace),
+    k8sCore.deleteNamespacedSecret(name, namespace),
     k8sNetworkingApp.deleteCollectionNamespacedIngress(
       namespace,
       undefined,
@@ -190,7 +393,7 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
       undefined,
       `${appDeployKey}=${name}`
     ),
-    // delete pvc
+
     k8sCore.deleteCollectionNamespacedPersistentVolumeClaim(
       namespace,
       undefined,
@@ -200,10 +403,9 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
       undefined,
       `app=${name}`
     ),
-    k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, namespace) // delete HorizontalPodAutoscaler
+    k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(name, namespace)
   ]);
 
-  /* find not 404 error */
   delDependent.forEach((item) => {
     console.log(item, 'delApp err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
@@ -213,13 +415,11 @@ export async function deleteAppByName({ name, req }: DeleteAppParams) {
     }
   });
 
-  // delete deploy and statefulSet
   const delApp = await Promise.allSettled([
-    k8sApp.deleteNamespacedDeployment(name, namespace), // delete deploy
-    k8sApp.deleteNamespacedStatefulSet(name, namespace) // delete stateFuleSet
+    k8sApp.deleteNamespacedDeployment(name, namespace),
+    k8sApp.deleteNamespacedStatefulSet(name, namespace)
   ]);
 
-  /* find not 404 error */
   delApp.forEach((item) => {
     console.log(item, 'delApp Deployment StatefulSet err');
     if (item.status === 'rejected' && +item?.reason?.body?.code !== 404) {
