@@ -1,7 +1,5 @@
 import { ApiReferenceReact } from '@scalar/api-reference-react';
-
 import { openApiDocument } from '@/api/openapi';
-
 import { SEALOS_DOMAIN } from '@/store/static';
 import { getUserKubeConfig } from '@/utils/user';
 
@@ -11,9 +9,9 @@ export default function References() {
   const config = {
     content: openApiDocument(SEALOS_DOMAIN),
     authentication: {
-      preferredSecurityScheme: ['kubeconfigAuth'],
+      preferredSecurityScheme: ['kubeconfig'],
       securitySchemes: {
-        kubeconfigAuth: {
+        kubeconfig: {
           in: 'header',
           name: 'Authorization',
           value: encodeURIComponent(getUserKubeConfig() || '')
