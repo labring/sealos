@@ -2,14 +2,7 @@ package commit
 
 import (
 	"context"
-	"io"
-	"log"
-
-	"github.com/containerd/containerd/v2/client"
-	"github.com/containerd/nerdctl/v2/pkg/api/types"
-	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"fmt"
 	// imageutil "github.com/labring/cri-shim/pkg/image"
 )
 

@@ -63,17 +63,10 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		case devboxv1alpha1.DevboxStateShutdown:
 			// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 			// step 1: do commit
-<<<<<<< HEAD
-			targetImage := devbox.Status.CommitRecords[devbox.Status.ContentID].Image
-			h.Logger.Info("commit devbox", "devbox", devbox.Name, "targetImage", targetImage)
-			containerID:=devbox.Status.CommitRecords[devbox.Status.ContentID].ContainerID
-			if err := h.Committer.Commit(ctx, devbox.Name, containerID, targetImage); err != nil {
-=======
 			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
 			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
 			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
->>>>>>> otherfork/devbox-daemon
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
@@ -111,17 +104,10 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		case devboxv1alpha1.DevboxStateShutdown:
 			// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 			// step 1: do commit
-<<<<<<< HEAD
-			targetImage := devbox.Status.CommitRecords[devbox.Status.ContentID].Image
-			containerID:=devbox.Status.CommitRecords[devbox.Status.ContentID].ContainerID
-			h.Logger.Info("commit devbox", "devbox", devbox.Name, "targetImage", targetImage)
-			if err := h.Committer.Commit(ctx, devbox.Name, containerID,targetImage); err != nil {
-=======
 			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
 			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
 			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
->>>>>>> otherfork/devbox-daemon
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
