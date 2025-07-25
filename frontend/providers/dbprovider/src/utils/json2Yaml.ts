@@ -98,7 +98,11 @@ export const json2CreateCluster = (
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
         metadata: {
-          labels: baseLabels,
+          labels: {
+            'kb.io/database': data.dbVersion,
+            'clusterdefinition.kubeblocks.io/name': data.dbType,
+            'clusterversion.kubeblocks.io/name': data.dbVersion
+          },
           name: data.dbName,
           namespace: getUserNamespace()
         },
@@ -148,7 +152,11 @@ export const json2CreateCluster = (
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
         metadata: {
-          labels: baseLabels,
+          labels: {
+            'kb.io/database': data.dbVersion,
+            'clusterdefinition.kubeblocks.io/name': data.dbType,
+            'clusterversion.kubeblocks.io/name': data.dbVersion
+          },
           name: data.dbName,
           namespace: getUserNamespace()
         },
@@ -198,17 +206,23 @@ export const json2CreateCluster = (
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
         metadata: {
+          annotations: {
+            'kubeblocks.io/host-network': 'mongodb'
+          },
           labels: {
-            'clusterversion.kubeblocks.io/name': data.dbVersion
+            'app.kubernetes.io/instance': data.dbName,
+            'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
+            'helm.sh/chart': 'mongodb-cluster-0.9.1'
           },
           name: data.dbName,
           namespace: getUserNamespace()
         },
         spec: {
-          terminationPolicy,
-          clusterDef: 'mongodb',
-          topology: 'replicaset',
-
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode',
+            topologyKeys: ['kubernetes.io/hostname']
+          },
           componentSpecs: [
             {
               componentDefRef: 'mongodb',
@@ -216,7 +230,7 @@ export const json2CreateCluster = (
               replicas: mongoRes.other?.replicas ?? data.replicas,
               resources: mongoRes.cpuMemory,
               ...(mongoRes.storage > 0 && {
-                serviceVersion: '8.0.4',
+                serviceVersion: '6.0.16',
                 volumeClaimTemplates: [
                   {
                     name: 'data',
@@ -228,20 +242,21 @@ export const json2CreateCluster = (
                 ]
               })
             }
-          ]
+          ],
+          terminationPolicy
         }
       }
     ];
   }
 
   function buildRedisYaml() {
-    const redisRes = resources['redis']; // 主/从节点
+    const redisRes = resources['redis'];
     const sentinelRes = resources['redis-sentinel'] ?? {
       cpuMemory: {
         limits: { cpu: '200m', memory: '256Mi' },
         requests: { cpu: '200m', memory: '256Mi' }
       },
-      storage: 20, // 默认 20 Gi
+      storage: 20,
       other: { replicas: 3 }
     };
 
@@ -250,8 +265,9 @@ export const json2CreateCluster = (
     const metaLabels = {
       'app.kubernetes.io/instance': data.dbName,
       'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
-      'clusterdefinition.kubeblocks.io/name': 'redis',
-      'clusterversion.kubeblocks.io/name': '',
+      'kb.io/database': data.dbVersion,
+      'clusterdefinition.kubeblocks.io/name': data.dbType,
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
       'helm.sh/chart': 'redis-cluster-0.9.0',
       ...data.labels
     };
@@ -295,7 +311,7 @@ export const json2CreateCluster = (
           {
             componentDef: 'redis-sentinel-7',
             name: 'redis-sentinel',
-            replicas: sentinelRes.other?.replicas ?? 3,
+            replicas: 3,
             resources: sentinelRes.cpuMemory,
             serviceVersion: data.dbVersion.split('-').pop() || '',
             volumeClaimTemplates: [
@@ -340,8 +356,9 @@ export const json2CreateCluster = (
     };
 
     const labels = {
-      'clusterdefinition.kubeblocks.io/name': 'clickhouse',
-      'clusterversion.kubeblocks.io/name': data.dbVersion.split('-').pop(),
+      'kb.io/database': data.dbVersion,
+      'clusterdefinition.kubeblocks.io/name': data.dbType,
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
       ...data.labels
     };
 
@@ -365,7 +382,7 @@ export const json2CreateCluster = (
             componentDefRef: 'zookeeper',
             disableExporter: true,
             name: 'zookeeper',
-            replicas: zkRes.other?.replicas ?? 1,
+            replicas: data.replicas,
             resources: {
               limits: { ...zkRes.cpuMemory.limits },
               requests: { ...zkRes.cpuMemory.requests }
@@ -376,7 +393,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${zkRes.storage}Gi` } }
+                  resources: { requests: { storage: `${data.storage}Gi` } }
                 }
               }
             ]
@@ -386,7 +403,7 @@ export const json2CreateCluster = (
             componentDefRef: 'clickhouse',
             disableExporter: true,
             name: 'clickhouse',
-            replicas: chRes.other?.replicas ?? 1,
+            replicas: data.replicas,
             resources: {
               limits: { ...chRes.cpuMemory.limits },
               requests: { ...chRes.cpuMemory.requests }
@@ -397,7 +414,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${chRes.storage}Gi` } }
+                  resources: { requests: { storage: `${data.storage}Gi` } }
                 }
               }
             ]
@@ -407,7 +424,7 @@ export const json2CreateCluster = (
             componentDefRef: 'ch-keeper',
             disableExporter: true,
             name: 'ch-keeper',
-            replicas: keeperRes.other?.replicas ?? 1,
+            replicas: data.replicas,
             resources: keeperRes.cpuMemory,
             serviceAccountName: `kb-${data.dbName}`,
             volumeClaimTemplates: [
@@ -415,7 +432,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${keeperRes.storage}Gi` } }
+                  resources: { requests: { storage: `${data.storage}Gi` } }
                 }
               }
             ]
@@ -431,70 +448,73 @@ export const json2CreateCluster = (
   }
 
   function buildKafkaYaml() {
-    console.log(resources);
     const brokerRes = resources['kafka-broker'] || {
       cpuMemory: {
         limits: { cpu: '0.5', memory: '0.5Gi' },
         requests: { cpu: '0.5', memory: '0.5Gi' }
       },
-      storage: 1,
+      storage: 20,
       other: { replicas: 1 }
     };
-
-    const exporterRes = resources['kafka-exporter'] || {
+    const controllerRes = resources['controller'] || {
       cpuMemory: {
         limits: { cpu: '0.5', memory: '0.5Gi' },
         requests: { cpu: '0.5', memory: '0.5Gi' }
       },
-      storage: 1,
+      storage: 20,
       other: { replicas: 1 }
     };
-
-    const serverRes = resources['kafka-server'] || {
+    const exporterRes = resources['kafka-exporter'] || {
       cpuMemory: {
-        limits: { cpu: '0.5', memory: '1Gi' },
-        requests: { cpu: '0.1', memory: '0.2Gi' }
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
       },
       storage: 0,
       other: { replicas: 1 }
     };
 
     const kafkaObj = {
-      apiVersion: 'apps.kubeblocks.io/v1',
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Cluster',
       metadata: {
         labels: {
+          'kb.io/database': data.dbVersion,
+          'clusterdefinition.kubeblocks.io/name': data.dbType,
           'clusterversion.kubeblocks.io/name': data.dbVersion
         },
-        name: data.dbName || 'kafka-separated-cluster',
-        namespace: getUserNamespace()
+        name: data.dbName,
+        namespace: getUserNamespace(),
+        annotations: {
+          'kubeblocks.io/extra-env':
+            '{"KB_KAFKA_ENABLE_SASL":"false","KB_KAFKA_BROKER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_CONTROLLER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_PUBLIC_ACCESS":"false"}'
+        }
       },
       spec: {
         terminationPolicy,
-        clusterDef: 'kafka',
-        topology: 'separated_monitor',
         componentSpecs: [
-          /* ----- kafka-broker --------------------------------------------- */
           {
-            name: 'kafka-broker',
+            name: 'broker',
+            componentDef: 'kafka-broker',
+            tls: false,
             replicas: data.replicas,
-            resources: brokerRes.cpuMemory,
-            env: [
+            affinity: {
+              podAntiAffinity: 'Preferred',
+              topologyKeys: ['kubernetes.io/hostname'],
+              tenancy: 'SharedNode'
+            },
+            tolerations: [
               {
-                name: 'KB_KAFKA_BROKER_HEAP',
-                value: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64'
-              },
-              {
-                name: 'KB_KAFKA_CONTROLLER_HEAP',
-                value: '-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64'
-              },
-              { name: 'KB_BROKER_DIRECT_POD_ACCESS', value: 'true' }
+                key: 'kb-data',
+                operator: 'Equal',
+                value: 'true',
+                effect: 'NoSchedule'
+              }
             ],
+            resources: brokerRes.cpuMemory,
             volumeClaimTemplates: [
               {
                 name: 'data',
                 spec: {
-                  storageClassName: '',
                   accessModes: ['ReadWriteOnce'],
                   resources: { requests: { storage: `${brokerRes.storage}Gi` } }
                 }
@@ -502,45 +522,44 @@ export const json2CreateCluster = (
               {
                 name: 'metadata',
                 spec: {
-                  storageClassName: '',
+                  storageClassName: null,
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${brokerRes.storage}Gi` } }
+                  resources: { requests: { storage: `5Gi` } }
                 }
               }
             ]
           },
-
-          /* ----- kafka-controller ----------------------------------------- */
           {
-            name: 'kafka-controller',
+            name: 'controller',
+            componentDefRef: 'controller',
+            componentDef: 'kafka-controller',
+            tls: false,
             replicas: data.replicas,
-            resources: {
-              limits: { ...exporterRes.cpuMemory.limits },
-              request: { ...exporterRes.cpuMemory.requests }
-            },
+            resources: controllerRes.cpuMemory,
             volumeClaimTemplates: [
               {
                 name: 'metadata',
                 spec: {
-                  storageClassName: '',
+                  storageClassName: null,
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${serverRes.storage}Gi` } }
+                  resources: { requests: { storage: `${controllerRes.storage}Gi` } }
                 }
               }
             ]
           },
-
-          /* ----- kafka-exporter ------------------------------------------- */
           {
-            name: 'kafka-exporter',
+            name: 'metrics-exp',
+            componentDef: 'kafka-exporter',
             replicas: data.replicas,
-            resources: exporterRes.cpuMemory
+            resources: {
+              limits: { ...exporterRes.cpuMemory.limits },
+              requests: { ...exporterRes.cpuMemory.requests }
+            }
           }
         ]
       }
     };
 
-    /* 4️⃣ 返回数组，外层 yaml.dump 会序列化 --------------------------------- */
     return [kafkaObj];
   }
 
@@ -573,7 +592,7 @@ export const json2CreateCluster = (
     };
 
     const labels = {
-      'clusterversion.kubeblocks.io/name': `milvus-${data.dbVersion}`, // e.g. milvus-2.3.2
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
       ...data.labels
     };
 
