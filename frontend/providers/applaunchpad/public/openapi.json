@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Application Launch Pad API",
+    "title": "Sealos AppLaunchpad API",
     "version": "1.0.0",
-    "description": "API documentation for Application Launch Pad service"
+    "description": "API documentation for Sealos AppLaunchpad"
   },
   "servers": [
     {
