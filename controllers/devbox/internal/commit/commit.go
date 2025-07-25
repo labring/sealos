@@ -6,15 +6,15 @@ import (
 )
 
 type Committer interface {
-	Commit(ctx context.Context, devboxName string, commitID string, baseImage string, commitImage string) error
+	Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error
 }
 
 type CommitterImpl struct {
 	// Client *containerd.Client
 }
 
-func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, commitID string, baseImage string, commitImage string) error {
-	fmt.Println("========>>>> commit devbox", devboxName, commitID, baseImage, commitImage)
+func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error {
+	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
 	return nil
 }
 
