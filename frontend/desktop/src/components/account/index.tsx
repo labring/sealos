@@ -93,9 +93,9 @@ export default function Account() {
   }, [initGuide, openGuideModal]);
 
   return (
-    <Box position={'relative'} flex={1}>
-      <Flex alignItems={'center'} height={'100%'} zIndex={3}>
-        <Flex alignItems={'center'} flexGrow={1}>
+    <Box position={'relative'} flex={1} w={'full'}>
+      <Flex alignItems={'center'} height={'100%'} zIndex={3} w={'full'}>
+        <Flex alignItems={'center'} flex={'1 1 auto'} minW={0}>
           <Center
             display={{
               base: 'none',
