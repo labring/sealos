@@ -198,7 +198,8 @@ const AppGridPagingContainer = ({
     if (!gridContainerRef.current) return 8;
 
     const height = gridContainerRef.current.clientHeight;
-    const rows = Math.floor((height + gridGap) / (appHeight + gridGap));
+    // At least 1 row in a grid.
+    const rows = Math.max(1, Math.floor((height + gridGap) / (appHeight + gridGap)));
 
     return rows * columns;
   }, [columns, gridGap, appHeight]);
@@ -883,7 +884,7 @@ export default function Apps() {
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <ModalBody p="0">
+          <ModalBody p="0" maxH={'full'}>
             <AppGridPagingContainer
               dragContainerProps={{
                 pt: {
@@ -913,7 +914,7 @@ export default function Apps() {
               onChange={(currentPage, pageSize) => {
                 setCurrentPageInFolder(currentPage);
                 setItemsPerPageInFolder(pageSize);
-                setTotalPagesInFolder(Math.ceil(moreApps.length / pageSize));
+                setTotalPagesInFolder(Math.ceil(folderApps.length / pageSize));
               }}
             >
               {folderPages.map((page, pageIndex) => (
