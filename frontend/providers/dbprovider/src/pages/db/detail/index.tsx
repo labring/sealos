@@ -10,7 +10,7 @@ import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';

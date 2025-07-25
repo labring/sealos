@@ -105,12 +105,28 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
 }
 
 export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
-  const dbType = db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+  const labels = db?.metadata?.labels || {};
+  const kbDatabase = labels['kb.io/database'];
+  let dbType = '';
+  let dbVersion = '';
+  if (kbDatabase) {
+    if (kbDatabase.startsWith('ac-mysql')) {
+      dbType = 'apecloud-mysql';
+      dbVersion = kbDatabase;
+    } else {
+      const [type, ...versionParts] = kbDatabase.split('-');
+      dbType = type;
+      dbVersion = labels['kb.io/database'] || '';
+    }
+  } else {
+    dbType = labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
+    dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
+  }
   // compute store amount
   return {
     id: db.metadata?.uid || ``,
     name: db.metadata?.name || 'db name',
-    dbType: dbType,
+    dbType: dbType as DBType,
     status:
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
@@ -129,6 +145,29 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 };
 
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
+  const labels = db?.metadata?.labels || {};
+  const kbDatabase = labels['kb.io/database'];
+  let dbType = '';
+  let dbVersion = '';
+  if (kbDatabase) {
+    if (kbDatabase.startsWith('ac-mysql')) {
+      dbType = 'apecloud-mysql';
+      dbVersion = kbDatabase;
+    } else {
+      const [type, ...versionParts] = kbDatabase.split('-');
+      dbType = type;
+      dbVersion = labels['kb.io/database'] || '';
+    }
+  } else {
+    dbType = labels['clusterdefinition.kubeblocks.io/name'] || 'kafka';
+    dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
+  }
+
+  const newLabels = { ...labels };
+  if (!newLabels['clusterversion.kubeblocks.io/name']) {
+    newLabels['clusterversion.kubeblocks.io/name'] = dbVersion;
+  }
+
   return {
     id: db.metadata?.uid || ``,
     createTime: dayjs(db.metadata?.creationTimestamp)
@@ -138,14 +177,14 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    dbType: db?.metadata?.labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql',
-    dbVersion: db?.metadata?.labels['clusterversion.kubeblocks.io/name'] || '',
+    dbType: dbType as DBType,
+    dbVersion: dbVersion,
     dbName: db.metadata?.name || 'db name',
     replicas: db.spec?.componentSpecs?.[0]?.replicas || 1,
     ...calcTotalResource(db.spec.componentSpecs),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
-    labels: db.metadata.labels || {},
+    labels: newLabels,
     source: getDBSource(db),
     autoBackup: adaptBackupByCluster(db),
     terminationPolicy: db.spec?.terminationPolicy || 'Delete'
