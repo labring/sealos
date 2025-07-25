@@ -1,21 +1,20 @@
 import { useState } from 'react';
-import { Tabs } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
+import { Copy, FileCode } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { Box, Center, Flex, Grid, useTheme } from '@chakra-ui/react';
 
 import Code from '@/components/Code';
-import MyIcon from '@/components/Icon';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
-import { obj2Query } from '@/utils/tools';
 import type { YamlItemType } from '@/types';
-import { useCopyData } from '@/utils/tools';
+import { obj2Query, useCopyData } from '@/utils/tools';
 
-import styles from './index.module.scss';
-
-const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: number }) => {
-  const theme = useTheme();
+const Yaml = ({ yamlList = [] }: { yamlList: YamlItemType[] }) => {
   const router = useRouter();
   const t = useTranslations();
   const { copyData } = useCopyData();
@@ -24,105 +23,70 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
 
   const devboxName = searchParams.get('name') as string;
 
+  const handleTabsChange = (value: string) => {
+    if (value === 'form') {
+      router.replace(
+        `/devbox/create?${obj2Query({
+          type: 'form',
+          name: devboxName
+        })}`
+      );
+    }
+  };
+
   return (
-    <Grid
-      h={'100%'}
-      templateColumns={'220px 1fr'}
-      gridGap={5}
-      alignItems={'start'}
-      px={`${pxVal}px`}
-    >
-      <Box>
-        <Tabs
-          list={[
-            { id: 'form', label: t('config_form') },
-            { id: 'yaml', label: t('yaml_file') }
-          ]}
-          activeId={'yaml'}
-          onChange={() =>
-            router.replace(
-              `/devbox/create?${obj2Query({
-                type: 'form',
-                name: devboxName
-              })}`
-            )
-          }
-        />
-        <Flex
-          flexDirection={'column'}
-          mt={3}
-          borderRadius={'md'}
-          overflow={'hidden'}
-          bg={'white'}
-          p="4px"
-          border={theme.borders.base}
-        >
+    <div className="flex gap-6">
+      {/* left side */}
+      <div className="flex min-w-65 flex-col gap-4">
+        <Tabs defaultValue="yaml" onValueChange={handleTabsChange}>
+          <TabsList className="h-11 w-full">
+            <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
+            <TabsTrigger value="yaml">{t('yaml_file')}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex flex-col rounded-xl border-1 border-zinc-200">
           {yamlList.map((file, index) => (
-            <Flex
+            <div
               key={file.filename}
-              py={'8px'}
-              cursor={'pointer'}
-              alignItems={'center'}
-              h={'40px'}
-              borderRadius={'base'}
-              _hover={{
-                backgroundColor: 'grayModern.100'
-              }}
-              {...(index === selectedIndex
-                ? {
-                    fontWeight: 'bold',
-                    borderColor: 'grayModern.900',
-                    backgroundColor: 'grayModern.100'
-                  }
-                : {
-                    color: 'grayModern.900',
-                    borderColor: 'myGray.200',
-                    backgroundColor: 'transparent'
-                  })}
+              className={cn(
+                'flex h-10 cursor-pointer items-center bg-white px-5 py-6 text-zinc-500',
+                index === selectedIndex && 'bg-gray-100 text-zinc-900',
+                index === 0 && 'rounded-t-xl',
+                index === yamlList.length - 1 && 'rounded-b-xl'
+              )}
               onClick={() => setSelectedIndex(index)}
             >
-              <Box
-                w={'2px'}
-                h={'24px'}
-                justifySelf={'start'}
-                bg={'grayModern.900'}
-                borderRadius={'12px'}
-                opacity={selectedIndex === index ? 1 : 0}
-              ></Box>
-              <Box ml="18px">{file.filename}</Box>
-            </Flex>
+              <div className={cn('flex items-center gap-2')}>
+                <FileCode className="h-5 w-5" />
+                <span>{file.filename}</span>
+              </div>
+            </div>
           ))}
-        </Flex>
-      </Box>
+        </div>
+      </div>
+
+      {/* right side */}
       {!!yamlList[selectedIndex] && (
-        <Flex
-          className={styles.codeBox}
-          flexDirection={'column'}
-          h={'100%'}
-          overflow={'hidden'}
-          border={theme.borders.base}
-          borderRadius={'md'}
-          position={'relative'}
-        >
-          <Flex px={8} py={4} bg={'grayModern.50'}>
-            <Box flex={1} fontSize={'xl'} color={'grayModern.900'} fontWeight={'bold'}>
-              {yamlList[selectedIndex].filename}
-            </Box>
-            <Center
-              cursor={'pointer'}
-              color={'grayModern.600'}
-              _hover={{ color: '#219BF4' }}
+        <Card className="flex h-[calc(100vh-200px)] w-full flex-col gap-5 overflow-hidden p-8">
+          {/* header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl/7 font-medium">{yamlList[selectedIndex].filename}</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-fit w-fit"
               onClick={() => copyData(yamlList[selectedIndex].value)}
             >
-              <MyIcon name="copy" w={'16px'} />
-            </Center>
-          </Flex>
-          <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
-            <Code className={styles.code} content={yamlList[selectedIndex].value} language="yaml" />
-          </Box>
-        </Flex>
+              <Copy className="!h-5 !w-5 text-neutral-400" />
+            </Button>
+          </div>
+          {/* content */}
+          <ScrollArea className="w-full">
+            <Code content={yamlList[selectedIndex].value} language="yaml" />
+          </ScrollArea>
+        </Card>
       )}
-    </Grid>
+    </div>
   );
 };
 

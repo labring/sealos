@@ -49,3 +49,30 @@ export const MockDevboxDetail = {
   ],
   lastTerminatedReason: ''
 };
+
+// Generate mock monitor data for CPU and Memory usage
+export const generateMockMonitorData = (name: string = '') => {
+  const now = Date.now();
+  const xData: number[] = [];
+  const yData: string[] = [];
+
+  // Generate 30 data points, one for each minute
+  for (let i = 0; i < 30; i++) {
+    // Convert current time to seconds and subtract i minutes
+    xData.push(Math.floor(now / 1000) - i * 60);
+
+    // Generate random percentage between 0-100 with 2 decimal places
+    const value = (Math.random() * 100).toFixed(2);
+    yData.push(value);
+  }
+
+  // Reverse arrays so that older data comes first
+  xData.reverse();
+  yData.reverse();
+
+  return {
+    name,
+    xData,
+    yData
+  };
+};

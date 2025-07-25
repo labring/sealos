@@ -7,7 +7,7 @@ import { ERROR_ENUM } from '@/services/error';
 import { retagSvcClient } from '@/services/retag';
 import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
 import { getRegionUid } from '@/utils/env';
-import { createTemplateRepositorySchema } from '@/utils/vaildate';
+import { createTemplateRepositorySchema } from '@/utils/validate';
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 // 不带 templateRepositoryUid 就是 create

@@ -18,6 +18,8 @@ export async function GET(req: NextRequest) {
 
     return jsonRes<Env>({
       data: {
+        documentUrlZH: process.env.DOCUMENT_URL_ZH || defaultEnv.documentUrlZH,
+        documentUrlEN: process.env.DOCUMENT_URL_EN || defaultEnv.documentUrlEN,
         privacyUrl: process.env.PRIVACY_URL || defaultEnv.privacyUrl,
         sealosDomain: process.env.SEALOS_DOMAIN || defaultEnv.sealosDomain,
         ingressSecret: process.env.INGRESS_SECRET || defaultEnv.ingressSecret,

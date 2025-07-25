@@ -12,6 +12,8 @@ export interface SourcePrice {
 }
 
 export interface Env {
+  documentUrlZH: string;
+  documentUrlEN: string;
   sealosDomain: string;
   ingressSecret: string;
   registryAddr: string;

@@ -1,5 +1,3 @@
-import { V1Deployment, V1Pod, V1StatefulSet } from '@kubernetes/client-node';
-
 import { DELETE, GET, POST } from '@/services/request';
 import {
   DevboxDetailTypeV2,
@@ -10,13 +8,6 @@ import {
   PodDetailType,
   ShutdownModeType
 } from '@/types/devbox';
-import { KBDevboxReleaseType, KBDevboxTypeV2 } from '@/types/k8s';
-import {
-  adaptAppListItem,
-  adaptDevboxListItemV2,
-  adaptDevboxVersionListItem,
-  adaptPod
-} from '@/utils/adapt';
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { AxiosProgressEvent } from 'axios';
 import { AppListItemType } from '@/types/app';
@@ -77,6 +68,8 @@ export const getDevboxMonitorData = (payload: {
   queryName: string;
   queryKey: keyof MonitorQueryKey;
   step: string;
+  start?: number;
+  end?: number;
 }) => GET<MonitorDataResult[]>(`/api/monitor/getMonitorData`, payload);
 
 export const getAppsByDevboxId = (devboxId: string) =>

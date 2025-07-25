@@ -1,32 +1,21 @@
-import { createStore } from 'zustand';
+import { create } from 'zustand';
 
-export type TagSelectorProps = {
+interface TagSelectorState {
   selectedTagList: Set<string>;
-};
-export type TagSelectorStore = {
-  setSelectedTag: (tagUid: string, select: boolean) => void;
+  setSelectedTag: (tagId: string, checked: boolean) => void;
   getSelectedTagList: () => string[];
-} & TagSelectorProps;
+  resetTags: () => void;
+}
 
-export const createTagSelectorStore = (initProps?: Partial<TagSelectorProps>) => {
-  const DEFAULT_PROPS: TagSelectorProps = {
-    selectedTagList: new Set()
-  };
-  return createStore<TagSelectorStore>()((set, get) => ({
-    ...DEFAULT_PROPS,
-    ...initProps,
-    setSelectedTag(tagUid, select) {
-      set((draft) => {
-        const newSet = new Set(draft.selectedTagList);
-        if (select) newSet.add(tagUid);
-        else newSet.delete(tagUid);
-        return {
-          selectedTagList: newSet
-        };
-      });
-    },
-    getSelectedTagList() {
-      return [...get().selectedTagList];
-    }
-  }));
-};
+export const useTagSelectorStore = create<TagSelectorState>((set, get) => ({
+  selectedTagList: new Set<string>(),
+  setSelectedTag: (tagId: string, checked: boolean) =>
+    set((state) => {
+      const newSet = new Set(state.selectedTagList);
+      if (checked) newSet.add(tagId);
+      else newSet.delete(tagId);
+      return { selectedTagList: newSet };
+    }),
+  getSelectedTagList: () => Array.from(get().selectedTagList),
+  resetTags: () => set({ selectedTagList: new Set<string>() })
+}));

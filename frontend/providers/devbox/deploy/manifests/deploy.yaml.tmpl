@@ -43,10 +43,14 @@ spec:
               value: {{ .regionUid }} # -nsealos cm desktop-frontend-config ->regionUid
             - name: DATABASE_URL
               value: {{ .databaseUrl }} # -nsealos cm desktop-frontend-config ->database->global + devbox
-          command: ["/bin/bash", "-c", "/app/providers/devbox/init-database.sh"]
+          command: ['/bin/bash', '-c', '/app/providers/devbox/init-database.sh']
       containers:
         - name: devbox-frontend
           env:
+            - name: DOCUMENT_URL_ZH
+              value: https://sealos.run/docs/overview/intro
+            - name: DOCUMENT_URL_EN
+              value: https://sealos.io/docs/overview/intro
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
             - name: INGRESS_SECRET
@@ -70,7 +74,7 @@ spec:
             - name: GPU_ENABLE
               value: 'false'
             - name: PRIVACY_URL
-              value: https://sealos.run/docs/5.0.0/msa/terms-of-service
+              value: https://sealos.run/docs/msa/privacy-policy
             - name: RETAG_SVC_URL
               value: http://devbox-service.devbox-system.svc.cluster.local:8092
             - name: JWT_SECRET

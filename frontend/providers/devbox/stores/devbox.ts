@@ -10,13 +10,13 @@ import {
   getMyDevboxList,
   getSSHConnectionInfo
 } from '@/api/devbox';
-import { devboxStatusMap, PodStatusEnum } from '@/constants/devbox';
 import type {
   DevboxDetailType,
   DevboxDetailTypeV2,
   DevboxListItemTypeV2,
   DevboxVersionListItemType
 } from '@/types/devbox';
+import dayjs from 'dayjs';
 
 type State = {
   devboxList: DevboxListItemTypeV2[];
@@ -28,6 +28,8 @@ type State = {
     uid: string;
     iconId: string | null;
     name: string;
+    templateUid?: string;
+    description?: string | null;
   };
   setStartedTemplate: (
     template:
@@ -35,6 +37,8 @@ type State = {
           uid: string;
           iconId: string | null;
           name: string;
+          templateUid?: string;
+          description?: string | null;
         }
       | undefined
   ) => void;
@@ -49,7 +53,7 @@ type State = {
     mock?: boolean
   ) => Promise<DevboxDetailTypeV2>;
   intervalLoadPods: (devboxName: string, updateDetail: boolean) => Promise<any>;
-  loadDetailMonitorData: (devboxName: string) => Promise<any>;
+  loadDetailMonitorData: (devboxName: string, start?: number, end?: number) => Promise<any>;
 };
 
 export const useDevboxStore = create<State>()(
@@ -108,7 +112,9 @@ export const useDevboxStore = create<State>()(
             state.startedTemplate = {
               uid: templateRepository.uid,
               iconId: templateRepository.iconId,
-              name: templateRepository.name
+              name: templateRepository.name,
+              templateUid: templateRepository.templateUid,
+              description: templateRepository.description
             };
         });
       },
@@ -178,7 +184,7 @@ export const useDevboxStore = create<State>()(
         });
         return 'success';
       },
-      loadDetailMonitorData: async (devboxName) => {
+      loadDetailMonitorData: async (devboxName, start, end) => {
         const pods = await getDevboxPodsByDevboxName(devboxName);
 
         const queryName = pods.length > 0 ? pods[0].podName : devboxName;
@@ -187,12 +193,16 @@ export const useDevboxStore = create<State>()(
           getDevboxMonitorData({
             queryKey: 'average_cpu',
             queryName: queryName,
-            step: '2m'
+            step: '2m',
+            start,
+            end
           }),
           getDevboxMonitorData({
             queryKey: 'average_memory',
             queryName: queryName,
-            step: '2m'
+            step: '2m',
+            start,
+            end
           })
         ]);
 

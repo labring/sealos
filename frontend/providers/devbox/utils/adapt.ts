@@ -53,8 +53,8 @@ export const adaptDevboxListItem = (devbox: KBDevboxType): DevboxListItemType =>
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
   };
 };
@@ -65,6 +65,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
       iconId: string | null;
     };
     uid: string;
+    name: string;
   }
 ]): DevboxListItemTypeV2 => {
   return {
@@ -76,7 +77,7 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
         ? devboxStatusMap[devbox.status.phase]
         : devboxStatusMap.Pending,
     sshPort: devbox.status?.network.nodePort || 65535,
-    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     usedCpu: {
@@ -94,8 +95,8 @@ export const adaptDevboxListItemV2 = ([devbox, template]: [
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
       : ''
   };
@@ -117,13 +118,14 @@ export const adaptDevboxDetailV2 = ([
     templateName: template.name,
     templateRepositoryName: template.templateRepository.name,
     templateRepositoryUid: template.templateRepository.uid,
+    templateRepositoryDescription: template.templateRepository.description || '',
     templateConfig: JSON.stringify(devbox.spec.config),
     image: template.image,
     iconId: template.templateRepository.iconId || '',
     status,
     sshPort: devbox.status?.network.nodePort || 65535,
     isPause: devbox.status?.phase === 'Stopped',
-    createTime: dayjs(devbox.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    createTime: devbox.metadata.creationTimestamp,
     cpu: cpuFormatToM(devbox.spec.resource.cpu),
     memory: memoryFormatToMi(devbox.spec.resource.memory),
     gpu: {
@@ -147,8 +149,8 @@ export const adaptDevboxDetailV2 = ([
         ? devbox.status.state.waiting
           ? devbox.status.state.waiting.reason
           : devbox.status.state.terminated
-          ? devbox.status.state.terminated.reason
-          : ''
+            ? devbox.status.state.terminated.reason
+            : ''
         : ''
       : ''
   };
@@ -160,26 +162,10 @@ export const adaptDevboxVersionListItem = (
     id: devboxRelease.metadata?.uid || '',
     name: devboxRelease.metadata.name || 'devbox-release-default',
     devboxName: devboxRelease.spec.devboxName || 'devbox',
-    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
+    createTime: devboxRelease.metadata.creationTimestamp,
     tag: devboxRelease.spec.newTag || 'v1.0.0',
     status:
       devboxRelease?.status?.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
-        ? devboxReleaseStatusMap[devboxRelease.status.phase]
-        : devboxReleaseStatusMap.Pending,
-    description: devboxRelease.spec.notes || 'release notes'
-  };
-};
-export const adaptDevboxVersionListItemV2 = (
-  devboxRelease: KBDevboxReleaseType
-): DevboxVersionListItemType => {
-  return {
-    id: devboxRelease.metadata?.uid || '',
-    name: devboxRelease.metadata.name || 'devbox-release-default',
-    devboxName: devboxRelease.spec.devboxName || 'devbox',
-    createTime: dayjs(devboxRelease.metadata.creationTimestamp).format('YYYY-MM-DD HH:mm'),
-    tag: devboxRelease.spec.newTag || 'v1.0.0',
-    status:
-      devboxRelease.status.phase && devboxReleaseStatusMap[devboxRelease.status.phase]
         ? devboxReleaseStatusMap[devboxRelease.status.phase]
         : devboxReleaseStatusMap.Pending,
     description: devboxRelease.spec.notes || 'release notes'

@@ -1,13 +1,13 @@
-import { useMessage } from '@sealos/ui';
 import dayjs from 'dayjs';
+import yaml from 'js-yaml';
+import { toast } from 'sonner';
+import { customAlphabet } from 'nanoid';
 import duration from 'dayjs/plugin/duration';
 import * as jsonpatch from 'fast-json-patch';
-import yaml from 'js-yaml';
 import { useTranslations } from 'next-intl';
 
 import { YamlKindEnum } from '@/constants/devbox';
 import type { DevboxKindsType, DevboxPatchPropsType } from '@/types/devbox';
-import { customAlphabet } from 'nanoid';
 
 dayjs.extend(duration);
 
@@ -87,7 +87,6 @@ export const obj2Query = (obj: Record<string, string | number>) => {
 };
 
 export const useCopyData = () => {
-  const { message: toast } = useMessage();
   const t = useTranslations();
 
   return {
@@ -95,11 +94,7 @@ export const useCopyData = () => {
       try {
         await navigator.clipboard.writeText(data);
 
-        toast({
-          title: t(title),
-          status: 'success',
-          duration: 1000
-        });
+        toast.success(t(title));
       } catch (error) {
         try {
           const textarea = document.createElement('textarea');
@@ -111,17 +106,10 @@ export const useCopyData = () => {
           document.execCommand('copy');
           document.body.removeChild(textarea);
 
-          toast({
-            title: t(title),
-            status: 'success',
-            duration: 1000
-          });
+          toast.success(t(title));
         } catch (fallbackError) {
           console.error('Copy failed:', fallbackError);
-          toast({
-            title: t('copy_failed'),
-            status: 'error'
-          });
+          toast.error(t('copy_failed'));
         }
       }
     }

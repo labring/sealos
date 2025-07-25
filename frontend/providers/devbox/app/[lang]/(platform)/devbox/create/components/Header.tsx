@@ -1,37 +1,36 @@
-import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
 import dayjs from 'dayjs';
 import JSZip from 'jszip';
-import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
+import { useTranslations } from 'next-intl';
+import { ArrowLeft, Info, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
-import MyIcon from '@/components/Icon';
+import { Button } from '@/components/ui/button';
+
+import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
-import { useEnvStore } from '@/stores/env';
-import { useGlobalStore } from '@/stores/global';
-import { useTemplateStore } from '@/stores/template';
-import type { YamlItemType } from '@/types/index';
 import { downLoadBlob } from '@/utils/tools';
 import { useGuideStore } from '@/stores/guide';
-import { Info, X } from 'lucide-react';
+import type { YamlItemType } from '@/types/index';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 
-const Header = ({
-  title,
-  yamlList,
-  applyCb,
-  applyBtnText
-}: {
+interface HeaderProps {
   yamlList: YamlItemType[];
   applyCb: () => void;
   title: string;
   applyBtnText: string;
-}) => {
+}
+
+const Header = ({ title, yamlList, applyCb, applyBtnText }: HeaderProps) => {
   const router = useRouter();
-  const { lastRoute } = useGlobalStore();
   const t = useTranslations();
-  const { config } = useTemplateStore();
-  const { env } = useEnvStore();
+  const searchParams = useSearchParams();
+  const name = searchParams.get('name');
+  const from = searchParams.get('from') as 'list' | 'detail';
+
+  const { guideConfigDevbox } = useGuideStore();
+
   const handleExportYaml = useCallback(async () => {
     const zip = new JSZip();
     yamlList.forEach((item) => {
@@ -41,133 +40,86 @@ const Header = ({
     downLoadBlob(res, 'application/zip', `yaml${dayjs().format('YYYYMMDDHHmmss')}.zip`);
   }, [yamlList]);
 
-  const { guideConfigDevbox } = useGuideStore();
   const isClientSide = useClientSideValue(true);
+
+  const handleBack = useCallback(() => {
+    if (name) {
+      if (from === 'detail') {
+        router.replace(`/devbox/detail/${name}`);
+      } else if (from === 'list') {
+        router.replace(`/`);
+      }
+    } else {
+      router.push('/template');
+    }
+  }, [name, router, from]);
 
   return (
     <>
       {!guideConfigDevbox && isClientSide && (
-        <Center
-          borderTop={'1px solid #BFDBFE'}
-          borderBottom={'1px solid #BFDBFE'}
-          bg={'#EFF6FF'}
-          h={'56px'}
-          w={'100%'}
-          fontSize={'16px'}
-          fontWeight={500}
-          color={'#2563EB'}
-          gap={'12px'}
-        >
+        <div className="flex min-h-14 w-full items-center justify-center gap-3 border-y border-blue-200 bg-blue-50 font-medium text-blue-600">
           <Info size={16} />
           {t('driver.create_app_header')}
-        </Center>
+        </div>
       )}
-      <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
-        <Flex
-          alignItems={'center'}
-          cursor={'pointer'}
-          onClick={() => {
-            if (config.lastRoute) {
-              router.replace(lastRoute);
-            } else {
-              router.replace(lastRoute);
-            }
-          }}
-        >
-          <MyIcon name="arrowLeft" width={'24px'} height={'24px'} />
-          <Box fontWeight={'bold'} color={'grayModern.900'} fontSize={'2xl'}>
-            {t(title)}
-          </Box>
-        </Flex>
-        <Box flex={1}></Box>
-        <Button h={'40px'} flex={'0 0 114px'} mr={5} variant={'outline'} onClick={handleExportYaml}>
-          {t('export_yaml')}
-        </Button>
-        <Box position={'relative'}>
+      <div className="flex h-24 w-full items-center justify-between self-stretch border-b-1 px-10 py-8">
+        {/* left side */}
+        <div className="flex cursor-pointer items-center">
+          <div
+            className="flex h-12 w-12 cursor-pointer items-center justify-center"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </div>
+          <p className="text-2xl/8 font-semibold">{t(title)}</p>
+        </div>
+        {/* right side */}
+        <div className="flex items-center gap-3">
+          <Button variant="outline" className="h-10" onClick={handleExportYaml}>
+            {t('export_yaml')}
+          </Button>
           <Button
-            className="driver-deploy-button"
-            minW={'140px'}
-            h={'40px'}
+            className={cn(
+              'driver-deploy-button h-10 min-w-30',
+              isClientSide && !guideConfigDevbox && 'outline-2 outline-offset-2 outline-blue-600'
+            )}
             onClick={applyCb}
-            _focusVisible={{ boxShadow: '' }}
-            outline={isClientSide && !guideConfigDevbox ? '1px solid #1C4EF5' : 'none'}
-            outlineOffset={isClientSide && !guideConfigDevbox ? '2px' : '0'}
           >
             {t(applyBtnText)}
           </Button>
-
           {isClientSide && !guideConfigDevbox && (
-            <Box
-              top={'54px'}
-              right={'35%'}
-              zIndex={1000}
-              position={'absolute'}
-              width={'250px'}
-              bg={'#2563EB'}
-              p={'16px'}
-              borderRadius={'12px'}
-              color={'#fff'}
-            >
-              <Flex alignItems={'center'} justifyContent={'space-between'}>
-                <Text fontSize={'14px'} fontWeight={600}>
-                  {t('driver.configure_devbox')}
-                </Text>
-                <Box
-                  cursor={'pointer'}
-                  ml={'auto'}
+            <div className="absolute top-34 right-18 z-[1000] w-[250px] rounded-xl bg-blue-600 p-4 text-white">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-sm font-semibold">{t('driver.configure_devbox')}</p>
+                <div
+                  className="ml-auto cursor-pointer"
                   onClick={() => {
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >
-                  <X width={'16px'} height={'16px'} />
-                </Box>
-              </Flex>
-              <Text
-                textAlign={'start'}
-                whiteSpace={'wrap'}
-                mt={'8px'}
-                color={'#FFFFFFCC'}
-                fontSize={'14px'}
-                fontWeight={400}
-              >
+                  <X className="h-4 w-4 text-[#7CA1F3]" strokeWidth={2} />
+                </div>
+              </div>
+              <p className="text-start text-sm font-normal whitespace-normal text-white">
                 {t('driver.adjust_resources_as_needed')}
-              </Text>
-              <Flex mt={'16px'} justifyContent={'space-between'} alignItems={'center'}>
-                <Text fontSize={'13px'} fontWeight={500}>
-                  3/5
-                </Text>
-                <Center
-                  w={'86px'}
-                  color={'#fff'}
-                  fontSize={'14px'}
-                  fontWeight={500}
-                  cursor={'pointer'}
-                  borderRadius={'8px'}
-                  background={'rgba(255, 255, 255, 0.20)'}
-                  h={'32px'}
-                  p={'px'}
+              </p>
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-[13px] font-medium">4/5</p>
+                <Button
+                  size={'sm'}
+                  className="bg-white/20 text-sm font-medium text-white hover:bg-white/10 hover:text-white"
                   onClick={() => {
                     applyCb();
                   }}
                 >
                   {t('driver.next')}
-                </Center>
-              </Flex>
-              <Box
-                position={'absolute'}
-                top={'-10px'}
-                right={'16px'}
-                width={0}
-                height={0}
-                borderLeft={'8px solid transparent'}
-                borderRight={'8px solid transparent'}
-                borderTop={'10px solid #2563EB'}
-                transform={'rotate(180deg)'}
-              />
-            </Box>
+                </Button>
+              </div>
+              <div className="absolute -top-[10px] right-4 h-0 w-0 rotate-180 border-t-[10px] border-r-8 border-l-8 border-t-[#2563EB] border-r-transparent border-l-transparent" />
+            </div>
           )}
-        </Box>
-      </Flex>
+        </div>
+      </div>
     </>
   );
 };

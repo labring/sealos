@@ -15,8 +15,6 @@ export type IDEType =
 type State = {
   screenWidth: number;
   setScreenWidth: (e: number) => void;
-  loading: boolean;
-  setLoading: (val: boolean) => void;
   lastRoute: string;
   setLastRoute: (val: string) => void;
 };
@@ -28,12 +26,6 @@ export const useGlobalStore = create<State>()(
       setScreenWidth(e: number) {
         set((state) => {
           state.screenWidth = e;
-        });
-      },
-      loading: false,
-      setLoading(val: boolean) {
-        set((state) => {
-          state.loading = val;
         });
       },
       lastRoute: '/',
