@@ -1,6 +1,6 @@
 package commit
 
 const (
-	namespace = "k8s.io"
+	namespace = "test.io"
 	address   = "unix:///var/run/containerd/containerd.sock"
 )
