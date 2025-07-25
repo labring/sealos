@@ -44,7 +44,8 @@ const (
 	AdminSuspendUserTraffic      = "/suspend-user-traffic"
 	AdminResumeUserTraffic       = "/resume-user-traffic"
 
-	AdminRefundForms = "/refund-forms"
+	AdminRefundForms     = "/refund-forms"
+	AdminCreateCorporate = "/corporate"
 )
 
 const (

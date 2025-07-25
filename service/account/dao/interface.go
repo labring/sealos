@@ -94,6 +94,7 @@ type Interface interface {
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
 	RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error
+	CreateCorporate(corporate types.Corporate) error
 }
 
 type Account struct {
@@ -2374,5 +2375,14 @@ func (g *Cockroach) RefundAmount(ref types.PaymentRefund, postDo func(types.Paym
 			}
 		}
 		return postDo(refund)
+	})
+}
+
+func (g *Cockroach) CreateCorporate(corporate types.Corporate) error {
+	return g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		if err := g.ck.CreateCorporate(&corporate); err != nil {
+			return fmt.Errorf("failed to create corporate: %w", err)
+		}
+		return nil
 	})
 }

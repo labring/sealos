@@ -272,3 +272,31 @@ func AdminPaymentRefund(c *gin.Context) {
 	// 4. 成功返回
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
+
+func AdminCreateCorporate(c *gin.Context) {
+	if err := authenticateAdminRequest(c); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{
+			Error: fmt.Sprintf("authenticate error: %v", err),
+		})
+		return
+	}
+
+	// 解析前端传来的接口
+	var corporateData types.Corporate
+	if err := c.ShouldBindJSON(&corporateData); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: fmt.Sprintf("invalid request body: %v", err),
+		})
+		return
+	}
+
+	// 调用CreateCorporate
+	if err := dao.DBClient.CreateCorporate(corporateData); err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
+			Error: fmt.Sprintf("failed to create corporate: %v", err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}

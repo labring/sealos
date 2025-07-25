@@ -53,7 +53,7 @@ type (
 )
 
 const (
-	PaymentStatusO        PaymentStatus = "NORMAL"
+	PaymentStatusPAID     PaymentStatus = "PAID"
 	PaymentStatusRefunded PaymentStatus = "REFUNDED"
 )
 
@@ -241,4 +241,19 @@ type PaymentRefund struct {
 
 func (PaymentRefund) TableName() string {
 	return "PaymentRefund"
+}
+
+type Corporate struct {
+	UID                 string    `json:"uid" gorm:"type:string;not null"`
+	ID                  string    `json:"paymentId" gorm:"type:string;not null"`
+	ReceiptSerialNumber string    `json:"receiptSerialNumber" gorm:"type:uuid;not null"`
+	PayerName           string    `json:"payerName" gorm:"type:varchar(255);not null"`
+	PaymentAmount       int64     `json:"paymentAmount" gorm:"type:float;not null"`
+	GiftAmount          int64     `json:"giftAmount" gorm:"type:float;not null"`
+	PayDate             time.Time `json:"payDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+	CreationDate        time.Time `json:"creationDate" gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
+}
+
+func (Corporate) TableName() string {
+	return "Corporate"
 }

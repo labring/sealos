@@ -1720,7 +1720,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 func (c *Cockroach) InitTables() error {
 	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
-		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{},
+		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
 		types.UserTimeRangeTraffic{})
@@ -2027,4 +2027,47 @@ func (c *Cockroach) GetEnterpriseRealNameInfoByUserID(userID string) (*types.Ent
 		return nil, fmt.Errorf("failed to get enterprise real name info: %w", err)
 	}
 	return &enterpriseRealNameInfo, nil
+}
+
+func (c *Cockroach) CreateCorporate(account *types.Corporate) error {
+	return c.DB.Transaction(func(tx *gorm.DB) error {
+		if account.UID == "" {
+			return fmt.Errorf("corporate uid is empty")
+		}
+		if account.ReceiptSerialNumber == "" {
+			return fmt.Errorf("corporate receiptSerialNumber is empty")
+		}
+		if account.PayerName == "" {
+			return fmt.Errorf("corporate payerName is empty")
+		}
+		if account.PaymentAmount < 0 {
+			return fmt.Errorf("corporate paymentAmount is zero")
+		}
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate payment id: %v", err)
+		}
+		account.ID = id
+		pay := &types.Payment{}
+		pay.ID = account.ID
+		pay.UserUID, _ = c.getUserUIDByID(account.UID)
+		pay.Method = "corporate"
+		pay.TradeNO = account.ReceiptSerialNumber
+		pay.Amount = account.PaymentAmount
+		pay.Gift = account.GiftAmount
+		pay.Status = types.PaymentStatusPAID
+		if err := c.DB.Create(pay).Error; err != nil {
+			return fmt.Errorf("failed to create payment: %w", err)
+		}
+		if err := c.DB.Create(account).Error; err != nil {
+			return fmt.Errorf("failed to create corporate: %w", err)
+		}
+		amount := account.PaymentAmount + account.GiftAmount
+		if account.PaymentAmount > 0 {
+			if err := c.UpdateWithAccount(pay.UserUID, false, true, false, amount, tx); err != nil {
+				return fmt.Errorf("failed to update corporate payment amount: %w", err)
+			}
+		}
+		return nil
+	})
 }
