@@ -75,15 +75,10 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
 	}
 
-	status, paidAmount, err := w.GetPaymentDetails(option.TradeNo)
+	_, paidAmount, err := w.GetPaymentDetails(option.TradeNo)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to query the payment order: %v", err)
 	}
-
-	// print the status of the payment order
-	fmt.Printf("payment order status: %s\n", status)
-	fmt.Printf("payment amount %d cent\n", paidAmount)
-	fmt.Printf("refund  amount %d cent\n", option.Amount)
 
 	// generate a merchant refund number
 	refundNo := uuid.NewString()

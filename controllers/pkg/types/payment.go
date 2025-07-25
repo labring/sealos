@@ -244,8 +244,8 @@ func (PaymentRefund) TableName() string {
 }
 
 type Corporate struct {
-	UID                 string    `json:"uid" gorm:"type:string;not null"`
-	ID                  string    `json:"paymentId" gorm:"type:string;not null"`
+	UserUID             string    `json:"userUid" gorm:"type:string;not null"`
+	ID                  string    `json:"Id" gorm:"type:string;not null"`
 	ReceiptSerialNumber string    `json:"receiptSerialNumber" gorm:"type:uuid;not null"`
 	PayerName           string    `json:"payerName" gorm:"type:varchar(255);not null"`
 	PaymentAmount       int64     `json:"paymentAmount" gorm:"type:float;not null"`

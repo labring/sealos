@@ -127,9 +127,9 @@ func TestCockroach_CreateCorporate(t *testing.T) {
 	defer ck.Close()
 
 	cor := &types.Corporate{
-		UID:                 "66EqYNUnLr",
+		UserUID:             "66EqYNUnLr",
 		ReceiptSerialNumber: uuid.New().String(),
-		PayerName:           "少爷",
+		PayerName:           "payerName",
 		PaymentAmount:       1_000_000,
 		GiftAmount:          1_000_000,
 	}

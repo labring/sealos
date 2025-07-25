@@ -2031,7 +2031,7 @@ func (c *Cockroach) GetEnterpriseRealNameInfoByUserID(userID string) (*types.Ent
 
 func (c *Cockroach) CreateCorporate(account *types.Corporate) error {
 	return c.DB.Transaction(func(tx *gorm.DB) error {
-		if account.UID == "" {
+		if account.UserUID == "" {
 			return fmt.Errorf("corporate uid is empty")
 		}
 		if account.ReceiptSerialNumber == "" {
@@ -2050,7 +2050,10 @@ func (c *Cockroach) CreateCorporate(account *types.Corporate) error {
 		account.ID = id
 		pay := &types.Payment{}
 		pay.ID = account.ID
-		pay.UserUID, _ = c.getUserUIDByID(account.UID)
+		pay.UserUID, err = c.getUserUIDByID(account.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get user uid: %v", err)
+		}
 		pay.Method = "corporate"
 		pay.TradeNO = account.ReceiptSerialNumber
 		pay.Amount = account.PaymentAmount
