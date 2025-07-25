@@ -2,7 +2,7 @@ name: Import Patch Images Package
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
+  GO_VERSION: "1.23"
   PROJECT_PATH: "./lifecycle"
 
 on:
