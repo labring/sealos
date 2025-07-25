@@ -6,6 +6,12 @@ export * as createDatabaseSchemas from './create-database';
 import * as updateDatabaseSchemas from './update-database';
 export * as updateDatabaseSchemas from './update-database';
 
+import * as startDatabaseSchemas from './start-database';
+export * as startDatabaseSchemas from './start-database';
+
+import * as pauseDatabaseSchemas from './pause-database';
+export * as pauseDatabaseSchemas from './pause-database';
+
 export const document = createDocument({
   openapi: '3.1.0',
   info: {
@@ -73,6 +79,46 @@ export const document = createDocument({
             content: {
               'application/json': {
                 schema: updateDatabaseSchemas.response
+              }
+            }
+          }
+        }
+      }
+    },
+    '/database/{databaseName}/start': {
+      post: {
+        summary: 'Start Database',
+        description: 'Start a database.',
+        security: [{ KubeconfigAuth: [] }],
+        requestParams: {
+          path: startDatabaseSchemas.pathParams
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: startDatabaseSchemas.response
+              }
+            }
+          }
+        }
+      }
+    },
+    '/database/{databaseName}/pause': {
+      post: {
+        summary: 'Pause Database',
+        description: 'Pause a database.',
+        security: [{ KubeconfigAuth: [] }],
+        requestParams: {
+          path: pauseDatabaseSchemas.pathParams
+        },
+        responses: {
+          '200': {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: pauseDatabaseSchemas.response
               }
             }
           }
