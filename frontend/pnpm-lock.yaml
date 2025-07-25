@@ -16,7 +16,7 @@ importers:
         version: 2.1.1(@chakra-ui/system@2.6.2)(react@18.2.0)
       '@chakra-ui/next-js':
         specifier: ^2.1.5
-        version: 2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.5.9)(react@18.2.0)
+        version: 2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.5.11)(react@18.2.0)
       '@chakra-ui/react':
         specifier: ^2.8.1
         version: 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
@@ -37,7 +37,7 @@ importers:
         version: 23.12.1
       next-i18next:
         specifier: ^15.3.0
-        version: 15.3.0(i18next@23.12.1)(next@13.5.9)(react-i18next@14.1.2)(react@18.2.0)
+        version: 15.3.0(i18next@23.12.1)(next@13.5.11)(react-i18next@14.1.2)(react@18.2.0)
       react-i18next:
         specifier: ^14.1.2
         version: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
@@ -1372,7 +1372,7 @@ importers:
         version: 2.1.1(@chakra-ui/system@2.6.2)(react@18.2.0)
       '@chakra-ui/next-js':
         specifier: ^2.1.5
-        version: 2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.1.6)(react@18.2.0)
+        version: 2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.5.11)(react@18.2.0)
       '@chakra-ui/react':
         specifier: ^2.8.1
         version: 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
@@ -1389,8 +1389,11 @@ importers:
         specifier: ^0.18.1
         version: 0.18.1
       '@next/font':
-        specifier: 13.1.6
-        version: 13.1.6
+        specifier: 13.5.11
+        version: 13.5.11
+      '@scalar/api-reference-react':
+        specifier: ^0.6.23
+        version: 0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
@@ -1461,11 +1464,11 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
       next:
-        specifier: 13.1.6
-        version: 13.1.6(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
+        specifier: 13.5.11
+        version: 13.5.11(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       next-i18next:
         specifier: ^15.3.0
-        version: 15.3.0(i18next@23.12.1)(next@13.1.6)(react-i18next@14.1.2)(react@18.2.0)
+        version: 15.3.0(i18next@23.12.1)(next@13.5.11)(react-i18next@14.1.2)(react@18.2.0)
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -1508,6 +1511,12 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      zod:
+        specifier: ^4.0.8
+        version: 4.0.8
+      zod-openapi:
+        specifier: ^5.2.0
+        version: 5.2.0(zod@4.0.8)
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
@@ -6179,6 +6188,21 @@ packages:
       react: 18.2.0
     dev: false
 
+  /@chakra-ui/next-js@2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.5.11)(react@18.2.0):
+    resolution: {integrity: sha512-brCz0UEOlImX4Np2jDIaljZJkW6kiDSuXG5erxvYjZlklLhmti1zj0o1sSjt5yff1xndfgHoOJb+BYG5wx+vDg==}
+    peerDependencies:
+      '@chakra-ui/react': '>=2.4.0'
+      '@emotion/react': '>=11'
+      next: '>=13'
+      react: '>=18'
+    dependencies:
+      '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
+      '@emotion/cache': 11.11.0
+      '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
+      next: 13.5.11(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
+      react: 18.2.0
+    dev: false
+
   /@chakra-ui/next-js@2.2.0(@chakra-ui/react@2.8.2)(@emotion/react@11.11.1)(next@13.5.6)(react@18.2.0):
     resolution: {integrity: sha512-brCz0UEOlImX4Np2jDIaljZJkW6kiDSuXG5erxvYjZlklLhmti1zj0o1sSjt5yff1xndfgHoOJb+BYG5wx+vDg==}
     peerDependencies:
@@ -8406,8 +8430,8 @@ packages:
       express-rate-limit: 7.5.0(express@5.1.0)
       pkce-challenge: 5.0.0
       raw-body: 3.0.0
-      zod: 3.23.8
-      zod-to-json-schema: 3.24.5(zod@3.23.8)
+      zod: 3.24.1
+      zod-to-json-schema: 3.24.5(zod@3.24.1)
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -8465,6 +8489,10 @@ packages:
 
   /@next/env@13.4.5:
     resolution: {integrity: sha512-SG/gKH6eij4vwQy87b/3mbpQ1X3x2vUdnpwq6/qL2IQWjtq58EY/UuNAp9CoEZoC9sI4L9AD1r+73Z9r4d3uug==}
+    dev: false
+
+  /@next/env@13.5.11:
+    resolution: {integrity: sha512-fbb2C7HChgM7CemdCY+y3N1n8pcTKdqtQLbC7/EQtPdLvlMUT9JX/dBYl8MMZAtYG4uVMyPFHXckb68q/NRwqg==}
     dev: false
 
   /@next/env@13.5.4:
@@ -8532,6 +8560,10 @@ packages:
 
   /@next/font@13.1.6:
     resolution: {integrity: sha512-AITjmeb1RgX1HKMCiA39ztx2mxeAyxl4ljv2UoSBUGAbFFMg8MO7YAvjHCgFhD39hL7YTbFjol04e/BPBH5RzQ==}
+    dev: false
+
+  /@next/font@13.5.11:
+    resolution: {integrity: sha512-C4fRIb3O0Dh/Wi8hE1lkHDKmR5leUfe4fG+wfuRX8p3PPeduvJYMcU/Wq5eU3XEl2XqMeOuVbLCd2DAH/8Er2Q==}
     dev: false
 
   /@next/font@13.5.9:
@@ -8819,7 +8851,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -8899,7 +8930,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
-    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -8979,7 +9009,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -9059,7 +9088,6 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
-    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -9964,6 +9992,61 @@ packages:
   /@rushstack/eslint-patch@1.6.0:
     resolution: {integrity: sha512-2/U3GXA6YiPYQDLGwtGlnNgKYBSwCFIHf8Y9LUY5VATHdtbLlU0Y1R3QoBnT0aB4qv/BEiVVsj7LJXoQCgJ2vA==}
 
+  /@scalar/api-client@2.3.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-hEuDEBEBuwaZg8dCFALjc5u5udVXiUN3GjlbAE3rAG9bl3BeaVxQIGhFxmeWPxWsZmM5XfWlXWQxrARwAu50oA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@headlessui/tailwindcss': 0.2.2(tailwindcss@3.4.1)
+      '@headlessui/vue': 1.7.23(vue@3.5.13)
+      '@scalar/components': 0.13.53(typescript@5.2.2)
+      '@scalar/draggable': 0.1.11(typescript@5.2.2)
+      '@scalar/icons': 0.3.2(typescript@5.2.2)
+      '@scalar/import': 0.3.19(@hyperjump/browser@1.3.0)
+      '@scalar/oas-utils': 0.2.136(@hyperjump/browser@1.3.0)
+      '@scalar/object-utils': 1.1.13
+      '@scalar/openapi-parser': 0.10.16
+      '@scalar/openapi-types': 0.2.1
+      '@scalar/postman-to-openapi': 0.2.9(@hyperjump/browser@1.3.0)
+      '@scalar/snippetz': 0.2.19
+      '@scalar/themes': 0.10.3
+      '@scalar/types': 0.1.11
+      '@scalar/use-codemirror': 0.11.98(typescript@5.2.2)
+      '@scalar/use-hooks': 0.1.45(typescript@5.2.2)
+      '@scalar/use-toasts': 0.7.9(typescript@5.2.2)
+      '@scalar/use-tooltip': 1.0.6(typescript@5.2.2)
+      '@vueuse/core': 10.11.1(vue@3.5.13)
+      '@vueuse/integrations': 11.3.0(axios@1.6.2)(focus-trap@7.6.4)(fuse.js@7.0.0)(nprogress@0.2.0)(vue@3.5.13)
+      focus-trap: 7.6.4
+      fuse.js: 7.0.0
+      microdiff: 1.5.0
+      nanoid: 5.1.5
+      pretty-bytes: 6.1.1
+      pretty-ms: 8.0.0
+      shell-quote: 1.8.2
+      type-fest: 4.40.1
+      vue: 3.5.13(typescript@5.2.2)
+      vue-router: 4.5.1(vue@3.5.13)
+      whatwg-mimetype: 4.0.0
+      yaml: 2.7.1
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
   /@scalar/api-client@2.3.26(@hyperjump/browser@1.3.0)(axios@1.7.3)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
     resolution: {integrity: sha512-hEuDEBEBuwaZg8dCFALjc5u5udVXiUN3GjlbAE3rAG9bl3BeaVxQIGhFxmeWPxWsZmM5XfWlXWQxrARwAu50oA==}
     engines: {node: '>=18'}
@@ -10000,7 +10083,34 @@ packages:
       vue-router: 4.5.1(vue@3.5.13)
       whatwg-mimetype: 4.0.0
       yaml: 2.7.1
-      zod: 3.23.8
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
+  /@scalar/api-reference-react@0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-jTBQ9y7J94Ln1i//7x1fHD3FJSBI+Cncqlh/1WGEPeaIOEZ6leEiSD9odWebf71EvkqFSQ8YSuDHB79KgMpqDA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+    dependencies:
+      '@scalar/api-reference': 1.28.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
+      '@scalar/types': 0.1.11
+      react: 18.2.0
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -10046,6 +10156,51 @@ packages:
       - universal-cookie
     dev: false
 
+  /@scalar/api-reference@1.28.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-DIE43vZx7gXPnxNUqKDC3ZlPZZNU/gNQYLsUShibhT8R6owvvwAefOithTNgmpHD3xf43VugeuzD5b0RXwpFTA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@floating-ui/vue': 1.1.6(vue@3.5.13)
+      '@headlessui/vue': 1.7.23(vue@3.5.13)
+      '@scalar/api-client': 2.3.26(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
+      '@scalar/code-highlight': 0.0.27
+      '@scalar/components': 0.13.53(typescript@5.2.2)
+      '@scalar/icons': 0.3.2(typescript@5.2.2)
+      '@scalar/oas-utils': 0.2.136(@hyperjump/browser@1.3.0)
+      '@scalar/openapi-parser': 0.10.16
+      '@scalar/openapi-types': 0.2.1
+      '@scalar/snippetz': 0.2.19
+      '@scalar/themes': 0.10.3
+      '@scalar/types': 0.1.11
+      '@scalar/use-hooks': 0.1.45(typescript@5.2.2)
+      '@scalar/use-toasts': 0.7.9(typescript@5.2.2)
+      '@unhead/vue': 1.11.20(vue@3.5.13)
+      '@vueuse/core': 10.11.1(vue@3.5.13)
+      flatted: 3.3.3
+      fuse.js: 7.0.0
+      github-slugger: 2.0.0
+      microdiff: 1.5.0
+      nanoid: 5.1.5
+      vue: 3.5.13(typescript@5.2.2)
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
   /@scalar/api-reference@1.28.26(@hyperjump/browser@1.3.0)(axios@1.7.3)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
     resolution: {integrity: sha512-DIE43vZx7gXPnxNUqKDC3ZlPZZNU/gNQYLsUShibhT8R6owvvwAefOithTNgmpHD3xf43VugeuzD5b0RXwpFTA==}
     engines: {node: '>=18'}
@@ -10072,7 +10227,7 @@ packages:
       microdiff: 1.5.0
       nanoid: 5.1.5
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -10188,7 +10343,7 @@ packages:
       nanoid: 5.1.5
       type-fest: 4.40.1
       yaml: 2.7.1
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
     dev: false
@@ -10218,7 +10373,7 @@ packages:
     resolution: {integrity: sha512-UMxX54taQXnEWYEuesbH+pkjlXRVV1u/Wx6YbVeU3QoJdFGqT3Z7si9zsokoG6MXDcdi1LGny7A0KwownmPvUQ==}
     engines: {node: '>=18'}
     dependencies:
-      zod: 3.23.8
+      zod: 3.24.1
     dev: false
 
   /@scalar/postman-to-openapi@0.2.9(@hyperjump/browser@1.3.0):
@@ -10253,7 +10408,7 @@ packages:
       '@unhead/schema': 1.11.20
       nanoid: 5.1.5
       type-fest: 4.40.1
-      zod: 3.23.8
+      zod: 3.24.1
     dev: false
 
   /@scalar/use-codemirror@0.11.98(typescript@5.2.2):
@@ -10295,7 +10450,7 @@ packages:
       cva: 1.0.0-beta.2(typescript@5.2.2)
       tailwind-merge: 2.6.0
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@vue/composition-api'
       - typescript
@@ -12175,6 +12330,59 @@ packages:
       '@types/web-bluetooth': 0.0.20
       '@vueuse/metadata': 11.3.0
       '@vueuse/shared': 11.3.0(vue@3.5.13)
+      vue-demi: 0.14.10(vue@3.5.13)
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - vue
+    dev: false
+
+  /@vueuse/integrations@11.3.0(axios@1.6.2)(focus-trap@7.6.4)(fuse.js@7.0.0)(nprogress@0.2.0)(vue@3.5.13):
+    resolution: {integrity: sha512-5fzRl0apQWrDezmobchoiGTkGw238VWESxZHazfhP3RM7pDSiyXy18QbfYkILoYNTd23HPAfQTJpkUc5QbkwTw==}
+    peerDependencies:
+      async-validator: ^4
+      axios: ^1
+      change-case: ^5
+      drauu: ^0.4
+      focus-trap: ^7
+      fuse.js: ^7
+      idb-keyval: ^6
+      jwt-decode: ^4
+      nprogress: ^0.2
+      qrcode: ^1.5
+      sortablejs: ^1
+      universal-cookie: ^7
+    peerDependenciesMeta:
+      async-validator:
+        optional: true
+      axios:
+        optional: true
+      change-case:
+        optional: true
+      drauu:
+        optional: true
+      focus-trap:
+        optional: true
+      fuse.js:
+        optional: true
+      idb-keyval:
+        optional: true
+      jwt-decode:
+        optional: true
+      nprogress:
+        optional: true
+      qrcode:
+        optional: true
+      sortablejs:
+        optional: true
+      universal-cookie:
+        optional: true
+    dependencies:
+      '@vueuse/core': 11.3.0(vue@3.5.13)
+      '@vueuse/shared': 11.3.0(vue@3.5.13)
+      axios: 1.6.2
+      focus-trap: 7.6.4
+      fuse.js: 7.0.0
+      nprogress: 0.2.0
       vue-demi: 0.14.10(vue@3.5.13)
     transitivePeerDependencies:
       - '@vue/composition-api'
@@ -18005,7 +18213,7 @@ packages:
     dependencies:
       foreground-child: 3.1.1
       jackspeak: 2.3.6
-      minimatch: 9.0.3
+      minimatch: 9.0.5
       minipass: 7.1.2
       path-scurry: 1.10.1
 
@@ -21675,18 +21883,11 @@ packages:
     dependencies:
       brace-expansion: 2.0.1
 
-  /minimatch@9.0.3:
-    resolution: {integrity: sha512-RHiac9mvaRw0x3AYRgDC1CxAP7HTcNrrECeA8YYJeWnpo+2Q5CegtZjaotWTWxDG3UeGA1coE05iH1mPjT/2mg==}
-    engines: {node: '>=16 || 14 >=14.17'}
-    dependencies:
-      brace-expansion: 2.0.1
-
   /minimatch@9.0.5:
     resolution: {integrity: sha512-G6T0ZX48xgozx7587koeX9Ys2NYy6Gmv//P89sEte9V9whIapMNF4idKxnW2QtCcLiTWlb/wfCabAtAFWhhBow==}
     engines: {node: '>=16 || 14 >=14.17'}
     dependencies:
       brace-expansion: 2.0.1
-    dev: true
 
   /minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
@@ -21942,7 +22143,6 @@ packages:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
-    dev: false
 
   /nanoid@3.3.7:
     resolution: {integrity: sha512-eSRppjcPIatRIMC1U6UngP8XFcz8MQWGQdt1MTBQ7NaAmvXDfvNxbvWV3x2y6CdEUciCSsDHDQZbhYaB8QEo2g==}
@@ -22087,6 +22287,26 @@ packages:
       i18next: 23.12.1
       i18next-fs-backend: 2.3.1
       next: 13.4.5(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
+      react: 18.2.0
+      react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
+    dev: false
+
+  /next-i18next@15.3.0(i18next@23.12.1)(next@13.5.11)(react-i18next@14.1.2)(react@18.2.0):
+    resolution: {integrity: sha512-bq7Cc9XJFcmGOCLnyEtHaeJ3+JJNsI/8Pkj9BaHAnhm4sZ9vNNC4ZsaqYnlRZ7VH5ypSo73fEqLK935jLsmCvQ==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      i18next: '>= 23.7.13'
+      next: '>= 12.0.0'
+      react: '>= 17.0.2'
+      react-i18next: '>= 13.5.0'
+    dependencies:
+      '@babel/runtime': 7.24.0
+      '@types/hoist-non-react-statics': 3.3.5
+      core-js: 3.33.3
+      hoist-non-react-statics: 3.3.2
+      i18next: 23.12.1
+      i18next-fs-backend: 2.3.1
+      next: 13.5.11(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
       react-i18next: 14.1.2(i18next@23.12.1)(react-dom@18.2.0)(react@18.2.0)
     dev: false
@@ -22363,6 +22583,46 @@ packages:
       '@next/swc-win32-arm64-msvc': 13.4.5
       '@next/swc-win32-ia32-msvc': 13.4.5
       '@next/swc-win32-x64-msvc': 13.4.5
+    transitivePeerDependencies:
+      - '@babel/core'
+      - babel-plugin-macros
+    dev: false
+
+  /next@13.5.11(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5):
+    resolution: {integrity: sha512-WUPJ6WbAX9tdC86kGTu92qkrRdgRqVrY++nwM+shmWQwmyxt4zhZfR59moXSI4N8GDYCBY3lIAqhzjDd4rTC8Q==}
+    engines: {node: '>=16.14.0'}
+    hasBin: true
+    peerDependencies:
+      '@opentelemetry/api': ^1.1.0
+      react: ^18.2.0
+      react-dom: ^18.2.0
+      sass: ^1.3.0
+    peerDependenciesMeta:
+      '@opentelemetry/api':
+        optional: true
+      sass:
+        optional: true
+    dependencies:
+      '@next/env': 13.5.11
+      '@swc/helpers': 0.5.2
+      busboy: 1.6.0
+      caniuse-lite: 1.0.30001594
+      postcss: 8.4.31
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
+      sass: 1.69.5
+      styled-jsx: 5.1.1(@babel/core@7.23.5)(react@18.2.0)
+      watchpack: 2.4.0
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 13.5.9
+      '@next/swc-darwin-x64': 13.5.9
+      '@next/swc-linux-arm64-gnu': 13.5.9
+      '@next/swc-linux-arm64-musl': 13.5.9
+      '@next/swc-linux-x64-gnu': 13.5.9
+      '@next/swc-linux-x64-musl': 13.5.9
+      '@next/swc-win32-arm64-msvc': 13.5.9
+      '@next/swc-win32-ia32-msvc': 13.5.9
+      '@next/swc-win32-x64-msvc': 13.5.9
     transitivePeerDependencies:
       - '@babel/core'
       - babel-plugin-macros
@@ -23042,7 +23302,6 @@ packages:
 
   /picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
-    dev: false
 
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
@@ -23123,13 +23382,13 @@ packages:
     resolution: {integrity: sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==}
     engines: {node: '>= 0.4'}
 
-  /postcss-import@15.1.0(postcss@8.4.31):
+  /postcss-import@15.1.0(postcss@8.5.3):
     resolution: {integrity: sha512-hpr+J05B2FVYUAXHeK1YyI267J/dDDhMU6B6civm8hSY1jYJnBXxzKDKDswzJmtLHryrjhnDjqqp/49t8FALew==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.4.31
+      postcss: 8.5.3
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.8
@@ -23146,16 +23405,16 @@ packages:
       resolve: 1.22.8
     dev: true
 
-  /postcss-js@4.0.1(postcss@8.4.31):
+  /postcss-js@4.0.1(postcss@8.5.3):
     resolution: {integrity: sha512-dDLF8pEO191hJMtlHFPRa8xsizHaM82MLfNkUHdUtVEV3tgTp5oj+8qbEqYM57SLfc74KSbw//4SeJma2LRVIw==}
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
       postcss: ^8.4.21
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.4.31
+      postcss: 8.5.3
 
-  /postcss-load-config@4.0.2(postcss@8.4.31):
+  /postcss-load-config@4.0.2(postcss@8.5.3):
     resolution: {integrity: sha512-bSVhyJGL00wMVoPUzAVAnbEoWyqRxkjv64tUl427SKnPrENtq6hJwUojroMz2VB+Q1edmi4IfrAPpami5VVgMQ==}
     engines: {node: '>= 14'}
     peerDependencies:
@@ -23168,16 +23427,16 @@ packages:
         optional: true
     dependencies:
       lilconfig: 3.1.2
-      postcss: 8.4.31
+      postcss: 8.5.3
       yaml: 2.7.1
 
-  /postcss-nested@6.0.1(postcss@8.4.31):
+  /postcss-nested@6.0.1(postcss@8.5.3):
     resolution: {integrity: sha512-mEp4xPMi5bSWiMbsgoPfcP74lsWLHkQbZc3sY+jWYd65CUwXrUaTp0fmNpa01ZcETKlIgUdFN/MpS2xZtqL9dQ==}
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
     dependencies:
-      postcss: 8.4.31
+      postcss: 8.5.3
       postcss-selector-parser: 6.0.15
 
   /postcss-nesting@12.0.4(postcss@8.4.31):
@@ -23225,7 +23484,6 @@ packages:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
-    dev: false
 
   /potpack@1.0.2:
     resolution: {integrity: sha512-choctRBIV9EMT9WGAZHn3V7t0Z2pMQyl0EZE6pFc/6ml3ssw7Dlf/oAOvFwjm1HVsqfQN8GfeFyJ+d8tRzqueQ==}
@@ -25665,7 +25923,6 @@ packages:
   /source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
-    dev: false
 
   /source-map-support@0.3.3:
     resolution: {integrity: sha512-9O4+y9n64RewmFoKUZ/5Tx9IHIcXM6Q+RTSw6ehnqybUz4a7iwR3Eaw80uLtqqQ5D0C+5H03D4KKGo9PdP33Gg==}
@@ -26237,12 +26494,12 @@ packages:
       micromatch: 4.0.7
       normalize-path: 3.0.0
       object-hash: 3.0.0
-      picocolors: 1.0.0
-      postcss: 8.4.31
-      postcss-import: 15.1.0(postcss@8.4.31)
-      postcss-js: 4.0.1(postcss@8.4.31)
-      postcss-load-config: 4.0.2(postcss@8.4.31)
-      postcss-nested: 6.0.1(postcss@8.4.31)
+      picocolors: 1.1.1
+      postcss: 8.5.3
+      postcss-import: 15.1.0(postcss@8.5.3)
+      postcss-js: 4.0.1(postcss@8.5.3)
+      postcss-load-config: 4.0.2(postcss@8.5.3)
+      postcss-nested: 6.0.1(postcss@8.5.3)
       postcss-selector-parser: 6.0.15
       resolve: 1.22.8
       sucrase: 3.35.0
@@ -27086,7 +27343,7 @@ packages:
     dependencies:
       browserslist: 4.23.0
       escalade: 3.1.1
-      picocolors: 1.0.0
+      picocolors: 1.1.1
 
   /uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
@@ -28038,12 +28295,21 @@ packages:
       zod: 3.23.8
     dev: false
 
-  /zod-to-json-schema@3.24.5(zod@3.23.8):
+  /zod-openapi@5.2.0(zod@4.0.8):
+    resolution: {integrity: sha512-f1bxel2MR5L5sxG9KNNAUs6Eh76VHrrF0pN06+W21MtO2f6oOaWkfY16r9rjTsXV9M3YmRITh++//Ur37GzUZg==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      zod: ^3.25.74 || ^4.0.0
+    dependencies:
+      zod: 4.0.8
+    dev: false
+
+  /zod-to-json-schema@3.24.5(zod@3.24.1):
     resolution: {integrity: sha512-/AuWwMP+YqiPbsJx5D6TfgRTc4kTLjsh5SOcd4bLsfUg2RcEXrFMJl1DGgdHy2aCfsIA/cr/1JM0xcB2GZji8g==}
     peerDependencies:
       zod: ^3.24.1
     dependencies:
-      zod: 3.23.8
+      zod: 3.24.1
     dev: false
 
   /zod@3.21.4:
@@ -28052,6 +28318,14 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  /zod@3.24.1:
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
+    dev: false
+
+  /zod@4.0.8:
+    resolution: {integrity: sha512-+MSh9cZU9r3QKlHqrgHMTSr3QwMGv4PLfR0M4N/sYWV5/x67HgXEhIGObdBkpnX8G78pTgWnIrBL2lZcNJOtfg==}
     dev: false
 
   /zrender@5.4.4:
