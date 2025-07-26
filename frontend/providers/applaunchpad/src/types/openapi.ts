@@ -2,12 +2,11 @@ import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import {
   CreateAppRequestSchema,
-  SuccessResponseSchema,
   GetAppByAppNameResponseSchema,
   DeleteAppByNameResponseSchema,
   GetAppsResponseSchema,
   GetAppPodsByAppNameResponseSchema
-} from '../constants/schema';
+} from '@/constants/schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
