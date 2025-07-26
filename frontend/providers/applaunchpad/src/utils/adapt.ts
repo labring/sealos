@@ -43,6 +43,7 @@ import { customAlphabet } from 'nanoid';
 import { has } from 'lodash';
 import type { EnvResponse } from '@/types';
 import { lauchpadRemarkKey } from '@/constants/account';
+import { getInitData } from '@/api/platform';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -225,8 +226,18 @@ export enum YamlKindEnum {
   PersistentVolumeClaim = 'PersistentVolumeClaim'
 }
 
-// adaptAppDetail function has been moved to server side API call
-export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): AppDetailType => {
+export const adaptAppDetail = async (
+  configs: DeployKindsType[],
+  options?: {
+    SEALOS_DOMAIN: string;
+    SEALOS_USER_DOMAINS: {
+      name: string;
+      secretName: string;
+    }[];
+  }
+): Promise<AppDetailType> => {
+  const { SEALOS_DOMAIN, SEALOS_USER_DOMAINS } = options ?? (await getInitData());
+
   const allServices = configs
     .filter((item) => item.kind === YamlKindEnum.Service)
     .map((item) => item as V1Service);
@@ -426,8 +437,8 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
         const protocol = (item?.protocol || 'TCP') as TransportProtocolType;
 
         const isCustomDomain =
-          !domain.endsWith(envs.SEALOS_DOMAIN) &&
-          !envs.SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
+          !domain.endsWith(SEALOS_DOMAIN) &&
+          !SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
         return {
           serviceName: service?.metadata?.name || '',
@@ -444,10 +455,10 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
             : domain.split('.')[0],
           customDomain: isCustomDomain ? domain : '',
           domain: isCustomDomain
-            ? envs.SEALOS_DOMAIN
+            ? SEALOS_DOMAIN
             : item?.nodePort
             ? domain
-            : domain.split('.').slice(1).join('.') || envs.SEALOS_DOMAIN
+            : domain.split('.').slice(1).join('.') || SEALOS_DOMAIN
         };
       }) || [],
     hpa: deployKindsMap.HorizontalPodAutoscaler?.spec
