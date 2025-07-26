@@ -110,9 +110,7 @@ const AppEditSchema = z.object({
 });
 
 //------ export schema ------
-export const CreateAppRequestSchema = z.object({
-  appForm: AppEditSchema
-});
+export const CreateAppRequestSchema = AppEditSchema;
 
 export const GetAppByAppNameQuerySchema = z.object({
   appName: z.string().min(1, { message: 'appName cannot be empty' })
@@ -127,6 +125,30 @@ export const DeleteAppByNameQuerySchema = z.object({
 export const DeleteAppByNameResponseSchema = z.object({
   message: z.string()
 });
+
+// Schema for partial app updates (PATCH)
+export const UpdateAppResourcesSchema = z
+  .object({
+    cpu: z.number().optional(),
+    memory: z.number().optional(),
+    replicas: z.number().min(0).optional(),
+    runCMD: z.string().optional(),
+    cmdParam: z.string().optional(),
+    imageName: z.string().optional()
+  })
+  .refine(
+    (data) =>
+      data.cpu !== undefined ||
+      data.memory !== undefined ||
+      data.replicas !== undefined ||
+      data.runCMD !== undefined ||
+      data.cmdParam !== undefined ||
+      data.imageName !== undefined,
+    {
+      message:
+        'At least one of cpu, memory, replicas, runCMD, cmdParam, or imageName must be provided'
+    }
+  );
 
 // Schema for MonitorDataResult
 const MonitorDataResultSchema = z.object({

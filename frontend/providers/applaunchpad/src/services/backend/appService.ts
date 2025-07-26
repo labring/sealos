@@ -4,6 +4,7 @@ import { serverLoadInitData } from '@/store/static';
 import { AppEditType } from '@/types/app';
 import { UserQuotaItemType } from '@/types/user';
 import { json2HPA } from '@/utils/deployYaml2Json';
+import { str2Num } from '@/utils/tools';
 import {
   PatchUtils,
   KubeConfig,
@@ -428,4 +429,219 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
       );
     }
   });
+}
+
+/**
+ * Update application resources using precise JSONPatch operations
+ * @param appName Application name
+ * @param updateData Object containing cpu, memory, replicas, runCMD, cmdParam, and/or imageName values to update
+ * @param k8s Kubernetes context containing clients and configuration
+ */
+export async function updateAppResources(
+  appName: string,
+  updateData: {
+    cpu?: number;
+    memory?: number;
+    replicas?: number;
+    runCMD?: string;
+    cmdParam?: string;
+    imageName?: string;
+  },
+  k8s: K8sContext
+) {
+  const { getDeployApp, k8sApp, k8sAutoscaling, apiClient, applyYamlList, namespace } = k8s;
+
+  const app = await getDeployApp(appName);
+  if (!app.metadata?.name || !app.spec) {
+    throw new Error('app data error');
+  }
+
+  // Handle replicas update with special pause/start logic
+  if (updateData.replicas !== undefined) {
+    if (updateData.replicas === 0) {
+      // Pause logic: save HPA config and delete HPA
+      const restartAnnotations: Record<string, string> = {
+        target: '',
+        value: ''
+      };
+
+      const requestQueue: Promise<any>[] = [];
+
+      try {
+        const { body: hpa } = await k8sAutoscaling.readNamespacedHorizontalPodAutoscaler(
+          appName,
+          namespace
+        );
+        restartAnnotations.target = hpa?.spec?.metrics?.[0]?.resource?.name || 'cpu';
+        restartAnnotations.value = `${
+          hpa?.spec?.metrics?.[0]?.resource?.target?.averageUtilization || 50
+        }`;
+        requestQueue.push(
+          k8sAutoscaling.deleteNamespacedHorizontalPodAutoscaler(appName, namespace)
+        );
+      } catch (error: any) {
+        if (error?.statusCode !== 404) {
+          throw new Error('无法读取到hpa');
+        }
+      }
+
+      app.metadata.annotations = app.metadata.annotations || {};
+      app.metadata.annotations[pauseKey] = JSON.stringify(restartAnnotations);
+      app.spec.replicas = 0;
+
+      requestQueue.push(apiClient.replace(app));
+      await Promise.all(requestQueue);
+    } else {
+      // Start logic: set replicas and restore HPA if needed
+      const requestQueue: Promise<any>[] = [];
+
+      app.spec.replicas = updateData.replicas;
+
+      if (app.metadata?.annotations?.[pauseKey]) {
+        const pauseData: {
+          target: string;
+          value: string;
+        } = JSON.parse(app.metadata.annotations[pauseKey]);
+
+        delete app.metadata.annotations[pauseKey];
+
+        if (pauseData.target) {
+          const hpaYaml = json2HPA({
+            appName,
+            hpa: {
+              use: true,
+              target: pauseData.target,
+              value: pauseData.value,
+              minReplicas: app.metadata.annotations[minReplicasKey] || '1',
+              maxReplicas: app.metadata.annotations[maxReplicasKey] || '2'
+            }
+          } as unknown as AppEditType);
+
+          requestQueue.push(applyYamlList([hpaYaml], 'create'));
+        }
+      }
+
+      requestQueue.push(apiClient.replace(app));
+      await Promise.all(requestQueue);
+    }
+  }
+
+  // Handle CPU/Memory/Command/Args/Image updates with JSONPatch
+  const resourceUpdates =
+    updateData.cpu !== undefined ||
+    updateData.memory !== undefined ||
+    updateData.runCMD !== undefined ||
+    updateData.cmdParam !== undefined ||
+    updateData.imageName !== undefined;
+  if (resourceUpdates) {
+    const jsonPatch: Array<{
+      op: 'replace';
+      path: string;
+      value: string | string[];
+    }> = [];
+
+    if (updateData.cpu !== undefined) {
+      jsonPatch.push(
+        {
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/resources/requests/cpu',
+          value: `${str2Num(Math.floor(updateData.cpu * 0.1))}m`
+        },
+        {
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/resources/limits/cpu',
+          value: `${str2Num(updateData.cpu)}m`
+        }
+      );
+    }
+
+    if (updateData.memory !== undefined) {
+      jsonPatch.push(
+        {
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/resources/requests/memory',
+          value: `${str2Num(Math.floor(updateData.memory * 0.1))}Mi`
+        },
+        {
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/resources/limits/memory',
+          value: `${str2Num(updateData.memory)}Mi`
+        }
+      );
+    }
+
+    if (updateData.runCMD !== undefined) {
+      // Convert string to array following the same logic as deployYaml2Json
+      const commandArray = (() => {
+        if (!updateData.runCMD) return undefined;
+        try {
+          return JSON.parse(updateData.runCMD);
+        } catch (error) {
+          return updateData.runCMD.split(' ').filter((item) => item);
+        }
+      })();
+
+      if (commandArray) {
+        jsonPatch.push({
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/command',
+          value: commandArray
+        });
+      }
+    }
+
+    if (updateData.cmdParam !== undefined) {
+      // Convert string to array following the same logic as deployYaml2Json
+      const argsArray = (() => {
+        if (!updateData.cmdParam) return undefined;
+        try {
+          return JSON.parse(updateData.cmdParam) as string[];
+        } catch (error) {
+          return [updateData.cmdParam];
+        }
+      })();
+
+      if (argsArray) {
+        jsonPatch.push({
+          op: 'replace',
+          path: '/spec/template/spec/containers/0/args',
+          value: argsArray
+        });
+      }
+    }
+
+    if (updateData.imageName !== undefined) {
+      jsonPatch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/image',
+        value: updateData.imageName
+      });
+    }
+
+    if (app.kind === 'Deployment') {
+      await k8sApp.patchNamespacedDeployment(
+        appName,
+        namespace,
+        jsonPatch,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+      );
+    } else if (app.kind === 'StatefulSet') {
+      await k8sApp.patchNamespacedStatefulSet(
+        appName,
+        namespace,
+        jsonPatch,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+      );
+    }
+  }
 }
