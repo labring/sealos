@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 	// "github.com/containerd/containerd/v2/pkg/cio"
 	// imageutil "github.com/labring/cri-shim/pkg/image"
 )
@@ -56,6 +57,7 @@ func NewCommitter() (Committer,error) {
 func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string,error) {
 	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
 	// 1. get image
+	ctx = namespaces.WithNamespace(ctx, namespace)
 	image, err := c.containerdClient.GetImage(ctx, baseImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to get image: %v", err)
@@ -92,6 +94,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 // DeleteContainer delete container
 func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName string) error {
 	// load container
+	ctx = namespaces.WithNamespace(ctx, namespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %v", err)
@@ -133,6 +136,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 // Commit commit container to image
 func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error {
 	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
+	ctx = namespaces.WithNamespace(ctx, namespace)
 	containerID,err:=c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
 		return fmt.Errorf("failed to create container: %v", err)
@@ -158,6 +162,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 
 // GetContainerAnnotations get container annotations
 func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerName string) (map[string]string, error) {
+	ctx = namespaces.WithNamespace(ctx, namespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load container: %v", err)
@@ -187,7 +192,7 @@ func NewGcHandler(containerdClient *client.Client) GcHandler {
 
 func (h *Handler) GC(ctx context.Context) error {
 	log.Printf("Starting GC in namespace: %s", namespace)
-
+	ctx = namespaces.WithNamespace(ctx, namespace)
 	// get all container in namespace
 	containers,err:=h.containerdClient.Containers(ctx)
 	if err !=nil{
