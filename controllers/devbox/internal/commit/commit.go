@@ -3,10 +3,12 @@ package commit
 import (
 	"context"
 	"fmt"
-	// "io"
+	"io"
 	"log"
-	"os"
 
+	// "os"
+
+	// "github.com/containerd/containerd"
 	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
@@ -35,7 +37,7 @@ func NewCommitter() (Committer,error) {
 		return nil, err
 	}
 
-	// create Containerd client
+	// create Containerd client: default namespace in const.go
 	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(namespace))
 	if err != nil {
 		return nil, err
@@ -62,9 +64,9 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	// 2. create container
 	// add annotations/labels
 	annotations := map[string]string{
-		"devbox.sealos.io/content-id": contentID,
-		"namespace":                   namespace,
-		"image.name":                  baseImage,
+		annotationKeyContentID:           contentID,
+		annotationKeyNamespace:           namespace,
+		annotationKeyImageName:           baseImage,
 		// "container.type":              "direct",
 		// "description":                 "Container created directly via containerd API",
 	}
@@ -87,16 +89,39 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	return container.ID(), nil
 }
 
-// DeleteContainerDirectly delete container directly
-func (c *CommitterImpl) DeleteContainerDirectly(ctx context.Context, containerName string) error {
+// DeleteContainer delete container
+func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName string) error {
 	// load container
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %v", err)
 	}
 
+	// try to get and stop task
+	task, err := container.Task(ctx, nil)
+	if err == nil {
+		log.Printf("Stopping task for container: %s", containerName)
+
+		// force kill task 
+		err = task.Kill(ctx, 9) // SIGKILL
+		if err != nil {
+			log.Printf("Warning: failed to send SIGKILL: %v", err)
+		} else {
+			log.Printf("Sent SIGKILL to task")
+		}
+
+		// delete task 
+		log.Printf("Deleting task...")
+		_, err = task.Delete(ctx, client.WithProcessKill)
+		if err != nil {
+			log.Printf("Warning: failed to delete task: %v", err)
+		} else {
+			log.Printf("Task deleted for container: %s", containerName)
+		}
+	}
+
 	// delete container (include snapshot)
-	err = container.Delete(ctx)
+	err = container.Delete(ctx,client.WithSnapshotCleanup)
 	if err != nil {
 		return fmt.Errorf("failed to delete container: %v", err)
 	}
@@ -121,8 +146,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 	}
 
 	opt := types.ContainerCommitOptions{
-		// Stdout:   io.Discard,
-		Stdout:   os.Stdout,
+		Stdout:   io.Discard,
 		GOptions: global,
 		Pause:    pauseContainerDuringCommit,
 		DevboxOptions: types.DevboxOptions{
@@ -152,4 +176,76 @@ type GcHandler interface {
 }
 
 type Handler struct {
+	containerdClient *client.Client
+}
+
+func NewGcHandler(containerdClient *client.Client) GcHandler {
+	return &Handler{
+		containerdClient: containerdClient,
+	}
+}
+
+func (h *Handler) GC(ctx context.Context) error {
+	log.Printf("Starting GC in namespace: %s", namespace)
+
+	// get all container in namespace
+	containers,err:=h.containerdClient.Containers(ctx)
+	if err !=nil{
+		log.Printf("Failed to get containers, err: %v", err)
+		return err
+	}
+
+	var deletedContainersCount int
+	for _,container:=range containers{
+		// if get container's labels failed, skip
+		labels,err:=container.Labels(ctx)
+		if err!=nil{
+			log.Printf("Failed to get labels for container %s, err: %v",container.ID(),err)
+			continue
+		}
+		// if container is not devbox container, skip
+		if _,ok:=labels[annotationKeyContentID];!ok{
+			continue 
+		}
+
+		// get container task
+		task,err:=container.Task(ctx,nil)
+		if err!=nil{
+			// delete orphan container
+			log.Printf("Found Orphan Container: %s",container.ID())
+			err=container.Delete(ctx,client.WithSnapshotCleanup)
+			if err!=nil{
+				log.Printf("Failed to delete Orphan Container %s, err: %v",container.ID(),err)
+			}else{
+				log.Printf("Deleted Orphan Container: %s successfully",container.ID())
+				deletedContainersCount++
+			}
+			continue
+		}
+
+		status,err:=task.Status(ctx)
+		if err!=nil{
+			log.Printf("Failed to get task status for container %s, err: %v",container.ID(),err)
+			continue
+		}
+		if status.Status!=client.Running{
+			// delete task
+			_,err=task.Delete(ctx,client.WithProcessKill)
+			if err!=nil{
+				log.Printf("Failed to delete task for container %s, err: %v",container.ID(),err)
+			}
+
+			// delete container and snapshot
+			err=container.Delete(ctx,client.WithSnapshotCleanup)
+			if err!=nil{
+				log.Printf("Failed to delete container %s, err: %v",container.ID(),err)
+			}else{
+				log.Printf("Deleted Container: %s successfully",container.ID())
+				deletedContainersCount++
+			}
+		}
+
+	}
+	log.Printf("GC completed, deleted %d containers",deletedContainersCount)
+	return nil
 }
