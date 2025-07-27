@@ -3,17 +3,18 @@ package commit
 import (
 	"context"
 	"fmt"
-	"io"
+	// "io"
 	"log"
+	"os"
 
-	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"github.com/containerd/containerd/v2/client"
+	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
-	"github.com/containerd/containerd/v2/client"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"github.com/containerd/containerd/v2/pkg/oci"
-	"github.com/containerd/containerd/v2/pkg/cio"
+	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	// "github.com/containerd/containerd/v2/pkg/cio"
 	// imageutil "github.com/labring/cri-shim/pkg/image"
 )
 
@@ -34,7 +35,7 @@ func NewCommitter() (Committer,error) {
 		return nil, err
 	}
 
-	// create containerd client
+	// create Containerd client
 	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(namespace))
 	if err != nil {
 		return nil, err
@@ -68,15 +69,14 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		// "description":                 "Container created directly via containerd API",
 	}
 
-	// container name
-	containerName := fmt.Sprintf("%s-container", devboxName)
+	containerName := fmt.Sprintf("%s-container", devboxName)	// container name
 
 	container, err := c.containerdClient.NewContainer(ctx, containerName,
 		client.WithImage(image),
 		client.WithNewSnapshot(containerName, image),
-		client.WithContainerLabels(annotations), // 添加 annotations
+		client.WithContainerLabels(annotations), // add annotations
 		client.WithNewSpec(oci.WithImageConfig(image),
-			oci.WithProcessArgs("/bin/sh", "-c", "while true; do echo 'Hello, World!'; sleep 5; done"),
+			// oci.WithProcessArgs("/bin/sh", "-c", "while true; do echo 'Hello, World!'; sleep 5; done"),
 			// oci.WithHostname("test-container"),
 		),
 	)
@@ -84,53 +84,18 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		return "", fmt.Errorf("failed to create container: %v", err)
 	}
 
-	// 3. create task: start container
-	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
-	if err != nil {
-		return "", fmt.Errorf("failed to create task: %v", err)
-	}
-
-	// 4. start task
-	err = task.Start(ctx)
-	if err != nil {
-		return "", fmt.Errorf("failed to start task: %v", err)
-	}
-
 	return container.ID(), nil
 }
 
 // DeleteContainerDirectly delete container directly
 func (c *CommitterImpl) DeleteContainerDirectly(ctx context.Context, containerName string) error {
-	// 1. load container
+	// load container
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %v", err)
 	}
 
-	// 2. get and stop task
-	task, err := container.Task(ctx, nil)
-	if err == nil {
-		log.Printf("Stopping task for container: %s", containerName)
-
-		// force kill task (avoid waiting problem)
-		err = task.Kill(ctx, 9) // SIGKILL
-		if err != nil {
-			log.Printf("Warning: failed to send SIGKILL: %v", err)
-		} else {
-			log.Printf("Sent SIGKILL to task")
-		}
-
-		// delete task after short wait
-		log.Printf("Deleting task...")
-		_, err = task.Delete(ctx, client.WithProcessKill)
-		if err != nil {
-			log.Printf("Warning: failed to delete task: %v", err)
-		} else {
-			log.Printf("Task deleted for container: %s", containerName)
-		}
-	}
-
-	// 3. delete container (include snapshot)
+	// delete container (include snapshot)
 	err = container.Delete(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to delete container: %v", err)
@@ -148,22 +113,18 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 		return fmt.Errorf("failed to create container: %v", err)
 	}
 
-	// annotations, err := c.GetContainerAnnotations(ctx, containerID)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to get container annotations: %v", err)
-	// }
-
 	global := types.GlobalCommandOptions{
 		Namespace:        namespace,
 		Address:          address,
-		DataRoot:         "/var/lib/containerd",
-		InsecureRegistry: true,
+		DataRoot:         dataRoot,
+		InsecureRegistry: insecureRegistry,
 	}
 
 	opt := types.ContainerCommitOptions{
-		Stdout:   io.Discard,
+		// Stdout:   io.Discard,
+		Stdout:   os.Stdout,
 		GOptions: global,
-		Pause:    false,
+		Pause:    pauseContainerDuringCommit,
 		DevboxOptions: types.DevboxOptions{
 			RemoveBaseImageTopLayer: true,
 		},
