@@ -206,6 +206,8 @@ jobs:
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
             type=ref,event=tag
             type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: build (and publish) ${{ matrix.module.name }} main image
         uses: docker/build-push-action@v6
