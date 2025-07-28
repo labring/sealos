@@ -34,6 +34,7 @@
     "@marsidev/react-turnstile": "^1.1.0",
     "@prisma/client": "^5.10.2",
     "@sealos/driver": "workspace:^",
+    "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@umami/node": "^0.4.0",

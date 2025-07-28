@@ -111,6 +111,9 @@ importers:
       '@sealos/driver':
         specifier: workspace:^
         version: link:../packages/driver
+      '@sealos/gtm':
+        specifier: workspace:^
+        version: link:../packages/gtm
       '@sealos/ui':
         specifier: workspace:^
         version: link:../packages/ui
@@ -378,6 +381,25 @@ importers:
       '@types/react-dom':
         specifier: 18.0.11
         version: 18.0.11
+
+  packages/gtm:
+    dependencies:
+      next:
+        specifier: '>=13.0.0'
+        version: 13.5.9(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
+      react:
+        specifier: '>=16.8.0'
+        version: 18.2.0
+    devDependencies:
+      '@types/node':
+        specifier: 18.15.11
+        version: 18.15.11
+      '@types/react':
+        specifier: 18.2.37
+        version: 18.2.37
+      typescript:
+        specifier: ^5.0.0
+        version: 5.2.2
 
   packages/mcp-sdk:
     dependencies:
@@ -22303,7 +22325,7 @@ packages:
       '@next/env': 13.3.0
       '@swc/helpers': 0.4.14
       busboy: 1.6.0
-      caniuse-lite: 1.0.30001565
+      caniuse-lite: 1.0.30001594
       postcss: 8.4.14
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -23205,9 +23227,9 @@ packages:
     resolution: {integrity: sha512-E398TUmfAYFPBSdzgeieK2Y1+1cpdxJx8yXbK/m57nRhKSmk1GB2tO4lbLBtlkfPQTDKfe4Xqv1ASWPpayPEig==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
-      nanoid: 3.3.7
-      picocolors: 1.0.0
-      source-map-js: 1.0.2
+      nanoid: 3.3.11
+      picocolors: 1.1.1
+      source-map-js: 1.2.1
     dev: false
 
   /postcss@8.4.31:
