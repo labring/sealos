@@ -214,23 +214,26 @@ const GuideModal = () => {
   }) => {
     return (
       <Flex
-        alignItems={'center'}
+        flexDirection={{
+          base: 'column',
+          md: 'row'
+        }}
         cursor={'pointer'}
         key={index}
-        p={'12px 12px 0px 12px'}
+        p={'12px'}
+        gap={'12px'}
         mb={'8px'}
         borderRadius="xl"
         border="1px solid"
         borderColor={isActive ? '#A1A1AA' : '#E4E4E7'}
         bg="white"
-        transition="all 0.5s ease"
+        transition="all 0.3s ease"
         onClick={onClick}
-        height={isActive ? 'auto' : '56px'}
         overflow="hidden"
         position={'relative'}
         boxShadow={isActive ? '0px 5.634px 8.451px -1.69px rgba(0, 0, 0, 0.05)' : 'none'}
       >
-        <Flex alignSelf={'start'}>
+        <Flex flex={1} minW={0}>
           <Center
             w={'24px'}
             h={'24px'}
@@ -243,31 +246,32 @@ const GuideModal = () => {
           >
             {index + 1}
           </Center>
-          <Box>
+          <Box minW={0}>
             <Text fontSize="16px" fontWeight="600">
               {step.title}
             </Text>
-            <Text
-              color="gray.600"
-              mt={1}
-              fontSize="14px"
-              opacity={isActive ? 1 : 0}
-              maxH={isActive ? '100px' : '0'}
-              transition="all 0.5s ease"
-            >
-              {step.description}
-            </Text>
+            <Box overflow="hidden" transition="all 0.3s ease" maxH={isActive ? 'auto' : '0'}>
+              <Text
+                color="gray.600"
+                fontSize="14px"
+                opacity={isActive ? 1 : 0}
+                transition="opacity 0.3s ease"
+                lineHeight="1.4"
+              >
+                {step.description}
+              </Text>
+            </Box>
           </Box>
         </Flex>
         <Box
           borderTopRadius={'12px'}
           p={'20px 12px 0px 12px'}
-          width={'390px'}
-          height={'158px'}
+          marginBottom={'-12px'}
+          alignSelf={'flex-end'}
+          w={{ md: '390px' }}
+          h={'158px'}
+          display={isActive ? 'block' : 'none'}
           overflow={'hidden'}
-          opacity={isActive ? 1 : 0}
-          transition="all 0.5s ease"
-          ml={'auto'}
           backgroundImage={'/images/onboarding/bg.png'}
           backgroundSize={'cover'}
           backgroundPosition={'center'}
@@ -298,7 +302,11 @@ const GuideModal = () => {
   return (
     <Modal isOpen={isOpen} onClose={closeGuideModal} isCentered closeOnOverlayClick={false}>
       <ModalOverlay />
-      <ModalContent minW={'900px'} h={'510px'} borderRadius={'20px'} background={'#FAFAFA'}>
+      <ModalContent
+        maxW={'min(calc(100vw - 40px), 900px)'}
+        borderRadius={'20px'}
+        background={'#FAFAFA'}
+      >
         <Flex flexDirection="column" bg={'#FAFAFA'} w={'100%'} h={'100%'} borderRadius={'16px'}>
           {selectedGuide !== null ? (
             <Box>
@@ -379,7 +387,7 @@ const GuideModal = () => {
                 </Button>
               </Flex>
 
-              <Box maxH="330px" overflowY="auto" pt={'20px'} pr={2} px={'40px'}>
+              <Box overflowY="auto" pt={'20px'} pr={2} px={'40px'}>
                 {guideLinks[selectedGuide].steps.map((step, index) => (
                   <StepCard
                     key={index}
@@ -461,7 +469,18 @@ const GuideModal = () => {
                 </Text>
               </Center>
 
-              <Grid templateColumns="repeat(2, 1fr)" gap={'16px'} mt={'32px'} flex={1}>
+              <Grid
+                templateColumns={{
+                  base: 'repeat(1, minmax(0, 1fr))',
+                  md: 'repeat(2, minmax(0, 1fr))'
+                }}
+                templateRows={{
+                  md: 'repeat(2, minmax(0, 1fr))'
+                }}
+                gap={'16px'}
+                mt={'32px'}
+                flex={1}
+              >
                 {guideLinks.map((item, index) => (
                   <Flex
                     key={index}
@@ -490,7 +509,7 @@ const GuideModal = () => {
                         alt="guide"
                       />
                     </Center>
-                    <Box>
+                    <Flex direction={'column'}>
                       <Text
                         fontSize="16px"
                         fontWeight="600"
@@ -500,7 +519,7 @@ const GuideModal = () => {
                       >
                         {item.title}
                       </Text>
-                      <Text color="#71717A" height={'40px'} fontSize="14px" mb={'12px'}>
+                      <Text color="#71717A" fontSize="14px" mb={'12px'}>
                         {item.description}
                       </Text>
                       <Text
@@ -512,7 +531,7 @@ const GuideModal = () => {
                       >
                         {t('v2:guide_steps', { count: item.stepNumbers })}
                       </Text>
-                    </Box>
+                    </Flex>
                   </Flex>
                 ))}
               </Grid>
