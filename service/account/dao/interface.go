@@ -2357,7 +2357,7 @@ func (g *Cockroach) RefundAmount(ref types.PaymentRefund, postDo func(types.Paym
 		refund := types.PaymentRefund{
 			TradeNo:      payment.TradeNO,  //自查询
 			ID:           payment.ID,       //外键 与payment关联  前端传入
-			Method:       ref.Method,       //前端传入
+			Method:       payment.Method,   //前端传入
 			RefundNo:     ref.RefundNo,     //生成传入
 			RefundAmount: ref.RefundAmount, //前端传入
 			DeductAmount: ref.DeductAmount, //前端传入
