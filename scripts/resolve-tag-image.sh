@@ -1,6 +1,6 @@
 #!/bin/bash
 set -ex
-SHA_TAG="${GIT_COMMIT_SHORT_SHA}"
+SHA_TAG="sha-${GIT_COMMIT_SHORT_SHA}"
 tag_name="$SHA_TAG"
 
 push_image=${1:-false}

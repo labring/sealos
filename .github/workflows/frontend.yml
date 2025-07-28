@@ -199,6 +199,8 @@ jobs:
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
             type=ref,event=tag
             type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: Create manifest list and push to GHCR
         working-directory: ${{ runner.temp }}/digests
