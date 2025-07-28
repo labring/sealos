@@ -913,6 +913,15 @@ func (c *Cockroach) updateWithAccount(userUID uuid.UUID, isDeduction, add, isAct
 	return HandleUpdateResult(result, types.Account{}.TableName())
 }
 
+func (c *Cockroach) UpdateWithAccount(
+	userUID uuid.UUID,
+	isDeduction, add, isActive bool,
+	amount int64,
+	db *gorm.DB,
+) error {
+	return c.updateWithAccount(userUID, isDeduction, add, isActive, amount, db)
+}
+
 func HandleUpdateResult(result *gorm.DB, entityName string) error {
 	if result.Error != nil {
 		return fmt.Errorf("failed to update %s: %w", entityName, result.Error)
@@ -1735,7 +1744,7 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 func (c *Cockroach) InitTables() error {
 	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
-		types.CardInfo{}, types.PaymentOrder{},
+		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
 		types.UserTimeRangeTraffic{})
@@ -1808,6 +1817,17 @@ func (c *Cockroach) InitTables() error {
 			}
 		}
 	}
+
+	// 增加状态列
+	if !c.DB.Migrator().HasColumn(&types.Payment{}, "status") {
+		fmt.Println("add column status to payment")
+		// 注意：IF NOT EXISTS 避免重复报错
+		sql := `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "status" TEXT NOT NULL DEFAULT 'PAID';`
+		if err := c.DB.Exec(sql).Error; err != nil {
+			return fmt.Errorf("failed to add payment.status column: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -2031,4 +2051,50 @@ func (c *Cockroach) GetEnterpriseRealNameInfoByUserID(userID string) (*types.Ent
 		return nil, fmt.Errorf("failed to get enterprise real name info: %w", err)
 	}
 	return &enterpriseRealNameInfo, nil
+}
+
+func (c *Cockroach) CreateCorporate(account *types.Corporate) error {
+	return c.DB.Transaction(func(tx *gorm.DB) error {
+		if account.UserUID == "" {
+			return fmt.Errorf("corporate uid is empty")
+		}
+		if account.ReceiptSerialNumber == "" {
+			return fmt.Errorf("corporate receiptSerialNumber is empty")
+		}
+		if account.PayerName == "" {
+			return fmt.Errorf("corporate payerName is empty")
+		}
+		if account.PaymentAmount < 0 {
+			return fmt.Errorf("corporate paymentAmount is zero")
+		}
+		id, err := gonanoid.New(12)
+		if err != nil {
+			return fmt.Errorf("failed to generate payment id: %v", err)
+		}
+		account.ID = id
+		pay := &types.Payment{}
+		pay.ID = account.ID
+		pay.UserUID, err = c.getUserUIDByID(account.UserUID)
+		if err != nil {
+			return fmt.Errorf("failed to get user uid: %v", err)
+		}
+		pay.Method = "corporate"
+		pay.TradeNO = account.ReceiptSerialNumber
+		pay.Amount = account.PaymentAmount
+		pay.Gift = account.GiftAmount
+		pay.Status = types.PaymentStatusPAID
+		if err := c.DB.Create(pay).Error; err != nil {
+			return fmt.Errorf("failed to create payment: %w", err)
+		}
+		if err := c.DB.Create(account).Error; err != nil {
+			return fmt.Errorf("failed to create corporate: %w", err)
+		}
+		amount := account.PaymentAmount + account.GiftAmount
+		if account.PaymentAmount > 0 {
+			if err := c.UpdateWithAccount(pay.UserUID, false, true, false, amount, tx); err != nil {
+				return fmt.Errorf("failed to update corporate payment amount: %w", err)
+			}
+		}
+		return nil
+	})
 }
