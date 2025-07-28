@@ -171,7 +171,7 @@ func TestConcurrentOperations(t *testing.T) {
 
 	// get current containers list
 	ctx = namespaces.WithNamespace(ctx, namespace)
-	currentContainers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	fmt.Printf("=== All Containers in current namespace ===\n")
     for _, container := range currentContainers {
         // labels, _ := container.Labels(ctx)
