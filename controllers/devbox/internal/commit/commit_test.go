@@ -6,10 +6,9 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 )
 
 // init Committer
