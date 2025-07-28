@@ -7,7 +7,6 @@ env:
 
 on:
   workflow_dispatch:
-
   push:
     tags:
       - "*"
@@ -120,10 +119,10 @@ jobs:
         run: ./scripts/changelog.sh "${REPOSITORY}"
       - uses: peter-evans/create-pull-request@v5
         with:
-          title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'
+          title: "docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}"
           body: |
             copilot:all
-            
+
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
             🤖 add release changelog using rebot.
@@ -134,3 +133,16 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           committer: sealos-release-robot <sealos-release-robot@sealos.io>
           author: sealos-release-robot <sealos-release-robot@sealos.io>
+
+  cloud-release:
+    uses: ./.github/workflows/cloud-release.yml
+    needs:
+      - goreleaser
+      - sync
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      tag: ${{ github.ref_name }}
+      build_offline_tar_only: false
