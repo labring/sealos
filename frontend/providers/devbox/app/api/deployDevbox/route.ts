@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
     )) as { body: { items: KBDevboxReleaseType[] } };
 
     const matchingDevboxVersions = releaseBody.items.filter((item: any) => {
-      console.log('item', item.spec.devboxName, devboxName);
       return item.spec && item.spec.devboxName === devboxName;
     });
 
