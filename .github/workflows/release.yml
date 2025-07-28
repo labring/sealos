@@ -132,6 +132,5 @@ jobs:
           signoff: true
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: cuisongliu
           committer: sealos-release-robot <sealos-release-robot@sealos.io>
           author: sealos-release-robot <sealos-release-robot@sealos.io>
