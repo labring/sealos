@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
 import {
   CreateAppRequestSchema,
+  UpdateAppResourcesSchema,
   GetAppByAppNameResponseSchema,
   DeleteAppByNameResponseSchema,
   GetAppsResponseSchema,
@@ -74,6 +75,48 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             }
           }
+        },
+        post: {
+          summary: 'Create a new application',
+          description: 'Create a new application with the specified configuration',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: CreateAppRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Application created successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    data: z.object({
+                      message: z.string(),
+                      appName: z.string()
+                    })
+                  })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
         }
       },
       '/api/v1/app/{appName}': {
@@ -128,14 +171,14 @@ export const openApiDocument = (sealosDomain: string) =>
             }
           }
         },
-        post: {
-          summary: 'Create a new application',
-          description: 'Create a new application with the specified configuration',
+        patch: {
+          summary: 'Update application resources',
+          description: 'Partially update application resources like CPU, memory, replicas, etc.',
           parameters: [
             {
               name: 'appName',
               in: 'path',
-              description: 'Application name (must match appName in request body)',
+              description: 'Application name',
               required: true,
               schema: {
                 type: 'string'
@@ -145,13 +188,13 @@ export const openApiDocument = (sealosDomain: string) =>
           requestBody: {
             content: {
               'application/json': {
-                schema: CreateAppRequestSchema
+                schema: UpdateAppResourcesSchema
               }
             }
           },
           responses: {
             '200': {
-              description: 'Application created successfully',
+              description: 'Application updated successfully',
               content: {
                 'application/json': {
                   schema: z.object({
@@ -162,6 +205,14 @@ export const openApiDocument = (sealosDomain: string) =>
             },
             '400': {
               description: 'Invalid request body or path parameters',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -319,50 +370,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/updateReplica': {
-        post: {
-          summary: 'Update application replicas',
-          description: 'Update the number of replicas for an application (0 = pause, >0 = start)',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: z.object({
-                  appName: z.string(),
-                  replica: z.number()
-                })
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Replicas updated successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: z.any()
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
+
       '/api/v1/pod/getAppPodsByAppName': {
         get: {
           summary: 'Get application pods',
@@ -409,9 +417,18 @@ export const openApiDocument = (sealosDomain: string) =>
         }
       },
       '/api/v1/pod/getPodsMetrics': {
-        get: {
+        post: {
           summary: 'Get pods metrics',
-          description: 'Retrieve metrics data for pods',
+          description: 'Retrieve metrics data for pods by providing pod names',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: z.object({
+                  podsName: z.array(z.string())
+                })
+              }
+            }
+          },
           responses: {
             '200': {
               description: 'Pods metrics retrieved successfully',
@@ -420,6 +437,14 @@ export const openApiDocument = (sealosDomain: string) =>
                   schema: z.object({
                     data: z.any()
                   })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
                 }
               }
             },
