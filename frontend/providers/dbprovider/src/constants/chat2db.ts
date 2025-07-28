@@ -19,6 +19,7 @@ export interface GenerateLoginUrlOpts {
     language?: LangType;
     hideAvatar?: boolean;
   };
+  dataSourceIds?: string;
 }
 
 export enum ThemeAppearance {
@@ -130,6 +131,21 @@ export interface DatasourceForm {
 }
 
 export interface CreateApiResponse {
+  success: boolean;
+  errorCode: string | null;
+  errorMessage: string | null;
+  errorDetail: string | null;
+  solutionLink: string | null;
+  data: {
+    id: number;
+    displayName: string;
+    status: string;
+    [key: string]: any;
+  };
+  traceId: string | null;
+}
+
+export interface SyncDatasourceResponse {
   success: boolean;
   errorCode: string | null;
   errorMessage: string | null;

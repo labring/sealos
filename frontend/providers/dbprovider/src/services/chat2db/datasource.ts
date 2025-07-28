@@ -4,7 +4,8 @@ import {
   DatasourceItem,
   DatasourceListResp,
   DatasourceDelete,
-  CreateApiResponse
+  CreateApiResponse,
+  SyncDatasourceResponse
 } from '@/constants/chat2db';
 
 export function createDatasource(
@@ -12,7 +13,7 @@ export function createDatasource(
   apiKey: string,
   userKey: string
 ) {
-  return POST<CreateApiResponse>('/api/proxy/create_data_source_a', data, {
+  return POST<any>('/api/proxy/create_data_source_a', data, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       auth_user: userKey,
@@ -44,7 +45,7 @@ export function deleteDatasource(id: number, apiKey: string) {
 
 // 首次调用时不需要 id 参数，返回数据源ID
 export function syncDatasourceFirst(data: Omit<DatasourceForm, 'id'>, apiKey: string) {
-  return POST<CreateApiResponse>('/api/proxy/sync_data_source_a', data, {
+  return POST<SyncDatasourceResponse>('/api/proxy/sync_data_source_a', data, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Time-Zone': 'Asia/Shanghai',
@@ -55,7 +56,7 @@ export function syncDatasourceFirst(data: Omit<DatasourceForm, 'id'>, apiKey: st
 
 // 非首次调用时需要 id 参数，不返回数据
 export function syncDatasource(data: DatasourceForm, apiKey: string) {
-  return POST<void>(`/api/proxy/sync_data_source_a`, data, {
+  return POST<SyncDatasourceResponse>(`/api/proxy/sync_data_source_a`, data, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Time-Zone': 'Asia/Shanghai',

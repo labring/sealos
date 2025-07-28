@@ -215,8 +215,13 @@ const DBList = ({
           url: connection,
           type: mapDBType(db.dbType)
         };
+        console.log(payload);
+        try {
+          await syncAuthUser(apiKey, { uid: userKey });
+        } catch (error) {
+          console.log('syncAuthUser', error);
+        }
 
-        await syncAuthUser(apiKey, { uid: userKey });
         let currentDataSourceId = getDataSourceId(db.name);
 
         // 检查是否是首次点击（数据库中是否已有数据源ID）
@@ -231,8 +236,8 @@ const DBList = ({
             }
           } catch (err: any) {
             // 如果同步失败，可能是数据源已存在，尝试创建
-            if (err.data) {
-              currentDataSourceId = err.data;
+            if (err.data && err.data.id) {
+              currentDataSourceId = err.data.id;
               if (currentDataSourceId) {
                 setDataSourceId(db.name, currentDataSourceId);
                 console.log('Datasource already exists with ID:', currentDataSourceId);
@@ -251,7 +256,7 @@ const DBList = ({
             await syncDatasource(syncPayload, apiKey);
             console.log('Synced existing datasource with ID:', currentDataSourceId);
           } catch (err) {
-            console.error('Failed to sync datasource:', err);
+            console.log('sync datasource:', err);
             // 同步失败不影响继续操作
           }
         }
@@ -281,11 +286,11 @@ const DBList = ({
 
         // 添加数据源ID到URL参数
         const url = new URL(baseUrl);
-        url.searchParams.set('dataSourceId', String(currentDataSourceId));
+        url.searchParams.set('dataSourceIds', String(currentDataSourceId));
 
         router.push(url.toString());
       } catch (err) {
-        console.error(t('chat2db_redirect_failed'), err);
+        console.log(err);
         toast({
           title: t('chat2db_redirect_failed'),
           status: 'error'

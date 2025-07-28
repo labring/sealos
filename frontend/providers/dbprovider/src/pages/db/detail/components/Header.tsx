@@ -172,9 +172,12 @@ const Header = ({
     };
 
     // console.log(JSON.stringify(payload));
-
     try {
       await syncAuthUser(apiKey, { uid: userKey });
+    } catch (error) {
+      console.log('syncAuthUser', error);
+    }
+    try {
       let currentDataSourceId = getDataSourceId(db.dbName);
       console.log('currentDataSourceId', currentDataSourceId);
       // 检查是否是首次点击（数据库中是否已有数据源ID）
@@ -209,7 +212,7 @@ const Header = ({
           await syncDatasource(syncPayload, apiKey);
           console.log('Synced existing datasource with ID:', currentDataSourceId);
         } catch (err) {
-          console.error('Failed to sync datasource:', err);
+          console.log('sync datasource:', err);
           // 同步失败不影响继续操作
         }
       }
@@ -237,16 +240,13 @@ const Header = ({
         }
       });
 
-      console.log('base url', baseUrl);
-      console.log('currentDataSourceId', currentDataSourceId);
-
       // 添加数据源ID到URL参数
       const url = new URL(baseUrl);
-      url.searchParams.set('dataSourceId', String(currentDataSourceId));
-
+      url.searchParams.set('dataSourceIds', String(currentDataSourceId));
+      console.log('base url', url.toString());
       router.push(url.toString());
     } catch (err) {
-      console.error(t('chat2db_redirect_failed'), err);
+      console.log(t('chat2db_redirect_failed'), err);
       toast({
         title: t('chat2db_redirect_failed'),
         status: 'error'

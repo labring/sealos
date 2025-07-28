@@ -1,6 +1,6 @@
 import { GET, POST } from '@/services/request';
 import { encryptCbcBrowser } from '@/api/encrypt';
-import { GenerateLoginUrlOpts, UserInfo } from '@/constants/chat2db';
+import { GenerateLoginUrlOpts, UserInfo, CreateApiResponse } from '@/constants/chat2db';
 
 const CHAT2DB_BASE = process.env.NEXT_PUBLIC_CHAT2DB_BASE;
 
@@ -8,7 +8,7 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
   const { userId, userNS, orgId, secretKey, ui = {} } = opts;
   const raw = `${userId}/${userNS}:${orgId}`;
   const key = await encryptCbcBrowser(raw, secretKey);
-
+  console.log(raw);
   const p = new URLSearchParams({
     key,
     theme: ui.theme ?? 'light',
@@ -19,12 +19,8 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
   return `${CHAT2DB_BASE}/workspace?${p.toString()}`;
 }
 
-export function logout() {
-  return POST('/api/oauth/logout_a');
-}
-
 export function syncAuthUser(apiKey: string, data: UserInfo) {
-  return POST(`/api/proxy/sync_auth_user_a`, data, {
+  return POST<CreateApiResponse>(`/api/proxy/sync_auth_user_a`, data, {
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Time-Zone': 'Asia/Shanghai'
