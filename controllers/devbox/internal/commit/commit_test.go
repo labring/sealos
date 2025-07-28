@@ -71,7 +71,7 @@ func TestDeleteContainer(t *testing.T) {
 	assert.NoError(t, err)
 
 	// show all containers in current namespace
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	assert.NoError(t, err)
 
@@ -120,7 +120,6 @@ func TestErrorCases(t *testing.T) {
 
 // test concurrent operations
 func TestConcurrentOperations(t *testing.T) {
-	// fmt.Println("=== 这是最新的测试代码 ===")
 	ctx := context.Background()
 	committer, err := NewCommitter()
 	assert.NoError(t, err)
@@ -156,7 +155,7 @@ func TestConcurrentOperations(t *testing.T) {
 	}
 
 	// get current containers list
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range currentContainers {
@@ -192,7 +191,7 @@ func TestGCHandler(t *testing.T) {
 	}
 
 	// show all containers before gc
-	ctx := namespaces.WithNamespace(context.Background(), Namespace)
+	ctx := namespaces.WithNamespace(context.Background(), DefaultNamespace)
 	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	fmt.Printf("=== All Containers before gc ===\n")
 	for _, container := range currentContainers {

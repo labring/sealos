@@ -33,7 +33,7 @@ func NewCommitter() (Committer, error) {
 	}
 
 	// create Containerd client: default namespace in const.go
-	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(Namespace))
+	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(DefaultNamespace))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func NewCommitter() (Committer, error) {
 func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
 	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
 	// 1. get image
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	image, err := c.containerdClient.GetImage(ctx, baseImage)
 	if err != nil {
 		// image not found, try to pull
@@ -66,7 +66,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	// add annotations/labels
 	annotations := map[string]string{
 		AnnotationKeyContentID: contentID,
-		AnnotationKeyNamespace: Namespace,
+		AnnotationKeyNamespace: DefaultNamespace,
 		AnnotationKeyImageName: baseImage,
 	}
 
@@ -90,7 +90,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 // DeleteContainer delete container
 func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName string) error {
 	// load container
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %v", err)
@@ -132,16 +132,16 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 // Commit commit container to image
 func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error {
 	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
 		return fmt.Errorf("failed to create container: %v", err)
 	}
 
 	global := types.GlobalCommandOptions{
-		Namespace:        Namespace,
+		Namespace:        DefaultNamespace,
 		Address:          DefaultContainerdAddress,
-		DataRoot:         DataRoot,
+		DataRoot:         DefaultDataRoot,
 		InsecureRegistry: InsecureRegistry,
 	}
 
@@ -158,7 +158,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 
 // GetContainerAnnotations get container annotations
 func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerName string) (map[string]string, error) {
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load container: %v", err)
@@ -188,8 +188,8 @@ func NewGcHandler(containerdClient *client.Client) GcHandler {
 
 // GC gc container
 func (h *Handler) GC(ctx context.Context) error {
-	log.Printf("Starting GC in namespace: %s", Namespace)
-	ctx = namespaces.WithNamespace(ctx, Namespace)
+	log.Printf("Starting GC in namespace: %s", DefaultNamespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 	// get all container in namespace
 	containers, err := h.containerdClient.Containers(ctx)
 	if err != nil {

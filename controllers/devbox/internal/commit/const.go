@@ -1,9 +1,9 @@
 package commit
 
 const (
-	Namespace                  = "sealos.io"
+	DefaultNamespace           = "sealos.io"
 	DefaultContainerdAddress   = "unix:///var/run/containerd/containerd.sock"
-	DataRoot                   = "/var/lib/containerd"
+	DefaultDataRoot            = "/var/lib/containerd"
 	InsecureRegistry           = true
 	PauseContainerDuringCommit = false
 
