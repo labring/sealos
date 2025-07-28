@@ -81,10 +81,13 @@ export default function WorkspaceToggle() {
                 pl={'12px'}
                 pr={'8px'}
                 bg={isOpen ? 'secondary' : ''}
+                minW={'0'}
+                flex={'0 1 auto'}
                 tabIndex={0}
               >
                 {namespace?.id && (
                   <Box
+                    flex={'0 0 auto'}
                     boxSize={{
                       base: '20px',
                       sm: '24px'
@@ -102,11 +105,9 @@ export default function WorkspaceToggle() {
                   fontSize={'14px'}
                   fontWeight={'500'}
                   textTransform={'capitalize'}
-                  maxW={{
-                    base: '30px',
-                    xs: '80px',
-                    sm: 'fit-content'
-                  }}
+                  flex={'0 1 auto'}
+                  wordBreak={'break-all'}
+                  minW={'2ch'}
                   overflow={'hidden'}
                   textOverflow={'ellipsis'}
                   whiteSpace={'nowrap'}

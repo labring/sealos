@@ -226,7 +226,7 @@ export default function EmailCheckComponent() {
                   mr={{ base: '4px', lg: '8px' }}
                   boxSize={{ base: '40px', lg: '56px' }}
                   fontSize={{ base: '16px', lg: '20px' }}
-                  borderRadius={{ base: '8px', lg: '12px' }}
+                  borderRadius={'12px'}
                 />
               ))}
             </PinInput>

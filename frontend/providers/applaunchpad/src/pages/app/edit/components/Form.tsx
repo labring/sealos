@@ -27,6 +27,7 @@ import {
   IconButton,
   Input,
   Switch,
+  Tooltip,
   useDisclosure,
   useTheme
 } from '@chakra-ui/react';
@@ -43,7 +44,7 @@ import PriceBox from './PriceBox';
 import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
-import { mountPathToConfigMapKey } from '@/utils/tools';
+import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -77,6 +78,7 @@ const Form = ({
   const { userSourcePrice } = useUserStore();
   const router = useRouter();
   const { toast } = useToast();
+  const { copyData } = useCopyData();
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
@@ -967,19 +969,28 @@ const Form = ({
                             borderTopRightRadius={'md'}
                             borderBottomRightRadius={'md'}
                           >
-                            <Box flex={1} userSelect={'all'} className="textEllipsis">
-                              {network.customDomain
-                                ? network.customDomain
-                                : network.openNodePort
-                                ? network?.nodePort
-                                  ? `${network.protocol.toLowerCase()}.${network.domain}:${
-                                      network.nodePort
-                                    }`
-                                  : `${network.protocol.toLowerCase()}.${network.domain}:${t(
-                                      'pending_to_allocated'
-                                    )}`
-                                : `${network.publicDomain}.${network.domain}`}
-                            </Box>
+                            <Tooltip label={t('click_to_copy_tooltip')}>
+                              <Box
+                                flex={1}
+                                userSelect={'all'}
+                                className="textEllipsis"
+                                onClick={() => {
+                                  copyData(`${network.publicDomain}.${network.domain}`);
+                                }}
+                              >
+                                {network.customDomain
+                                  ? network.customDomain
+                                  : network.openNodePort
+                                  ? network?.nodePort
+                                    ? `${network.protocol.toLowerCase()}.${network.domain}:${
+                                        network.nodePort
+                                      }`
+                                    : `${network.protocol.toLowerCase()}.${network.domain}:${t(
+                                        'pending_to_allocated'
+                                      )}`
+                                  : `${network.publicDomain}.${network.domain}`}
+                              </Box>
+                            </Tooltip>
 
                             {network.openPublicDomain && !network.openNodePort && (
                               <Box
@@ -989,7 +1000,7 @@ const Form = ({
                                 onClick={() =>
                                   setCustomAccessModalData({
                                     publicDomain: network.publicDomain,
-                                    customDomain: network.customDomain,
+                                    currentCustomDomain: network.customDomain,
                                     domain: network.domain
                                   })
                                 }
@@ -1328,8 +1339,6 @@ const Form = ({
               ...networks[i],
               customDomain: e
             });
-
-            setCustomAccessModalData(undefined);
           }}
         />
       )}
