@@ -521,6 +521,13 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
+  // [TODO] Guide is currently not compatible with narrow screen.
+  const isNarrowScreen =
+    useBreakpointValue({
+      base: true,
+      lg: false
+    }) ?? true;
+
   // min = 1 line app name
   // max = 2 lines app name
   const appHeight =
