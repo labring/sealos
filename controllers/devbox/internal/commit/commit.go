@@ -3,8 +3,6 @@ package commit
 import (
 	"context"
 	"fmt"
-	"log"
-	"io"
 	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/containerd/containerd/v2/pkg/oci"
@@ -12,7 +10,9 @@ import (
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+	"log"
 )
 
 type Committer interface {
@@ -68,6 +68,8 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		AnnotationKeyContentID: contentID,
 		AnnotationKeyNamespace: DefaultNamespace,
 		AnnotationKeyImageName: baseImage,
+		AnnotationImageFrom:    AnnotationImageFromValue,
+		AnnotationUseLimit:     AnnotationUseLimitValue,
 	}
 
 	containerName := fmt.Sprintf("%s-container", devboxName) // container name

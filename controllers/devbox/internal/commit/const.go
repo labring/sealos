@@ -10,5 +10,9 @@ const (
 	AnnotationKeyContentID               = "devbox.sealos.io/content-id"
 	AnnotationKeyNamespace               = "namespace"
 	AnnotationKeyImageName               = "image.name"
+	AnnotationImageFrom                  = "devbox.sealos.io/init"
+	AnnotationUseLimit                   = "devbox.sealos.io/storage-limit"
 	DevboxOptionsRemoveBaseImageTopLayer = true
+	AnnotationImageFromValue             = "true"
+	AnnotationUseLimitValue              = "1Gi"
 )
