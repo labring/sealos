@@ -27,13 +27,13 @@ type CommitterImpl struct {
 // NewCommitter new a CommitterImpl
 func NewCommitter() (Committer, error) {
 	// create gRPC connection
-	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(DefaultContainerdAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
 
 	// create Containerd client: default namespace in const.go
-	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(namespace))
+	containerdClient, err := client.NewWithConn(conn, client.WithDefaultNamespace(Namespace))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func NewCommitter() (Committer, error) {
 func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
 	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
 	// 1. get image
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	image, err := c.containerdClient.GetImage(ctx, baseImage)
 	if err != nil {
 		// image not found, try to pull
@@ -65,9 +65,9 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	// 2. create container
 	// add annotations/labels
 	annotations := map[string]string{
-		annotationKeyContentID: contentID,
-		annotationKeyNamespace: namespace,
-		annotationKeyImageName: baseImage,
+		AnnotationKeyContentID: contentID,
+		AnnotationKeyNamespace: Namespace,
+		AnnotationKeyImageName: baseImage,
 	}
 
 	containerName := fmt.Sprintf("%s-container", devboxName) // container name
@@ -90,7 +90,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 // DeleteContainer delete container
 func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName string) error {
 	// load container
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return fmt.Errorf("failed to load container: %v", err)
@@ -132,25 +132,25 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 // Commit commit container to image
 func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error {
 	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
 		return fmt.Errorf("failed to create container: %v", err)
 	}
 
 	global := types.GlobalCommandOptions{
-		Namespace:        namespace,
-		Address:          address,
-		DataRoot:         dataRoot,
-		InsecureRegistry: insecureRegistry,
+		Namespace:        Namespace,
+		Address:          DefaultContainerdAddress,
+		DataRoot:         DataRoot,
+		InsecureRegistry: InsecureRegistry,
 	}
 
 	opt := types.ContainerCommitOptions{
 		Stdout:   io.Discard,
 		GOptions: global,
-		Pause:    pauseContainerDuringCommit,
+		Pause:    PauseContainerDuringCommit,
 		DevboxOptions: types.DevboxOptions{
-			RemoveBaseImageTopLayer: true,
+			RemoveBaseImageTopLayer: DevboxOptionsRemoveBaseImageTopLayer,
 		},
 	}
 	return container.Commit(ctx, c.containerdClient, commitImage, containerID, opt)
@@ -158,7 +158,7 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 
 // GetContainerAnnotations get container annotations
 func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerName string) (map[string]string, error) {
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	container, err := c.containerdClient.LoadContainer(ctx, containerName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load container: %v", err)
@@ -188,8 +188,8 @@ func NewGcHandler(containerdClient *client.Client) GcHandler {
 
 // GC gc container
 func (h *Handler) GC(ctx context.Context) error {
-	log.Printf("Starting GC in namespace: %s", namespace)
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	log.Printf("Starting GC in namespace: %s", Namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	// get all container in namespace
 	containers, err := h.containerdClient.Containers(ctx)
 	if err != nil {
@@ -206,7 +206,7 @@ func (h *Handler) GC(ctx context.Context) error {
 			continue
 		}
 		// if container is not devbox container, skip
-		if _, ok := labels[annotationKeyContentID]; !ok {
+		if _, ok := labels[AnnotationKeyContentID]; !ok {
 			continue
 		}
 

@@ -71,7 +71,7 @@ func TestDeleteContainer(t *testing.T) {
 	assert.NoError(t, err)
 
 	// show all containers in current namespace
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	assert.NoError(t, err)
 
@@ -156,7 +156,7 @@ func TestConcurrentOperations(t *testing.T) {
 	}
 
 	// get current containers list
-	ctx = namespaces.WithNamespace(ctx, namespace)
+	ctx = namespaces.WithNamespace(ctx, Namespace)
 	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	fmt.Printf("=== All Containers in current namespace ===\n")
 	for _, container := range currentContainers {
@@ -192,7 +192,7 @@ func TestGCHandler(t *testing.T) {
 	}
 
 	// show all containers before gc
-	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	ctx := namespaces.WithNamespace(context.Background(), Namespace)
 	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
 	fmt.Printf("=== All Containers before gc ===\n")
 	for _, container := range currentContainers {

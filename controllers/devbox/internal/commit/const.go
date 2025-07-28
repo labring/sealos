@@ -1,13 +1,14 @@
 package commit
 
 const (
-	namespace = "sealos.io"
-	address   = "unix:///var/run/containerd/containerd.sock"
-	dataRoot  = "/var/lib/containerd"
-	insecureRegistry = true
-	pauseContainerDuringCommit = false
+	Namespace                  = "sealos.io"
+	DefaultContainerdAddress   = "unix:///var/run/containerd/containerd.sock"
+	DataRoot                   = "/var/lib/containerd"
+	InsecureRegistry           = true
+	PauseContainerDuringCommit = false
 
-	annotationKeyContentID = "devbox.sealos.io/content-id"
-	annotationKeyNamespace = "namespace"
-	annotationKeyImageName = "image.name"
+	AnnotationKeyContentID               = "devbox.sealos.io/content-id"
+	AnnotationKeyNamespace               = "namespace"
+	AnnotationKeyImageName               = "image.name"
+	DevboxOptionsRemoveBaseImageTopLayer = true
 )
