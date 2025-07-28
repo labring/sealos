@@ -86,11 +86,18 @@ export default function Account() {
     });
   };
 
+  const isNarrowScreen =
+    useBreakpointValue({
+      base: true,
+      md: false
+    }) ?? true;
+
   useEffect(() => {
-    if (initGuide) {
+    // [TODO] Guide is currently not compatible with narrow screen.
+    if (initGuide && !isNarrowScreen) {
       openGuideModal();
     }
-  }, [initGuide, openGuideModal]);
+  }, [initGuide, openGuideModal, isNarrowScreen]);
 
   return (
     <Box position={'relative'} flex={1} w={'full'}>
