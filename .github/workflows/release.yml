@@ -102,7 +102,7 @@ jobs:
     needs:
       - goreleaser
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - name: Checkout
