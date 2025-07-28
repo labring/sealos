@@ -282,7 +282,7 @@ func AdminCreateCorporate(c *gin.Context) {
 		return
 	}
 
-	// 解析前端传来的接口
+	// Parse interfaces coming from the frontend
 	var corporateData types.Corporate
 	if err := c.ShouldBindJSON(&corporateData); err != nil {
 		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
@@ -291,7 +291,7 @@ func AdminCreateCorporate(c *gin.Context) {
 		return
 	}
 
-	// 调用CreateCorporate
+	// invoke CreateCorporate
 	if err := dao.DBClient.CreateCorporate(corporateData); err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
 			Error: fmt.Sprintf("failed to create corporate: %v", err),
