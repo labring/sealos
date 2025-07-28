@@ -5,44 +5,46 @@ export const codeTheme = {
     color: '#2f3337'
   },
   linenumber: {
-    minWidth: '2em'
+    minWidth: '2em',
+    paddingRight: '20px'
   },
   'hljs-comment': {
     color: '#656e77'
   },
   comment: {
-    color: '#A19F9D'
+    color: '#71717A' // line number color
   },
   'hljs-keyword': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-selector-tag': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-meta-keyword': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-doctag': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-section': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-selector-class': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-meta': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-selector-pseudo': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-attr': {
-    color: '#0770BC'
+    color: '#18181B'
   },
   'hljs-attribute': {
     color: '#803378'
   },
+  // key
   'hljs-name': {
     color: '#b75501'
   },
@@ -70,29 +72,30 @@ export const codeTheme = {
   'hljs-literal': {
     color: '#b75501'
   },
+  // value
   'hljs-string': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-regexp': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-symbol': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-variable': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-template-variable': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-link': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-selector-attr': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-meta-string': {
-    color: '#9E53C1'
+    color: '#2563EB'
   },
   'hljs-bullet': {
     color: '#535a60'

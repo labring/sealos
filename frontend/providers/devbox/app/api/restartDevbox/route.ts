@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // NOTE： if stop in there,maybe later stopped but not start,and annotations not be adjusted.
     // 2.get devbox pod and ensure the devbox pod is deleted,when the devbox pod is deleted,the devbox will be restarted
     let pods;
     const maxRetries = 10;
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
     } while (pods.length > 0 && retries < maxRetries);
 
     if (retries === maxRetries) {
-      throw new Error('Max retries reached while waiting for devbox pod to be deleted');
+      throw new Error('Restart devbox failed');
     }
     console.log('devbox pod is deleted');
 

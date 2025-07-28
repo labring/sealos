@@ -6,6 +6,8 @@ import { getAppEnv } from '@/api/platform';
 import { Env } from '@/types/static';
 
 export const defaultEnv: Env = {
+  documentUrlZH: 'https://sealos.run/docs/overview/intro',
+  documentUrlEN: 'https://sealos.io/docs/overview/intro',
   sealosDomain: 'dev.sealos.plus',
   ingressSecret: 'wildcard-cert',
   registryAddr: 'hub.dev.sealos.plus',
