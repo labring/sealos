@@ -1,7 +1,7 @@
 package commit
 
 const (
-	namespace = "test.io"
+	namespace = "sealos.io"
 	address   = "unix:///var/run/containerd/containerd.sock"
 	dataRoot  = "/var/lib/containerd"
 	insecureRegistry = true

@@ -204,10 +204,6 @@ type CommitRecord struct {
 	// +kubebuilder:validation:Optional
 	Node string `json:"node"`
 
-	// ContainerID is the devbox's container ID
-	// +kubebuilder:validation:Optional
-	ContainerID string `json:"containerID"`
-
 	// GenerateTime is the time when the commit is generated
 	// +kubebuilder:validation:Optional
 	GenerateTime metav1.Time `json:"generateTime"`

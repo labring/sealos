@@ -3,22 +3,16 @@ package commit
 import (
 	"context"
 	"fmt"
-	"io"
-	"log"
-
-	// "os"
-
-	// "github.com/containerd/containerd"
 	"github.com/containerd/containerd/v2/client"
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"io"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
-	"github.com/containerd/containerd/v2/pkg/namespaces"
-	// "github.com/containerd/containerd/v2/pkg/cio"
-	// imageutil "github.com/labring/cri-shim/pkg/image"
+	"log"
 )
 
 type Committer interface {
@@ -27,11 +21,11 @@ type Committer interface {
 
 type CommitterImpl struct {
 	runtimeServiceClient runtimeapi.RuntimeServiceClient // CRI client
-	containerdClient     *client.Client    // containerd client
+	containerdClient     *client.Client                  // containerd client
 }
 
 // NewCommitter new a CommitterImpl
-func NewCommitter() (Committer,error) {
+func NewCommitter() (Committer, error) {
 	// create gRPC connection
 	conn, err := grpc.NewClient(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -54,40 +48,37 @@ func NewCommitter() (Committer,error) {
 }
 
 // CreateContainer create container
-func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string,error) {
+func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, contentID string, baseImage string) (string, error) {
 	fmt.Println("========>>>> create container", devboxName, contentID, baseImage)
 	// 1. get image
 	ctx = namespaces.WithNamespace(ctx, namespace)
 	image, err := c.containerdClient.GetImage(ctx, baseImage)
 	if err != nil {
-        // image not found, try to pull
-        log.Printf("Image %s not found, pulling...", baseImage)
-        image, err = c.containerdClient.Pull(ctx, baseImage, client.WithPullUnpack)
-        if err != nil {
-            return "", fmt.Errorf("failed to pull image %s: %v", baseImage, err)
-        }
-    }
+		// image not found, try to pull
+		log.Printf("Image %s not found, pulling...", baseImage)
+		image, err = c.containerdClient.Pull(ctx, baseImage, client.WithPullUnpack)
+		if err != nil {
+			return "", fmt.Errorf("failed to pull image %s: %v", baseImage, err)
+		}
+	}
 
 	// 2. create container
 	// add annotations/labels
 	annotations := map[string]string{
-		annotationKeyContentID:           contentID,
-		annotationKeyNamespace:           namespace,
-		annotationKeyImageName:           baseImage,
-		// "container.type":              "direct",
-		// "description":                 "Container created directly via containerd API",
+		annotationKeyContentID: contentID,
+		annotationKeyNamespace: namespace,
+		annotationKeyImageName: baseImage,
 	}
 
-	containerName := fmt.Sprintf("%s-container", devboxName)	// container name
+	containerName := fmt.Sprintf("%s-container", devboxName) // container name
 
 	container, err := c.containerdClient.NewContainer(ctx, containerName,
 		client.WithImage(image),
 		client.WithNewSnapshot(containerName, image),
-		client.WithContainerLabels(annotations), // add annotations
-		client.WithNewSpec(oci.WithImageConfig(image),
-			// oci.WithProcessArgs("/bin/sh", "-c", "while true; do echo 'Hello, World!'; sleep 5; done"),
-			// oci.WithHostname("test-container"),
-		),
+		client.WithContainerLabels(annotations),        // add annotations
+		client.WithNewSpec(oci.WithImageConfig(image)), // oci.WithProcessArgs("/bin/sh", "-c", "while true; do echo 'Hello, World!'; sleep 5; done"),
+		// oci.WithHostname("test-container"),
+
 	)
 	if err != nil {
 		return "", fmt.Errorf("failed to create container: %v", err)
@@ -110,7 +101,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	if err == nil {
 		log.Printf("Stopping task for container: %s", containerName)
 
-		// force kill task 
+		// force kill task
 		err = task.Kill(ctx, 9) // SIGKILL
 		if err != nil {
 			log.Printf("Warning: failed to send SIGKILL: %v", err)
@@ -118,7 +109,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 			log.Printf("Sent SIGKILL to task")
 		}
 
-		// delete task 
+		// delete task
 		log.Printf("Deleting task...")
 		_, err = task.Delete(ctx, client.WithProcessKill)
 		if err != nil {
@@ -129,7 +120,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	}
 
 	// delete container (include snapshot)
-	err = container.Delete(ctx,client.WithSnapshotCleanup)
+	err = container.Delete(ctx, client.WithSnapshotCleanup)
 	if err != nil {
 		return fmt.Errorf("failed to delete container: %v", err)
 	}
@@ -142,7 +133,7 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID string, baseImage string, commitImage string) error {
 	fmt.Println("========>>>> commit devbox", devboxName, contentID, baseImage, commitImage)
 	ctx = namespaces.WithNamespace(ctx, namespace)
-	containerID,err:=c.CreateContainer(ctx, devboxName, contentID, baseImage)
+	containerID, err := c.CreateContainer(ctx, devboxName, contentID, baseImage)
 	if err != nil {
 		return fmt.Errorf("failed to create container: %v", err)
 	}
@@ -195,67 +186,68 @@ func NewGcHandler(containerdClient *client.Client) GcHandler {
 	}
 }
 
+// GC gc container
 func (h *Handler) GC(ctx context.Context) error {
 	log.Printf("Starting GC in namespace: %s", namespace)
 	ctx = namespaces.WithNamespace(ctx, namespace)
 	// get all container in namespace
-	containers,err:=h.containerdClient.Containers(ctx)
-	if err !=nil{
+	containers, err := h.containerdClient.Containers(ctx)
+	if err != nil {
 		log.Printf("Failed to get containers, err: %v", err)
 		return err
 	}
 
 	var deletedContainersCount int
-	for _,container:=range containers{
+	for _, container := range containers {
 		// if get container's labels failed, skip
-		labels,err:=container.Labels(ctx)
-		if err!=nil{
-			log.Printf("Failed to get labels for container %s, err: %v",container.ID(),err)
+		labels, err := container.Labels(ctx)
+		if err != nil {
+			log.Printf("Failed to get labels for container %s, err: %v", container.ID(), err)
 			continue
 		}
 		// if container is not devbox container, skip
-		if _,ok:=labels[annotationKeyContentID];!ok{
-			continue 
+		if _, ok := labels[annotationKeyContentID]; !ok {
+			continue
 		}
 
 		// get container task
-		task,err:=container.Task(ctx,nil)
-		if err!=nil{
+		task, err := container.Task(ctx, nil)
+		if err != nil {
 			// delete orphan container
-			log.Printf("Found Orphan Container: %s",container.ID())
-			err=container.Delete(ctx,client.WithSnapshotCleanup)
-			if err!=nil{
-				log.Printf("Failed to delete Orphan Container %s, err: %v",container.ID(),err)
-			}else{
-				log.Printf("Deleted Orphan Container: %s successfully",container.ID())
+			log.Printf("Found Orphan Container: %s", container.ID())
+			err = container.Delete(ctx, client.WithSnapshotCleanup)
+			if err != nil {
+				log.Printf("Failed to delete Orphan Container %s, err: %v", container.ID(), err)
+			} else {
+				log.Printf("Deleted Orphan Container: %s successfully", container.ID())
 				deletedContainersCount++
 			}
 			continue
 		}
 
-		status,err:=task.Status(ctx)
-		if err!=nil{
-			log.Printf("Failed to get task status for container %s, err: %v",container.ID(),err)
+		status, err := task.Status(ctx)
+		if err != nil {
+			log.Printf("Failed to get task status for container %s, err: %v", container.ID(), err)
 			continue
 		}
-		if status.Status!=client.Running{
+		if status.Status != client.Running {
 			// delete task
-			_,err=task.Delete(ctx,client.WithProcessKill)
-			if err!=nil{
-				log.Printf("Failed to delete task for container %s, err: %v",container.ID(),err)
+			_, err = task.Delete(ctx, client.WithProcessKill)
+			if err != nil {
+				log.Printf("Failed to delete task for container %s, err: %v", container.ID(), err)
 			}
 
 			// delete container and snapshot
-			err=container.Delete(ctx,client.WithSnapshotCleanup)
-			if err!=nil{
-				log.Printf("Failed to delete container %s, err: %v",container.ID(),err)
-			}else{
-				log.Printf("Deleted Container: %s successfully",container.ID())
+			err = container.Delete(ctx, client.WithSnapshotCleanup)
+			if err != nil {
+				log.Printf("Failed to delete container %s, err: %v", container.ID(), err)
+			} else {
+				log.Printf("Deleted Container: %s successfully", container.ID())
 				deletedContainersCount++
 			}
 		}
 
 	}
-	log.Printf("GC completed, deleted %d containers",deletedContainersCount)
+	log.Printf("GC completed, deleted %d containers", deletedContainersCount)
 	return nil
 }
