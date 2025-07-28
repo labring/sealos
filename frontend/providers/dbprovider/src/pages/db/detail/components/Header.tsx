@@ -20,11 +20,12 @@ import {
   mapDBType
 } from '@/constants/chat2db';
 import { ConnectionInfo } from './AppBaseInfo';
-import { generateLoginUrl } from '@/services/chat2db/user';
-import { createDatasource } from '@/services/chat2db/datasource';
+import { generateLoginUrl, syncAuthUser } from '@/services/chat2db/user';
+import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { dbTypeMap } from '@/utils/database';
 import { error } from 'console';
 import { useDBStore } from '@/store/db';
+import { getLangStore } from '@/utils/cookieUtils';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -61,6 +62,7 @@ const Header = ({
   });
 
   const [loading, setLoading] = useState(false);
+  const { getDataSourceId, setDataSourceId } = useDBStore();
 
   const handleRestartApp = useCallback(async () => {
     try {
@@ -147,12 +149,14 @@ const Header = ({
     const userId = userObj?.user.id;
     const userNS = userObj?.user.nsid;
     const userKey = `${userId}/${userNS}`;
+
     if (!conn) {
       return toast({
         title: 'Connection info not ready',
         status: 'error'
       });
     }
+
     const { host, port, connection, username, password, dbType, dbName } = conn;
 
     const payload = {
@@ -167,10 +171,60 @@ const Header = ({
       type: mapDBType(dbType)
     };
 
-    console.log(JSON.stringify(payload));
+    // console.log(JSON.stringify(payload));
 
     try {
-      const url = await generateLoginUrl({
+      await syncAuthUser(apiKey, { uid: userKey });
+      let currentDataSourceId = getDataSourceId(db.dbName);
+      console.log('currentDataSourceId', currentDataSourceId);
+      // 检查是否是首次点击（数据库中是否已有数据源ID）
+      if (!currentDataSourceId) {
+        // 首次点击，调用 syncDatasourceFirst 创建数据源
+        try {
+          const res = await syncDatasourceFirst(payload, apiKey);
+          currentDataSourceId = res.data; // 从响应中获取数据源ID
+          if (currentDataSourceId) {
+            setDataSourceId(db.dbName, currentDataSourceId); // 存储到store中
+            console.log('Created datasource with ID:', currentDataSourceId);
+          }
+        } catch (err: any) {
+          // 如果同步失败，可能是数据源已存在，尝试创建
+          if (err.data) {
+            currentDataSourceId = err.data;
+            if (currentDataSourceId) {
+              setDataSourceId(db.dbName, currentDataSourceId);
+              console.log('Datasource already exists with ID:', currentDataSourceId);
+            }
+          } else {
+            throw err;
+          }
+        }
+      } else {
+        // 非首次点击，同步现有数据源
+        try {
+          const syncPayload = {
+            ...payload,
+            id: currentDataSourceId
+          };
+          await syncDatasource(syncPayload, apiKey);
+          console.log('Synced existing datasource with ID:', currentDataSourceId);
+        } catch (err) {
+          console.error('Failed to sync datasource:', err);
+          // 同步失败不影响继续操作
+        }
+      }
+
+      // 确保 currentDataSourceId 是有效的数字
+      if (!currentDataSourceId) {
+        throw new Error('Failed to get or create datasource ID');
+      }
+
+      // 获取当前系统语言并映射到 chat2db 支持的语言格式
+      const currentLang = getLangStore() || i18n?.language || 'zh';
+      const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
+
+      // 构建带有数据源ID的URL
+      const baseUrl = await generateLoginUrl({
         userId,
         userNS,
         orgId,
@@ -178,20 +232,19 @@ const Header = ({
         ui: {
           theme: ThemeAppearance.Light,
           primaryColor: PrimaryColorsType.bw,
-          language: LangType.ZH_CN,
+          language: chat2dbLanguage,
           hideAvatar: yowantLayoutConfig.hideAvatar
         }
       });
 
-      // try {
-      //   const res = await createDatasource(payload, apiKey, userKey);
-      // } catch (err) {
-      //   const id = (err as { data?: any }).data;
-      //   console.log(id);
-      // useDBStore.getState().setDataSourceId(id);
-      // }
+      console.log('base url', baseUrl);
+      console.log('currentDataSourceId', currentDataSourceId);
 
-      router.push(url);
+      // 添加数据源ID到URL参数
+      const url = new URL(baseUrl);
+      url.searchParams.set('dataSourceId', String(currentDataSourceId));
+
+      router.push(url.toString());
     } catch (err) {
       console.error(t('chat2db_redirect_failed'), err);
       toast({
@@ -199,7 +252,7 @@ const Header = ({
         status: 'error'
       });
     }
-  }, [toast, router]);
+  }, [toast, router, conn, db.dbName, getDataSourceId, setDataSourceId, t]);
 
   return (
     <Flex h={'80px'} alignItems={'center'}>
@@ -354,7 +407,6 @@ const Header = ({
       {isOpenDelModal && (
         <DelModal
           dbName={db.dbName}
-          dbType={db.dbType}
           source={db.source}
           onClose={onCloseDelModal}
           onSuccess={() => router.replace('/dbs')}
