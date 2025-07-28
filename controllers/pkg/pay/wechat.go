@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/wechatpay-apiv3/wechatpay-go/core"
 	"github.com/wechatpay-apiv3/wechatpay-go/services/refunddomestic"
 )
@@ -74,10 +76,15 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		return "", "", fmt.Errorf("order %s has not been paid or the payment time is unknown and cannot be refunded", option.TradeNo)
 	}
 
+	_, paidAmount, err := w.GetPaymentDetails(option.TradeNo)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to query the payment order: %v", err)
+	}
+
 	// generate a merchant refund number
-	refundNo := GetRandomString(32)
-	if refundNo == "" {
-		return "", "", fmt.Errorf("generate refundNo failed")
+	refundNo := uuid.NewString()
+	if option.RefundID != "" {
+		refundNo = option.RefundID
 	}
 
 	// Amount Unit Conversion: option. Amount is the "cent", which is the same as CreatePayment (amount/10000)
@@ -94,7 +101,7 @@ func (w WechatPayment) RefundPayment(option RefundOption) (string, string, error
 		OutRefundNo: core.String(refundNo),
 		Reason:      core.String(fmt.Sprintf("refund for order %s", option.OrderID)),
 		Amount: &refunddomestic.AmountReq{
-			Total:    core.Int64(refundAmt),
+			Total:    core.Int64(paidAmount / 10000),
 			Refund:   core.Int64(refundAmt),
 			Currency: core.String("CNY"),
 		},
