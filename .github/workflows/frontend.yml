@@ -197,6 +197,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=ref,event=tag
             type=sha
 
       - name: Create manifest list and push to GHCR
