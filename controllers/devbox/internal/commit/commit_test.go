@@ -3,11 +3,13 @@ package commit
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
+
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/stretchr/testify/assert"
-	"sync"
+	"github.com/stretchr/testify/require"
 )
 
 // const (
@@ -179,8 +181,64 @@ func TestConcurrentOperations(t *testing.T) {
         // fmt.Printf("Labels: %+v\n", labels)
         // fmt.Printf("---\n")
     }
-    fmt.Printf("=== Total %d containers ===\n", len(containers))
+    fmt.Printf("=== Total %d containers ===\n", len(currentContainers))
 
+}
+
+// test gc handler
+func TestGCHandler(t *testing.T) {
+	// new Committer and GCHandler
+	committer,err:=NewCommitter()
+	require.NoError(t,err)
+	gcHandler:=NewGcHandler(committer.(*CommitterImpl).containerdClient)
+
+	// create 5 containers
+	testCountainers:=[]struct{
+		devboxName string
+		contentID string
+		baseImage string
+	}{
+		{"test-gc-devbox-1","test-gc-content-id-1","docker.io/library/busybox:latest"},
+		{"test-gc-devbox-2","test-gc-content-id-2","docker.io/library/nginx:latest"},
+		{"test-gc-devbox-3","test-gc-content-id-3","docker.io/library/alpine:latest"},
+		{"test-gc-devbox-4","test-gc-content-id-4","docker.io/library/busybox:latest"},
+		{"test-gc-devbox-5","test-gc-content-id-5","docker.io/library/nginx:latest"},
+	}
+	// createContainerIDs:=make([]string,0,len(testCountainers))
+	for _,container:=range testCountainers{
+		_,err:=committer.(*CommitterImpl).CreateContainer(context.Background(),container.devboxName,container.contentID,container.baseImage)
+		require.NoError(t,err)
+		// createContainerIDs=append(createContainerIDs,cID)
+	}
+
+	// show all containers before gc
+	ctx := namespaces.WithNamespace(context.Background(), namespace)
+	currentContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	fmt.Printf("=== All Containers before gc ===\n")
+    for _, container := range currentContainers {
+        // labels, _ := container.Labels(ctx)
+        fmt.Printf("Container ID: %s\n", container.ID())
+        // fmt.Printf("Labels: %+v\n", labels)
+        // fmt.Printf("---\n")
+    }
+    fmt.Printf("=== Total %d containers ===\n", len(currentContainers))
+
+	// gc: 
+	err=gcHandler.GC(context.Background())
+	require.NoError(t,err)
+
+	// verify containers are deleted
+	// get current containers list
+	// ctx := namespaces.WithNamespace(context.Background(), namespace)
+	afterContainers, _ := committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	fmt.Printf("=== All Containers after gc ===\n")
+    for _, container := range afterContainers {
+        // labels, _ := container.Labels(ctx)
+        fmt.Printf("Container ID: %s\n", container.ID())
+        // fmt.Printf("Labels: %+v\n", labels)
+        // fmt.Printf("---\n")
+    }
+    fmt.Printf("=== Total %d containers ===\n", len(afterContainers))
 }
 
 // // 测试大镜像的处理
