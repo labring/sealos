@@ -1,12 +1,10 @@
-import { getCluster } from '@/pages/api/getDBByName';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { jsonRes } from '@/services/backend/response';
+import { jsonRes, handleK8sError } from '@/services/backend/response';
 import { startDatabaseSchemas } from '@/types/apis';
 import { ResponseCode, ResponseMessages } from '@/types/response';
-import { json2BasicOps } from '@/utils/json2Yaml';
-import { PatchUtils } from '@kubernetes/client-node';
 import { NextApiRequest, NextApiResponse } from 'next';
+import { startDatabase } from '@/services/backend/apis/start-database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
@@ -36,44 +34,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const dbName = pathParamsParseResult.data.databaseName;
+      const result = await startDatabase(
+        k8s,
+        {
+          params: pathParamsParseResult.data
+        },
+        req
+      );
 
-      const body = await getCluster(req, dbName);
-      if (body.spec.backup?.enabled === false) {
-        const patch = [
-          {
-            op: 'replace',
-            path: '/spec/backup/enabled',
-            value: true
-          }
-        ];
-
-        await k8s.k8sCustomObjects.patchNamespacedCustomObject(
-          'apps.kubeblocks.io',
-          'v1alpha1',
-          k8s.namespace,
-          'clusters',
-          dbName,
-          patch,
-          undefined,
-          undefined,
-          undefined,
-          { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
-        );
-      }
-
-      const yaml = json2BasicOps({
-        dbName,
-        type: 'Start'
-      });
-      await k8s.applyYamlList([yaml], 'update');
-
-      return jsonRes(res, { data: 'start success' });
+      return jsonRes(res, result);
     } catch (error) {
-      return jsonRes(res, {
-        code: 500,
-        error: error
-      });
+      return jsonRes(res, handleK8sError(error));
     }
   }
 

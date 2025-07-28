@@ -1,15 +1,10 @@
-import { BackupSupportedDBTypeList } from '@/constants/db';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
-import { KbPgClusterType } from '@/types/cluster';
-import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
-import { json2ResourceOps } from '@/utils/json2Yaml';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { updateBackupPolicyApi } from '../../backup/updatePolicy';
-import { updateTerminationPolicyApi } from '../../createDB';
 import { ResponseCode, ResponseMessages } from '@/types/response';
 import { updateDatabaseSchemas } from '@/types/apis';
+import { updateDatabase } from '@/services/backend/apis/update-database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
@@ -48,76 +43,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const reqPathParams = pathParamsParseResult.data;
-      const reqBody = bodyParseResult.data;
-
-      const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
-        'apps.kubeblocks.io',
-        'v1alpha1',
-        k8s.namespace,
-        'clusters',
-        reqPathParams.databaseName
-      )) as {
-        body: KbPgClusterType;
-      };
-      const existingDatabase = adaptDBDetail(body);
-      const mergedDatabase = {
-        ...existingDatabase,
-        ...reqBody.dbForm
-      };
-
-      const opsRequests = [];
-
-      if (
-        existingDatabase.cpu !== mergedDatabase.cpu ||
-        existingDatabase.memory !== mergedDatabase.memory
-      ) {
-        const verticalScalingYaml = json2ResourceOps(mergedDatabase, 'VerticalScaling');
-        opsRequests.push(verticalScalingYaml);
-      }
-
-      if (existingDatabase.replicas !== mergedDatabase.replicas) {
-        const horizontalScalingYaml = json2ResourceOps(mergedDatabase, 'HorizontalScaling');
-        opsRequests.push(horizontalScalingYaml);
-      }
-
-      if (mergedDatabase.storage > existingDatabase.storage) {
-        const volumeExpansionYaml = json2ResourceOps(mergedDatabase, 'VolumeExpansion');
-        opsRequests.push(volumeExpansionYaml);
-      }
-
-      console.log({ opsRequests });
-
-      if (opsRequests.length > 0) {
-        await k8s.applyYamlList(opsRequests, 'create');
-      }
-
-      if (BackupSupportedDBTypeList.includes(mergedDatabase.dbType) && mergedDatabase?.autoBackup) {
-        const autoBackup = convertBackupFormToSpec({
-          autoBackup: mergedDatabase?.autoBackup,
-          dbType: mergedDatabase.dbType
-        });
-
-        await updateBackupPolicyApi({
-          dbName: mergedDatabase.dbName,
-          dbType: mergedDatabase.dbType,
-          autoBackup,
-          k8sCustomObjects: k8s.k8sCustomObjects,
-          namespace: k8s.namespace
-        });
-
-        if (existingDatabase.terminationPolicy !== mergedDatabase.terminationPolicy) {
-          await updateTerminationPolicyApi({
-            dbName: mergedDatabase.dbName,
-            terminationPolicy: mergedDatabase.terminationPolicy,
-            k8sCustomObjects: k8s.k8sCustomObjects,
-            namespace: k8s.namespace
-          });
-        }
-      }
+      const result = await updateDatabase(k8s, {
+        params: pathParamsParseResult.data,
+        body: bodyParseResult.data
+      });
 
       return jsonRes(res, {
-        data: `Successfully submitted ${opsRequests.length} change requests`
+        data: `Successfully submitted ${result.opsRequests.length} change requests`
       });
     } catch (err) {
       console.log('error create db', err);

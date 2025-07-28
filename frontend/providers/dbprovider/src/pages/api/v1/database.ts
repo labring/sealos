@@ -9,6 +9,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from '../backup/updatePolicy';
 import { createDatabaseSchemas } from '@/types/apis';
 import { ResponseCode, ResponseMessages } from '@/types/response';
+import { createDatabase } from '@/services/backend/apis/create-database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const kubeconfig = await authSession(req).catch(() => null);
@@ -38,55 +39,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      const reqBody = bodyParseResult.data;
-
-      const account = json2Account(reqBody.dbForm);
-      const cluster = json2CreateCluster(reqBody.dbForm, reqBody.backupInfo, {
-        storageClassName: process.env.STORAGE_CLASSNAME
+      await createDatabase(k8s, {
+        body: bodyParseResult.data
       });
-
-      await k8s.applyYamlList([account, cluster], 'create');
-      const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
-        'apps.kubeblocks.io',
-        'v1alpha1',
-        k8s.namespace,
-        'clusters',
-        reqBody.dbForm.dbName
-      )) as {
-        body: KbPgClusterType;
-      };
-      const dbUid = body.metadata.uid;
-
-      const updateAccountYaml = json2Account(reqBody.dbForm, dbUid);
-
-      await k8s.applyYamlList([updateAccountYaml], 'replace');
-
-      try {
-        if (
-          BackupSupportedDBTypeList.includes(reqBody.dbForm.dbType) &&
-          reqBody.dbForm?.autoBackup
-        ) {
-          const autoBackup = convertBackupFormToSpec({
-            autoBackup: reqBody.dbForm?.autoBackup,
-            dbType: reqBody.dbForm.dbType
-          });
-
-          await updateBackupPolicyApi({
-            dbName: reqBody.dbForm.dbName,
-            dbType: reqBody.dbForm.dbType,
-            autoBackup,
-            k8sCustomObjects: k8s.k8sCustomObjects,
-            namespace: k8s.namespace
-          });
-        }
-      } catch (err: any) {
-        // local env will fail to update backup policy
-        if (process.env.NODE_ENV === 'production') {
-          throw err;
-        } else {
-          console.log(err);
-        }
-      }
 
       jsonRes(res, {
         data: 'success create db'
