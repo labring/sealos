@@ -30,7 +30,7 @@ import type { AppProps } from 'next/app';
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
-      <GTMScript 
+      <GTMScript
         gtmId={process.env.NEXT_PUBLIC_GTM_ID!}
         enabled={!!process.env.NEXT_PUBLIC_GTM_ID}
         debug={process.env.NODE_ENV === 'development'}
@@ -51,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <GTMScript 
+        <GTMScript
           gtmId={process.env.NEXT_PUBLIC_GTM_ID!}
           enabled={!!process.env.NEXT_PUBLIC_GTM_ID}
           debug={process.env.NODE_ENV === 'development'}
@@ -63,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-### 3. Advanced Setup (via _document.tsx)
+### 3. Advanced Setup (via \_document.tsx)
 
 If you need more control, configure in `_document.tsx`:
 
@@ -76,13 +76,13 @@ import Script from 'next/script';
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
     const initialProps = await Document.getInitialProps(ctx);
-    
+
     const gtmConfig = getGTMScripts({
       gtmId: process.env.NEXT_PUBLIC_GTM_ID || '',
       enabled: !!process.env.NEXT_PUBLIC_GTM_ID,
       debug: process.env.NODE_ENV === 'development'
     });
-    
+
     return {
       ...initialProps,
       scripts: [...(scripts || []), ...gtmConfig.scripts],
@@ -92,7 +92,7 @@ class MyDocument extends Document {
 
   render() {
     const { scripts = [], noscripts = [] } = this.props;
-    
+
     return (
       <Html lang="en">
         <Head>
@@ -139,36 +139,45 @@ track('deployment_create', {
 });
 ```
 
-### Predefined Event Functions
+### All Event Types
 
 ```tsx
-import { 
-  trackModuleOpen,
-  trackDeploymentCreate,
-  trackAppLaunch,
-  trackLoginSuccess
-} from '@sealos/gtm';
+import { track } from '@sealos/gtm';
 
 // Module events
-trackModuleOpen('devbox');
-trackModuleOpen('guide', { trigger: 'manual' });
+track('module_open', { module: 'devbox' });
+track('module_view', { module: 'applaunchpad', view_name: 'logs' });
 
 // Deployment events
-trackDeploymentStart('devbox');
-trackDeploymentCreate('devbox', {
+track('deployment_start', { module: 'devbox' });
+track('deployment_create', {
+  module: 'devbox',
   config: { template_name: 'php', template_version: '7.4' },
   resources: { cpu_cores: 1, ram_mb: 1024 }
 });
 
 // App launch
-trackAppLaunch('wordpress', 'appstore');
+track('app_launch', {
+  module: 'desktop',
+  app_name: 'wordpress',
+  source: 'appstore'
+});
 
 // Auth events
-trackLoginSuccess({
+track('login_start', { module: 'auth' });
+track('login_success', {
+  module: 'auth',
   method: 'oauth2',
   oauth2_provider: 'google',
   user_type: 'new'
 });
+
+// Workspace events
+track('workspace_create', { module: 'workspace' });
+track('workspace_invite', { module: 'workspace', invite_role: 'developer' });
+
+// Error tracking
+track('error_occurred', { module: 'devbox', error_code: 'NAME_ALREADY_IN_USE' });
 ```
 
 ### TypeScript Support
@@ -202,13 +211,16 @@ configureGTM({
 ## Supported Events
 
 ### Module Events
+
 - `module_open` - When a module is opened
 - `module_view` - When navigating within a module
 
 ### App Events
+
 - `app_launch` - When launching apps from desktop
 
 ### Deployment Events
+
 - `deployment_start` - Starting a deployment
 - `deployment_create` - Deployment completed
 - `deployment_update` - Updating a deployment
@@ -217,6 +229,7 @@ configureGTM({
 - `deployment_details` - Viewing deployment details
 
 ### Workspace Events
+
 - `workspace_create` - Creating a workspace
 - `workspace_delete` - Deleting a workspace
 - `workspace_switch` - Switching workspaces
@@ -224,11 +237,13 @@ configureGTM({
 - `workspace_join` - Joining via invite
 
 ### Guide Events
+
 - `guide_start` - Starting a guide
 - `guide_complete` - Completing a guide
 - `guide_exit` - Exiting a guide
 
 ### Other Events
+
 - `ide_open` - Opening IDE
 - `release_create` - Creating a release
 - `error_occurred` - Error tracking
@@ -238,6 +253,7 @@ configureGTM({
 ## Module Support
 
 All Sealos modules are supported:
+
 - `desktop`, `devbox`, `database`, `applaunchpad`
 - `appstore`, `costcenter`, `workspace`, `guide`
 - `aiproxy`, `kubepanel`, `objectstorage`, `cronjob`, `terminal`
