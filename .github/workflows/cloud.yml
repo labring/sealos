@@ -4,46 +4,46 @@ on:
   workflow_call:
     inputs:
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push all-in-one image tag, default is latest'
-        default: 'latest'
+        description: "Push all-in-one image tag, default is latest"
+        default: "latest"
         required: false
         type: string
       build_from:
-        description: 'Build all-in-one image from components image tag, default is latest'
-        default: 'latest'
+        description: "Build all-in-one image from components image tag, default is latest"
+        default: "latest"
         required: false
         type: string
   workflow_dispatch:
     inputs:
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push all-in-one image tag, default is latest'
-        default: 'latest'
+        description: "Push all-in-one image tag, default is latest"
+        default: "latest"
         required: false
         type: string
       build_from:
-        description: 'Build all-in-one image from components image tag, default is latest'
-        default: 'latest'
+        description: "Build all-in-one image from components image tag, default is latest"
+        default: "latest"
         required: false
         type: string
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
       - "deploy/cloud/**"
       - ".github/workflows/cloud.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - "deploy/cloud/**"
       - ".github/workflows/cloud.yml"
@@ -54,6 +54,8 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
+  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+  ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
   save-sealos:
@@ -93,6 +95,9 @@ jobs:
         run: |
           bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
           echo "repo=ghcr.io/${REPO_OWNER}/sealos-cloud" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud" >> $GITHUB_OUTPUT
+          fi
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
@@ -110,9 +115,17 @@ jobs:
         # if push to master, then login to ghcr.io
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
@@ -120,12 +133,14 @@ jobs:
           BUILD_FROM: ${{ inputs.build_from }}
           REPOSITORY_OWNER: ${{ github.repository_owner }}
           REPO: ${{ steps.prepare.outputs.repo }}
+          ALIYUN_REPO: ${{ steps.prepare.outputs.aliyun_repo }}
           TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
           [ -z "${BUILD_FROM}" ] && BuildFromTag="latest" || BuildFromTag="${BUILD_FROM}"; echo "BuildFromTag=${BuildFromTag}"
           sed -i "s#labring#${REPOSITORY_OWNER}#g" init.sh
           sed -i "s#latest#${BuildFromTag}#g" init.sh
 
+          # Build for GHCR
           sudo bash init.sh amd64 
           sudo sealos build -t "${REPO}:${TAG_NAME}-amd64" --platform linux/amd64 -f Kubefile
           sudo sealos build -t "${REPO}:latest-amd64" --platform linux/amd64 -f Kubefile
@@ -138,16 +153,44 @@ jobs:
           sudo sealos build -t "${REPO}:${TAG_NAME}-arm64" --platform linux/arm64 -f Kubefile
           sudo sealos build -t "${REPO}:latest-arm64" --platform linux/arm64 -f Kubefile
 
+          # Build for Aliyun if enabled
+          if [[ -n "${ALIYUN_REPO}" ]]; then
+            # delete old registry cache
+            sudo rm -rf registry
+            sudo rm -rf tars
+            
+            sudo bash init.sh amd64 
+            sudo sealos build -t "${ALIYUN_REPO}:${TAG_NAME}-amd64" --platform linux/amd64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_REPO}:latest-amd64" --platform linux/amd64 -f Kubefile
+
+            # delete old registry cache
+            sudo rm -rf registry
+            sudo rm -rf tars
+
+            sudo bash init.sh arm64 
+            sudo sealos build -t "${ALIYUN_REPO}:${TAG_NAME}-arm64" --platform linux/arm64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_REPO}:latest-arm64" --platform linux/arm64 -f Kubefile
+          fi
+
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
         env:
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ steps.prepare.outputs.repo }}
+          ALIYUN_REPO: ${{ steps.prepare.outputs.aliyun_repo }}
           TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
           sudo sealos images
+
+          # Create manifests for GHCR
           bash scripts/manifest-cluster-images.sh "$REPO:$TAG_NAME"
           bash scripts/manifest-cluster-images.sh "$REPO:latest"
+
+          # Create manifests for Aliyun if enabled
+          if [[ -n "${ALIYUN_REPO}" ]]; then
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_REPO:$TAG_NAME"
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_REPO:latest"
+          fi
 
       # todo: build multi-arch images
 

@@ -204,6 +204,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=ref,event=tag
             type=sha
 
       - name: build (and publish) ${{ matrix.module.name }} main image
