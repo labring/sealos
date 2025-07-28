@@ -15,6 +15,8 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-24.04
+    permissions:
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +55,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - goreleaser
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,6 +100,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - goreleaser
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
