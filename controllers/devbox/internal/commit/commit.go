@@ -60,8 +60,13 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	ctx = namespaces.WithNamespace(ctx, namespace)
 	image, err := c.containerdClient.GetImage(ctx, baseImage)
 	if err != nil {
-		return "", fmt.Errorf("failed to get image: %v", err)
-	}
+        // image not found, try to pull
+        log.Printf("Image %s not found, pulling...", baseImage)
+        image, err = c.containerdClient.Pull(ctx, baseImage, client.WithPullUnpack)
+        if err != nil {
+            return "", fmt.Errorf("failed to pull image %s: %v", baseImage, err)
+        }
+    }
 
 	// 2. create container
 	// add annotations/labels
