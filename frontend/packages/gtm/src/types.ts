@@ -1,41 +1,3 @@
-// GTM Event Types based on Sealos naming convention
-export type GTMEventType =
-  // Module events
-  | 'module_open'
-  | 'module_view'
-  // App launch
-  | 'app_launch'
-  // Deployment events
-  | 'deployment_start'
-  | 'deployment_create'
-  | 'deployment_update'
-  | 'deployment_shutdown'
-  | 'deployment_delete'
-  | 'deployment_details'
-  // IDE events
-  | 'ide_open'
-  // Release events
-  | 'release_create'
-  // Error events
-  | 'error_occurred'
-  // Paywall events
-  | 'paywall_triggered'
-  // Guide events
-  | 'guide_start'
-  | 'guide_complete'
-  | 'guide_exit'
-  // Announcement events
-  | 'announcement_click'
-  // Workspace events
-  | 'workspace_create'
-  | 'workspace_delete'
-  | 'workspace_switch'
-  | 'workspace_invite'
-  | 'workspace_join'
-  // Auth events
-  | 'login_start'
-  | 'login_success';
-
 export type GTMModule =
   | 'desktop'
   | 'devbox'
@@ -55,16 +17,13 @@ export type GTMModule =
 
 export type GTMContext = 'app' | 'website';
 
-// Base GTM Event interface
 export interface BaseGTMEvent {
-  event: GTMEventType;
+  event: string;
   context: GTMContext;
   module: GTMModule;
   method?: string;
-  [key: string]: any;
 }
 
-// Specific event interfaces
 export interface ModuleOpenEvent extends BaseGTMEvent {
   event: 'module_open';
   trigger?: 'manual' | 'onboarding';
@@ -123,7 +82,7 @@ export interface DeploymentShutdownEvent extends BaseGTMEvent {
 export interface IDEOpenEvent extends BaseGTMEvent {
   event: 'ide_open';
   module: 'devbox';
-  method: string; // vscode, cursor, etc.
+  method: string;
 }
 
 export interface ReleaseCreateEvent extends BaseGTMEvent {
@@ -210,7 +169,6 @@ export interface LoginSuccessEvent extends BaseGTMEvent {
   user_type: 'new' | 'existing';
 }
 
-// Union type for all possible events
 export type GTMEvent =
   | ModuleOpenEvent
   | ModuleViewEvent
@@ -235,7 +193,8 @@ export type GTMEvent =
   | LoginStartEvent
   | LoginSuccessEvent;
 
-// Global dataLayer type
+export type GTMEventType = GTMEvent['event'];
+
 declare global {
   interface Window {
     dataLayer: any[];
