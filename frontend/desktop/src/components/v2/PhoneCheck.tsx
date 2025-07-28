@@ -38,6 +38,7 @@ export default function PhoneCheckComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const { captchaIsLoaded } = useScriptStore();
   const { signupData, clearSignupData, startTime, updateStartTime } = useSignupStore();
+  const [pinValue, setPinValue] = useState('');
   const { setToken } = useSessionStore();
 
   const getRemainTime = () => 60000 - new Date().getTime() + startTime;
@@ -185,6 +186,11 @@ export default function PhoneCheckComponent() {
   const onSubmit = async (force = false) => {
     if ((!canResend || isLoading) && !force) return;
 
+    // Clear error state
+    verifyMutation.reset();
+    // Clear input field
+    setPinValue('');
+
     setIsLoading(true);
     try {
       if (!signupData || signupData.providerType !== 'PHONE') {
@@ -269,6 +275,8 @@ export default function PhoneCheckComponent() {
               placeholder=""
               focusBorderColor="#18181B"
               autoFocus
+              value={pinValue}
+              onChange={setPinValue}
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
                 verifyMutation.mutate({ code: value, id: signupData?.providerId || '' });
@@ -281,14 +289,34 @@ export default function PhoneCheckComponent() {
                   mr={{ base: '4px', lg: '8px' }}
                   boxSize={{ base: '40px', lg: '56px' }}
                   fontSize={{ base: '16px', lg: '20px' }}
-                  borderRadius={{ base: '8px', lg: '12px' }}
+                  borderRadius={'12px'}
                 />
               ))}
             </PinInput>
           </FormControl>
 
+          {sendCodeMutation.isLoading && (
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:sending_code')}
+            </Text>
+          )}
+
           {verifyMutation.isLoading ? (
-            <Text>{t('v2:verifying')}</Text>
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:verifying')}
+            </Text>
           ) : (
             <Flex>
               {verifyMutation.isError && (

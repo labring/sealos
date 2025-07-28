@@ -14,9 +14,16 @@
 
 package pay
 
+type RefundOption struct {
+	OrderID string `json:"order_id"`
+	TradeNo string `json:"trade_no"`
+	Amount  int64  `json:"amount"`
+}
+
 type Interface interface {
 	// amount = sealos amount
 	CreatePayment(amount int64, user, describe string) (tradeNo string, codeURL string, err error)
+	RefundPayment(option RefundOption) (refundNo string, refundID string, err error)
 	GetPaymentDetails(sessionID string) (string, int64, error)
 	ExpireSession(payment string) error
 }

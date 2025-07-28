@@ -21,13 +21,12 @@ var (
 		Version:  "v1alpha1",
 		Resource: "clusters",
 	}
-	debtGVR = schema.GroupVersionResource{
-		Group:    "account.sealos.io",
+	quotaGVR = schema.GroupVersionResource{
+		Group:    "",
 		Version:  "v1",
-		Resource: "debts",
+		Resource: "resourcequotas",
 	}
-	debtNamespace = "account-system"
-	userGVR       = schema.GroupVersionResource{
+	userGVR = schema.GroupVersionResource{
 		Group:    "user.sealos.io",
 		Version:  "v1",
 		Resource: "users",

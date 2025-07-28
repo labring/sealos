@@ -1,6 +1,6 @@
 import yaml from 'js-yaml';
 import { customAlphabet } from 'nanoid';
-import { SessionV1 } from 'sealos-desktop-sdk/*';
+import { SessionV1 } from 'sealos-desktop-sdk';
 
 export const getUserKubeConfig = () => {
   if (typeof window === 'undefined') {

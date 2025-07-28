@@ -1,145 +1,75 @@
-import {
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  useDisclosure,
-  Button,
-  Checkbox,
-  Box
-} from '@chakra-ui/react';
+import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import { TriangleAlert } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-const ConfirmCheckbox = ({
-  checkboxLabel,
-  onCheckedChange,
-  defaultChecked
-}: {
-  checkboxLabel: string;
-  onCheckedChange: (checked: boolean) => void;
-  defaultChecked: boolean;
-}) => {
-  const [isChecked, setIsChecked] = useState(defaultChecked);
-  const t = useTranslations();
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.checked;
-    setIsChecked(newValue);
-    onCheckedChange(newValue);
-  };
-
-  return (
-    <Checkbox isChecked={isChecked} spacing={4} onChange={handleChange}>
-      {t(checkboxLabel)}
-    </Checkbox>
-  );
-};
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export const useConfirm = ({
   title = 'prompt',
   content,
   confirmText = 'confirm',
-  cancelText = 'cancel',
-  showCheckbox = false,
-  defaultChecked = true,
-  checkboxLabel = ''
+  cancelText = 'cancel'
 }: {
   title?: string;
   content: string;
   confirmText?: string;
   cancelText?: string;
-  showCheckbox?: boolean;
-  checkboxLabel?: string;
-  defaultChecked?: boolean;
 }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isOpen, setIsOpen] = useState(false);
   const t = useTranslations();
-  const cancelRef = useRef(null);
   const confirmCb = useRef<any>();
   const cancelCb = useRef<any>();
-  const isCheckedRef = useRef(defaultChecked);
 
   return {
-    openConfirm: useCallback(
-      (confirm?: any, cancel?: any) => {
-        return function () {
-          onOpen();
-          confirmCb.current = confirm;
-          cancelCb.current = cancel;
-          isCheckedRef.current = defaultChecked;
-        };
-      },
-      [onOpen, defaultChecked]
-    ),
+    openConfirm: useCallback((confirm?: any, cancel?: any) => {
+      return function () {
+        setIsOpen(true);
+        confirmCb.current = confirm;
+        cancelCb.current = cancel;
+      };
+    }, []),
     ConfirmChild: useCallback(
       () => (
-        <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onClose}>
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="top-[20%] w-[400px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-1.5">
+                <TriangleAlert className="h-4 w-4 text-yellow-600" />
                 {t(title)}
-              </AlertDialogHeader>
-
-              <AlertDialogBody>
-                <Box>{t(content)}</Box>
-                <Box mt={'12px'}>
-                  {showCheckbox && (
-                    <ConfirmCheckbox
-                      checkboxLabel={checkboxLabel}
-                      defaultChecked={defaultChecked}
-                      onCheckedChange={(checked) => {
-                        isCheckedRef.current = checked;
-                      }}
-                    />
-                  )}
-                </Box>
-              </AlertDialogBody>
-
-              <AlertDialogFooter>
-                <Button
-                  variant={'outline'}
-                  onClick={() => {
-                    onClose();
-                    typeof cancelCb.current === 'function' && cancelCb.current();
-                  }}
-                >
-                  {t(cancelText)}
-                </Button>
-                <Button
-                  ml={3}
-                  variant={'solid'}
-                  onClick={() => {
-                    onClose();
-                    if (showCheckbox) {
-                      typeof confirmCb.current === 'function' &&
-                        confirmCb.current(isCheckedRef.current);
-                    } else {
-                      typeof confirmCb.current === 'function' && confirmCb.current();
-                    }
-                  }}
-                >
-                  {t(confirmText)}
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="text-zinc-900">{t(content)}</div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsOpen(false);
+                  typeof cancelCb.current === 'function' && cancelCb.current();
+                }}
+              >
+                {t(cancelText)}
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsOpen(false);
+                  typeof confirmCb.current === 'function' && confirmCb.current();
+                }}
+              >
+                {t(confirmText)}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       ),
-      [
-        cancelText,
-        checkboxLabel,
-        confirmText,
-        content,
-        isOpen,
-        onClose,
-        showCheckbox,
-        t,
-        title,
-        defaultChecked
-      ]
+      [cancelText, confirmText, content, isOpen, t, title]
     )
   };
 };

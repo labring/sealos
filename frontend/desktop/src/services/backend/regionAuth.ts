@@ -200,6 +200,44 @@ export async function getRegionToken({
             'privateRelation.workspaceUid',
             privateRelation?.workspaceUid
           );
+
+          // try to fix the workspace usage record
+          try {
+            // check if the user is merged
+            const mergeUserInfo = await globalPrisma.mergeUserTransactionInfo.findFirst({
+              where: {
+                userUid: userUid
+              }
+            });
+
+            if (mergeUserInfo && privateRelation) {
+              console.log('Found merge user info, attempting to fix WorkspaceUsage');
+
+              await globalPrisma.workspaceUsage.updateMany({
+                where: {
+                  userUid: userUid,
+                  regionUid: region.uid,
+                  workspaceUid: workspaceUid
+                },
+                data: {
+                  workspaceUid: privateRelation.workspaceUid
+                }
+              });
+
+              return {
+                userUid: userCrResult.userUid,
+                userCrUid: userCrResult.uid,
+                userCrName: userCrResult.crName,
+                regionUid: region.uid,
+                userId,
+                workspaceId: privateRelation.workspace.id,
+                workspaceUid: privateRelation.workspace.uid
+              };
+            }
+          } catch (error) {
+            console.error('Failed to fix WorkspaceUsage mismatch:', error);
+          }
+
           return null;
         }
         return {

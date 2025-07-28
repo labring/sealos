@@ -142,6 +142,73 @@ export class MergeUserCrJob implements CronJobStatus {
             workspaceUid,
             userRole: userWorkspace?.role
           });
+
+          // handle workspace usage, ensure the workspace id is consistent
+          try {
+            const mergeUserWorkspaceUsage = await globalPrisma.workspaceUsage.findFirst({
+              where: {
+                userUid: mergeUserUid,
+                workspaceUid,
+                regionUid: getRegionUid()
+              }
+            });
+
+            if (mergeUserWorkspaceUsage) {
+              // find the user workspace usage record
+              const userWorkspaceUsage = await globalPrisma.workspaceUsage.findFirst({
+                where: {
+                  userUid,
+                  workspaceUid,
+                  regionUid: getRegionUid()
+                }
+              });
+
+              if (userWorkspaceUsage) {
+                // if the user has the record, update the seat
+                await globalPrisma.workspaceUsage.update({
+                  where: {
+                    id: userWorkspaceUsage.id
+                  },
+                  data: {
+                    seat: Math.max(userWorkspaceUsage.seat, mergeUserWorkspaceUsage.seat)
+                  }
+                });
+
+                // delete the merge user workspace usage record
+                await globalPrisma.workspaceUsage.delete({
+                  where: {
+                    id: mergeUserWorkspaceUsage.id
+                  }
+                });
+              } else {
+                // if the user has no record, transfer the merge user workspace usage record to the user
+                await globalPrisma.workspaceUsage.update({
+                  where: {
+                    id: mergeUserWorkspaceUsage.id
+                  },
+                  data: {
+                    userUid
+                  }
+                });
+              }
+
+              await globalPrisma.eventLog.create({
+                data: {
+                  eventName: MergeUserEvent['<MERGE_USER>_MERGE_WORKSPACE'],
+                  mainId: userUid,
+                  data: JSON.stringify({
+                    mergeUserUid,
+                    userUid,
+                    workspaceUid,
+                    regionUid: getRegionUid(),
+                    message: `merge workspace usage`
+                  })
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Failed to merge WorkspaceUsage:', error);
+          }
         })
       );
     }
