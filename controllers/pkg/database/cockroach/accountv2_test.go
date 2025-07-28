@@ -15,10 +15,10 @@
 package cockroach
 
 import (
-	"github.com/google/uuid"
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
