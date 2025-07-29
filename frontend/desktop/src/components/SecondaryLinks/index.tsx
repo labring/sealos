@@ -90,28 +90,24 @@ export default function SecondaryLinks() {
   if (!isCollapsed) {
     return (
       <Flex gap={'4px'} ml={'auto'}>
-        {layoutConfig?.version === 'cn' && (
-          <Center
-            mr={'12px'}
-            borderRadius={'8px'}
-            bg={
-              'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-            }
-            h={'36px'}
-            px={'12px'}
-            py={'8px'}
-            color="#2563EB"
-            fontSize={'14px'}
-            fontWeight={'500'}
-            cursor={'pointer'}
-            onClick={openCostCenterApp}
-          >
-            <Text>{t('common:balance')}</Text>
-            <Divider orientation="vertical" mx={'12px'} />
-            <CurrencySymbol />
-            <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
-          </Center>
-        )}
+        <Center
+          mr={'12px'}
+          borderRadius={'8px'}
+          bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
+          h={'36px'}
+          px={'12px'}
+          py={'8px'}
+          color="#2563EB"
+          fontSize={'14px'}
+          fontWeight={'500'}
+          cursor={'pointer'}
+          onClick={openCostCenterApp}
+        >
+          <Text>{t('common:balance')}</Text>
+          <Divider orientation="vertical" mx={'12px'} />
+          <CurrencySymbol />
+          <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
+        </Center>
 
         <Center
           className="guide-button"
