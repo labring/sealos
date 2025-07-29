@@ -19,12 +19,15 @@ package controller
 import (
 	"context"
 	"fmt"
+	"math"
+	"strconv"
 	"time"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	"github.com/labring/sealos/controllers/devbox/label"
 
 	"github.com/google/uuid"
@@ -67,6 +70,8 @@ type DevboxReconciler struct {
 	StateChangeRecorder record.EventRecorder
 
 	RestartPredicateDuration time.Duration
+	AcceptanceThreshold      int
+	stat.NodeStatsProvider
 }
 
 // +kubebuilder:rbac:groups=devbox.sealos.io,resources=devboxes,verbs=get;list;watch;create;update;patch;delete
@@ -146,12 +151,16 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
 	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
-		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" && r.getAcceptanceScore(ctx) >= r.AcceptanceThreshold {
+			// if devbox is not scheduled to node, schedule it to current node
+			logger.Info("devbox not scheduled to node, try scheduling to us now",
+				"nodeName", r.NodeName,
+				"contentID", devbox.Status.ContentID)
 			// set up devbox node and content id, new a record for the devbox
 			devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
 			if err := r.Status().Update(ctx, devbox); err != nil {
-				logger.Info("try to schedule devbox to node failed", "error", err)
-				return ctrl.Result{}, nil
+				logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
+				return ctrl.Result{}, err
 			}
 			logger.Info("devbox scheduled to node", "node", r.NodeName)
 			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
@@ -571,6 +580,257 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts
 	}
 
 	return expectPod
+}
+func (r *DevboxReconciler) getAcceptanceConsideration(ctx context.Context) (helper.AcceptanceConsideration, error) {
+	logger := log.FromContext(ctx)
+	node := &corev1.Node{}
+	if err := r.Get(context.Background(), client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return helper.AcceptanceConsideration{}, err
+	}
+	ann := node.Annotations
+	ac := helper.AcceptanceConsideration{}
+	if v, err := strconv.Atoi(ann[devboxv1alpha1.AnnotationContainerFSAvailableThreshold]); err != nil {
+		logger.Error(err, "failed to parse containerfs available threshold. use default value instead", "value", ann[devboxv1alpha1.AnnotationContainerFSAvailableThreshold])
+		ac.ContainerFSAvailableThreshold = helper.DefaultContainerFSAvailableThreshold
+	} else {
+		ac.ContainerFSAvailableThreshold = uint(v)
+	}
+	if v, err := strconv.Atoi(ann[devboxv1alpha1.AnnotationCPURequestRatio]); err != nil {
+		logger.Error(err, "failed to parse CPU request ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationCPURequestRatio])
+		ac.CPURequestRatio = helper.DefaultCPURequestRatio
+	} else {
+		ac.CPURequestRatio = uint(v)
+	}
+	if v, err := strconv.Atoi(ann[devboxv1alpha1.AnnotationCPULimitRatio]); err != nil {
+		logger.Error(err, "failed to parse CPU limit ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationCPULimitRatio])
+		ac.CPULimitRatio = helper.DefaultCPULimitRatio
+	} else {
+		ac.CPULimitRatio = uint(v)
+	}
+	if v, err := strconv.Atoi(ann[devboxv1alpha1.AnnotationMemoryRequestRatio]); err != nil {
+		logger.Error(err, "failed to parse memory request ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationMemoryRequestRatio])
+		ac.MemoryRequestRatio = helper.DefaultMemoryRequestRatio
+	} else {
+		ac.MemoryRequestRatio = uint(v)
+	}
+	if v, err := strconv.Atoi(ann[devboxv1alpha1.AnnotationMemoryLimitRatio]); err != nil {
+		logger.Error(err, "failed to parse memory limit ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationMemoryLimitRatio])
+		ac.MemoryLimitRatio = helper.DefaultMemoryLimitRatio
+	} else {
+		ac.MemoryLimitRatio = uint(v)
+	}
+	return ac, nil
+}
+
+func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context) int {
+	logger := log.FromContext(ctx)
+	var (
+		ac                      helper.AcceptanceConsideration
+		containerFsStats        stat.FsStats
+		err                     error
+		availableBytes          uint64
+		availablePercentage     uint
+		capacityBytes           uint64
+		cpuRequestPercentage    uint
+		cpuLimitPercentage      uint
+		memoryRequestPercentage uint
+		memoryLimitPercentage   uint
+
+		score int
+	)
+	ac, err = r.getAcceptanceConsideration(ctx)
+	if err != nil {
+		logger.Error(err, "failed to get acceptance consideration")
+		goto unsuitable // If we can't get the acceptance consideration, we assume the node is not suitable
+	}
+	containerFsStats, err = r.ContainerFsStats(ctx)
+	if err != nil || containerFsStats.AvailableBytes == nil || containerFsStats.CapacityBytes == nil {
+		logger.Error(err, "failed to get container filesystem stats")
+		goto unsuitable // If we can't get the container filesystem stats, we assume the node is not suitable
+	}
+	availableBytes = *containerFsStats.AvailableBytes
+	capacityBytes = *containerFsStats.CapacityBytes
+	if minBytesRequired, ok := r.EphemeralStorage.MaximumLimit.AsInt64(); !ok {
+		logger.Error(err, "failed to get minimum bytes required for ephemeral storage")
+		goto unsuitable // If we can't get the minimum bytes required, we assume the node is not suitable
+	} else if availableBytes < uint64(minBytesRequired) {
+		logger.Info("available bytes less than minimum required", "availableBytes", availableBytes, "minimumRequired", minBytesRequired)
+		goto unsuitable // If available bytes are less than the minimum required, we assume the node is not suitable
+	}
+	availablePercentage = uint(float64(availableBytes) / float64(capacityBytes) * 100)
+	if availablePercentage > ac.ContainerFSAvailableThreshold {
+		logger.Info("container filesystem available percentage is greater than threshold",
+			"availablePercentage", availablePercentage,
+			"threshold", ac.ContainerFSAvailableThreshold)
+		score += getScoreUnit(1)
+	}
+	cpuRequestPercentage, err = r.getTotalCPURequest(ctx, r.NodeName)
+	if err != nil {
+		logger.Error(err, "failed to get total CPU request")
+		goto unsuitable // If we can't get the CPU request, we assume the node is not suitable
+	} else if cpuRequestPercentage < ac.CPURequestRatio {
+		logger.Info("cpu request percentage is less than cpu overcommitment request ratio", "requestPercentage", cpuRequestPercentage, "ratio", ac.CPURequestRatio)
+		score += getScoreUnit(0)
+	}
+	cpuLimitPercentage, err = r.getTotalCPULimit(ctx, r.NodeName)
+	if err != nil {
+		logger.Error(err, "failed to get total CPU limit")
+		goto unsuitable // If we can't get the CPU limit, we assume the node is not suitable
+	} else if cpuLimitPercentage < ac.CPULimitRatio {
+		logger.Info("cpu limit percentage is less than cpu overcommitment limit ratio", "limitPercentage", cpuLimitPercentage, "ratio", ac.CPULimitRatio)
+		score += getScoreUnit(0)
+	}
+	memoryRequestPercentage, err = r.getTotalMemoryRequest(ctx, r.NodeName)
+	if err != nil {
+		logger.Error(err, "failed to get total memory request")
+		goto unsuitable // If we can't get the memory request, we assume the node is not suitable
+	} else if memoryRequestPercentage < ac.MemoryRequestRatio {
+		logger.Info("memory request percentage is less than memory overcommitment request ratio", "requestPercentage", memoryRequestPercentage, "ratio", ac.MemoryRequestRatio)
+		score += getScoreUnit(0)
+	}
+	memoryLimitPercentage, err = r.getTotalMemoryLimit(ctx, r.NodeName)
+	if err != nil {
+		logger.Error(err, "failed to get total memory limit")
+		goto unsuitable // If we can't get the memory limit, we assume the node is not suitable
+	} else if memoryLimitPercentage < ac.MemoryLimitRatio {
+		logger.Info("memory limit percentage is less than memory overcommitment limit ratio", "limitPercentage", memoryLimitPercentage, "ratio", ac.MemoryLimitRatio)
+		score += getScoreUnit(0)
+	}
+	return score
+unsuitable:
+	return math.MinInt
+}
+
+// This function may lead to overflow if p is too large, but since p is always in the range of 0-6, it should be safe.
+// Use with caution.
+func getScoreUnit(p uint) int {
+	return 16 << (p * 4)
+}
+
+// getTotalCPURequest returns the total CPU requests (in millicores) for all pods in the namespace.
+func (r *DevboxReconciler) getTotalCPURequest(ctx context.Context, namespace string) (uint, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingFields{"spec.nodeName": r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalCPURequest int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if cpuReq, ok := container.Resources.Requests[corev1.ResourceCPU]; ok {
+				// TODO: check if this could lead to overflow
+				totalCPURequest += cpuReq.MilliValue()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableCPU := node.Status.Allocatable[corev1.ResourceCPU]
+	allocatableMilli := allocatableCPU.MilliValue()
+	if allocatableMilli == 0 {
+		return 0, fmt.Errorf("node %s allocatable CPU is zero", r.NodeName)
+	}
+	percentage := uint((float64(totalCPURequest) / float64(allocatableMilli)) * 100)
+	return percentage, nil
+}
+
+// getTotalCPULimit returns the total CPU limits (in millicores) for all pods in the namespace.
+func (r *DevboxReconciler) getTotalCPULimit(ctx context.Context, namespace string) (uint, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingFields{"spec.nodeName": r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalCPULimit int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if cpuLimit, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
+				// TODO: check if this could lead to overflow
+				totalCPULimit += cpuLimit.MilliValue()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableCPU := node.Status.Allocatable[corev1.ResourceCPU]
+	allocatableMilli := allocatableCPU.MilliValue()
+	if allocatableMilli == 0 {
+		return 0, fmt.Errorf("node %s allocatable CPU is zero", r.NodeName)
+	}
+	percentage := uint((float64(totalCPULimit) / float64(allocatableMilli)) * 100)
+	return percentage, nil
+}
+
+func (r *DevboxReconciler) getTotalMemoryRequest(ctx context.Context, namespace string) (uint, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingFields{"spec.nodeName": r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalMemoryRequest int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if memReq, ok := container.Resources.Requests[corev1.ResourceMemory]; ok {
+				// TODO: check if this could lead to overflow
+				totalMemoryRequest += memReq.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableMemory := node.Status.Allocatable[corev1.ResourceMemory]
+	allocatableBytes := allocatableMemory.Value()
+	if allocatableBytes == 0 {
+		return 0, fmt.Errorf("node %s allocatable memory is zero", r.NodeName)
+	}
+	percentage := uint((float64(totalMemoryRequest) / float64(allocatableBytes)) * 100)
+	return percentage, nil
+}
+
+func (r *DevboxReconciler) getTotalMemoryLimit(ctx context.Context, namespace string) (uint, error) {
+	podList := &corev1.PodList{}
+	listOpts := []client.ListOption{
+		client.InNamespace(namespace),
+		client.MatchingFields{"spec.nodeName": r.NodeName},
+	}
+	if err := r.List(ctx, podList, listOpts...); err != nil {
+		return 0, err
+	}
+	var totalMemoryLimit int64
+	for _, pod := range podList.Items {
+		for _, container := range pod.Spec.Containers {
+			if memLimit, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
+				// TODO: check if this could lead to overflow
+				totalMemoryLimit += memLimit.Value()
+			}
+		}
+	}
+	node := &corev1.Node{}
+	if err := r.Get(ctx, client.ObjectKey{Name: r.NodeName}, node); err != nil {
+		return 0, err
+	}
+	allocatableMemory := node.Status.Allocatable[corev1.ResourceMemory]
+	allocatableBytes := allocatableMemory.Value()
+	if allocatableBytes == 0 {
+		return 0, fmt.Errorf("node %s allocatable memory is zero", r.NodeName)
+	}
+	percentage := uint((float64(totalMemoryLimit) / float64(allocatableBytes)) * 100)
+	return percentage, nil
 }
 
 type ControllerRestartPredicate struct {
