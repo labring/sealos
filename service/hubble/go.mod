@@ -1,4 +1,4 @@
-module hubble
+module github.com/labring/sealos/service
 
 go 1.22
 
