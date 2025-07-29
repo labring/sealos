@@ -86,6 +86,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             if (!file.name.includes('.')) throw new Error('file name error');
             form.append('file', file, encodeURIComponent(file.name));
           });
+          console.log('form', form);
           const result = await uploadFile(form, (e) => {
             if (!e.progress) return;
             const percent = Math.round(e.progress * 100);
@@ -95,7 +96,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               setFileProgressText(t('file.Upload Success'));
             }
           });
-
+          console.log('result', result);
           if (!result[0]) {
             closeMigrate();
             return toast({
