@@ -1,4 +1,4 @@
-module github.com/labring/sealos/service
+module github.com/labring/sealos/service/hubble
 
 go 1.22
 
