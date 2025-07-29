@@ -272,7 +272,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	committer := &commit.CommitterImpl{}
+	committer, err := commit.NewCommitter()
+	if err != nil {
+		setupLog.Error(err, "unable to create committer")
+		os.Exit(1)
+	}
 
 	stateChangeHandler := controller.StateChangeHandler{
 		Client:              mgr.GetClient(),
