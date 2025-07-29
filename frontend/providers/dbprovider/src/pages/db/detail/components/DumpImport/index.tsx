@@ -113,19 +113,29 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           setMigrateName(res.name);
         } catch (error: any) {
           // 更好的错误处理，避免 [object Object] 显示
+          console.log('Upload error:', error);
           let errorMessage = t('file_upload_failed');
-          if (error?.message) {
+
+          // 检查是否是服务器返回的错误
+          if (error?.response?.data?.data) {
+            errorMessage = error.response.data.data;
+          } else if (error?.response?.data?.error) {
+            errorMessage = error.response.data.error;
+          } else if (error?.data?.data) {
+            errorMessage = error.data.data;
+          } else if (error?.data?.error) {
+            errorMessage = error.data.error;
+          } else if (error?.message) {
             errorMessage = error.message;
           } else if (error?.errMessage) {
             errorMessage = error.errMessage;
           } else if (typeof error === 'string') {
             errorMessage = error;
-          } else if (error?.data?.message) {
-            errorMessage = error.data.message;
           } else if (error?.response?.data?.message) {
             errorMessage = error.response.data.message;
           }
 
+          console.log('Final error message:', errorMessage);
           toast({
             title: errorMessage,
             status: 'error'
