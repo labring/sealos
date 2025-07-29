@@ -24,9 +24,11 @@ export interface BaseGTMEvent {
   method?: string;
 }
 
-export interface ModuleOpenEvent extends BaseGTMEvent {
+export interface ModuleOpenEvent extends Omit<BaseGTMEvent, 'module'> {
   event: 'module_open';
   trigger?: 'manual' | 'onboarding';
+  // Module key on desktop is not constrained.
+  module: string;
 }
 
 export interface ModuleViewEvent extends BaseGTMEvent {

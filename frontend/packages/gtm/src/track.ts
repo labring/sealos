@@ -20,9 +20,12 @@ class GTMTracker {
     return this;
   }
 
-  track(event: GTMEvent): void;
-  track<T extends GTMEventType>(eventType: T, properties?: EventProperties<T>): void;
-  track<T extends GTMEventType>(eventOrType: GTMEvent | T, properties?: EventProperties<T>): void {
+  track(event: Readonly<GTMEvent>): void;
+  track<T extends GTMEventType>(eventType: T, properties?: Readonly<EventProperties<T>>): void;
+  track<T extends GTMEventType>(
+    eventOrType: Readonly<GTMEvent> | T,
+    properties?: Readonly<EventProperties<T>>
+  ): void {
     if (!this.config.enabled) return;
 
     let gtmEvent: GTMEvent;
