@@ -151,19 +151,22 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
 	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
-		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" && r.getAcceptanceScore(ctx) >= r.AcceptanceThreshold {
-			// if devbox is not scheduled to node, schedule it to current node
-			logger.Info("devbox not scheduled to node, try scheduling to us now",
-				"nodeName", r.NodeName,
-				"contentID", devbox.Status.ContentID)
-			// set up devbox node and content id, new a record for the devbox
-			devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
-			if err := r.Status().Update(ctx, devbox); err != nil {
-				logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
-				return ctrl.Result{}, err
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
+			if score := r.getAcceptanceScore(ctx); score >= r.AcceptanceThreshold {
+				// if devbox is not scheduled to node, schedule it to current node
+				logger.Info("devbox not scheduled to node, try scheduling to us now",
+					"nodeName", r.NodeName,
+					"devbox", devbox.Name,
+					"score", score)
+				// set up devbox node and content id, new a record for the devbox
+				devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
+				if err := r.Status().Update(ctx, devbox); err != nil {
+					logger.Info("try to schedule devbox to node failed. This devbox may have already been scheduled to another node", "error", err)
+					return ctrl.Result{}, err
+				}
+				logger.Info("devbox scheduled to node", "node", r.NodeName)
+				r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
 			}
-			logger.Info("devbox scheduled to node", "node", r.NodeName)
-			r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
 		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
 			logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
 			return ctrl.Result{}, nil
