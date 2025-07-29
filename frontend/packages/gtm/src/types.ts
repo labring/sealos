@@ -15,6 +15,8 @@ export type GTMModule =
   | 'dashboard'
   | 'auth';
 
+export type GTMGuide = 'devbox' | 'database' | 'applaunchpad' | 'appstore';
+
 export type GTMContext = 'app' | 'website';
 
 export interface BaseGTMEvent {
@@ -106,20 +108,20 @@ export interface ErrorOccurredEvent extends BaseGTMEvent {
 export interface GuideStartEvent extends BaseGTMEvent {
   event: 'guide_start';
   module: 'guide';
-  guide_name: string;
+  guide_name: GTMGuide;
 }
 
 export interface GuideCompleteEvent extends BaseGTMEvent {
   event: 'guide_complete';
   module: 'guide';
-  guide_name: string;
+  guide_name: GTMGuide;
   duration_seconds: number;
 }
 
 export interface GuideExitEvent extends BaseGTMEvent {
   event: 'guide_exit';
   module: 'guide';
-  guide_name?: string;
+  guide_name?: GTMGuide;
   progress_step?: number;
   duration_seconds?: number;
 }
@@ -127,7 +129,7 @@ export interface GuideExitEvent extends BaseGTMEvent {
 export interface AnnouncementClickEvent extends BaseGTMEvent {
   event: 'announcement_click';
   module: 'dashboard';
-  announcement_id: string;
+  announcement_id: 'invitation_referral_prompt' | 'onboarding_guide_prompt';
 }
 
 export interface WorkspaceCreateEvent extends BaseGTMEvent {
