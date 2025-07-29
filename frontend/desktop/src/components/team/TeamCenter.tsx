@@ -37,6 +37,7 @@ import NsListItem from '@/components/team/NsListItem';
 import RenameTeam from './RenameTeam';
 import { Plus, Settings } from 'lucide-react';
 import useAppStore from '@/stores/app';
+import { track } from '@sealos/gtm';
 
 export default function TeamCenter({
   isOpen,
@@ -107,6 +108,15 @@ export default function TeamCenter({
       setNsid(defaultNamespace.id);
     }
   }, [_namespaces, ns_uid]);
+
+  useEffect(() => {
+    if (isOpen) {
+      track('module_view', {
+        view_name: 'manage',
+        module: 'workspace'
+      });
+    }
+  }, [isOpen]);
 
   const openAccountCenterApp = (page?: string) => {
     openDesktopApp({

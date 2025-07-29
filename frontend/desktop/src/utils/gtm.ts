@@ -1,9 +1,14 @@
+// Legacy GTM v1 events
+
+/** @deprecated */
 export const gtmLoginStart = () =>
   window?.dataLayer?.push?.({
     event: 'login_start',
     module: 'auth',
     context: 'app'
   });
+
+/** @deprecated */
 export const gtmLoginSuccess = ({
   method,
   oauth2Provider,
@@ -19,11 +24,5 @@ export const gtmLoginSuccess = ({
     oauth2_provider: oauth2Provider,
     user_type,
     module: 'auth',
-    context: 'app'
-  });
-export const gtmOpenCostcenter = () =>
-  window?.dataLayer?.push({
-    event: 'module_open',
-    module: 'costcenter',
     context: 'app'
   });
