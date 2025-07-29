@@ -3,3 +3,4 @@ node_modules/
 .env*.local
 next-env.d.ts
 !.vscode/
+.claude
