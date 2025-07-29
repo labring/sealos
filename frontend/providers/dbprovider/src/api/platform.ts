@@ -22,9 +22,9 @@ export const uploadFile = (
   onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ) => {
   return POST<string[]>('/api/minio/upload', data, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    },
+    // headers: {
+    //   'Content-Type': 'multipart/form-data'
+    // },
     timeout: 3 * 60 * 1000,
     onUploadProgress
   });
