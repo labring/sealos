@@ -34,10 +34,6 @@ jobs:
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
             qemu-user-static binfmt-support
 
-      - name: Copy License to lifecycle
-        run: |
-          cp LICENSE* ./lifecycle/
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
