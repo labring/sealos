@@ -112,8 +112,22 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           });
           setMigrateName(res.name);
         } catch (error: any) {
+          // 更好的错误处理，避免 [object Object] 显示
+          let errorMessage = t('file_upload_failed');
+          if (error?.message) {
+            errorMessage = error.message;
+          } else if (error?.errMessage) {
+            errorMessage = error.errMessage;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          } else if (error?.data?.message) {
+            errorMessage = error.data.message;
+          } else if (error?.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+
           toast({
-            title: String(error),
+            title: errorMessage,
             status: 'error'
           });
           closeMigrate();
@@ -126,7 +140,11 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           if (!!obj.message) {
             return obj.message;
           }
-          return deepSearch(Object.values(obj)[0]);
+          const values = Object.values(obj);
+          if (values.length > 0) {
+            return deepSearch(values[0]);
+          }
+          return t('submit_error');
         };
         toast({
           title: deepSearch(error),
@@ -187,7 +205,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     ['getDBService', db?.dbName, db?.dbType],
     () => (db ? getDatabases({ dbName: db.dbName, dbType: db.dbType }) : null),
     {
-      retry: 3
+      retry: 3,
+      select: (data) => data?.filter((dbName) => dbName !== 'Database') || []
     }
   );
 
