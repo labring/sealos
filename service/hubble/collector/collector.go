@@ -3,10 +3,11 @@ package collector
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/service/hubble/datastore"
 	"log"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/service/hubble/datastore"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -35,7 +36,7 @@ func NewCollector(hubbleAddr string, dataStore *datastore.DataStore) *Collector 
 
 // Start begins collecting flow data from Hubble
 func (c *Collector) Start() {
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		c.hubbleAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)

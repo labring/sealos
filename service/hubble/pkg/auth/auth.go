@@ -3,14 +3,15 @@ package auth
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"strings"
+
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"net"
-	"os"
-	"strings"
 )
 
 type Auth struct {
