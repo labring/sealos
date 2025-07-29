@@ -3,7 +3,7 @@ package collector
 import (
 	"context"
 	"fmt"
-	"hubble/datastore"
+	"github.com/labring/sealos/service/hubble/datastore"
 	"log"
 	"strings"
 	"time"

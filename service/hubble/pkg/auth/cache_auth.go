@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"hubble/pkg/cache"
+	"github.com/labring/sealos/service/hubble/pkg/cache"
 	"time"
 )
 

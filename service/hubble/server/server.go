@@ -3,10 +3,10 @@ package server
 import (
 	"context"
 	"fmt"
-	"hubble/datastore"
-	"hubble/pkg/auth"
-	"hubble/pkg/constants"
-	"hubble/pkg/models"
+	"github.com/labring/sealos/service/hubble/datastore"
+	"github.com/labring/sealos/service/hubble/pkg/auth"
+	"github.com/labring/sealos/service/hubble/pkg/constants"
+	"github.com/labring/sealos/service/hubble/pkg/models"
 	"net/http"
 	"time"
 

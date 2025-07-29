@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"hubble/pkg/config"
+	"github.com/labring/sealos/service/hubble/pkg/config"
 	"os"
 
 	"gopkg.in/yaml.v3"

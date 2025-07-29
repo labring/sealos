@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"flag"
-	"hubble/collector"
-	"hubble/config"
-	"hubble/datastore"
-	"hubble/server"
+	"github.com/labring/sealos/service/hubble/collector"
+	"github.com/labring/sealos/service/hubble/config"
+	"github.com/labring/sealos/service/hubble/datastore"
+	"github.com/labring/sealos/service/hubble/server"
+
 	"log"
 	"net/http"
 	"os"
