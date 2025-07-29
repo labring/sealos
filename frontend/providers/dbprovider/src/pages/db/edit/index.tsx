@@ -14,6 +14,7 @@ import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -132,6 +133,27 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       // }
 
       await createDB({ dbForm: formData, isEdit });
+
+      track('deployment_create', {
+        module: 'database',
+        method: 'custom',
+        app_name: formData.dbName,
+        config: {
+          template_name: formData.dbType,
+          template_version: formData.dbVersion,
+          template_type: 'public'
+        },
+        resources: {
+          cpu_cores: formData.cpu,
+          ram_mb: formData.memory,
+          replicas: formData.replicas,
+          storage: formData.storage
+        },
+        backups: {
+          enabled: !!formData.autoBackup
+        }
+      });
+
       toast({
         title: t(applySuccess),
         status: 'success'

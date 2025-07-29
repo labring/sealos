@@ -6,6 +6,7 @@ import { DBType } from '@/types/db';
 import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex, Text, useMediaQuery, useTheme } from '@chakra-ui/react';
 import { MyTooltip, useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
@@ -133,6 +134,14 @@ const AppDetail = ({
     () => loadDBDetail(dbName, router?.query?.guide === 'true'),
     {
       refetchInterval: 3000,
+      onSuccess() {
+        // Track database details view event
+        track({
+          event: 'deployment_details',
+          module: 'database',
+          context: 'app'
+        });
+      },
       onError(err) {
         router.replace('/dbs');
         toast({
@@ -185,10 +194,18 @@ const AppDetail = ({
                   }
                 : {
                     color: 'grayModern.500',
-                    onClick: () =>
+                    onClick: () => {
+                      // Track navigation to different views
+                      track('module_view', {
+                        module: 'database',
+                        view_name: item.value,
+                        app_name: dbName
+                      });
+
                       router.replace(
                         `/db/detail?name=${dbName}&dbType=${dbType}&listType=${item.value}`
-                      )
+                      );
+                    }
                   })}
             >
               {isSmallScreen ? (

@@ -7,6 +7,7 @@ import { useTranslation } from 'next-i18next';
 import { startDriver, applistDriverObj } from '@/hooks/driver';
 import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { track } from '@sealos/gtm';
 
 const Empty = () => {
   const { t } = useTranslation();
@@ -16,7 +17,15 @@ const Empty = () => {
   const { applistCompleted } = useGuideStore();
   useEffect(() => {
     if (!applistCompleted && isClientSide) {
-      startDriver(applistDriverObj(t, () => router.push('/db/edit')));
+      startDriver(
+        applistDriverObj(t, () => {
+          track('module_view', {
+            module: 'database',
+            view_name: 'create_form'
+          });
+          router.push('/db/edit');
+        })
+      );
     }
   }, [applistCompleted, t, router, isClientSide]);
 
@@ -40,7 +49,13 @@ const Empty = () => {
         w={155}
         mt={5}
         variant={'solid'}
-        onClick={() => router.push('/db/edit')}
+        onClick={() => {
+          track('module_view', {
+            module: 'database',
+            view_name: 'create_form'
+          });
+          router.push('/db/edit');
+        }}
       >
         {t('create_db')}
       </Button>
