@@ -1,11 +1,11 @@
 auth:
-  whiteList: "192.168.10.35"
+  whiteList:
 http:
   addr: ":8080"
 hubble:
   addr: "hubble-relay.kube-system.svc.cluster.local:80"
 redis:
-  addr: "dbconn.sealoshzh.site:46720"
+  addr:
   username: "default"
-  password: "7jppnfwm"
+  password:
   db: 10
