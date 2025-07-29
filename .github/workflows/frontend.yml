@@ -202,7 +202,7 @@ jobs:
         env:
           DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
-      - name: Create manifest list and push to GHCR
+      - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         env:
           TEMP_DIR: ${{ runner.temp }}
