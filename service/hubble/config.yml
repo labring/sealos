@@ -1,0 +1,11 @@
+auth:
+  whiteList: "192.168.10.35"
+http:
+  addr: ":8080"
+hubble:
+  addr: "hubble-relay.kube-system.svc.cluster.local:80"
+redis:
+  addr: "dbconn.sealoshzh.site:46720"
+  username: "default"
+  password: "7jppnfwm"
+  db: 10
