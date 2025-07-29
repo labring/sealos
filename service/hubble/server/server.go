@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/labring/sealos/service/hubble/datastore"
 	"github.com/labring/sealos/service/hubble/pkg/auth"
 	"github.com/labring/sealos/service/hubble/pkg/constants"
 	"github.com/labring/sealos/service/hubble/pkg/models"
-	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )

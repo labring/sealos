@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
-	"github.com/labring/sealos/service/hubble/pkg/cache"
 	"time"
+
+	"github.com/labring/sealos/service/hubble/pkg/cache"
 )
 
 type CacheAuth struct {

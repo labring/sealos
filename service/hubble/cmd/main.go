@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+
 	"github.com/labring/sealos/service/hubble/collector"
 	"github.com/labring/sealos/service/hubble/config"
 	"github.com/labring/sealos/service/hubble/datastore"
