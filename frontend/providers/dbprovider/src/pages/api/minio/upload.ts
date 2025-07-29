@@ -73,39 +73,106 @@ const minioClient = new Minio.Client({
 
 export default async function handler(req: any, res: NextApiResponse) {
   try {
+    // 添加环境变量检查日志
+    console.log('Environment variables check:', {
+      MINIO_URL: process.env?.MINIO_URL,
+      MINIO_PORT: process.env?.MINIO_PORT,
+      MINIO_USE_SSL: process.env?.MINIO_USE_SSL,
+      MINIO_ACCESS_KEY: process.env?.MINIO_ACCESS_KEY ? '***' : 'undefined',
+      MINIO_SECRET_KEY: process.env?.MINIO_SECRET_KEY ? '***' : 'undefined',
+      MINIO_BUCKET_NAME: process.env?.MINIO_BUCKET_NAME
+    });
+
     if (!process.env?.MINIO_URL || !process.env?.MINIO_SECRET_KEY) {
+      console.log('Missing minio environment variables');
       return jsonRes(res, {
         code: 500,
         data: 'Missing minio service'
       });
     }
 
-    const { applyYamlList, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-    const { files } = await upload.doUpload(req, res);
+    console.log('Starting authentication...');
+    let kubeconfig;
+    try {
+      kubeconfig = await authSession(req);
+      console.log('Authentication successful, kubeconfig length:', kubeconfig?.length || 0);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return jsonRes(res, {
+        code: 401,
+        data: 'Authentication failed'
+      });
+    }
+
+    console.log('Starting K8s initialization...');
+    let k8sResult;
+    try {
+      k8sResult = await getK8s({ kubeconfig });
+      console.log('K8s initialization successful, namespace:', k8sResult.namespace);
+    } catch (k8sError) {
+      console.error('K8s initialization failed:', k8sError);
+      return jsonRes(res, {
+        code: 500,
+        data:
+          'K8s initialization failed: ' +
+          (k8sError instanceof Error ? k8sError.message : String(k8sError))
+      });
+    }
+
+    const { namespace } = k8sResult;
+
+    console.log('Starting file upload...');
+    let files;
+    try {
+      const uploadResult = await upload.doUpload(req, res);
+      files = uploadResult.files;
+      console.log('File upload successful, files count:', files.length);
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      return jsonRes(res, {
+        code: 500,
+        data:
+          'File upload failed: ' +
+          (uploadError instanceof Error ? uploadError.message : String(uploadError))
+      });
+    }
+
     const bucketName = process.env?.MINIO_BUCKET_NAME || 'database-test';
+    console.log('Using bucket:', bucketName);
 
     const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         const fileName = `${namespace}-${Date.now()}-${file.filename}`;
-        await minioClient.fPutObject(bucketName, fileName, file.path);
-        return fileName;
+        console.log('Uploading file to MinIO:', fileName);
+        try {
+          await minioClient.fPutObject(bucketName, fileName, file.path);
+          console.log('File uploaded successfully:', fileName);
+          return fileName;
+        } catch (minioError) {
+          console.error('MinIO upload failed for file:', fileName, minioError);
+          throw minioError;
+        }
       })
     );
     const endTime = performance.now();
     const duration = endTime - startTime;
-    console.log(upLoadResults);
-    console.log(`file:${files} time:${duration}`);
+    console.log('Upload results:', upLoadResults);
+    console.log(`Upload completed in ${duration}ms`);
 
     jsonRes(res, {
       data: upLoadResults
     });
   } catch (error) {
+    console.error('Upload handler error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error?.constructor?.name
+    });
+
     jsonRes(res, {
       code: 500,
-      error
+      error: error instanceof Error ? error.message : error
     });
   }
 }
