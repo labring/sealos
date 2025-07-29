@@ -36,6 +36,7 @@ func NewCollector(hubbleAddr string, dataStore *datastore.DataStore) *Collector 
 
 // Start begins collecting flow data from Hubble
 func (c *Collector) Start() {
+	log.Printf("Loaded hubble address: %s", c.hubbleAddr)
 	conn, err := grpc.NewClient(
 		c.hubbleAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

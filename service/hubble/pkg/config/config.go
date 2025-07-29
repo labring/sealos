@@ -22,6 +22,6 @@ type RedisConfig struct {
 type Config struct {
 	Auth   AuthConfig   `yaml:"auth"`
 	HTTP   HTTPConfig   `yaml:"http"`
-	Hubble HubbleConfig `yaml:"collector"`
+	Hubble HubbleConfig `yaml:"hubble"`
 	Redis  RedisConfig  `yaml:"redis"`
 }
