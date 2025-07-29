@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/labring/sealos/service/hubble/datastore"
@@ -46,8 +48,16 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 		})
 		return
 	}
-
-	ns, err := s.auth.Authenticate(context.Background(), "", kc)
+	kubeConfig, err := url.QueryUnescape(kc)
+	if err != nil {
+		fmt.Printf("Failed to decode URL-encoded kubeconfig: %v\n", err)
+		c.JSON(http.StatusBadRequest, models.Response{
+			Message: constants.DecodingKCFailedMsg,
+			Data:    nil,
+		})
+		return
+	}
+	ns, err := s.auth.Authenticate(context.Background(), "", kubeConfig)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, models.Response{
 			Message: err.Error(),

@@ -50,10 +50,10 @@ func (ca *CacheAuth) Authenticate(ctx context.Context, ns, kc string) (string, e
 		}
 
 		if cachedBool, ok := cachedValue.(bool); ok && cachedBool {
-			return "", nil
+			return ns, nil
 		}
 
-		return "", ErrNoAuth
+		return ns, ErrNoAuth
 	}
 	ns, err = ca.auth.Authenticate(ctx, ns, kc)
 	if err == nil {

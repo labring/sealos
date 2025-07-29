@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -76,6 +77,7 @@ func (a *Auth) Authenticate(ctx context.Context, ns, kc string) (string, error) 
 		if k8shost := getKubernetesHostFromEnv(); k8shost != "" {
 			config.Host = k8shost
 		} else {
+			log.Printf("k8s host not found (%s)\n", config.Host)
 			return "", ErrNoSealosHost
 		}
 	}
