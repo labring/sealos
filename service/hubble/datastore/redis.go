@@ -38,41 +38,35 @@ func (ds *DataStore) Get(key string) (string, bool, error) {
 	return val, true, nil
 }
 
-// EnsureSetExpiration 确保Set键有过期时间，如果没有则设置为默认值
 func (ds *DataStore) EnsureSetExpiration(key string) error {
 	ctx := context.Background()
 
-	// 使用TTL命令检查键的剩余生存时间
 	ttl, err := ds.client.TTL(ctx, key).Result()
 	if err != nil {
 		return err
 	}
 
-	// 如果TTL返回-1，表示键存在但没有设置过期时间
-	// 如果TTL返回-2，表示键不存在
+	// If TTL returns -1, it means the key exists but has no expiration time
+	// If TTL returns -2, it means the key does not exist
 	if ttl == -1 {
-		// 键存在但没有过期时间，设置默认过期时间
+		// Key exists but has no expiration time, set default expiration
 		return ds.client.Expire(ctx, key, DefaultExpiration).Err()
 	}
 
-	// 键不存在或已经有过期时间，不需要操作
+	// Key does not exist or already has an expiration time, no action needed
 	return nil
 }
 
-// AddToSet 向Set中添加成员并确保有过期时间
 func (ds *DataStore) AddToSet(key string, members ...interface{}) error {
 	ctx := context.Background()
 
-	// 添加成员到Set
 	if err := ds.client.SAdd(ctx, key, members...).Err(); err != nil {
 		return err
 	}
 
-	// 确保Set有过期时间
 	return ds.EnsureSetExpiration(key)
 }
 
-// GetSetMembers 获取Set中的所有成员
 func (ds *DataStore) GetSetMembers(key string) ([]string, error) {
 	ctx := context.Background()
 	members, err := ds.client.SMembers(ctx, key).Result()
