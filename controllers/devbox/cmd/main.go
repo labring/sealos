@@ -98,6 +98,7 @@ func main() {
 	var restartPredicateDuration time.Duration
 	// devbox node label
 	var devboxNodeLabel string
+	var acceptanceThreshold int
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
@@ -130,6 +131,8 @@ func main() {
 	flag.DurationVar(&restartPredicateDuration, "restart-predicate-duration", 2*time.Hour, "Sets the restart predicate time duration for devbox controller restart. By default, the duration is set to 2 hours.")
 	// devbox node label
 	flag.StringVar(&devboxNodeLabel, "devbox-node-label", "devbox.sealos.io/node", "The label of the devbox node")
+	// scheduling flags
+	flag.IntVar(&acceptanceThreshold, "acceptance-threshold", 16, "The minimum acceptance score for scheduling devbox to node. Default is 16, which means the node must have enough resources to run the devbox.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -267,6 +270,7 @@ func main() {
 		DebugMode:                debugMode,
 		RestartPredicateDuration: restartPredicateDuration,
 		NodeName:                 nodes.GetNodeName(),
+		AcceptanceThreshold:      acceptanceThreshold,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
