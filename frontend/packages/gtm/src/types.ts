@@ -95,6 +95,11 @@ export interface DeploymentRestartEvent extends BaseGTMEvent {
   event: 'deployment_restart';
 }
 
+export interface DeploymentActionEvent extends BaseGTMEvent {
+  event: 'deployment_action';
+  event_type: 'terminal_open';
+}
+
 export interface IDEOpenEvent extends BaseGTMEvent {
   event: 'ide_open';
   module: 'devbox';
@@ -196,6 +201,7 @@ export type GTMEvent =
   | DeploymentDeleteEvent
   | DeploymentShutdownEvent
   | DeploymentRestartEvent
+  | DeploymentActionEvent
   | IDEOpenEvent
   | ReleaseCreateEvent
   | PaywallTriggeredEvent
