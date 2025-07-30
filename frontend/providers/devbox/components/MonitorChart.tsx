@@ -79,7 +79,9 @@ const MonitorChart = ({
       data: xData,
       axisLabel: {
         show: isShowLabel,
-        align: 'left'
+        align: (value: string, index: number, texts: string[]) => {
+          return index === texts.length - 1 ? 'right' : 'left';
+        }
       },
       axisTick: {
         show: false
@@ -110,7 +112,7 @@ const MonitorChart = ({
       containLabel: isShowLabel,
       show: false,
       left: '2%',
-      right: isShowLabel ? '2%' : 0,
+      right: isShowLabel ? '4%' : 0,
       top: 10,
       bottom: 2
     },
