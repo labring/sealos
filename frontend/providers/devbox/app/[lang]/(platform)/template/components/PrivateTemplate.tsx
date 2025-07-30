@@ -9,6 +9,7 @@ import TemplateCard from './TemplateCard';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Pagination } from '@/components/ui/pagination';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PrivateTemplate({ search }: { search: string }) {
   const [pageQueryBody, setPageQueryBody] = useState({
@@ -39,6 +40,9 @@ export default function PrivateTemplate({ search }: { search: string }) {
     ['template-repository-list', 'template-repository-private', queryBody],
     () => {
       return listPrivateTemplateRepositoryApi(queryBody);
+    },
+    {
+      keepPreviousData: true
     }
   );
 
@@ -72,24 +76,40 @@ export default function PrivateTemplate({ search }: { search: string }) {
     <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
       <ScrollArea className="h-[calc(100vh-200px)] pr-2">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
-          {privateTemplateRepositoryList.map((tr) => (
-            <TemplateCard
-              key={tr.uid}
-              isPublic={tr.isPublic}
-              isDisabled={tr.templates.length === 0}
-              iconId={tr.iconId || ''}
-              templateRepositoryName={tr.name}
-              templateRepositoryDescription={tr.description}
-              templateRepositoryUid={tr.uid}
-              inPublicStore={false}
-              tags={tr.templateRepositoryTags.map((t) => t.tag)}
+          {listPrivateTemplateRepository.isLoading ? (
+            Array.from({ length: 9 }).map((_, idx) => (
+              <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <Skeleton className="h-4 w-full" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-6 w-16 rounded-md" />
+                  <Skeleton className="h-6 w-16 rounded-md" />
+                </div>
+              </div>
+            ))
+          ) : privateTemplateRepositoryList.length > 0 ? (
+            privateTemplateRepositoryList.map((tr) => (
+              <TemplateCard
+                key={tr.uid}
+                isPublic={tr.isPublic}
+                isDisabled={tr.templates.length === 0}
+                iconId={tr.iconId || ''}
+                templateRepositoryName={tr.name}
+                templateRepositoryDescription={tr.description}
+                templateRepositoryUid={tr.uid}
+                inPublicStore={false}
+                tags={tr.templateRepositoryTags.map((t) => t.tag)}
+              />
+            ))
+          ) : (
+            <Empty
+              description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
             />
-          ))}
+          )}
         </div>
-
-        {privateTemplateRepositoryList.length === 0 && (
-          <Empty description={hasFilter ? t('no_search_template_tip') : t('no_template_action')} />
-        )}
       </ScrollArea>
 
       <Pagination
