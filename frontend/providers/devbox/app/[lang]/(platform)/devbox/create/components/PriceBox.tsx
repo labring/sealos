@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -29,6 +30,7 @@ interface PriceBoxProps {
 const PriceBox = ({ components = [], className }: PriceBoxProps) => {
   const t = useTranslations();
   const { sourcePrice } = usePriceStore();
+  const { env } = useEnvStore();
 
   const priceList: {
     icon?: React.ReactNode;
@@ -112,7 +114,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <CurrencySymbol width={16} height={16} />
+              <CurrencySymbol width={16} height={16} type={env.currencySymbol} />
               &nbsp;
               {item.value}
             </div>
