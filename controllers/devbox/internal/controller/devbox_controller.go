@@ -159,7 +159,8 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				logger.Info("devbox not scheduled to node, try scheduling to us now",
 					"nodeName", r.NodeName,
 					"devbox", devbox.Name,
-					"score", score)
+					"score", score,
+					"acceptanceThreshold", r.AcceptanceThreshold)
 				// set up devbox node and content id, new a record for the devbox
 				devbox.Status.CommitRecords[devbox.Status.ContentID].Node = r.NodeName
 				if err := r.Status().Update(ctx, devbox); err != nil {
@@ -168,6 +169,13 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 				}
 				logger.Info("devbox scheduled to node", "node", r.NodeName)
 				r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Devbox scheduled to node", "Devbox scheduled to node")
+			} else {
+				logger.Info("devbox not scheduled to node, try scheduling to us later",
+					"nodeName", r.NodeName,
+					"devbox", devbox.Name,
+					"score", score,
+					"acceptanceThreshold", r.AcceptanceThreshold)
+				return ctrl.Result{RequeueAfter: 5 * time.Second}, nil
 			}
 		} else if devbox.Status.CommitRecords[devbox.Status.ContentID].Node != r.NodeName {
 			logger.Info("devbox already scheduled to node", "node", devbox.Status.CommitRecords[devbox.Status.ContentID].Node)
@@ -187,9 +195,6 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// create service if network type is NodePort
 	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
 		logger.Info("syncing service")
-		if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
-			return ctrl.Result{}, err
-		}
 		if err := r.syncService(ctx, devbox, recLabels); err != nil {
 			logger.Error(err, "sync service failed")
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Sync service failed", "%v", err)
