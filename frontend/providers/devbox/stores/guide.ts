@@ -16,7 +16,7 @@ interface GuideState {
   setGuide2: (completed: boolean) => void;
   setGuide3: (completed: boolean) => void;
   setguideConfigDevbox: (completed: boolean) => void;
-  setguideIDE: (completed: boolean) => void;
+  setGuideIDE: (completed: boolean) => void;
   setManageAndDeploy: (completed: boolean) => void;
   setGuide6: (completed: boolean) => void;
   setGuide7: (completed: boolean) => void;
@@ -43,7 +43,7 @@ export const useGuideStore = create<GuideState>()(
       setGuide2: (completed: boolean) => set({ guide2: completed }),
       setGuide3: (completed: boolean) => set({ guide3: completed }),
       setguideConfigDevbox: (completed: boolean) => set({ guideConfigDevbox: completed }),
-      setguideIDE: (completed: boolean) => set({ guideIDE: completed }),
+      setGuideIDE: (completed: boolean) => set({ guideIDE: completed }),
       setManageAndDeploy: (completed: boolean) => set({ manageAndDeploy: completed }),
       setGuide6: (completed: boolean) => set({ guide6: completed }),
       setGuide7: (completed: boolean) => set({ guide7: completed }),

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { track } from '@sealos/gtm';
 
 interface DeleteDevboxDialogProps {
   devbox: DevboxListItemTypeV2 | DevboxDetailTypeV2;
@@ -42,6 +43,11 @@ const DeleteDevboxDialog = ({
       await delDevbox(devbox.name);
       removeDevboxIDE(devbox.name);
       toast.success(t('delete_successful'));
+      track({
+        event: 'deployment_delete',
+        module: 'devbox',
+        context: 'app'
+      });
       onSuccess();
       onClose();
 

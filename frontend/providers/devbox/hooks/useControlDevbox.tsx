@@ -6,6 +6,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
+import { track } from '@sealos/gtm';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
@@ -49,6 +50,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         }
         await startDevbox({ devboxName: devbox.name });
         toast.success(t('start_success'));
+        track({
+          event: 'deployment_start',
+          module: 'devbox',
+          context: 'app'
+        });
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('start_error'));
         console.error(error);
