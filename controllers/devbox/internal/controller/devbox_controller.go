@@ -645,9 +645,15 @@ func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context) int {
 		goto unsuitable // If we can't get the acceptance consideration, we assume the node is not suitable
 	}
 	containerFsStats, err = r.ContainerFsStats(ctx)
-	if err != nil || containerFsStats.AvailableBytes == nil || containerFsStats.CapacityBytes == nil {
+	if err != nil {
 		logger.Error(err, "failed to get container filesystem stats")
 		goto unsuitable // If we can't get the container filesystem stats, we assume the node is not suitable
+	} else if containerFsStats.AvailableBytes == nil {
+		logger.Info("available bytes is nil, assume the node is not suitable")
+		goto unsuitable // If we can't get the available bytes, we assume the node is not suitable
+	} else if containerFsStats.CapacityBytes == nil {
+		logger.Info("capacity bytes is nil, assume the node is not suitable")
+		goto unsuitable // If we can't get the capacity bytes, we assume the node is not suitable
 	}
 	availableBytes = *containerFsStats.AvailableBytes
 	capacityBytes = *containerFsStats.CapacityBytes
