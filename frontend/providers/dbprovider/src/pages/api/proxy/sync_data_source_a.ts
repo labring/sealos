@@ -20,6 +20,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               : req.headers['auth_user']
           }
         : {}),
+      ...(req.headers['sync_user']
+        ? {
+            sync_user: Array.isArray(req.headers['sync_user'])
+              ? req.headers['sync_user'][0]
+              : req.headers['sync_user']
+          }
+        : {}),
       'Time-Zone': Array.isArray(req.headers['time-zone'])
         ? req.headers['time-zone'][0]
         : req.headers['time-zone'] || 'Asia/Shanghai'

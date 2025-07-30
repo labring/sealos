@@ -223,12 +223,12 @@ const DBList = ({
         }
 
         let currentDataSourceId = getDataSourceId(db.name);
-
+        console.log('currentDataSourceId', currentDataSourceId);
         // 检查是否是首次点击（数据库中是否已有数据源ID）
         if (!currentDataSourceId) {
           // 首次点击，调用 syncDatasourceFirst 创建数据源
           try {
-            const res = await syncDatasourceFirst(payload, apiKey);
+            const res = await syncDatasourceFirst(payload, apiKey, userKey);
             currentDataSourceId = res.data; // 从响应中获取数据源ID
             if (currentDataSourceId) {
               setDataSourceId(db.name, currentDataSourceId); // 存储到store中
@@ -238,6 +238,7 @@ const DBList = ({
             // 如果同步失败，可能是数据源已存在，尝试创建
             if (err.data && err.data.id) {
               currentDataSourceId = err.data.id;
+              console.log('currentDataSourceId', currentDataSourceId);
               if (currentDataSourceId) {
                 setDataSourceId(db.name, currentDataSourceId);
                 console.log('Datasource already exists with ID:', currentDataSourceId);
@@ -253,10 +254,11 @@ const DBList = ({
               ...payload,
               id: currentDataSourceId
             };
-            await syncDatasource(syncPayload, apiKey);
+            console.log('syncPayload', JSON.stringify(syncPayload));
+            await syncDatasource(syncPayload, apiKey, userKey);
             console.log('Synced existing datasource with ID:', currentDataSourceId);
           } catch (err) {
-            console.log('sync datasource:', err);
+            console.log('sync datasource:', JSON.stringify(err));
             // 同步失败不影响继续操作
           }
         }
@@ -287,7 +289,7 @@ const DBList = ({
         // 添加数据源ID到URL参数
         const url = new URL(baseUrl);
         url.searchParams.set('dataSourceIds', String(currentDataSourceId));
-
+        console.log('url', url.toString());
         router.push(url.toString());
       } catch (err) {
         console.log(err);

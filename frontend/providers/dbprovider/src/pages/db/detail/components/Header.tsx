@@ -184,7 +184,7 @@ const Header = ({
       if (!currentDataSourceId) {
         // 首次点击，调用 syncDatasourceFirst 创建数据源
         try {
-          const res = await syncDatasourceFirst(payload, apiKey);
+          const res = await syncDatasourceFirst(payload, apiKey, userKey);
           currentDataSourceId = res.data; // 从响应中获取数据源ID
           if (currentDataSourceId) {
             setDataSourceId(db.dbName, currentDataSourceId); // 存储到store中
@@ -209,7 +209,7 @@ const Header = ({
             ...payload,
             id: currentDataSourceId
           };
-          await syncDatasource(syncPayload, apiKey);
+          await syncDatasource(syncPayload, apiKey, userKey);
           console.log('Synced existing datasource with ID:', currentDataSourceId);
         } catch (err) {
           console.log('sync datasource:', err);
