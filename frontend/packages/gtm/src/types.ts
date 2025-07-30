@@ -65,7 +65,7 @@ export interface DeploymentCreateEvent extends BaseGTMEvent {
     replicas?: number;
     storage?: number;
     scaling?: {
-      method: 'CPU' | 'RAM';
+      method: 'CPU' | 'RAM' | 'GPU';
       value: number;
     };
   };
@@ -74,13 +74,25 @@ export interface DeploymentCreateEvent extends BaseGTMEvent {
   };
 }
 
-export interface DeploymentActionEvent extends BaseGTMEvent {
-  event: 'deployment_update' | 'deployment_delete' | 'deployment_details';
+export interface DeploymentDetailsEvent extends BaseGTMEvent {
+  event: 'deployment_details';
+}
+
+export interface DeploymentUpdateEvent extends BaseGTMEvent {
+  event: 'deployment_update';
+}
+
+export interface DeploymentDeleteEvent extends BaseGTMEvent {
+  event: 'deployment_delete';
 }
 
 export interface DeploymentShutdownEvent extends BaseGTMEvent {
   event: 'deployment_shutdown';
   type: 'normal' | 'cost_saving';
+}
+
+export interface DeploymentRestartEvent extends BaseGTMEvent {
+  event: 'deployment_restart';
 }
 
 export interface IDEOpenEvent extends BaseGTMEvent {
@@ -179,8 +191,11 @@ export type GTMEvent =
   | AppLaunchEvent
   | DeploymentStartEvent
   | DeploymentCreateEvent
-  | DeploymentActionEvent
+  | DeploymentDetailsEvent
+  | DeploymentUpdateEvent
+  | DeploymentDeleteEvent
   | DeploymentShutdownEvent
+  | DeploymentRestartEvent
   | IDEOpenEvent
   | ReleaseCreateEvent
   | PaywallTriggeredEvent

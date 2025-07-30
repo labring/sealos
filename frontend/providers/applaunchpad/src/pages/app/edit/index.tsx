@@ -34,6 +34,7 @@ import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
+import { track } from '@sealos/gtm';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -409,7 +410,34 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
 
-              openConfirm(() => submitSuccess(parseYamls))();
+              openConfirm(() => {
+                track('deployment_create', {
+                  module: 'applaunchpad',
+                  method: 'custom',
+                  config: {
+                    template_type: 'public',
+                    template_name: data.imageName,
+                    template_version: data.imageName.split(':')?.[1] ?? 'latest'
+                  },
+                  resources: {
+                    cpu_cores: data.cpu,
+                    ram_mb: data.memory,
+                    replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
+                    scaling: data.hpa.use
+                      ? {
+                          method:
+                            data.hpa.target === 'cpu'
+                              ? 'CPU'
+                              : data.hpa.target === 'gpu'
+                              ? 'GPU'
+                              : 'RAM',
+                          value: data.hpa.value
+                        }
+                      : undefined
+                  }
+                });
+                submitSuccess(parseYamls);
+              })();
             }, submitError)();
           }}
         />

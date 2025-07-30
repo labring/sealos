@@ -6,11 +6,12 @@ import { serviceSideProps } from '@/utils/i18n';
 import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import dynamic from 'next/dynamic';
-import React from 'react';
+import React, { useEffect } from 'react';
 import AppBaseInfo from '@/components/app/detail/index/AppBaseInfo';
 import Pods from '@/components/app/detail/index/Pods';
 import DetailLayout from '@/components/layouts/DetailLayout';
 import AdvancedInfo from '@/components/app/detail/index/AdvancedInfo';
+import { track } from '@sealos/gtm';
 
 const AppMainInfo = dynamic(() => import('@/components/app/detail/index/AppMainInfo'), {
   ssr: false
@@ -31,6 +32,12 @@ const AppDetail = ({ appName }: { appName: string }) => {
       refetchInterval: 2 * 60 * 1000
     }
   );
+
+  useEffect(() => {
+    track('deployment_details', {
+      module: 'applaunchpad'
+    });
+  }, []);
 
   return (
     <DetailLayout appName={appName} key={'detail'}>

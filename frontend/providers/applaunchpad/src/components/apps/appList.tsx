@@ -42,6 +42,7 @@ import { applistDriverObj, startDriver } from '@/hooks/driver';
 import LangSelect from '../LangSelect';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { PencilLine } from 'lucide-react';
+import { track } from '@sealos/gtm';
 
 const DelModal = dynamic(() => import('@/components/app/detail/index/DelModal'));
 
@@ -550,7 +551,12 @@ const AppList = ({
           w={'156px'}
           flex={'0 0 auto'}
           leftIcon={<MyIcon name={'plus'} w={'20px'} fill={'#FFF'} />}
-          onClick={() => router.push('/app/edit')}
+          onClick={() => {
+            track('deployment_start', {
+              module: 'applaunchpad'
+            });
+            router.push('/app/edit');
+          }}
         >
           {t('Create Application')}
         </Button>
