@@ -402,5 +402,8 @@
   "vscode": "VS Code",
   "vscodeInsider": "VSCode Insider",
   "vscode_tooltip": "点击在 VSCode 中开发",
-  "yaml_file": "YAML 文件"
+  "yaml_file": "YAML 文件",
+  "invalid_date_format": "日期格式无效",
+  "invalid_time_format": "时间格式无效",
+  "end_time_cannot_be_future": "结束时间不能超过当前时间"
 }

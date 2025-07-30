@@ -400,5 +400,8 @@
   "vm": "vm",
   "vscode": "VS Code",
   "vscode_tooltip": "Click to develop in VSCode",
-  "yaml_file": "YAML"
+  "yaml_file": "YAML",
+  "invalid_date_format": "Invalid date format",
+  "invalid_time_format": "Invalid time format",
+  "end_time_cannot_be_future": "End time cannot be later than current time"
 }

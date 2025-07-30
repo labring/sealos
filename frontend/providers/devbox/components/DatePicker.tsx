@@ -164,7 +164,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     if (type === 'date') {
       setFromDateString(value);
       if (!isMatch(value, 'y-MM-dd')) {
-        setFromDateError('Invalid date format');
+        setFromDateError(t('invalid_date_format'));
         return;
       }
       setFromDateError(null);
@@ -172,7 +172,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     } else {
       setFromTimeString(value);
       if (!isMatch(value, 'HH:mm:ss')) {
-        setFromTimeError('Invalid time format');
+        setFromTimeError(t('invalid_time_format'));
         return;
       }
       setFromTimeError(null);
@@ -202,7 +202,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     if (type === 'date') {
       setToDateString(value);
       if (!isMatch(value, 'y-MM-dd')) {
-        setToDateError('Invalid date format');
+        setToDateError(t('invalid_date_format'));
         return;
       }
       setToDateError(null);
@@ -210,7 +210,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     } else {
       setToTimeString(value);
       if (!isMatch(value, 'HH:mm:ss')) {
-        setToTimeError('Invalid time format');
+        setToTimeError(t('invalid_time_format'));
         return;
       }
       setToTimeError(null);
@@ -222,6 +222,17 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     if (!isValid(date)) {
       return setSelectedRange({ from: selectedRange?.from, to: undefined });
     }
+
+    // Check if the selected date is in the future
+    if (isAfter(date, new Date())) {
+      if (type === 'date') {
+        setToDateError(t('end_time_cannot_be_future'));
+      } else {
+        setToTimeError(t('end_time_cannot_be_future'));
+      }
+      return;
+    }
+
     if (selectedRange?.from) {
       if (isBefore(date, selectedRange.from)) {
         setSelectedRange({ from: date, to: selectedRange.from });
@@ -236,6 +247,12 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
   const handleRangeSelect: SelectRangeEventHandler = (range: DateRange | undefined) => {
     if (range) {
       let { from, to } = range;
+
+      // Check if the end date is in the future
+      if (to && isAfter(endOfDay(to), new Date())) {
+        to = new Date();
+      }
+
       if (inputState === 0) {
         // from
         if (from === selectedRange?.from) {
@@ -319,7 +336,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
           </div>
         </PopoverTrigger>
         <PopoverContent className="w-105 p-0" align="start">
-          <div className="flex h-100 w-80">
+          <div className="flex min-h-100 w-80">
             <div className="flex flex-col">
               <DayPicker
                 navLayout="around"
@@ -331,7 +348,7 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
               />
               <Separator className="bg-zinc-100" />
               {/* Start and End button */}
-              <div className="flex flex-col gap-2 px-4 pt-2 pb-3">
+              <div className="flex min-h-40 flex-col gap-4 px-4 pt-2 pb-4">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs text-zinc-600">{t('date_start')}</span>
                   <div className="flex w-full gap-1">
@@ -340,12 +357,14 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
                       onChange={(e) => handleFromChange(e.target.value, 'date')}
                       error={!!fromDateError}
                       showError={fromDateShake}
+                      errorMessage={fromDateError}
                     />
                     <DatePickerInput
                       value={fromTimeString}
                       onChange={(e) => handleFromChange(e.target.value, 'time')}
                       error={!!fromTimeError}
                       showError={fromTimeShake}
+                      errorMessage={fromTimeError}
                     />
                   </div>
                 </div>
@@ -357,12 +376,14 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
                       onChange={(e) => handleToChange(e.target.value, 'date')}
                       error={!!toDateError}
                       showError={toDateShake}
+                      errorMessage={toDateError}
                     />
                     <DatePickerInput
                       value={toTimeString}
                       onChange={(e) => handleToChange(e.target.value, 'time')}
                       error={!!toTimeError}
                       showError={toTimeShake}
+                      errorMessage={toTimeError}
                     />
                   </div>
                 </div>
@@ -429,19 +450,33 @@ interface DatePickerInputProps {
   onChange: ChangeEventHandler<HTMLInputElement> | undefined;
   error: boolean;
   showError: boolean;
+  errorMessage?: string | null;
 }
 
-const DatePickerInput = ({ value, onChange, error, showError }: DatePickerInputProps) => {
+const DatePickerInput = ({
+  value,
+  onChange,
+  error,
+  showError,
+  errorMessage
+}: DatePickerInputProps) => {
   return (
-    <Input
-      className={cn(
-        'h-8 w-30 bg-white pl-2 text-xs text-zinc-900',
-        error && 'border-red-500 hover:border-red-500',
-        showError && 'animate-shake border-red-500 hover:border-red-500'
+    <div className="relative">
+      <Input
+        className={cn(
+          'h-8 w-30 bg-white pl-2 text-xs text-zinc-900',
+          error && 'border-red-500 hover:border-red-500',
+          showError && 'animate-shake border-red-500 hover:border-red-500'
+        )}
+        value={value}
+        onChange={onChange}
+      />
+      {error && errorMessage && (
+        <div className="absolute top-full left-0 mt-1 text-[11px] leading-none font-normal text-red-500">
+          {errorMessage}
+        </div>
       )}
-      value={value}
-      onChange={onChange}
-    />
+    </div>
   );
 };
 
