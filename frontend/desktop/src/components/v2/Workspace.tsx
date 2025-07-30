@@ -72,7 +72,7 @@ export default function Workspace() {
   });
   const handleStartDeploying = async () => {
     try {
-      if (!selectedRegion || !workspaceName || mutation.isLoading) {
+      if (!selectedRegion || !workspaceName.trim() || mutation.isLoading) {
         toast({
           status: 'error',
           title: t('v2:please_select_region_and_workspace_name')
@@ -83,7 +83,7 @@ export default function Workspace() {
         const target = new URL(`https://${selectedRegion.domain}/switchRegion`);
         if (!token) throw Error('No token found');
         target.searchParams.append('token', token);
-        target.searchParams.append('workspaceName', encodeURIComponent(workspaceName));
+        target.searchParams.append('workspaceName', encodeURIComponent(workspaceName.trim()));
         // target.searchParams.append('regionUid', encodeURIComponent(region.uid));
         target.searchParams.append('switchRegionType', SwitchRegionType.INIT);
         await router.replace(target);
@@ -91,7 +91,7 @@ export default function Workspace() {
       }
       const initRegionTokenResult = await mutation.mutateAsync({
         regionUid: selectedRegion.uid,
-        workspaceName: workspaceName
+        workspaceName: workspaceName.trim()
       });
       if (!initRegionTokenResult.data) {
         throw new Error('No result data');
@@ -246,13 +246,18 @@ export default function Workspace() {
                 value={workspaceName}
                 borderRadius={'8px'}
                 onChange={(e) => {
-                  setWorkspaceName(e.target.value.trim());
+                  setWorkspaceName(e.target.value);
                 }}
-                onFocus={() => {
+                onFocus={(e) => {
                   if (!workspaceNameFieldDirty) {
                     setWorkspaceNameFieldDirty(true);
                     setWorkspaceName('');
+                  } else {
+                    setWorkspaceName(e.target.value.trim());
                   }
+                }}
+                onBlur={(e) => {
+                  setWorkspaceName(e.target.value.trim());
                 }}
               />
             </FormControl>
