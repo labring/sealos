@@ -52,6 +52,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
 	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
+	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -271,6 +272,7 @@ func main() {
 		RestartPredicateDuration: restartPredicateDuration,
 		NodeName:                 nodes.GetNodeName(),
 		AcceptanceThreshold:      acceptanceThreshold,
+		NodeStatsProvider:        &stat.NodeStatsProviderImpl{},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devbox")
 		os.Exit(1)
