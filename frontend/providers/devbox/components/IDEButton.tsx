@@ -85,7 +85,8 @@ const IDEButton = memo(
     const handleGotoIDE = useCallback(
       async (currentIDE: IDEType = 'cursor') => {
         track({
-          event: 'ide_open',
+          event: 'deployment_action',
+          event_type: 'ide_open',
           module: 'devbox',
           context: 'app',
           method: currentIDE
