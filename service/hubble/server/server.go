@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/labring/sealos/service/hubble/datastore"
 	"github.com/labring/sealos/service/hubble/pkg/auth"
@@ -34,11 +33,11 @@ func NewServer(dataStore *datastore.DataStore, whiteList string) *Server {
 func (s *Server) setupRoutes() {
 	api := s.Router.Group(constants.APIBasePath)
 	{
-		api.POST(constants.DiscoveryPath, s.getFlowConnections)
+		api.POST(constants.FlowsPath, s.flowsHandler)
 	}
 }
 
-func (s *Server) getFlowConnections(c *gin.Context) {
+func (s *Server) flowsHandler(c *gin.Context) {
 	kc := c.GetHeader(constants.KubeConfig)
 	if kc == "" {
 		c.JSON(http.StatusBadRequest, models.Response{
@@ -49,7 +48,6 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 	}
 	kubeConfig, err := url.QueryUnescape(kc)
 	if err != nil {
-		fmt.Printf("Failed to decode URL-encoded kubeconfig: %v\n", err)
 		c.JSON(http.StatusBadRequest, models.Response{
 			Message: constants.DecodingKCFailedMsg,
 			Data:    nil,
@@ -65,7 +63,7 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 		return
 	}
 
-	var req models.DiscoveryRequest
+	var req models.FlowsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.Response{
 			Message: fmt.Sprintf(constants.InvalidRequestMsg, err.Error()),
@@ -74,9 +72,9 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 		return
 	}
 
-	var res []models.DiscoveryData
-	for _, podName := range req.PodNames {
-		flows, err := s.collectFlowData(ns, podName)
+	var res []models.FlowsData
+	for _, crName := range req.CRNames {
+		flows, err := s.collectFlowData(ns, crName)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.Response{
 				Message: err.Error(),
@@ -84,10 +82,7 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 			})
 			return
 		}
-		res = append(res, models.DiscoveryData{
-			PodName: podName,
-			Flows:   flows,
-		})
+		res = append(res, models.FlowsData{CRName: crName, Flows: flows})
 	}
 
 	c.JSON(http.StatusOK, models.Response{
@@ -96,79 +91,11 @@ func (s *Server) getFlowConnections(c *gin.Context) {
 	})
 }
 
-func (s *Server) collectFlowData(namespace, pod string) ([]models.Flow, error) {
-	var allFlows []models.Flow
-	outboundFlows, err := s.getOutboundFlows(namespace, pod)
+func (s *Server) collectFlowData(namespace, crName string) ([]string, error) {
+	flowKey := fmt.Sprintf(constants.CRFlowSetKeyPattern, namespace, crName)
+	flows, err := s.dataStore.GetSetMembers(flowKey)
 	if err != nil {
-		return nil, fmt.Errorf(constants.OutboundFlowErrorMsg, err)
+		return nil, fmt.Errorf("failed to get outbound flows: %w", err)
 	}
-	allFlows = append(allFlows, outboundFlows...)
-	inboundFlows, err := s.getInboundFlows(namespace, pod)
-	if err != nil {
-		return nil, fmt.Errorf(constants.InboundFlowErrorMsg, err)
-	}
-	allFlows = append(allFlows, inboundFlows...)
-
-	return allFlows, nil
-}
-
-func (s *Server) parseFlow(fromPod, toPod, flowKey string) (models.Flow, bool) {
-	flowData, exists, err := s.dataStore.Get(flowKey)
-	if err != nil {
-		return models.Flow{}, false
-	}
-
-	if !exists {
-		return models.Flow{}, false
-	}
-
-	timestamp, err := time.Parse(time.RFC3339, flowData)
-	if err != nil {
-		timestamp = time.Now()
-	}
-
-	return models.Flow{
-		From:      fromPod,
-		To:        toPod,
-		Timestamp: timestamp,
-	}, true
-}
-
-func (s *Server) getOutboundFlows(namespace, pod string) ([]models.Flow, error) {
-	var flows []models.Flow
-
-	fromKey := fmt.Sprintf(constants.OutboundSetKeyPattern, namespace, pod)
-	toPods, err := s.dataStore.GetSetMembers(fromKey)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, toPod := range toPods {
-		flowKey := fmt.Sprintf(constants.OutboundFlowKeyPattern, namespace, pod, toPod)
-
-		if flow, success := s.parseFlow(pod, toPod, flowKey); success {
-			flows = append(flows, flow)
-		}
-	}
-
-	return flows, nil
-}
-
-func (s *Server) getInboundFlows(namespace, pod string) ([]models.Flow, error) {
-	var flows []models.Flow
-
-	toKey := fmt.Sprintf(constants.InboundSetKeyPattern, namespace, pod)
-	fromPods, err := s.dataStore.GetSetMembers(toKey)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, fromPod := range fromPods {
-		flowKey := fmt.Sprintf(constants.InboundFlowKeyPattern, fromPod, namespace, pod)
-		if flow, success := s.parseFlow(fromPod, pod, flowKey); success {
-			flows = append(flows, flow)
-		}
-	}
-
 	return flows, nil
 }

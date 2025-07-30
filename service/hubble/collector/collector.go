@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/labring/sealos/service/hubble/datastore"
+	"github.com/labring/sealos/service/hubble/pkg/constants"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -32,6 +32,13 @@ func NewCollector(hubbleAddr string, dataStore *datastore.DataStore) *Collector 
 		ctx:        ctx,
 		cancel:     cancel,
 	}
+}
+
+type FlowEndpoints struct {
+	SourceNamespace string
+	SourceName      string
+	DestNamespace   string
+	DestName        string
 }
 
 // Start begins collecting flow data from Hubble
@@ -73,17 +80,12 @@ func (c *Collector) Start() {
 				continue
 			}
 
-			srcNs, srcPod, dstNs, dstPod, ok := extractFlowEndpoints(flow)
+			flowEndpoint, ok := extractFlowEndpoints(flow)
 			if !ok {
 				continue
 			}
 
-			timestamp := time.Now()
-			if flow.GetTime() != nil {
-				timestamp = flow.GetTime().AsTime()
-			}
-
-			if err := c.updateFlowRelationships(srcNs, srcPod, dstNs, dstPod, timestamp); err != nil {
+			if err := c.updateFlowRelationships(flowEndpoint); err != nil {
 				log.Printf("Error updating flow relationships: %v", err)
 			}
 		}
@@ -94,46 +96,71 @@ func (c *Collector) Stop() {
 	c.cancel()
 }
 
-func extractFlowEndpoints(flow *pb.Flow) (string, string, string, string, bool) {
+func extractNameFromLabels(labels []string) (string, bool) {
+	prefixes := []string{constants.DBLabelPrefix, constants.OSSLabelPrefix, constants.AppLabelPrefix, constants.DevboxLabelPrefix}
+	for _, label := range labels {
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(label, prefix) {
+				return label[len(prefix):], true
+			}
+		}
+	}
+	return "", false
+}
+
+func extractFlowEndpoints(flow *pb.Flow) (*FlowEndpoints, bool) {
 	if flow.GetSource() == nil || flow.GetDestination() == nil {
-		return "", "", "", "", false
+		return nil, false
 	}
 
 	srcNs := flow.GetSource().GetNamespace()
+	srcLabels := flow.GetSource().GetLabels()
 	srcPod := flow.GetSource().GetPodName()
 	dstNs := flow.GetDestination().GetNamespace()
 	dstPod := flow.GetDestination().GetPodName()
+	dstLabels := flow.GetDestination().GetLabels()
 
+	// Skip flows with missing namespace or pod information
+	// This ensures we only process complete flow data
 	if srcNs == "" || srcPod == "" || dstNs == "" || dstPod == "" {
-		return "", "", "", "", false
+		return nil, false
 	}
 
-	if !strings.HasPrefix(srcNs, "ns-") || !strings.HasPrefix(dstNs, "ns-") {
-		return "", "", "", "", false
+	// Filter flows to only include those with at least one user namespace
+	// User namespaces are identified by the "ns-" prefix
+	// This helps focus on user traffic and exclude system-to-system communications
+	if !strings.HasPrefix(srcNs, "ns-") && !strings.HasPrefix(dstNs, "ns-") {
+		return nil, false
 	}
 
-	return srcNs, srcPod, dstNs, dstPod, true
+	srcName, srcFound := extractNameFromLabels(srcLabels)
+	if !srcFound {
+		return nil, false
+	}
+
+	dstName, dstFound := extractNameFromLabels(dstLabels)
+	if !dstFound {
+		return nil, false
+	}
+
+	return &FlowEndpoints{
+		SourceNamespace: srcNs,
+		SourceName:      srcName,
+		DestNamespace:   dstNs,
+		DestName:        dstName,
+	}, true
 }
 
-func (c *Collector) updateFlowRelationships(srcNs, srcPod, dstNs, dstPod string, timestamp time.Time) error {
-	srcToKey := fmt.Sprintf("%s-%s-to", srcNs, srcPod)
-	dstFromKey := fmt.Sprintf("%s-%s-from", dstNs, dstPod)
-	connectionKey := fmt.Sprintf("%s-%s-%s-%s", srcNs, srcPod, dstNs, dstPod)
-	dstValue := fmt.Sprintf("%s-%s", dstNs, dstPod)
-	srcValue := fmt.Sprintf("%s-%s", srcNs, srcPod)
-	timeValue := timestamp.Format(time.RFC3339)
-
-	if err := c.dataStore.AddToSet(srcToKey, dstValue); err != nil {
+func (c *Collector) updateFlowRelationships(flowEndpoint *FlowEndpoints) error {
+	srcKey := fmt.Sprintf("%s/%s", flowEndpoint.SourceNamespace, flowEndpoint.SourceName)
+	dstKey := fmt.Sprintf("%s/%s", flowEndpoint.DestNamespace, flowEndpoint.DestName)
+	// Filter out self-loop traffic (when source and destination are identical)
+	// This typically represents internal pod communications within the same CR
+	if srcKey == dstKey {
+		return nil
+	}
+	if err := c.dataStore.AddToSet(srcKey, dstKey); err != nil {
 		return fmt.Errorf("failed to update source-to-destination set: %w", err)
 	}
-
-	if err := c.dataStore.AddToSet(dstFromKey, srcValue); err != nil {
-		return fmt.Errorf("failed to update destination-from-source set: %w", err)
-	}
-
-	if err := c.dataStore.Set(connectionKey, timeValue); err != nil {
-		return fmt.Errorf("failed to set connection timestamp: %w", err)
-	}
-
 	return nil
 }

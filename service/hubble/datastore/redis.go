@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DefaultExpiration = 7 * 24 * time.Hour
+	DefaultExpiration = 90 * 24 * time.Hour
 )
 
 type DataStore struct {

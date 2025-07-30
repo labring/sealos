@@ -5,7 +5,7 @@ type Response struct {
 	Data    interface{} `json:"data"`
 }
 
-type DiscoveryData struct {
-	PodName string `json:"podName"`
-	Flows   []Flow `json:"flows"`
+type FlowsData struct {
+	CRName string   `json:"crName"`
+	Flows  []string `json:"flows"`
 }

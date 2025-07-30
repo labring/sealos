@@ -1,5 +1,5 @@
 package models
 
-type DiscoveryRequest struct {
-	PodNames []string `json:"podNames" binding:"required"`
+type FlowsRequest struct {
+	CRNames []string `json:"crNames" binding:"required"`
 }
