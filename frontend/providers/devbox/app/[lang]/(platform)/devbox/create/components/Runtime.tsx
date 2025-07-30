@@ -115,7 +115,9 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     if (isEdit) return;
     const name = searchParams.get('name');
     if (name) return;
-    router.push('/template');
+    const formData = getValues();
+    localStorage.setItem('devbox_create_form_data', JSON.stringify(formData));
+    router.push('/template?from=create');
   };
 
   useEffect(() => {
@@ -133,6 +135,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
       // Only set templateRepositoryUid if it's not already set
       setValue('templateRepositoryUid', startedTemplate.uid);
     }
+    // do not add dependency
   }, [
     startedTemplate,
     router,
