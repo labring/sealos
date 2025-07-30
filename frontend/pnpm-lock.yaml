@@ -710,6 +710,9 @@ importers:
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
+      '@sealos/gtm':
+        specifier: workspace:^
+        version: link:../../packages/gtm
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
@@ -12971,7 +12974,7 @@ packages:
       '@typescript-eslint/scope-manager': 5.62.0
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.2.2)
-      debug: 4.3.4
+      debug: 4.3.6
       eslint: 8.38.0
       typescript: 5.2.2
     transitivePeerDependencies:
