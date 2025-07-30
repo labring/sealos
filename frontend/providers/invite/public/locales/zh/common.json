@@ -13,7 +13,7 @@
   "balance_reward": "余额奖励，",
   "balance_reward_text": "被邀请人首年充值金额的 10% 会返还至代理商 Sealos 账户内",
   "cashback_first_rule": "1. 好友完成实名认证后，您和TA都将获得 <strong>{{amount}}</strong> 元余额奖励",
-  "click_to_get": "点击此处前往领取",
+  "click_to_get": "点击此处前往领取。",
   "completed": "已完成",
   "completed_users": "已完成用户",
   "completion_time": "完成时间",
