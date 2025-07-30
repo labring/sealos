@@ -45,8 +45,8 @@ type NodeStatsProviderImpl struct {
 func (n *NodeStatsProviderImpl) ContainerFsStats(ctx context.Context) (FsStats, error) {
 	// This is a placeholder for the actual implementation.
 	// In a real implementation, this would return the filesystem stats of the container.
-	availableBytes := uint64(1000000000) // Example value
-	capacityBytes := uint64(2000000000)  // Example value
+	availableBytes := uint64(10000000000) // Example value
+	capacityBytes := uint64(20000000000)  // Example value
 	return FsStats{
 		AvailableBytes: &availableBytes, // Example value
 		CapacityBytes:  &capacityBytes,  // Example value
