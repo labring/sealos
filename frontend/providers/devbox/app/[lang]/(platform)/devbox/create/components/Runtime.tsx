@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
 import { nanoid } from '@/utils/tools';
 import { useEnvStore } from '@/stores/env';
-import { listTemplate } from '@/api/template';
+import { listOfficialTemplateRepository, listTemplate } from '@/api/template';
 import { useDevboxStore } from '@/stores/devbox';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 
@@ -36,13 +36,17 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   const router = useRouter();
   const t = useTranslations();
   const { env } = useEnvStore();
-  const { startedTemplate, devboxDetail } = useDevboxStore();
+  const { startedTemplate, devboxDetail, setStartedTemplate } = useDevboxStore();
   const { getValues, setValue, watch } = useFormContext<DevboxEditTypeV2>();
   const searchParams = useSearchParams();
 
   const templateRepositoryUid = watch('templateRepositoryUid');
   const templateUid = watch('templateUid');
   const isValidTemplateRepositoryUid = z.string().uuid().safeParse(templateRepositoryUid).success;
+
+  const templateRepositoryQuery = useQuery(['templateRepository'], listOfficialTemplateRepository, {
+    enabled: !isEdit
+  });
 
   const templateListQuery = useQuery(
     ['templateList', templateRepositoryUid],
@@ -51,6 +55,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
       enabled: isValidTemplateRepositoryUid
     }
   );
+
   const templateList = useMemo(
     () => templateListQuery.data?.templateList || [],
     [templateListQuery.data?.templateList]
@@ -114,15 +119,26 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
   };
 
   useEffect(() => {
-    // if (!startedTemplate && !isEdit) {
-    //   router.push('/template');
-    //   return;
-    // }
-
-    if (startedTemplate) {
+    const runtime = searchParams.get('runtime');
+    if (runtime && templateRepositoryQuery.isSuccess) {
+      const runtimeTemplate = templateRepositoryQuery.data?.templateRepositoryList.find(
+        (item) => item.iconId === runtime
+      );
+      if (runtimeTemplate) {
+        setStartedTemplate(runtimeTemplate);
+        setValue('templateRepositoryUid', runtimeTemplate.uid);
+      }
+    } else if (startedTemplate) {
       setValue('templateRepositoryUid', startedTemplate.uid);
     }
-  }, [startedTemplate, router, setValue, isEdit]);
+  }, [
+    router,
+    setValue,
+    isEdit,
+    templateRepositoryQuery.isSuccess,
+    searchParams,
+    templateRepositoryQuery.data?.templateRepositoryList
+  ]);
 
   useEffect(() => {
     if (!templateListQuery.isSuccess || !templateList.length || !templateListQuery.isFetched)
