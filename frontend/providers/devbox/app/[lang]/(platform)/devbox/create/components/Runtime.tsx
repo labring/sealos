@@ -124,20 +124,24 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
       const runtimeTemplate = templateRepositoryQuery.data?.templateRepositoryList.find(
         (item) => item.iconId === runtime
       );
-      if (runtimeTemplate) {
+      // Only update if the template is different
+      if (runtimeTemplate && (!startedTemplate || startedTemplate.uid !== runtimeTemplate.uid)) {
         setStartedTemplate(runtimeTemplate);
         setValue('templateRepositoryUid', runtimeTemplate.uid);
       }
-    } else if (startedTemplate) {
+    } else if (startedTemplate && !templateRepositoryUid) {
+      // Only set templateRepositoryUid if it's not already set
       setValue('templateRepositoryUid', startedTemplate.uid);
     }
   }, [
+    startedTemplate,
     router,
     setValue,
     isEdit,
     templateRepositoryQuery.isSuccess,
     searchParams,
-    templateRepositoryQuery.data?.templateRepositoryList
+    templateRepositoryQuery.data?.templateRepositoryList,
+    templateRepositoryUid
   ]);
 
   useEffect(() => {

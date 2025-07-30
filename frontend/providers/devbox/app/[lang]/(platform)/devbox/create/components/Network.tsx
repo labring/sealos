@@ -108,7 +108,7 @@ export default function Network({
         className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8"
         id="network"
       >
-        <span className="text-xl/7 font-medium">{t('Network Settings')}</span>
+        <span className="text-lg/7 font-medium">{t('Network Settings')}</span>
         <div className="flex flex-col items-start gap-3">
           {/* Add Port Button when no port */}
           {networks.length === 0 && <AppendNetworksButton onClick={() => appendNetworks()} />}
