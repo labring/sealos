@@ -26,6 +26,7 @@ import ToolboxDrawer from './drawers/ToolboxDrawer';
 import JetBrainsGuideDrawer from './drawers/JetbrainsGuideDrawer';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { usePathname } from '@/i18n';
+import { track } from '@sealos/gtm';
 
 export interface JetBrainsGuideData {
   devboxName: string;
@@ -79,11 +80,17 @@ const IDEButton = memo(
     const [jetbrainsGuideData, setJetBrainsGuideData] = useState<JetBrainsGuideData>();
 
     const currentIDE = getDevboxIDEByDevboxName(devboxName) as IDEType;
-    const { guideIDE, setguideIDE } = useGuideStore();
+    const { guideIDE, setGuideIDE } = useGuideStore();
 
     const handleGotoIDE = useCallback(
       async (currentIDE: IDEType = 'cursor') => {
-        setguideIDE(true);
+        track({
+          event: 'ide_open',
+          module: 'devbox',
+          context: 'app',
+          method: currentIDE
+        });
+        setGuideIDE(true);
         destroyDriver();
 
         setLoading(true);
@@ -132,7 +139,7 @@ const IDEButton = memo(
           setLoading(false);
         }
       },
-      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setguideIDE]
+      [t, devboxName, runtimeType, env.sealosDomain, env.namespace, sshPort, setGuideIDE]
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);

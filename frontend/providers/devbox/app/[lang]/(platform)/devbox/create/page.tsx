@@ -28,6 +28,9 @@ import Form from './components/Form';
 import Yaml from './components/Yaml';
 import Header from './components/Header';
 import { Loading } from '@/components/ui/loading';
+import { track } from '@sealos/gtm';
+import { listTemplate } from '@/api/template';
+import { z } from 'zod';
 
 const DevboxCreatePage = () => {
   const router = useRouter();
@@ -36,7 +39,7 @@ const DevboxCreatePage = () => {
 
   const { env } = useEnvStore();
   const { addDevboxIDE } = useIDEStore();
-  const { setDevboxDetail, setStartedTemplate } = useDevboxStore();
+  const { setDevboxDetail, setStartedTemplate, startedTemplate } = useDevboxStore();
   const { sourcePrice, setSourcePrice } = usePriceStore();
 
   const crOldYamls = useRef<DevboxKindsType[]>([]);
@@ -48,8 +51,6 @@ const DevboxCreatePage = () => {
 
   const tabType = searchParams.get('type') || 'form';
   const devboxName = searchParams.get('name') || '';
-
-  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
 
   // NOTE: need to explain why this is needed
   // fix a bug: searchParams will disappear when go into this page
@@ -100,6 +101,23 @@ const DevboxCreatePage = () => {
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
   });
+
+  const templateRepositoryUid = formHook.watch('templateRepositoryUid');
+  const isValidTemplateRepositoryUid = z.string().uuid().safeParse(templateRepositoryUid).success;
+
+  const templateListQuery = useQuery(
+    ['templateList', templateRepositoryUid],
+    () => listTemplate(templateRepositoryUid),
+    {
+      enabled: isValidTemplateRepositoryUid
+    }
+  );
+  const templateList = useMemo(
+    () => templateListQuery.data?.templateList || [],
+    [templateListQuery.data?.templateList]
+  );
+
+  const generateDefaultYamlList = () => generateYamlList(defaultDevboxEditValueV2, env);
 
   // update yamlList every time yamlList change
   const debouncedUpdateYaml = useMemo(
@@ -216,10 +234,29 @@ const DevboxCreatePage = () => {
           patch,
           devboxName: formData.name
         });
+        track({
+          event: 'deployment_update',
+          module: 'devbox',
+          context: 'app'
+        });
       } else {
         await createDevbox(formData);
+        track({
+          event: 'deployment_create',
+          module: 'devbox',
+          context: 'app',
+          config: {
+            template_name: startedTemplate?.name || '',
+            template_version: templateList.find((t) => t.uid === formData.templateUid)?.name || ''
+          },
+          resources: {
+            cpu_cores: formData.cpu,
+            ram_mb: formData.memory
+          }
+        });
       }
       addDevboxIDE('vscode', formData.name);
+
       toast.success(t(applySuccess));
 
       if (sourcePrice?.gpu) {

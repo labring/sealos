@@ -44,6 +44,7 @@ import { Pagination } from '@/components/ui/pagination';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import ShutdownModal from '@/components/dialogs/ShutdownDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { track } from '@sealos/gtm';
 
 const DeleteDevboxModal = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 
@@ -196,7 +197,14 @@ const DevboxList = ({
               />
               <Button
                 variant="secondary"
-                onClick={() => router.push(`/devbox/detail/${item.name}`)}
+                onClick={() => {
+                  router.push(`/devbox/detail/${item.name}`);
+                  track({
+                    event: 'deployment_details',
+                    module: 'devbox',
+                    context: 'app'
+                  });
+                }}
               >
                 {t('detail')}
               </Button>

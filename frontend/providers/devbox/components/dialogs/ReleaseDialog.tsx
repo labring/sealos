@@ -1,13 +1,13 @@
 import { toast } from 'sonner';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
-import { DevboxListItemTypeV2 } from '@/types/devbox';
-import { releaseDevbox, shutdownDevbox, startDevbox } from '@/api/devbox';
+import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';
+import { releaseDevbox, shutdownDevbox, startDevbox, getDevboxVersionList } from '@/api/devbox';
 
 import {
   Dialog,
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { track } from '@sealos/gtm';
 
 interface ReleaseDialogProps {
   devbox: Omit<DevboxListItemTypeV2, 'template'>;
@@ -41,6 +42,17 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
   const [tagError, setTagError] = useState<string | null>(null);
   const [releaseDes, setReleaseDes] = useState('');
   const [isAutoStart, setIsAutoStart] = useState(devbox.status.value === 'Running');
+  const [versionList, setVersionList] = useState<DevboxVersionListItemType[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      getDevboxVersionList(devbox.name, devbox.id)
+        .then((list) => {
+          setVersionList(list);
+        })
+        .catch(console.error);
+    }
+  }, [open, devbox.name, devbox.id]);
 
   const validateTag = (value: string) => {
     if (!value) {
@@ -95,6 +107,12 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
           await startDevbox({ devboxName: devbox.name });
         }
         toast.success(t('submit_release_successful'));
+        track({
+          event: 'release_create',
+          module: 'devbox',
+          context: 'app',
+          release_number: versionList.length + 1
+        });
         onSuccess();
         onClose();
       } catch (error: any) {
@@ -105,7 +123,17 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
       }
       setLoading(false);
     },
-    [devbox.status.value, devbox.name, devbox.id, tag, releaseDes, t, onSuccess, onClose]
+    [
+      devbox.status.value,
+      devbox.name,
+      devbox.id,
+      tag,
+      releaseDes,
+      t,
+      onSuccess,
+      onClose,
+      versionList.length
+    ]
   );
 
   return (
