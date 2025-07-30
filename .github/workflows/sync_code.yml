@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - staging/src/github.com/labring/**
+      - lifecycle/staging/src/github.com/labring/**
   workflow_dispatch:
 jobs:
   sync:
@@ -15,12 +15,13 @@ jobs:
 
       - name: Run GitHub File Sync
         # Can update to v1 when https://github.com/BetaHuhn/repo-file-sync-action/issues/168 is resolved
-        uses: BetaHuhn/repo-file-sync-action@v1.16.5
+        uses: BetaHuhn/repo-file-sync-action@v1
         with:
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.SYNC_CODE_PAT }}
           CONFIG_PATH: .github/sync_code.yml
           ORIGINAL_MESSAGE: true
           SKIP_PR: true
           COMMIT_EACH_FILE: false
+          COMMIT_BODY: "Change-type: patch"
           GIT_EMAIL: "sealos-ci-robot@sealos.io"
           GIT_USERNAME: "sealos-ci-robot"
