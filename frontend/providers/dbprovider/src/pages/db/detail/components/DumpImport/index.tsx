@@ -3,7 +3,9 @@ import {
   applyDumpCR,
   deleteMigrateJobByName,
   getLogByNameAndContainerName,
-  getMigrateJobList
+  getMigrateJobList,
+  getMigratePodList,
+  getPodStatusByName
 } from '@/api/migrate';
 import { uploadFile } from '@/api/platform';
 import FileSelect from '@/components/FileSelect';
@@ -32,6 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
+import { useMemo } from 'react';
 
 enum MigrateStatusEnum {
   Prepare = 'Prepare',
@@ -193,22 +196,75 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
         } else if (podStatus === 'Failed') {
           setMigrateStatus(MigrateStatusEnum.Fail);
         }
-        // setPodName(data[0].metadata.name);
       }
     }
   });
 
+  // 获取相关的 Pod 信息
+  const { data: podList = [] } = useQuery(
+    ['getMigratePodList', migrateName],
+    () => getMigratePodList(migrateName, 'file'),
+    {
+      enabled: !!migrateName && migrateStatus === MigrateStatusEnum.Fail,
+      refetchInterval: 5000,
+      onSuccess(data) {
+        console.log('Pod list data:', data);
+        // 设置第一个 pod 的名称用于获取日志
+        if (data && data.length > 0 && !podName) {
+          // API 实际返回的是 metadata 数组，所以需要访问 metadata.name
+          const podNameToSet = (data[0] as any).name || '';
+          console.log('Setting pod name:', podNameToSet);
+          setPodName(podNameToSet);
+        }
+      }
+    }
+  );
+
+  // 获取完整的 Pod 信息，包括容器信息
+  const { data: fullPodInfo } = useQuery(
+    ['getFullPodInfo', podName],
+    () => getPodStatusByName(podName),
+    {
+      enabled: !!podName && migrateStatus === MigrateStatusEnum.Fail,
+      onSuccess(data) {
+        console.log('Full pod info:', data);
+      },
+      onError(error) {
+        console.error('Failed to get pod info:', error);
+      }
+    }
+  );
+
+  // 从 Pod 信息中提取容器名称
+  const containerName = useMemo(() => {
+    if (!fullPodInfo?.spec?.containers || fullPodInfo.spec.containers.length === 0) {
+      console.log('No containers found in pod, using default container name');
+      return 'migrate'; // 默认容器名称
+    }
+
+    // 获取第一个容器的名称
+    const firstContainer = fullPodInfo.spec.containers[0];
+    console.log('Using container name:', firstContainer.name);
+    return firstContainer.name;
+  }, [fullPodInfo]);
+
   const { data: log = '' } = useQuery(
-    ['getLogByNameAndContainerName', podName],
+    ['getLogByNameAndContainerName', podName, containerName],
     () =>
       getLogByNameAndContainerName({
         podName: podName,
-        containerName: migrateName,
+        containerName: containerName,
         stream: false
       }),
     {
       refetchInterval: 5000,
-      enabled: !!podName && !!migrateName && migrateStatus === MigrateStatusEnum.Fail
+      enabled: !!podName && !!containerName && migrateStatus === MigrateStatusEnum.Fail,
+      onSuccess(data) {
+        console.log('Log data received:', data);
+      },
+      onError(error) {
+        console.error('Failed to get logs:', error);
+      }
     }
   );
 
@@ -382,7 +438,15 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                       fontSize={'14px'}
                       fontWeight={400}
                       color={'#7B838B'}
-                      dangerouslySetInnerHTML={{ __html: log ? log : 'have_error' }}
+                      dangerouslySetInnerHTML={{
+                        __html: log
+                          ? log
+                          : `迁移失败，但无法获取详细错误日志。请检查：
+                             <br/>1. Pod 名称: ${podName || '未获取到'}
+                             <br/>2. 容器名称: ${containerName || '未获取到'}
+                             <br/>3. 迁移任务名称: ${migrateName || '未获取到'}
+                             <br/>4. 请稍后重试或联系管理员查看集群日志。`
+                      }}
                     ></Text>
                   </Flex>
                 )}
