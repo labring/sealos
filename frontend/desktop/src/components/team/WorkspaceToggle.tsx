@@ -69,7 +69,7 @@ export default function WorkspaceToggle() {
   const namespaces = data?.data?.namespaces || [];
   const namespace = namespaces.find((x) => x.uid === ns_uid);
 
-  const WorkspaceList = ({ isOpen }: { isOpen: boolean }) => {
+  const WorkspaceList = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     // Prevent unwanted excess events
     const prevIsOpenRef = useRef<boolean>(true);
 
@@ -151,6 +151,7 @@ export default function WorkspaceToggle() {
             onClick={() => {
               // setMessageFilter([]);
               modalDisclosure.onOpen();
+              onClose();
             }}
             // {...props}
           >
@@ -167,7 +168,7 @@ export default function WorkspaceToggle() {
   return (
     <>
       <Popover placement="bottom-start" isLazy>
-        {({ isOpen }) => (
+        {({ isOpen, onClose }) => (
           <>
             <PopoverTrigger>
               <HStack
@@ -224,7 +225,7 @@ export default function WorkspaceToggle() {
                 </Center>
               </HStack>
             </PopoverTrigger>
-            <WorkspaceList isOpen={isOpen} />
+            <WorkspaceList isOpen={isOpen} onClose={onClose} />
           </>
         )}
       </Popover>
