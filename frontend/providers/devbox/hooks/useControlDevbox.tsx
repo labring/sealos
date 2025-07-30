@@ -75,6 +75,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           },
           messageData: { type: 'new terminal', command: defaultCommand }
         });
+        track({
+          event: 'deployment_action',
+          module: 'devbox',
+          context: 'app',
+          event_type: 'terminal_open'
+        });
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('jump_terminal_error'));
         console.error(error);
