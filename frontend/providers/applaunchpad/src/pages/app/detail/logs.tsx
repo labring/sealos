@@ -18,6 +18,7 @@ import { downLoadBold } from '@/utils/tools';
 import { useLogStore } from '@/store/logStore';
 import { useRouter } from 'next/router';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 
 export interface JsonFilterItem {
   key: string;
@@ -49,6 +50,13 @@ export default function LogsPage({ appName }: { appName: string }) {
 
   const { refreshInterval, setRefreshInterval, startDateTime, endDateTime } = useDateTimeStore();
   const { setLogs, exportLogs, parsedLogs, logCounts, setLogCounts } = useLogStore();
+
+  useEffect(() => {
+    track('module_view', {
+      module: 'applaunchpad',
+      view_name: 'logs'
+    });
+  }, []);
 
   const formHook = useForm<LogsFormData>({
     defaultValues: {

@@ -12,6 +12,7 @@ import { ListItem } from '@/components/AdvancedSelect';
 import useDateTimeStore from '@/store/date';
 import { getAppMonitorData } from '@/api/app';
 import EmptyChart from '@/components/Icon/icons/emptyChart.svg';
+import { track } from '@sealos/gtm';
 
 export default function MonitorPage({ appName }: { appName: string }) {
   const { toast } = useToast();
@@ -20,6 +21,13 @@ export default function MonitorPage({ appName }: { appName: string }) {
   const { startDateTime, endDateTime } = useDateTimeStore();
   const [podList, setPodList] = useState<ListItem[]>([]);
   const { refreshInterval } = useDateTimeStore();
+
+  useEffect(() => {
+    track('module_view', {
+      module: 'applaunchpad',
+      view_name: 'monitors'
+    });
+  }, []);
 
   useEffect(() => {
     if (appDetailPods?.length > 0 && podList.length === 0) {

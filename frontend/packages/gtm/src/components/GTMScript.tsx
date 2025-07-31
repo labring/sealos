@@ -56,7 +56,7 @@ export function GTMScript({ gtmId, enabled = true, debug = false, onInit }: GTMS
     <>
       <Script
         id="gtm-script"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
         onLoad={handleScriptLoad}
         onError={() => {

@@ -1,16 +1,27 @@
 name: Release Cloud
 
 on:
-  release:
-    types: [ published ]
+  workflow_call:
+    inputs:
+      tag:
+        description: "Tag for manual release"
+        required: false
+        default: ""
+        type: string
+      build_offline_tar_only:
+        description: "Build offline tar only"
+        required: false
+        default: false
+        type: boolean
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag for manual release'
+        description: "Tag for manual release"
         required: false
-        default: ''
+        default: ""
+        type: string
       build_offline_tar_only:
-        description: 'Build offline tar only'
+        description: "Build offline tar only"
         required: false
         default: false
         type: boolean
@@ -27,33 +38,33 @@ jobs:
       artifact_name: sealos-cloud-release
 
   release-controllers:
-    if: ${{ github.event.inputs.build_offline_tar_only == false }}
+    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/controllers.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      push_image_tag: ${{inputs.tag }}
     secrets: inherit
 
   release-frontends:
-    if: ${{ github.event.inputs.build_offline_tar_only == false }}
+    if: ${{ inputs.build_offline_tar_only == false }}
     uses: ./.github/workflows/frontends.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
 
   release-service:
-    if: ${{ github.event.inputs.build_offline_tar_only == false }}
+    if: ${{ inputs.build_offline_tar_only == false }}
     needs:
       - save-sealos
     uses: ./.github/workflows/services.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      push_image_tag: ${{ inputs.tag }}
     secrets: inherit
 
   release-cloud:
-    if: ${{ github.event.inputs.build_offline_tar_only == false }}
+    if: ${{ inputs.build_offline_tar_only == false }}
     needs:
       - save-sealos
       - release-controllers
@@ -62,8 +73,8 @@ jobs:
     uses: ./.github/workflows/cloud.yml
     with:
       push_image: true
-      push_image_tag: ${{ github.event.inputs.tag || github.event.release.tag_name }}
-      build_from: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      push_image_tag: ${{ inputs.tag }}
+      build_from: ${{ inputs.tag }}
     secrets: inherit
 
   release-amd-offline-tar:
@@ -71,7 +82,7 @@ jobs:
       - release-cloud
     runs-on: self-hosted
     env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      RELEASE_TAG: ${{ inputs.tag }}
       OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout
@@ -110,7 +121,7 @@ jobs:
       - release-cloud
     runs-on: self-hosted
     env:
-      RELEASE_TAG: ${{ github.event.inputs.tag || github.event.release.tag_name }}
+      RELEASE_TAG: ${{ inputs.tag }}
       OSS_BUCKET: ${{ secrets.OSS_BUCKET }}
     steps:
       - name: Checkout

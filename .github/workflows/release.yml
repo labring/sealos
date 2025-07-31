@@ -7,7 +7,6 @@ env:
 
 on:
   workflow_dispatch:
-
   push:
     tags:
       - "*"
@@ -15,6 +14,9 @@ on:
 jobs:
   goreleaser:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +39,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -53,6 +55,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - goreleaser
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,6 +100,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - goreleaser
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,10 +119,10 @@ jobs:
         run: ./scripts/changelog.sh "${REPOSITORY}"
       - uses: peter-evans/create-pull-request@v5
         with:
-          title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'
+          title: "docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}"
           body: |
             copilot:all
-            
+
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
             🤖 add release changelog using rebot.
@@ -123,6 +131,18 @@ jobs:
           signoff: true
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          reviewers: cuisongliu
           committer: sealos-release-robot <sealos-release-robot@sealos.io>
           author: sealos-release-robot <sealos-release-robot@sealos.io>
+
+  cloud-release:
+    uses: ./.github/workflows/cloud-release.yml
+    needs:
+      - goreleaser
+      - sync
+    permissions:
+      contents: read
+      packages: write
+    secrets: inherit
+    with:
+      tag: ${{ github.ref_name }}
+      build_offline_tar_only: false

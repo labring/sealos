@@ -15,6 +15,8 @@ export type GTMModule =
   | 'dashboard'
   | 'auth';
 
+export type GTMGuide = 'devbox' | 'database' | 'applaunchpad' | 'appstore';
+
 export type GTMContext = 'app' | 'website';
 
 export interface BaseGTMEvent {
@@ -24,9 +26,11 @@ export interface BaseGTMEvent {
   method?: string;
 }
 
-export interface ModuleOpenEvent extends BaseGTMEvent {
+export interface ModuleOpenEvent extends Omit<BaseGTMEvent, 'module'> {
   event: 'module_open';
   trigger?: 'manual' | 'onboarding';
+  // Module key on desktop is not constrained.
+  module: string;
 }
 
 export interface ModuleViewEvent extends BaseGTMEvent {
@@ -61,7 +65,7 @@ export interface DeploymentCreateEvent extends BaseGTMEvent {
     replicas?: number;
     storage?: number;
     scaling?: {
-      method: 'CPU' | 'RAM';
+      method: 'CPU' | 'RAM' | 'GPU';
       value: number;
     };
   };
@@ -70,13 +74,30 @@ export interface DeploymentCreateEvent extends BaseGTMEvent {
   };
 }
 
-export interface DeploymentActionEvent extends BaseGTMEvent {
-  event: 'deployment_update' | 'deployment_delete' | 'deployment_details';
+export interface DeploymentDetailsEvent extends BaseGTMEvent {
+  event: 'deployment_details';
+}
+
+export interface DeploymentUpdateEvent extends BaseGTMEvent {
+  event: 'deployment_update';
+}
+
+export interface DeploymentDeleteEvent extends BaseGTMEvent {
+  event: 'deployment_delete';
 }
 
 export interface DeploymentShutdownEvent extends BaseGTMEvent {
   event: 'deployment_shutdown';
   type: 'normal' | 'cost_saving';
+}
+
+export interface DeploymentRestartEvent extends BaseGTMEvent {
+  event: 'deployment_restart';
+}
+
+export interface DeploymentActionEvent extends BaseGTMEvent {
+  event: 'deployment_action';
+  event_type: 'terminal_open';
 }
 
 export interface IDEOpenEvent extends BaseGTMEvent {
@@ -104,20 +125,20 @@ export interface ErrorOccurredEvent extends BaseGTMEvent {
 export interface GuideStartEvent extends BaseGTMEvent {
   event: 'guide_start';
   module: 'guide';
-  guide_name: string;
+  guide_name: GTMGuide;
 }
 
 export interface GuideCompleteEvent extends BaseGTMEvent {
   event: 'guide_complete';
   module: 'guide';
-  guide_name: string;
+  guide_name: GTMGuide;
   duration_seconds: number;
 }
 
 export interface GuideExitEvent extends BaseGTMEvent {
   event: 'guide_exit';
   module: 'guide';
-  guide_name?: string;
+  guide_name?: GTMGuide;
   progress_step?: number;
   duration_seconds?: number;
 }
@@ -125,7 +146,7 @@ export interface GuideExitEvent extends BaseGTMEvent {
 export interface AnnouncementClickEvent extends BaseGTMEvent {
   event: 'announcement_click';
   module: 'dashboard';
-  announcement_id: string;
+  announcement_id: 'invitation_referral_prompt' | 'onboarding_guide_prompt';
 }
 
 export interface WorkspaceCreateEvent extends BaseGTMEvent {
@@ -175,8 +196,12 @@ export type GTMEvent =
   | AppLaunchEvent
   | DeploymentStartEvent
   | DeploymentCreateEvent
-  | DeploymentActionEvent
+  | DeploymentDetailsEvent
+  | DeploymentUpdateEvent
+  | DeploymentDeleteEvent
   | DeploymentShutdownEvent
+  | DeploymentRestartEvent
+  | DeploymentActionEvent
   | IDEOpenEvent
   | ReleaseCreateEvent
   | PaywallTriggeredEvent

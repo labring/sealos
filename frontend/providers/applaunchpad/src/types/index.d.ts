@@ -54,6 +54,7 @@ export type AppConfigType = {
         [key: string]: string;
       }[];
     };
+    gtmId: string | null;
     currencySymbol: Coin;
     pvcStorageMax: number;
     eventAnalyze: {

@@ -21,6 +21,7 @@
     "@kubernetes/client-node": "^0.18.1",
     "@next/font": "13.1.6",
     "@sealos/driver": "workspace:^",
+    "@sealos/gtm": "workspace:^",
     "@sealos/ui": "workspace:^",
     "@tanstack/react-query": "^4.35.3",
     "@tanstack/react-table": "^8.10.7",

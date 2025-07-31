@@ -1,42 +1,41 @@
 name: Build Services image
 
-
 on:
   create:
     tags:
   workflow_call:
     inputs:
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
-        default: 'latest'
+        description: "Push image tag"
+        default: "latest"
         required: false
         type: string
   workflow_dispatch:
     inputs:
       push_image:
-        description: 'Push image'
+        description: "Push image"
         required: false
         type: boolean
         default: false
       push_image_tag:
-        description: 'Push image tag'
-        default: 'latest'
+        description: "Push image tag"
+        default: "latest"
         required: false
         type: string
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
       - "service/**"
       - ".github/workflows/services.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths:
       - "service/**"
       - ".github/workflows/services.yml"
@@ -47,6 +46,8 @@ env:
   GO_VERSION: "1.22"
   DEFAULT_OWNER: "labring"
   CRYPTOKEY: ${{ secrets.CONTROLLER_BUILD_CRYPTOKEY }}
+  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+  ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
   resolve-modules:
@@ -62,7 +63,7 @@ jobs:
         run: bash scripts/resolve-modules.sh ./service
 
   golangci-lint:
-    needs: [  resolve-modules ]
+    needs: [resolve-modules]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -91,7 +92,17 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database, pay, account, minio, launchpad, exceptionmonitor, devbox, vlogs ]
+        module:
+          [
+            database,
+            pay,
+            account,
+            minio,
+            launchpad,
+            exceptionmonitor,
+            devbox,
+            vlogs,
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -147,6 +158,9 @@ jobs:
         run: |
           bash scripts/resolve-tag-image.sh "$PUSH_IMAGE" "$IS_TAG" "$PUSH_IMAGE_TAG"
           echo "docker_repo=ghcr.io/$REPO_OWNER/sealos-$MODULE-service" >> $GITHUB_OUTPUT
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_docker_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-$MODULE-service" >> $GITHUB_OUTPUT
+          fi
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -163,17 +177,30 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        uses: docker/login-action@v3
+        if: ${{ ((github.event_name == 'push') ||(github.event_name == 'create') || (inputs.push_image == true)) && env.ALIYUN_REGISTRY }}
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
+            ${{ steps.prepare.outputs.docker_repo }}
+            ${{ steps.prepare.outputs.aliyun_docker_repo }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=ref,event=tag
+            type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: build (and publish) ${{ matrix.module }} main image
         uses: docker/build-push-action@v6
@@ -202,7 +229,17 @@ jobs:
     strategy:
       matrix:
         ## TODO: add more modules
-        module: [ database, pay, account, minio, launchpad, exceptionmonitor, devbox, vlogs ]
+        module:
+          [
+            database,
+            pay,
+            account,
+            minio,
+            launchpad,
+            exceptionmonitor,
+            devbox,
+            vlogs,
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -235,6 +272,10 @@ jobs:
           echo "new_docker_repo=ghcr.io/$REPO_OWNER/sealos-$MODULE-service" >> $GITHUB_OUTPUT
           echo "cluster_repo=ghcr.io/$REPO_OWNER/sealos-cloud-$MODULE-service" >> $GITHUB_OUTPUT
 
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_cluster_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-$MODULE-service" >> $GITHUB_OUTPUT
+          fi
+
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
@@ -250,9 +291,17 @@ jobs:
         # if push to master, then login to ghcr.io
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Mutate image tag in deploy files
         working-directory: service/${{ matrix.module }}/deploy
@@ -270,26 +319,57 @@ jobs:
         env:
           MODULE: ${{ matrix.module }}
           CLUSTER_REPO: ${{ steps.prepare.outputs.cluster_repo }}
+          ALIYUN_CLUSTER_REPO: ${{ steps.prepare.outputs.aliyun_cluster_repo }}
           TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
+          # Build for GHCR
           CLUSTER_IMAGE_NAME="${CLUSTER_REPO}:${TAG_NAME}"
           sudo sealos build -t "${CLUSTER_IMAGE_NAME}-amd64" --platform linux/amd64 -f Kubefile
           sudo rm -rf registry
           sudo sealos build -t "${CLUSTER_IMAGE_NAME}-arm64" --platform linux/arm64 -f Kubefile
+
+          # Build for Aliyun if enabled
+          if [[ -n "${ALIYUN_CLUSTER_REPO}" ]]; then
+            ALIYUN_CLUSTER_IMAGE_NAME="${ALIYUN_CLUSTER_REPO}:${TAG_NAME}"
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE_NAME}-amd64" --platform linux/amd64 -f Kubefile
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE_NAME}-arm64" --platform linux/arm64 -f Kubefile
+          fi
+
           sudo sealos images
 
       - name: Build ${{ matrix.module }}-service cluster image for latest
         env:
           CLUSTER_REPO: ${{ steps.prepare.outputs.cluster_repo }}
+          ALIYUN_CLUSTER_REPO: ${{ steps.prepare.outputs.aliyun_cluster_repo }}
           TAG_NAME: ${{ steps.prepare.outputs.tag_name }}
         run: |
+          # Handle GHCR images
           CLUSTER_IMAGE_NAME="$CLUSTER_REPO:$TAG_NAME"
           CLUSTER_IMAGE_NAME_LATEST="$CLUSTER_REPO:latest"
           sudo sealos tag "$CLUSTER_IMAGE_NAME-amd64"  "$CLUSTER_IMAGE_NAME_LATEST-amd64"
           sudo sealos tag "$CLUSTER_IMAGE_NAME-arm64"  "$CLUSTER_IMAGE_NAME_LATEST-arm64"
+
+          # Handle Aliyun images if enabled
+          if [[ -n "${ALIYUN_CLUSTER_REPO}" ]]; then
+            ALIYUN_CLUSTER_IMAGE_NAME="$ALIYUN_CLUSTER_REPO:$TAG_NAME"
+            ALIYUN_CLUSTER_IMAGE_NAME_LATEST="$ALIYUN_CLUSTER_REPO:latest"
+            sudo sealos tag "$ALIYUN_CLUSTER_IMAGE_NAME-amd64"  "$ALIYUN_CLUSTER_IMAGE_NAME_LATEST-amd64"
+            sudo sealos tag "$ALIYUN_CLUSTER_IMAGE_NAME-arm64"  "$ALIYUN_CLUSTER_IMAGE_NAME_LATEST-arm64"
+          fi
+
           sudo sealos images
+
+          # Create manifests for GHCR
           bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE_NAME"
           bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE_NAME_LATEST"
+
+          # Create manifests for Aliyun if enabled
+          if [[ -n "${ALIYUN_CLUSTER_REPO}" ]]; then
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE_NAME"
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE_NAME_LATEST"
+          fi
 
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6

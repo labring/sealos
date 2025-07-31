@@ -25,7 +25,8 @@ import {
   useDisclosure,
   Divider,
   FlexProps,
-  Image
+  Image,
+  Link
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { CheckCheck, ClockIcon, CopyIcon, DownloadIcon, GiftIcon, UserIcon } from 'lucide-react';
@@ -172,9 +173,12 @@ export default function InvitationPage({
               }}
             />
             {t('balance_reward')}
+            <Link onClick={onOpen} color={'#2563EB'} fontWeight={'bold'}>
+              {t('click_to_get')}
+            </Link>
           </Text>
         </Box>
-        <Center
+        {/* <Center
           fontSize={'14px'}
           fontWeight={'500'}
           height="40px"
@@ -190,7 +194,7 @@ export default function InvitationPage({
         >
           <Icon as={GiftIcon} boxSize={4} color={'#2563EB'} />
           {t('activity_subsidy')}
-        </Center>
+        </Center> */}
       </Flex>
 
       <Flex py={'36px'} gap={'46px'} alignItems={'center'}>
@@ -452,7 +456,7 @@ export default function InvitationPage({
               fontWeight={'500'}
               onClick={() =>
                 window.open(
-                  'https://fael3z0zfze.feishu.cn/share/base/form/shrcnUYQoGd0kO79MtcSiyI2eVc',
+                  'https://fael3z0zfze.feishu.cn/wiki/CMj0wZY49iXwdukdjLGcGjMcnof',
                   '_blank'
                 )
               }

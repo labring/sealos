@@ -34,6 +34,7 @@ import styles from './index.module.scss';
 import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
+import { track } from '@sealos/gtm';
 
 const AppItem = ({
   app,
@@ -795,7 +796,23 @@ export default function Apps() {
             gap={'8px'}
             p={'8px 12px'}
             cursor={'pointer'}
-            onClick={layoutConfig?.version === 'cn' ? openReferralApp : () => openGuideModal()}
+            onClick={
+              layoutConfig?.version === 'cn'
+                ? () => {
+                    track('announcement_click', {
+                      module: 'dashboard',
+                      announcement_id: 'invitation_referral_prompt'
+                    });
+                    openReferralApp();
+                  }
+                : () => {
+                    track('announcement_click', {
+                      module: 'dashboard',
+                      announcement_id: 'onboarding_guide_prompt'
+                    });
+                    openGuideModal();
+                  }
+            }
           >
             <Box position="relative" className="gradient-icon">
               <Volume2 width={16} height={16} />
