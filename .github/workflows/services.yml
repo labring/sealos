@@ -102,6 +102,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout
@@ -239,6 +240,7 @@ jobs:
             exceptionmonitor,
             devbox,
             vlogs,
+            hubble,
           ]
     steps:
       - name: Checkout
