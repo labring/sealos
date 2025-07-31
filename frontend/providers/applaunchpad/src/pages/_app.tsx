@@ -43,7 +43,7 @@ const queryClient = new QueryClient({
   }
 });
 
-type AppOwnProps = { config: AppConfigType };
+type AppOwnProps = { config: Partial<AppConfigType> };
 
 const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
   const router = useRouter();
@@ -218,8 +218,18 @@ MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppIn
   const ctx = await App.getInitialProps(context);
   const filename =
     process.env.NODE_ENV === 'development' ? 'data/config.yaml.local' : '/app/data/config.yaml';
-  const yamlContent = fs.readFileSync(filename, 'utf-8');
-  const config = yaml.load(yamlContent) as AppConfigType;
+
+  let config: Partial<AppConfigType> = {};
+
+  try {
+    if (typeof window === 'undefined') {
+      const yamlContent = fs.readFileSync(filename, 'utf-8');
+      config = yaml.load(yamlContent) as AppConfigType;
+    }
+  } catch (error) {
+    console.error('Failed to load config:', error);
+  }
+
   return { ...ctx, config };
 };
 

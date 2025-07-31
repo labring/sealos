@@ -2,6 +2,7 @@ import { Html, Head, Main, NextScript } from 'next/document';
 
 export default function Document() {
   const scripts: { [key: string]: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
+
   return (
     <Html lang="en">
       <Head>

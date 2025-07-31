@@ -13,34 +13,30 @@ const RedirectPage = () => {
   useEffect(() => {
     const handleRedirect = (formData?: string) => {
       if (formData) {
-        const parsedData: Partial<AppEditSyncedFields> = JSON.parse(decodeURIComponent(formData));
-        const appName = parsedData?.appName;
-
-        if (appName) {
-          getAppByName(appName)
-            .then((app) => {
-              if (app.isPause) {
-                router.replace({
-                  pathname: '/app/detail',
-                  query: { name: appName }
-                });
-              } else {
+        try {
+          const parsedData: Partial<AppEditSyncedFields> = JSON.parse(decodeURIComponent(formData));
+          const appName = parsedData?.appName;
+          if (appName) {
+            getAppByName(appName)
+              .then((app) => {
                 setLastRoute(`/app/detail?name=${appName}`);
                 router.replace({
                   pathname: '/app/edit',
                   query: { name: appName, formData }
                 });
-              }
-            })
-            .catch((err) => {
-              setLastRoute('/');
-              router.replace({
-                pathname: '/app/edit',
-                query: { formData }
+              })
+              .catch((err) => {
+                setLastRoute('/');
+                router.replace({
+                  pathname: '/app/edit',
+                  query: { formData }
+                });
               });
-            });
-        } else {
-          router.replace('/apps');
+          } else {
+            router.replace('/apps');
+          }
+        } catch (error) {
+          console.error('解析formData失败:', error);
         }
       } else {
         router.replace('/apps');
