@@ -110,7 +110,8 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [already, setAlready] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [defaultStorePathList, setDefaultStorePathList] = useState<string[]>([]); // default store will no be edit
+  // For identifying existing stores and quota calculation
+  const [existingStores, setExistingStores] = useState<AppEditType['storeList']>([]);
   const [defaultGpuSource, setDefaultGpuSource] = useState<AppEditType['gpu']>({
     type: '',
     amount: 0,
@@ -289,7 +290,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         formOldYamls.current = formData2Yamls(res);
         crOldYamls.current = res.crYamlList;
 
-        setDefaultStorePathList(res.storeList.map((item) => item.path));
+        setExistingStores(res.storeList);
         setDefaultGpuSource(res.gpu);
         formHook.reset(adaptEditAppData(res));
         setAlready(true);
@@ -462,7 +463,7 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
             <Form
               formHook={formHook}
               already={already}
-              defaultStorePathList={defaultStorePathList}
+              existingStores={existingStores}
               countGpuInventory={countGpuInventory}
               pxVal={pxVal}
               refresh={forceUpdate}

@@ -58,7 +58,7 @@ const labelWidth = 120;
 const Form = ({
   formHook,
   already,
-  defaultStorePathList,
+  existingStores,
   countGpuInventory,
   pxVal,
   refresh,
@@ -66,7 +66,7 @@ const Form = ({
 }: {
   formHook: UseFormReturn<AppEditType, any>;
   already: boolean;
-  defaultStorePathList: string[];
+  existingStores: AppEditType['storeList'];
   countGpuInventory: (type?: string) => number;
   pxVal: number;
   refresh: boolean;
@@ -1379,7 +1379,8 @@ const Form = ({
       {storeEdit && (
         <StoreModal
           defaultValue={storeEdit}
-          isEditStore={defaultStorePathList.includes(storeEdit.path)}
+          isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
+          minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)
             .map((item) => item.path.toLocaleLowerCase())}
