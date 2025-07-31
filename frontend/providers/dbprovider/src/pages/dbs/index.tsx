@@ -9,6 +9,7 @@ import Sidebar from '@/components/Sidebar';
 import { Flex } from '@chakra-ui/react';
 import { useGuideStore } from '@/store/guide';
 import { useRouter } from 'next/router';
+import { track } from '@sealos/gtm';
 
 function Home() {
   const { dbList, setDBList } = useDBStore();
@@ -28,6 +29,11 @@ function Home() {
     if (router.isReady) {
       const { action } = router.query as { action?: string };
       resetGuideState(!(action === 'guide'));
+
+      track('module_open', {
+        module: 'database',
+        trigger: action === 'guide' ? 'onboarding' : 'manual'
+      });
     }
   }, [resetGuideState, router]);
 

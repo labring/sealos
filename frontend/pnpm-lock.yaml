@@ -1422,6 +1422,9 @@ importers:
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
+      '@sealos/gtm':
+        specifier: workspace:^
+        version: link:../../packages/gtm
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui
