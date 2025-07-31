@@ -7,6 +7,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { useDesktopConfigStore } from './desktopConfig';
+import { track } from '@sealos/gtm';
 
 export class AppInfo {
   pid: number;
@@ -126,6 +127,8 @@ const useAppStore = create<TOSState>()(
         },
 
         openApp: async (app: TApp, { query, raw, pathname = '/', appSize = 'maximize' } = {}) => {
+          console.log('open app: ', app.key);
+
           useDesktopConfigStore.getState().temporarilyDisableAnimation();
           const zIndex = get().maxZIndex + 1;
           // debugger
@@ -163,6 +166,19 @@ const useAppStore = create<TOSState>()(
             state.currentAppPid = _app.pid;
             state.maxZIndex = zIndex;
           });
+
+          if (app.key.startsWith('system-')) {
+            track('module_open', {
+              module: app.key.slice(7)
+            });
+          } else {
+            track('app_launch', {
+              module: 'desktop',
+              app_name: app.name,
+              // All icons are from appstore as of now.
+              source: 'appstore'
+            });
+          }
         },
         // open desktop app by app key and pathname, and send message to app
         openDesktopApp: ({
@@ -178,6 +194,7 @@ const useAppStore = create<TOSState>()(
           pathname: string;
           appSize?: WindowSize;
         }) => {
+          console.log('open desktop app: ', appKey);
           const app = get().installedApps.find((item) => item.key === appKey);
           const runningApp = get().runningInfo.find((item) => item.key === appKey);
 

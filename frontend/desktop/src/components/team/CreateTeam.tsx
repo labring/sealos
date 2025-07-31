@@ -16,6 +16,7 @@ import { createRequest } from '@/api/namespace';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
+import { track } from '@sealos/gtm';
 
 export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { t } = useTranslation();
@@ -29,6 +30,9 @@ export default function CreateTeam({ isOpen, onClose }: { isOpen: boolean; onClo
     onSuccess(data) {
       if (data.code === 200) {
         queryClient.invalidateQueries({ queryKey: ['teamList'] });
+        track('workspace_create', {
+          module: 'workspace'
+        });
         onClose();
       }
     },
