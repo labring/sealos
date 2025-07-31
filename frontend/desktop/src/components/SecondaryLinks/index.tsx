@@ -40,6 +40,10 @@ export default function SecondaryLinks() {
   const { openGuideModal, setInitGuide } = useGuideModalStore();
   const { openDesktopApp } = useAppStore();
   const { session } = useSessionStore();
+  const currencySymbol = useConfigStore(
+    (state) => state.layoutConfig?.currencySymbol || 'shellCoin'
+  );
+
   const user = session?.user;
 
   const isCollapsed = useBreakpointValue({
@@ -105,7 +109,7 @@ export default function SecondaryLinks() {
         >
           <Text>{t('common:balance')}</Text>
           <Divider orientation="vertical" mx={'12px'} />
-          <CurrencySymbol />
+          <CurrencySymbol type={currencySymbol} />
           <Text ml={'4px'}>{formatMoney(balance).toFixed(2)}</Text>
         </Center>
 
@@ -186,7 +190,7 @@ export default function SecondaryLinks() {
               <Flex height={'16px'} alignItems="center" my="8px" px="12px">
                 <Text>{t('common:balance')}</Text>
                 <Divider orientation="vertical" mx="8px" />
-                <CurrencySymbol />
+                <CurrencySymbol type={currencySymbol} />
                 <Text ml="4px">{formatMoney(balance).toFixed(2)}</Text>
               </Flex>
             </MenuItem>

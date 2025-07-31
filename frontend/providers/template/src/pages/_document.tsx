@@ -22,9 +22,6 @@ export default function Document() {
       <body>
         <Main />
         <NextScript />
-        {scripts.map((script, i) => (
-          <script key={i} {...script} async />
-        ))}
       </body>
     </Html>
   );
