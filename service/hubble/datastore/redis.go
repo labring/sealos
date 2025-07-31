@@ -57,14 +57,12 @@ func (ds *DataStore) EnsureSetExpiration(key string) error {
 	return nil
 }
 
-func (ds *DataStore) AddToSet(key string, members ...interface{}) error {
-	ctx := context.Background()
-
-	if err := ds.client.SAdd(ctx, key, members...).Err(); err != nil {
-		return err
-	}
-
-	return ds.EnsureSetExpiration(key)
+func (ds *DataStore) AddToSet(ctx context.Context, key string, members ...interface{}) error {
+	pipe := ds.client.Pipeline()
+	pipe.SAdd(ctx, key, members...)
+	pipe.Expire(ctx, key, DefaultExpiration)
+	_, err := pipe.Exec(ctx)
+	return err
 }
 
 func (ds *DataStore) GetSetMembers(key string) ([]string, error) {

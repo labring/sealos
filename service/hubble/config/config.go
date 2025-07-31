@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -28,7 +29,7 @@ func LoadConfig(configPath string) (*config.Config, error) {
 		},
 	}
 	if configPath == "" {
-		return nil, fmt.Errorf("config path is required")
+		return nil, errors.New("config path is required")
 	}
 	data, err := os.ReadFile(configPath)
 	if err != nil {

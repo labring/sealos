@@ -20,17 +20,12 @@ import (
 type Collector struct {
 	hubbleAddr string
 	dataStore  *datastore.DataStore
-	ctx        context.Context
-	cancel     context.CancelFunc
 }
 
 func NewCollector(hubbleAddr string, dataStore *datastore.DataStore) *Collector {
-	ctx, cancel := context.WithCancel(context.Background())
 	return &Collector{
 		hubbleAddr: hubbleAddr,
 		dataStore:  dataStore,
-		ctx:        ctx,
-		cancel:     cancel,
 	}
 }
 
@@ -42,7 +37,7 @@ type FlowEndpoints struct {
 }
 
 // Start begins collecting flow data from Hubble
-func (c *Collector) Start() {
+func (c *Collector) Start(ctx context.Context) {
 	log.Printf("Loaded hubble address: %s", c.hubbleAddr)
 	conn, err := grpc.NewClient(
 		c.hubbleAddr,
@@ -59,14 +54,14 @@ func (c *Collector) Start() {
 		Follow: true,
 	}
 
-	stream, err := client.GetFlows(c.ctx, req)
+	stream, err := client.GetFlows(ctx, req)
 	if err != nil {
 		log.Fatalf("Failed to get flow data: %v", err)
 	}
 
 	for {
 		select {
-		case <-c.ctx.Done():
+		case <-ctx.Done():
 			return
 		default:
 			resp, err := stream.Recv()
@@ -85,19 +80,16 @@ func (c *Collector) Start() {
 				continue
 			}
 
-			if err := c.updateFlowRelationships(flowEndpoint); err != nil {
+			if err := c.updateFlowRelationships(ctx, flowEndpoint); err != nil {
 				log.Printf("Error updating flow relationships: %v", err)
 			}
 		}
 	}
 }
 
-func (c *Collector) Stop() {
-	c.cancel()
-}
+var prefixes = []string{constants.DBLabelPrefix, constants.OSSLabelPrefix, constants.AppLabelPrefix, constants.DevboxLabelPrefix}
 
 func extractNameFromLabels(labels []string) (string, bool) {
-	prefixes := []string{constants.DBLabelPrefix, constants.OSSLabelPrefix, constants.AppLabelPrefix, constants.DevboxLabelPrefix}
 	for _, label := range labels {
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(label, prefix) {
@@ -112,46 +104,40 @@ func extractFlowEndpoints(flow *pb.Flow) (*FlowEndpoints, bool) {
 	if flow.GetSource() == nil || flow.GetDestination() == nil {
 		return nil, false
 	}
-
-	srcNs := flow.GetSource().GetNamespace()
-	srcLabels := flow.GetSource().GetLabels()
-	srcPod := flow.GetSource().GetPodName()
-	dstNs := flow.GetDestination().GetNamespace()
-	dstPod := flow.GetDestination().GetPodName()
-	dstLabels := flow.GetDestination().GetLabels()
-
+	source := flow.GetSource()
+	dest := flow.GetDestination()
 	// Skip flows with missing namespace or pod information
 	// This ensures we only process complete flow data
-	if srcNs == "" || srcPod == "" || dstNs == "" || dstPod == "" {
+	if source.Namespace == "" || source.PodName == "" || dest.Namespace == "" || dest.PodName == "" {
 		return nil, false
 	}
 
 	// Filter flows to only include those with at least one user namespace
 	// User namespaces are identified by the "ns-" prefix
 	// This helps focus on user traffic and exclude system-to-system communications
-	if !strings.HasPrefix(srcNs, "ns-") && !strings.HasPrefix(dstNs, "ns-") {
+	if !strings.HasPrefix(source.Namespace, "ns-") && !strings.HasPrefix(dest.Namespace, "ns-") {
 		return nil, false
 	}
 
-	srcName, srcFound := extractNameFromLabels(srcLabels)
+	srcName, srcFound := extractNameFromLabels(source.Labels)
 	if !srcFound {
 		return nil, false
 	}
 
-	dstName, dstFound := extractNameFromLabels(dstLabels)
+	dstName, dstFound := extractNameFromLabels(dest.Labels)
 	if !dstFound {
 		return nil, false
 	}
 
 	return &FlowEndpoints{
-		SourceNamespace: srcNs,
+		SourceNamespace: source.Namespace,
 		SourceName:      srcName,
-		DestNamespace:   dstNs,
+		DestNamespace:   dest.Namespace,
 		DestName:        dstName,
 	}, true
 }
 
-func (c *Collector) updateFlowRelationships(flowEndpoint *FlowEndpoints) error {
+func (c *Collector) updateFlowRelationships(ctx context.Context, flowEndpoint *FlowEndpoints) error {
 	srcKey := fmt.Sprintf("%s/%s", flowEndpoint.SourceNamespace, flowEndpoint.SourceName)
 	dstKey := fmt.Sprintf("%s/%s", flowEndpoint.DestNamespace, flowEndpoint.DestName)
 	// Filter out self-loop traffic (when source and destination are identical)
@@ -159,7 +145,7 @@ func (c *Collector) updateFlowRelationships(flowEndpoint *FlowEndpoints) error {
 	if srcKey == dstKey {
 		return nil
 	}
-	if err := c.dataStore.AddToSet(srcKey, dstKey); err != nil {
+	if err := c.dataStore.AddToSet(ctx, srcKey, dstKey); err != nil {
 		return fmt.Errorf("failed to update source-to-destination set: %w", err)
 	}
 	return nil
