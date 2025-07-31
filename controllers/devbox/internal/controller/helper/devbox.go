@@ -268,3 +268,14 @@ func GetArgs(devbox *devboxv1alpha1.Devbox) []string {
 func IsExceededQuotaError(err error) bool {
 	return strings.Contains(err.Error(), "exceeded quota")
 }
+
+func GetStorageLimitInBytes(devbox *devboxv1alpha1.Devbox) (int64, error) {
+	if devbox.Spec.StorageLimit != "" {
+		storageLimit, err := resource.ParseQuantity(devbox.Spec.StorageLimit)
+		if err != nil {
+			return 0, err
+		}
+		return storageLimit.Value(), nil
+	}
+	return 0, nil
+}
