@@ -219,7 +219,7 @@ const DBList = ({
         try {
           await syncAuthUser(apiKey, { uid: userKey });
         } catch (error) {
-          console.log('syncAuthUser', error);
+          console.log('syncAuthUser', JSON.stringify(error));
         }
 
         let currentDataSourceId = getDataSourceId(db.name);
