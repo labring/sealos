@@ -29,6 +29,7 @@ import { ApiResp } from '@/types';
 import { useTranslation } from 'next-i18next';
 import { GroupAddIcon } from '@sealos/ui';
 import { useCopyData } from '@/hooks/useCopyData';
+import { track } from '@sealos/gtm';
 
 export default function InviteMember({
   ns_uid,
@@ -68,6 +69,12 @@ export default function InviteMember({
   const getLinkCode = useMutation({
     mutationFn: getInviteCodeRequest,
     mutationKey: [session?.user.ns_uid],
+    onSuccess(_data, variables) {
+      track('workspace_invite', {
+        module: 'workspace',
+        invite_role: variables.role === UserRole.Developer ? 'developer' : 'manager'
+      });
+    },
     onError() {
       toast({
         status: 'error',

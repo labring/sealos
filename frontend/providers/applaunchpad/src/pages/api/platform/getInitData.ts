@@ -35,6 +35,7 @@ export const defaultAppConfig: AppConfigType = {
       description: 'Sealos Desktop App Demo',
       scripts: []
     },
+    gtmId: null,
     currencySymbol: Coin.shellCoin,
     pvcStorageMax: 20,
     eventAnalyze: {

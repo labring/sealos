@@ -25,6 +25,7 @@ const fs = require('fs');
 import * as yaml from 'js-yaml';
 import type { AppConfigType } from '@/types';
 import Script from 'next/script';
+import { GTMScript } from '@sealos/gtm';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -204,6 +205,11 @@ const MyApp = ({ Component, pageProps, config }: AppProps & AppOwnProps) => {
       {config?.launchpad?.meta?.scripts?.map((script, i) => (
         <Script key={i} {...script} />
       ))}
+      <GTMScript
+        enabled={!!config?.launchpad?.gtmId}
+        gtmId={config?.launchpad?.gtmId!}
+        debug={process.env.NODE_ENV === 'development'}
+      />
     </>
   );
 };

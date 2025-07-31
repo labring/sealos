@@ -5,6 +5,7 @@ import type { AppDetailType, AppPatchPropsType, PodDetailType } from '@/types/ap
 import { MonitorDataResult, MonitorQueryKey } from '@/types/monitor';
 import { LogQueryPayload } from '@/pages/api/log/queryLogs';
 import { PodListQueryPayload } from '@/pages/api/log/queryPodList';
+import { track } from '@sealos/gtm';
 
 export const postDeployApp = (yamlList: string[]) => POST('/api/applyApp', { yamlList });
 
@@ -12,12 +13,24 @@ export const putApp = (data: {
   patch: AppPatchPropsType;
   appName: string;
   stateFulSetYaml?: string;
-}) => POST('/api/updateApp', data);
+}) => {
+  track('deployment_update', {
+    module: 'applaunchpad'
+  });
+
+  return POST('/api/updateApp', data);
+};
 
 export const getMyApps = () =>
   GET<V1Deployment & V1StatefulSet[]>('/api/getApps').then((res) => res.map(adaptAppListItem));
 
-export const delAppByName = (name: string) => DELETE('/api/delApp', { name });
+export const delAppByName = (name: string) => {
+  track('deployment_delete', {
+    module: 'applaunchpad'
+  });
+
+  return DELETE('/api/delApp', { name });
+};
 
 export const getAppByName = (name: string, mock = false) =>
   GET<AppDetailType>(`/api/getAppByAppName?appName=${name}&mock=${mock}`);
@@ -42,11 +55,30 @@ export const getPodLogs = (data: {
 export const getPodEvents = (podName: string) =>
   GET(`/api/getPodEvents?podName=${podName}`).then(adaptEvents);
 
-export const restartAppByName = (appName: string) => GET(`/api/restartApp?appName=${appName}`);
+export const restartAppByName = (appName: string) => {
+  track('deployment_restart', {
+    module: 'applaunchpad'
+  });
 
-export const pauseAppByName = (appName: string) => GET(`/api/pauseApp?appName=${appName}`);
+  return GET(`/api/restartApp?appName=${appName}`);
+};
 
-export const startAppByName = (appName: string) => GET(`/api/startApp?appName=${appName}`);
+export const pauseAppByName = (appName: string) => {
+  track('deployment_shutdown', {
+    module: 'applaunchpad',
+    type: 'normal'
+  });
+
+  return GET(`/api/pauseApp?appName=${appName}`);
+};
+
+export const startAppByName = (appName: string) => {
+  track('deployment_start', {
+    module: 'applaunchpad'
+  });
+
+  return GET(`/api/startApp?appName=${appName}`);
+};
 
 export const restartPodByName = (podName: string) => GET(`/api/restartPod?podName=${podName}`);
 

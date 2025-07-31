@@ -83,6 +83,7 @@ export type LayoutConfigType = {
     aiAssistantEnabled: boolean;
     bannerEnabled: boolean;
   };
+  gtmId: string | null;
 };
 
 export type AuthConfigType = {
@@ -317,7 +318,8 @@ export const DefaultLayoutConfig: LayoutConfigType = {
     accountSettingEnabled: false,
     aiAssistantEnabled: false,
     bannerEnabled: false
-  }
+  },
+  gtmId: null
 };
 
 export const DefaultAuthClientConfig: AuthClientConfigType = {
