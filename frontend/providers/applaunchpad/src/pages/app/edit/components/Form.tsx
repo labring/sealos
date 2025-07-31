@@ -5,7 +5,7 @@ import { APPLICATION_PROTOCOLS, defaultSliderKey, ProtocolList } from '@/constan
 import { GpuAmountMarkList } from '@/constants/editApp';
 import { useToast } from '@/hooks/useToast';
 import { useGlobalStore } from '@/store/global';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { PVC_STORAGE_MAX, SEALOS_DOMAIN } from '@/store/static';
 import { useUserStore } from '@/store/user';
 import type { QueryType } from '@/types';
 import { type AppEditType } from '@/types/app';
@@ -45,6 +45,7 @@ import QuotaBox from './QuotaBox';
 import type { StoreType } from './StoreModal';
 import styles from './index.module.scss';
 import { mountPathToConfigMapKey, useCopyData } from '@/utils/tools';
+import { useQuery } from '@tanstack/react-query';
 
 const CustomAccessModal = dynamic(() => import('./CustomAccessModal'));
 const ConfigmapModal = dynamic(() => import('./ConfigmapModal'));
@@ -82,6 +83,7 @@ const Form = ({
   const { name } = router.query as QueryType;
   const theme = useTheme();
   const isEdit = useMemo(() => !!name, [name]);
+
   const {
     register,
     control,
@@ -163,6 +165,21 @@ const Form = ({
   const [configEdit, setConfigEdit] = useState<ConfigMapType>();
   const [storeEdit, setStoreEdit] = useState<StoreType>();
   const { isOpen: isEditEnvs, onOpen: onOpenEditEnvs, onClose: onCloseEditEnvs } = useDisclosure();
+
+  // For quota calculation in fields
+  const { userQuota, loadUserQuota } = useUserStore();
+  useQuery(['getUserQuota'], loadUserQuota);
+
+  const storageQuotaLeft = useMemo(() => {
+    const storageQuota = userQuota?.find((item) => item.type === 'storage');
+    if (!storageQuota) return 0;
+
+    const newlyUsedStorage =
+      storeList.reduce((sum, item) => sum + item.value, 0) -
+      existingStores.reduce((sum, item) => sum + item.value, 0);
+
+    return storageQuota.limit - storageQuota.used - newlyUsedStorage;
+  }, [userQuota, existingStores, storeList]);
 
   // listen scroll and set activeNav
   useEffect(() => {
@@ -1381,6 +1398,12 @@ const Form = ({
           defaultValue={storeEdit}
           isEditStore={!!existingStores.find((item) => storeEdit.path === item.path)}
           minValue={existingStores.find((item) => storeEdit.path === item.path)?.value ?? 1}
+          maxValue={Math.min(
+            // left quota - this one
+            storageQuotaLeft + (storeList.find((item) => item.id === storeEdit.id)?.value ?? 0),
+            // But not exceed the size cap
+            PVC_STORAGE_MAX
+          )}
           listNames={storeList
             .filter((item) => item.id !== storeEdit.id)
             .map((item) => item.path.toLocaleLowerCase())}
