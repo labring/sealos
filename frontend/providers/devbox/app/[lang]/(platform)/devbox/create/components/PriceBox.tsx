@@ -114,7 +114,7 @@ const PriceBox = ({ components = [], className }: PriceBoxProps) => {
                 index === priceList.length - 1 && 'text-blue-600'
               )}
             >
-              <CurrencySymbol width={16} height={16} type={env.currencySymbol} />
+              <CurrencySymbol type={env.currencySymbol} />
               &nbsp;
               {item.value}
             </div>
