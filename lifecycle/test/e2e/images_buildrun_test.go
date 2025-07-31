@@ -37,7 +37,7 @@ var _ = Describe("E2E_sealos_images_buildrun_test", func() {
 			By("write dockerfile")
 			dFile := config.RootfsDockerfile{
 				Images:    []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
-				BaseImage: "labring/kubernetes:v1.25.0",
+				BaseImage: "docker.io/labring/kubernetes:v1.25.0",
 				Copys:     []string{"sealctl opt/"},
 			}
 			tmpdir, err := dFile.Write()

@@ -1,9 +1,15 @@
 name: Check-LinkError
 
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
+  push:
+    branches: [ "*" ]
+    paths:
+      - "**/*.md"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "**/*.md"
+  workflow_dispatch:
 
 jobs:
   linkChecker:

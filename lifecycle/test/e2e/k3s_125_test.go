@@ -48,7 +48,7 @@ var _ = Describe("E2E_sealos_k3s_basic_test", func() {
 		BeforeEach(func() {
 			By("build rootfs")
 			dFile := config.RootfsDockerfile{
-				BaseImage: "labring/k3s:v1.25-latest",
+				BaseImage: "docker.io/labring/k3s:v1.25-latest",
 				Copys:     []string{"sealctl opt/"},
 			}
 			tmpdir, err := dFile.Write()

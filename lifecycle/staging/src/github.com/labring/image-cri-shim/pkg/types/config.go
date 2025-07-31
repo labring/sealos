@@ -24,7 +24,7 @@ import (
 
 	registry2 "github.com/labring/sreg/pkg/registry/crane"
 
-	types2 "github.com/docker/docker/api/types"
+	types2 "github.com/docker/docker/api/types/registry"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -19,7 +19,7 @@ package server
 import (
 	"context"
 
-	"github.com/docker/docker/api/types"
+	rtype "github.com/docker/docker/api/types/registry"
 
 	"github.com/google/go-containerregistry/pkg/name"
 
@@ -30,11 +30,11 @@ import (
 
 type v1ImageService struct {
 	imageClient       api.ImageServiceClient
-	CRIConfigs        map[string]types.AuthConfig
-	OfflineCRIConfigs map[string]types.AuthConfig
+	CRIConfigs        map[string]rtype.AuthConfig
+	OfflineCRIConfigs map[string]rtype.AuthConfig
 }
 
-func ToV1AuthConfig(c *types.AuthConfig) *api.AuthConfig {
+func ToV1AuthConfig(c *rtype.AuthConfig) *api.AuthConfig {
 	return &api.AuthConfig{
 		Username:      c.Username,
 		Password:      c.Password,

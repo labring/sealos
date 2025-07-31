@@ -17,6 +17,8 @@ package types
 import (
 	"fmt"
 
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
+
 	"github.com/imdario/mergo"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
@@ -37,6 +39,7 @@ type KubeadmConfig struct {
 	kubeadm.ClusterConfiguration
 	kubeadm.JoinConfiguration
 	kubeproxyconfigv1alpha1.KubeProxyConfiguration
+	// https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/
 	kubeletconfigv1beta1.KubeletConfiguration
 }
 
@@ -98,7 +101,7 @@ func (k *KubeadmConfig) etcdLocalOrExternal(kubeadmConfig *KubeadmConfig) {
 
 func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
 	logger.Debug("using default kubeadm config")
-	return defaultKubeadmConfig
+	return DefaultKubeadmInitConfiguration()
 }
 
 // Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.
@@ -132,6 +135,7 @@ func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, err
 
 	switch k.InitConfiguration.APIVersion {
 	case KubeadmV1beta3, "": // defaults to v1beta3
+		logger.Info("using v1beta3 kubeadm config")
 		var v1beta3InitConfiguration v1beta3.InitConfiguration
 		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
 		var v1beta3JoinConfiguration v1beta3.JoinConfiguration
@@ -153,6 +157,29 @@ func (k *KubeadmConfig) ToConvertedKubeadmConfig() (*ConvertedKubeadmConfig, err
 		conversion.InitConfiguration = v1beta3InitConfiguration
 		conversion.ClusterConfiguration = v1beta3ClusterConfiguration
 		conversion.JoinConfiguration = v1beta3JoinConfiguration
+	case KubeadmV1beta4: // defaults to v1beta3
+		logger.Info("using v1beta4 kubeadm config")
+		var v1beta4InitConfiguration v1beta4.InitConfiguration
+		var v1beta4ClusterConfiguration v1beta4.ClusterConfiguration
+		var v1beta4JoinConfiguration v1beta4.JoinConfiguration
+		if err = v1beta4.Convert_kubeadm_InitConfiguration_To_v1beta4_InitConfiguration(&k.InitConfiguration, &v1beta4InitConfiguration, nil); err != nil {
+			return nil, err
+		}
+		if err = v1beta4.Convert_kubeadm_ClusterConfiguration_To_v1beta4_ClusterConfiguration(&k.ClusterConfiguration, &v1beta4ClusterConfiguration, nil); err != nil {
+			return nil, err
+		}
+		if err = v1beta4.Convert_kubeadm_JoinConfiguration_To_v1beta4_JoinConfiguration(&k.JoinConfiguration, &v1beta4JoinConfiguration, nil); err != nil {
+			return nil, err
+		}
+		v1beta4InitConfiguration.APIVersion = v1beta4.SchemeGroupVersion.String()
+		v1beta4ClusterConfiguration.APIVersion = v1beta4.SchemeGroupVersion.String()
+		v1beta4JoinConfiguration.APIVersion = v1beta4.SchemeGroupVersion.String()
+		v1beta4InitConfiguration.Kind = "InitConfiguration"
+		v1beta4ClusterConfiguration.Kind = "ClusterConfiguration"
+		v1beta4JoinConfiguration.Kind = "JoinConfiguration"
+		conversion.InitConfiguration = v1beta4InitConfiguration
+		conversion.ClusterConfiguration = v1beta4ClusterConfiguration
+		conversion.JoinConfiguration = v1beta4JoinConfiguration
 	default: // unknown version
 		conversion.JoinConfiguration = k.JoinConfiguration
 		conversion.InitConfiguration = k.InitConfiguration
@@ -199,14 +226,30 @@ func (k *KubeadmConfig) FinalizeFeatureGatesConfiguration() {
 	if k.ClusterConfiguration.KubernetesVersion == "" {
 		panic("kubernetesVersion must not been null")
 	}
-	extraArgs := []map[string]string{k.ClusterConfiguration.ControllerManager.ExtraArgs, k.ClusterConfiguration.APIServer.ExtraArgs, k.ClusterConfiguration.Scheduler.ExtraArgs}
+	extraArgs := [][]kubeadm.Arg{k.ClusterConfiguration.ControllerManager.ExtraArgs, k.ClusterConfiguration.APIServer.ExtraArgs, k.ClusterConfiguration.Scheduler.ExtraArgs}
 	if versionutil.MustParseSemantic(k.ClusterConfiguration.KubernetesVersion).LessThan(versionutil.MustParseSemantic("1.19.0")) {
-		delete(extraArgs[0], "cluster-signing-duration")
-		extraArgs[0]["experimental-cluster-signing-duration"] = "87600h"
+		for i, args := range extraArgs {
+			for j, v := range args {
+				if v.Name == "cluster-signing-duration" {
+					extraArgs[i][j].Name = "experimental-cluster-signing-duration"
+					extraArgs[i][j].Value = "87600h"
+				}
+			}
+		}
 	}
 	for i, args := range extraArgs {
-		if args["feature-gates"] != "" {
-			args["feature-gates"] = updateFeatureGatesConfiguration(args["feature-gates"], k.ClusterConfiguration.KubernetesVersion).(string)
+		for j, v := range args {
+			if v.Name == "feature-gates" {
+				// remove feature-gates from kubeadm config, it will be set in kubelet config
+				extraArgs[i][j].Value = ""
+				continue
+			}
+		}
+		for j, v := range args {
+			if v.Name == "feature-gates" && v.Value != "" {
+				newValue := updateFeatureGatesConfiguration(v.Value, k.ClusterConfiguration.KubernetesVersion).(string)
+				args[j].Value = newValue
+			}
 		}
 		extraArgs[i] = args
 	}

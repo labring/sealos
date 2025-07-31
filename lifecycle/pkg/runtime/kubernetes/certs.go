@@ -64,9 +64,9 @@ func (k *KubeadmRuntime) UpdateCertSANs(certSans []string) error {
 		k.deleteAPIServer,
 		k.showKubeadmCert,
 	}
-	for _, f := range pipeline {
+	for i, f := range pipeline {
 		if err := f(); err != nil {
-			return fmt.Errorf("failed to generate cert %v", err)
+			return fmt.Errorf("failed to generate cert %v in %d", err, i)
 		}
 	}
 	return nil

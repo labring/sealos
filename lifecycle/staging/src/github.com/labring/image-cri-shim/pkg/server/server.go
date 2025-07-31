@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"time"
 
-	dockertype "github.com/docker/docker/api/types"
+	dockertype "github.com/docker/docker/api/types/registry"
 	"google.golang.org/grpc"
 	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 

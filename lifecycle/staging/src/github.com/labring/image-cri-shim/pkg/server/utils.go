@@ -19,9 +19,9 @@ package server
 import (
 	"strings"
 
-	"github.com/labring/sreg/pkg/registry/crane"
+	"github.com/docker/docker/api/types/registry"
 
-	"github.com/docker/docker/api/types"
+	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -74,7 +74,7 @@ import (
 //	}
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
-func replaceImage(image, action string, authConfig map[string]types.AuthConfig) (newImage string, isReplace bool, cfg *types.AuthConfig) {
+func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
 	// TODO we can change the image name of req, and make the cri pull the image we need.
 	// for example:
 	// req.Image.Image = "sealos.hub:5000/library/nginx:1.1.1"

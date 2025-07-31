@@ -16,4 +16,5 @@ package types
 
 const (
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
+	KubeadmV1beta4 = "kubeadm.k8s.io/v1beta4"
 )

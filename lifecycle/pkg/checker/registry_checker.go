@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/docker/api/types/registry"
+
 	"github.com/labring/sreg/pkg/registry/crane"
 
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
-
-	"github.com/docker/docker/api/types"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -97,7 +97,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	regInfo := helpers.GetRegistryInfo(execer, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
-	cfg := types.AuthConfig{
+	cfg := registry.AuthConfig{
 		Username: regInfo.Username,
 		Password: regInfo.Password,
 	}
