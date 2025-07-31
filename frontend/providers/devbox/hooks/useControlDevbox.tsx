@@ -31,6 +31,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           return;
         }
         await restartDevbox({ devboxName: devbox.name });
+        track({
+          event: 'deployment_restart',
+          module: 'devbox',
+          context: 'app'
+        });
         toast.success(t('restart_success'));
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('restart_error'));
@@ -77,9 +82,9 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         });
         track({
           event: 'deployment_action',
+          event_type: 'terminal_open',
           module: 'devbox',
-          context: 'app',
-          event_type: 'terminal_open'
+          context: 'app'
         });
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('jump_terminal_error'));
