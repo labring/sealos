@@ -272,13 +272,12 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
     const defaultCommand = commandMap[db.dbType];
 
-    // track({
-    //   event:'',
-    //   module: 'database',
-    //   view_name: 'terminal_open',
-    //   event_type: 'terminal_open',
-    //   app_name: db.dbName
-    // });
+    track({
+      event: 'deployment_action',
+      module: 'database',
+      event_type: 'terminal_open',
+      context: 'app'
+    } as any);
 
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-terminal',
