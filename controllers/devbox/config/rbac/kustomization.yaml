@@ -36,10 +36,5 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
-- operationrequest_editor_role.yaml
-- operationrequest_viewer_role.yaml
-- devboxrelease_editor_role.yaml
-- devboxrelease_viewer_role.yaml
 - devbox_editor_role.yaml
 - devbox_viewer_role.yaml
-
