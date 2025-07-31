@@ -134,14 +134,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
       await createDB({ dbForm: formData, isEdit });
 
-      track('deployment_create', {
+      track({
+        event: 'deployment_create',
         module: 'database',
-        method: 'custom',
-        app_name: formData.dbName,
+        context: 'app',
         config: {
           template_name: formData.dbType,
-          template_version: formData.dbVersion,
-          template_type: 'public'
+          template_version: formData.dbVersion
         },
         resources: {
           cpu_cores: formData.cpu,
