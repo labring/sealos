@@ -1,5 +1,5 @@
 package models
 
-type FlowsRequest struct {
-	CRNames []string `json:"crNames" binding:"required"`
+type TrafficRequest struct {
+	Resources []string `json:"resources" binding:"required"`
 }

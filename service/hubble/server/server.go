@@ -40,7 +40,7 @@ func (s *Server) setupRoutes() {
 func (s *Server) flowsHandler(c *gin.Context) {
 	kc := c.GetHeader(constants.KubeConfig)
 	if kc == "" {
-		c.JSON(http.StatusBadRequest, models.Response{
+		c.JSON(http.StatusBadRequest, models.TrafficResponse{
 			Message: constants.MissingKCMsg,
 			Data:    nil,
 		})
@@ -48,7 +48,7 @@ func (s *Server) flowsHandler(c *gin.Context) {
 	}
 	kubeConfig, err := url.QueryUnescape(kc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, models.Response{
+		c.JSON(http.StatusBadRequest, models.TrafficResponse{
 			Message: constants.DecodingKCFailedMsg,
 			Data:    nil,
 		})
@@ -56,36 +56,36 @@ func (s *Server) flowsHandler(c *gin.Context) {
 	}
 	ns, err := s.auth.Authenticate(context.Background(), "", kubeConfig)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, models.Response{
+		c.JSON(http.StatusUnauthorized, models.TrafficResponse{
 			Message: err.Error(),
 			Data:    nil,
 		})
 		return
 	}
 
-	var req models.FlowsRequest
+	var req models.TrafficRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, models.Response{
+		c.JSON(http.StatusBadRequest, models.TrafficResponse{
 			Message: fmt.Sprintf(constants.InvalidRequestMsg, err.Error()),
 			Data:    nil,
 		})
 		return
 	}
 
-	var res []models.FlowsData
-	for _, crName := range req.CRNames {
-		flows, err := s.collectFlowData(ns, crName)
+	var res []models.TrafficData
+	for _, resource := range req.Resources {
+		flows, err := s.collectFlowData(ns, resource)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.Response{
+			c.JSON(http.StatusInternalServerError, models.TrafficResponse{
 				Message: err.Error(),
 				Data:    nil,
 			})
 			return
 		}
-		res = append(res, models.FlowsData{CRName: crName, Flows: flows})
+		res = append(res, models.TrafficData{Resource: resource, Flows: flows})
 	}
 
-	c.JSON(http.StatusOK, models.Response{
+	c.JSON(http.StatusOK, models.TrafficResponse{
 		Message: constants.GetFlowsSuccessMsg,
 		Data:    res,
 	})

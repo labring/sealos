@@ -53,8 +53,9 @@ func main() {
 	// Initialize HTTP server with routes and authentication
 	server := server.NewServer(dataStore, cfg.Auth.WhiteList)
 	httpServer := &http.Server{
-		Addr:    cfg.HTTP.Addr,
-		Handler: server.Router,
+		ReadHeaderTimeout: 5 * time.Second,
+		Addr:              cfg.HTTP.Addr,
+		Handler:           server.Router,
 	}
 	go func() {
 		log.Printf("Starting HTTP server on %s", cfg.HTTP.Addr)
@@ -78,13 +79,6 @@ func main() {
 		log.Printf("HTTP server shutdown error: %v", err)
 	} else {
 		log.Println("HTTP server shutdown gracefully")
-	}
-
-	select {
-	case <-time.After(5 * time.Second):
-		log.Println("Waited for collector to shutdown")
-	case <-shutdownCtx.Done():
-		log.Println("Shutdown timeout reached")
 	}
 	log.Println("Graceful shutdown completed")
 }
