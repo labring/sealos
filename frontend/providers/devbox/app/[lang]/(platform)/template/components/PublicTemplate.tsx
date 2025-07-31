@@ -167,9 +167,9 @@ const PublicTemplate = ({ search }: { search: string }) => {
       {/* right content */}
       <div className="flex flex-1 flex-col !overflow-visible">
         <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
-            {listTemplateRepository.isLoading ? (
-              Array.from({ length: 9 }).map((_, idx) => (
+          {listTemplateRepository.isLoading ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
+              {Array.from({ length: 9 }).map((_, idx) => (
                 <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-8 w-8 rounded-lg" />
@@ -181,9 +181,11 @@ const PublicTemplate = ({ search }: { search: string }) => {
                     <Skeleton className="h-6 w-16 rounded-md" />
                   </div>
                 </div>
-              ))
-            ) : templateRepositoryList.length > 0 ? (
-              templateRepositoryList.map((tr, idx) => (
+              ))}
+            </div>
+          ) : templateRepositoryList.length > 0 ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
+              {templateRepositoryList.map((tr, idx) => (
                 <TemplateCard
                   key={tr.uid}
                   iconId={tr.iconId || ''}
@@ -194,13 +196,13 @@ const PublicTemplate = ({ search }: { search: string }) => {
                   isPublic
                   forceHover={idx === 0}
                 />
-              ))
-            ) : (
-              <Empty
-                description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
-              />
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <Empty
+              description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
+            />
+          )}
         </ScrollArea>
         <Pagination
           className="pr-2"
