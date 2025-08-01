@@ -421,7 +421,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                       fontWeight={400}
                       color={'#7B838B'}
                       dangerouslySetInnerHTML={{
-                        __html: log ? log : ``
+                        __html: log ? log : 'have_error'
                       }}
                     ></Text>
                   </Flex>
