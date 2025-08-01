@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	utilsysctl "k8s.io/component-helpers/node/util/sysctl"
 	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
-	utilipset "k8s.io/kubernetes/pkg/util/ipset"
+	utilipset "k8s.io/kubernetes/pkg/proxy/ipvs/ipset"
 	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
 	"k8s.io/utils/exec"
 

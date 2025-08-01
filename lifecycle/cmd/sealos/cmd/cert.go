@@ -77,6 +77,8 @@ func newCertCmd() *cobra.Command {
 				return err
 			}
 
+			logger.Info("update certs for cluster %s", cf.GetCluster().GetName())
+
 			rt, err := factory.New(cf.GetCluster(), cf.GetRuntimeConfig())
 			if err != nil {
 				return fmt.Errorf("create runtime failed: %v", err)

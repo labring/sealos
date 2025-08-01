@@ -14,17 +14,17 @@
 
 package types
 
+import "strings"
+
 const (
-	defaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta3
+	defaultKubeadmInitConfiguration = `apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
 localAPIEndpoint:
   # advertiseAddress: 192.168.2.110
   bindPort: 6443
 nodeRegistration:
-  criSocket: /run/containerd/containerd.sock
-
----
-apiVersion: kubeadm.k8s.io/v1beta3
+  criSocket: /run/containerd/containerd.sock`
+	defaultKubeadmClusterConfiguration = `apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: v1.19.8
 #controlPlaneEndpoint: "apiserver.cluster.local:6443"
@@ -40,15 +40,22 @@ apiServer:
   #    - 10.0.0.2
   #    - 10.103.97.2
   extraArgs:
-    #    etcd-servers: https://192.168.2.110:2379
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
-    audit-policy-file: "/etc/kubernetes/audit-policy.yml"
-    audit-log-path: "/var/log/kubernetes/audit.log"
-    audit-log-format: json
-    audit-log-maxbackup: '10'
-    audit-log-maxsize: '100'
-    audit-log-maxage: '7'
-    enable-aggregator-routing: 'true'
+  - name: audit-log-format
+    value: json
+  - name: audit-log-maxage
+    value: "7"
+  - name: audit-log-maxbackup
+    value: "10"
+  - name: audit-log-maxsize
+    value: "100"
+  - name: audit-log-path
+    value: /var/log/kubernetes/audit.log
+  - name: audit-policy-file
+    value: /etc/kubernetes/audit-policy.yml
+  - name: enable-aggregator-routing
+    value: "true"
+  - name: feature-gates
+    value: TTLAfterFinished=true,EphemeralContainers=true
   extraVolumes:
     - name: "audit"
       hostPath: "/etc/kubernetes"
@@ -65,9 +72,12 @@ apiServer:
       pathType: File
 controllerManager:
   extraArgs:
-    bind-address: 0.0.0.0
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
-    cluster-signing-duration: 876000h
+  - name: bind-address
+    value: 0.0.0.0
+  - name: cluster-signing-duration
+    value: 876000h
+  - name: feature-gates
+    value: TTLAfterFinished=true,EphemeralContainers=true
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime
@@ -76,8 +86,10 @@ controllerManager:
       pathType: File
 scheduler:
   extraArgs:
-    bind-address: 0.0.0.0
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+  - name: bind-address
+    value: 0.0.0.0
+  - name: feature-gates
+    value: TTLAfterFinished=true,EphemeralContainers=true
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime
@@ -87,19 +99,16 @@ scheduler:
 etcd:
   local:
     extraArgs:
-      listen-metrics-urls: http://0.0.0.0:2381
-
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
+    - name: listen-metrics-urls
+      value: http://0.0.0.0:2381`
+	defaultKubeadmKubeProxyConfiguration = `apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 metricsBindAddress: 0.0.0.0
 #ipvs:
 #  excludeCIDRs:
-#    - "10.103.97.2/32"
-
----
-apiVersion: kubelet.config.k8s.io/v1beta1
+#    - "10.103.97.2/32"`
+	defaultKubeadmKubeletConfiguration = `apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 authentication:
   anonymous:
@@ -172,11 +181,14 @@ registerNode: true
 nodeStatusMaxImages: 50
 enableProfilingHandler: true
 enableSystemLogHandler: true
+logging:
+  format: text
+  flushFrequency: 5000000000
+  verbosity: 0
 featureGates:
   TTLAfterFinished: true
-  EphemeralContainers: true
----
-apiVersion: kubeadm.k8s.io/v1beta3
+  EphemeralContainers: true`
+	defaultKubeadmJoinConfiguration = `apiVersion: kubeadm.k8s.io/v1beta4
 kind: JoinConfiguration
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
@@ -188,3 +200,7 @@ controlPlane:
     # advertiseAddress: 192.168.56.7
     bindPort: 6443`
 )
+
+func DefaultKubeadmInitConfiguration() string {
+	return strings.Join([]string{defaultKubeadmInitConfiguration, defaultKubeadmClusterConfiguration, defaultKubeadmKubeProxyConfiguration, defaultKubeadmKubeletConfiguration, defaultKubeadmJoinConfiguration}, "\n---\n")
+}

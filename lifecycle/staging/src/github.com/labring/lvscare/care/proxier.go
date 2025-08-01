@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/kubernetes/pkg/util/ipvs"
+	ipvs "k8s.io/kubernetes/pkg/proxy/ipvs/util"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
