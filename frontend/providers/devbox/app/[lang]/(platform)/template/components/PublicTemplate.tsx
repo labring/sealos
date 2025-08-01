@@ -180,7 +180,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
       <div className="flex flex-1 flex-col !overflow-visible">
         <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
           {listTemplateRepository.isLoading ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,345px,440px),1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
               {Array.from({ length: 9 }).map((_, idx) => (
                 <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
                   <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ const PublicTemplate = ({ search }: { search: string }) => {
               ))}
             </div>
           ) : templateRepositoryList.length > 0 ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,345px,440px),1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
               {templateRepositoryList.map((tr, idx) => (
                 <TemplateCard
                   key={tr.uid}

@@ -76,7 +76,7 @@ export default function PrivateTemplate({ search }: { search: string }) {
     <div className="flex h-[calc(100vh-200px)] flex-col gap-3">
       <ScrollArea className="h-[calc(100vh-200px)] pr-2">
         {listPrivateTemplateRepository.isLoading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,345px,440px),1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,340px,540px),1fr))] gap-3">
             {Array.from({ length: 9 }).map((_, idx) => (
               <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
                 <div className="flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function PrivateTemplate({ search }: { search: string }) {
             ))}
           </div>
         ) : privateTemplateRepositoryList.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,345px,440px),1fr))] gap-3">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,340px,640px),1fr))] gap-3">
             {privateTemplateRepositoryList.map((tr) => (
               <TemplateCard
                 key={tr.uid}
