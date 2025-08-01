@@ -22,7 +22,6 @@ import MyFormControl from '@/components/FormControl';
 import { useTranslation } from 'next-i18next';
 import { mountPathToConfigMapKey } from '@/utils/tools';
 import { MyTooltip } from '@sealos/ui';
-import { PVC_STORAGE_MAX } from '@/store/static';
 
 export type StoreType = {
   id?: string;
@@ -37,12 +36,16 @@ const StoreModal = ({
     path: '',
     value: 1
   },
+  minValue,
+  maxValue,
   listNames,
   isEditStore,
   successCb,
   closeCb
 }: {
   defaultValue?: StoreType;
+  minValue: number;
+  maxValue: number;
   listNames: string[];
   isEditStore: boolean;
   successCb: (e: StoreType) => void;
@@ -50,10 +53,7 @@ const StoreModal = ({
 }) => {
   const { t } = useTranslation();
   const type = useMemo(() => (!!defaultValue.id ? 'create' : 'edit'), [defaultValue]);
-  const minVal = useMemo(
-    () => (isEditStore ? defaultValue.value : 1),
-    [defaultValue.value, isEditStore]
-  );
+
   const {
     register,
     setValue,
@@ -83,8 +83,8 @@ const StoreModal = ({
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                 {t('capacity')}
               </Box>
-              <MyTooltip label={`${t('Storage Range')}: ${minVal}~${PVC_STORAGE_MAX} Gi`}>
-                <NumberInput max={PVC_STORAGE_MAX} min={minVal} step={1} position={'relative'}>
+              <MyTooltip label={`${t('Storage Range')}: ${minValue}~${maxValue} Gi`}>
+                <NumberInput max={maxValue} min={minValue} step={1} position={'relative'}>
                   <Box
                     position={'absolute'}
                     right={10}
@@ -108,16 +108,16 @@ const StoreModal = ({
                     {...register('value', {
                       required: t('Storage Value can not empty') || 'Storage Value can not empty',
                       min: {
-                        value: minVal,
-                        message: `${t('Min Storage Value')} ${minVal} Gi`
+                        value: minValue,
+                        message: `${t('Min Storage Value')} ${minValue} Gi`
                       },
                       max: {
-                        value: PVC_STORAGE_MAX,
-                        message: `${t('Max Storage Value')} ${PVC_STORAGE_MAX} Gi`
+                        value: maxValue,
+                        message: `${t('Max Storage Value')} ${maxValue} Gi`
                       },
                       valueAsNumber: true
                     })}
-                    max={PVC_STORAGE_MAX}
+                    max={maxValue}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />
