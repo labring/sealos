@@ -131,7 +131,7 @@ const Network = () => {
         return (
           <div className="flex items-center gap-2">
             {displayAddress && (
-              <>
+              <div className="min-w-fit">
                 {statusMap[displayAddress]?.ready ? (
                   <div className="flex cursor-pointer items-center gap-2 rounded-full border-[0.5px] border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs/4 font-medium">
                     <div className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
@@ -190,12 +190,12 @@ const Network = () => {
                     </TooltipContent>
                   </Tooltip>
                 )}
-              </>
+              </div>
             )}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div
-                  className="guide-network-address cursor-pointer text-sm/5 break-words hover:underline"
+                  className="guide-network-address cursor-pointer text-sm/5 break-all hover:underline"
                   onClick={() => window.open(`${protocolMap[item.protocol]}${address}`, '_blank')}
                 >
                   {protocolMap[item.protocol]}
@@ -227,7 +227,7 @@ const Network = () => {
       </div>
       {/* table */}
       {devboxDetail?.networks && devboxDetail.networks.length > 0 ? (
-        <ScrollArea className="w-full min-w-0 pr-2">
+        <ScrollArea className="w-full min-w-0">
           <Table className="w-full table-fixed">
             <TableHeader>
               <TableRow>

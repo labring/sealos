@@ -3,14 +3,20 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { useRouter } from '@/i18n';
+import { useSearchParams } from 'next/navigation';
 
 const Header = () => {
   const router = useRouter();
   const t = useTranslations();
-
+  const searchParams = useSearchParams();
   const handleBack = useCallback(() => {
-    router.push('/');
-  }, [router]);
+    const from = searchParams.get('from');
+    if (from === 'create') {
+      router.push('/devbox/create?from=template');
+    } else {
+      router.push('/');
+    }
+  }, [router, searchParams]);
 
   return (
     <div className="flex h-24 w-full cursor-pointer items-center justify-between self-stretch border-b-1 px-10 py-8">

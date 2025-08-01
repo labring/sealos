@@ -1,5 +1,5 @@
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
@@ -15,13 +15,14 @@ import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import TemplateCard from './TemplateCard';
 import { Pagination } from '@/components/ui/pagination';
 import Empty from './Empty';
 
 const PublicTemplate = ({ search }: { search: string }) => {
-  const { selectedTagList, getSelectedTagList, resetTags } = useTagSelectorStore();
+  const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag } = useTagSelectorStore();
   const tagsQuery = useQuery(['template-repository-tags'], listTag, {
     staleTime: Infinity,
     cacheTime: Infinity
@@ -30,6 +31,18 @@ const PublicTemplate = ({ search }: { search: string }) => {
   let tags = (tagsQuery.data?.tagList || []).sort((a, b) =>
     a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0
   );
+
+  // Set official tag as default selected only on first load
+  const hasSetDefaultRef = useRef(false);
+  useEffect(() => {
+    if (!hasSetDefaultRef.current && tags.length > 0) {
+      const officialTag = tags.find((tag) => tag.name === 'official');
+      if (officialTag && selectedTagList.size === 0) {
+        setSelectedTag(officialTag.uid, true);
+        hasSetDefaultRef.current = true;
+      }
+    }
+  }, [tags, selectedTagList.size, setSelectedTag]);
 
   const t = useTranslations();
   const { guide3, setGuide3 } = useGuideStore();
@@ -88,6 +101,9 @@ const PublicTemplate = ({ search }: { search: string }) => {
         queryBody.tags,
         queryBody.search
       );
+    },
+    {
+      keepPreviousData: true
     }
   );
   const templateRepositoryList = useMemo(
@@ -163,21 +179,38 @@ const PublicTemplate = ({ search }: { search: string }) => {
       {/* right content */}
       <div className="flex flex-1 flex-col !overflow-visible">
         <ScrollArea className="select-runtime-container h-[calc(100vh-200px)] pr-2">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(210px,300px,440px),1fr))] gap-3">
-            {templateRepositoryList.map((tr, idx) => (
-              <TemplateCard
-                key={tr.uid}
-                iconId={tr.iconId || ''}
-                templateRepositoryName={tr.name}
-                templateRepositoryDescription={tr.description}
-                templateRepositoryUid={tr.uid}
-                tags={tr.templateRepositoryTags.map((t) => t.tag)}
-                isPublic
-                forceHover={idx === 0}
-              />
-            ))}
-          </div>
-          {templateRepositoryList.length === 0 && (
+          {listTemplateRepository.isLoading ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
+              {Array.from({ length: 9 }).map((_, idx) => (
+                <div key={idx} className="flex flex-col gap-4 rounded-xl border p-4">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                    <Skeleton className="h-6 w-16 rounded-md" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : templateRepositoryList.length > 0 ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(clamp(200px,300px,440px),1fr))] gap-3">
+              {templateRepositoryList.map((tr, idx) => (
+                <TemplateCard
+                  key={tr.uid}
+                  iconId={tr.iconId || ''}
+                  templateRepositoryName={tr.name}
+                  templateRepositoryDescription={tr.description}
+                  templateRepositoryUid={tr.uid}
+                  tags={tr.templateRepositoryTags.map((t) => t.tag)}
+                  isPublic
+                  forceHover={idx === 0}
+                />
+              ))}
+            </div>
+          ) : (
             <Empty
               description={hasFilter ? t('no_search_template_tip') : t('no_template_action')}
             />

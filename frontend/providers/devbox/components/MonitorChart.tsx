@@ -48,7 +48,7 @@ const MonitorChart = ({
 }: MonitorChartProps) => {
   const { screenWidth } = useGlobalStore();
   const xData =
-    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('YYYY-MM-DD HH:mm') : '')) ||
+    data?.xData?.map((time) => (time ? dayjs(time * 1000).format('MM-DD HH:mm') : '')) ||
     new Array(30).fill(0);
   const yData = data?.yData || new Array(30).fill('');
 
@@ -78,7 +78,10 @@ const MonitorChart = ({
       boundaryGap: false,
       data: xData,
       axisLabel: {
-        show: isShowLabel
+        show: isShowLabel,
+        align: (value: string, index: number, texts: string[]) => {
+          return index === texts.length - 1 ? 'right' : 'left';
+        }
       },
       axisTick: {
         show: false
@@ -108,8 +111,8 @@ const MonitorChart = ({
     grid: {
       containLabel: isShowLabel,
       show: false,
-      left: 0,
-      right: isShowLabel ? 14 : 0,
+      left: '2%',
+      right: isShowLabel ? '4%' : 0,
       top: 10,
       bottom: 2
     },

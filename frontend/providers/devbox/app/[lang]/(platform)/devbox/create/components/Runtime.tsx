@@ -115,7 +115,9 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     if (isEdit) return;
     const name = searchParams.get('name');
     if (name) return;
-    router.push('/template');
+    const formData = getValues();
+    localStorage.setItem('devbox_create_form_data', JSON.stringify(formData));
+    router.push('/template?from=create');
   };
 
   useEffect(() => {
@@ -124,20 +126,25 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
       const runtimeTemplate = templateRepositoryQuery.data?.templateRepositoryList.find(
         (item) => item.iconId === runtime
       );
-      if (runtimeTemplate) {
+      // Only update if the template is different
+      if (runtimeTemplate && (!startedTemplate || startedTemplate.uid !== runtimeTemplate.uid)) {
         setStartedTemplate(runtimeTemplate);
         setValue('templateRepositoryUid', runtimeTemplate.uid);
       }
-    } else if (startedTemplate) {
+    } else if (startedTemplate && !templateRepositoryUid) {
+      // Only set templateRepositoryUid if it's not already set
       setValue('templateRepositoryUid', startedTemplate.uid);
     }
+    // do not add dependency
   }, [
+    startedTemplate,
     router,
     setValue,
     isEdit,
     templateRepositoryQuery.isSuccess,
     searchParams,
-    templateRepositoryQuery.data?.templateRepositoryList
+    templateRepositoryQuery.data?.templateRepositoryList,
+    templateRepositoryUid
   ]);
 
   useEffect(() => {

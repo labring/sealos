@@ -56,6 +56,10 @@ const DevboxCreatePage = () => {
   const [captureFrom, setCaptureFrom] = useState('');
   const [captureScrollTo, setCaptureScrollTo] = useState('');
   const [captureDevboxName, setCaptureDevboxName] = useState('');
+  const formHook = useForm<DevboxEditTypeV2>({
+    defaultValues: defaultDevboxEditValueV2
+  });
+
   useEffect(() => {
     const name = searchParams.get('name');
     const from = searchParams.get('from');
@@ -74,8 +78,19 @@ const DevboxCreatePage = () => {
           );
         }
       }
+    } else if (from === 'template') {
+      const savedFormData = localStorage.getItem('devbox_create_form_data');
+      if (savedFormData) {
+        try {
+          const formData = JSON.parse(savedFormData);
+          formHook.reset(formData);
+          localStorage.removeItem('devbox_create_form_data');
+        } catch (error) {
+          console.error('Failed to parse saved form data:', error);
+        }
+      }
     }
-  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom]);
+  }, [searchParams, router, captureDevboxName, captureScrollTo, captureFrom, formHook]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const isEdit = useMemo(() => !!devboxName, []);
@@ -84,10 +99,6 @@ const DevboxCreatePage = () => {
 
   const { openConfirm, ConfirmChild } = useConfirm({
     content: applyMessage
-  });
-
-  const formHook = useForm<DevboxEditTypeV2>({
-    defaultValues: defaultDevboxEditValueV2
   });
 
   // update yamlList every time yamlList change

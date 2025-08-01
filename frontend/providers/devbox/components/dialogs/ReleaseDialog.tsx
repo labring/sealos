@@ -118,14 +118,14 @@ const ReleaseDialog = ({ onClose, onSuccess, devbox, open }: ReleaseDialogProps)
         onClose();
       }}
     >
-      <DialogContent className="min-w-[450px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('release_version')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-start gap-4 self-stretch">
           {/* prompt info */}
-          <div className="flex flex-col items-start gap-3 rounded-lg bg-zinc-100 p-4 text-sm/5">
+          <div className="flex w-full flex-col items-start gap-3 rounded-lg bg-zinc-100 p-4 text-sm/5">
             <div className="flex flex-col items-start gap-1">
               <span>{t('release_version_info')}</span>
               <div className="flex items-center gap-1">

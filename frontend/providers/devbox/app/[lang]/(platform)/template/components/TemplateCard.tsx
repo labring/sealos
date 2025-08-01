@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
@@ -30,6 +30,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import TemplateVersionControlDrawer from '@/components/drawers/TemplateVersionControlDrawer';
 import EditTemplateRepositoryDrawer from '@/components/drawers/EditTemplateRepositoryDrawer';
@@ -75,6 +76,8 @@ const TemplateCard = ({
   const [isEditTemplateVersionOpen, setIsEditTemplateVersionOpen] = useState(false);
   const [isEditTemplateOpen, setIsEditTemplateOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<string>('');
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [officialImageLoaded, setOfficialImageLoaded] = useState(false);
 
   const { data: templateVersions } = useQuery({
     queryKey: ['template-versions', templateRepositoryUid],
@@ -86,6 +89,28 @@ const TemplateCard = ({
       return templateList;
     }
   });
+
+  useEffect(() => {
+    const preloadImage = (src: string): Promise<void> => {
+      return new Promise((resolve) => {
+        const img = document.createElement('img');
+        img.onload = () => resolve();
+        img.src = src;
+      });
+    };
+
+    const loadImages = async () => {
+      await preloadImage(`/images/runtime/${iconId}.svg`);
+      setImageLoaded(true);
+
+      if (inPublicStore && tags.findIndex((tag) => tag.name === 'official') !== -1) {
+        await preloadImage('/images/official.svg');
+        setOfficialImageLoaded(true);
+      }
+    };
+
+    loadImages();
+  }, [iconId, inPublicStore, tags]);
 
   const handleSelectTemplate = () => {
     setStartedTemplate({
@@ -115,12 +140,19 @@ const TemplateCard = ({
           <div className="flex items-center justify-between gap-2 self-stretch">
             <div className="flex items-center gap-2">
               {/* logo */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
+              <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border-[0.5px] border-zinc-200 bg-zinc-50">
+                {!imageLoaded && <Skeleton className="absolute inset-0 h-8 w-8 rounded-lg" />}
                 <Image
                   width={32}
                   height={32}
                   src={`/images/runtime/${iconId}.svg`}
                   alt={templateRepositoryName}
+                  className={cn(
+                    'transition-opacity duration-200',
+                    imageLoaded ? 'opacity-100' : 'opacity-0'
+                  )}
+                  onLoad={() => setImageLoaded(true)}
+                  priority
                 />
               </div>
               {/* name */}
@@ -137,7 +169,23 @@ const TemplateCard = ({
                 tags.findIndex((tag) => tag.name === 'official') !== -1 ? (
                   <Tooltip>
                     <TooltipTrigger>
-                      <Image src="/images/official.svg" alt="official" width={24} height={24} />
+                      <div className="relative h-6 w-6">
+                        {!officialImageLoaded && (
+                          <Skeleton className="absolute inset-0 h-6 w-6 rounded-full" />
+                        )}
+                        <Image
+                          src="/images/official.svg"
+                          alt="official"
+                          width={24}
+                          height={24}
+                          className={cn(
+                            'transition-opacity duration-200',
+                            officialImageLoaded ? 'opacity-100' : 'opacity-0'
+                          )}
+                          onLoadingComplete={() => setOfficialImageLoaded(true)}
+                          priority
+                        />
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>{t('tags_enum.official')}</TooltipContent>
                   </Tooltip>

@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Loading } from '@/components/ui/loading';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 6);
 
@@ -145,11 +146,23 @@ export default function DeployDevboxDrawer({
                     <TableRow key={item.name}>
                       <TableCell className="w-[175px] truncate text-black">{item.name}</TableCell>
                       <TableCell>
-                        {item.imageName.startsWith(
-                          `${env.registryAddr}/${env.namespace}/${devboxName}`
-                        )
-                          ? item.imageName.replace(`${env.registryAddr}/${env.namespace}/`, '')
-                          : '-'}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="w-full cursor-pointer truncate">
+                              {item.imageName.startsWith(
+                                `${env.registryAddr}/${env.namespace}/${devboxName}`
+                              )
+                                ? item.imageName.replace(
+                                    `${env.registryAddr}/${env.namespace}/`,
+                                    ''
+                                  )
+                                : '-'}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{item.imageName}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell>{item.createTime}</TableCell>
                       <TableCell className="text-right">

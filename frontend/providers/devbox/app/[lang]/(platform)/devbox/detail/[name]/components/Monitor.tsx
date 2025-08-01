@@ -27,7 +27,7 @@ const Monitor = () => {
 
   useEffect(() => {
     handleRefresh();
-  }, []);
+  }, [handleRefresh]);
 
   return (
     <div className="flex h-full flex-1 flex-col items-start gap-2">

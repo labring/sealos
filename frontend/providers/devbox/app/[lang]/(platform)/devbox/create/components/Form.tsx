@@ -56,7 +56,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
   return (
     <div className="flex justify-center gap-6">
       {/* left grid */}
-      <div className="flex min-w-65 flex-col gap-4">
+      <div className="flex min-w-65 flex-col gap-4 text-sm">
         <Tabs defaultValue="form" onValueChange={handleTabChange}>
           <TabsList className="h-11 w-full">
             <TabsTrigger value="form">{t('config_form')}</TabsTrigger>
@@ -81,7 +81,7 @@ const Form = ({ isEdit, countGpuInventory }: FormProps) => {
         <DevboxName isEdit={isEdit} />
         {/* Usage */}
         <div className="flex flex-col gap-6 rounded-2xl border border-zinc-200 bg-white p-8">
-          <span className="text-xl/7 font-medium">{t('usage')}</span>
+          <span className="text-lg/7 font-medium">{t('usage')}</span>
           <Gpu countGpuInventory={countGpuInventory} />
           <Cpu />
           <Memory />
