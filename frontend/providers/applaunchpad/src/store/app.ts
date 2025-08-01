@@ -53,6 +53,10 @@ export const useAppStore = create<State>()(
         const appStatus =
           pods.filter((pod) => pod.status.value === PodStatusEnum.running).length > 0
             ? appStatusMap.running
+            : // Show error state when all pods are terminated.
+            pods.filter((pod) => pod.status.value === PodStatusEnum.terminated).length ===
+              pods.length
+            ? appStatusMap.error
             : appStatusMap.creating;
 
         set((state) => {
