@@ -6,6 +6,7 @@ import { sealosApp } from 'sealos-desktop-sdk/app';
 import { useUserStore } from '@/stores/user';
 import { DevboxListItemTypeV2, DevboxDetailTypeV2 } from '@/types/devbox';
 import { restartDevbox, startDevbox } from '@/api/devbox';
+import { track } from '@sealos/gtm';
 
 export const useControlDevbox = (refetchDevboxData: () => void) => {
   const { isOutStandingPayment } = useUserStore();
@@ -30,6 +31,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
           return;
         }
         await restartDevbox({ devboxName: devbox.name });
+        track({
+          event: 'deployment_restart',
+          module: 'devbox',
+          context: 'app'
+        });
         toast.success(t('restart_success'));
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('restart_error'));
@@ -49,6 +55,11 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
         }
         await startDevbox({ devboxName: devbox.name });
         toast.success(t('start_success'));
+        track({
+          event: 'deployment_start',
+          module: 'devbox',
+          context: 'app'
+        });
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('start_error'));
         console.error(error);
@@ -68,6 +79,12 @@ export const useControlDevbox = (refetchDevboxData: () => void) => {
             defaultCommand
           },
           messageData: { type: 'new terminal', command: defaultCommand }
+        });
+        track({
+          event: 'deployment_action',
+          event_type: 'terminal_open',
+          module: 'devbox',
+          context: 'app'
         });
       } catch (error: any) {
         toast.error(typeof error === 'string' ? error : error.message || t('jump_terminal_error'));
