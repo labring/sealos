@@ -6,7 +6,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const apiUrl = 'https://chat2dbgateway.sealosbja.site/api/open/enterprise/sync_data_source_a';
+  const apiUrl = `${process.env.CHAT2DB_GATEWAY_BASE_URL}/api/open/enterprise/sync_data_source_a`;
 
   const response = await fetch(apiUrl, {
     method: 'POST',

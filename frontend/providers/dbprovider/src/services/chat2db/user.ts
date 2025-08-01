@@ -2,13 +2,13 @@ import { GET, POST } from '@/services/request';
 import { encryptCbcBrowser } from '@/api/encrypt';
 import { GenerateLoginUrlOpts, UserInfo, CreateApiResponse } from '@/constants/chat2db';
 
-const CHAT2DB_BASE = process.env.NEXT_PUBLIC_CHAT2DB_BASE;
+const clientDomain = process.env.CLIENT_DOMAIN_NAME;
 
 export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<string> {
   const { userId, userNS, orgId, secretKey, ui = {} } = opts;
   const raw = `${userId}/${userNS}:${orgId}`;
   const key = await encryptCbcBrowser(raw, secretKey);
-  console.log(raw);
+
   const p = new URLSearchParams({
     key,
     theme: ui.theme ?? 'light',
@@ -16,7 +16,15 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
     language: ui.language ?? navigator.language,
     hideAvatar: String(ui.hideAvatar ?? true)
   });
-  return `${CHAT2DB_BASE}/workspace?${p.toString()}`;
+
+  console.log('clientDomain', clientDomain);
+  if (!clientDomain) {
+    throw new Error('CLIENT_DOMAIN_NAME environment variable is not set');
+  }
+
+  const baseUrl = clientDomain;
+
+  return `${baseUrl}/workspace?${p.toString()}`;
 }
 
 export function syncAuthUser(apiKey: string, data: UserInfo) {

@@ -5,6 +5,7 @@ export default function ManageDataPage() {
   const router = useRouter();
   const [src, setSrc] = useState('');
 
+  const baseURL = process.env.CLIENT_DOMAIN_NAME;
   useEffect(() => {
     if (!router.isReady) return;
 
@@ -20,7 +21,7 @@ export default function ManageDataPage() {
       hideAvatar: String(hideAvatar ?? true)
     });
 
-    setSrc(`https://chat2dbclient.sealosbja.site/workspace?${p.toString()}`);
+    setSrc(`${baseURL}/workspace?${p.toString()}`);
   }, [router.isReady, router.query]);
 
   if (!router.isReady || !src) return null;

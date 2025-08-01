@@ -203,6 +203,25 @@ const DBList = ({
 
         const { host, port, connection, username, password } = conn;
 
+        let connectionUrl = connection;
+        switch (db.dbType) {
+          case 'mongodb':
+            connectionUrl = `mongodb://${host}:${port}`;
+            break;
+          case 'apecloud-mysql':
+            connectionUrl = `jdbc:mysql://${host}:${port}`;
+            break;
+          case 'postgresql':
+            connectionUrl = `jdbc:postgresql://${host}:${port}`;
+            break;
+          case 'redis':
+            connectionUrl = `jdbc:redis://${host}:${port}`;
+            break;
+          default:
+            // keep original connection
+            break;
+        }
+
         const payload = {
           alias: db.name,
           environmentId: 2 as 1 | 2,
@@ -271,6 +290,8 @@ const DBList = ({
             hideAvatar: yowantLayoutConfig.hideAvatar
           }
         });
+
+        console.log('baseUrl', baseUrl);
 
         const url = new URL(baseUrl);
         url.searchParams.set('dataSourceIds', String(currentDataSourceId));
