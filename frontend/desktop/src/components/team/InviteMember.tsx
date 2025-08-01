@@ -96,7 +96,7 @@ export default function InviteMember({
     });
     const code = data.data?.code!;
     const link = generateLink(code);
-    await copyData(link);
+    await copyData(link, t('v2:invite_link_copied'));
   };
   return (
     <>

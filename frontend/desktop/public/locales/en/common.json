@@ -149,7 +149,7 @@
   "invalid_verification_code": "The input verification code is incorrect, please check if there is an input error.",
   "invitation_reminder": "Invitation reminder",
   "invite_member": "Invite Member",
-  "invite_members_to_workspace_": "Invite members to workspace {{workspace}}",
+  "invite_members_to_workspace": "Invite members to workspace {{workspace}}",
   "inviter_id_tips": "Invitation code (Only mobile registration is supported, optional)",
   "irreversibleactiontips": "This action is irreversible, please proceed with caution.",
   "jump_over": "Jump Over",

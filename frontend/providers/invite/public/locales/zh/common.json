@@ -40,5 +40,7 @@
   "reward_status": "奖励状态",
   "serial_number": "序号",
   "total_earnings": "总收益",
-  "user_list": "用户列表"
+  "user_list": "用户列表",
+  "Cancel": "取消",
+  "Copy Failed": "复制失败"
 }

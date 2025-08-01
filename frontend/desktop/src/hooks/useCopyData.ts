@@ -1,12 +1,15 @@
 import { useToast } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * copy text data
  */
 export const useCopyData = () => {
   const toast = useToast();
+  const { t } = useTranslation();
+
   return {
-    copyData: async (data: string, title: string = '复制成功') => {
+    copyData: async (data: string, title: string = t('v2:copy_success')) => {
       try {
         if (navigator.clipboard) {
           await navigator.clipboard.writeText(data);

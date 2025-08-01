@@ -392,5 +392,9 @@
   "within_1_day": "Within 1 day",
   "within_1_hour": "Within 1 hour",
   "within_5_minute": "Within 5 minute",
-  "click_to_copy_tooltip": "Click to copy"
+  "click_to_copy_tooltip": "Click to copy",
+  "GPU": "GPU",
+  "Page": "Pages",
+  "shared": "Shared",
+  "Copy Failed": "Failed to copy"
 }

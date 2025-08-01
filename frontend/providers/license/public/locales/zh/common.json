@@ -14,5 +14,9 @@
   "Cluster ID": "集群 ID: {{id}}",
   "Purchase Tip": "激活 / 购买",
   "cluster_info": "集群信息",
-  "expire_date": "到期时间"
+  "expire_date": "到期时间",
+  "file.upload error description": "文件上传失败",
+  "Cancel": "取消",
+  "file.Select a maximum of 10 files": "至多选择 10 个文件",
+  "Copy Failed": "复制失败"
 }

@@ -343,7 +343,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     <Input
                       width={'300px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Such as')} /bin/bash -c`}
+                      placeholder={`${t('example')} /bin/bash -c`}
                       {...register('runCMD')}
                     />
                   </Box>
@@ -354,7 +354,7 @@ const Form = ({ formHook }: { formHook: UseFormReturn<CronJobEditType, any> }) =
                     <Input
                       width={'300px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder={`${t('Such as')} sleep 10 && /entrypoint.sh db createdb`}
+                      placeholder={`${t('example')} sleep 10 && /entrypoint.sh db createdb`}
                       {...register('cmdParam')}
                     />
                   </Box>

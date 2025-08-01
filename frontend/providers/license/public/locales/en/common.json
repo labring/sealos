@@ -14,5 +14,9 @@
   "Cluster ID": "Cluster ID: {{id}}",
   "Purchase Tip": "Activate / Purchase",
   "cluster_info": "Cluster Info",
-  "expire_date": "Expire Date"
+  "expire_date": "Expire Date",
+  "file.upload error description": "Failed to upload files",
+  "Cancel": "Cancel",
+  "file.Select a maximum of 10 files": "You can select no more than 10 files",
+  "Copy Failed": "Failed to copy"
 }
