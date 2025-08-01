@@ -308,6 +308,58 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       })
     );
 
+    // Update domain name in AppCR link (only match prefix for now)
+    const existingAppCr = (await k8sCustomObjects
+      .getNamespacedCustomObject('app.sealos.io', 'v1', namespace, 'apps', appName)
+      .catch((error) => {
+        if (error.body.code !== 404) {
+          throw new Error('Unexpected error when getting AppCR: ' + error.body.message);
+        }
+
+        return null;
+      })) as {
+      body: any;
+    };
+
+    if (existingAppCr) {
+      const plainUrlRe = new RegExp(/^https?:\/\/[^\/]+\/?$/);
+      if (plainUrlRe.test(existingAppCr.body.spec.data.url)) {
+        const targetIngressPatch = patch.find(
+          (item) =>
+            item.kind === 'Ingress' &&
+            item.type === 'patch' &&
+            (item.value.spec.rules[0]?.http.paths[0]?.path === '/' ||
+              item.value.spec.rules[0]?.http.paths[0]?.path === '/()(.*)') &&
+            item.value.spec.rules[0]?.http.paths[0]?.pathType === 'Prefix'
+        );
+
+        if (!targetIngressPatch) return;
+
+        // Is ingress patch, checked above.
+        const host = (targetIngressPatch as any).value.spec.rules[0]?.host;
+        if (!host) return;
+
+        const appCrUrlPatch = {
+          op: 'replace',
+          path: '/spec/data/url',
+          value: `https://${host}`
+        };
+
+        await k8sCustomObjects.patchNamespacedCustomObject(
+          'app.sealos.io',
+          'v1',
+          namespace,
+          'apps',
+          appName,
+          [appCrUrlPatch],
+          undefined,
+          undefined,
+          undefined,
+          { headers: { 'Content-type': PatchUtils.PATCH_FORMAT_JSON_PATCH } }
+        );
+      }
+    }
+
     jsonRes(res);
   } catch (err: any) {
     jsonRes(res, {
