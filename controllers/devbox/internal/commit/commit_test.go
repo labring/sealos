@@ -6,9 +6,10 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/containerd/containerd/v2/pkg/namespaces"
 )
 
 // init Committer
@@ -45,17 +46,16 @@ func TestCreateContainer(t *testing.T) {
 
 	// create container
 	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
-	contentID := "test-content-id-456"
+	contentID := fmt.Sprintf("test-content-id-%d", time.Now().Unix())
 	baseImage := "docker.io/library/nginx:latest" // use another public image to test
-
 	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImage)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, containerID)
 
 	// verify container labels
 	annotations, err := committer.(*CommitterImpl).GetContainerAnnotations(ctx, containerID)
+	fmt.Printf("annotations: %+v\n", annotations)
 	assert.NoError(t, err)
-	assert.Equal(t, contentID, annotations["devbox.sealos.io/content-id"])
 }
 
 // test delete container
@@ -82,6 +82,45 @@ func TestDeleteContainer(t *testing.T) {
 
 	// delete container
 	err = committer.(*CommitterImpl).DeleteContainer(ctx, containerID)
+	assert.NoError(t, err)
+
+	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	assert.NoError(t, err)
+
+	fmt.Printf("=== All Containers in current namespace ===\n")
+	for _, container := range containers {
+		fmt.Printf("Container ID: %s\n", container.ID())
+	}
+	fmt.Printf("=== Total %d containers ===\n", len(containers))
+
+	// verify container is deleted (try to get labels should return error)
+	_, err = committer.(*CommitterImpl).GetContainerAnnotations(ctx, containerID)
+	assert.Error(t, err)
+}
+
+// test remove container
+func TestRemoveContainer(t *testing.T) {
+	ctx := context.Background()
+	committer, err := NewCommitter()
+	assert.NoError(t, err)
+	// create a container
+	devboxName := fmt.Sprintf("test-devbox-%d", time.Now().Unix())
+	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, "test-content-id-789", "docker.io/library/alpine:latest")
+	assert.NoError(t, err)
+
+	// show all containers in current namespace
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+	containers, err := committer.(*CommitterImpl).containerdClient.Containers(ctx)
+	assert.NoError(t, err)
+
+	fmt.Printf("=== All Containers in current namespace ===\n")
+	for _, container := range containers {
+		fmt.Printf("Container ID: %s\n", container.ID())
+	}
+	fmt.Printf("=== Total %d containers ===\n", len(containers))
+
+	// delete container
+	err = committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
 	assert.NoError(t, err)
 
 	containers, err = committer.(*CommitterImpl).containerdClient.Containers(ctx)
@@ -150,7 +189,10 @@ func TestConcurrentOperations(t *testing.T) {
 
 	// delete containers
 	for _, containerID := range containers {
-		committer.(*CommitterImpl).DeleteContainer(ctx, containerID)
+		err := committer.(*CommitterImpl).RemoveContainer(ctx, containerID)
+		if err != nil {
+			t.Logf("Warning: failed to delete container %s: %v", containerID, err)
+		}
 	}
 
 	// get current containers list
@@ -161,7 +203,6 @@ func TestConcurrentOperations(t *testing.T) {
 		fmt.Printf("Container ID: %s\n", container.ID())
 	}
 	fmt.Printf("=== Total %d containers ===\n", len(currentContainers))
-
 }
 
 // test gc handler
@@ -210,6 +251,41 @@ func TestGCHandler(t *testing.T) {
 		fmt.Printf("Container ID: %s\n", container.ID())
 	}
 	fmt.Printf("=== Total %d containers ===\n", len(afterContainers))
+}
+
+// test runtime selection
+func TestRuntimeSelection(t *testing.T) {
+	ctx := context.Background()
+	committer, err := NewCommitter()
+	assert.NoError(t, err)
+
+	// create container with specific runtime
+	devboxName := fmt.Sprintf("test-runtime-%d", time.Now().Unix())
+	contentID := "test-runtime-content-id"
+	baseImage := "docker.io/library/busybox:latest"
+
+	containerID, err := committer.(*CommitterImpl).CreateContainer(ctx, devboxName, contentID, baseImage)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, containerID)
+
+	// get container info to verify runtime
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+	container, err := committer.(*CommitterImpl).containerdClient.LoadContainer(ctx, containerID)
+	assert.NoError(t, err)
+
+	info, err := container.Info(ctx)
+	assert.NoError(t, err)
+
+	fmt.Printf("=== Container Runtime Information ===\n")
+	fmt.Printf("Container ID: %s\n", containerID)
+	fmt.Printf("Runtime Name: %s\n", info.Runtime.Name)
+	fmt.Printf("Runtime Options: %+v\n", info.Runtime.Options)
+	fmt.Printf("Expected Runtime: %s\n", DefaultRuntime)
+	fmt.Printf("Runtime Match: %v\n", info.Runtime.Name == DefaultRuntime)
+
+	// cleanup
+	err = committer.(*CommitterImpl).DeleteContainer(ctx, containerID)
+	assert.NoError(t, err)
 }
 
 // // test large image

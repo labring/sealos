@@ -20,11 +20,11 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-replace github.com/containerd/nerdctl => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250717075412-9690955bbfc2
+replace github.com/containerd/nerdctl => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27
 
-replace github.com/containerd/nerdctl/v2 => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250717075412-9690955bbfc2
+replace github.com/containerd/nerdctl/v2 => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27
 
-replace github.com/containerd/nerdctl/mod/tigron => github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250717075412-9690955bbfc2
+replace github.com/containerd/nerdctl/mod/tigron => github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250731025443-879dbf5c7d27
 
 require (
 	cel.dev/expr v0.20.0 // indirect
@@ -87,7 +87,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
