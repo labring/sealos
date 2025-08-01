@@ -119,6 +119,10 @@ func extractFlowEndpoints(flow *pb.Flow) (*FlowEndpoints, bool) {
 		return nil, false
 	}
 
+	if source.Namespace == "kube-dns" || dest.Namespace == "kube-dns" {
+		return nil, false
+	}
+
 	srcName, srcFound := extractNameFromLabels(source.Labels)
 	if !srcFound {
 		return nil, false
