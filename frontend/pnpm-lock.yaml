@@ -9008,6 +9008,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -9086,6 +9087,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -9164,6 +9166,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -9242,6 +9245,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -11149,6 +11153,60 @@ packages:
       - universal-cookie
     dev: false
 
+  /@scalar/api-client@2.3.34(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-TwhtLNr/1AlbsOe52imeriggpYcLQX12rVR953LAN5GX4B1cwvnOuA/2kX6EhpxWYM6tbgQaojmIZAB3mMaxXA==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@headlessui/tailwindcss': 0.2.2(tailwindcss@3.4.1)
+      '@headlessui/vue': 1.7.23(vue@3.5.13)
+      '@scalar/components': 0.13.59(typescript@5.2.2)
+      '@scalar/draggable': 0.1.11(typescript@5.2.2)
+      '@scalar/icons': 0.3.7(typescript@5.2.2)
+      '@scalar/import': 0.3.27
+      '@scalar/oas-utils': 0.2.144
+      '@scalar/object-utils': 1.1.14
+      '@scalar/openapi-parser': 0.10.17
+      '@scalar/openapi-types': 0.2.3
+      '@scalar/postman-to-openapi': 0.2.17
+      '@scalar/snippetz': 0.2.20
+      '@scalar/themes': 0.11.3
+      '@scalar/types': 0.1.16
+      '@scalar/use-codemirror': 0.11.104(typescript@5.2.2)
+      '@scalar/use-hooks': 0.1.50(typescript@5.2.2)
+      '@scalar/use-toasts': 0.7.10(typescript@5.2.2)
+      '@scalar/use-tooltip': 1.0.7(typescript@5.2.2)
+      '@vueuse/core': 10.11.1(vue@3.5.13)
+      '@vueuse/integrations': 11.3.0(axios@1.6.2)(focus-trap@7.6.4)(fuse.js@7.0.0)(nprogress@0.2.0)(vue@3.5.13)
+      focus-trap: 7.6.4
+      fuse.js: 7.0.0
+      microdiff: 1.5.0
+      nanoid: 5.1.5
+      pretty-bytes: 6.1.1
+      pretty-ms: 8.0.0
+      shell-quote: 1.8.2
+      type-fest: 4.40.1
+      vue: 3.5.13(typescript@5.2.2)
+      vue-router: 4.5.1(vue@3.5.13)
+      whatwg-mimetype: 4.0.0
+      yaml: 2.7.1
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
   /@scalar/api-reference-react@0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
     resolution: {integrity: sha512-jTBQ9y7J94Ln1i//7x1fHD3FJSBI+Cncqlh/1WGEPeaIOEZ6leEiSD9odWebf71EvkqFSQ8YSuDHB79KgMpqDA==}
     engines: {node: '>=18'}
@@ -11187,6 +11245,32 @@ packages:
       react: 18.2.0
     transitivePeerDependencies:
       - '@hyperjump/browser'
+      - '@vue/composition-api'
+      - async-validator
+      - axios
+      - change-case
+      - drauu
+      - idb-keyval
+      - jwt-decode
+      - nprogress
+      - qrcode
+      - sortablejs
+      - supports-color
+      - tailwindcss
+      - typescript
+      - universal-cookie
+    dev: false
+
+  /@scalar/api-reference-react@0.6.31(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2):
+    resolution: {integrity: sha512-fjCfSdCgTG3XYvRdCViwmcWqfcv1sYhjCNu9zZwq0Fw/hjRcFnJCjxFhwfN6kJT1lRl2jRgC72zKeDaUqmO3oA==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+    dependencies:
+      '@scalar/api-reference': 1.28.34(axios@1.6.2)(nprogress@0.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
+      '@scalar/types': 0.1.16
+      react: 18.2.0
+    transitivePeerDependencies:
       - '@vue/composition-api'
       - async-validator
       - axios
@@ -24920,7 +25004,6 @@ packages:
 
   /picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
-    dev: false
 
   /picomatch@2.3.1:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
@@ -30081,6 +30164,10 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  /zod@3.24.1:
+    resolution: {integrity: sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A==}
     dev: false
 
   /zod@4.0.14:
