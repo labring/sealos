@@ -116,28 +116,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           });
           setMigrateName(res.name);
         } catch (error: any) {
-          let errorMessage = t('file_upload_failed');
-
-          if (error?.response?.data?.data) {
-            errorMessage = error.response.data.data;
-          } else if (error?.response?.data?.error) {
-            errorMessage = error.response.data.error;
-          } else if (error?.data?.data) {
-            errorMessage = error.data.data;
-          } else if (error?.data?.error) {
-            errorMessage = error.data.error;
-          } else if (error?.message) {
-            errorMessage = error.message;
-          } else if (error?.errMessage) {
-            errorMessage = error.errMessage;
-          } else if (typeof error === 'string') {
-            errorMessage = error;
-          } else if (error?.response?.data?.message) {
-            errorMessage = error.response.data.message;
-          }
-
           toast({
-            title: errorMessage,
+            title: t('file_upload_failed'),
             status: 'error'
           });
           closeMigrate();
