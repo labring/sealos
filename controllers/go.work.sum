@@ -2864,6 +2864,12 @@ github.com/linuxkit/virtsock v0.0.0-20201010232012-f8cee7dfc7a3/go.mod h1:3r6x7q
 github.com/lithammer/dedent v1.1.0 h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffktY=
 github.com/lithammer/dedent v1.1.0/go.mod h1:jrXYCQtgg0nJiN+StA2KgR7w6CiQNv9Fd/Z9BP0jIOc=
 github.com/longhorn/go-iscsi-helper v0.0.0-20210330030558-49a327fb024e/go.mod h1:9z/y9glKmWEdV50tjlUPxFwi1goQfIrrsoZbnMyIZbY=
+github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250717075412-9690955bbfc2 h1:ZZSdAQJUwb+HyWle8w+B+vLZodSJaeKMojEOdWXYuUU=
+github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250717075412-9690955bbfc2/go.mod h1:gmUZh2wUVxr/msGogKUi6v9eJbP5ASO4fVYEPzHH4iI=
+github.com/luanshaotong/nerdctl/v2 v2.0.0-20250717075412-9690955bbfc2 h1:Xd/Ucu301cld+j+E/+nf0aeQ5HOwmZfJ+WH2dCjCy3Y=
+github.com/luanshaotong/nerdctl/v2 v2.0.0-20250717075412-9690955bbfc2/go.mod h1:un/Eqg9DrVwazXHukMsxq+PEBixrN7YC3NRXdx5J3tY=
+github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27 h1:SkN036GKQ+DOJHVmD3iz2RxggOkxy+suE4ySluf+79Q=
+github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27/go.mod h1:3IzoMVp0HIP/lMWRA4xzTMghuKJ4F3fFWTtGAfrFhzk=
 github.com/lyft/protoc-gen-star v0.6.0/go.mod h1:TGAoBVkt8w7MPG72TrKIu85MIdXwDuzJYeZuUPFPNwA=
 github.com/lyft/protoc-gen-star v0.6.1 h1:erE0rdztuaDq3bpGifD95wfoPrSZc95nGA6tbiNYh6M=
 github.com/lyft/protoc-gen-star v0.6.1/go.mod h1:TGAoBVkt8w7MPG72TrKIu85MIdXwDuzJYeZuUPFPNwA=
