@@ -679,7 +679,7 @@ func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devbo
 			"threshold", ac.ContainerFSAvailableThreshold)
 		score += getScoreUnit(1)
 	}
-	cpuRequestRatio, err = r.getTotalCPURequestRatio(ctx, r.NodeName)
+	cpuRequestRatio, err = r.getTotalCPURequestRatio(ctx)
 	if err != nil {
 		logger.Error(err, "failed to get total CPU request")
 		goto unsuitable // If we can't get the CPU request, we assume the node is not suitable
@@ -687,7 +687,7 @@ func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devbo
 		logger.Info("cpu request ratio is less than cpu overcommitment request ratio", "RequestRatio", cpuRequestRatio, "ratio", ac.CPURequestRatio)
 		score += getScoreUnit(0)
 	}
-	cpuLimitRatio, err = r.getTotalCPULimitRatio(ctx, r.NodeName)
+	cpuLimitRatio, err = r.getTotalCPULimitRatio(ctx)
 	if err != nil {
 		logger.Error(err, "failed to get total CPU limit")
 		goto unsuitable // If we can't get the CPU limit, we assume the node is not suitable
@@ -695,7 +695,7 @@ func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devbo
 		logger.Info("cpu limit ratio is less than cpu overcommitment limit ratio", "LimitRatio", cpuLimitRatio, "ratio", ac.CPULimitRatio)
 		score += getScoreUnit(0)
 	}
-	memoryRequestRatio, err = r.getTotalMemoryRequestRatio(ctx, r.NodeName)
+	memoryRequestRatio, err = r.getTotalMemoryRequestRatio(ctx)
 	if err != nil {
 		logger.Error(err, "failed to get total memory request")
 		goto unsuitable // If we can't get the memory request, we assume the node is not suitable
@@ -703,7 +703,7 @@ func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devbo
 		logger.Info("memory request ratio is less than memory overcommitment request ratio", "RequestRatio", memoryRequestRatio, "ratio", ac.MemoryRequestRatio)
 		score += getScoreUnit(0)
 	}
-	memoryLimitRatio, err = r.getTotalMemoryLimitRatio(ctx, r.NodeName)
+	memoryLimitRatio, err = r.getTotalMemoryLimitRatio(ctx)
 	if err != nil {
 		logger.Error(err, "failed to get total memory limit")
 		goto unsuitable // If we can't get the memory limit, we assume the node is not suitable
@@ -723,11 +723,10 @@ func getScoreUnit(p uint) int {
 }
 
 // getTotalCPURequestRatio returns the total CPU requests (in millicores) ratio for all pods in the namespace.
-func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context, namespace string) (float64, error) {
+func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingFields{"spec.nodeName": r.NodeName},
+		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -755,11 +754,10 @@ func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context, namespac
 }
 
 // getTotalCPULimitRatio returns the total CPU limits (in millicores) ratio for all pods in the namespace.
-func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context, namespace string) (float64, error) {
+func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingFields{"spec.nodeName": r.NodeName},
+		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -787,11 +785,10 @@ func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context, namespace 
 }
 
 // getTotalMemoryRequestRatio returns the total memory requests ratio for all pods in the namespace.
-func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context, namespace string) (float64, error) {
+func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingFields{"spec.nodeName": r.NodeName},
+		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -819,11 +816,10 @@ func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context, names
 }
 
 // getTotalMemoryLimitRatio returns the total memory limits ratio for all pods in the namespace.
-func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context, namespace string) (float64, error) {
+func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.InNamespace(namespace),
-		client.MatchingFields{"spec.nodeName": r.NodeName},
+		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -870,6 +866,15 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha1.PodNodeNameIndex, func(rawObj client.Object) []string {
+		pod := rawObj.(*corev1.Pod)
+		if pod.Spec.NodeName == "" {
+			return nil
+		}
+		return []string{pod.Spec.NodeName}
+	}); err != nil {
+		return fmt.Errorf("failed to index field %s: %w", devboxv1alpha1.PodNodeNameIndex, err)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
 		For(&devboxv1alpha1.Devbox{}).

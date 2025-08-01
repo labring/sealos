@@ -42,6 +42,8 @@ const (
 
 	// Label the devbox pod with the devbox part of
 	LabelDevBoxPartOf = "devbox"
+	// Index for pod node name
+	PodNodeNameIndex = "spec.nodeName"
 )
 
 type DevboxState string
