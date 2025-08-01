@@ -84,7 +84,7 @@
   "Transfer Amount must be a integer": "Transfer Amount must be a integer",
   "Recipient ID is invalid": "Recipient ID is invalid",
   "Transfer Amount must be less than balance": "The balance after the transfer must not be less than 10",
-  "he payee cannot be oneself": "The payee cannot be oneself",
+  "The payee cannot be oneself": "The payee cannot be oneself",
   "True Amount": "True Amount",
   "Get Code": "verification",
   "Stripe Success": "pay with Stripe successfully",

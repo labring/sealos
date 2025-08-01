@@ -40,5 +40,7 @@
   "reward_status": "Reward Status",
   "serial_number": "No.",
   "total_earnings": "Total Earnings",
-  "user_list": "User List"
+  "user_list": "User List",
+  "Cancel": "Cancel",
+  "Copy Failed": "Failed to copy"
 }

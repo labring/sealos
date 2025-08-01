@@ -201,5 +201,7 @@
   "implement": "Execute",
   "job_implement_success": "Job has been executed",
   "job_implement_error": "An error occurred while executing the job",
-  "Executing": "Executing"
+  "Executing": "Executing",
+  "The image cannot be empty": "The image cannot be empty",
+  "example": "Example: "
 }

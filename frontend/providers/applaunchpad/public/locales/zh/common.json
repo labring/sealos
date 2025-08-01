@@ -392,5 +392,9 @@
   "within_1_day": "一天内",
   "within_1_hour": "一小时内",
   "within_5_minute": "五分钟内",
-  "click_to_copy_tooltip": "点击复制"
+  "click_to_copy_tooltip": "点击复制",
+  "GPU": "GPU",
+  "Page": "页",
+  "shared": "共享",
+  "Copy Failed": "复制失败"
 }
