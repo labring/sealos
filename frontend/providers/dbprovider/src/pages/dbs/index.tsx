@@ -30,10 +30,10 @@ function Home() {
       const { action } = router.query as { action?: string };
       resetGuideState(!(action === 'guide'));
 
-      track('module_open', {
-        module: 'database',
-        trigger: action === 'guide' ? 'onboarding' : 'manual'
-      });
+      // track('module_open', {
+      //   module: 'database',
+      //   trigger: action === 'guide' ? 'onboarding' : 'manual'
+      // });
     }
   }, [resetGuideState, router]);
 
