@@ -68,11 +68,12 @@ jobs:
         run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v1.64.5
+          version: v2.3.0
           working-directory: ${{ matrix.workdir }}
-          args: "--out-${NO_FUTURE}format colored-line-number"
+          # args between =, not space
+          args: --color=always --config=${{ github.workspace }}/.golangci.yml
 
   image-build:
     runs-on: ubuntu-24.04
