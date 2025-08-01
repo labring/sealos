@@ -1,5 +1,5 @@
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ import { Pagination } from '@/components/ui/pagination';
 import Empty from './Empty';
 
 const PublicTemplate = ({ search }: { search: string }) => {
-  const { selectedTagList, getSelectedTagList, resetTags } = useTagSelectorStore();
+  const { selectedTagList, getSelectedTagList, resetTags, setSelectedTag } = useTagSelectorStore();
   const tagsQuery = useQuery(['template-repository-tags'], listTag, {
     staleTime: Infinity,
     cacheTime: Infinity
@@ -31,6 +31,18 @@ const PublicTemplate = ({ search }: { search: string }) => {
   let tags = (tagsQuery.data?.tagList || []).sort((a, b) =>
     a.name === 'official' ? -1 : b.name === 'official' ? 1 : 0
   );
+
+  // Set official tag as default selected only on first load
+  const hasSetDefaultRef = useRef(false);
+  useEffect(() => {
+    if (!hasSetDefaultRef.current && tags.length > 0) {
+      const officialTag = tags.find((tag) => tag.name === 'official');
+      if (officialTag && selectedTagList.size === 0) {
+        setSelectedTag(officialTag.uid, true);
+        hasSetDefaultRef.current = true;
+      }
+    }
+  }, [tags, selectedTagList.size, setSelectedTag]);
 
   const t = useTranslations();
   const { guide3, setGuide3 } = useGuideStore();
