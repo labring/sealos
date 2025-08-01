@@ -49,7 +49,6 @@ import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { sealosApp } from 'sealos-desktop-sdk/app';
-import { updateDatasource } from '@/services/chat2db/datasource';
 const CopyBox = ({
   value,
   showSecret = true,
@@ -367,8 +366,6 @@ const AppBaseInfo = ({
   };
 
   const handelEditPassword: SubmitHandler<PasswordEdit> = async (data: PasswordEdit) => {
-    const datasourceId = dbStatefulSet?.metadata?.labels?.['chat2db.io/id'];
-    const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY;
     try {
       onClose();
       await editPassword({
@@ -388,27 +385,6 @@ const AppBaseInfo = ({
         title: typeof error === 'string' ? error : t('edit_password_failed'),
         status: 'error'
       });
-    }
-    try {
-      if (secret) {
-        await updateDatasource(
-          {
-            id: datasourceId,
-            alias: db.dbName,
-            environmentId: 2,
-            storageType: 'CLOUD',
-            host: secret.host,
-            port: secret.port,
-            user: secret.username,
-            password: secret.password,
-            url: secret.connection,
-            type: db.dbType
-          },
-          apiKey as string
-        );
-      }
-    } catch (error) {
-      console.log(error);
     }
   };
 

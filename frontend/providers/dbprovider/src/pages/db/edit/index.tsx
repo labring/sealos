@@ -28,13 +28,9 @@ import Yaml from './components/Yaml';
 import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
-import { getDBSecret, getDBServiceByName } from '@/api/db';
-import { DBTypeSecretMap } from '@/constants/db';
+import { getDBSecret } from '@/api/db';
 import type { ConnectionInfo } from '../detail/components/AppBaseInfo';
-import { syncAuthUser } from '@/services/chat2db/user';
-import { createDatasource } from '@/services/chat2db/datasource';
 import type { DBType } from '@/types/db';
-import { mapDBType } from '@/constants/chat2db';
 
 const ErrorModal = dynamic(() => import('@/components/ErrorModal'));
 
@@ -102,23 +98,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     ];
   };
-
-  function injectDatasourceId(yamlList: YamlItemType[], dsId: number): YamlItemType[] {
-    if (!dsId) return yamlList;
-    const next = yamlList.map((item) => {
-      if (item.filename === 'cluster.yaml') {
-        const doc: any = yaml.load(item.value) || {};
-        doc.metadata = doc.metadata || {};
-        doc.metadata.labels = {
-          ...(doc.metadata.labels || {}),
-          'chat2db.io/id': dsId
-        };
-        console.log(doc);
-        return { ...item, value: yaml.dump(doc) };
-      }
-    });
-    return next.filter(Boolean) as YamlItemType[];
-  }
 
   function getCpuCores(yamlString: string): number {
     try {
@@ -216,13 +195,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       uid: userKey
     };
 
-    // try {
-    //   const result = await syncAuthUser(API_KEY as string, payload);
-    //   console.log('syn with author', result);
-    // } catch (e) {
-    //   console.log(e);
-    // }
-
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;
     setIsLoading(true);
@@ -292,47 +264,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     }
     setIsLoading(false);
-    // let sec = secret;
-    // if (!sec) {
-    //   try {
-    //     sec = await waitForSecret(formData.dbName, formData.dbType);
-    //   } catch (e) {
-    //     toast({ title: 'Secret timeout', status: 'warning' });
-    //   }
-    // }
-    // console.log(sec);
-    // if (sec) {
-    //   try {
-    //     await createDatasource(
-    //       {
-    //         alias: formData.dbName,
-    //         environmentId: 2,
-    //         storageType: 'CLOUD',
-    //         host: sec.host,
-    //         port: String(sec.port),
-    //         user: sec.username,
-    //         password: sec.password,
-    //         url: sec.connection,
-    //         type: mapDBType(formData.dbType)
-    //       },
-    //       API_KEY as string,
-    //       userKey
-    //     );
-    //   } catch (error) {
-    //     // console.log('create data source', error)
-    //     const id = (error as { data?: any }).data;
-    //     console.log(id);
-    //     if (id) {
-    //       setYamlList((old) => injectDatasourceId(old, id));
-    //     }
-    //     if (isEdit && id) {
-    //       const clusterItem = injectDatasourceId(yamlList, id).find(
-    //         (i) => i.filename === 'cluster.yaml'
-    //       );
-    //       await applyYamlList([clusterItem!.value], 'update');
-    //     }
-    //   }
-    // }
   };
 
   const submitError = (err: FieldErrors<DBEditType>) => {

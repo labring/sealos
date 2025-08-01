@@ -1,8 +1,7 @@
 import { GET, POST } from '@/services/request';
 import { encryptCbcBrowser } from '@/api/encrypt';
 import { GenerateLoginUrlOpts, UserInfo, CreateApiResponse } from '@/constants/chat2db';
-
-const clientDomain = process.env.CLIENT_DOMAIN_NAME;
+import { getAppEnv } from '@/api/platform';
 
 export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<string> {
   const { userId, userNS, orgId, secretKey, ui = {} } = opts;
@@ -16,6 +15,9 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
     language: ui.language ?? navigator.language,
     hideAvatar: String(ui.hideAvatar ?? true)
   });
+
+  const envData = await getAppEnv();
+  const clientDomain = envData.clientDomainName;
 
   console.log('clientDomain', clientDomain);
   if (!clientDomain) {

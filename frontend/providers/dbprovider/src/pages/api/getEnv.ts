@@ -12,6 +12,7 @@ export type SystemEnvResponse = {
   SHOW_DOCUMENT: boolean;
   CurrencySymbol: 'shellCoin' | 'cny' | 'usd';
   STORAGE_MAX_SIZE: number;
+  clientDomainName: string;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -33,7 +34,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       BACKUP_ENABLED: process.env.BACKUP_ENABLED === 'true',
       SHOW_DOCUMENT: process.env.SHOW_DOCUMENT === 'true',
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
-      STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300
+      STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
+      clientDomainName: process.env.CLIENT_DOMAIN_NAME || ''
     }
   });
 }
