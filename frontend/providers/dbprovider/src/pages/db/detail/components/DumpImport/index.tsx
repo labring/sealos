@@ -89,7 +89,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             if (!file.name.includes('.')) throw new Error('file name error');
             form.append('file', file, encodeURIComponent(file.name));
           });
-          console.log('form', form);
+
           const result = await uploadFile(form, (e) => {
             if (!e.progress) return;
             const percent = Math.round(e.progress * 100);
@@ -99,7 +99,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
               setFileProgressText(t('file.Upload Success'));
             }
           });
-          console.log('result', result);
+
           if (!result[0]) {
             closeMigrate();
             return toast({
@@ -116,11 +116,8 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
           });
           setMigrateName(res.name);
         } catch (error: any) {
-          // 更好的错误处理，避免 [object Object] 显示
-          console.log('Upload error:', error);
           let errorMessage = t('file_upload_failed');
 
-          // 检查是否是服务器返回的错误
           if (error?.response?.data?.data) {
             errorMessage = error.response.data.data;
           } else if (error?.response?.data?.error) {
@@ -139,7 +136,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
             errorMessage = error.response.data.message;
           }
 
-          console.log('Final error message:', errorMessage);
           toast({
             title: errorMessage,
             status: 'error'
@@ -200,7 +196,6 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     }
   });
 
-  // 获取相关的 Pod 信息
   const { data: podList = [] } = useQuery(
     ['getMigratePodList', migrateName],
     () => getMigratePodList(migrateName, 'file'),
@@ -208,43 +203,32 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
       enabled: !!migrateName && migrateStatus === MigrateStatusEnum.Fail,
       refetchInterval: 5000,
       onSuccess(data) {
-        console.log('Pod list data:', data);
-        // 设置第一个 pod 的名称用于获取日志
         if (data && data.length > 0 && !podName) {
-          // API 实际返回的是 metadata 数组，所以需要访问 metadata.name
           const podNameToSet = (data[0] as any).name || '';
-          console.log('Setting pod name:', podNameToSet);
           setPodName(podNameToSet);
         }
       }
     }
   );
 
-  // 获取完整的 Pod 信息，包括容器信息
   const { data: fullPodInfo } = useQuery(
     ['getFullPodInfo', podName],
     () => getPodStatusByName(podName),
     {
       enabled: !!podName && migrateStatus === MigrateStatusEnum.Fail,
-      onSuccess(data) {
-        console.log('Full pod info:', data);
-      },
+      onSuccess(data) {},
       onError(error) {
         console.error('Failed to get pod info:', error);
       }
     }
   );
 
-  // 从 Pod 信息中提取容器名称
   const containerName = useMemo(() => {
     if (!fullPodInfo?.spec?.containers || fullPodInfo.spec.containers.length === 0) {
-      console.log('No containers found in pod, using default container name');
-      return 'migrate'; // 默认容器名称
+      return 'migrate';
     }
 
-    // 获取第一个容器的名称
     const firstContainer = fullPodInfo.spec.containers[0];
-    console.log('Using container name:', firstContainer.name);
     return firstContainer.name;
   }, [fullPodInfo]);
 
@@ -259,9 +243,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
     {
       refetchInterval: 5000,
       enabled: !!podName && !!containerName && migrateStatus === MigrateStatusEnum.Fail,
-      onSuccess(data) {
-        console.log('Log data received:', data);
-      },
+      onSuccess(data) {},
       onError(error) {
         console.error('Failed to get logs:', error);
       }
@@ -439,13 +421,7 @@ export default function DumpImport({ db }: { db?: DBDetailType }) {
                       fontWeight={400}
                       color={'#7B838B'}
                       dangerouslySetInnerHTML={{
-                        __html: log
-                          ? log
-                          : `迁移失败，但无法获取详细错误日志。请检查：
-                             <br/>1. Pod 名称: ${podName || '未获取到'}
-                             <br/>2. 容器名称: ${containerName || '未获取到'}
-                             <br/>3. 迁移任务名称: ${migrateName || '未获取到'}
-                             <br/>4. 请稍后重试或联系管理员查看集群日志。`
+                        __html: log ? log : ``
                       }}
                     ></Text>
                   </Flex>
