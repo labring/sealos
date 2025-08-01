@@ -37,6 +37,7 @@ export default function EmailCheckComponent() {
   const { signupData, clearSignupData, startTime, updateStartTime, setStartTime } =
     useSignupStore();
   const { setToken } = useSessionStore();
+  const [pinValue, setPinValue] = useState('');
   useEffect(() => {
     if (!signupData) {
       router.push('/signin');
@@ -75,19 +76,18 @@ export default function EmailCheckComponent() {
       const globalToken = result.data?.token;
       if (!globalToken) throw Error();
       setToken(globalToken);
-      const method = 'email';
       if (result.data?.needInit) {
         gtmLoginSuccess({
           user_type: 'new',
-          method
+          method: 'email'
         });
         await router.push('/workspace');
       } else {
         const regionTokenRes = await getRegionToken();
         if (regionTokenRes?.data) {
           gtmLoginSuccess({
-            user_type: 'returning',
-            method
+            user_type: 'existing',
+            method: 'email'
           });
           await sessionConfig(regionTokenRes.data);
           await router.replace('/');
@@ -103,36 +103,26 @@ export default function EmailCheckComponent() {
         cfToken
       })
   );
-  const onSubmit = async (force = false) => {
-    if ((!canResend || isLoading) && !force) return;
 
+  const sendCode = async (cfToken?: string) => {
     setIsLoading(true);
     const oldTime = startTime;
-    updateStartTime();
     setCanResend(false);
+
     try {
       if (!signupData || signupData.providerType !== 'EMAIL') {
         throw new Error('No signup data found');
       }
-      let cfToken;
-      const turnstileConfig = authConfig?.turnstile;
-      if (!!turnstileConfig?.enabled && turnstileConfig.cloudflare.siteKey) {
-        // console.log('sitekey', authConfig?.turnstile.cloudflare.siteKey);
-        cfToken = await turnstileRef.current?.getResponsePromise();
-        // console.log('onsubmit cfToken', cfToken);
-        if (!cfToken) {
-          throw Error('get token error');
-        }
-      }
+
       const result = await sendCodeMutation.mutateAsync({
         id: signupData.providerId,
         cfToken
       });
       if (result.code !== 200) {
         throw Error(result.message);
+      } else {
+        updateStartTime();
       }
-      // Start countdown
-      // updateStartTime();
     } catch (error) {
       // rollout
       setStartTime(oldTime);
@@ -147,39 +137,82 @@ export default function EmailCheckComponent() {
         position: 'top'
       });
     } finally {
-      turnstileRef.current?.reset();
       setIsLoading(false);
     }
   };
-  useEffect(() => {
+
+  const onSubmit = async (force = false) => {
+    if ((!canResend || isLoading) && !force) return;
+
+    // Clear error state
+    verifyMutation.reset();
+    // Clear input field
+    setPinValue('');
+
+    if (authConfig?.turnstile.enabled) {
+      turnstileRef.current?.reset();
+    } else {
+      sendCode();
+    }
+  };
+
+  const onTurnstileSuccess = (cfToken: string) => {
     if (startTime + 60_000 <= new Date().getTime()) {
+      sendCode(cfToken);
+    }
+  };
+
+  // Trigger code send when page loaded.
+  // If turnstile is enabled, it will be triggered by onSuccess callback and we do not need to manually trigger it.
+  useEffect(() => {
+    if (startTime + 60_000 <= new Date().getTime() && !authConfig?.turnstile.enabled) {
       onSubmit(true);
     }
   }, []);
+
   const handleBack = () => {
     router.back();
   };
   const bg = useColorModeValue('white', 'gray.700');
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg={bg} w={'50%'} direction={'column'}>
+    <Flex minH="100vh" align="center" justify="center" bg={bg} direction={'column'}>
       <Stack spacing={8} mx="auto" maxW="lg" px={4} h={'60%'}>
-        <Flex rounded="lg" p={8} w={'480px'} gap={'16px'} flexDirection={'column'}>
+        <Flex rounded="lg" p={8} gap={'16px'} flexDirection={'column'}>
           <Box>
             <MailCheck size={'32px'} color="#ADBDCE"></MailCheck>
           </Box>
           <Text fontWeight="600" fontSize="24px" lineHeight="31px" color="#000000" mt={'8px'}>
             {t('v2:check_your_email')}
           </Text>
-          <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
-            {t('v2:verification_message', { email: signupData?.providerId || '' })}
-          </Text>
+
+          {!!authConfig?.turnstile.enabled && (
+            <Turnstile
+              options={{
+                size: 'normal',
+                refreshExpired: 'never',
+                refreshTimeout: 'never'
+              }}
+              ref={turnstileRef}
+              siteKey={authConfig?.turnstile.cloudflare.siteKey}
+              onSuccess={onTurnstileSuccess}
+            />
+          )}
+
+          {remainTime > 0 && (
+            <Text fontWeight="400" fontSize="14px" lineHeight="20px" color="#18181B" mb="4px">
+              {t('v2:verification_message', { email: signupData?.providerId || '' })}
+            </Text>
+          )}
+
           <FormControl id="verificationCode">
             <FormLabel></FormLabel>
             <PinInput
               placeholder=""
               focusBorderColor="#18181B"
               autoFocus
+              value={pinValue}
+              onChange={setPinValue}
               isDisabled={verifyMutation.isLoading}
               onComplete={(value) => {
                 console.log('Verification code:', value);
@@ -190,17 +223,37 @@ export default function EmailCheckComponent() {
                 <PinInputField
                   key={index}
                   placeholder=""
-                  mr="8px"
-                  boxSize={'56px'}
-                  fontSize={'20px'}
+                  mr={{ base: '4px', lg: '8px' }}
+                  boxSize={{ base: '40px', lg: '56px' }}
+                  fontSize={{ base: '16px', lg: '20px' }}
                   borderRadius={'12px'}
                 />
               ))}
             </PinInput>
           </FormControl>
 
+          {isLoading && (
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:sending_code')}
+            </Text>
+          )}
+
           {verifyMutation.isLoading ? (
-            <Text>{t('v2:verifying')}</Text>
+            <Text
+              style={{
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '20px'
+              }}
+            >
+              {t('v2:verifying')}
+            </Text>
           ) : (
             <Flex>
               {verifyMutation.isError && (
@@ -237,7 +290,7 @@ export default function EmailCheckComponent() {
                   >
                     {t('v2:request_new_link')}
                   </Text>
-                ) : (
+                ) : remainTime > 0 ? (
                   <Text
                     fontWeight="400"
                     fontSize="14px"
@@ -249,6 +302,8 @@ export default function EmailCheckComponent() {
                   >
                     {t('v2:can_request_new_link', { countdown: Math.floor(remainTime / 1000) })}
                   </Text>
+                ) : (
+                  <></>
                 )}
               </Box>
             </Flex>
@@ -270,15 +325,6 @@ export default function EmailCheckComponent() {
           </Flex>
         </Flex>
       </Stack>
-      {!!authConfig?.turnstile.enabled && (
-        <Turnstile
-          options={{
-            size: 'invisible'
-          }}
-          ref={turnstileRef}
-          siteKey={authConfig?.turnstile.cloudflare.siteKey}
-        />
-      )}
     </Flex>
   );
 }

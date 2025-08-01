@@ -24,11 +24,18 @@ export const defaultAppConfig: AppConfigType = {
     gpuEnabled: false
   },
   launchpad: {
+    infrastructure: {
+      provider: 'alibaba',
+      requiresDomainReg: false,
+      domainRegQueryLink: 'http://localhost:3000',
+      domainBindingDocumentationLink: null
+    },
     meta: {
       title: 'Sealos Desktop App Demo',
       description: 'Sealos Desktop App Demo',
       scripts: []
     },
+    gtmId: null,
     currencySymbol: Coin.shellCoin,
     pvcStorageMax: 20,
     eventAnalyze: {
@@ -99,6 +106,11 @@ export const getServerEnv = (AppConfig: AppConfigType): EnvResponse => {
   return {
     SEALOS_DOMAIN: AppConfig.cloud.domain,
     DOMAIN_PORT: AppConfig.cloud.port?.toString() || '',
+    INFRASTRUCTURE_PROVIDER: AppConfig.launchpad.infrastructure.provider,
+    REQUIRES_DOMAIN_REG: AppConfig.launchpad.infrastructure.requiresDomainReg,
+    DOMAIN_REG_QUERY_LINK: AppConfig.launchpad.infrastructure.domainRegQueryLink,
+    DOMAIN_BINDING_DOCUMENTATION_LINK:
+      AppConfig.launchpad.infrastructure.domainBindingDocumentationLink,
     SHOW_EVENT_ANALYZE: AppConfig.launchpad.eventAnalyze.enabled,
     FORM_SLIDER_LIST_CONFIG: AppConfig.launchpad.appResourceFormSliderConfig,
     guideEnabled: AppConfig.common.guideEnabled,

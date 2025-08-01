@@ -246,7 +246,7 @@ export default function Desktop(props: any) {
       {layoutConfig?.common?.bannerEnabled && (
         <SaleBanner isBannerVisible={isBannerVisible} setIsBannerVisible={setIsBannerVisible} />
       )}
-      <Flex height={'68px'} px="32px">
+      <Flex height={'68px'} px={{ base: '16px', md: '32px' }}>
         <Account />
       </Flex>
 
@@ -274,7 +274,7 @@ export default function Desktop(props: any) {
           <Warn />
         </Flex> */}
 
-        <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'}>
+        <Flex flexDirection={'column'} gap={'8px'} flex={1} position={'relative'} width={'100%'}>
           <Apps />
         </Flex>
 

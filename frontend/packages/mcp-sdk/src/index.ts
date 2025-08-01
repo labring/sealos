@@ -1,1 +1,1 @@
-export { McpHandler, createMcpApiHandler } from './sdk';
+export { McpHandler, createMcpApiHandler, getToolsList } from './sdk';

@@ -11,12 +11,16 @@ import InviterPop from './InviterPop';
 import { useTranslation } from 'next-i18next';
 import useSessionStore from '@/stores/session';
 import { useRouter } from 'next/router';
+import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 
 export default function SignLayout({ children }: { children: React.ReactNode }) {
+  useLanguageSwitcher(); // force set language
+  const { i18n } = useTranslation();
   const { layoutConfig, authConfig } = useConfigStore();
   const { setCaptchaIsLoad } = useScriptStore();
   const { session, token } = useSessionStore();
   const router = useRouter();
+
   useEffect(() => {
     const url = sessionStorage.getItem('accessTemplatesNoLogin');
     if (!!url) {
@@ -24,12 +28,14 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
       window.location.replace(url);
     }
   }, []);
+
   useEffect(() => {
     if (session && token) {
       router.replace('/');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const { i18n } = useTranslation();
+
   return (
     <Box>
       <Head>
@@ -54,9 +60,10 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
           alt="signin-bg"
           fill={'cover'}
           w={'50%'}
+          display={{ base: 'none', md: 'block' }}
         />
 
-        <VStack w={'50%'} position={'relative'}>
+        <VStack w="full" position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
             {layoutConfig?.version === 'cn' && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}

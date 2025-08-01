@@ -6,6 +6,7 @@ import { RegionResourceType } from '@/services/backend/svc/checkResource';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import { ApiResp, Region } from '@/types';
+import { AdClickData } from '@/types/adClick';
 import { BIND_STATUS } from '@/types/response/bind';
 import { RESOURCE_STATUS } from '@/types/response/checkResource';
 import { DELETE_USER_STATUS } from '@/types/response/deleteUser';
@@ -35,7 +36,7 @@ export const _passwordLoginRequest =
           password: string;
           inviterId: string | null | undefined;
           semData: SemData | null | undefined;
-          bdVid: string | null | undefined;
+          adClickData: AdClickData | null | undefined;
         }
       | {
           user: string;
@@ -122,7 +123,7 @@ export const _getNewSmsCodeRequest =
 export const _oauthProviderSignIn =
   (request: AxiosInstance) =>
   (provider: ProviderType) =>
-  (data: { code: string; inviterId?: string; semData?: SemData; bdVid?: string }) =>
+  (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
     request.post<
       typeof data,
       ApiResp<{

@@ -204,3 +204,41 @@ Dec 11 02:18:47 test-node-0 image-cri-shim[46869]: 2022-12-11T02:18:47 info User
 Dec 11 02:18:47 test-node-0 image-cri-shim[46869]: 2022-12-11T02:18:47 info Password: passw0rd
 Dec 11 02:18:47 test-node-0 image-cri-shim[46869]: 2022-12-11T02:18:47 info CRIVersion: v1
 ```
+
+# Contribution Policy
+
+🚫 **This repository does NOT accept any form of contributions.**  
+This includes:
+- ❌ Pull requests
+- ❌ Direct code submissions
+- ❌ Bug reports
+- ❌ Feature requests
+- ❌ Documentation changes
+
+**All contributions must be submitted exclusively to the central repository:**  
+👉 **https://github.com/labring/sealos**
+
+---
+
+## Contribution Guidelines
+1. **For bugs**  
+   → Report in the [Issues section of the main repository](https://github.com/labring/sealos/issues)  
+   → Include reproduction steps and environment details
+
+2. **For code contributions**  
+   → Submit changes via **main repository only**  
+   → Follow contribution guidelines at [sealos/CONTRIBUTING.md](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md)
+
+3. **For feature requests**  
+   → Create an Issue in the [main repository](https://github.com/labring/sealos/issues) with `[Feature]` prefix
+
+---
+
+## Important Notes
+⚠️ **This repository is read-only**
+- Serves as reference implementation only
+- Active development occurs exclusively at [labring/sealos](https://github.com/labring/sealos)
+- PRs/issues submitted here will be **closed immediately without review**
+
+📌 **Any contributions made to this repository will be invalid**  
+For your submissions to be considered, please use the central repository.

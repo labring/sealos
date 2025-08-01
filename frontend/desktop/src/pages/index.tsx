@@ -1,6 +1,7 @@
 import { nsListRequest, switchRequest } from '@/api/namespace';
 import DesktopContent from '@/components/desktop_content';
 import { trackEventName } from '@/constants/account';
+import { useSemParams } from '@/hooks/useSemParams';
 import useAppStore from '@/stores/app';
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
@@ -10,7 +11,7 @@ import { SemData } from '@/types/sem';
 import { NSType } from '@/types/team';
 import { AccessTokenPayload } from '@/types/token';
 import { parseOpenappQuery } from '@/utils/format';
-import { sessionConfig, setBaiduId, setInviterId, setUserSemData } from '@/utils/sessionConfig';
+import { sessionConfig, setAdClickData, setInviterId, setUserSemData } from '@/utils/sessionConfig';
 import { switchKubeconfigNamespace } from '@/utils/switchKubeconfigNamespace';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Box, useColorMode } from '@chakra-ui/react';
@@ -187,23 +188,17 @@ export default function Home({ sealos_cloud_domain }: { sealos_cloud_domain: str
     swtichWorksapceMutation.mutate(workspaceUid);
   }, [session?.user?.ns_uid, workspaces]);
 
-  // handle baidu
+  // Grab params from ad clicks and store in local storage
+  const { adClickData, semData } = useSemParams();
   useEffect(() => {
-    const { bd_vid, s, k } = router.query;
-    if (bd_vid) {
-      setBaiduId(bd_vid as string);
+    if (adClickData) {
+      setAdClickData(adClickData);
     }
 
-    // handle new user sem source
-    const semData: SemData = { channel: '' };
-    if (s) {
-      semData.channel = s as string;
+    if (semData) {
+      setUserSemData(semData);
     }
-    if (k) {
-      semData.additionalInfo = { semKeyword: k as string };
-    }
-    setUserSemData(semData);
-  }, []);
+  });
 
   // handle workspaceInvite
   useEffect(() => {

@@ -4,7 +4,7 @@ import {
   CreateTemplateRepositoryType,
   UpdateTemplateRepositoryType,
   UpdateTemplateType
-} from '@/utils/vaildate';
+} from '@/utils/validate';
 
 export const listOfficialTemplateRepository = () =>
   GET<{
@@ -137,14 +137,14 @@ export const listTag = () =>
     tagList: Tag[];
   }>(`/api/templateRepository/tag/list`);
 
-export const createTemplateReposistory = (data: CreateTemplateRepositoryType) =>
+export const createTemplateRepository = (data: CreateTemplateRepositoryType) =>
   POST(`/api/templateRepository/withTemplate/create`, data);
 export const initUser = () => POST<string>(`/api/auth/init`);
 
 export const deleteTemplateRepository = (templateRepositoryUid: string) =>
   DELETE(`/api/templateRepository/delete?templateRepositoryUid=${templateRepositoryUid}`);
 
-export const updateTemplateReposistory = (data: UpdateTemplateRepositoryType) =>
+export const updateTemplateRepository = (data: UpdateTemplateRepositoryType) =>
   POST(`/api/templateRepository/update`, data);
 export const updateTemplate = (data: UpdateTemplateType) =>
   POST(`/api/templateRepository/withTemplate/update`, data);

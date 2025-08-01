@@ -74,9 +74,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
 
         if (network.openNodePort) {
           return {
-            inline: `${protocol?.inline}${app.appName}.${getUserNamespace()}.svc.cluster.local:${
-              network.port
-            }`,
+            inline: `${protocol?.inline}${
+              network?.serviceName ? network.serviceName : app.appName
+            }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
             public: `${protocol?.label}${protocol?.value.toLowerCase()}.${network.domain}${
               network?.nodePort ? `:${network.nodePort}` : ''
             }`,
@@ -85,9 +85,9 @@ const AppMainInfo = ({ app = MOCK_APP_DETAIL }: { app: AppDetailType }) => {
         }
 
         return {
-          inline: `${appProtocol?.inline}${app.appName}.${getUserNamespace()}.svc.cluster.local:${
-            network.port
-          }`,
+          inline: `${appProtocol?.inline}${
+            network?.serviceName ? network.serviceName : app.appName
+          }.${getUserNamespace()}.svc.cluster.local:${network.port}`,
           public: network.openPublicDomain
             ? `${appProtocol?.label}${
                 network.customDomain

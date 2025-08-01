@@ -4,6 +4,7 @@
   "Balance is insufficient": "余额不足",
   "Payment Status": "支付状态",
   "Scan with WeChat": "微信扫码支付",
+  "Scan with Alipay": "支付宝支付",
   "Balance": "账户余额",
   "SideBar": {
     "Index": "首页",
@@ -180,6 +181,7 @@
   "Invoice Create Time": "申请开票时间",
   "Invoice Update Time": "开票时间",
   "pay with wechat": "微信支付",
+  "pay with alipay": "支付宝支付",
   "pay with stripe": "Stripe 支付",
   "Total Expenditure": "总支出",
   "Total Recharge": "总充值",
@@ -237,8 +239,8 @@
   "usage": "用量",
   "resource": "资源",
   "Double": "双倍",
-  "first_recharge_tips": "部分规格首次充值可享双倍赠送金额",
-  "first_recharge_title": "首充双倍!",
+  "first_recharge_tips": "部分规格首次充值可享赠送金额",
+  "first_recharge_title": "首充折扣优惠!",
   "credit_purchase": "余额充值",
   "remaining_balance": "当前余额",
   "custom_amount": "输入金额"

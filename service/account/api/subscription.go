@@ -258,9 +258,12 @@ func getOwnNsListWithClt(clt client.Client, user string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("list namespace failed: %w", err)
 	}
-	nsListStr := make([]string, len(nsList.Items))
+	var nsListStr []string
 	for i := range nsList.Items {
-		nsListStr[i] = nsList.Items[i].Name
+		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
+		nsListStr = append(nsListStr, nsList.Items[i].Name)
 	}
 	return nsListStr, nil
 }

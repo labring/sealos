@@ -3,6 +3,7 @@ export type EnvData = {
   transferEnabled: boolean;
   stripeEnabled: boolean;
   wechatEnabled: boolean;
+  alipayEnabled: boolean;
   currency: 'shellCoin' | 'cny' | 'usd';
   invoiceEnabled: boolean;
   gpuEnabled: boolean;

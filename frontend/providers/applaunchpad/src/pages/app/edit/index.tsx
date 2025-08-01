@@ -34,6 +34,7 @@ import { useMessage } from '@sealos/ui';
 import { customAlphabet } from 'nanoid';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
+import { track } from '@sealos/gtm';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -195,12 +196,27 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
         if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
           setErrorMessage(t('user_balance_not_enough'));
           setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+
+          track('paywall_triggered', {
+            module: 'applaunchpad',
+            type: 'insufficient_balance'
+          });
         } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
           setErrorMessage(t('forbidden_create_app'));
           setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+
+          track('error_occurred', {
+            module: 'applaunchpad',
+            error_code: 'FORBIDDEN_CREATE_APP'
+          });
         } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
           setErrorMessage(t('app_already_exists'));
           setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+
+          track('error_occurred', {
+            module: 'applaunchpad',
+            error_code: 'APP_ALREADY_EXISTS'
+          });
         } else {
           setErrorMessage(JSON.stringify(error));
         }
@@ -409,7 +425,34 @@ const EditApp = ({ appName, tabType }: { appName?: string; tabType: string }) =>
                 }
               }
 
-              openConfirm(() => submitSuccess(parseYamls))();
+              openConfirm(() => {
+                track('deployment_create', {
+                  module: 'applaunchpad',
+                  method: 'custom',
+                  config: {
+                    template_type: 'public',
+                    template_name: data.imageName,
+                    template_version: data.imageName.split(':')?.[1] ?? 'latest'
+                  },
+                  resources: {
+                    cpu_cores: data.cpu,
+                    ram_mb: data.memory,
+                    replicas: data.hpa.use ? data.hpa.maxReplicas : Number(data.replicas),
+                    scaling: data.hpa.use
+                      ? {
+                          method:
+                            data.hpa.target === 'cpu'
+                              ? 'CPU'
+                              : data.hpa.target === 'gpu'
+                              ? 'GPU'
+                              : 'RAM',
+                          value: data.hpa.value
+                        }
+                      : undefined
+                  }
+                });
+                submitSuccess(parseYamls);
+              })();
             }, submitError)();
           }}
         />

@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     // important load env
     serverLoadInitData();
 
-    const { applyYamlList } = await getK8s({
+    const { kc, applyYamlList } = await getK8s({
       kubeconfig: await authSession(req.headers)
     });
 
@@ -30,6 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 
     jsonRes(res, { data: result });
   } catch (err: any) {
+    console.log(err);
     jsonRes(res, {
       code: 500,
       error: err?.body || err

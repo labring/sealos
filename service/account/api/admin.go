@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/labring/sealos/controllers/pkg/pay"
+
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,7 +18,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// GetAccount
+// AdminGetAccountWithWorkspaceID GetAccount
 // @Summary Get user account
 // @Description Get user account
 // @Tags Account
@@ -47,7 +50,7 @@ func AdminGetAccountWithWorkspaceID(c *gin.Context) {
 	})
 }
 
-// ChargeBilling
+// AdminChargeBilling ChargeBilling
 // @Summary Charge billing
 // @Description Charge billing
 // @Tags Account
@@ -224,5 +227,77 @@ func adminUserTrafficOperator(c *gin.Context, networkStatus string) {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("failed to flush user resource status: %v", err)})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func AdminPaymentRefund(c *gin.Context) {
+	// 1. 管理员鉴权
+	if err := authenticateAdminRequest(c); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{
+			Error: fmt.Sprintf("authenticate error: %v", err),
+		})
+		return
+	}
+
+	// 2. 解析前端传来的 JSON
+	var refundData types.PaymentRefund
+	if err := c.ShouldBindJSON(&refundData); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: fmt.Sprintf("invalid request body: %v", err),
+		})
+		return
+	}
+	postDo := func(p types.PaymentRefund) error {
+		svc, err := pay.NewPayHandler(p.Method)
+		if err != nil {
+			return fmt.Errorf("new payment handler failed: %v", err)
+		}
+		_, _, err = svc.RefundPayment(pay.RefundOption{
+			TradeNo:  p.TradeNo,
+			Amount:   p.RefundAmount,
+			RefundID: p.RefundNo,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to refund payment: %v", err)
+		}
+		return nil
+	}
+	// 3. 调用 RefundAmount
+	if err := dao.DBClient.RefundAmount(refundData, postDo); err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
+			Error: fmt.Sprintf("refund processing error: %v", err),
+		})
+		return
+	}
+
+	// 4. 成功返回
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func AdminCreateCorporate(c *gin.Context) {
+	if err := authenticateAdminRequest(c); err != nil {
+		c.JSON(http.StatusUnauthorized, helper.ErrorMessage{
+			Error: fmt.Sprintf("authenticate error: %v", err),
+		})
+		return
+	}
+
+	// Parse interfaces coming from the frontend
+	var corporateData types.Corporate
+	if err := c.ShouldBindJSON(&corporateData); err != nil {
+		c.JSON(http.StatusBadRequest, helper.ErrorMessage{
+			Error: fmt.Sprintf("invalid request body: %v", err),
+		})
+		return
+	}
+
+	// invoke CreateCorporate
+	if err := dao.DBClient.CreateCorporate(corporateData); err != nil {
+		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{
+			Error: fmt.Sprintf("failed to create corporate: %v", err),
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }

@@ -540,7 +540,7 @@ func (r *DebtReconciler) retryFailedUsers() {
 func (r *DebtReconciler) processUsersInParallel(users []uuid.UUID) {
 	var (
 		wg        sync.WaitGroup
-		semaphore = make(chan struct{}, 50)
+		semaphore = make(chan struct{}, 1000)
 	)
 
 	for _, user := range users {

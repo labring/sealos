@@ -40,6 +40,12 @@ export type AppConfigType = {
     gpuEnabled: boolean;
   };
   launchpad: {
+    infrastructure: {
+      provider: string;
+      requiresDomainReg: boolean;
+      domainRegQueryLink: string;
+      domainBindingDocumentationLink: string | null;
+    };
     meta: {
       title: string;
       description: string;
@@ -48,6 +54,7 @@ export type AppConfigType = {
         [key: string]: string;
       }[];
     };
+    gtmId: string | null;
     currencySymbol: Coin;
     pvcStorageMax: number;
     eventAnalyze: {
@@ -83,6 +90,10 @@ declare global {
 export type EnvResponse = {
   SEALOS_DOMAIN: string;
   DOMAIN_PORT: string;
+  INFRASTRUCTURE_PROVIDER: string;
+  REQUIRES_DOMAIN_REG: boolean;
+  DOMAIN_REG_QUERY_LINK: string;
+  DOMAIN_BINDING_DOCUMENTATION_LINK: string | null;
   SHOW_EVENT_ANALYZE: boolean;
   FORM_SLIDER_LIST_CONFIG: FormSliderListType;
   CURRENCY: Coin;

@@ -29,6 +29,7 @@ import React, { useCallback, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 import { MOCK_APP_DETAIL } from '@/mock/apps';
 import { useAppStore } from '@/store/app';
+import { track } from '@sealos/gtm';
 
 const LogsModal = dynamic(() => import('./LogsModal'));
 const DetailModel = dynamic(() => import('./PodDetailModal'));
@@ -188,6 +189,10 @@ const Pods = ({ pods = [], appName }: { pods: PodDetailType[]; appName: string }
             <Button
               variant={'square'}
               onClick={() => {
+                track('deployment_action', {
+                  event_type: 'terminal_open',
+                  module: 'applaunchpad'
+                });
                 const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
                 sealosApp.runEvents('openDesktopApp', {
                   appKey: 'system-terminal',

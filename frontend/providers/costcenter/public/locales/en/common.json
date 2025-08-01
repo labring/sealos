@@ -4,6 +4,7 @@
   "Balance is insufficient": "Balance is insufficient",
   "Payment Status": "Payment Status",
   "Scan with WeChat": "Scan with WeChat",
+  "Scan with Alipay": "Scan with Alipay",
   "Balance": "Balance",
   "SideBar": {
     "Index": "Home Page",
@@ -183,6 +184,7 @@
   "Invoice Create Time": "invoice create time",
   "Invoice Update Time": "invoice update time",
   "pay with stripe": "Pay With Stripe",
+  "pay with alipay": "Pay With Alipay",
   "pay with wechat": "Pay With Wechat",
   "Pay Minimum Tips": "The amount need to be more than 10 when paying with Stripe",
   "Source Quota": "Resource Quota",
@@ -237,8 +239,8 @@
   "usage": "usage",
   "resource": "resource",
   "Double": "Double",
-  "first_recharge_tips": "Get double credits when making a first-time purchase for some tiers.",
-  "first_recharge_title": "Get Double with Initial Purchase!",
+  "first_recharge_tips": "Earn credits when making a first-time purchase for some tiers.",
+  "first_recharge_title": "Earn Credits with Initial Purchase!",
   "credit_purchase": "Credit Purchase",
   "remaining_balance": "Remaining Balance",
   "custom_amount": "Custom Amount"
