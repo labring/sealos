@@ -304,6 +304,7 @@
   "migration_successful": "Migration Completed Successfully",
   "migration_task_created_successfully": "Migration task created",
   "min_replicas": "Min Replicas: ",
+  "minute": "minute",
   "monitor_list": "Monitoring",
   "ms_node": "master-slave node",
   "multi_components_tip": "The storage of the multi-component database will be allocated to each component.",
