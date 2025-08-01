@@ -188,7 +188,6 @@ const DBList = ({
       const userKey = `${userId}/${userNS}`;
 
       try {
-        // 获取数据库连接信息
         const conn = await getDBSecret({
           dbName: db.name,
           dbType: db.dbType,
@@ -216,26 +215,18 @@ const DBList = ({
           type: mapDBType(db.dbType)
         };
         console.log(payload);
-        try {
-          await syncAuthUser(apiKey, { uid: userKey });
-        } catch (error) {
-          console.log('syncAuthUser', JSON.stringify(error));
-        }
 
         let currentDataSourceId = getDataSourceId(db.name);
         console.log('currentDataSourceId', currentDataSourceId);
-        // 检查是否是首次点击（数据库中是否已有数据源ID）
         if (!currentDataSourceId) {
-          // 首次点击，调用 syncDatasourceFirst 创建数据源
           try {
             const res = await syncDatasourceFirst(payload, apiKey, userKey);
-            currentDataSourceId = res.data; // 从响应中获取数据源ID
+            currentDataSourceId = res.data;
             if (currentDataSourceId) {
-              setDataSourceId(db.name, currentDataSourceId); // 存储到store中
+              setDataSourceId(db.name, currentDataSourceId);
               console.log('Created datasource with ID:', currentDataSourceId);
             }
           } catch (err: any) {
-            // 如果同步失败，可能是数据源已存在，尝试创建
             if (err.data && err.data.id) {
               currentDataSourceId = err.data.id;
               console.log('currentDataSourceId', currentDataSourceId);
@@ -248,7 +239,6 @@ const DBList = ({
             }
           }
         } else {
-          // 非首次点击，同步现有数据源
           try {
             const syncPayload = {
               ...payload,
@@ -259,20 +249,16 @@ const DBList = ({
             console.log('Synced existing datasource with ID:', currentDataSourceId);
           } catch (err) {
             console.log('sync datasource:', JSON.stringify(err));
-            // 同步失败不影响继续操作
           }
         }
 
-        // 确保 currentDataSourceId 是有效的数字
         if (!currentDataSourceId) {
           throw new Error('Failed to get or create datasource ID');
         }
 
-        // 获取当前系统语言并映射到 chat2db 支持的语言格式
         const currentLang = getLangStore() || i18n?.language || 'zh';
         const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
 
-        // 构建带有数据源ID的URL
         const baseUrl = await generateLoginUrl({
           userId,
           userNS,
@@ -286,7 +272,6 @@ const DBList = ({
           }
         });
 
-        // 添加数据源ID到URL参数
         const url = new URL(baseUrl);
         url.searchParams.set('dataSourceIds', String(currentDataSourceId));
         console.log('url', url.toString());

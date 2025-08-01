@@ -178,24 +178,24 @@ export interface DatasourceDelete {
 }
 
 const DB_TYPE_MAP: Record<string, string> = {
-  mysql: 'MySQL',
-  clickhouse: 'ClickHouse',
-  mongodb: 'MongoDB',
-  snowflake: 'Snowflake',
+  'apecloud-mysql': 'MYSQL',
+  clickhouse: 'CLICKHOUSE',
+  mongodb: 'MONGODB',
+  snowflake: 'SNOWFLAKE',
   h2: 'H2',
-  oracle: 'Oracle',
-  postgresql: 'PostgreSQL',
+  oracle: 'ORACLE',
+  postgresql: 'POSTGRESQL',
   dm: 'DM',
-  oceanbase: 'OceanBase',
+  oceanbase: 'OCEANBASE',
   hive: 'HIVE',
-  kingbase: 'Kingbase',
-  redis: 'Redis',
-  opengauss: 'OpenGauss',
-  sqlserver: 'SQLServer',
-  sqlite: 'SQLite',
+  kingbase: 'KINGBASE',
+  redis: 'REDIS',
+  opengauss: 'OPENGAUSS',
+  sqlserver: 'SQLSERVER',
+  sqlite: 'SQLITE',
   db2: 'DB2',
-  duckdb: 'DuckDB',
-  gaussdb: 'GaussDB'
+  duckdb: 'DUCKDB',
+  gaussdb: 'GAUSSDB'
 };
 
 /**

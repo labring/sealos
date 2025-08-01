@@ -159,6 +159,25 @@ const Header = ({
 
     const { host, port, connection, username, password, dbType, dbName } = conn;
 
+    let connectionUrl = connection;
+    switch (dbType) {
+      case 'mongodb':
+        connectionUrl = `mongodb://${host}:${port}`;
+        break;
+      case 'apecloud-mysql':
+        connectionUrl = `jdbc:mysql://${host}:${port}`;
+        break;
+      case 'postgresql':
+        connectionUrl = `jdbc:postgresql://${host}:${port}`;
+        break;
+      case 'redis':
+        connectionUrl = `jdbc:redis://${host}:${port}`;
+        break;
+      default:
+        // keep original connection
+        break;
+    }
+
     const payload = {
       alias: dbName,
       environmentId: 2 as 1 | 2,
@@ -167,91 +186,70 @@ const Header = ({
       port: String(port),
       user: username,
       password: password,
-      url: connection,
+      url: connectionUrl,
       type: mapDBType(dbType)
     };
 
-    // console.log(JSON.stringify(payload));
-    try {
-      await syncAuthUser(apiKey, { uid: userKey });
-    } catch (error) {
-      console.log('syncAuthUser', error);
-    }
-    try {
-      let currentDataSourceId = getDataSourceId(db.dbName);
-      console.log('currentDataSourceId', currentDataSourceId);
-      // 检查是否是首次点击（数据库中是否已有数据源ID）
-      if (!currentDataSourceId) {
-        // 首次点击，调用 syncDatasourceFirst 创建数据源
-        try {
-          const res = await syncDatasourceFirst(payload, apiKey, userKey);
-          currentDataSourceId = res.data; // 从响应中获取数据源ID
+    console.log(JSON.stringify(payload));
+    let currentDataSourceId = getDataSourceId(db.dbName);
+    console.log('currentDataSourceId', currentDataSourceId);
+
+    if (!currentDataSourceId) {
+      try {
+        const res = await syncDatasourceFirst(payload, apiKey, userKey);
+        currentDataSourceId = res.data;
+        if (currentDataSourceId) {
+          setDataSourceId(db.dbName, currentDataSourceId);
+          console.log('Created datasource with ID:', currentDataSourceId);
+        }
+      } catch (err: any) {
+        if (err.data) {
+          currentDataSourceId = err.data;
           if (currentDataSourceId) {
-            setDataSourceId(db.dbName, currentDataSourceId); // 存储到store中
-            console.log('Created datasource with ID:', currentDataSourceId);
+            setDataSourceId(db.dbName, currentDataSourceId);
+            console.log('Datasource already exists with ID:', currentDataSourceId);
           }
-        } catch (err: any) {
-          // 如果同步失败，可能是数据源已存在，尝试创建
-          if (err.data) {
-            currentDataSourceId = err.data;
-            if (currentDataSourceId) {
-              setDataSourceId(db.dbName, currentDataSourceId);
-              console.log('Datasource already exists with ID:', currentDataSourceId);
-            }
-          } else {
-            throw err;
-          }
-        }
-      } else {
-        // 非首次点击，同步现有数据源
-        try {
-          const syncPayload = {
-            ...payload,
-            id: currentDataSourceId
-          };
-          await syncDatasource(syncPayload, apiKey, userKey);
-          console.log('Synced existing datasource with ID:', currentDataSourceId);
-        } catch (err) {
-          console.log('sync datasource:', err);
-          // 同步失败不影响继续操作
+        } else {
+          throw err;
         }
       }
-
-      // 确保 currentDataSourceId 是有效的数字
-      if (!currentDataSourceId) {
-        throw new Error('Failed to get or create datasource ID');
+    } else {
+      try {
+        const syncPayload = {
+          ...payload,
+          id: currentDataSourceId
+        };
+        await syncDatasource(syncPayload, apiKey, userKey);
+        console.log('Synced existing datasource with ID:', currentDataSourceId);
+      } catch (err) {
+        console.log('sync datasource:', JSON.stringify(err));
       }
-
-      // 获取当前系统语言并映射到 chat2db 支持的语言格式
-      const currentLang = getLangStore() || i18n?.language || 'zh';
-      const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
-
-      // 构建带有数据源ID的URL
-      const baseUrl = await generateLoginUrl({
-        userId,
-        userNS,
-        orgId,
-        secretKey,
-        ui: {
-          theme: ThemeAppearance.Light,
-          primaryColor: PrimaryColorsType.bw,
-          language: chat2dbLanguage,
-          hideAvatar: yowantLayoutConfig.hideAvatar
-        }
-      });
-
-      // 添加数据源ID到URL参数
-      const url = new URL(baseUrl);
-      url.searchParams.set('dataSourceIds', String(currentDataSourceId));
-      console.log('base url', url.toString());
-      router.push(url.toString());
-    } catch (err) {
-      console.log(t('chat2db_redirect_failed'), err);
-      toast({
-        title: t('chat2db_redirect_failed'),
-        status: 'error'
-      });
     }
+
+    if (!currentDataSourceId) {
+      throw new Error('Failed to get or create datasource ID');
+    }
+
+    const currentLang = getLangStore() || i18n?.language || 'zh';
+    const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
+
+    const baseUrl = await generateLoginUrl({
+      userId,
+      userNS,
+      orgId,
+      secretKey,
+      ui: {
+        theme: ThemeAppearance.Light,
+        primaryColor: PrimaryColorsType.bw,
+        language: chat2dbLanguage,
+        hideAvatar: yowantLayoutConfig.hideAvatar
+      }
+    });
+
+    const chat2dbUrl = new URL(baseUrl);
+    chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
+    console.log('base url', chat2dbUrl.toString());
+    router.push(chat2dbUrl.toString());
   }, [toast, router, conn, db.dbName, getDataSourceId, setDataSourceId, t]);
 
   return (
