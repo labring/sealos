@@ -227,14 +227,11 @@ export enum YamlKindEnum {
 
 // adaptAppDetail function has been moved to server side API call
 export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): AppDetailType => {
-  const allServicePorts = configs.flatMap((item) => {
-    if (item.kind === YamlKindEnum.Service) {
-      const temp = item as V1Service;
-      return temp.spec?.ports || [];
-    } else {
-      return [];
-    }
-  });
+  const allServices = configs
+    .filter((item) => item.kind === YamlKindEnum.Service)
+    .map((item) => item as V1Service);
+
+  const allServicePorts = allServices.flatMap((service) => service.spec?.ports || []);
 
   const deployKindsMap: {
     [YamlKindEnum.StatefulSet]?: V1StatefulSet;
@@ -411,6 +408,9 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
       }) || [],
     networks:
       allServicePorts?.map((item) => {
+        const service = allServices.find((svc) =>
+          svc.spec?.ports?.some((port) => port.port === item.port)
+        );
         const ingress = configs.find(
           (config: any) =>
             config.kind === YamlKindEnum.Ingress &&
@@ -430,6 +430,7 @@ export const adaptAppDetail = (configs: DeployKindsType[], envs: EnvResponse): A
           !envs.SEALOS_USER_DOMAINS.some((item) => domain.endsWith(item.name));
 
         return {
+          serviceName: service?.metadata?.name || '',
           networkName: ingress?.metadata?.name || '',
           portName: item.name || '',
           port: item.port,

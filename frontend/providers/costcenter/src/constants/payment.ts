@@ -6,7 +6,7 @@ export type PaymentForm = {
   namespace: string;
   userId: string;
   amount: string;
-  paymentMethod: 'wechat' | 'stripe';
+  paymentMethod: 'wechat' | 'alipay' | 'stripe';
 };
 
 export const paymentMeta: CRDMeta = {

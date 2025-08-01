@@ -1,6 +1,19 @@
 import request from '@/services/request';
 import useAppStore from '@/stores/app';
-import { Box, Button, Center, Flex, Image, Text, UseDisclosureReturn } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Center,
+  Flex,
+  Image,
+  Popover,
+  PopoverBody,
+  PopoverContent,
+  PopoverTrigger,
+  Portal,
+  Text,
+  UseDisclosureReturn
+} from '@chakra-ui/react';
 import { NotificationIcon, WarnIcon, useMessage } from '@sealos/ui';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -21,6 +34,7 @@ dayjs.locale('en');
 type NotificationProps = {
   disclosure: UseDisclosureReturn;
   onAmount: (amount: number) => void;
+  children: React.ReactNode;
 };
 
 export default function Notification(props: NotificationProps) {
@@ -167,215 +181,241 @@ export default function Notification(props: NotificationProps) {
     setExpandedMessageId(expandedMessageId === uid ? null : uid);
   };
 
-  return disclosure.isOpen ? (
-    <>
-      <Box className={styles.bg} onClick={() => disclosure.onClose()} cursor={'auto'}></Box>
-      <Box className={clsx(styles.container)}>
-        <Flex
-          h={'44px'}
-          alignItems={'center'}
-          position="relative"
-          pl={'20px'}
-          pr={'16px'}
-          borderBottom={'1px solid #F4F4F5'}
-        >
-          <Text>{t('common:alert')}</Text>
-          <Flex alignItems={'center'} gap={'12px'} ml={'auto'} cursor={'pointer'}>
-            <Text color={'#1C4EF5'} fontSize={'12px'} fontWeight={500} onClick={markAllAsRead}>
-              {t('common:read_all')}
-            </Text>
-            <X
-              cursor={'pointer'}
-              size={16}
-              color="#737373"
-              onClick={() => disclosure.onClose()}
-              style={{ marginLeft: 'auto' }}
-            />
-          </Flex>
-        </Flex>
+  return (
+    <Box>
+      <Popover
+        isOpen={disclosure.isOpen}
+        onClose={disclosure.onClose}
+        placement="bottom-end"
+        isLazy
+      >
+        <PopoverTrigger>{props.children}</PopoverTrigger>
 
-        <Flex direction={'column'} h="430px" className={styles.scrollWrap}>
-          {notifications?.length > 0 ? (
-            notifications?.map((item: TNotification) => (
-              <Flex
-                cursor={'pointer'}
-                key={item?.uid}
-                onClick={() => handleReadMessage(item)}
-                position="relative"
-                borderBottom={'1px solid #f4f4f5'}
-                p={'12px 20px'}
-                gap={'12px'}
-              >
-                <Center
-                  flexShrink={0}
-                  width="32px"
-                  height="32px"
-                  borderRadius="full"
-                  border="1px solid #F4F4F5"
-                  position={'relative'}
+        <Portal>
+          <PopoverContent w="360px" maxW="100vw">
+            <PopoverBody p="0">
+              <Box className={clsx(styles.container)}>
+                <Flex
+                  h={'44px'}
+                  alignItems={'center'}
+                  position="relative"
+                  pl={'20px'}
+                  pr={'16px'}
+                  borderBottom={'1px solid #F4F4F5'}
                 >
-                  {item?.i18n['en']?.from === 'Referral' ? null : (
-                    <TriangleAlert
-                      size={20}
-                      color={getNotificationIconColor(item?.i18n['en']?.from)}
+                  <Text>{t('common:alert')}</Text>
+                  <Flex alignItems={'center'} gap={'12px'} ml={'auto'} cursor={'pointer'}>
+                    <Text
+                      color={'#1C4EF5'}
+                      fontSize={'12px'}
+                      fontWeight={500}
+                      onClick={markAllAsRead}
+                    >
+                      {t('common:read_all')}
+                    </Text>
+                    <X
+                      cursor={'pointer'}
+                      size={16}
+                      color="#737373"
+                      onClick={() => disclosure.onClose()}
+                      style={{ marginLeft: 'auto' }}
                     />
-                  )}
-                  {!item.isRead && (
-                    <Box
-                      position="absolute"
-                      top="0px"
-                      right="0px"
-                      w="6px"
-                      h="6px"
-                      borderRadius="50%"
-                      bg="red.500"
-                    />
-                  )}
-                </Center>
-                <Box>
-                  <Text fontSize={'14px'} fontWeight={500} color={'#000000'}>
-                    {item.i18n[i18n.language]?.title}
-                  </Text>
-                  <Text
-                    height={expandedMessageId === item.uid ? 'auto' : '32px'}
-                    mt={'2px'}
-                    whiteSpace="pre-wrap"
-                    fontSize={'12px'}
-                    color={'#737373'}
-                    noOfLines={expandedMessageId === item.uid ? undefined : 2}
-                    overflow={'hidden'}
-                    textOverflow={'ellipsis'}
-                    onClick={(e) => toggleExpand(item.uid, e)}
-                    cursor="pointer"
-                    position="relative"
-                  >
-                    {item?.i18n['en']?.from === 'Referral' ? (
-                      <div
-                        style={{ cursor: 'pointer', marginTop: '10px' }}
-                        onClick={handleReferral}
+                  </Flex>
+                </Flex>
+
+                <Flex direction={'column'} h="430px" className={styles.scrollWrap}>
+                  {notifications?.length > 0 ? (
+                    notifications?.map((item: TNotification) => (
+                      <Flex
+                        cursor={'pointer'}
+                        key={item?.uid}
+                        onClick={() => handleReadMessage(item)}
+                        position="relative"
+                        borderBottom={'1px solid #f4f4f5'}
+                        p={'12px 20px'}
+                        gap={'12px'}
                       >
-                        {item.i18n[i18n.language]?.message}
-                      </div>
-                    ) : (
-                      <>{item.i18n[i18n.language]?.message}</>
-                    )}
-                  </Text>
-                  <Text mt="8px" fontSize={'14px'} fontWeight={400} color={'#18181B'}>
-                    {dayjs((item?.timestamp || 0) * 1000).fromNow()}
-                  </Text>
-                </Box>
+                        <Center
+                          flexShrink={0}
+                          width="32px"
+                          height="32px"
+                          borderRadius="full"
+                          border="1px solid #F4F4F5"
+                          position={'relative'}
+                        >
+                          {item?.i18n['en']?.from === 'Referral' ? null : (
+                            <TriangleAlert
+                              size={20}
+                              color={getNotificationIconColor(item?.i18n['en']?.from)}
+                            />
+                          )}
+                          {!item.isRead && (
+                            <Box
+                              position="absolute"
+                              top="0px"
+                              right="0px"
+                              w="6px"
+                              h="6px"
+                              borderRadius="50%"
+                              bg="red.500"
+                            />
+                          )}
+                        </Center>
+                        <Box>
+                          <Text fontSize={'14px'} fontWeight={500} color={'#000000'}>
+                            {item.i18n[i18n.language]?.title}
+                          </Text>
+                          <Text
+                            height={expandedMessageId === item.uid ? 'auto' : '32px'}
+                            mt={'2px'}
+                            whiteSpace="pre-wrap"
+                            fontSize={'12px'}
+                            color={'#737373'}
+                            noOfLines={expandedMessageId === item.uid ? undefined : 2}
+                            overflow={'hidden'}
+                            textOverflow={'ellipsis'}
+                            onClick={(e) => toggleExpand(item.uid, e)}
+                            cursor="pointer"
+                            position="relative"
+                          >
+                            {item?.i18n['en']?.from === 'Referral' ? (
+                              <div
+                                style={{ cursor: 'pointer', marginTop: '10px' }}
+                                onClick={handleReferral}
+                              >
+                                {item.i18n[i18n.language]?.message}
+                              </div>
+                            ) : (
+                              <>{item.i18n[i18n.language]?.message}</>
+                            )}
+                          </Text>
+                          <Text mt="8px" fontSize={'14px'} fontWeight={400} color={'#18181B'}>
+                            {dayjs((item?.timestamp || 0) * 1000).fromNow()}
+                          </Text>
+                        </Box>
+                      </Flex>
+                    ))
+                  ) : (
+                    <Flex
+                      h="100%"
+                      color={'#737373'}
+                      width={'220px'}
+                      flexDirection={'column'}
+                      justifyContent={'center'}
+                      alignItems={'center'}
+                      mx={'auto'}
+                    >
+                      <Image src="/images/no-notification.svg" alt="no-notification" />
+                      <Text mt={'20px'} fontSize={'16px'} fontWeight={500} color={'#18181B'}>
+                        No notifications yet
+                      </Text>
+                      <Text color={'#71717A'} mt={'4px'} fontSize={'14px'}>
+                        Recent notifications will be shown here. Everything is going well.
+                      </Text>
+                    </Flex>
+                  )}
+                </Flex>
+              </Box>
+            </PopoverBody>
+          </PopoverContent>
+        </Portal>
+      </Popover>
+
+      <Popover
+        isOpen={!!MessageConfig.popupMessage && !disclosure.isOpen}
+        closeOnBlur={false}
+        placement="bottom-end"
+        isLazy
+      >
+        <PopoverTrigger>
+          {/* Helps locating the popover */}
+          <Box visibility={'hidden'}></Box>
+        </PopoverTrigger>
+
+        <Portal>
+          <PopoverContent w="396px" maxW="100vw">
+            <PopoverBody
+              bg="#FFF"
+              boxShadow={'0px 4px 12px 0px rgba(0, 0, 0, 0.08)'}
+              borderRadius={'12px'}
+              p="24px"
+              zIndex={9}
+            >
+              <Flex alignItems={'center'} position={'relative'}>
+                {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? null : (
+                  <TriangleAlert
+                    size={20}
+                    color={getNotificationIconColor(MessageConfig.popupMessage?.i18n['en']?.from)}
+                  />
+                )}
+                <Text fontSize={'16px'} fontWeight={600} ml="6px">
+                  {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
+                </Text>
+                <X
+                  size={20}
+                  color="#18181B"
+                  style={{
+                    position: 'absolute',
+                    right: '0px',
+                    top: '0px',
+                    color: '#18181B'
+                  }}
+                  cursor={'pointer'}
+                  onClick={() => {
+                    const temp = MessageConfig.popupMessage;
+                    setMessageConfig(
+                      produce((draft) => {
+                        draft.popupMessage = undefined;
+                      })
+                    );
+                    readMsgMutation.mutate([temp?.name || '']);
+                  }}
+                />
               </Flex>
-            ))
-          ) : (
-            <Flex
-              h="100%"
-              color={'#737373'}
-              width={'220px'}
-              flexDirection={'column'}
-              justifyContent={'center'}
-              alignItems={'center'}
-              mx={'auto'}
-            >
-              <Image src="/images/no-notification.svg" alt="no-notification" />
-              <Text mt={'20px'} fontSize={'16px'} fontWeight={500} color={'#18181B'}>
-                No notifications yet
-              </Text>
-              <Text color={'#71717A'} mt={'4px'} fontSize={'14px'}>
-                Recent notifications will be shown here. Everything is going well.
-              </Text>
-            </Flex>
-          )}
-        </Flex>
-      </Box>
-    </>
-  ) : (
-    <>
-      {MessageConfig?.popupMessage && (
-        <Box
-          cursor={'default'}
-          position={'absolute'}
-          w="396px"
-          top={'70px'}
-          right={'60px'}
-          bg="#FFF"
-          boxShadow={'0px 4px 12px 0px rgba(0, 0, 0, 0.08)'}
-          borderRadius={'12px'}
-          p="24px"
-          zIndex={9}
-        >
-          <Flex alignItems={'center'} position={'relative'}>
-            {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? null : (
-              <TriangleAlert
-                size={20}
-                color={getNotificationIconColor(MessageConfig.popupMessage?.i18n['en']?.from)}
-              />
-            )}
-            <Text fontSize={'16px'} fontWeight={600} ml="6px">
-              {MessageConfig.popupMessage?.i18n[i18n.language]?.title}
-            </Text>
-            <X
-              size={20}
-              color="#18181B"
-              style={{
-                position: 'absolute',
-                right: '0px',
-                top: '0px',
-                color: '#18181B'
-              }}
-              cursor={'pointer'}
-              onClick={() => {
-                const temp = MessageConfig.popupMessage;
-                setMessageConfig(
-                  produce((draft) => {
-                    draft.popupMessage = undefined;
-                  })
-                );
-                readMsgMutation.mutate([temp?.name || '']);
-              }}
-            />
-          </Flex>
 
-          {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? (
-            <div style={{ cursor: 'pointer', marginTop: '10px' }} onClick={handleReferral}>
-              {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
-            </div>
-          ) : (
-            <Text
-              whiteSpace="pre-wrap"
-              mt="8px"
-              fontSize={'14px'}
-              fontWeight={400}
-              color={'#18181B'}
-            >
-              {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
-            </Text>
-          )}
+              {MessageConfig.popupMessage?.i18n['en']?.from === 'Referral' ? (
+                <div style={{ cursor: 'pointer', marginTop: '10px' }} onClick={handleReferral}>
+                  {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+                </div>
+              ) : (
+                <Text
+                  whiteSpace="pre-wrap"
+                  mt="8px"
+                  fontSize={'14px'}
+                  fontWeight={400}
+                  color={'#18181B'}
+                >
+                  {MessageConfig.popupMessage?.i18n[i18n.language]?.message}
+                </Text>
+              )}
 
-          <Flex alignItems={'center'} mt="16px">
-            {MessageConfig.popupMessage?.i18n['en']?.from === 'Debt-System' && (
-              <Button
-                w="92px"
-                h="32px"
-                variant={'solid'}
-                color={'#FAFAFA'}
-                borderRadius={'8px'}
-                onClick={() => {
-                  const temp = MessageConfig.popupMessage;
-                  setMessageConfig(
-                    produce((draft) => {
-                      draft.popupMessage = undefined;
-                    })
-                  );
-                  readMsgMutation.mutate([temp?.name || '']);
-                  handleCharge();
-                }}
-              >
-                {t('common:charge')}
-              </Button>
-            )}
-          </Flex>
-        </Box>
-      )}
-    </>
+              <Flex alignItems={'center'} mt="16px">
+                {MessageConfig.popupMessage?.i18n['en']?.from === 'Debt-System' && (
+                  <Button
+                    w="92px"
+                    h="32px"
+                    variant={'solid'}
+                    color={'#FAFAFA'}
+                    borderRadius={'8px'}
+                    onClick={() => {
+                      const temp = MessageConfig.popupMessage;
+                      setMessageConfig(
+                        produce((draft) => {
+                          draft.popupMessage = undefined;
+                        })
+                      );
+                      readMsgMutation.mutate([temp?.name || '']);
+                      handleCharge();
+                    }}
+                  >
+                    {t('common:charge')}
+                  </Button>
+                )}
+              </Flex>
+            </PopoverBody>
+          </PopoverContent>
+        </Portal>
+      </Popover>
+    </Box>
   );
 }

@@ -1,31 +1,26 @@
-import request from '@/services/request';
 import { useConfigStore } from '@/stores/config';
 import useScriptStore from '@/stores/script';
-import { ApiResp } from '@/types';
-import { Box, Button, ButtonProps, Link, LinkProps } from '@chakra-ui/react';
-import { delay } from 'lodash';
-import React, { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import { Button, useToast } from '@chakra-ui/react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { v4 } from 'uuid';
-import useSms from '../auth/useSms';
-import useSmsStateStore from '@/stores/captcha';
-import useCustomError from '../auth/useCustomError';
 import { useTranslation } from 'next-i18next';
-import { I18nCommonKey } from '@/types/i18next';
-import { jsonRes } from '@/services/backend/response';
-import { useSignupStore } from '@/stores/signup';
 export type TCaptchaInstance = {
   invoke: () => void;
 };
 type Props = {
-  showError: (errorMessage: I18nCommonKey, duration?: number) => void;
+  onCaptchaComplete: (captchaVerifyParam: string) => Promise<{
+    captchaValid: boolean;
+    success: boolean;
+  }>;
+  onCallbackComplete: (success: boolean) => void;
+  onInitError?: () => void;
 };
 const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
-  { showError }: Props,
+  { onCaptchaComplete, onCallbackComplete, onInitError }: Props,
   ref
 ) {
   const captchaElementRef = useRef<HTMLDivElement>(null);
   const captchaInstanceRef = useRef(null);
-  const tokenRef = useRef('');
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { authConfig } = useConfigStore();
   useImperativeHandle<any, TCaptchaInstance>(
@@ -39,10 +34,12 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
     },
     []
   );
-  const { captchaIsLoaded, captchaIsInited, setCaptchaIsInited } = useScriptStore();
   const [buttonId] = useState('captcha_button_pop');
   const [captchaId] = useState('captcha_' + v4().slice(0, 8));
+  const { captchaIsLoaded } = useScriptStore();
   const { i18n, t } = useTranslation();
+  const toast = useToast();
+
   // @ts-ignore
   const getInstance = (instance) => {
     captchaInstanceRef.current = instance;
@@ -50,6 +47,7 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
 
   useEffect(() => {
     if (!captchaIsLoaded) return;
+
     const initAliyunCaptchaOptions = {
       SceneId: authConfig?.captcha.ali.sceneId,
       prefix: authConfig?.captcha.ali.prefix,
@@ -57,81 +55,26 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
       element: '#' + captchaId,
       button: '#' + buttonId,
       async captchaVerifyCallback(captchaVerifyParam: string) {
-        console.log('cvc');
-        try {
-          const state = useSignupStore.getState();
-          if (60_000 + state.startTime < new Date().getTime()) {
-            return {
-              captchaResult: false,
-              bizResult: false
-            };
-          }
-          const signupData = state.signupData;
-          if (!signupData || signupData.providerType !== 'PHONE')
-            return {
-              captchaResult: false,
-              bizResult: false
-            };
-          const id = signupData.providerId;
-          const res = await request.post<
-            any,
-            ApiResp<
-              | {
-                  result: boolean;
-                  code: string;
-                }
-              | undefined
-            >
-          >('/api/auth/phone/sms', {
-            id,
-            captchaVerifyParam
-          });
-          if (res.code === 200) {
-            if (res.message !== 'successfully') {
-              return {
-                captchaResult: true,
-                bizResult: false
-              };
-            } else {
-              return {
-                captchaResult: true,
-                bizResult: true
-              };
-            }
-          } else {
-            // boolean | undefined
-            if (res.data?.result !== true)
-              return {
-                captchaResult: false
-              };
-            else
-              return {
-                captchaResult: true,
-                bizResult: false
-              };
-          }
-        } catch (err) {
-          // @ts-ignore
-          if (err?.code === 409 && err?.data?.result === false) {
-            return {
-              captchaResult: false,
-              bizResult: false
-            };
-          } else {
-            return {
-              captchaResult: true,
-              bizResult: false
-            };
-          }
-        }
+        const result = await onCaptchaComplete(captchaVerifyParam);
+        return {
+          captchaResult: result.captchaValid,
+          bizResult: result.success
+        };
       },
       onBizResultCallback(bizResult: boolean) {
-        if (bizResult) {
-          const state = useSignupStore.getState();
-          state.updateStartTime();
+        onCallbackComplete(bizResult);
+      },
+      onError(error: any) {
+        if (onInitError) {
+          onInitError();
         } else {
-          const message = i18n.t('common:get_code_failed') || 'Get code failed';
-          showError(message);
+          toast({
+            title: t('common:captcha_init_failed'),
+            status: 'error',
+            duration: 3000,
+            isClosable: true,
+            position: 'top'
+          });
         }
       },
       getInstance,
@@ -144,6 +87,8 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
       region: 'cn'
     };
 
+    console.log('initializing captcha');
+
     // @ts-ignore
     window.initAliyunCaptcha(initAliyunCaptchaOptions);
     // console.log('inited success', captchaIsInited);
@@ -153,7 +98,8 @@ const HiddenCaptchaComponent = forwardRef(function HiddenCaptchaComponent(
       captchaInstanceRef.current = null;
       // setCaptchaIsInited(false);
     };
-  }, [captchaIsLoaded, t, i18n.language]);
+  }, [i18n.language]);
+
   return (
     <>
       <Button ref={buttonRef} variant={'unstyled'} hidden id={buttonId} />

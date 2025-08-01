@@ -18,6 +18,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
@@ -114,4 +115,27 @@ func TestCockroach_InitTables(t *testing.T) {
 	//if err != nil {
 	//	t.Fatalf("AddDeductionBalanceWithCredits() error = %v", err)
 	//}
+}
+
+func TestCockroach_CreateCorporate(t *testing.T) {
+	os.Setenv("LOCAL_REGION", "")
+	ck, err := NewCockRoach("/", "")
+	if err != nil {
+		t.Errorf("NewCockRoach() error = %v", err)
+		return
+	}
+	defer ck.Close()
+
+	cor := &types.Corporate{
+		UserUID:             "66EqYNUnLr",
+		ReceiptSerialNumber: uuid.New().String(),
+		PayerName:           "payerName",
+		PaymentAmount:       1_000_000,
+		GiftAmount:          1_000_000,
+	}
+	err = ck.CreateCorporate(cor)
+	if err != nil {
+		t.Errorf("CreateCorporate() error = %v", err)
+	}
+	t.Logf("cor: %+v", cor)
 }

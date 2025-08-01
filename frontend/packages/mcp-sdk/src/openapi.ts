@@ -49,11 +49,9 @@ export class OpenAPIToolsParser {
       if (!pathItem) continue;
       for (const [method, operation] of Object.entries(pathItem)) {
         if (method === 'parameters' || !operation) continue;
-
         const op = operation as OpenAPIV3.OperationObject;
         const cleanPath = path.replace(/^\//, '');
         const toolId = `${method.toUpperCase()}-${cleanPath}`.replace(/[^a-zA-Z0-9-]/g, '-');
-
         const tool: Tool = {
           // @ts-ignore
           name: op.summary,

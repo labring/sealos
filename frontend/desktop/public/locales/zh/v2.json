@@ -91,6 +91,7 @@
   "register": "注册",
   "remember_me": "记住我",
   "request_new_link": "重新发送验证码",
+  "sending_code": "正在发送验证码...",
   "settings": "设置",
   "show_me": "展示",
   "sign_in": "登录",

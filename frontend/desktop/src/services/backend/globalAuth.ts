@@ -16,6 +16,7 @@ import { enableSignUp, enableTracking, getRegionUid, getVersion } from '../enabl
 import { trackSignUp } from './tracking';
 import { emit } from 'process';
 import { addOauthProvider, bindEmailSvc } from './svc/bindProvider';
+import { AdClickData } from '@/types/adClick';
 
 type TransactionClient = Omit<
   PrismaClient,
@@ -199,7 +200,7 @@ async function signUp({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
@@ -265,7 +266,7 @@ async function signUpWithEmail({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
@@ -325,7 +326,7 @@ export async function signUpByPassword({
           data: {
             userUid: user.uid,
             channel: semData.channel,
-            ...(semData.additionalInfo && { additionalInfo: semData.additionalInfo })
+            additionalInfo: semData.additionalInfo
           }
         });
       }
@@ -375,7 +376,7 @@ export const getGlobalToken = async ({
   password,
   inviterId,
   semData,
-  bdVid
+  adClickData
 }: {
   provider: ProviderType;
   providerId: string;
@@ -385,7 +386,7 @@ export const getGlobalToken = async ({
   password?: string;
   inviterId?: string;
   semData?: SemData;
-  bdVid?: string;
+  adClickData?: AdClickData;
 }) => {
   let user: User | null = null;
 
@@ -438,6 +439,12 @@ export const getGlobalToken = async ({
           await trackSignUp({
             userId: result.user.id,
             userUid: result.user.uid
+          });
+        }
+
+        if (adClickData) {
+          await uploadConvertData(adClickData).catch((e) => {
+            console.log('Failed to upload AD click data: ', e);
           });
         }
       }
@@ -500,14 +507,10 @@ export const getGlobalToken = async ({
             signResult: result
           });
         }
-        if (bdVid) {
-          await uploadConvertData({ newType: [3], bdVid })
-            .then((res) => {
-              console.log(res);
-            })
-            .catch((err) => {
-              console.log(err);
-            });
+        if (adClickData) {
+          await uploadConvertData(adClickData).catch((e) => {
+            console.log('Failed to upload AD click data: ', e);
+          });
         }
         if (enableTracking()) {
           await trackSignUp({
@@ -522,6 +525,7 @@ export const getGlobalToken = async ({
         provider,
         id: providerId
       });
+
       result && (user = result.user);
     }
   }

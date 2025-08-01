@@ -32,6 +32,9 @@ export type PayMethods = {
   wechat: {
     enabled: boolean;
   };
+  alipay: {
+    enabled: boolean;
+  }
   stripe: {
     enabled: boolean;
     publicKey: string;
@@ -115,6 +118,9 @@ export var DefaultAppConfig: AppConfigType = {
       enabled: false,
       payMethods: {
         wechat: {
+          enabled: false
+        },
+        alipay: {
           enabled: false
         },
         stripe: {

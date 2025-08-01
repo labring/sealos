@@ -77,6 +77,8 @@ func RegisterPayRouter() {
 	adminGroup := router.Group(helper.AdminGroup).
 		GET(helper.AdminGetAccountWithWorkspace, api.AdminGetAccountWithWorkspaceID).
 		GET(helper.AdminGetUserRealNameInfo, api.AdminGetUserRealNameInfo).
+		POST(helper.AdminCreateCorporate, api.AdminCreateCorporate).
+		POST(helper.AdminRefundForms, api.AdminPaymentRefund).
 		POST(helper.AdminChargeBilling, api.AdminChargeBilling).
 		POST(helper.AdminFlushDebtResourceStatus, api.AdminFlushDebtResourceStatus).
 		POST(helper.AdminSuspendUserTraffic, api.AdminSuspendUserTraffic).

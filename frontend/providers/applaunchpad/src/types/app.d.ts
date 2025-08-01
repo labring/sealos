@@ -77,6 +77,7 @@ export interface AppEditType {
   memory: number;
   gpu?: GpuType;
   networks: {
+    serviceName?: string;
     networkName: string;
     portName: string;
     port: number;
@@ -112,6 +113,7 @@ export interface AppEditType {
     value: string;
     key: string;
     volumeName: string;
+    subPath?: string; // compatible old key
   }[];
   storeList: {
     name: string;

@@ -413,6 +413,7 @@ const (
 	QuotaLimitsMemory        = "QUOTA_LIMITS_MEMORY"
 	QuotaLimitsStorage       = "QUOTA_LIMITS_STORAGE"
 	QuotaLimitsGPU           = "QUOTA_LIMITS_GPU"
+	QuotaLimitsPods          = "QUOTA_LIMITS_PODS"
 	QuotaLimitsNodePorts     = "QUOTA_LIMITS_NODE_PORTS"
 	QuotaObjectStorageSize   = "QUOTA_OBJECT_STORAGE_SIZE"
 	QuotaObjectStorageBucket = "QUOTA_OBJECT_STORAGE_BUCKET"
@@ -432,6 +433,7 @@ const (
 	DefaultQuotaLimitsStorage       = "100Gi"
 	DefaultQuotaLimitsGPU           = "8"
 	DefaultQuotaLimitsNodePorts     = "10"
+	DefaultQuotaLimitsPods          = "20"
 	DefaultQuotaObjectStorageSize   = "100Gi"
 	DefaultQuotaObjectStorageBucket = "5"
 )
@@ -444,6 +446,7 @@ func DefaultResourceQuotaHard() corev1.ResourceList {
 		corev1.ResourceLimitsMemory:           resource.MustParse(env.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
 		corev1.ResourceRequestsStorage:        resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
 		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
+		corev1.ResourcePods:                   resource.MustParse(env.GetEnvWithDefault(QuotaLimitsPods, DefaultQuotaLimitsPods)),
 		corev1.ResourceServicesNodePorts:      resource.MustParse(env.GetEnvWithDefault(QuotaLimitsNodePorts, DefaultQuotaLimitsNodePorts)),
 		ResourceObjectStorageSize:             resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageSize, DefaultQuotaObjectStorageSize)),
 		ResourceObjectStorageBucket:           resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageBucket, DefaultQuotaObjectStorageBucket)),

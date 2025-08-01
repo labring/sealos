@@ -123,8 +123,7 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
             >
               <MyIcon name="warningInfo" w={'16px'} h={'16px'} mr={2} />
               <Text fontWeight="500">
-                {dbName}
-                {t('has_comps', { number: compNum })}:&emsp;
+                {dbName}&emsp;{t('has_comps', { number: compNum })}:&emsp;
               </Text>
               <Text>{descriptionMap.get(data.dbType)}</Text>
             </Box>

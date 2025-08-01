@@ -2,9 +2,10 @@ import { getInviteCodeInfoRequest, reciveAction, verifyInviteCodeRequest } from 
 import useCallbackStore from '@/stores/callback';
 import { useConfigStore } from '@/stores/config';
 import useSessionStore from '@/stores/session';
-import { ROLE_LIST } from '@/types/team';
+import { ROLE_LIST, UserRole } from '@/types/team';
 import { compareFirstLanguages } from '@/utils/tools';
 import { Button, Flex, Image, Text, VStack } from '@chakra-ui/react';
+import { track } from '@sealos/gtm';
 import { dehydrate, QueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { isString } from 'lodash';
 import type { NextPage } from 'next';
@@ -21,9 +22,7 @@ const Callback: NextPage = () => {
   const logo = useConfigStore().layoutConfig?.logo;
   const { setWorkspaceInviteCode } = useCallbackStore();
   const { t } = useTranslation();
-  const verifyMutation = useMutation({
-    mutationFn: verifyInviteCodeRequest
-  });
+
   const inviteTips = ({ managerName, teamName, role }: Record<string, string>) =>
     t('common:receive_tips', {
       managerName,
@@ -44,6 +43,20 @@ const Callback: NextPage = () => {
       }),
     enabled: isString(inviteCode)
   });
+
+  const verifyMutation = useMutation({
+    mutationFn: verifyInviteCodeRequest,
+    onSuccess: (_data, variables) => {
+      if (variables.action === reciveAction.Accepte) {
+        track('workspace_join', {
+          module: 'workspace',
+          trigger: 'invite',
+          role: infoResp?.data?.data!.role === UserRole.Manager ? 'manager' : 'developer'
+        });
+      }
+    }
+  });
+
   const reset = () => {
     setWorkspaceInviteCode();
     router.replace('/');

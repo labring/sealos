@@ -15,6 +15,7 @@ import { captchaReq } from '../sms';
 import { isDisposableEmail } from 'disposable-email-domains-js';
 import { createMiddleware } from '@/utils/factory';
 import { HttpStatusCode } from 'axios';
+import { AdClickData } from '@/types/adClick';
 
 export const filterPhoneParams = async (
   req: NextApiRequest,
@@ -50,15 +51,15 @@ export const filterPhoneVerifyParams = (
     code: string;
     inviterId?: string;
     semData?: SemData;
-    bdVid?: string;
+    adClickData?: AdClickData;
   }) => void
 ) =>
   filterPhoneParams(req, res, async (data) => {
-    const { code, inviterId, semData, bdVid } = req.body as {
+    const { code, inviterId, semData, adClickData } = req.body as {
       code?: string;
       inviterId?: string;
       semData?: SemData;
-      bdVid?: string;
+      adClickData?: AdClickData;
     };
     if (!code)
       return jsonRes(res, {
@@ -72,7 +73,7 @@ export const filterPhoneVerifyParams = (
         code,
         inviterId,
         semData,
-        bdVid
+        adClickData
       })
     );
   });
@@ -161,7 +162,7 @@ export const filterCaptcha = async (
   const { captchaVerifyParam } = req.body as { captchaVerifyParam?: string };
   if (!captchaVerifyParam)
     return jsonRes(res, {
-      message: 'captchaVerifyParam  is invalid',
+      message: 'captchaVerifyParam is not provided',
       code: 400
     });
   const result = await captchaReq({
@@ -169,7 +170,7 @@ export const filterCaptcha = async (
   });
   if (!result?.verifyResult)
     return jsonRes(res, {
-      message: 'captchaVerifyParam is invalid',
+      message: 'captcha verification failed',
       data: {
         result: !!result?.verifyResult,
         code: result?.verifyCode || ''
@@ -249,6 +250,9 @@ export const sendSmsCodeGuard = createMiddleware<{ id: string; smsType: SmsType 
     if (!(await checkSendable({ smsType, id }))) {
       return jsonRes(res, {
         message: 'code already sent',
+        data: {
+          error: 'too_frequent'
+        },
         code: 409
       });
     }

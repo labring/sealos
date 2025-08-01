@@ -3,6 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import { AccessTokenPayload } from '@/types/token';
 import useSessionStore from '@/stores/session';
 import { SemData } from '@/types/sem';
+import { AdClickData } from '@/types/adClick';
 
 export const sessionConfig = async ({
   token,
@@ -52,6 +53,15 @@ export const setUserSemData = (data: SemData): void => {
   localStorage.setItem('sealos_sem', JSON.stringify(data));
 };
 
-export const getBaiduId = () => localStorage.getItem('bd_vid');
+export const getAdClickData = (): AdClickData | null => {
+  const adClickString = localStorage.getItem('ad_click');
+  if (adClickString) {
+    return JSON.parse(adClickString);
+  }
 
-export const setBaiduId = (id: string) => localStorage.setItem('bd_vid', id);
+  return null;
+};
+
+export const setAdClickData = (data: AdClickData) => {
+  localStorage.setItem('ad_click', JSON.stringify(data));
+};

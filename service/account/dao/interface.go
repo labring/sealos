@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -92,6 +93,8 @@ type Interface interface {
 	SetDefaultCard(cardID uuid.UUID, userUID uuid.UUID) error
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
+	RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error
+	CreateCorporate(corporate types.Corporate) error
 }
 
 type Account struct {
@@ -2321,4 +2324,65 @@ func (m *MongoDB) reconcileUnsettledLLMBilling(startTime, endTime time.Time) (ma
 		return nil, fmt.Errorf("cursor error: %v", err)
 	}
 	return result, nil
+}
+
+func (g *Cockroach) RefundAmount(ref types.PaymentRefund, postDo func(types.PaymentRefund) error) error {
+	//g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+	//	// 1. get payment with id，status设置为退款
+	//	// 2. 创建 paymentRefund 数据 进行关联
+	//	// 3. 更新用户账户余额
+	//})
+	return g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		// 1. 查询原 payment 并设置状态为已退款
+		var payment types.Payment
+		if err := tx.
+			Where("id = ? ", ref.ID).
+			First(&payment).Error; err != nil {
+			return fmt.Errorf("payment not found: %w", err)
+		}
+
+		// 状态改为 "refunded"
+		payment.Status = types.PaymentStatusRefunded
+		if err := tx.Save(&payment).Error; err != nil {
+			return fmt.Errorf("failed to update payment status: %w", err)
+		}
+
+		// 2. 调用退款接口进行退款
+		// 调用退款接口之后返回 OutTradeNo 传入payment_refund
+
+		if ref.RefundNo == "" {
+			ref.RefundNo = uuid.NewString()
+		}
+		// 2. 创建一条 payment_refund 记录
+		refund := types.PaymentRefund{
+			TradeNo:      payment.TradeNO,  //自查询
+			ID:           payment.ID,       //外键 与payment关联  前端传入
+			Method:       payment.Method,   //前端传入
+			RefundNo:     ref.RefundNo,     //生成传入
+			RefundAmount: ref.RefundAmount, //前端传入
+			DeductAmount: ref.DeductAmount, //前端传入
+			RefundReason: ref.RefundReason, //前端选择传入
+		}
+		if err := tx.Create(&refund).Error; err != nil {
+			log.Printf("创建 refund 时的字段内容: %+v", refund)
+			return fmt.Errorf("failed to create payment_refund: %w", err)
+		}
+
+		// 用公开方法调用
+		if ref.DeductAmount > 0 {
+			if err := g.ck.UpdateWithAccount(payment.UserUID, false, false, false, ref.DeductAmount, tx); err != nil {
+				return fmt.Errorf("扣款失败：%w", err)
+			}
+		}
+		return postDo(refund)
+	})
+}
+
+func (g *Cockroach) CreateCorporate(corporate types.Corporate) error {
+	return g.ck.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		if err := g.ck.CreateCorporate(&corporate); err != nil {
+			return fmt.Errorf("failed to create corporate: %w", err)
+		}
+		return nil
+	})
 }
