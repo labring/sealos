@@ -48,6 +48,9 @@ jobs:
   container-sealos:
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:
       - name: Checkout
@@ -68,7 +71,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Download sealos
         uses: actions/download-artifact@v4
@@ -116,6 +119,8 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       issues: write
+      contents: write
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -127,7 +132,7 @@ jobs:
         with:
           version: v0.0.8-rc1
         env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}"
           SEALOS_TYPE: "issue_renew"
           SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
           SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
@@ -146,6 +151,8 @@ jobs:
       - save-sealos
     runs-on: ubuntu-24.04
     permissions:
+      contents: write
+      packages: write
       issues: write
     steps:
       - name: Checkout
@@ -177,13 +184,13 @@ jobs:
       - name: Manifest Cluster Images
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           sudo sealos login -u "${REPOSITORY_OWNER}" -p "${GH_PAT}" --debug ghcr.io
           sudo sealos load -i /tmp/sealos/images/patch-arm64.tar
           sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
           sudo sealos images
-          bash ${{ env.PROJECT_PATH }}/scripts/manifest-cluster-images.sh
+          bash ./scripts/manifest-cluster-images.sh
 
       - name: Manifest Cluster Images for latest
         env:
@@ -193,7 +200,7 @@ jobs:
           sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-amd64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-amd64"
           sudo sealos tag "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:${GIT_COMMIT_SHORT_SHA}-arm64" "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest-arm64"
           sudo sealos images
-          bash ${{ env.PROJECT_PATH }}/scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest"
+          bash ./scripts/manifest-cluster-images.sh "ghcr.io/${REPOSITORY_OWNER}/sealos-patch:latest"
 
       - name: Renew issue and Sync Images
         uses: labring/gh-rebot@v0.0.6
