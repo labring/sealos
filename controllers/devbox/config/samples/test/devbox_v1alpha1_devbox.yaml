@@ -15,30 +15,15 @@
 apiVersion: devbox.sealos.io/v1alpha1
 kind: Devbox
 metadata:
-  labels:
-    app.kubernetes.io/name: devbox
-    app.kubernetes.io/managed-by: kustomize
-  name: devbox-sample
+  name: devbox-sample-1
 spec:
-  state: Running
-  resource:
-    cpu: 1000m
-    memory: 1024Mi
-  runtimeRef:
-    name: go-1-22-5
-    namespace: devbox-system
-  command:
-    - /bin/bash
-  args:
-    - -c
-    - |
-      apt-get update
-      apt-get install -y tini
-      tini -- /bin/bash -c "echo 'DevBox is ready for testing'; tail -f /dev/null"
+  squash: false
   network:
     type: NodePort
-    extraPorts:
-      - containerPort: 443
-        name: 'https'
-      - containerPort: 80
-        name: 'http'
+  runtimeClassName: devbox-runtime
+  resource:
+    cpu: 2000m
+    memory: 4096Mi
+  image: ghcr.io/labring-actions/devbox/go-1.23.0:13aacd8
+  config:
+    workingDir: /home/devbox/project
