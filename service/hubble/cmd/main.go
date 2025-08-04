@@ -3,12 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-
-	"github.com/labring/sealos/service/hubble/collector"
-	"github.com/labring/sealos/service/hubble/config"
-	"github.com/labring/sealos/service/hubble/datastore"
-	"github.com/labring/sealos/service/hubble/server"
-
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +11,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/labring/sealos/service/hubble/collector"
+	"github.com/labring/sealos/service/hubble/config"
+	"github.com/labring/sealos/service/hubble/datastore"
+	"github.com/labring/sealos/service/hubble/server"
 )
 
 func main() {
@@ -36,10 +34,11 @@ func main() {
 		DB:       cfg.Redis.DB,
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	if err := redisClient.Ping(ctx).Err(); err != nil {
+		cancel()
 		log.Fatalf("Failed to connect to Redis: %v", err)
 	}
+	defer cancel()
 	log.Println("Successfully connected to Redis")
 	dataStore := datastore.NewDataStore(redisClient)
 

@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gin-gonic/gin"
 	"github.com/labring/sealos/service/hubble/datastore"
 	"github.com/labring/sealos/service/hubble/pkg/auth"
 	"github.com/labring/sealos/service/hubble/pkg/constants"
 	"github.com/labring/sealos/service/hubble/pkg/models"
-
-	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
@@ -72,7 +71,7 @@ func (s *Server) flowsHandler(c *gin.Context) {
 		return
 	}
 
-	var res []models.TrafficData
+	res := make([]models.TrafficData, 0, len(req.Resources))
 	for _, resource := range req.Resources {
 		flows, err := s.collectFlowData(ns, resource)
 		if err != nil {
@@ -91,11 +90,12 @@ func (s *Server) flowsHandler(c *gin.Context) {
 	})
 }
 
-func (s *Server) collectFlowData(namespace, crName string) ([]string, error) {
-	flowKey := fmt.Sprintf(constants.CRFlowSetKeyPattern, namespace, crName)
+func (s *Server) collectFlowData(namespace string, resource models.Resource) ([]string, error) {
+	flowKey := fmt.Sprintf(constants.FlowSetKeyPattern, namespace, resource.Type, resource.Name)
 	flows, err := s.dataStore.GetSetMembers(flowKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get outbound flows: %w", err)
 	}
+
 	return flows, nil
 }

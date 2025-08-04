@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -38,12 +39,12 @@ func (a *Auth) isWhitelistedHost(host string) bool {
 func extractNamespaceFromKubeConfig(kubeConfigData string) (string, error) {
 	config, err := clientcmd.Load([]byte(kubeConfigData))
 	if err != nil {
-		return "", fmt.Errorf("failed to load kubeconfig: %v", err)
+		return "", fmt.Errorf("failed to load kubeconfig: %w", err)
 	}
 
 	currentContext := config.CurrentContext
 	if currentContext == "" {
-		return "", fmt.Errorf("no current-context found in kubeconfig")
+		return "", errors.New("no current-context found in kubeconfig")
 	}
 
 	context, exists := config.Contexts[currentContext]
@@ -53,7 +54,7 @@ func extractNamespaceFromKubeConfig(kubeConfigData string) (string, error) {
 
 	namespace := context.Namespace
 	if namespace == "" {
-		return "", fmt.Errorf("no namespace found in kubeconfig")
+		return "", errors.New("no namespace found in kubeconfig")
 	}
 
 	return namespace, nil
@@ -70,7 +71,7 @@ func (a *Auth) Authenticate(ctx context.Context, ns, kc string) (string, error) 
 
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
-		return "", fmt.Errorf("kubeconfig failed: %v", err)
+		return "", fmt.Errorf("kubeconfig failed: %w", err)
 	}
 
 	if !a.isWhitelistedHost(config.Host) {
@@ -83,21 +84,21 @@ func (a *Auth) Authenticate(ctx context.Context, ns, kc string) (string, error) 
 	}
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return "", fmt.Errorf("failed to create client: %v", err)
+		return "", fmt.Errorf("failed to create client: %w", err)
 	}
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		return "", fmt.Errorf("failed to create discovery client: %v", err)
+		return "", fmt.Errorf("failed to create discovery client: %w", err)
 	}
 	res, err := discoveryClient.RESTClient().Get().AbsPath("/readyz").DoRaw(ctx)
 	if err != nil {
-		return "", fmt.Errorf("API server health check failed: %v", err)
+		return "", fmt.Errorf("API server health check failed: %w", err)
 	}
 	if string(res) != "ok" {
 		return "", fmt.Errorf("API server not ready: %s", string(res))
 	}
 	if err := checkResourceAccess(ctx, client, ns, "get", "pods"); err != nil {
-		return "", fmt.Errorf("resource access check failed: %v", err)
+		return "", fmt.Errorf("resource access check failed: %w", err)
 	}
 
 	return ns, nil
@@ -111,7 +112,11 @@ func getKubernetesHostFromEnv() string {
 	return "https://" + net.JoinHostPort(host, port)
 }
 
-func checkResourceAccess(ctx context.Context, client *kubernetes.Clientset, namespace, verb, resource string) error {
+func checkResourceAccess(
+	ctx context.Context,
+	client *kubernetes.Clientset,
+	namespace, verb, resource string,
+) error {
 	review := &authorizationapi.SelfSubjectAccessReview{
 		Spec: authorizationapi.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationapi.ResourceAttributes{
@@ -124,7 +129,9 @@ func checkResourceAccess(ctx context.Context, client *kubernetes.Clientset, name
 		},
 	}
 
-	resp, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, review, metav1.CreateOptions{})
+	resp, err := client.AuthorizationV1().
+		SelfSubjectAccessReviews().
+		Create(ctx, review, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

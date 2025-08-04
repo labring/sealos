@@ -1,11 +1,11 @@
 package models
 
 type TrafficResponse struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Message string `json:"message"`
+	Data    any    `json:"data"`
 }
 
 type TrafficData struct {
-	Resource string   `json:"resource"`
+	Resource Resource `json:"resource"`
 	Flows    []string `json:"flows"`
 }

@@ -5,8 +5,8 @@ import (
 )
 
 type Cache interface {
-	Get(key string) (interface{}, bool)
-	Set(key string, value interface{}, ttl time.Duration)
+	Get(key string) (any, bool)
+	Set(key string, value any, ttl time.Duration)
 	Delete(key string)
 	Clear()
 }

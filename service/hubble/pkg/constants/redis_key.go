@@ -1,5 +1,6 @@
 package constants
 
 const (
-	CRFlowSetKeyPattern = "%s/%s"
+	// FlowSetKeyPattern represents the format for flow set keys: "namespace/resourceType/name"
+	FlowSetKeyPattern = "%s/%s/%s"
 )

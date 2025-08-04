@@ -22,7 +22,7 @@ func NewDataStore(client *redis.Client) *DataStore {
 	}
 }
 
-func (ds *DataStore) Set(key string, value string) error {
+func (ds *DataStore) Set(key, value string) error {
 	ctx := context.Background()
 	return ds.client.Set(ctx, key, value, DefaultExpiration).Err()
 }
@@ -57,7 +57,10 @@ func (ds *DataStore) EnsureSetExpiration(key string) error {
 	return nil
 }
 
-func (ds *DataStore) AddToSet(ctx context.Context, key string, members ...interface{}) error {
+// AddToSet adds members to a Redis set and refreshes its expiration time.
+// Each time new data is added, the set's TTL is reset to DefaultExpiration,
+// ensuring the set remains available as long as it's actively being updated.
+func (ds *DataStore) AddToSet(ctx context.Context, key string, members ...any) error {
 	pipe := ds.client.Pipeline()
 	pipe.SAdd(ctx, key, members...)
 	pipe.Expire(ctx, key, DefaultExpiration)

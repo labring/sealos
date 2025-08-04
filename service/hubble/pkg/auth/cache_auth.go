@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
 	"time"
 
@@ -29,7 +29,7 @@ func NewCacheAuth(whiteList string) *CacheAuth {
 }
 
 func getCacheKey(namespace, kubeconfig string) string {
-	h := md5.New()
+	h := sha256.New()
 	h.Write([]byte(kubeconfig))
 	return fmt.Sprintf("auth:%s:%x", namespace, h.Sum(nil))
 }

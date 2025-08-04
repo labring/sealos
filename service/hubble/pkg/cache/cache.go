@@ -13,7 +13,7 @@ type MemoryCache struct {
 }
 
 type cacheItem struct {
-	value  interface{}
+	value  any
 	expiry time.Time
 }
 
@@ -54,7 +54,7 @@ func (c *MemoryCache) cleanup() {
 	}
 }
 
-func (c *MemoryCache) Get(key string) (interface{}, bool) {
+func (c *MemoryCache) Get(key string) (any, bool) {
 	c.mutex.RLock()
 	defer c.mutex.RUnlock()
 
@@ -70,7 +70,7 @@ func (c *MemoryCache) Get(key string) (interface{}, bool) {
 	return item.value, true
 }
 
-func (c *MemoryCache) Set(key string, value interface{}, ttl time.Duration) {
+func (c *MemoryCache) Set(key string, value any, ttl time.Duration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

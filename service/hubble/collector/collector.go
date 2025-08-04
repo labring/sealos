@@ -6,14 +6,12 @@ import (
 	"log"
 	"strings"
 
-	"github.com/labring/sealos/service/hubble/datastore"
-	"github.com/labring/sealos/service/hubble/pkg/constants"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
 	pb "github.com/cilium/cilium/api/v1/flow"
 	observer "github.com/cilium/cilium/api/v1/observer"
+	"github.com/labring/sealos/service/hubble/datastore"
+	"github.com/labring/sealos/service/hubble/pkg/constants"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Collector handles the collection of network flow data from Hubble
@@ -32,8 +30,10 @@ func NewCollector(hubbleAddr string, dataStore *datastore.DataStore) *Collector 
 type FlowEndpoints struct {
 	SourceNamespace string
 	SourceName      string
+	SourceType      string
 	DestNamespace   string
 	DestName        string
+	DestType        string
 }
 
 // Start begins collecting flow data from Hubble
@@ -46,7 +46,6 @@ func (c *Collector) Start(ctx context.Context) {
 	if err != nil {
 		log.Fatalf("Failed to connect to Hubble: %v", err)
 	}
-	defer conn.Close()
 
 	client := observer.NewObserverClient(conn)
 
@@ -56,9 +55,10 @@ func (c *Collector) Start(ctx context.Context) {
 
 	stream, err := client.GetFlows(ctx, req)
 	if err != nil {
+		conn.Close()
 		log.Fatalf("Failed to get flow data: %v", err)
 	}
-
+	defer conn.Close()
 	for {
 		select {
 		case <-ctx.Done():
@@ -87,17 +87,30 @@ func (c *Collector) Start(ctx context.Context) {
 	}
 }
 
-var prefixes = []string{constants.DBLabelPrefix, constants.OSSLabelPrefix, constants.AppLabelPrefix, constants.DevboxLabelPrefix}
+var prefixToResourceType = map[string]string{
+	constants.DBLabelPrefix:     constants.DatabaseType,
+	constants.OSSLabelPrefix:    constants.OSSType,
+	constants.AppLabelPrefix:    constants.AppType,
+	constants.DevboxLabelPrefix: constants.DevboxType,
+}
 
-func extractNameFromLabels(labels []string) (string, bool) {
+var prefixes = make([]string, 0, len(prefixToResourceType))
+
+func init() {
+	for prefix := range prefixToResourceType {
+		prefixes = append(prefixes, prefix)
+	}
+}
+
+func extractNameFromLabels(labels []string) (name, resourceType string, found bool) {
 	for _, label := range labels {
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(label, prefix) {
-				return label[len(prefix):], true
+				return label[len(prefix):], prefixToResourceType[prefix], true
 			}
 		}
 	}
-	return "", false
+	return "", "", false
 }
 
 func extractFlowEndpoints(flow *pb.Flow) (*FlowEndpoints, bool) {
@@ -108,42 +121,59 @@ func extractFlowEndpoints(flow *pb.Flow) (*FlowEndpoints, bool) {
 	dest := flow.GetDestination()
 	// Skip flows with missing namespace or pod information
 	// This ensures we only process complete flow data
-	if source.Namespace == "" || source.PodName == "" || dest.Namespace == "" || dest.PodName == "" {
+	if source.GetNamespace() == "" || source.GetPodName() == "" || dest.GetNamespace() == "" ||
+		dest.GetPodName() == "" {
 		return nil, false
 	}
 
 	// Filter flows to only include those with at least one user namespace
 	// User namespaces are identified by the "ns-" prefix
 	// This helps focus on user traffic and exclude system-to-system communications
-	if !strings.HasPrefix(source.Namespace, "ns-") && !strings.HasPrefix(dest.Namespace, "ns-") {
+	if !strings.HasPrefix(source.GetNamespace(), "ns-") &&
+		!strings.HasPrefix(dest.GetNamespace(), "ns-") {
 		return nil, false
 	}
 
-	if source.Namespace == "kube-dns" || dest.Namespace == "kube-dns" {
+	if source.GetNamespace() == "kube-dns" || dest.GetNamespace() == "kube-dns" {
 		return nil, false
 	}
 
-	srcName, srcFound := extractNameFromLabels(source.Labels)
+	srcName, srcType, srcFound := extractNameFromLabels(source.GetLabels())
 	if !srcFound {
 		return nil, false
 	}
 
-	dstName, dstFound := extractNameFromLabels(dest.Labels)
+	dstName, dstType, dstFound := extractNameFromLabels(dest.GetLabels())
 	if !dstFound {
 		return nil, false
 	}
 
 	return &FlowEndpoints{
-		SourceNamespace: source.Namespace,
+		SourceNamespace: source.GetNamespace(),
 		SourceName:      srcName,
-		DestNamespace:   dest.Namespace,
+		SourceType:      srcType,
+		DestNamespace:   dest.GetNamespace(),
 		DestName:        dstName,
+		DestType:        dstType,
 	}, true
 }
 
-func (c *Collector) updateFlowRelationships(ctx context.Context, flowEndpoint *FlowEndpoints) error {
-	srcKey := fmt.Sprintf("%s/%s", flowEndpoint.SourceNamespace, flowEndpoint.SourceName)
-	dstKey := fmt.Sprintf("%s/%s", flowEndpoint.DestNamespace, flowEndpoint.DestName)
+func (c *Collector) updateFlowRelationships(
+	ctx context.Context,
+	flowEndpoint *FlowEndpoints,
+) error {
+	srcKey := fmt.Sprintf(
+		"%s/%s/%s",
+		flowEndpoint.SourceNamespace,
+		flowEndpoint.SourceType,
+		flowEndpoint.SourceName,
+	)
+	dstKey := fmt.Sprintf(
+		"%s/%s/%s",
+		flowEndpoint.DestNamespace,
+		flowEndpoint.DestType,
+		flowEndpoint.DestName,
+	)
 	// Filter out self-loop traffic (when source and destination are identical)
 	// This typically represents internal pod communications within the same CR
 	if srcKey == dstKey {

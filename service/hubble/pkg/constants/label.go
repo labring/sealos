@@ -7,3 +7,10 @@ const (
 	AppLabelPrefix    = "k8s:app="
 	// TODO: AI PROXY Label
 )
+
+const (
+	DevboxType   = "devbox"
+	OSSType      = "oss"
+	DatabaseType = "database"
+	AppType      = "app"
+)
