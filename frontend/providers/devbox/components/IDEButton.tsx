@@ -90,7 +90,7 @@ const IDEButton = memo(
           module: 'devbox',
           context: 'app',
           method: currentIDE
-        });
+        } as any);
         setGuideIDE(true);
         destroyDriver();
 
