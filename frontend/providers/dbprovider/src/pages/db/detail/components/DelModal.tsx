@@ -16,6 +16,7 @@ import {
   ModalOverlay
 } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useTranslation } from 'next-i18next';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sealosApp } from 'sealos-desktop-sdk/app';
@@ -58,6 +59,13 @@ const DelModal = ({
     try {
       setLoading(true);
       await delDBByName(dbName);
+
+      track({
+        event: 'deployment_delete',
+        module: 'database',
+        context: 'app'
+      });
+
       toast({
         title: t('delete_successful'),
         status: 'success'
@@ -70,6 +78,11 @@ const DelModal = ({
         status: 'error'
       });
       console.error(error);
+
+      track('error_occurred', {
+        module: 'database',
+        error_code: 'DELETE_ERROR'
+      });
     }
     setLoading(false);
   }, [dbName, toast, t, onSuccess, onClose]);

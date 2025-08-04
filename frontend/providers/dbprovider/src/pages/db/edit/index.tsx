@@ -14,6 +14,7 @@ import { serviceSideProps } from '@/utils/i18n';
 import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import debounce from 'lodash/debounce';
 import { useTranslation } from 'next-i18next';
@@ -132,6 +133,26 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       // }
 
       await createDB({ dbForm: formData, isEdit });
+
+      track({
+        event: 'deployment_create',
+        module: 'database',
+        context: 'app',
+        config: {
+          template_name: formData.dbType,
+          template_version: formData.dbVersion
+        },
+        resources: {
+          cpu_cores: formData.cpu,
+          ram_mb: formData.memory,
+          replicas: formData.replicas,
+          storage: formData.storage
+        },
+        backups: {
+          enabled: !!formData.autoBackup
+        }
+      });
+
       toast({
         title: t(applySuccess),
         status: 'success'
@@ -141,14 +162,34 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
         setErrorMessage(t('user_balance_not_enough'));
         setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+
+        track('paywall_triggered', {
+          module: 'database',
+          type: 'insufficient_balance'
+        });
       } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
         setErrorMessage(t('forbidden_create_app'));
         setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'FORBIDDEN_CREATE_APP'
+        });
       } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
         setErrorMessage(t('app_already_exists'));
         setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'APP_ALREADY_EXISTS'
+        });
       } else {
         setErrorMessage(JSON.stringify(error));
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'UNKNOWN_ERROR'
+        });
       }
     }
     setIsLoading(false);

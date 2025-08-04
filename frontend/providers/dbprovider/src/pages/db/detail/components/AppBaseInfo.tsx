@@ -40,6 +40,7 @@ import {
   useDisclosure
 } from '@chakra-ui/react';
 import { CurrencySymbol, MyTooltip, useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { pick } from 'lodash';
 import { useTranslation } from 'next-i18next';
@@ -271,6 +272,13 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
 
     const defaultCommand = commandMap[db.dbType];
 
+    track({
+      event: 'deployment_action',
+      module: 'database',
+      event_type: 'terminal_open',
+      context: 'app'
+    } as any);
+
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-terminal',
       query: {
@@ -278,7 +286,7 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
       },
       messageData: { type: 'new terminal', command: defaultCommand }
     });
-  }, [db.dbType, secret]);
+  }, [db.dbType, secret, db.dbName]);
 
   const refetchAll = () => {
     refetchDBStatefulSet();

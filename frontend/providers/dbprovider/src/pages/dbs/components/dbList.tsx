@@ -15,6 +15,7 @@ import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
 import { Box, Button, Center, Flex, Image, useDisclosure, useTheme } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import {
   ColumnDef,
   getCoreRowModel,
@@ -68,6 +69,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error, '==restart error==');
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'RESTART_ERROR'
+        });
       }
       setLoading(false);
     },
@@ -89,6 +95,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'PAUSE_ERROR'
+        });
       }
       setLoading(false);
       setTimeout(() => {
@@ -103,6 +114,13 @@ const DBList = ({
       try {
         setLoading(true);
         await startDBByName({ dbName: db.name, dbType: db.dbType });
+
+        track({
+          event: 'deployment_start',
+          module: 'database',
+          context: 'app'
+        });
+
         toast({
           title: t('start_success'),
           status: 'success'
@@ -113,6 +131,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'START_ERROR'
+        });
       }
       setLoading(false);
       refetchApps();
@@ -187,9 +210,14 @@ const DBList = ({
               color={'grayModern.900'}
               _hover={{ color: 'brightBlue.600' }}
               leftIcon={<MyIcon name={'detail'} w={'16px'} />}
-              onClick={() =>
-                router.push(`/db/detail?name=${row.original.name}&dbType=${row.original.dbType}`)
-              }
+              onClick={() => {
+                track('module_view', {
+                  module: 'database',
+                  view_name: 'details',
+                  app_name: row.original.name
+                });
+                router.push(`/db/detail?name=${row.original.name}&dbType=${row.original.dbType}`);
+              }}
             >
               {t('details')}
             </Button>
@@ -220,7 +248,14 @@ const DBList = ({
                             <Box ml={2}>{t('Continue')}</Box>
                           </>
                         ),
-                        onClick: () => handleStartApp(row.original)
+                        onClick: () => {
+                          track({
+                            event: 'deployment_update',
+                            module: 'database',
+                            context: 'app'
+                          });
+                          handleStartApp(row.original);
+                        }
                       }
                     ]
                   : [
@@ -232,6 +267,12 @@ const DBList = ({
                           </>
                         ),
                         onClick: () => {
+                          track('module_view', {
+                            module: 'database',
+                            view_name: 'edit_form',
+                            app_name: row.original.name
+                          });
+
                           if (
                             row.original.source.hasSource &&
                             row.original.source.sourceType === 'sealaf'
@@ -253,7 +294,14 @@ const DBList = ({
                             <Box ml={2}>{t('Restart')}</Box>
                           </>
                         ),
-                        onClick: () => handleRestartApp(row.original),
+                        onClick: () => {
+                          track({
+                            event: 'deployment_update',
+                            module: 'database',
+                            context: 'app'
+                          });
+                          handleRestartApp(row.original);
+                        },
                         isDisabled: row.original.status.value === 'Updating'
                       }
                     ]),
@@ -266,7 +314,15 @@ const DBList = ({
                             <Box ml={2}>{t('Pause')}</Box>
                           </>
                         ),
-                        onClick: onOpenPause(() => handlePauseApp(row.original))
+                        onClick: onOpenPause(() => {
+                          track({
+                            event: 'deployment_shutdown',
+                            module: 'database',
+                            context: 'app',
+                            type: 'normal'
+                          });
+                          handlePauseApp(row.original);
+                        })
                       }
                     ]
                   : []),
@@ -354,7 +410,13 @@ const DBList = ({
           h={'full'}
           variant={'solid'}
           leftIcon={<MyIcon name={'plus'} w={'18px'} h={'18px'} />}
-          onClick={() => router.push('/db/edit')}
+          onClick={() => {
+            track('module_view', {
+              module: 'database',
+              view_name: 'create_form'
+            });
+            router.push('/db/edit');
+          }}
         >
           {t('create_db')}
         </Button>
