@@ -481,59 +481,61 @@ const GuideModal = () => {
                 mt={'32px'}
                 flex={1}
               >
-                {guideLinks.map((item, index) => (
-                  <Flex
-                    key={index}
-                    onClick={() => setSelectedGuide(index)}
-                    p={'20px'}
-                    borderRadius="16px"
-                    border={'1px solid #E4E4E7'}
-                    background={'#FFF'}
-                    boxShadow={'0px 1px 2px 0px rgba(0, 0, 0, 0.05)'}
-                    _hover={{
-                      boxShadow: 'lg',
-                      transform: 'scale(1.002)',
-                      transition: 'all 0.2s'
-                    }}
-                    cursor={'pointer'}
-                    gap={'16px'}
-                  >
-                    <Center flexShrink={0} width={'40px'} height={'40px'} borderRadius={'12px'}>
-                      <Image
-                        boxShadow={'0px 2.889px 4.334px -0.867px rgba(0, 0, 0, 0.05)'}
-                        border={'0.5px solid rgba(0, 0, 0, 0.05)'}
-                        borderRadius={'12px'}
-                        width={'40px'}
-                        height={'40px'}
-                        src={item.icon}
-                        alt="guide"
-                      />
-                    </Center>
-                    <Flex direction={'column'}>
-                      <Text
-                        fontSize="16px"
-                        fontWeight="600"
-                        mb={'8px'}
-                        color={'#18181B'}
-                        lineHeight={'16px'}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text color="#71717A" fontSize="14px" mb={'12px'}>
-                        {item.description}
-                      </Text>
-                      <Text
-                        lineHeight={'20px'}
-                        color="#18181B"
-                        fontSize="14px"
-                        mt={'auto'}
-                        fontWeight={'500'}
-                      >
-                        {t('v2:guide_steps', { count: item.stepNumbers })}
-                      </Text>
+                {guideLinks
+                  .filter((app) => installedApps.find((i) => i.key === app.key))
+                  .map((item, index) => (
+                    <Flex
+                      key={index}
+                      onClick={() => setSelectedGuide(index)}
+                      p={'20px'}
+                      borderRadius="16px"
+                      border={'1px solid #E4E4E7'}
+                      background={'#FFF'}
+                      boxShadow={'0px 1px 2px 0px rgba(0, 0, 0, 0.05)'}
+                      _hover={{
+                        boxShadow: 'lg',
+                        transform: 'scale(1.002)',
+                        transition: 'all 0.2s'
+                      }}
+                      cursor={'pointer'}
+                      gap={'16px'}
+                    >
+                      <Center flexShrink={0} width={'40px'} height={'40px'} borderRadius={'12px'}>
+                        <Image
+                          boxShadow={'0px 2.889px 4.334px -0.867px rgba(0, 0, 0, 0.05)'}
+                          border={'0.5px solid rgba(0, 0, 0, 0.05)'}
+                          borderRadius={'12px'}
+                          width={'40px'}
+                          height={'40px'}
+                          src={item.icon}
+                          alt="guide"
+                        />
+                      </Center>
+                      <Flex direction={'column'}>
+                        <Text
+                          fontSize="16px"
+                          fontWeight="600"
+                          mb={'8px'}
+                          color={'#18181B'}
+                          lineHeight={'16px'}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text color="#71717A" fontSize="14px" mb={'12px'}>
+                          {item.description}
+                        </Text>
+                        <Text
+                          lineHeight={'20px'}
+                          color="#18181B"
+                          fontSize="14px"
+                          mt={'auto'}
+                          fontWeight={'500'}
+                        >
+                          {t('v2:guide_steps', { count: item.stepNumbers })}
+                        </Text>
+                      </Flex>
                     </Flex>
-                  </Flex>
-                ))}
+                  ))}
               </Grid>
 
               <Text
