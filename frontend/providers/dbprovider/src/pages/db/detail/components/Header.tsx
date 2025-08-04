@@ -6,6 +6,7 @@ import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType } from '@/types/db';
 import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
+import { track } from '@sealos/gtm';
 import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
@@ -61,6 +62,11 @@ const Header = ({
         status: 'error'
       });
       console.error(error);
+
+      track('error_occurred', {
+        module: 'database',
+        error_code: 'RESTART_ERROR'
+      });
     }
     setLoading(false);
   }, [db, t, toast]);
@@ -79,6 +85,11 @@ const Header = ({
         status: 'error'
       });
       console.error(error);
+
+      track('error_occurred', {
+        module: 'database',
+        error_code: 'PAUSE_ERROR'
+      });
     }
     setLoading(false);
   }, [db, t, toast]);
@@ -87,6 +98,13 @@ const Header = ({
     try {
       setLoading(true);
       await startDBByName(db);
+
+      track({
+        event: 'deployment_start',
+        module: 'database',
+        context: 'app'
+      });
+
       toast({
         title: t('start_success'),
         status: 'success'
@@ -97,6 +115,11 @@ const Header = ({
         status: 'error'
       });
       console.error(error);
+
+      track('error_occurred', {
+        module: 'database',
+        error_code: 'START_ERROR'
+      });
     }
     setLoading(false);
   }, [db, t, toast]);

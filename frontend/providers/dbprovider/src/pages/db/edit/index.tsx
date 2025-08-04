@@ -162,14 +162,34 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       if (error?.code === ResponseCode.BALANCE_NOT_ENOUGH) {
         setErrorMessage(t('user_balance_not_enough'));
         setErrorCode(ResponseCode.BALANCE_NOT_ENOUGH);
+
+        track('paywall_triggered', {
+          module: 'database',
+          type: 'insufficient_balance'
+        });
       } else if (error?.code === ResponseCode.FORBIDDEN_CREATE_APP) {
         setErrorMessage(t('forbidden_create_app'));
         setErrorCode(ResponseCode.FORBIDDEN_CREATE_APP);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'FORBIDDEN_CREATE_APP'
+        });
       } else if (error?.code === ResponseCode.APP_ALREADY_EXISTS) {
         setErrorMessage(t('app_already_exists'));
         setErrorCode(ResponseCode.APP_ALREADY_EXISTS);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'APP_ALREADY_EXISTS'
+        });
       } else {
         setErrorMessage(JSON.stringify(error));
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'UNKNOWN_ERROR'
+        });
       }
     }
     setIsLoading(false);

@@ -69,6 +69,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error, '==restart error==');
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'RESTART_ERROR'
+        });
       }
       setLoading(false);
     },
@@ -90,6 +95,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'PAUSE_ERROR'
+        });
       }
       setLoading(false);
       setTimeout(() => {
@@ -104,6 +114,13 @@ const DBList = ({
       try {
         setLoading(true);
         await startDBByName({ dbName: db.name, dbType: db.dbType });
+
+        track({
+          event: 'deployment_start',
+          module: 'database',
+          context: 'app'
+        });
+
         toast({
           title: t('start_success'),
           status: 'success'
@@ -114,6 +131,11 @@ const DBList = ({
           status: 'error'
         });
         console.error(error);
+
+        track('error_occurred', {
+          module: 'database',
+          error_code: 'START_ERROR'
+        });
       }
       setLoading(false);
       refetchApps();

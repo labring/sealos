@@ -78,6 +78,11 @@ const DelModal = ({
         status: 'error'
       });
       console.error(error);
+
+      track('error_occurred', {
+        module: 'database',
+        error_code: 'DELETE_ERROR'
+      });
     }
     setLoading(false);
   }, [dbName, toast, t, onSuccess, onClose]);
