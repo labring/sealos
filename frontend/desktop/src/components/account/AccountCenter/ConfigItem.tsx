@@ -12,9 +12,9 @@ export const ConfigItem = forwardRef<
       flexDirection={{ base: 'column', md: 'row' }}
       {...props}
     >
-      <Box w={'120px'} color={'grayModern.900'}>
+      <Flex w={'120px'} color={'grayModern.900'} alignItems={'center'}>
         {LeftElement}
-      </Box>
+      </Flex>
       <Flex
         flex={1}
         justifyContent={'space-between'}
