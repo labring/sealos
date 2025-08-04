@@ -230,10 +230,10 @@ const DBList = ({
           port: String(port),
           user: username,
           password: password,
-          url: connection,
+          url: connectionUrl,
           type: mapDBType(db.dbType)
         };
-        console.log(payload);
+        console.log(JSON.stringify(payload));
 
         let currentDataSourceId = getDataSourceId(db.name);
         console.log('currentDataSourceId', currentDataSourceId);
@@ -246,9 +246,8 @@ const DBList = ({
               console.log('Created datasource with ID:', currentDataSourceId);
             }
           } catch (err: any) {
-            if (err.data && err.data.id) {
-              currentDataSourceId = err.data.id;
-              console.log('currentDataSourceId', currentDataSourceId);
+            if (err.data) {
+              currentDataSourceId = err.data;
               if (currentDataSourceId) {
                 setDataSourceId(db.name, currentDataSourceId);
                 console.log('Datasource already exists with ID:', currentDataSourceId);
@@ -263,11 +262,11 @@ const DBList = ({
               ...payload,
               id: currentDataSourceId
             };
-            console.log('syncPayload', JSON.stringify(syncPayload));
+            console.log('syncPayload', syncPayload);
             await syncDatasource(syncPayload, apiKey, userKey);
             console.log('Synced existing datasource with ID:', currentDataSourceId);
           } catch (err) {
-            console.log('sync datasource:', JSON.stringify(err));
+            console.log('sync datasource:', err);
           }
         }
 
@@ -293,10 +292,10 @@ const DBList = ({
 
         console.log('baseUrl', baseUrl);
 
-        const url = new URL(baseUrl);
-        url.searchParams.set('dataSourceIds', String(currentDataSourceId));
-        console.log('url', url.toString());
-        router.push(url.toString());
+        const chat2dbUrl = new URL(baseUrl);
+        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
+        console.log('base url', chat2dbUrl.toString());
+        router.push(chat2dbUrl.toString());
       } catch (err) {
         console.log(err);
         toast({
