@@ -85,17 +85,6 @@ export default function AccountCenter(props: AccountCenterProps) {
     infoData.refetch();
   };
 
-  const modalTitle = useMemo(() => {
-    if (pageState === PageState.INDEX) return t('common:account_settings');
-    else if (pageState === PageState.PASSWORD) return t('common:changepassword');
-    else if (Object.values(PhoneState).includes(pageState as PhoneState))
-      return t('common:changephone');
-    else if (Object.values(EmailState).includes(pageState as EmailState))
-      return t('common:changeemail');
-    else if (pageState === PageState.REALNAME_AUTH) return t('common:realName_verification');
-    else return '';
-  }, [t, pageState]);
-
   const infoData = useQuery({
     queryFn: UserInfo,
     queryKey: [session?.token, 'UserInfo'],
@@ -146,6 +135,19 @@ export default function AccountCenter(props: AccountCenterProps) {
     return state;
   }, [infoData.data?.oauthProvider]);
 
+  const modalTitle = useMemo(() => {
+    if (pageState === PageState.INDEX) return t('common:account_settings');
+    else if (pageState === PageState.PASSWORD) return t('common:changepassword');
+    else if (pageState === PageState.EMAIL_BIND) return t('common:bindemail');
+    else if (pageState === PageState.EMAIL_UNBIND) return t('common:unbindemail');
+    else if (pageState === PageState.EMAIL_CHANGE_BIND) return t('common:changeemail');
+    else if (pageState === PageState.PHONE_BIND) return t('common:bindphone');
+    else if (pageState === PageState.PHONE_UNBIND) return t('common:unbindphone');
+    else if (pageState === PageState.PHONE_CHANGE_BIND) return t('common:changephone');
+    else if (pageState === PageState.REALNAME_AUTH) return t('common:realName_verification');
+    else return '';
+  }, [t, pageState]);
+
   return (
     <>
       {children ? (
@@ -172,7 +174,14 @@ export default function AccountCenter(props: AccountCenterProps) {
           icon={<SettingIcon boxSize={'16px'} fill={'rgba(255, 255, 255, 0.7)'} />}
         />
       )}
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => {
+          resetPageState();
+          onClose();
+        }}
+        isCentered
+      >
         <ModalOverlay />
         <ModalContent
           borderRadius={'12px'}

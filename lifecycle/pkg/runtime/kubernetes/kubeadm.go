@@ -46,6 +46,7 @@ var (
 	V1260 = semver.MustParse("v1.26.0")
 	V1270 = semver.MustParse("v1.27.0")
 	V1280 = semver.MustParse("v1.28.0")
+	V1310 = semver.MustParse("v1.31.0")
 )
 
 // k.getKubeVersion can't be empty
@@ -76,6 +77,8 @@ func getterKubeadmAPIVersion(kubeVersion string) string {
 	var apiVersion string
 	switch {
 	// kubernetes gte 1.22
+	case gte(v, V1310):
+		apiVersion = types.KubeadmV1beta4
 	case gte(v, V1220):
 		apiVersion = types.KubeadmV1beta3
 	default:
@@ -346,13 +349,19 @@ func (k *KubeadmRuntime) setAPIServerEndpoint(endpoint string) {
 }
 
 func (k *KubeadmRuntime) setJoinInternalIP(nodeIP string) {
-	k.kubeadmConfig.JoinConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{
-		"node-ip": nodeIP,
+	k.kubeadmConfig.JoinConfiguration.NodeRegistration.KubeletExtraArgs = []kubeadm.Arg{
+		{
+			Name:  "node-ip",
+			Value: nodeIP,
+		},
 	}
 }
 func (k *KubeadmRuntime) setInitInternalIP(nodeIP string) {
-	k.kubeadmConfig.InitConfiguration.NodeRegistration.KubeletExtraArgs = map[string]string{
-		"node-ip": nodeIP,
+	k.kubeadmConfig.InitConfiguration.NodeRegistration.KubeletExtraArgs = []kubeadm.Arg{
+		{
+			Name:  "node-ip",
+			Value: nodeIP,
+		},
 	}
 }
 
@@ -473,7 +482,7 @@ func (k *KubeadmRuntime) CompleteKubeadmConfig(fns ...func(*KubeadmRuntime) erro
 	k.setInitInternalIP(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.kubeadmConfig.ClusterConfiguration.APIServer.ExtraArgs == nil {
-		k.kubeadmConfig.ClusterConfiguration.APIServer.ExtraArgs = make(map[string]string)
+		k.kubeadmConfig.ClusterConfiguration.APIServer.ExtraArgs = make([]kubeadm.Arg, 0)
 	}
 	k.setExcludeCIDRs()
 	k.initCertSANS()

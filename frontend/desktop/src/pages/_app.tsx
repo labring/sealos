@@ -7,6 +7,7 @@ import { appWithTranslation, useTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
 import Router from 'next/router';
 import { useEffect } from 'react';
+import { GTMScript } from '@sealos/gtm';
 import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
@@ -27,7 +28,7 @@ Router.events.on('routeChangeError', () => NProgress.done());
 
 const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
-  const { initAppConfig } = useConfigStore();
+  const { initAppConfig, layoutConfig } = useConfigStore();
 
   useEffect(() => {
     initAppConfig();
@@ -40,6 +41,11 @@ const App = ({ Component, pageProps }: AppProps) => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <GTMScript
+        enabled={!!layoutConfig?.gtmId}
+        gtmId={layoutConfig?.gtmId ?? ''}
+        debug={process.env.NODE_ENV === 'development'}
+      />
       <Hydrate state={pageProps.dehydratedState}>
         <ChakraProvider theme={theme}>
           <Component {...pageProps} />

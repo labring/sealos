@@ -203,7 +203,7 @@ export default function SigninComponent() {
                   background="#FFFFFF"
                   border="1px solid #E4E4E7"
                   borderRadius="8px"
-                  placeholder={t('phone')}
+                  placeholder={t('common:phone')}
                   py="10px"
                   pr={'12px'}
                   pl={'60px'}
@@ -400,7 +400,7 @@ export default function SigninComponent() {
             target="_blank"
             textDecoration="underline"
           >
-            {t('privacy_policy')}
+            {t('v2:privacy_policy')}
           </Box>
         </Box>
       </Stack>

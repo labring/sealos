@@ -1,6 +1,8 @@
 module github.com/labring/sealos/test/e2e
 
-go 1.20
+go 1.23
+
+toolchain go1.23.1
 
 replace (
 	github.com/labring/image-cri-shim => ../../staging/src/github.com/labring/image-cri-shim
@@ -8,20 +10,20 @@ replace (
 )
 
 replace (
-	k8s.io/api => k8s.io/api v0.27.4
-	k8s.io/apimachinery => k8s.io/apimachinery v0.27.4
-	k8s.io/client-go => k8s.io/client-go v0.27.4
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.27.4
-	k8s.io/component-base => k8s.io/component-base v0.27.4
-	k8s.io/cri-api => k8s.io/cri-api v0.27.4
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.27.4
-	k8s.io/kubelet => k8s.io/kubelet v0.27.4
+	k8s.io/api => k8s.io/api v0.30.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.30.3
+	k8s.io/client-go => k8s.io/client-go v0.30.3
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.30.3
+	k8s.io/component-base => k8s.io/component-base v0.30.3
+	k8s.io/cri-api => k8s.io/cri-api v0.30.3
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.30.3
+	k8s.io/kubelet => k8s.io/kubelet v0.30.3
 )
 
 replace (
 	github.com/containers/common => github.com/containers/common v0.53.1-0.20230613173441-e1ea4d9a74e5
 	github.com/containers/storage => github.com/containers/storage v1.46.1
-	github.com/docker/docker => github.com/docker/docker v23.0.6+incompatible
+	github.com/docker/docker => github.com/docker/docker v25.0.1+incompatible
 	github.com/imdario/mergo => github.com/imdario/mergo v0.3.13
 )
 
@@ -36,13 +38,13 @@ require (
 	github.com/onsi/ginkgo/v2 v2.10.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
-	k8s.io/api v0.27.4
-	k8s.io/apimachinery v0.27.4
-	k8s.io/client-go v0.27.4
-	k8s.io/cri-api v0.27.4
-	k8s.io/kube-proxy v0.27.4
-	k8s.io/kubelet v0.27.4
-	k8s.io/kubernetes v1.27.4
+	k8s.io/api v0.30.3
+	k8s.io/apimachinery v0.30.3
+	k8s.io/client-go v0.30.3
+	k8s.io/cri-api v0.30.3
+	k8s.io/kube-proxy v0.30.3
+	k8s.io/kubelet v0.30.3
+	k8s.io/kubernetes v1.30.3
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -127,7 +129,7 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/cluster-bootstrap v0.27.4 // indirect
+	k8s.io/cluster-bootstrap v0.30.3 // indirect
 	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect

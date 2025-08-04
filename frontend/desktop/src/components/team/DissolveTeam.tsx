@@ -20,6 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useState } from 'react';
 import CustomInput from './Input';
+import { track } from '@sealos/gtm';
 export default function DissolveTeam({
   nsid,
   ns_uid,
@@ -42,6 +43,9 @@ export default function DissolveTeam({
       queryClient.invalidateQueries({
         queryKey: ['teamList'],
         exact: false
+      });
+      track('workspace_delete', {
+        module: 'workspace'
       });
       onSuccess && onSuccess(ns_uid);
       onClose();

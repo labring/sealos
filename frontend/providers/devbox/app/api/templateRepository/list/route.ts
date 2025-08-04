@@ -47,7 +47,8 @@ export async function GET(req: NextRequest) {
         ...(search && search.length > 0
           ? {
               name: {
-                contains: search
+                contains: search,
+                mode: 'insensitive'
               }
             }
           : {})

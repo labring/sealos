@@ -104,7 +104,7 @@ const Callback: NextPage = () => {
         try {
           let workspaceName: string | undefined;
           if (!isString(query?.workspaceName)) throw Error('workspace not found');
-          workspaceName = query.workspaceName;
+          workspaceName = decodeURIComponent(query.workspaceName);
           // const regionUid = query.regionUid as unknown as string;
           if (!!curToken) {
             delSession();

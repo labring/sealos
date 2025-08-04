@@ -175,7 +175,7 @@ const OnlineServiceButton = () => {
                 whiteSpace="wrap"
                 mt={'2px'}
               >
-                {t('online_service')}
+                {t('common:online_service')}
               </Text>
             </Flex>
             {taskComponentState !== 'none' && <Box w={'100%'} h={'1px'} bg={'#071B410D'}></Box>}

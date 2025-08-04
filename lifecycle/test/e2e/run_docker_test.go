@@ -62,7 +62,7 @@ networking:
 `
 			dFile := config.RootfsDockerfile{
 				KubeadmYaml: kubeadm,
-				BaseImage:   "labring/kubernetes-docker:v1.25.0",
+				BaseImage:   "docker.io/labring/kubernetes-docker:v1.25.0",
 			}
 			var tmpdir string
 			tmpdir, err = dFile.Write()

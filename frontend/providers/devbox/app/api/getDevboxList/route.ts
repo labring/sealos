@@ -38,7 +38,8 @@ export async function GET(req: NextRequest) {
           select: {
             iconId: true
           }
-        }
+        },
+        name: true
       }
     });
     // match template with devbox

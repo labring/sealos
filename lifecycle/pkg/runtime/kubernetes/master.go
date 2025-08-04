@@ -18,11 +18,17 @@ import (
 	"context"
 	"fmt"
 	"path"
+	"strings"
+
+	"github.com/labring/sreg/pkg/registry/crane"
+	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/pkg/registry/helpers"
 
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/strings"
+	str2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -48,11 +54,41 @@ func (k *KubeadmRuntime) imagePull(hostAndPort, version string) error {
 	if version == "" {
 		version = k.getKubeVersion()
 	}
-	imagePull := fmt.Sprintf("kubeadm config images pull --cri-socket unix://%s  --kubernetes-version %s %s", k.cluster.GetImageEndpoint(), version, vlogToStr(k.klogLevel))
-	err := k.sshCmdAsync(hostAndPort, imagePull)
-	if err != nil {
-		return fmt.Errorf("master pull image failed, error: %s", err.Error())
+	type Images struct {
+		Images []string `json:"images"`
 	}
+	imageList := fmt.Sprintf("kubeadm config images list --kubernetes-version %s -o json 2>/dev/null", version)
+	listJson, err := k.sshCmdToString(hostAndPort, imageList)
+	if err != nil {
+		return fmt.Errorf("get kubeadm images list failed, error: %s", err.Error())
+	}
+	var images Images
+	if err = json.Unmarshal([]byte(listJson), &images); err != nil {
+		return fmt.Errorf("unmarshal kubeadm images list failed, json: %s, error: %s", listJson, err.Error())
+	}
+	var newImageList []string
+	registry := helpers.GetRegistryInfo(k.execer, k.pathResolver.RootFSPath(), k.cluster.GetRegistryIPAndPort())
+	for _, image := range images.Images {
+		image = strings.TrimSpace(image)
+		if image == "" {
+			continue
+		}
+		regAddr := crane.GetRegistryDomain(image)
+		if regAddr != "" {
+			image = strings.Replace(image, regAddr, fmt.Sprintf("%s:%s", registry.Domain, registry.Port), 1)
+			newImageList = append(newImageList, image)
+		}
+	}
+	logger.Info("start to pull images: %s", strings.Join(newImageList, ", "))
+
+	for _, image := range newImageList {
+		imagePullCmd := fmt.Sprintf("crictl pull %s", image)
+		if err := k.sshCmdAsync(hostAndPort, imagePullCmd); err != nil {
+			return fmt.Errorf("pull image %s failed, error: %s", image, err.Error())
+		}
+		logger.Info("succeeded in pulling image %s", image)
+	}
+
 	return nil
 }
 
@@ -155,7 +191,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 }
 
 func (k *KubeadmRuntime) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
-	return k.syncNodeIPVSYaml(strings.RemoveDuplicate(mastersIPList), nodeIPList)
+	return k.syncNodeIPVSYaml(str2.RemoveDuplicate(mastersIPList), nodeIPList)
 }
 
 func (k *KubeadmRuntime) deleteMasters(masters []string) error {
@@ -181,7 +217,7 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 func (k *KubeadmRuntime) deleteMaster(master string) error {
 	return k.resetNode(master, func() {
 		//remove master
-		masterIPs := strings.RemoveFromSlice(k.getMasterIPList(), master)
+		masterIPs := str2.RemoveFromSlice(k.getMasterIPList(), master)
 		if len(masterIPs) > 0 {
 			// TODO: do we need draining first?
 			if err := k.removeNode(master); err != nil {

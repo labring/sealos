@@ -22,6 +22,8 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
+  ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY }}
+  ALIYUN_REPO_PREFIX: ${{ secrets.ALIYUN_REPO_PREFIX && secrets.ALIYUN_REPO_PREFIX || secrets.ALIYUN_USERNAME && format('{0}/{1}', secrets.ALIYUN_REGISTRY, secrets.ALIYUN_USERNAME) || '' }}
 
 jobs:
   image-build:
@@ -50,6 +52,9 @@ jobs:
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
           echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          fi
 
       - name: Docker meta
         id: meta
@@ -57,6 +62,7 @@ jobs:
         with:
           images: |
             ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -67,7 +73,15 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: ${{ inputs.push_image && env.ALIYUN_REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
 
       - name: Build
         id: build
@@ -80,7 +94,7 @@ jobs:
             name=${{ env.MODULE_NAME }}
             path=${{ inputs.module }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,"name=${{ env.GHCR_REPO }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
+          outputs: type=image,"name=${{ env.GHCR_REPO }}${{ env.ALIYUN_REPO && format(',{0}', env.ALIYUN_REPO) || '' }}",name-canonical=true,push-by-digest=${{ inputs.push_image }},push=${{ inputs.push_image }}
 
       - name: Export digest
         env:
@@ -117,7 +131,15 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ALIYUN_REGISTRY }}
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
 
       - name: Extract module name
         id: module_name
@@ -128,6 +150,9 @@ jobs:
           MODULE_NAME=$(basename "$MODULE_INPUT")
           echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
           echo "GHCR_REPO=ghcr.io/${REPOSITORY_OWNER}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "ALIYUN_REPO=${{ env.ALIYUN_REPO_PREFIX }}/sealos-${MODULE_NAME}-frontend" >> $GITHUB_ENV
+          fi
 
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -138,6 +163,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
 
@@ -167,10 +193,14 @@ jobs:
         with:
           images: |
             ${{ env.GHCR_REPO }}
+            ${{ env.ALIYUN_REPO }}
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+            type=ref,event=tag
             type=sha
+        env:
+          DOCKER_METADATA_SHORT_SHA_LENGTH: 9
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
@@ -178,8 +208,11 @@ jobs:
           TEMP_DIR: ${{ runner.temp }}
           GHCR_REPO: ${{ env.GHCR_REPO }}
         run: |
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf "${GHCR_REPO}@sha256:%s " *)
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            docker buildx imagetools create -t $TAG \
+              $(printf "${GHCR_REPO}@sha256:%s " *)
+            sleep 5
+          done
 
       - name: Inspect image
         env:
@@ -201,6 +234,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Extract module name
         id: module_name
         env:
@@ -211,6 +245,7 @@ jobs:
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
+
       - name: Check if tag
         id: check_tag
         env:
@@ -240,6 +275,12 @@ jobs:
           echo "cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-frontend:${tag_name}" >> $GITHUB_OUTPUT
           echo "latest_cluster_image=ghcr.io/${REPO_OWNER}/sealos-cloud-${MODULE_NAME}-frontend:latest" >> $GITHUB_OUTPUT
 
+          if [[ -n "${{ env.ALIYUN_REPO_PREFIX }}" ]]; then
+            echo "aliyun_cluster_repo=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend" >> $GITHUB_OUTPUT
+            echo "aliyun_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend:${tag_name}" >> $GITHUB_OUTPUT
+            echo "aliyun_latest_cluster_image=${{ env.ALIYUN_REPO_PREFIX }}/sealos-cloud-${MODULE_NAME}-frontend:latest" >> $GITHUB_OUTPUT
+          fi
+
       - name: Download sealos
         uses: actions/download-artifact@v4
         with:
@@ -255,9 +296,17 @@ jobs:
       - name: Sealos login to ghcr.io
         env:
           REPOSITORY_OWNER: ${{ github.repository_owner }}
-          GH_PAT: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           sudo sealos login -u "$REPOSITORY_OWNER" -p "$GH_PAT" --debug ghcr.io
+
+      - name: Sealos login to Aliyun Registry
+        if: ${{ env.ALIYUN_REGISTRY }}
+        env:
+          ALIYUN_USERNAME: ${{ secrets.ALIYUN_USERNAME }}
+          ALIYUN_PASSWORD: ${{ secrets.ALIYUN_PASSWORD }}
+        run: |
+          sudo sealos login -u "$ALIYUN_USERNAME" -p "$ALIYUN_PASSWORD" --debug ${{ env.ALIYUN_REGISTRY }}
 
       - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
         working-directory: frontend/${{ inputs.module }}/deploy
@@ -268,8 +317,12 @@ jobs:
           NEW_DOCKER_IMAGE: ${{ steps.prepare.outputs.new_docker_image }}
           CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
           LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
+          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
+          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
           sudo sed -i "s;${OLD_DOCKER_IMAGE};${NEW_DOCKER_IMAGE};" manifests/*
+
+          # Build for GHCR
           sudo sealos build -t "${CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
           sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
           # delete old registry cache
@@ -277,15 +330,32 @@ jobs:
           sudo sealos build -t "${CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
           sudo sealos build -t "${LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
 
-      - name: Manifest Cluster Images'
+          # Build for Aliyun if enabled
+          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-amd64" --platform linux/amd64 -f Kubefile
+            sudo rm -rf registry
+            sudo sealos build -t "${ALIYUN_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+            sudo sealos build -t "${ALIYUN_LATEST_CLUSTER_IMAGE}-arm64" --platform linux/arm64 -f Kubefile
+          fi
+
+      - name: Manifest Cluster Images
         env:
           OWNER: ${{ github.repository_owner }}
           CLUSTER_IMAGE: ${{ steps.prepare.outputs.cluster_image }}
           LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.latest_cluster_image }}
+          ALIYUN_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_cluster_image }}
+          ALIYUN_LATEST_CLUSTER_IMAGE: ${{ steps.prepare.outputs.aliyun_latest_cluster_image }}
         run: |
           sudo sealos images
           bash scripts/manifest-cluster-images.sh "$CLUSTER_IMAGE"
           bash scripts/manifest-cluster-images.sh "$LATEST_CLUSTER_IMAGE"
+
+          if [[ -n "${ALIYUN_CLUSTER_IMAGE}" ]]; then
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE"
+            bash scripts/manifest-cluster-images.sh "$ALIYUN_LATEST_CLUSTER_IMAGE"
+          fi
 
       - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
         uses: labring/gh-rebot@v0.0.6

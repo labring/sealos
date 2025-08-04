@@ -27,6 +27,8 @@ import { useRouter } from 'next/router';
 import { ChevronDown, Plus, Settings } from 'lucide-react';
 import CreateTeam from './CreateTeam';
 import BoringAvatar from 'boring-avatars';
+import { useEffect, useMemo, useRef } from 'react';
+import { track } from '@sealos/gtm';
 
 export default function WorkspaceToggle() {
   const modalDisclosure = useDisclosure();
@@ -41,6 +43,10 @@ export default function WorkspaceToggle() {
     mutationFn: switchRequest,
     async onSuccess(data) {
       if (data.code === 200 && !!data.data && session) {
+        track('workspace_switch', {
+          module: 'workspace'
+        });
+
         const payload = jwtDecode<AccessTokenPayload>(data.data.token);
         await sessionConfig({
           ...data.data,
@@ -63,10 +69,106 @@ export default function WorkspaceToggle() {
   const namespaces = data?.data?.namespaces || [];
   const namespace = namespaces.find((x) => x.uid === ns_uid);
 
+  const WorkspaceList = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+    // Prevent unwanted excess events
+    const prevIsOpenRef = useRef<boolean>(true);
+
+    useEffect(() => {
+      if (isOpen && !prevIsOpenRef.current) {
+        track('module_open', {
+          module: 'workspace'
+        });
+      }
+      prevIsOpenRef.current = isOpen;
+    }, [isOpen]);
+
+    return (
+      <PopoverContent w={'full'} minW={'274px'}>
+        <PopoverBody
+          cursor={'initial'}
+          // maxH={'300px'}
+          // overflow={'auto'}
+          borderRadius={'12px'}
+          p={'0'}
+          py={'8px'}
+          color={'#18181B'}
+          style={{
+            scrollbarWidth: 'none'
+          }}
+          fontSize={'13px'}
+        >
+          <Text px={'12px'} py={'6px'} color={'#71717A'} fontSize={'12px'} fontWeight={'500'}>
+            {t('common:workspace')}
+          </Text>
+          <VStack gap={0} alignItems={'stretch'} maxH={'260px'} overflow={'scroll'}>
+            {namespaces.map((ns) => {
+              return (
+                <NsListItem
+                  key={ns.uid}
+                  width={'full'}
+                  onClick={() => {
+                    switchTeam({ uid: ns.uid });
+                  }}
+                  displayPoint={true}
+                  id={ns.uid}
+                  isPrivate={ns.nstype === NSType.Private}
+                  isSelected={ns.uid === ns_uid}
+                  teamName={ns.teamName}
+                  teamAvatar={ns.id}
+                  showCheck={true}
+                  selectedColor={'rgba(0, 0, 0, 0.05)'}
+                  fontSize={'14px'}
+                />
+              );
+            })}
+          </VStack>
+
+          <Flex
+            alignItems={'center'}
+            gap={'8px'}
+            px={'16px'}
+            py={'6px'}
+            height={'40px'}
+            cursor={'pointer'}
+            onClick={() => {
+              createTeamDisclosure.onOpen();
+            }}
+          >
+            <Plus size={20} color="#71717A" />
+            <Text fontSize="14px" fontWeight="400" color="#18181B">
+              {t('common:create_workspace')}
+            </Text>
+          </Flex>
+          <Divider my={'4px'} borderColor={'#F4F4F5'} />
+
+          {/* TeamCenter */}
+          <HStack
+            fontSize={'14px'}
+            px={'8px'}
+            alignItems={'center'}
+            cursor={'pointer'}
+            borderRadius={'4px'}
+            onClick={() => {
+              // setMessageFilter([]);
+              modalDisclosure.onOpen();
+              onClose();
+            }}
+            // {...props}
+          >
+            <Center p={'6px 8px'} gap={'12px'}>
+              <Settings size={16} color={'#737373'} />
+              <Text>{t('common:manage_team')}</Text>
+            </Center>
+          </HStack>
+        </PopoverBody>
+      </PopoverContent>
+    );
+  };
+
   return (
     <>
       <Popover placement="bottom-start" isLazy>
-        {({ isOpen }) => (
+        {({ isOpen, onClose }) => (
           <>
             <PopoverTrigger>
               <HStack
@@ -81,10 +183,13 @@ export default function WorkspaceToggle() {
                 pl={'12px'}
                 pr={'8px'}
                 bg={isOpen ? 'secondary' : ''}
+                minW={'0'}
+                flex={'0 1 auto'}
                 tabIndex={0}
               >
                 {namespace?.id && (
                   <Box
+                    flex={'0 0 auto'}
                     boxSize={{
                       base: '20px',
                       sm: '24px'
@@ -102,11 +207,9 @@ export default function WorkspaceToggle() {
                   fontSize={'14px'}
                   fontWeight={'500'}
                   textTransform={'capitalize'}
-                  maxW={{
-                    base: '30px',
-                    xs: '80px',
-                    sm: 'fit-content'
-                  }}
+                  flex={'0 1 auto'}
+                  wordBreak={'break-all'}
+                  minW={'2ch'}
                   overflow={'hidden'}
                   textOverflow={'ellipsis'}
                   whiteSpace={'nowrap'}
@@ -122,84 +225,7 @@ export default function WorkspaceToggle() {
                 </Center>
               </HStack>
             </PopoverTrigger>
-            <PopoverContent w={'full'} minW={'274px'}>
-              <PopoverBody
-                cursor={'initial'}
-                // maxH={'300px'}
-                // overflow={'auto'}
-                borderRadius={'12px'}
-                p={'0'}
-                py={'8px'}
-                color={'#18181B'}
-                style={{
-                  scrollbarWidth: 'none'
-                }}
-                fontSize={'13px'}
-              >
-                <Text px={'12px'} py={'6px'} color={'#71717A'} fontSize={'12px'} fontWeight={'500'}>
-                  {t('common:workspace')}
-                </Text>
-                <VStack gap={0} alignItems={'stretch'} maxH={'260px'} overflow={'scroll'}>
-                  {namespaces.map((ns) => {
-                    return (
-                      <NsListItem
-                        key={ns.uid}
-                        width={'full'}
-                        onClick={() => {
-                          switchTeam({ uid: ns.uid });
-                        }}
-                        displayPoint={true}
-                        id={ns.uid}
-                        isPrivate={ns.nstype === NSType.Private}
-                        isSelected={ns.uid === ns_uid}
-                        teamName={ns.teamName}
-                        teamAvatar={ns.id}
-                        showCheck={true}
-                        selectedColor={'rgba(0, 0, 0, 0.05)'}
-                        fontSize={'14px'}
-                      />
-                    );
-                  })}
-                </VStack>
-
-                <Flex
-                  alignItems={'center'}
-                  gap={'8px'}
-                  px={'16px'}
-                  py={'6px'}
-                  height={'40px'}
-                  cursor={'pointer'}
-                  onClick={() => {
-                    createTeamDisclosure.onOpen();
-                  }}
-                >
-                  <Plus size={20} color="#71717A" />
-                  <Text fontSize="14px" fontWeight="400" color="#18181B">
-                    {t('common:create_workspace')}
-                  </Text>
-                </Flex>
-                <Divider my={'4px'} borderColor={'#F4F4F5'} />
-
-                {/* TeamCenter */}
-                <HStack
-                  fontSize={'14px'}
-                  px={'8px'}
-                  alignItems={'center'}
-                  cursor={'pointer'}
-                  borderRadius={'4px'}
-                  onClick={() => {
-                    // setMessageFilter([]);
-                    modalDisclosure.onOpen();
-                  }}
-                  // {...props}
-                >
-                  <Center p={'6px 8px'} gap={'12px'}>
-                    <Settings size={16} color={'#737373'} />
-                    <Text>{t('common:manage_team')}</Text>
-                  </Center>
-                </HStack>
-              </PopoverBody>
-            </PopoverContent>
+            <WorkspaceList isOpen={isOpen} onClose={onClose} />
           </>
         )}
       </Popover>
