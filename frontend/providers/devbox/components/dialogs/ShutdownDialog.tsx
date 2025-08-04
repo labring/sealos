@@ -17,6 +17,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { track } from '@sealos/gtm';
 
 interface ShutdownDialogPros {
   onSuccess: () => void;
@@ -35,6 +36,12 @@ const ShutdownDialog = ({ onSuccess, onClose, devbox, open }: ShutdownDialogPros
       setLoading(true);
       await shutdownDevbox({ devboxName: devbox.name, shutdownMode });
       toast.success(t('pause_success'));
+      track({
+        event: 'deployment_shutdown',
+        module: 'devbox',
+        context: 'app',
+        type: shutdownMode === 'Stopped' ? 'normal' : 'cost_saving'
+      });
       onSuccess();
     } catch (error: any) {
       toast.error(typeof error === 'string' ? error : error.message || t('pause_error'));
