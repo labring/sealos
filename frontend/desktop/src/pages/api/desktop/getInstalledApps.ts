@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
     });
 
-    let apps = [...defaultArr, ...userArr].filter((item) => item.displayType !== 'hidden');
+    let apps = [...defaultArr, ...userArr];
 
     jsonRes(res, { data: apps });
   } catch (err) {
