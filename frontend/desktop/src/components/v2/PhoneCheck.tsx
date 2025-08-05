@@ -234,7 +234,10 @@ export default function PhoneCheckComponent() {
   useEffect(() => {
     let timeout: NodeJS.Timeout;
 
-    if (captchaIsLoaded && startTime + 60_000 <= new Date().getTime()) {
+    if (
+      (captchaIsLoaded || (conf.authConfig && !conf.authConfig.captcha.enabled)) &&
+      startTime + 60_000 <= new Date().getTime()
+    ) {
       timeout = setTimeout(() => onSubmit(true), 2000);
     }
 
