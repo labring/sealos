@@ -278,7 +278,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	committer, err := commit.NewCommitter()
+	committer, err := commit.NewCommitter(registryAddr, registryUser, registryPassword)
 	if err != nil {
 		setupLog.Error(err, "unable to create committer")
 		os.Exit(1)

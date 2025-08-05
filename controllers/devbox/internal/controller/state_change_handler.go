@@ -66,7 +66,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
 			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
-			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
+			if _, err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
@@ -107,7 +107,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 			baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 			commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
 			h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
-			if err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
+			if _, err := h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 				h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 				return err
 			}
