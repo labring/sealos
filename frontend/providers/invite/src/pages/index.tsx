@@ -172,10 +172,11 @@ export default function InvitationPage({
                 __html: t('friend_certification_text', { amount: INVITER_REWARD })
               }}
             />
-            {t('balance_reward')}
+            {t('invite_more_reward_more')}
             <Link onClick={onOpen} color={'#2563EB'} fontWeight={'bold'}>
-              {t('click_to_get')}
+              {t('click_here')}
             </Link>
+            {t('view_rule_and_get')}
           </Text>
         </Box>
         {/* <Center
