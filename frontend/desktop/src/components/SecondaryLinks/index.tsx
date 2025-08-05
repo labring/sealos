@@ -199,7 +199,8 @@ export default function SecondaryLinks() {
           </>
         )}
 
-        <MenuItem
+        {/* // [TODO] Guide is currently not compatible with narrow screen. */}
+        {/* <MenuItem
           py="8px"
           px="12px"
           borderRadius="8px"
@@ -209,7 +210,7 @@ export default function SecondaryLinks() {
           fontWeight="500"
         >
           {t('common:guide')}
-        </MenuItem>
+        </MenuItem> */}
 
         {layoutConfig?.common.docsUrl && (
           <MenuItem
