@@ -5,9 +5,10 @@ import "time"
 const (
 	DefaultNamespace           = "sealos.io"
 	DefaultContainerdAddress   = "unix:///var/run/containerd/containerd.sock"
-	DefaultDataRoot            = "/var/lib/containerd"
 	DefaultRuntime             = "io.containerd.runc.v2"
-	DefaultSnapshotter         = "devbox"
+	DefaultNerdctlDataRoot     = "/var/lib/containerd"
+	DefaultNerdctlHostsDir     = "/etc/containerd/certs.d"
+	DefaultDevboxSnapshotter   = "devbox"
 	DefaultNetworkMode         = "none"
 	InsecureRegistry           = true
 	PauseContainerDuringCommit = false

@@ -35,6 +35,7 @@ type CommitterImpl struct {
 	runtimeServiceClient runtimeapi.RuntimeServiceClient // CRI client
 	containerdClient     *client.Client                  // containerd client
 	conn                 *grpc.ClientConn                // gRPC connection
+	globalOptions        *types.GlobalCommandOptions     // global options
 	registryAddr         string
 	registryUsername     string
 	registryPassword     string
@@ -80,6 +81,7 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string) (Comm
 		runtimeServiceClient: runtimeServiceClient,
 		containerdClient:     containerdClient,
 		conn:                 conn,
+		globalOptions:        NewGlobalOptionConfig(),
 		registryAddr:         registryAddr,
 		registryUsername:     registryUsername,
 		registryPassword:     registryPassword,
@@ -99,8 +101,6 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		}
 	}
 
-	global := NewGlobalOptionConfig()
-
 	// create container with labels
 	originalAnnotations := map[string]string{
 		v1alpha1.AnnotationContentID:    contentID,
@@ -116,7 +116,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 
 	// create container options
 	createOpt := types.ContainerCreateOptions{
-		GOptions:       *global,
+		GOptions:       *c.globalOptions,
 		Runtime:        DefaultRuntime, // user devbox runtime
 		Name:           fmt.Sprintf("devbox-%s-container-%d", devboxName, time.Now().Unix()),
 		Pull:           "missing",
@@ -132,9 +132,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 		Label:          convertedAnnotations,
 		SnapshotLabels: convertedLabels,
 		ImagePullOpt: types.ImagePullOptions{
-			GOptions: types.GlobalCommandOptions{
-				Snapshotter: DefaultSnapshotter,
-			},
+			GOptions: *c.globalOptions,
 		},
 	}
 
@@ -204,8 +202,8 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 }
 
 // RemoveContainer remove container
-func (c *CommitterImpl) RemoveContainer(ctx context.Context, containerNames string) error {
-	fmt.Println("========>>>> remove container", containerNames)
+func (c *CommitterImpl) RemoveContainer(ctx context.Context, containerID string) error {
+	fmt.Println("========>>>> remove container", containerID)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
 	// check connection status, if connection is bad, try to reconnect
@@ -223,7 +221,7 @@ func (c *CommitterImpl) RemoveContainer(ctx context.Context, containerNames stri
 		Volumes:  false,
 		GOptions: *global,
 	}
-	err := container.Remove(ctx, c.containerdClient, []string{containerNames}, opt)
+	err := container.Remove(ctx, c.containerdClient, []string{containerID}, opt)
 	if err != nil {
 		return fmt.Errorf("failed to remove container: %v", err)
 	}
@@ -472,15 +470,15 @@ func NewGlobalOptionConfig() *types.GlobalCommandOptions {
 	return &types.GlobalCommandOptions{
 		Namespace:        DefaultNamespace,
 		Address:          DefaultContainerdAddress,
-		DataRoot:         DefaultDataRoot,
+		DataRoot:         DefaultNerdctlDataRoot,
 		Debug:            false,
 		DebugFull:        false,
-		Snapshotter:      DefaultSnapshotter,
+		Snapshotter:      DefaultDevboxSnapshotter,
 		CNIPath:          ncdefaults.CNIPath(),
 		CNINetConfPath:   ncdefaults.CNINetConfPath(),
 		CgroupManager:    ncdefaults.CgroupManager(),
-		InsecureRegistry: false,
-		HostsDir:         ncdefaults.HostsDirs(),
+		InsecureRegistry: InsecureRegistry,
+		HostsDir:         []string{DefaultNerdctlHostsDir},
 		Experimental:     true,
 		HostGatewayIP:    ncdefaults.HostGatewayIP(),
 		KubeHideDupe:     false,
