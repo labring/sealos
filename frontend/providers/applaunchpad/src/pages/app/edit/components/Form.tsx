@@ -862,7 +862,7 @@ const Form = ({
                         }
                       })}
                     />
-                    {i === networks.length - 1 && (
+                    {i === networks.length - 1 && networks.length + 1 <= 15 && (
                       <Box mt={3}>
                         <Button
                           w={'100px'}
