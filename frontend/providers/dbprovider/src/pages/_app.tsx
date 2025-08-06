@@ -8,7 +8,7 @@ import { ChakraProvider } from '@chakra-ui/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import throttle from 'lodash/throttle';
 import { appWithTranslation, useTranslation } from 'next-i18next';
-import type { AppProps } from 'next/app';
+import type { AppContext, AppInitialProps, AppProps } from 'next/app';
 import Head from 'next/head';
 import Router, { useRouter } from 'next/router';
 import NProgress from 'nprogress';
@@ -16,10 +16,11 @@ import { useEffect, useState } from 'react';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import useEnvStore from '@/store/env';
-
 import '@sealos/driver/src/driver.css';
 import '@/styles/reset.scss';
 import 'nprogress/nprogress.css';
+import Script from 'next/script';
+import App from 'next/app';
 
 //Binding events.
 Router.events.on('routeChangeStart', () => NProgress.start());
@@ -37,7 +38,11 @@ const queryClient = new QueryClient({
   }
 });
 
-function App({ Component, pageProps }: AppProps) {
+type AppOwnProps = {
+  customScripts: { [key: string]: string }[];
+};
+
+function MyApp({ Component, pageProps, customScripts }: AppProps & AppOwnProps) {
   const router = useRouter();
   const { i18n } = useTranslation();
   const { SystemEnv, initSystemEnv } = useEnvStore();
@@ -187,8 +192,27 @@ function App({ Component, pageProps }: AppProps) {
           <Loading loading={loading} />
         </ChakraProvider>
       </QueryClientProvider>
+      {customScripts.map((script, i) => (
+        <Script strategy="afterInteractive" key={i} {...script} />
+      ))}
     </>
   );
 }
 
-export default appWithTranslation(App);
+MyApp.getInitialProps = async (context: AppContext): Promise<AppOwnProps & AppInitialProps> => {
+  const ctx = await App.getInitialProps(context);
+
+  let customScripts: AppOwnProps['customScripts'] = [];
+
+  try {
+    if (typeof window === 'undefined') {
+      customScripts = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
+    }
+  } catch (error) {
+    console.error('Failed to inject custom scripts:', error);
+  }
+
+  return { ...ctx, customScripts };
+};
+
+export default appWithTranslation(MyApp);
