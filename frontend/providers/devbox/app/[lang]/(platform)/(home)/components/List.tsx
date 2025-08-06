@@ -58,6 +58,7 @@ import { track } from '@sealos/gtm';
 import { Polygon } from '@/components/Polygon';
 import DatePicker from '@/components/DatePicker';
 import { Separator } from '@/components/ui/separator';
+import SearchEmpty from './SearchEmpty';
 
 const DeleteDevboxDialog = dynamic(() => import('@/components/dialogs/DeleteDevboxDialog'));
 const EditRemarkDialog = dynamic(() => import('@/components/dialogs/EditRemarkDialog'));
@@ -594,7 +595,7 @@ const DevboxList = ({
     <>
       {/* table */}
       <div className="flex h-full w-full flex-col justify-between">
-        <div className="flex flex-col gap-3">
+        <div className="flex h-full flex-col gap-3">
           {/* table header */}
           <div className="flex h-10 items-center rounded-lg border-[0.5px] bg-white px-6 py-1 text-sm/5 text-zinc-500 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)]">
             {table.getFlatHeaders().map((header) => (
@@ -608,32 +609,38 @@ const DevboxList = ({
             ))}
           </div>
           {/* table body */}
-          {table.getRowModel().rows.map((row) => (
-            <div
-              key={row.id}
-              className="flex h-16 items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
-              data-id={row.original.id}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <div
-                  key={cell.id}
-                  style={{ width: cell.column.getSize() }}
-                  className="flex-shrink-0 flex-grow-1"
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </div>
-              ))}
-            </div>
-          ))}
+          {table.getRowModel().rows.length === 0 ? (
+            <SearchEmpty />
+          ) : (
+            table.getRowModel().rows.map((row) => (
+              <div
+                key={row.id}
+                className="flex h-16 items-center rounded-xl border-[0.5px] bg-white px-6 shadow-[0px_2px_8px_-2px_rgba(0,0,0,0.08)] transition-colors"
+                data-id={row.original.id}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <div
+                    key={cell.id}
+                    style={{ width: cell.column.getSize() }}
+                    className="flex-shrink-0 flex-grow-1"
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
         </div>
         {/* pagination */}
-        <Pagination
-          currentPage={table.getState().pagination.pageIndex + 1}
-          totalPages={table.getPageCount()}
-          pageSize={table.getState().pagination.pageSize}
-          totalItems={devboxList.length}
-          onPageChange={(page) => table.setPageIndex(page - 1)}
-        />
+        {table.getRowModel().rows.length > 0 && (
+          <Pagination
+            currentPage={table.getState().pagination.pageIndex + 1}
+            totalPages={table.getPageCount()}
+            pageSize={table.getState().pagination.pageSize}
+            totalItems={table.getFilteredRowModel().rows.length}
+            onPageChange={(page) => table.setPageIndex(page - 1)}
+          />
+        )}
       </div>
 
       {/* dialogs */}
