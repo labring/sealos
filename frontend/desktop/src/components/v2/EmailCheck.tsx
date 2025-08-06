@@ -107,7 +107,6 @@ export default function EmailCheckComponent() {
   const sendCode = async (cfToken?: string) => {
     setIsLoading(true);
     const oldTime = startTime;
-    setCanResend(false);
 
     try {
       if (!signupData || signupData.providerType !== 'EMAIL') {
@@ -122,6 +121,7 @@ export default function EmailCheckComponent() {
         throw Error(result.message);
       } else {
         updateStartTime();
+        setCanResend(false);
       }
     } catch (error) {
       // rollout

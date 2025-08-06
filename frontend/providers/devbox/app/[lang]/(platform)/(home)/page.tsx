@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { useGuideStore } from '@/stores/guide';
@@ -19,6 +19,7 @@ export default function HomePage() {
   const { resetGuideState } = useGuideStore();
   const isClientSide = useClientSideValue(true);
   const { list, isLoading, refetchList } = useDevboxList();
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (isClientSide) {
@@ -30,8 +31,12 @@ export default function HomePage() {
 
   return (
     <div className="flex h-[calc(100vh-28px)] min-w-fit flex-col px-12">
-      <Header />
-      {list.length === 0 ? <Empty /> : <List devboxList={list} refetchDevboxList={refetchList} />}
+      <Header onSearch={setSearchQuery} />
+      {list.length === 0 ? (
+        <Empty />
+      ) : (
+        <List devboxList={list} refetchDevboxList={refetchList} searchQuery={searchQuery} />
+      )}
     </div>
   );
 }
