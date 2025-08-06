@@ -160,7 +160,21 @@ const StoreModal = ({
           </ModalBody>
 
           <ModalFooter>
-            <Button w={'88px'} onClick={handleSubmit(successCb)}>
+            <Button
+              w={'88px'}
+              onClick={handleSubmit((e) => {
+                const clampedValue = Number.isSafeInteger(e.value)
+                  ? Math.min(maxValue, Math.max(e.value, minValue))
+                  : minValue;
+
+                successCb({
+                  id: e.id,
+                  name: e.name,
+                  path: e.path,
+                  value: clampedValue
+                });
+              })}
+            >
               {t('Confirm')}
             </Button>
           </ModalFooter>
