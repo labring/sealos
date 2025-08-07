@@ -269,10 +269,7 @@ const DevboxList = ({
         enableColumnFilter: true,
         filterFn: statusFilterFn,
         header: ({ column, table }) => {
-          const currentData =
-            table.getFilteredRowModel().rows.length > 0
-              ? table.getFilteredRowModel().rows.map((row) => row.original)
-              : table.getCoreRowModel().rows.map((row) => row.original);
+          const currentData = table.getCoreRowModel().rows.map((row) => row.original);
 
           const existingStatuses = new Set(
             currentData.map((item) =>
