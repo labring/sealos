@@ -79,21 +79,36 @@ export async function GET(req: NextRequest) {
             name: true,
             uid: true,
             description: true,
-            iconId: true
-          },
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-          orderBy: [
-            {
-              createdAt: 'asc'
-            }
-          ]
+            iconId: true,
+            createdAt: true
+          }
         }),
         tx.templateRepository.count({
           where
         })
       ]);
-      return [templateRepositoryList, totalItems];
+      // Sort repositories by PROGRAMMING_LANGUAGE tag name, then by creation date
+      const sortedList = [...templateRepositoryList].sort((a, b) => {
+        const aLangTag =
+          a.templateRepositoryTags.find((t) => t.tag.type === 'PROGRAMMING_LANGUAGE')?.tag.name ||
+          '';
+        const bLangTag =
+          b.templateRepositoryTags.find((t) => t.tag.type === 'PROGRAMMING_LANGUAGE')?.tag.name ||
+          '';
+
+        if (aLangTag !== bLangTag) {
+          return aLangTag.localeCompare(bLangTag);
+        }
+
+        // If programming language tags are the same, sort by creation date
+        return a.createdAt.getTime() - b.createdAt.getTime();
+      });
+
+      // Apply pagination after sorting
+      const start = (page - 1) * pageSize;
+      const paginatedList = sortedList.slice(start, start + pageSize);
+
+      return [paginatedList, totalItems];
     });
 
     return jsonRes({
