@@ -286,7 +286,13 @@ const Header = ({
 
   return (
     <Flex h={'80px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
+      <Flex
+        alignItems={'center'}
+        cursor={'pointer'}
+        onClick={() => {
+          router.push('/dbs');
+        }}
+      >
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
         <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
           {router.query.name || db.dbName}
@@ -463,7 +469,7 @@ const Header = ({
                 setUpdateAppName(db.dbName);
                 onOpenUpdateModal();
               } else {
-                router.push(`/db/edit?name=${db.dbName}`);
+                router.replace(`/db/edit?name=${db.dbName}`);
               }
             }}
           >
@@ -528,7 +534,9 @@ const Header = ({
           dbName={db.dbName}
           source={db.source}
           onClose={onCloseDelModal}
-          onSuccess={() => router.replace('/dbs')}
+          onSuccess={() => {
+            router.push('/dbs');
+          }}
         />
       )}
 
