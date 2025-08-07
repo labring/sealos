@@ -80,32 +80,77 @@ export default async function handler(req: any, res: NextApiResponse) {
       });
     }
 
-    const { applyYamlList, namespace } = await getK8s({
-      kubeconfig: await authSession(req)
-    });
-    const { files } = await upload.doUpload(req, res);
+    let kubeconfig;
+    try {
+      kubeconfig = await authSession(req);
+    } catch (authError) {
+      console.error('Authentication failed:', authError);
+      return jsonRes(res, {
+        code: 401,
+        data: 'Authentication failed'
+      });
+    }
+
+    let k8sResult;
+    try {
+      k8sResult = await getK8s({ kubeconfig });
+    } catch (k8sError) {
+      console.error('K8s initialization failed:', k8sError);
+      return jsonRes(res, {
+        code: 500,
+        data:
+          'K8s initialization failed: ' +
+          (k8sError instanceof Error ? k8sError.message : String(k8sError))
+      });
+    }
+
+    const { namespace } = k8sResult;
+
+    let files;
+    try {
+      const uploadResult = await upload.doUpload(req, res);
+      files = uploadResult.files;
+    } catch (uploadError) {
+      console.error('File upload failed:', uploadError);
+      return jsonRes(res, {
+        code: 500,
+        data:
+          'File upload failed: ' +
+          (uploadError instanceof Error ? uploadError.message : String(uploadError))
+      });
+    }
+
     const bucketName = process.env?.MINIO_BUCKET_NAME || 'database-test';
 
     const startTime = performance.now();
     const upLoadResults = await Promise.all(
       files.map(async (file) => {
         const fileName = `${namespace}-${Date.now()}-${file.filename}`;
-        await minioClient.fPutObject(bucketName, fileName, file.path);
-        return fileName;
+        try {
+          await minioClient.fPutObject(bucketName, fileName, file.path);
+          return fileName;
+        } catch (minioError) {
+          console.error('MinIO upload failed for file:', fileName, minioError);
+          throw minioError;
+        }
       })
     );
     const endTime = performance.now();
     const duration = endTime - startTime;
-    console.log(upLoadResults);
-    console.log(`file:${files} time:${duration}`);
 
     jsonRes(res, {
       data: upLoadResults
     });
   } catch (error) {
+    console.error('Upload handler error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error?.constructor?.name
+    });
+
     jsonRes(res, {
       code: 500,
-      error
+      error: error instanceof Error ? error.message : error
     });
   }
 }
