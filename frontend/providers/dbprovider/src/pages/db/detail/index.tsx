@@ -137,7 +137,7 @@ const AppDetail = ({
     {
       refetchInterval: 3000,
       onError(err) {
-        router.replace('/dbs');
+        router.push('/dbs');
         toast({
           title: String(err),
           status: 'error'
@@ -194,7 +194,7 @@ const AppDetail = ({
                 : {
                     color: 'grayModern.500',
                     onClick: () =>
-                      router.replace(
+                      router.push(
                         `/db/detail?name=${dbName}&dbType=${dbType}&listType=${item.value}`
                       )
                   })}

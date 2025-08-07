@@ -111,67 +111,15 @@ const Header = ({
     setLoading(false);
   }, [db, t, toast]);
 
-  // //   const handleManageData = useCallback(async () => {
-  // //     const userStr = localStorage.getItem('session');
-  // //     const orgId = '34';
-  // //     const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
-  // //     const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
-  // //     const userObj = userStr ? JSON.parse(userStr) : null;
-  // //     const userId = userObj?.user.id;
-  // //     // const userNS = userObj?.user.nsid; // 不再需要 userNS
-  // //     if (!conn) {
-  // //       return toast({
-  // //         title: 'Connection info not ready',
-  // //         status: 'error'
-  // //       });
-  // //     }
-  // //     const { host, port, connection, username, password, dbType, dbName } = conn;
-
-  // //     const payload = {
-  // //       environmentId: 1 as 1 | 2,
-  // //       storageType: 'LOCAL' as 'LOCAL' | 'CLOUD',
-  // //       host: host,
-  // //       port: String(port),
-  // //       user: username,
-  // //       password: password,
-  // //       url: connection,
-  // //       type: mapDBType(dbType)
-  // //     };
-
-  // //     // try {
-  // //     //   const url = await generateLoginUrl({
-  // //     //     userId,
-  // //     //     orgId,
-  // //     //     secretKey,
-  // //     //     ui: {
-  // //     //       theme: ThemeAppearance.Light,
-  // //     //       primaryColor: PrimaryColorsType.bw,
-  // //     //       language: LangType.ZH_CN,
-  // //     //       hideAvatar: yowantLayoutConfig.hideAvatar
-  // //     //     }
-  // //     //   });
-
-  // //     //   try {
-  // //     //     console.log(111);
-
-  // //     //     await createDatasource(payload, apiKey);
-  // //     //   } catch (err) {
-  // //     //     console.log(err);
-  // //     //   }
-
-  // //   //     router.push(url);
-  // //   //   } catch (err) {
-  // //   //     console.error(t('chat2db_redirect_failed'), err);
-  // //   //     toast({
-  // //   //       title: t('chat2db_redirect_failed'),
-  // //   //       status: 'error'
-  // //   //     });
-  // //   //   }
-  // //   // }, [toast, router]);
-
   return (
     <Flex h={'80px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
+      <Flex
+        alignItems={'center'}
+        cursor={'pointer'}
+        onClick={() => {
+          router.push('/dbs');
+        }}
+      >
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
         <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
           {router.query.name || db.dbName}
@@ -276,7 +224,7 @@ const Header = ({
                 setUpdateAppName(db.dbName);
                 onOpenUpdateModal();
               } else {
-                router.push(`/db/edit?name=${db.dbName}`);
+                router.replace(`/db/edit?name=${db.dbName}`);
               }
             }}
           >
@@ -324,7 +272,9 @@ const Header = ({
           dbName={db.dbName}
           source={db.source}
           onClose={onCloseDelModal}
-          onSuccess={() => router.replace('/dbs')}
+          onSuccess={() => {
+            router.push('/dbs');
+          }}
         />
       )}
 
