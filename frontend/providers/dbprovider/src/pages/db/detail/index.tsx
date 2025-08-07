@@ -234,7 +234,7 @@ const AppDetail = ({
         </Flex>
         {listType === TabEnum.Overview ? (
           <Flex boxSize={'full'} flex={1} flexDirection={'column'}>
-            <AppBaseInfo db={dbDetail} onConnReady={(info) => setConnInfo(info)} />
+            <AppBaseInfo db={dbDetail} />
             <Box
               flex={'1 0 200px'}
               bg={'white'}
