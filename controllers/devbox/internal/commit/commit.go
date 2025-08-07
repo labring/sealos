@@ -12,6 +12,7 @@ import (
 	"github.com/containerd/containerd/v2/core/remotes"
 	"github.com/containerd/containerd/v2/core/remotes/docker"
 	"github.com/containerd/containerd/v2/core/remotes/docker/config"
+	"github.com/containerd/containerd/v2/core/snapshots"
 	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/containerd/nerdctl/v2/pkg/api/types"
 	"github.com/containerd/nerdctl/v2/pkg/cmd/container"
@@ -198,6 +199,28 @@ func (c *CommitterImpl) DeleteContainer(ctx context.Context, containerName strin
 	}
 
 	log.Printf("Container deleted: %s successfully", containerName)
+	return nil
+}
+
+func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, contentID string) error {
+	fmt.Println("========>>>> set lv removable for container", contentID)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+
+	// check connection status, if connection is bad, try to reconnect
+	if err := c.CheckConnection(ctx); err != nil {
+		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
+		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
+			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+		}
+	}
+
+	_, err := c.containerdClient.SnapshotService(DefaultDevboxSnapshotter).Update(ctx, snapshots.Info{
+		Name:   containerID,
+		Labels: map[string]string{removeContentIDKey: contentID},
+	}, "labels."+removeContentIDKey)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

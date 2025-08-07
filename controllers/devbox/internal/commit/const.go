@@ -21,6 +21,7 @@ const (
 
 	SnapshotLabelPrefix  = "containerd.io/snapshot/devbox-"
 	ContainerLabelPrefix = "devbox.sealos.io/"
+	removeContentIDKey   = "containerd.io/snapshot/devbox-remove-content-id"
 
 	DefaultMaxRetries = 3
 	DefaultRetryDelay = 5 * time.Second
