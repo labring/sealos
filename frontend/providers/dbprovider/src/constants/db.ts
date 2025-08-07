@@ -38,6 +38,8 @@ export enum DBTypeEnum {
   clickhouse = 'clickhouse'
 }
 
+export const DB_REMARK_KEY = 'cluster.sealos.io/remark';
+
 export enum DBStatusEnum {
   Creating = 'Creating',
   Starting = 'Starting',

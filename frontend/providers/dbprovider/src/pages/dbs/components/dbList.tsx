@@ -13,7 +13,7 @@ import { useGlobalStore } from '@/store/global';
 import { useGuideStore } from '@/store/guide';
 import { DBListItemType } from '@/types/db';
 import { printMemory } from '@/utils/tools';
-import { Box, Button, Center, Flex, Image, useDisclosure, useTheme } from '@chakra-ui/react';
+import { Box, Button, Center, Flex, Image, Text, useDisclosure, useTheme } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
 import {
@@ -26,6 +26,20 @@ import { useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import {
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  FormControl,
+  FormLabel,
+  Input,
+  ModalFooter
+} from '@chakra-ui/react';
+import { setDBRemark } from '@/api/db';
 
 const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
@@ -47,6 +61,12 @@ const DBList = ({
     onOpen: onOpenUpdateModal,
     onClose: onCloseUpdateModal
   } = useDisclosure();
+  const {
+    isOpen: isOpenRemarkModal,
+    onOpen: onOpenRemarkModal,
+    onClose: onCloseRemarkModal
+  } = useDisclosure();
+  const [remarkValue, setRemarkValue] = useState('');
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
 
@@ -150,9 +170,102 @@ const DBList = ({
         accessorKey: 'name',
         header: () => t('name'),
         cell: ({ row }) => (
-          <Box color={'grayModern.900'} fontSize={'md'}>
-            {row.original.name}
-          </Box>
+          <Flex
+            cursor={'pointer'}
+            fontSize={'12px'}
+            fontWeight={'bold'}
+            alignItems={row.original?.remark ? 'flex-start' : 'center'}
+            _hover={{
+              '& .remark-button': {
+                opacity: 1,
+                visibility: 'visible'
+              },
+              '& .app-name': {
+                maxWidth: '100px'
+              }
+            }}
+            flexDirection={row.original?.remark ? 'column' : 'row'}
+            gap={row.original?.remark ? '4px' : 0}
+          >
+            <Flex alignItems="center" width="100%">
+              <Text
+                className="app-name"
+                color={'grayModern.900'}
+                fontSize={'12px'}
+                fontWeight={'bold'}
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
+                title=""
+                maxWidth="150px"
+                transition="max-width 0.2s"
+              >
+                {row.original.name}
+              </Text>
+
+              {!row.original.remark && (
+                <Center
+                  className="remark-button"
+                  gap={'4px'}
+                  color={'#737373'}
+                  opacity={0}
+                  visibility="hidden"
+                  transition="all 0.2s"
+                  flexShrink={0}
+                  ml={2}
+                  onClick={() => {
+                    setUpdateAppName(row.original.name);
+                    setRemarkValue('');
+                    onOpenRemarkModal();
+                  }}
+                >
+                  <MyIcon name="edit" w="16px" />
+                  <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
+                    {t('set_remarks')}
+                  </Text>
+                </Center>
+              )}
+            </Flex>
+            {row.original.remark && (
+              <Flex alignItems="center" width="100%">
+                <Text
+                  className="app-name"
+                  fontSize={'12px'}
+                  color={'#737373'}
+                  flex={1}
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                  title=""
+                  maxWidth="150px"
+                  transition="max-width 0.2s"
+                >
+                  {row.original.remark}
+                </Text>
+
+                <Center
+                  className="remark-button"
+                  gap={'4px'}
+                  color={'#737373'}
+                  opacity={0}
+                  visibility="hidden"
+                  transition="all 0.2s"
+                  flexShrink={0}
+                  ml={2}
+                  onClick={() => {
+                    setUpdateAppName(row.original.name);
+                    setRemarkValue(row.original.remark || '');
+                    onOpenRemarkModal();
+                  }}
+                >
+                  <MyIcon name="edit" w="16px" />
+                  <Text fontSize={'14px'} fontWeight={'400'} whiteSpace="nowrap">
+                    {t('set_remarks')}
+                  </Text>
+                </Center>
+              </Flex>
+            )}
+          </Flex>
         )
       },
       {
@@ -446,6 +559,52 @@ const DBList = ({
           onSuccess={refetchApps}
         />
       )}
+      <Modal isOpen={isOpenRemarkModal} onClose={onCloseRemarkModal}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>{t('set_remarks')}</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <FormControl>
+              <Input
+                placeholder={t('set_remarks_placeholder')}
+                value={remarkValue}
+                onChange={(e) => setRemarkValue(e.target.value)}
+                maxLength={60}
+              />
+            </FormControl>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" onClick={onCloseRemarkModal} mr={'12px'}>
+              {t('Cancel')}
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={async () => {
+                try {
+                  setLoading(true);
+                  await setDBRemark({ dbName: updateAppName, remark: remarkValue });
+                  toast({
+                    title: t('remark_updated_successfully'),
+                    status: 'success'
+                  });
+                  refetchApps();
+                  onCloseRemarkModal();
+                } catch (error) {
+                  console.log('remark error', error);
+                  toast({
+                    title: t('update_remark_failed'),
+                    status: 'error'
+                  });
+                }
+                setLoading(false);
+              }}
+            >
+              {t('confirm')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <UpdateModal
         source={dbList.find((i) => i.name === updateAppName)?.source}
         isOpen={isOpenUpdateModal}

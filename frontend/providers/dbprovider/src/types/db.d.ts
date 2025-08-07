@@ -62,6 +62,7 @@ export interface DBListItemType {
   isDiskSpaceOverflow: boolean;
   labels: { [key: string]: string };
   source: DBSource;
+  remark: string;
 }
 
 export type DBComponentsName =

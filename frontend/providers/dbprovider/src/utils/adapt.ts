@@ -1,4 +1,5 @@
 import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/constants/backup';
+import { DB_REMARK_KEY } from '@/constants/db';
 import {
   DBBackupMethodNameMap,
   DBNameLabel,
@@ -115,7 +116,8 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
-    source: getDBSource(db)
+    source: getDBSource(db),
+    remark: db.metadata?.annotations?.[DB_REMARK_KEY] || ''
   };
 };
 
