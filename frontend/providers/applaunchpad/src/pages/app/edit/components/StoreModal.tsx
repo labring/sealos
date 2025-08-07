@@ -90,10 +90,17 @@ const StoreModal = ({
               <Box mb={'8px'} fontSize={'14px'} fontWeight={500} color={'grayModern.900'}>
                 {t('capacity')}
               </Box>
-              <MyTooltip label={`${t('Storage Range')}: ${minValue}~${maxValue} Gi`}>
+              <MyTooltip
+                label={
+                  maxValue === 0
+                    ? t('Storage limit reached')
+                    : `${t('Storage Range')}: ${minValue}~${maxValue} Gi`
+                }
+              >
                 <NumberInput
                   step={1}
                   position={'relative'}
+                  isDisabled={maxValue === 0}
                   {...register('value', {
                     required: t('Storage Value can not empty') || 'Storage Value can not empty',
                     min: {
