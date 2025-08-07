@@ -72,7 +72,7 @@ https://github.com/user-attachments/assets/2fc03676-3310-4f81-8f1c-dd1ab225dde0
 
 1. Open Sealos Devbox.
    
-   <img width="656" alt="image" src="https://github.com/user-attachments/assets/79692f6c-315f-4363-9426-b41f541f9a55">
+   <img width="914" height="331" alt="image" src="https://github.com/user-attachments/assets/cbc2982b-d40a-458b-9c07-078bd9e36a3b" />
    
 2. Create a development environment, choosing from a range of languages and frameworks.
    
@@ -88,7 +88,7 @@ https://github.com/user-attachments/assets/2fc03676-3310-4f81-8f1c-dd1ab225dde0
 
 1. Open Sealos database.
    
-   <img width="567" alt="image" src="https://github.com/user-attachments/assets/74ca3ce9-6ef8-4396-b9c2-7c1940bb7e0c">
+   <img width="824" height="256" alt="image" src="https://github.com/user-attachments/assets/4f28b15f-c453-4110-93ae-ce0e72caea48" />
 
 2. Create your database.
 
@@ -102,7 +102,7 @@ https://github.com/user-attachments/assets/2fc03676-3310-4f81-8f1c-dd1ab225dde0
 
 1. Open Sealos App Launchpad.
 
-   <img width="567" alt="image" src="https://github.com/user-attachments/assets/5f6481c0-05c6-4892-a096-94b613cee73c">
+   <img width="885" height="191" alt="image" src="https://github.com/user-attachments/assets/3134922a-75b4-4c3b-a3e4-6c402f171dff" />
 
 2. Deploy the Docker image using a Kubernetes Deployment and expose it with an Ingress.
 
