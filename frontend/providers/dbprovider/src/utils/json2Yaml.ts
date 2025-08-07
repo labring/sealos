@@ -201,17 +201,20 @@ export const json2CreateCluster = (
   function buildMongoYaml() {
     const mongoRes = resources['mongodb'];
     if (!mongoRes) return [];
+
+    // For MongoDB using ComponentVersion, remove the prefix to get clean version (e.g., "mongodb-7.0.16" -> "7.0.16")
+    const serviceVersion = data.dbVersion.startsWith('mongodb-')
+      ? data.dbVersion.replace('mongodb-', '')
+      : data.dbVersion;
+
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
         metadata: {
-          annotations: {
-            'kubeblocks.io/host-network': 'mongodb'
-          },
           labels: {
             'app.kubernetes.io/instance': data.dbName,
-            'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
+            'app.kubernetes.io/version': serviceVersion,
             'helm.sh/chart': 'mongodb-cluster-0.9.1'
           },
           name: data.dbName,
@@ -230,7 +233,7 @@ export const json2CreateCluster = (
               replicas: mongoRes.other?.replicas ?? data.replicas,
               resources: mongoRes.cpuMemory,
               ...(mongoRes.storage > 0 && {
-                serviceVersion: '6.0.16',
+                serviceVersion: serviceVersion,
                 volumeClaimTemplates: [
                   {
                     name: 'data',
@@ -262,12 +265,17 @@ export const json2CreateCluster = (
 
     if (!redisRes) return [];
 
+    // For Redis using ComponentVersion, remove the prefix to get clean version (e.g., "redis-7.2.7" -> "7.2.7")
+    const serviceVersion = data.dbVersion.startsWith('redis-')
+      ? data.dbVersion.replace('redis-', '')
+      : data.dbVersion.split('-').pop() || '';
+
     const metaLabels = {
       'app.kubernetes.io/instance': data.dbName,
-      'app.kubernetes.io/version': data.dbVersion.split('-').pop() || '',
-      'kb.io/database': data.dbVersion,
+      'app.kubernetes.io/version': serviceVersion,
+      // 'kb.io/database': data.dbVersion, // Keep full version for database label
       'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      'clusterversion.kubeblocks.io/name': data.dbVersion, // Keep full version
       'helm.sh/chart': 'redis-cluster-0.9.0',
       ...data.labels
     };
@@ -295,7 +303,7 @@ export const json2CreateCluster = (
             enabledLogs: ['running'],
             env: [{ name: 'CUSTOM_SENTINEL_MASTER_NAME' }],
             resources: redisRes.cpuMemory,
-            serviceVersion: data.dbVersion.split('-').pop() || '',
+            serviceVersion: serviceVersion,
             switchPolicy: { type: 'Noop' },
             volumeClaimTemplates: [
               {
@@ -313,7 +321,7 @@ export const json2CreateCluster = (
             name: 'redis-sentinel',
             replicas: 3,
             resources: sentinelRes.cpuMemory,
-            serviceVersion: data.dbVersion.split('-').pop() || '',
+            serviceVersion: serviceVersion,
             volumeClaimTemplates: [
               {
                 name: 'data',
