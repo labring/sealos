@@ -112,7 +112,12 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
     [t]
   );
 
-  const defaultRecentDate = recentDateList[0];
+  const defaultRecentDate = useMemo(() => {
+    const currentTimeRange = formatTimeRange(startDateTime, endDateTime);
+    return (
+      recentDateList.find((item) => item.compareValue === currentTimeRange) || recentDateList[0]
+    );
+  }, [startDateTime, endDateTime, recentDateList]);
 
   const [inputState, setInputState] = useState<0 | 1>(0);
   const [recentDate, setRecentDate] = useState<RecentDate>(defaultRecentDate);
@@ -425,8 +430,8 @@ const DatePicker = ({ isDisabled = false, onClose, className, ...props }: DatePi
                 variant="outline"
                 className="h-8"
                 onClick={() => {
-                  setRecentDate(defaultRecentDate);
-                  handleRecentDateClick(defaultRecentDate);
+                  setRecentDate(recentDateList[0]);
+                  handleRecentDateClick(recentDateList[0]);
                 }}
               >
                 {t('reset')}

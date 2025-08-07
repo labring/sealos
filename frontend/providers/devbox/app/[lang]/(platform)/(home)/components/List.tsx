@@ -99,6 +99,14 @@ const DevboxList = ({
   const { handleRestartDevbox, handleStartDevbox, handleGoToTerminal } =
     useControlDevbox(refetchDevboxList);
 
+  const { startDateTime: dateRangeStart } = useDateTimeStore();
+
+  // Check if a specific time range is selected (not "all time")
+  const isSpecificTimeRangeSelected = useMemo(() => {
+    const allTimeStartDate = new Date('1970-01-01T00:00:00Z');
+    return dateRangeStart.getTime() !== allTimeStartDate.getTime();
+  }, [dateRangeStart]);
+
   const [onOpenRelease, setOnOpenRelease] = useState(false);
   const [onOpenShutdown, setOnOpenShutdown] = useState(false);
   const [delDevbox, setDelDevbox] = useState<DevboxListItemTypeV2 | null>(null);
@@ -382,12 +390,18 @@ const DevboxList = ({
               <div className="flex cursor-pointer items-center gap-2 hover:text-zinc-800">
                 {column.getIsSorted() === 'asc' ? (
                   <ArrowUpWideNarrow className="h-4 w-4 shrink-0 text-blue-600" />
+                ) : isSpecificTimeRangeSelected ? (
+                  <ArrowDownWideNarrow className="h-4 w-4 shrink-0 text-blue-600" />
                 ) : (
                   <ArrowDownWideNarrow className="h-4 w-4 shrink-0" />
                 )}
                 {t('create_time')}
                 <Polygon
-                  fillColor={column.getIsSorted() === 'asc' ? '#2563EB' : '#A1A1AA'}
+                  fillColor={
+                    column.getIsSorted() === 'asc' || isSpecificTimeRangeSelected
+                      ? '#2563EB'
+                      : '#A1A1AA'
+                  }
                   className="h-1.5 w-3 shrink-0"
                 />
               </div>
@@ -537,7 +551,7 @@ const DevboxList = ({
       }
     ],
     // NOTE: do not add devboxList dependency, it will cause infinite re-render
-    [statusFilter]
+    [statusFilter, isSpecificTimeRangeSelected]
   );
 
   const { startDateTime } = useDateTimeStore();
