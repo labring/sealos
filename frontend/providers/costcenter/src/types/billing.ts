@@ -100,6 +100,7 @@ export type RechargeBillingItem = {
   TradeNO: 'number';
   CodeURL: string;
   InvoicedAt: boolean;
+  Status?: 'PAID' | 'REFUNDED';
 };
 export type RechargeBillingData = {
   payments: RechargeBillingItem[];
