@@ -1,9 +1,7 @@
 import { Html, Head, Main, NextScript } from 'next/document';
-import Script from 'next/script';
 
 export default function Document() {
   const brandName = process.env.NEXT_PUBLIC_BRAND_NAME || 'Sealos';
-  const scripts: { [key: string]: string }[] = JSON.parse(process.env.CUSTOM_SCRIPTS ?? '[]');
 
   return (
     <Html lang="en">
@@ -15,9 +13,6 @@ export default function Document() {
         <meta name="apple-mobile-web-app-title" content={brandName} />
         <meta name="description" content={`${brandName} cloud`} />
         <meta name="format-detection" content="telephone=no" />
-        {scripts.map((script, i) => (
-          <Script key={i} {...script} />
-        ))}
       </Head>
       <body>
         <Main />
