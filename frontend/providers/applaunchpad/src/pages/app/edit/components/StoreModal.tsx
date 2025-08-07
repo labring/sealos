@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -71,6 +71,13 @@ const StoreModal = ({
     }
   };
 
+  const clampValue = useCallback(
+    (value: number) => {
+      return Number.isSafeInteger(value) ? Math.min(maxValue, Math.max(value, minValue)) : minValue;
+    },
+    [minValue, maxValue]
+  );
+
   return (
     <>
       <Modal isOpen onClose={closeCb} lockFocusAcrossFrames={false}>
@@ -84,7 +91,27 @@ const StoreModal = ({
                 {t('capacity')}
               </Box>
               <MyTooltip label={`${t('Storage Range')}: ${minValue}~${maxValue} Gi`}>
-                <NumberInput max={maxValue} min={minValue} step={1} position={'relative'}>
+                <NumberInput
+                  step={1}
+                  position={'relative'}
+                  {...register('value', {
+                    required: t('Storage Value can not empty') || 'Storage Value can not empty',
+                    min: {
+                      value: minValue,
+                      message: `${t('Min Storage Value')} ${minValue} Gi`
+                    },
+                    max: {
+                      value: maxValue,
+                      message: `${t('Max Storage Value')} ${maxValue} Gi`
+                    },
+                    valueAsNumber: true
+                  })}
+                  min={minValue}
+                  max={maxValue}
+                  onChange={(e) => {
+                    setValue('value', Number(e));
+                  }}
+                >
                   <Box
                     position={'absolute'}
                     right={10}
@@ -105,19 +132,6 @@ const StoreModal = ({
                       bg: '#FFF',
                       color: '#111824'
                     }}
-                    {...register('value', {
-                      required: t('Storage Value can not empty') || 'Storage Value can not empty',
-                      min: {
-                        value: minValue,
-                        message: `${t('Min Storage Value')} ${minValue} Gi`
-                      },
-                      max: {
-                        value: maxValue,
-                        message: `${t('Max Storage Value')} ${maxValue} Gi`
-                      },
-                      valueAsNumber: true
-                    })}
-                    max={maxValue}
                   />
                   <NumberInputStepper>
                     <NumberIncrementStepper />
@@ -163,15 +177,11 @@ const StoreModal = ({
             <Button
               w={'88px'}
               onClick={handleSubmit((e) => {
-                const clampedValue = Number.isSafeInteger(e.value)
-                  ? Math.min(maxValue, Math.max(e.value, minValue))
-                  : minValue;
-
                 successCb({
                   id: e.id,
                   name: e.name,
                   path: e.path,
-                  value: clampedValue
+                  value: clampValue(e.value)
                 });
               })}
             >
