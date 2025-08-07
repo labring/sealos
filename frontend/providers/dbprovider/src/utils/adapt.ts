@@ -37,7 +37,12 @@ import {
 } from '@/utils/tools';
 import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { has } from 'lodash';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
 
 export const getDBSource = (
@@ -110,7 +115,9 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
         : dbStatusMap.UnKnow,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp)
+      .tz('Asia/Shanghai')
+      .format('YYYY/MM/DD HH:mm'),
     ...calcTotalResource(db.spec.componentSpecs),
     replicas: db.spec?.componentSpecs.find((comp) => comp.name === dbType)?.replicas || 1,
     conditions: db?.status?.conditions || [],
@@ -124,7 +131,9 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
 export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   return {
     id: db.metadata?.uid || ``,
-    createTime: dayjs(db.metadata?.creationTimestamp).format('YYYY/MM/DD HH:mm'),
+    createTime: dayjs(db.metadata?.creationTimestamp)
+      .tz('Asia/Shanghai')
+      .format('YYYY/MM/DD HH:mm'),
     status:
       db?.status?.phase && dbStatusMap[db?.status?.phase]
         ? dbStatusMap[db?.status?.phase]
