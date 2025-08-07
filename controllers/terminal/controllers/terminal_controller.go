@@ -176,7 +176,12 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncIngress(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	hostname string,
+	recLabels map[string]string,
+) error {
 	var err error
 	host := hostname + "." + r.CtrConfig.Global.CloudDomain
 	if terminal.Spec.IngressType == terminalv1.Nginx {
