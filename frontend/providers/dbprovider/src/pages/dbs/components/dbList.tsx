@@ -33,10 +33,11 @@ import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { generateLoginUrl, syncAuthUser } from '@/services/chat2db/user';
+import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import {
   Modal,
@@ -290,12 +291,17 @@ const DBList = ({
           }
         });
 
-        console.log('baseUrl', baseUrl);
-
         const chat2dbUrl = new URL(baseUrl);
         chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
         console.log('base url', chat2dbUrl.toString());
-        router.push(chat2dbUrl.toString());
+
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-chat2db',
+          pathname: '',
+          query: {
+            url: chat2dbUrl.toString()
+          }
+        });
       } catch (err) {
         console.log(err);
         toast({

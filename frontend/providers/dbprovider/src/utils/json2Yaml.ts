@@ -49,28 +49,27 @@ export const json2CreateCluster = (
   const resources = distributeResources(data);
 
   const metadata = {
-    // finalizers: ['cluster.kubeblocks.io/finalizer'],
+    finalizers: ['cluster.kubeblocks.io/finalizer'],
     labels: {
       ...data.labels,
       'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion
-      // [crLabelKey]: data.dbName
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      [crLabelKey]: data.dbName
     },
-    // annotations: {
-    //   ...(backupInfo?.name
-    //     ? {
-    //         [BACKUP_LABEL_KEY]: JSON.stringify({
-    //           [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
-    //             name: backupInfo.name,
-    //             namespace: backupInfo.namespace,
-    //             connectionPassword: backupInfo.connectionPassword
-    //           }
-    //         })
-    //       }
-    //     : {})
-    // },
-    name: data.dbName,
-    namespace: getUserNamespace()
+    annotations: {
+      ...(backupInfo?.name
+        ? {
+            [BACKUP_LABEL_KEY]: JSON.stringify({
+              [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
+                name: backupInfo.name,
+                namespace: backupInfo.namespace,
+                connectionPassword: backupInfo.connectionPassword
+              }
+            })
+          }
+        : {})
+    },
+    name: data.dbName
   };
 
   const storageClassName =
@@ -93,66 +92,6 @@ export const json2CreateCluster = (
         break;
     }
 
-    if (dbType === DBTypeEnum.mongodb) {
-      console.log(data);
-
-      const mongoRes = resources['mongodb'];
-      if (!mongoRes) return [];
-      const mongoMeta = {
-        labels: {
-          'app.kubernetes.io/instance': data.dbName,
-          'app.kubernetes.io/version': data.dbVersion,
-          'helm.sh/chart': `mongodb-cluster-0.9.1`,
-          'chat2db.io/id': '1'
-        },
-        name: data.dbName,
-        namespace: getUserNamespace()
-      };
-
-      return [
-        {
-          apiVersion: 'apps.kubeblocks.io/v1alpha1',
-          kind: 'Cluster',
-          metadata: mongoMeta,
-          spec: {
-            affinity: {
-              podAntiAffinity: 'Preferred',
-              tenancy: 'SharedNode',
-              topologyKeys: ['kubernetes.io/hostname']
-            },
-
-            componentSpecs: [
-              {
-                componentDefRef: 'mongodb',
-                name: 'mongodb',
-                replicas: mongoRes.other?.replicas ?? data.replicas,
-                resources: mongoRes.cpuMemory,
-                ...(mongoRes.storage > 0
-                  ? {
-                      serviceVersion: '8.0.4', // ???
-                      volumeClaimTemplates: [
-                        {
-                          name: 'data',
-                          spec: {
-                            accessModes: ['ReadWriteOnce'],
-                            resources: {
-                              requests: {
-                                storage: `${mongoRes.storage}Gi`
-                              }
-                            }
-                          }
-                        }
-                      ]
-                    }
-                  : {})
-              }
-            ],
-            terminationPolicy
-          }
-        }
-      ];
-    }
-
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -160,19 +99,17 @@ export const json2CreateCluster = (
         metadata,
         spec: {
           affinity: {
-            // nodeLabels: {},
+            nodeLabels: {},
             podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode'
-            // topologyKeys: ['kubernetes.io/hostname']
+            tenancy: 'SharedNode',
+            topologyKeys: ['kubernetes.io/hostname']
           },
           clusterDefinitionRef: dbType,
           clusterVersionRef: data.dbVersion,
           componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
             return {
               componentDefRef: key,
-              disableExploter: true,
-              enableLogs: ['running'],
-              // monitor: true,
+              monitor: true,
               name: key,
               replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
               resources: resourceData.cpuMemory,
@@ -191,8 +128,8 @@ export const json2CreateCluster = (
                             requests: {
                               storage: `${resourceData.storage}Gi`
                             }
-                          }
-                          // ...storageClassName
+                          },
+                          ...storageClassName
                         }
                       }
                     ]
@@ -200,15 +137,8 @@ export const json2CreateCluster = (
                 : {})
             };
           }),
-          resources: {
-            cpu: '0'
-          },
-          memory: '0',
-          storage: {
-            size: '0'
-          },
-          terminationPolicy
-          // tolerations: []
+          terminationPolicy,
+          tolerations: []
         }
       }
     ];

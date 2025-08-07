@@ -11,6 +11,7 @@ import { i18n, useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import UpdateModal from './UpdateModal';
 import {
   ThemeAppearance,
@@ -20,7 +21,7 @@ import {
   mapDBType
 } from '@/constants/chat2db';
 import { ConnectionInfo } from './AppBaseInfo';
-import { generateLoginUrl, syncAuthUser } from '@/services/chat2db/user';
+import { generateLoginUrl } from '@/services/chat2db/user';
 import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
 import { dbTypeMap } from '@/utils/database';
 import { error } from 'console';
@@ -249,7 +250,14 @@ const Header = ({
     const chat2dbUrl = new URL(baseUrl);
     chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
     console.log('base url', chat2dbUrl.toString());
-    router.push(chat2dbUrl.toString());
+
+    sealosApp.runEvents('openDesktopApp', {
+      appKey: 'system-chat2db',
+      pathname: '',
+      query: {
+        url: chat2dbUrl.toString()
+      }
+    });
   }, [toast, router, conn, db.dbName, getDataSourceId, setDataSourceId, t]);
 
   return (

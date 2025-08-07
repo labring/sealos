@@ -167,33 +167,10 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     });
   }, [secret, formHook]);
 
-  async function waitForSecret(dbName: string, dbType: string, max = 120_000) {
-    const interval = 2_000;
-    const deadline = Date.now() + max;
-
-    while (Date.now() < deadline) {
-      try {
-        const sec = await getDBSecret({ dbName, dbType: dbType as DBType });
-        if (sec) return sec;
-      } catch (_) {}
-      await new Promise((r) => setTimeout(r, interval));
-    }
-    throw new Error('Secret not ready within timeout');
-  }
-
   const submitSuccess = async (formData: DBEditType) => {
     if (!createCompleted) {
       return router.push('/db/detail?name=hello-db&guide=true');
     }
-    const API_KEY = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY;
-    const userStr = localStorage.getItem('session');
-    const userObj = userStr ? JSON.parse(userStr) : null;
-    const userNS = userObj?.user.nsid;
-    const userId = userObj?.user.id;
-    const userKey = `${userId}/${userNS}`;
-    const payload = {
-      uid: userKey
-    };
 
     const needMongoAdapter =
       formData.dbType === 'mongodb' && formData.replicas !== oldDBEditData.current?.replicas;

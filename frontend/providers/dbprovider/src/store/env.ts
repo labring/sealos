@@ -23,7 +23,8 @@ const useEnvStore = create<EnvState>()(
       SHOW_DOCUMENT: true,
       CurrencySymbol: 'shellCoin',
       STORAGE_MAX_SIZE: 300,
-      clientDomainName: ''
+      CLIENT_DOMAIN_NAME: '',
+      GATEWAY_DOMAIN_NAME: ''
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

@@ -1,5 +1,4 @@
 import { applyYamlList, getDBSecret } from '@/api/db';
-import { updateDatasource } from '@/services/chat2db/datasource';
 import { defaultDBEditValue } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useLoading } from '@/hooks/useLoading';
@@ -112,31 +111,6 @@ const EditApp = ({
 
   const submitSuccess = async (formData: MigrateForm) => {
     setIsLoading(true);
-    // try {
-    //   console.log(111)
-    //   const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
-    //   const userStr = typeof window !== 'undefined' ? localStorage.getItem('session') : null;
-    //   const userObj = userStr ? JSON.parse(userStr) : null;
-    //   const userNS = userObj?.user.nsid;
-
-    //   const dataSourceId = useDBStore.getState().dataSourceId;
-    //   const url = `${formData.dbType}://${formData.sinkUser}:${formData.sinkPassword}@${formData.sinkHost}:${formData.sinkPort}`;
-
-    //   const datasourcePayload = {
-    //     id: dataSourceId,
-    //     alias: formData.dbName,
-    //     environmentId: 2 as 1 | 2,
-    //     storageType: 'Cloud' as 'LOCAL' | 'CLOUD',
-    //     host: formData.sinkHost,
-    //     port: String(formData.sinkPort),
-    //     user: formData.sinkUser,
-    //     password: formData.sinkPassword,
-    //     url,
-    //     type: formData.dbType
-    //   };
-    //   await updateDatasource(datasourcePayload, apiKey);
-    // } catch (error) {
-    // }
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
       await applyYamlList(yamlList, 'create');

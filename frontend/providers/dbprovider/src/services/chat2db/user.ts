@@ -17,9 +17,9 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
   });
 
   const envData = await getAppEnv();
-  const clientDomain = envData.clientDomainName;
-
+  const clientDomain = envData.CLIENT_DOMAIN_NAME;
   console.log('clientDomain', clientDomain);
+
   if (!clientDomain) {
     throw new Error('CLIENT_DOMAIN_NAME environment variable is not set');
   }
@@ -27,13 +27,4 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
   const baseUrl = clientDomain;
 
   return `${baseUrl}/workspace?${p.toString()}`;
-}
-
-export function syncAuthUser(apiKey: string, data: UserInfo) {
-  return POST<CreateApiResponse>(`/api/proxy/sync_auth_user_a`, data, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Time-Zone': 'Asia/Shanghai'
-    }
-  });
 }
