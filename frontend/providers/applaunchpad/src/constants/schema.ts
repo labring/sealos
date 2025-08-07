@@ -5,7 +5,7 @@
 import 'zod-openapi/extend';
 import { z } from 'zod';
 import { customAlphabet } from 'nanoid';
-import { AppDetailType } from '@/types/app';
+import { AppDetailType, AppEditType } from '@/types/app';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
@@ -76,7 +76,7 @@ const EnvSchema = z
 
 const HpaSchema = z
   .object({
-    use: z.boolean().default(false).openapi({
+    enabled: z.boolean().default(false).openapi({
       description: 'Enable horizontal pod autoscaling'
     }),
     target: z.enum(['cpu', 'memory', 'gpu']).default('cpu').openapi({
@@ -98,7 +98,7 @@ const HpaSchema = z
 
 const SecretSchema = z
   .object({
-    use: z.boolean().default(false).openapi({
+    enabled: z.boolean().default(false).openapi({
       description: 'Use image pull secrets'
     }),
     username: z.string().default('').openapi({
@@ -159,8 +159,8 @@ const StoreSchema = z
 
 const GpuSchema = z
   .object({
-    manufacturers: z.string().default('nvidia').openapi({
-      description: 'GPU manufacturer'
+    vendor: z.string().default('nvidia').openapi({
+      description: 'GPU vendor'
     }),
     type: z.string().default('').openapi({
       description: 'GPU model/type'
@@ -176,17 +176,17 @@ const GpuSchema = z
 
 const AppEditSchema = z
   .object({
-    appName: z.string().default('hello-world').openapi({
+    name: z.string().default('hello-world').openapi({
       description: 'Application name (must be unique)'
     }),
-    imageName: z.string().default('nginx').openapi({
+    image: z.string().default('nginx').openapi({
       description: 'Docker image name with optional tag'
     }),
-    runCMD: z.string().default('').openapi({
+    command: z.string().default('').openapi({
       description: 'Container run command'
     }),
-    cmdParam: z.string().default('').openapi({
-      description: 'Command parameters'
+    cmdArgs: z.string().default('').openapi({
+      description: 'Command arguments'
     }),
     replicas: z
       .union([z.number(), z.literal('')])
@@ -306,14 +306,14 @@ export const GetAppPodsByAppNameQuerySchema = z.object({
 
 const PodDetailTypeSchema = z
   .object({
-    podName: z.string(),
+    name: z.string(),
     status: PodStatusMapTypeSchema,
     nodeName: z.string(),
     ip: z.string(),
     restarts: z.number(),
     age: z.string(),
-    usedCpu: MonitorDataResultSchema,
-    usedMemory: MonitorDataResultSchema,
+    cpuStats: MonitorDataResultSchema,
+    memoryStats: MonitorDataResultSchema,
     cpu: z.number(),
     memory: z.number(),
     podReason: z.string().optional(),
@@ -338,7 +338,7 @@ const ResourceSchema = z.object({
   }),
   gpu: z
     .object({
-      manufacturers: z.string().default('nvidia'),
+      vendor: z.string().default('nvidia'),
       type: z.string(),
       amount: z.number().default(1)
     })
@@ -418,8 +418,8 @@ export const PortConfigSchema = z.object({
   port: z.number().default(80),
   protocol: z.enum(['TCP', 'UDP', 'SCTP']).default('TCP'),
   appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).default('HTTP'),
-  openPublicDomain: z.boolean().default(false),
-  openNodePort: z.boolean().default(false),
+  usesPublicDomain: z.boolean().default(false),
+  usesNodePort: z.boolean().default(false),
 
   networkName: z.string().default(() => `network-${nanoid()}`),
   portName: z.string().default(() => nanoid()),
@@ -459,8 +459,8 @@ export const CreateLaunchpadRequestSchema = z
           port: 80,
           protocol: 'TCP',
           appProtocol: 'HTTP',
-          openPublicDomain: false,
-          openNodePort: false,
+          usesPublicDomain: false,
+          usesNodePort: false,
           portName: nanoid(),
           publicDomain: nanoid(),
           domain: ''
@@ -530,7 +530,7 @@ export const LaunchpadApplicationSchema = z
 
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
-): z.infer<typeof AppEditSchema> {
+): AppEditType {
   const cpuValue = standardRequest.resource.cpu;
   const memoryValue = standardRequest.resource.memory;
 
@@ -542,12 +542,12 @@ export function transformToLegacySchema(
       port: port.port,
       protocol: port.protocol,
       appProtocol: port.appProtocol,
-      openPublicDomain: port.openPublicDomain,
+      openPublicDomain: port.usesPublicDomain,
       publicDomain: port.publicDomain,
       customDomain: port.customDomain || '',
       domain: port.domain,
       nodePort: port.nodePort,
-      openNodePort: port.openNodePort
+      openNodePort: port.usesNodePort
     })) || [];
 
   const envs =
@@ -620,7 +620,13 @@ export function transformToLegacySchema(
     replicas: standardRequest.resource.replicas,
     cpu: cpuValue,
     memory: memoryValue,
-    gpu: standardRequest.resource.gpu,
+    gpu: standardRequest.resource.gpu
+      ? {
+          manufacturers: standardRequest.resource.gpu.vendor,
+          type: standardRequest.resource.gpu.type,
+          amount: standardRequest.resource.gpu.amount
+        }
+      : undefined,
     networks,
     envs,
     hpa,
@@ -649,6 +655,12 @@ export function transformFromLegacySchema(
       cpu: legacyData.cpu || 200,
       memory: legacyData.memory || 256,
       gpu: legacyData.gpu
+        ? {
+            vendor: legacyData.gpu.manufacturers,
+            type: legacyData.gpu.type,
+            amount: legacyData.gpu.amount
+          }
+        : undefined
     },
     ports: legacyData.networks || [],
     env:
