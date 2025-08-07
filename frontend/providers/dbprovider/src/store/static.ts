@@ -44,6 +44,7 @@ export let DBVersionMap: DBVersionMapType = {
   ],
   [DBTypeEnum.redis]: [
     { id: 'redis-7.2.7', label: 'redis-7.2.7' },
+    { id: 'redis-7.2.4', label: 'redis-7.2.4' },
     { id: 'redis-7.0.6', label: 'redis-7.0.6' }
   ],
   [DBTypeEnum.kafka]: [{ id: 'kafka-3.3.2', label: 'kafka-3.3.2' }],
@@ -79,7 +80,14 @@ export const getUserPrice = async () => {
 export const getDBVersion = async () => {
   try {
     const res = await getDBVersionMap();
-    DBVersionMap = res;
+    // Merge dynamic data with static data, keeping static data as fallback
+    Object.keys(DBVersionMap).forEach((dbType) => {
+      if (res[dbType as keyof typeof res] && res[dbType as keyof typeof res].length > 0) {
+        // Use dynamic data if available
+        DBVersionMap[dbType as keyof typeof DBVersionMap] = res[dbType as keyof typeof res];
+      }
+      // Otherwise keep the existing static data
+    });
   } catch (err) {
     retryVersion--;
     if (retryVersion >= 0) {

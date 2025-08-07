@@ -503,7 +503,11 @@ const Form = ({
                           onClick={() => {
                             if (isEdit) return;
                             setValue('dbType', item.id);
-                            setValue('dbVersion', DBVersionMap[getValues('dbType')][0].id);
+                            // Use item.id directly instead of getValues('dbType') to avoid timing issues
+                            const versions = DBVersionMap[item.id];
+                            if (versions && versions.length > 0) {
+                              setValue('dbVersion', versions[0].id);
+                            }
                           }}
                         >
                           <Image
