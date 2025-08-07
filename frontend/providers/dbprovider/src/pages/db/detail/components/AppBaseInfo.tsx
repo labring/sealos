@@ -108,13 +108,7 @@ export interface ConnectionInfo {
   dbName: string;
 }
 
-const AppBaseInfo = ({
-  db = defaultDBDetail,
-  onConnReady
-}: {
-  db: DBDetailType;
-  onConnReady?: (info: ConnectionInfo) => void;
-}) => {
+const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
   const { t } = useTranslation();
   const { copyData } = useCopyData();
   const { SystemEnv } = useEnvStore();
@@ -270,19 +264,6 @@ const AppBaseInfo = ({
     ],
     [db]
   );
-
-  useEffect(() => {
-    if (!secret) return;
-    onConnReady?.({
-      host: secret.host,
-      port: secret.port,
-      connection: secret.connection,
-      username: secret.username,
-      password: secret.password,
-      dbType: db.dbType,
-      dbName: db.dbName
-    });
-  }, [secret, db, onConnReady]);
 
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
