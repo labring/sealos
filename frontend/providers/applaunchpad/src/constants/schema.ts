@@ -58,7 +58,7 @@ const NetworkSchema = z
 
 const EnvSchema = z
   .object({
-    key: z.string().openapi({
+    name: z.string().openapi({
       description: 'Environment variable name'
     }),
     value: z.string().openapi({
@@ -220,7 +220,7 @@ const AppEditSchema = z
       .openapi({
         description: 'Network configurations for the application'
       }),
-    envs: EnvSchema,
+    env: EnvSchema,
     hpa: HpaSchema,
     secret: SecretSchema,
     configMapList: ConfigMapSchema,
@@ -267,7 +267,8 @@ export const UpdateAppResourcesSchema = z
     replicas: z.number().min(0).optional(),
     runCMD: z.string().optional(),
     cmdParam: z.string().optional(),
-    imageName: z.string().optional()
+    imageName: z.string().optional(),
+    env: EnvSchema.optional()
   })
   .refine(
     (data) =>
@@ -276,10 +277,11 @@ export const UpdateAppResourcesSchema = z
       data.replicas !== undefined ||
       data.runCMD !== undefined ||
       data.cmdParam !== undefined ||
-      data.imageName !== undefined,
+      data.imageName !== undefined ||
+      data.env !== undefined,
     {
       message:
-        'At least one of cpu, memory, replicas, runCMD, cmdParam, or imageName must be provided'
+        'At least one of cpu, memory, replicas, runCMD, cmdParam, imageName or env must be provided'
     }
   );
 

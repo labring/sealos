@@ -446,6 +446,7 @@ export async function updateAppResources(
     runCMD?: string;
     cmdParam?: string;
     imageName?: string;
+    env?: { name: string; value: string; valueFrom?: string }[];
   },
   k8s: K8sContext
 ) {
@@ -532,12 +533,13 @@ export async function updateAppResources(
     updateData.memory !== undefined ||
     updateData.runCMD !== undefined ||
     updateData.cmdParam !== undefined ||
-    updateData.imageName !== undefined;
+    updateData.imageName !== undefined ||
+    updateData.env !== undefined;
   if (resourceUpdates) {
     const jsonPatch: Array<{
       op: 'replace';
       path: string;
-      value: string | string[];
+      value: unknown;
     }> = [];
 
     if (updateData.cpu !== undefined) {
@@ -615,6 +617,14 @@ export async function updateAppResources(
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',
         value: updateData.imageName
+      });
+    }
+
+    if (updateData.env !== undefined) {
+      jsonPatch.push({
+        op: 'replace',
+        path: '/spec/template/spec/containers/0/env',
+        value: updateData.env
       });
     }
 
