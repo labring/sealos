@@ -290,7 +290,7 @@ const Header = ({
         alignItems={'center'}
         cursor={'pointer'}
         onClick={() => {
-          router.push('/dbs');
+          router.replace('/dbs');
         }}
       >
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />

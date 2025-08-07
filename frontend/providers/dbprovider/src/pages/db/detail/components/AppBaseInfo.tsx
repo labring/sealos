@@ -265,7 +265,6 @@ const AppBaseInfo = ({ db = defaultDBDetail }: { db: DBDetailType }) => {
     [db]
   );
 
-
   const onclickConnectDB = useCallback(() => {
     if (!secret) return;
     const commandMap = {
