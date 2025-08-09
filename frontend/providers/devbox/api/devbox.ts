@@ -88,3 +88,6 @@ export const execCommandInDevboxPod = (data: {
     onDownloadProgress: data.onDownloadProgress,
     signal: data.signal
   });
+
+export const updateDevboxRemark = (data: { devboxName: string; remark: string }) =>
+  POST('/api/updateDevboxRemark', data);

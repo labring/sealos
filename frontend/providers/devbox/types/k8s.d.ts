@@ -3,59 +3,11 @@ import {
   gpuNodeSelectorKey,
   PodStatusEnum,
   ReconfigStatus,
-  gpuResourceKey
+  gpuResourceKey,
+  devboxRemarkKey
 } from '@/constants/devbox';
 
-export type KBDevboxType = {
-  apiVersion: 'devbox.sealos.io/v1alpha1';
-  kind: 'Devbox';
-  metadata: {
-    name: string;
-    uid: string;
-    creationTimestamp: string;
-  };
-  spec: KBDevboxSpec;
-  status: {
-    lastState: {
-      terminated?: {
-        containerID: string;
-        exitCode: number;
-        finishedAt: string;
-        reason: string; // normally is Error if it not null
-        startedAt: string;
-      };
-    };
-    state: {
-      running?: {
-        startedAt: string;
-      };
-      waiting?: {
-        message: string;
-        reason: string;
-      };
-      terminated?: {
-        containerID: string;
-        exitCode: number;
-        finishedAt: string;
-        reason: string;
-        startedAt: string;
-      };
-    };
-    phase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Unknown';
-    commitHistory: {
-      image: string;
-      pod: string;
-      status: string;
-      time: string;
-    }[];
-    network: {
-      nodePort: number;
-      tailnet: string;
-      type: 'NodePort' | 'Tailnet';
-    };
-    podPhase: 'Pending' | 'Running' | 'Stopped' | 'Stopping' | 'Error' | 'Delete';
-  };
-};
+// TODO: delete v2 string
 export type KBDevboxTypeV2 = {
   apiVersion: 'devbox.sealos.io/v1alpha1';
   kind: 'Devbox';
@@ -63,6 +15,9 @@ export type KBDevboxTypeV2 = {
     name: string;
     uid: string;
     creationTimestamp: string;
+    annotations: {
+      [devboxRemarkKey]?: string;
+    };
   };
   spec: KBDevboxSpecV2;
   status?: {

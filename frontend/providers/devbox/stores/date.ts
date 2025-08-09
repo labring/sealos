@@ -1,4 +1,4 @@
-import { subMinutes } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
@@ -15,7 +15,7 @@ type DateTimeState = {
 
 export const useDateTimeStore = create<DateTimeState>()(
   immer((set, get) => ({
-    startDateTime: subMinutes(new Date(), 30),
+    startDateTime: parseISO('1970-01-01T00:00:00Z'),
     endDateTime: new Date(),
     timeZone: 'local',
     refreshInterval: 0,
