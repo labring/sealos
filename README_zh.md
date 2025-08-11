@@ -1,9 +1,9 @@
 <h2 align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
-  <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
-  <img src="./docs/4.0/img/sealos-left.png" />
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
+  <img src="./docs/img/sealos-left.png" />
 </picture>
 
 一款以 Kubernetes 为内核的云操作系统发行版
@@ -48,7 +48,7 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 * [在 Sealos 上 运行低代码平台](https://sealos.run/docs/category/low-code-platform)
 * [在 Sealos 上 运行搭建聊天应用](https://sealos.run/docs/examples/social-communication/install-tailchat)
 
-![](/docs/4.0/img/sealos-desktop-zh.webp)
+![](/docs/img/sealos-desktop-zh.webp)
 
 🔍 您可以通过以下的屏幕截图进一步了解 Sealos，关于 Sealos 更为详细的介绍与说明，请参阅 [什么是 Sealos](https://sealos.run/docs/Intro)。
 
@@ -56,9 +56,9 @@ Sealos 是一款以 Kubernetes 为内核的**云操作系统发行版**。它以
 
 | 模板市场 | 应用管理 |
 | :---: | :---: |
-| ![](/docs/4.0/img/templates-zh.jpg) | ![](/docs/4.0/img/app-launchpad-1-zh.jpg) |
+| ![](/docs/img/templates-zh.jpg) | ![](/docs/img/app-launchpad-1-zh.jpg) |
 | 数据库管理 | 函数计算 |
-| ![](/docs/4.0/img/database-zh.jpg) | ![](/docs/4.0/img/laf-zh.jpg) |
+| ![](/docs/img/database-zh.jpg) | ![](/docs/img/laf-zh.jpg) |
 
 </div>
 
