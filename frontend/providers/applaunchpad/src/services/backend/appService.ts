@@ -440,13 +440,15 @@ export async function deleteAppByName(name: string, k8s: K8sContext) {
 export async function updateAppResources(
   appName: string,
   updateData: {
-    cpu?: number;
-    memory?: number;
-    replicas?: number;
-    runCMD?: string;
-    cmdParam?: string;
-    imageName?: string;
-    env?: { name: string; value: string; valueFrom?: string }[];
+    resource?: {
+      cpu?: number;
+      memory?: number;
+      replicas?: number;
+    };
+    command?: string;
+    args?: string;
+    image?: string;
+    env?: { name: string; value?: string; valueFrom?: any }[];
   },
   k8s: K8sContext
 ) {
@@ -458,8 +460,8 @@ export async function updateAppResources(
   }
 
   // Handle replicas update with special pause/start logic
-  if (updateData.replicas !== undefined) {
-    if (updateData.replicas === 0) {
+  if (updateData.resource?.replicas !== undefined) {
+    if (updateData.resource.replicas === 0) {
       // Pause logic: save HPA config and delete HPA
       const restartAnnotations: Record<string, string> = {
         target: '',
@@ -496,7 +498,7 @@ export async function updateAppResources(
       // Start logic: set replicas and restore HPA if needed
       const requestQueue: Promise<any>[] = [];
 
-      app.spec.replicas = updateData.replicas;
+      app.spec.replicas = updateData.resource.replicas;
 
       if (app.metadata?.annotations?.[pauseKey]) {
         const pauseData: {
@@ -529,11 +531,11 @@ export async function updateAppResources(
 
   // Handle CPU/Memory/Command/Args/Image updates with JSONPatch
   const resourceUpdates =
-    updateData.cpu !== undefined ||
-    updateData.memory !== undefined ||
-    updateData.runCMD !== undefined ||
-    updateData.cmdParam !== undefined ||
-    updateData.imageName !== undefined ||
+    updateData.resource?.cpu !== undefined ||
+    updateData.resource?.memory !== undefined ||
+    updateData.command !== undefined ||
+    updateData.args !== undefined ||
+    updateData.image !== undefined ||
     updateData.env !== undefined;
   if (resourceUpdates) {
     const jsonPatch: Array<{
@@ -542,44 +544,44 @@ export async function updateAppResources(
       value: unknown;
     }> = [];
 
-    if (updateData.cpu !== undefined) {
+    if (updateData.resource?.cpu !== undefined) {
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/cpu',
-          value: `${str2Num(Math.floor(updateData.cpu * 0.1))}m`
+          value: `${str2Num(Math.floor(updateData.resource.cpu * 0.1))}m`
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/cpu',
-          value: `${str2Num(updateData.cpu)}m`
+          value: `${str2Num(updateData.resource.cpu)}m`
         }
       );
     }
 
-    if (updateData.memory !== undefined) {
+    if (updateData.resource?.memory !== undefined) {
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/memory',
-          value: `${str2Num(Math.floor(updateData.memory * 0.1))}Mi`
+          value: `${str2Num(Math.floor(updateData.resource.memory * 0.1))}Mi`
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/memory',
-          value: `${str2Num(updateData.memory)}Mi`
+          value: `${str2Num(updateData.resource.memory)}Mi`
         }
       );
     }
 
-    if (updateData.runCMD !== undefined) {
+    if (updateData.command !== undefined) {
       // Convert string to array following the same logic as deployYaml2Json
       const commandArray = (() => {
-        if (!updateData.runCMD) return undefined;
+        if (!updateData.command) return undefined;
         try {
-          return JSON.parse(updateData.runCMD);
+          return JSON.parse(updateData.command);
         } catch (error) {
-          return updateData.runCMD.split(' ').filter((item) => item);
+          return updateData.command.split(' ').filter((item) => item);
         }
       })();
 
@@ -592,14 +594,14 @@ export async function updateAppResources(
       }
     }
 
-    if (updateData.cmdParam !== undefined) {
+    if (updateData.args !== undefined) {
       // Convert string to array following the same logic as deployYaml2Json
       const argsArray = (() => {
-        if (!updateData.cmdParam) return undefined;
+        if (!updateData.args) return undefined;
         try {
-          return JSON.parse(updateData.cmdParam) as string[];
+          return JSON.parse(updateData.args) as string[];
         } catch (error) {
-          return [updateData.cmdParam];
+          return [updateData.args];
         }
       })();
 
@@ -612,11 +614,11 @@ export async function updateAppResources(
       }
     }
 
-    if (updateData.imageName !== undefined) {
+    if (updateData.image !== undefined) {
       jsonPatch.push({
         op: 'replace',
         path: '/spec/template/spec/containers/0/image',
-        value: updateData.imageName
+        value: updateData.image
       });
     }
 

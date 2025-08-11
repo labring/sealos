@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
+import { LaunchpadApplicationSchema } from '@/types/schema';
 import {
-  UpdateAppResourcesSchema,
-  GetAppByAppNameResponseSchema,
+  CreateLaunchpadRequestSchema,
   DeleteAppByNameResponseSchema,
-  GetAppPodsByAppNameResponseSchema
-} from '@/constants/schema';
-import { CreateLaunchpadRequestSchema, LaunchpadApplicationSchema } from '@/constants/schema';
+  GetAppByAppNameResponseSchema,
+  GetAppPodsByAppNameResponseSchema,
+  UpdateAppResourcesSchema
+} from './request_schema';
 
 export const ErrorResponseSchema = z.object({
   code: z.number(),
