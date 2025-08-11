@@ -213,7 +213,7 @@ const DBList = ({
             connectionUrl = `jdbc:mysql://${host}:${port}`;
             break;
           case 'postgresql':
-            connectionUrl = `jdbc:postgresql://${host}:${port}`;
+            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
             break;
           case 'redis':
             connectionUrl = `jdbc:redis://${host}:${port}`;
