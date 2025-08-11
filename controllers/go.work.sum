@@ -2036,6 +2036,7 @@ github.com/containerd/cgroups v0.0.0-20200824123100-0b889c03f102/go.mod h1:s5q4S
 github.com/containerd/cgroups v0.0.0-20210114181951-8a68de567b68/go.mod h1:ZJeTFisyysqgcCdecO57Dj79RfL0LNeGiFUqLYQRYLE=
 github.com/containerd/cgroups v1.0.1/go.mod h1:0SJrPIenamHDcZhEcJMNBB85rHcUsw4f25ZfBiPYRkU=
 github.com/containerd/cgroups v1.0.3/go.mod h1:/ofk34relqNjSGyqPrmEULrO4Sc8LJhvJmWbUCUKqj8=
+github.com/containerd/cgroups v1.1.0/go.mod h1:6ppBcbh/NOOUU+dMKrykgaBnK9lCIBxHqJDGwsa1mIw=
 github.com/containerd/cgroups/v3 v3.0.2 h1:f5WFqIVSgo5IZmtTT3qVBo6TzI1ON6sycSBKkymb9L0=
 github.com/containerd/cgroups/v3 v3.0.2/go.mod h1:JUgITrzdFqp42uI2ryGA+ge0ap/nxzYgkGmIcetmErE=
 github.com/containerd/console v0.0.0-20180822173158-c12b1e7919c1/go.mod h1:Tj/on1eG8kiEhd0+fhSDzsPAFESxzBBvdyEgyryXffw=
@@ -2107,6 +2108,7 @@ github.com/containerd/imgcrypt v1.1.1/go.mod h1:xpLnwiQmEUJPvQoAapeb2SNCxz7Xr6PJ
 github.com/containerd/imgcrypt v1.1.3/go.mod h1:/TPA1GIDXMzbj01yd8pIbQiLdQxed5ue1wb8bP7PQu4=
 github.com/containerd/imgcrypt v1.1.4/go.mod h1:LorQnPtzL/T0IyCeftcsMEO7AqxUDbdO8j/tSUpgxvo=
 github.com/containerd/imgcrypt v1.1.7/go.mod h1:FD8gqIcX5aTotCtOmjeCsi3A1dHmTZpnMISGKSczt4k=
+github.com/containerd/imgcrypt v1.1.8 h1:ZS7TuywcRNLoHpU0g+v4/PsKynl6TYlw5xDVWWoIyFA=
 github.com/containerd/imgcrypt v1.1.8/go.mod h1:x6QvFIkMyO2qGIY2zXc88ivEzcbgvLdWjoZyGqDap5U=
 github.com/containerd/nri v0.0.0-20201007170849-eb1350a75164/go.mod h1:+2wGSDGFYfE5+So4M5syatU0N0f0LbWpuqyMi4/BE8c=
 github.com/containerd/nri v0.0.0-20210316161719-dbaa18c31c14/go.mod h1:lmxnXF6oMkbqs39FiCt1s0R2HSMhcLel9vNL3m4AaeY=
@@ -2129,6 +2131,7 @@ github.com/containerd/ttrpc v1.2.2/go.mod h1:sIT6l32Ph/H9cvnJsfXM5drIVzTr5A2flTf
 github.com/containerd/typeurl v0.0.0-20180627222232-a93fcdb778cd/go.mod h1:Cm3kwCdlkCfMSHURc+r6fwoGH6/F1hH3S4sg0rLFWPc=
 github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd/go.mod h1:GeKYzf2pQcqv7tJ0AoCuuhtnqhva5LNU3U+OyKxxJpk=
 github.com/containerd/typeurl v1.0.1/go.mod h1:TB1hUtrpaiO88KEK56ijojHS1+NeF0izUACaJW2mdXg=
+github.com/containerd/typeurl v1.0.2 h1:Chlt8zIieDbzQFzXzAeBEF92KhExuE4p9p92/QmY7aY=
 github.com/containerd/typeurl v1.0.2/go.mod h1:9trJWW2sRlGub4wZJRTW83VtbOLS6hwcDZXTn6oPz9s=
 github.com/containerd/zfs v0.0.0-20200918131355-0a33824f23a2/go.mod h1:8IgZOBdv8fAgXddBT4dBXJPtxyRsejFIpXoklgxgEjw=
 github.com/containerd/zfs v0.0.0-20210301145711-11e8f1707f62/go.mod h1:A9zfAbMlQwE+/is6hi0Xw8ktpL+6glmqZYtevJgaB8Y=
