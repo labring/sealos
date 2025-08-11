@@ -518,6 +518,9 @@ export default function Apps() {
   const folderRef = useRef<HTMLDivElement>(null);
   const modalContentRef = useRef<HTMLDivElement>(null);
 
+  // For hiding the flickers when opening the folder
+  const [isModalContentVisible, setIsModalContentVisible] = useState(false);
+
   // [TODO] Guide is currently not compatible with narrow screen.
   const isNarrowScreen =
     useBreakpointValue({
@@ -747,6 +750,18 @@ export default function Apps() {
     };
   }, [isFolderOpen]);
 
+  // Fade in Modal content on open to mask layout calculation flicker
+  useEffect(() => {
+    if (isFolderOpen) {
+      setIsModalContentVisible(false);
+      const raf = requestAnimationFrame(() => {
+        setIsModalContentVisible(true);
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    setIsModalContentVisible(false);
+  }, [isFolderOpen]);
+
   const gradientIconStyle = {
     '.gradient-icon': {
       svg: {
@@ -906,7 +921,11 @@ export default function Apps() {
             color="#18181B"
             _hover={{ bg: 'rgba(0, 0, 0, 0.05)' }}
           />
-          <ModalBody p="0" maxH={'full'}>
+          <ModalBody
+            p="0"
+            maxH={'full'}
+            style={{ opacity: isModalContentVisible ? 1 : 0, transition: 'opacity 0.25s ease' }}
+          >
             <AppGridPagingContainer
               dragContainerProps={{
                 pt: {
