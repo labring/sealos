@@ -1,7 +1,7 @@
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CreateLaunchpadRequestSchema, transformToLegacySchema } from '@/constants/schema';
+import { CreateLaunchpadRequestSchema, transformToLegacySchema } from '@/types/request_schema';
 import { createApp, createK8sContext } from '@/services/backend';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {

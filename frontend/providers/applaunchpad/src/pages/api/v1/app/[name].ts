@@ -1,9 +1,9 @@
 import {
   GetAppByAppNameQuerySchema,
   DeleteAppByNameQuerySchema,
-  UpdateAppResourcesSchema
-} from '@/constants/schema';
-import { LaunchpadApplicationSchema, transformFromLegacySchema } from '@/constants/schema';
+  UpdateAppResourcesSchema,
+  transformFromLegacySchema
+} from '@/types/request_schema';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -16,6 +16,7 @@ import {
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
+import { LaunchpadApplicationSchema } from '@/types/schema';
 
 async function processAppResponse(
   response: PromiseSettledResult<any>[]
