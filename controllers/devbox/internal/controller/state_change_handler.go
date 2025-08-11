@@ -123,12 +123,15 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 		GenerateTime: metav1.Now(),
 	}
 	h.Logger.Info("update devbox status to shutdown", "devbox", devbox.Name)
-
 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		return h.Client.Status().Update(ctx, devbox)
 	}); err != nil {
 		h.Logger.Error(err, "failed to update devbox status", "devbox", devbox.Name)
 		return err
+	}
+	// step 5: set lv removable
+	if err := h.Committer.SetLvRemovable(ctx, containerID, devbox.Status.ContentID); err != nil {
+		h.Logger.Error(err, "failed to set lv removable", "containerID", containerID, "contentID", devbox.Status.ContentID)
 	}
 	return nil
 }

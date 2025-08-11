@@ -317,6 +317,9 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			if !podList.Items[0].DeletionTimestamp.IsZero() {
 				return r.handlePodDeleted(ctx, &podList.Items[0])
 			}
+			if podList.Items[0].Status.Phase != corev1.PodRunning && podList.Items[0].Status.Phase != corev1.PodPending {
+				return r.deletePod(ctx, &podList.Items[0])
+			}
 			return nil
 		default:
 			// more than one pod found, remove finalizer and delete them

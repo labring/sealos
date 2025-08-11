@@ -30,6 +30,7 @@ type Committer interface {
 	Push(ctx context.Context, imageName string) error
 	RemoveImage(ctx context.Context, imageName string, force bool, async bool) error
 	RemoveContainer(ctx context.Context, containerName string) error
+	SetLvRemovable(ctx context.Context, containerID string, contentID string) error
 }
 
 type CommitterImpl struct {
@@ -216,8 +217,8 @@ func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, 
 
 	_, err := c.containerdClient.SnapshotService(DefaultDevboxSnapshotter).Update(ctx, snapshots.Info{
 		Name:   containerID,
-		Labels: map[string]string{removeContentIDKey: contentID},
-	}, "labels."+removeContentIDKey)
+		Labels: map[string]string{RemoveContentIDkey: contentID},
+	}, "labels."+RemoveContentIDkey)
 	if err != nil {
 		return err
 	}
