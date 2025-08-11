@@ -30,6 +30,8 @@ type Committer interface {
 	Push(ctx context.Context, imageName string) error
 	RemoveImage(ctx context.Context, imageName string, force bool, async bool) error
 	RemoveContainer(ctx context.Context, containerName string) error
+	InitializeGC(ctx context.Context) error
+	GC(ctx context.Context) error
 	SetLvRemovable(ctx context.Context, containerID string, contentID string) error
 }
 
@@ -41,6 +43,10 @@ type CommitterImpl struct {
 	registryAddr         string
 	registryUsername     string
 	registryPassword     string
+	// GC
+	gcContainerMap map[string]struct{}
+	gcImageMap     map[string]struct{}
+	gcInterval     time.Duration
 }
 
 // NewCommitter new a CommitterImpl with registry configuration
@@ -87,6 +93,9 @@ func NewCommitter(registryAddr, registryUsername, registryPassword string) (Comm
 		registryAddr:         registryAddr,
 		registryUsername:     registryUsername,
 		registryPassword:     registryPassword,
+		gcContainerMap:       make(map[string]struct{}),
+		gcImageMap:           make(map[string]struct{}),
+		gcInterval:           DefaultGcInterval,
 	}, nil
 }
 
@@ -261,6 +270,9 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 		return "", fmt.Errorf("failed to create container: %v", err)
 	}
 
+	// // mark for gc
+	// defer c.MarkForGC(containerID, commitImage)
+
 	// create commit options
 	global := NewGlobalOptionConfig()
 	opt := types.ContainerCommitOptions{
@@ -279,35 +291,6 @@ func (c *CommitterImpl) Commit(ctx context.Context, devboxName string, contentID
 	}
 
 	return containerID, nil
-	// // if commit failed, delete container
-	// if err != nil {
-	// 	// remove container
-	// 	err = c.RemoveContainer(ctx, containerID)
-	// 	if err != nil {
-	// 		log.Printf("Warning: failed to remove container %s: %v", containerID, err)
-	// 	}
-	// 	// remove image
-	// 	err = c.RemoveImage(ctx, commitImage, false, false)
-	// 	if err != nil {
-	// 		log.Printf("Warning: failed to remove image %s: %v", commitImage, err)
-	// 	}
-	// 	return fmt.Errorf("failed to commit container: %v", err)
-	// }
-
-	// // commit success, push image and delete image
-	// err = c.Push(ctx, commitImage)
-	// if err != nil {
-	// 	log.Printf("Warning: failed to push image %s: %v", commitImage, err)
-	// }
-	// // err = c.RemoveContainer(ctx, containerID)
-	// // if err != nil {
-	// // 	log.Printf("Warning: failed to remove container %s: %v", containerID, err)
-	// // }
-	// err = c.RemoveImage(ctx, commitImage, false, false)
-	// if err != nil {
-	// 	log.Printf("Warning: failed to remove image %s: %v", commitImage, err)
-	// }
-	// return nil
 }
 
 // GetContainerAnnotations get container annotations
@@ -330,6 +313,15 @@ func (c *CommitterImpl) GetContainerAnnotations(ctx context.Context, containerNa
 func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
 	fmt.Println("========>>>> push image", imageName)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+
+	// check connection status, if connection is bad, try to reconnect
+	if err := c.CheckConnection(ctx); err != nil {
+		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
+		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
+			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+		}
+	}
+
 	//set resolver
 	resolver, err := GetResolver(ctx, c.registryUsername, c.registryPassword)
 	if err != nil {
@@ -359,6 +351,15 @@ func (c *CommitterImpl) Push(ctx context.Context, imageName string) error {
 func (c *CommitterImpl) RemoveImage(ctx context.Context, imageName string, force bool, async bool) error {
 	fmt.Println("========>>>> remove image", imageName)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+
+	// check connection status, if connection is bad, try to reconnect
+	if err := c.CheckConnection(ctx); err != nil {
+		log.Printf("Connection check failed: %v, attempting to reconnect...", err)
+		if reconnectErr := c.Reconnect(ctx); reconnectErr != nil {
+			return fmt.Errorf("failed to reconnect: %v", reconnectErr)
+		}
+	}
+
 	global := NewGlobalOptionConfig()
 	opt := types.ImageRemoveOptions{
 		Stdout:   io.Discard,
@@ -369,6 +370,125 @@ func (c *CommitterImpl) RemoveImage(ctx context.Context, imageName string, force
 	return image.Remove(ctx, c.containerdClient, []string{imageName}, opt)
 }
 
+// MarkForGC mark container and image for GC
+func (c *CommitterImpl) MarkForGC(containerID string, imageID string) {
+	c.gcContainerMap[containerID] = struct{}{}
+	c.gcImageMap[imageID] = struct{}{}
+}
+
+// GC start periodic GC
+func (c *CommitterImpl) GC(ctx context.Context) error {
+	ticker := time.NewTicker(c.gcInterval)
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				log.Printf("Starting periodic GC at: %v", time.Now())
+				if err := c.normalGC(ctx); err != nil {
+					log.Printf("Failed to GC, err: %v", err)
+				}
+			}
+		}
+	}()
+	return nil
+}
+
+// normalGC gc container and image
+func (c *CommitterImpl) normalGC(ctx context.Context) error {
+	log.Printf("Starting normal GC in namespace: %s", DefaultNamespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+	// get all container in namespace
+	containers, err := c.containerdClient.Containers(ctx)
+	if err != nil {
+		log.Printf("Failed to get containers, err: %v", err)
+		return err
+	}
+
+	// gc container
+	for _, container := range containers {
+		if _, ok := c.gcContainerMap[container.ID()]; ok {
+			err = c.RemoveContainer(ctx, container.ID())
+			if err != nil {
+				log.Printf("Failed to remove container %s, err: %v", container.ID(), err)
+			}
+		}
+	}
+
+	// clear gcContainerMap
+	c.gcContainerMap = make(map[string]struct{})
+
+	// get all image in namespace
+	images, err := c.containerdClient.ListImages(ctx)
+	if err != nil {
+		log.Printf("Failed to get images, err: %v", err)
+		return err
+	}
+
+	// gc image
+	for _, image := range images {
+		if _, ok := c.gcImageMap[image.Name()]; ok {
+			err = c.RemoveImage(ctx, image.Name(), false, false)
+			if err != nil {
+				log.Printf("Failed to remove image %s, err: %v", image.Name(), err)
+			}
+		}
+	}
+
+	// clear gcImageMap
+	c.gcImageMap = make(map[string]struct{})
+
+	return nil
+}
+
+// InitializeGC initialize force GC
+func (c *CommitterImpl) InitializeGC(ctx context.Context) error {
+	gcCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	if err := c.forceGC(gcCtx); err != nil {
+		log.Printf("Failed to initialize force GC, err: %v", err)
+		return fmt.Errorf("failed to initialize force GC: %v", err)
+	}
+	log.Println("Force GC initialized successfully")
+	return nil
+}
+
+// forceGC force gc container and image
+func (c *CommitterImpl) forceGC(ctx context.Context) error {
+	log.Printf("Starting force GC in namespace: %s", DefaultNamespace)
+	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
+	containers, err := c.containerdClient.Containers(ctx)
+	if err != nil {
+		log.Printf("Failed to get containers, err: %v", err)
+		return err
+	}
+
+	// gc container
+	for _, container := range containers {
+		if err := c.RemoveContainer(ctx, container.ID()); err != nil {
+			log.Printf("Failed to remove container %s, err: %v", container.ID(), err)
+		}
+	}
+	c.gcContainerMap = make(map[string]struct{})
+
+	// gc image
+	images, err := c.containerdClient.ListImages(ctx)
+	if err != nil {
+		log.Printf("Failed to get images, err: %v", err)
+		return err
+	}
+	for _, image := range images {
+		if err := c.RemoveImage(ctx, image.Name(), false, false); err != nil {
+			log.Printf("Failed to remove image %s, err: %v", image.Name(), err)
+		}
+	}
+	c.gcImageMap = make(map[string]struct{})
+	return nil
+}
+
+// GetResolver get resolver
 func GetResolver(ctx context.Context, username string, secret string) (remotes.Resolver, error) {
 	resolverOptions := docker.ResolverOptions{
 		Tracker: docker.NewInMemoryTracker(),
@@ -386,85 +506,6 @@ func GetResolver(ctx context.Context, username string, secret string) (remotes.R
 	hostOptions.DefaultTLS = nil
 	resolverOptions.Hosts = config.ConfigureHosts(ctx, hostOptions)
 	return docker.NewResolver(resolverOptions), nil
-}
-
-type GcHandler interface {
-	GC(ctx context.Context) error
-}
-
-type Handler struct {
-	containerdClient *client.Client
-}
-
-func NewGcHandler(containerdClient *client.Client) GcHandler {
-	return &Handler{
-		containerdClient: containerdClient,
-	}
-}
-
-// GC gc container
-func (h *Handler) GC(ctx context.Context) error {
-	log.Printf("Starting GC in namespace: %s", DefaultNamespace)
-	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
-	// get all container in namespace
-	containers, err := h.containerdClient.Containers(ctx)
-	if err != nil {
-		log.Printf("Failed to get containers, err: %v", err)
-		return err
-	}
-
-	var deletedContainersCount int
-	for _, container := range containers {
-		// if get container's labels failed, skip
-		labels, err := container.Labels(ctx)
-		if err != nil {
-			log.Printf("Failed to get labels for container %s, err: %v", container.ID(), err)
-			continue
-		}
-		// if container is not devbox container, skip
-		if _, ok := labels[v1alpha1.AnnotationContentID]; !ok {
-			continue
-		}
-
-		// get container task
-		task, err := container.Task(ctx, nil)
-		if err != nil {
-			// delete orphan container
-			log.Printf("Found Orphan Container: %s", container.ID())
-			err = container.Delete(ctx, client.WithSnapshotCleanup)
-			if err != nil {
-				log.Printf("Failed to delete Orphan Container %s, err: %v", container.ID(), err)
-			} else {
-				log.Printf("Deleted Orphan Container: %s successfully", container.ID())
-				deletedContainersCount++
-			}
-			continue
-		}
-
-		status, err := task.Status(ctx)
-		if err != nil {
-			log.Printf("Failed to get task status for container %s, err: %v", container.ID(), err)
-			continue
-		}
-		if status.Status != client.Running {
-			// delete task
-			_, err = task.Delete(ctx, client.WithProcessKill)
-			if err != nil {
-				log.Printf("Failed to delete task for container %s, err: %v", container.ID(), err)
-			}
-
-			// delete container and snapshot
-			err = container.Delete(ctx, client.WithSnapshotCleanup)
-			if err != nil {
-				log.Printf("Failed to delete container %s, err: %v", container.ID(), err)
-			} else {
-				log.Printf("Deleted Container: %s successfully", container.ID())
-				deletedContainersCount++
-			}
-		}
-	}
-	log.Printf("GC completed, deleted %d containers", deletedContainersCount)
-	return nil
 }
 
 // convertLabels convert labels to "containerd.io/snapshot/devbox-" format

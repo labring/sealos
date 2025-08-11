@@ -15,9 +15,9 @@ const (
 
 	AnnotationKeyNamespace               = "namespace"
 	AnnotationKeyImageName               = "image.name"
-	DevboxOptionsRemoveBaseImageTopLayer = true
 	AnnotationImageFromValue             = "true"
 	AnnotationUseLimitValue              = "1Gi"
+	DevboxOptionsRemoveBaseImageTopLayer = true
 
 	SnapshotLabelPrefix  = "containerd.io/snapshot/devbox-"
 	ContainerLabelPrefix = "devbox.sealos.io/"
@@ -25,4 +25,5 @@ const (
 
 	DefaultMaxRetries = 3
 	DefaultRetryDelay = 5 * time.Second
+	DefaultGcInterval = 20 * time.Minute
 )
