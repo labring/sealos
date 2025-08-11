@@ -141,7 +141,13 @@ export async function GET(req: NextRequest) {
     const dbList = clusters.map(async (cluster) => {
       const dbName = cluster.name;
       const dbType = cluster.dbType;
-      const secretName = dbName + '-conn-credential';
+      let secretName = dbName + '-conn-credential';
+      if (dbType === DBTypeEnum.redis) {
+        secretName = dbName + '-redis-account-default';
+      }
+      if (dbType === DBTypeEnum.mongodb) {
+        secretName = dbName + '-mongodb-account-root';
+      }
 
       const secret = await k8sCore.readNamespacedSecret(secretName, namespace);
 
