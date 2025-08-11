@@ -190,6 +190,7 @@ export const json2CreateCluster = (
         kind: 'Cluster',
         metadata: {
           labels: {
+            'kb.io/database': data.dbVersion,
             'app.kubernetes.io/instance': data.dbName,
             'app.kubernetes.io/version': serviceVersion,
             'helm.sh/chart': 'mongodb-cluster-0.9.1'
@@ -248,6 +249,7 @@ export const json2CreateCluster = (
       : data.dbVersion.split('-').pop() || '';
 
     const metaLabels = {
+      'kb.io/database': data.dbVersion,
       'app.kubernetes.io/instance': data.dbName,
       'app.kubernetes.io/version': serviceVersion,
       // 'kb.io/database': data.dbVersion, // Keep full version for database label
@@ -577,6 +579,7 @@ export const json2CreateCluster = (
     };
 
     const labels = {
+      'kb.io/database': data.dbVersion,
       'clusterversion.kubeblocks.io/name': data.dbVersion,
       ...data.labels
     };

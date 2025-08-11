@@ -2,6 +2,7 @@ import { BACKUP_REMARK_LABEL_KEY, BackupTypeEnum, backupStatusMap } from '@/cons
 import { DB_REMARK_KEY } from '@/constants/db';
 import {
   DBBackupMethodNameMap,
+  DBComponentNameMap,
   DBNameLabel,
   DBPreviousConfigKey,
   DBReconfigStatusMap,
@@ -109,18 +110,54 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
   const kbDatabase = labels['kb.io/database'];
   let dbType = '';
   let dbVersion = '';
+
+  // All databases now use kb.io/database for version information
   if (kbDatabase) {
+    // Parse database type and version from kb.io/database
     if (kbDatabase.startsWith('ac-mysql')) {
       dbType = 'apecloud-mysql';
       dbVersion = kbDatabase;
     } else {
       const [type, ...versionParts] = kbDatabase.split('-');
       dbType = type;
-      dbVersion = labels['kb.io/database'] || '';
+      dbVersion = kbDatabase; // Use full kb.io/database value as version
     }
   } else {
-    dbType = labels['clusterdefinition.kubeblocks.io/name'] || 'postgresql';
-    dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
+    // Fallback: if kb.io/database is not available, try other sources
+    if (labels['clusterdefinition.kubeblocks.io/name']) {
+      dbType = labels['clusterdefinition.kubeblocks.io/name'];
+      dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
+    } else {
+      // ComponentVersion approach - infer from componentSpecs or helm chart
+      const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
+      const helmChart = labels['helm.sh/chart'];
+
+      if (componentDefRef) {
+        dbType = componentDefRef;
+        if (componentDefRef === ('mysql' as any)) {
+          dbType = 'apecloud-mysql';
+        }
+      } else if (helmChart) {
+        if (helmChart.includes('mongodb')) {
+          dbType = 'mongodb';
+        } else if (helmChart.includes('redis')) {
+          dbType = 'redis';
+        } else if (helmChart.includes('mysql')) {
+          dbType = 'apecloud-mysql';
+        } else if (helmChart.includes('postgresql')) {
+          dbType = 'postgresql';
+        }
+      }
+
+      dbVersion =
+        labels['app.kubernetes.io/version'] ||
+        (db.spec?.componentSpecs?.[0] as any)?.serviceVersion ||
+        '';
+
+      if (!dbType) {
+        dbType = 'postgresql';
+      }
+    }
   }
   // compute store amount
   return {
@@ -135,7 +172,14 @@ export const adaptDBListItem = (db: KbPgClusterType): DBListItemType => {
       .tz('Asia/Shanghai')
       .format('YYYY/MM/DD HH:mm'),
     ...calcTotalResource(db.spec.componentSpecs),
-    replicas: db.spec?.componentSpecs.find((comp) => comp.name === dbType)?.replicas || 1,
+    replicas: (() => {
+      // Find component by matching with DBComponentNameMap
+      const componentNames = DBComponentNameMap[dbType as DBType] || [];
+      const matchingComponent = db.spec?.componentSpecs.find(
+        (comp) => componentNames.includes(comp.name as any) || comp.name === dbType
+      );
+      return matchingComponent?.replicas || 1;
+    })(),
     conditions: db?.status?.conditions || [],
     isDiskSpaceOverflow: false,
     labels: db.metadata.labels || {},
@@ -149,16 +193,20 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
   const kbDatabase = labels['kb.io/database'];
   let dbType = '';
   let dbVersion = '';
+
+  // All databases now use kb.io/database for version information
   if (kbDatabase) {
+    // Parse database type and version from kb.io/database
     if (kbDatabase.startsWith('ac-mysql')) {
       dbType = 'apecloud-mysql';
       dbVersion = kbDatabase;
     } else {
       const [type, ...versionParts] = kbDatabase.split('-');
       dbType = type;
-      dbVersion = labels['kb.io/database'] || '';
+      dbVersion = kbDatabase; // Use full kb.io/database value as version
     }
   } else {
+    // Fallback: if kb.io/database is not available, try other sources
     dbType = labels['clusterdefinition.kubeblocks.io/name'] || 'kafka';
     dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
   }
