@@ -35,6 +35,7 @@ import { ArrowRight, Volume2 } from 'lucide-react';
 import { useGuideModalStore } from '@/stores/guideModal';
 import { currentDriver, destroyDriver } from '../account/driver';
 import { track } from '@sealos/gtm';
+import { throttle } from 'lodash';
 
 const AppItem = ({
   app,
@@ -213,14 +214,13 @@ const AppGridPagingContainer = ({
 
   // Calculate items per page and scroll position on initial render and on screen size changes
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
-
-    const handleResize = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
+    const handleResize = throttle(
+      () => {
         setItemsPerPage(calculateItemsPerPage());
-      }, 200);
-    };
+      },
+      200,
+      { leading: true, trailing: false }
+    );
 
     handleResize();
 
@@ -228,27 +228,24 @@ const AppGridPagingContainer = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(debounceTimer);
     };
   }, [columns, calculateItemsPerPage]);
 
   // Calculate grid width on screen size changes
   useEffect(() => {
-    let debounceTimer: NodeJS.Timeout;
-
-    const handleResize = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
+    const handleResize = throttle(
+      () => {
         setPageWidth(calculatePageWidth());
-      }, 50);
-    };
+      },
+      50,
+      { leading: true, trailing: false }
+    );
 
     handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout(debounceTimer);
     };
   }, [calculatePageWidth]);
 
@@ -541,6 +538,7 @@ export default function Apps() {
       sm: 3,
       lg: 5
     }) ?? 2;
+
   const gridGap = 10;
 
   const [itemsPerPageInGrid, setItemsPerPageInGrid] = useState(0);
@@ -861,7 +859,7 @@ export default function Apps() {
               <AppGrid
                 key={pageIndex}
                 gridGap={gridGap}
-                rows={itemsPerPageInGrid / columns}
+                rows={Math.ceil(itemsPerPageInGrid / columns)}
                 appHeight={appHeight}
                 columns={columns}
               >
@@ -945,7 +943,7 @@ export default function Apps() {
                 <AppGrid
                   key={pageIndex}
                   gridGap={gridGap}
-                  rows={itemsPerPageInFolder / columns}
+                  rows={Math.ceil(itemsPerPageInFolder / columns)}
                   appHeight={appHeight}
                   columns={columns}
                   gridProps={{
