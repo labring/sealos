@@ -420,6 +420,12 @@ export function transformFromLegacySchema(
     // Additional 5 fields for GET responses
     id: legacyData.id,
     createTime: legacyData.createTime,
-    isPause: legacyData.isPause || false
+    status: {
+      observedGeneration: legacyData.openapi?.status.observedGeneration || 0,
+      replicas: legacyData.openapi?.status.replicas || 0,
+      availableReplicas: legacyData.openapi?.status.availableReplicas || 0,
+      updatedReplicas: legacyData.openapi?.status.updatedReplicas || 0,
+      isPause: legacyData.openapi?.status.isPause || false
+    }
   };
 }
