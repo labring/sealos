@@ -186,7 +186,13 @@ export const LaunchpadApplicationSchema = z
     // Additional metadata fields for GET responses
     id: z.string().openapi({ description: 'Application ID' }),
     createTime: z.string().openapi({ description: 'Creation time' }),
-    isPause: z.boolean().openapi({ description: 'Whether application is paused' })
+    status: z.object({
+      observedGeneration: z.number().openapi({ description: 'Observed generation' }),
+      replicas: z.number().openapi({ description: 'Replicas' }),
+      availableReplicas: z.number().openapi({ description: 'Available replicas' }),
+      updatedReplicas: z.number().openapi({ description: 'Updated replicas' }),
+      isPause: z.boolean().default(false).openapi({ description: 'Whether application is paused' })
+    })
   })
   .openapi({
     title: 'Launchpad Application',

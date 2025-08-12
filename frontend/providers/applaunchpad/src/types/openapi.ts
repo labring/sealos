@@ -5,7 +5,6 @@ import {
   CreateLaunchpadRequestSchema,
   DeleteAppByNameResponseSchema,
   GetAppByAppNameResponseSchema,
-  GetAppPodsByAppNameResponseSchema,
   UpdateAppResourcesSchema
 } from './request_schema';
 
@@ -68,10 +67,7 @@ export const openApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: z.object({
-                    data: z.object({
-                      message: z.string(),
-                      name: z.string()
-                    })
+                    data: LaunchpadApplicationSchema
                   })
                 }
               }
@@ -255,14 +251,14 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/app/startApp': {
+      '/api/v1/app/{name}/start': {
         get: {
           summary: 'Start application',
           description: 'Start a paused application by restoring its replicas and HPA configuration',
           parameters: [
             {
               name: 'name',
-              in: 'query',
+              in: 'path',
               description: 'Name of the application to start',
               required: true,
               schema: {
@@ -282,7 +278,15 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '400': {
-              description: 'Invalid query parameters',
+              description: 'Invalid path parameters',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
@@ -300,7 +304,7 @@ export const openApiDocument = (sealosDomain: string) =>
           }
         }
       },
-      '/api/v1/app/pauseApp': {
+      '/api/v1/app/{name}/pause': {
         get: {
           summary: 'Pause application',
           description:
@@ -308,7 +312,7 @@ export const openApiDocument = (sealosDomain: string) =>
           parameters: [
             {
               name: 'name',
-              in: 'query',
+              in: 'path',
               description: 'Name of the application to pause',
               required: true,
               schema: {
@@ -328,96 +332,15 @@ export const openApiDocument = (sealosDomain: string) =>
               }
             },
             '400': {
-              description: 'Invalid query parameters',
+              description: 'Invalid path parameters',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
                 }
               }
             },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-
-      '/api/v1/pod/getAppPodsByAppName': {
-        get: {
-          summary: 'Get application pods',
-          description: 'Retrieve all pods for a specific application by name',
-          parameters: [
-            {
-              name: 'name',
-              in: 'query',
-              description: 'Application name',
-              required: true,
-              schema: {
-                type: 'string'
-              }
-            }
-          ],
-          responses: {
-            '200': {
-              description: 'Pods retrieved successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: GetAppPodsByAppNameResponseSchema
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid query parameters',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            },
-            '500': {
-              description: 'Internal server error',
-              content: {
-                'application/json': {
-                  schema: ErrorResponseSchema
-                }
-              }
-            }
-          }
-        }
-      },
-      '/api/v1/pod/getPodsMetrics': {
-        post: {
-          summary: 'Get pods metrics',
-          description: 'Retrieve metrics data for pods by providing pod names',
-          requestBody: {
-            content: {
-              'application/json': {
-                schema: z.object({
-                  podsName: z.array(z.string())
-                })
-              }
-            }
-          },
-          responses: {
-            '200': {
-              description: 'Pods metrics retrieved successfully',
-              content: {
-                'application/json': {
-                  schema: z.object({
-                    data: z.any()
-                  })
-                }
-              }
-            },
-            '400': {
-              description: 'Invalid request body',
+            '404': {
+              description: 'Application not found',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema

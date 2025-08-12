@@ -495,7 +495,16 @@ export const adaptAppDetail = async (
     volumeMounts: getFilteredVolumeMounts(),
     volumes: getFilteredVolumes(),
     kind: appDeploy?.kind?.toLowerCase() as 'deployment' | 'statefulset',
-    source: getAppSource(appDeploy)
+    source: getAppSource(appDeploy),
+    openapi: {
+      status: {
+        observedGeneration: appDeploy.status?.observedGeneration || 0,
+        replicas: appDeploy.status?.replicas || 0,
+        availableReplicas: appDeploy.status?.availableReplicas || 0,
+        updatedReplicas: appDeploy.status?.updatedReplicas || 0,
+        isPause: !!appDeploy?.metadata?.annotations?.[pauseKey]
+      }
+    }
   };
 };
 

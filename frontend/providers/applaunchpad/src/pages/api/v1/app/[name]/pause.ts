@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { jsonRes } from '@/services/backend/response';
-import { startApp, createK8sContext } from '@/services/backend';
+import { pauseApp, createK8sContext } from '@/services/backend';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
@@ -15,13 +15,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     }
 
     const k8s = await createK8sContext(req);
-    await startApp(name, k8s);
+
+    try {
+      await k8s.getDeployApp(name);
+    } catch (error: any) {
+      return jsonRes(res, {
+        code: 404,
+        error: `App ${name} not found`
+      });
+    }
+
+    await pauseApp(name, k8s);
 
     jsonRes(res, {
-      message: 'App started successfully'
+      message: 'App paused successfully'
     });
   } catch (err: any) {
-    console.log('Start app error:', err);
+    console.log('Pause app error:', err);
     jsonRes(res, {
       code: 500,
       error: err.message || err
