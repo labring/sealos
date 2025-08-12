@@ -26,6 +26,9 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	"github.com/sirupsen/logrus"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -387,7 +390,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		if len(plans) == 0 {
 			return fmt.Errorf("subscription plan list is empty")
 		}
-		r.SubscriptionQuotaLimit, err = resources.ParseResourceLimitWithSubscription(plans)
+		r.SubscriptionQuotaLimit, err = resources.ParseResourceLimitWithPlans(plans)
 		if err != nil {
 			return fmt.Errorf("parse resource limit with subscription failed: %v", err)
 		}
@@ -407,6 +410,18 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).
 		Complete(r)
+}
+
+type OnlyCreatePredicate struct {
+	predicate.Funcs
+}
+
+func (OnlyCreatePredicate) Update(_ event.UpdateEvent) bool {
+	return false
+}
+
+func (OnlyCreatePredicate) Create(_ event.CreateEvent) bool {
+	return true
 }
 
 func RawParseRechargeConfig() (activities pkgtypes.Activities, discountsteps []int64, discountratios []float64, returnErr error) {

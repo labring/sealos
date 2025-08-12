@@ -57,6 +57,7 @@ type BillingTaskRunner struct {
 }
 
 var DebtUserMap *maps.ConcurrentNullValueMap
+var SubscriptionWorkspaceMap *maps.ConcurrentNullValueMap
 
 func (r *BillingTaskRunner) Start(ctx context.Context) error {
 	defer func() {
@@ -118,12 +119,18 @@ type BillingReconciler struct {
 func (r *BillingReconciler) ExecuteBillingTask() error {
 	r.Logger.Info("start billing reconcile", "time", time.Now().Format(time.RFC3339))
 	DebtUserMap = maps.NewConcurrentNullValueMap()
+	SubscriptionWorkspaceMap = maps.NewConcurrentNullValueMap()
 	var users []string
 	if err := r.AccountV2.GetGlobalDB().Model(&types.Debt{}).Where("account_debt_status IN (?, ?, ?) ", types.DebtPeriod, types.DebtDeletionPeriod, types.FinalDeletionPeriod).
 		Distinct("user_uid").Pluck("user_uid", &users).Error; err != nil {
 		return fmt.Errorf("failed to query unique users: %w", err)
 	}
 	DebtUserMap.Set(users...)
+	var subscriptionWorkspaces []string
+	if err := r.AccountV2.GetGlobalDB().Model(&types.WorkspaceSubscription{}).Where("region_domain = ?", r.AccountV2.GetLocalRegion().Domain).Pluck("workspace", &subscriptionWorkspaces).Error; err != nil {
+		return fmt.Errorf("failed to query workspace subscriptions: %w", err)
+	}
+	SubscriptionWorkspaceMap.Set(subscriptionWorkspaces...)
 	ownerListMap, err := r.getRecentUsedOwners()
 	if err != nil {
 		return fmt.Errorf("failed to get the owner list of the recently used resource: %w", err)
@@ -203,6 +210,12 @@ func (r *BillingReconciler) reconcileBilling(owner string, billings []*resources
 	amount := int64(0)
 	orderIDs := make([]string, 0, len(billings))
 	for _, billing := range billings {
+		// TODO skip the billing of the subscription workspace: if billing.namespace is the subscription space, billing.Status= subscription, && skip amount ++
+		// Only the traffic charges for the subscription space are processed, and no billing is required. The traffic charges are handled separately within the subscription
+		if _, ok := SubscriptionWorkspaceMap.Get(billing.Namespace); ok {
+			billing.Status = resources.Subscription
+			continue
+		}
 		amount += billing.Amount
 		orderIDs = append(orderIDs, billing.OrderID)
 	}

@@ -53,7 +53,7 @@ func AdminFlushDebtResourceStatus(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"success": true})
 		return
 	}
-	namespaces, err := getOwnNsListWithClt(dao.K8sManager.GetClient(), owner)
+	namespaces, err := getOwnNsListWithCltWithOutWorkspaceSubscription(dao.K8sManager.GetClient(), owner)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, helper.ErrorMessage{Error: fmt.Sprintf("get own namespace list failed: %v", err)})
 		return
