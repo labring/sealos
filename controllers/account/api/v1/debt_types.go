@@ -55,20 +55,6 @@ var DefaultDebtConfig = map[DebtStatusType]int64{
 	//DebtStatusSmall:  SmallBlockWaitSecond,
 }
 
-const DebtNamespaceAnnoStatusKey = "debt.sealos/status"
-
-const (
-	NormalDebtNamespaceAnnoStatus                    = "Normal"
-	SuspendDebtNamespaceAnnoStatus                   = "Suspend"
-	SuspendCompletedDebtNamespaceAnnoStatus          = "SuspendCompleted"
-	FinalDeletionDebtNamespaceAnnoStatus             = "FinalDeletion"
-	FinalDeletionCompletedDebtNamespaceAnnoStatus    = "FinalDeletionCompleted"
-	ResumeDebtNamespaceAnnoStatus                    = "Resume"
-	ResumeCompletedDebtNamespaceAnnoStatus           = "ResumeCompleted"
-	TerminateSuspendDebtNamespaceAnnoStatus          = "TerminateSuspend"
-	TerminateSuspendCompletedDebtNamespaceAnnoStatus = "TerminateSuspendCompleted"
-)
-
 // DebtSpec defines the desired state of Debt
 type DebtSpec struct {
 	UserName string `json:"userName,omitempty"`
