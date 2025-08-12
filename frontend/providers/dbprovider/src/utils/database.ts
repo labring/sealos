@@ -124,7 +124,7 @@ export async function fetchDBSecret(
     .toString('utf-8')
     .trim();
 
-  const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+  let host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
 
   const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64')
     .toString('utf-8')
