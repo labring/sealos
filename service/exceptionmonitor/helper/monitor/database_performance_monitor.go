@@ -42,7 +42,8 @@ func checkDatabasePerformanceInNamespace(namespace string) error {
 	var clusters *unstructured.UnstructuredList
 	var err error
 	if api.MonitorType == api.MonitorTypeALL {
-		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).List(context.Background(), metav1.ListOptions{})
+		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).
+			List(context.Background(), metav1.ListOptions{})
 	} else {
 		clusters, err = api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).List(context.Background(), metav1.ListOptions{})
 	}
@@ -71,7 +72,11 @@ func monitorCluster(cluster unstructured.Unstructured) {
 		notificationInfo = *value
 	}
 	switch notificationInfo.ExceptionStatus {
-	case api.StatusDeleting, api.StatusCreating, api.StatusStopping, api.StatusStopped, api.StatusUnknown:
+	case api.StatusDeleting,
+		api.StatusCreating,
+		api.StatusStopping,
+		api.StatusStopped,
+		api.StatusUnknown:
 		break
 	default:
 		if api.CPUMemMonitor {
@@ -104,24 +109,28 @@ func handleDiskMonitor(notificationInfo *api.Info) {
 	}
 }
 
-func processUsage(usage float64, threshold float64, performanceType string, notificationInfo *api.Info) {
+func processUsage(usage, threshold float64, performanceType string, notificationInfo *api.Info) {
 	notificationInfo.PerformanceType = performanceType
 	usageStr := strconv.FormatFloat(usage, 'f', 2, 64)
-	if notificationInfo.PerformanceType == api.CPUChinese {
+	switch {
+	case notificationInfo.PerformanceType == api.CPUChinese:
 		notificationInfo.CPUUsage = usageStr
-	} else if performanceType == api.MemoryChinese {
+	case performanceType == api.MemoryChinese:
 		notificationInfo.MemUsage = usageStr
-	} else if performanceType == api.DiskChinese {
+	case performanceType == api.DiskChinese:
 		notificationInfo.DiskUsage = usageStr
 	}
 	if usage >= threshold {
-		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.CPUChinese {
+		if _, ok := api.CPUNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok &&
+			notificationInfo.PerformanceType == api.CPUChinese {
 			processException(notificationInfo, threshold)
 		}
-		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.MemoryChinese {
+		if _, ok := api.MemNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok &&
+			notificationInfo.PerformanceType == api.MemoryChinese {
 			processException(notificationInfo, threshold)
 		}
-		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok && notificationInfo.PerformanceType == api.DiskChinese {
+		if _, ok := api.DiskNotificationInfoMap[notificationInfo.DatabaseClusterUID]; !ok &&
+			notificationInfo.PerformanceType == api.DiskChinese {
 			processException(notificationInfo, threshold)
 		}
 	} else if usage < threshold {
@@ -164,7 +173,7 @@ func processException(notificationInfo *api.Info, threshold float64) {
 func processRecovery(notificationInfo *api.Info) {
 	notificationInfo.NotificationType = "recovery"
 	notificationInfo.RecoveryStatus = notificationInfo.ExceptionStatus
-	notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format("2006-01-02 15:04:05")
+	notificationInfo.RecoveryTime = time.Now().Add(8 * time.Hour).Format(time.DateTime)
 	alertMessage := notification.GetNotificationMessage(notificationInfo)
 	notificationInfo.FeishuWebHook = api.FeishuWebhookURLMap["FeishuWebhookURLImportant"]
 	if err := notification.SendFeishuNotification(notificationInfo, alertMessage); err != nil {
@@ -189,11 +198,12 @@ func NumberToChinese(num int) string {
 	tenDigit := num / 10
 	unitDigit := num % 10
 
-	if tenDigit == 1 && unitDigit == 0 {
+	switch {
+	case tenDigit == 1 && unitDigit == 0:
 		return "十"
-	} else if tenDigit == 1 {
+	case tenDigit == 1:
 		return "十" + numToChinese[unitDigit]
-	} else if unitDigit == 0 {
+	case unitDigit == 0:
 		return numToChinese[tenDigit] + "十"
 	}
 	return numToChinese[tenDigit] + "十" + numToChinese[unitDigit]

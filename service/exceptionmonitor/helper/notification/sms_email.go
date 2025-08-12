@@ -113,8 +113,12 @@ func SendToEmail(clusterName, content, userEmail, name string) error {
 
 func constructMessage(clusterName, content, name, sendType string) string {
 	if sendType == "phone" {
-		return fmt.Sprintf("{\"type\":\"数据库\",\"name\":\"%s\",\"region\":\"%s\",\"content\":\"%s\"}",
-			name, api.ClusterRegionMap[clusterName], content)
+		return fmt.Sprintf(
+			"{\"type\":\"数据库\",\"name\":\"%s\",\"region\":\"%s\",\"content\":\"%s\"}",
+			name,
+			api.ClusterRegionMap[clusterName],
+			content,
+		)
 	}
 	if sendType == "email" {
 		return fmt.Sprintf("【Sealos Cloud】您好！\n\n"+
@@ -127,7 +131,9 @@ func constructMessage(clusterName, content, name, sendType string) string {
 }
 
 func GetNSOwner(namespace string) (string, error) {
-	ns, err := api.ClientSet.CoreV1().Namespaces().Get(context.Background(), namespace, metav1.GetOptions{})
+	ns, err := api.ClientSet.CoreV1().
+		Namespaces().
+		Get(context.Background(), namespace, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

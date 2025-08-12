@@ -7,22 +7,19 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var (
-	backupGVR = schema.GroupVersionResource{
-		Group:    "dataprotection.kubeblocks.io",
-		Version:  "v1alpha1",
-		Resource: "backups",
-	}
-)
+var backupGVR = schema.GroupVersionResource{
+	Group:    "dataprotection.kubeblocks.io",
+	Version:  "v1alpha1",
+	Resource: "backups",
+}
 
 func DatabaseBackupMonitor() {
 	for api.BackupMonitor {
@@ -34,7 +31,8 @@ func DatabaseBackupMonitor() {
 }
 
 func checkDatabaseBackups() error {
-	backupList, err := api.DynamicClient.Resource(backupGVR).List(context.Background(), metav1.ListOptions{})
+	backupList, err := api.DynamicClient.Resource(backupGVR).
+		List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -46,7 +44,8 @@ func checkDatabaseBackups() error {
 
 func processBackup(backup unstructured.Unstructured) {
 	status, found, err := unstructured.NestedString(backup.Object, "status", "phase")
-	backupName, namespace, startTimestamp := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().String()
+	backupName, namespace, startTimestamp := backup.GetName(), backup.GetNamespace(), backup.GetCreationTimestamp().
+		String()
 	if err != nil {
 		log.Printf("Unable to get %s status in %s:%v", backupName, namespace, err)
 		return
@@ -74,7 +73,9 @@ func processBackup(backup unstructured.Unstructured) {
 	}
 	backupPolicyName, _, _ := unstructured.NestedString(backup.Object, "spec", "backupPolicyName")
 	databaseName := getPrefix(backupPolicyName)
-	cluster, err := api.DynamicClient.Resource(databaseClusterGVR).Namespace(namespace).Get(context.Background(), databaseName, metav1.GetOptions{})
+	cluster, err := api.DynamicClient.Resource(databaseClusterGVR).
+		Namespace(namespace).
+		Get(context.Background(), databaseName, metav1.GetOptions{})
 	if cluster == nil && errors.IsNotFound(err) {
 		return
 	}
@@ -100,7 +101,14 @@ func SendBackupNotification(backupName, namespace, status, startTimestamp string
 		FeishuWebHook:       api.FeishuWebhookURLMap["FeishuWebhookURLBackup"],
 	}
 	if _, ok := api.LastBackupStatusMap[backupName]; !ok {
-		message := notification.GetBackupMessage(notification.ExceptionType, namespace, backupName, status, startTimestamp, "")
+		message := notification.GetBackupMessage(
+			notification.ExceptionType,
+			namespace,
+			backupName,
+			status,
+			startTimestamp,
+			"",
+		)
 		if err := notification.SendFeishuNotification(&notificationInfo, message); err != nil {
 			log.Printf("Error sending exception notification:%v", err)
 		}

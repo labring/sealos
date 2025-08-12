@@ -10,7 +10,7 @@ import (
 )
 
 func InitClient() error {
-	//TODO Get kubernetes.client through k8s.io/client-go/rest.InClusterConfig()
+	// TODO Get kubernetes.client through k8s.io/client-go/rest.InClusterConfig()
 	kubeconfigPath := "/home/nonroot/kubeconfig/kubeconfig"
 
 	kubeconfig, err := os.ReadFile(kubeconfigPath)
@@ -23,8 +23,8 @@ func InitClient() error {
 		return err
 	}
 
-	//config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
-	//if err != nil {
+	// config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	// if err != nil {
 	//	return err
 	//}
 	api.DynamicClient, err = dynamic.NewForConfig(config)

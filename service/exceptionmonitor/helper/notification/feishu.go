@@ -15,9 +15,7 @@ import (
 
 const ExceptionType = "exception"
 
-var (
-	feiShuClient *lark.Client
-)
+var feiShuClient *lark.Client
 
 func InitFeishuClient() {
 	feiShuClient = lark.NewClient(api.APPID, api.APPSECRET)
@@ -26,35 +24,35 @@ func InitFeishuClient() {
 func GetCockroachMessage(errMessage, cockroachType string) string {
 	headerTemplate := "red"
 	titleContent := "小强数据库异常告警"
-	elements := []map[string]interface{}{
+	elements := []map[string]any{
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
+				"content": "集群环境：" + api.ClusterName,
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库类型：%s", cockroachType),
+				"content": "数据库类型：" + cockroachType,
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("异常信息：%s", errMessage),
+				"content": "异常信息：" + errMessage,
 				"tag":     "lark_md",
 			},
 		},
 	}
-	card := map[string]interface{}{
+	card := map[string]any{
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
 		"elements": elements,
-		"header": map[string]interface{}{
+		"header": map[string]any{
 			"template": headerTemplate,
 			"title": map[string]string{
 				"content": titleContent,
@@ -71,82 +69,92 @@ func GetCockroachMessage(errMessage, cockroachType string) string {
 	return string(databaseMessage)
 }
 
+func newFeishuInfo(common []map[string]any, more ...map[string]any) []map[string]any {
+	newInfo := make([]map[string]any, 0, len(common)+len(more))
+	newInfo = append(newInfo, common...)
+	newInfo = append(newInfo, more...)
+	return newInfo
+}
+
 func GetNotificationMessage(notificationInfo *api.Info) string {
 	headerTemplate := "red"
 	titleContent := "数据库" + notificationInfo.ExceptionType + "告警"
 	usage := ""
-	if notificationInfo.PerformanceType == api.CPUChinese {
+	switch notificationInfo.PerformanceType {
+	case api.CPUChinese:
 		usage = notificationInfo.CPUUsage
-	} else if notificationInfo.PerformanceType == api.MemoryChinese {
+	case api.MemoryChinese:
 		usage = notificationInfo.MemUsage
-	} else if notificationInfo.PerformanceType == api.DiskChinese {
+	case api.DiskChinese:
 		usage = notificationInfo.DiskUsage
 	}
 
-	commonElements := []map[string]interface{}{
+	commonElements := []map[string]any{
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("集群环境：%s", api.ClusterName),
+				"content": "集群环境：" + api.ClusterName,
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("命名空间：%s", notificationInfo.Namespace),
+				"content": "命名空间：" + notificationInfo.Namespace,
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库名：%s", notificationInfo.DatabaseClusterName),
+				"content": "数据库名：" + notificationInfo.DatabaseClusterName,
 				"tag":     "lark_md",
 			},
 		},
 		{
 			"tag": "div",
 			"text": map[string]string{
-				"content": fmt.Sprintf("数据库状态：%s", notificationInfo.ExceptionStatus),
+				"content": "数据库状态：" + notificationInfo.ExceptionStatus,
 				"tag":     "lark_md",
 			},
 		},
 	}
 
-	if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "状态" {
-		exceptionElements := []map[string]interface{}{
+	if notificationInfo.NotificationType == ExceptionType &&
+		notificationInfo.ExceptionType == "状态" {
+		exceptionElements := []map[string]any{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("数据库异常时间：%s", notificationInfo.ExceptionStatusTime),
-					"tag":     "lark_md",
-				},
-			}, {
-				"tag": "div",
-				"text": map[string]string{
-					"content": fmt.Sprintf("欠费级别：%s", notificationInfo.DebtLevel),
+					"content": "数据库异常时间：" + notificationInfo.ExceptionStatusTime,
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("事件信息：%s", notificationInfo.Events),
+					"content": "欠费级别：" + notificationInfo.DebtLevel,
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("告警原因：%s", notificationInfo.Reason),
+					"content": "事件信息：" + notificationInfo.Events,
+					"tag":     "lark_md",
+				},
+			},
+			{
+				"tag": "div",
+				"text": map[string]string{
+					"content": "告警原因：" + notificationInfo.Reason,
 					"tag":     "lark_md",
 				},
 			},
 		}
-		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
+		notificationInfo.FeishuInfo = newFeishuInfo(commonElements, exceptionElements...)
 	} else if notificationInfo.NotificationType == ExceptionType && notificationInfo.ExceptionType == "阀值" {
-		exceptionElements := []map[string]interface{}{
+		exceptionElements := []map[string]any{
 			{
 				"tag": "div",
 				"text": map[string]string{
@@ -155,14 +163,14 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 				},
 			},
 		}
-		notificationInfo.FeishuInfo = append(commonElements, exceptionElements...)
+		notificationInfo.FeishuInfo = newFeishuInfo(commonElements, exceptionElements...)
 	}
 
 	if notificationInfo.NotificationType == "recovery" {
 		headerTemplate = "blue"
 		titleContent = "数据库" + notificationInfo.ExceptionType + "恢复通知"
 
-		separatorElements := []map[string]interface{}{
+		separatorElements := []map[string]any{
 			{
 				"tag": "div",
 				"text": map[string]string{
@@ -174,7 +182,7 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, separatorElements...)
 
 		if notificationInfo.ExceptionType == "阀值" {
-			usageRecoveryElements := []map[string]interface{}{
+			usageRecoveryElements := []map[string]any{
 				{
 					"tag": "div",
 					"text": map[string]string{
@@ -183,32 +191,34 @@ func GetNotificationMessage(notificationInfo *api.Info) string {
 					},
 				},
 			}
-			notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, usageRecoveryElements...)
+			notificationInfo.FeishuInfo = append(
+				notificationInfo.FeishuInfo,
+				usageRecoveryElements...)
 		}
-		recoveryTimeElements := []map[string]interface{}{
+		recoveryTimeElements := []map[string]any{
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("数据库状态：%s", notificationInfo.RecoveryStatus),
+					"content": "数据库状态：" + notificationInfo.RecoveryStatus,
 					"tag":     "lark_md",
 				},
 			},
 			{
 				"tag": "div",
 				"text": map[string]string{
-					"content": fmt.Sprintf("数据库恢复时间：%s", notificationInfo.RecoveryTime),
+					"content": "数据库恢复时间：" + notificationInfo.RecoveryTime,
 					"tag":     "lark_md",
 				},
 			},
 		}
 		notificationInfo.FeishuInfo = append(notificationInfo.FeishuInfo, recoveryTimeElements...)
 	}
-	card := map[string]interface{}{
+	card := map[string]any{
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
 		"elements": notificationInfo.FeishuInfo,
-		"header": map[string]interface{}{
+		"header": map[string]any{
 			"template": headerTemplate,
 			"title": map[string]string{
 				"content": titleContent,
@@ -280,7 +290,11 @@ func updateFeishuNotification(messageID, message string) error {
 	return nil
 }
 
-func createFeishuNotification(notification *api.Info, message string, messageIDMap map[string]string) error {
+func createFeishuNotification(
+	notification *api.Info,
+	message string,
+	messageIDMap map[string]string,
+) error {
 	req := larkim.NewCreateMessageReqBuilder().
 		ReceiveIdType("chat_id").
 		Body(larkim.NewCreateMessageReqBodyBuilder().
@@ -289,7 +303,6 @@ func createFeishuNotification(notification *api.Info, message string, messageIDM
 			Content(message).Build()).Build()
 
 	resp, err := feiShuClient.Im.Message.Create(context.Background(), req)
-
 	if err != nil {
 		log.Println("Error:", err)
 		return err
@@ -306,7 +319,10 @@ func createFeishuNotification(notification *api.Info, message string, messageIDM
 		return nil
 	}
 	if messageID == "" {
-		log.Printf("send databaseName %s feishu notification, return no messageID", notification.DatabaseClusterName)
+		log.Printf(
+			"send databaseName %s feishu notification, return no messageID",
+			notification.DatabaseClusterName,
+		)
 	} else {
 		messageIDMap[notification.DatabaseClusterName] = messageID
 	}
@@ -322,13 +338,13 @@ func extractAndPrintMessageID(str string) string {
 	return ""
 }
 
-func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]interface{} {
-	card := map[string]interface{}{
+func createCard(headerTemplate, headerTitle string, elements []map[string]string) map[string]any {
+	card := map[string]any{
 		"config": map[string]bool{
 			"wide_screen_mode": true,
 		},
-		"elements": make([]map[string]interface{}, len(elements)),
-		"header": map[string]interface{}{
+		"elements": make([]map[string]any, len(elements)),
+		"header": map[string]any{
 			"template": headerTemplate,
 			"title": map[string]string{
 				"content": headerTitle,
@@ -338,7 +354,11 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 	}
 
 	for i, element := range elements {
-		card["elements"].([]map[string]interface{})[i] = map[string]interface{}{
+		e, ok := card["elements"].([]map[string]any)
+		if !ok {
+			continue
+		}
+		e[i] = map[string]any{
 			"tag": "div",
 			"text": map[string]string{
 				"content": fmt.Sprintf("%s：%s", element["label"], element["value"]),
@@ -351,7 +371,7 @@ func createCard(headerTemplate, headerTitle string, elements []map[string]string
 }
 
 func GetQuotaMessage(nsQuota *api.NameSpaceQuota) string {
-	var card map[string]interface{}
+	var card map[string]any
 	elements := createQuotaElements(nsQuota)
 	card = createCard("red", "Quota阀值通知", elements)
 
@@ -418,7 +438,10 @@ func addNonEmptyFieldsToElements(nsQuota *api.NameSpaceQuota, elements *[]map[st
 	}
 }
 
-func createBackupElements(namespace, backupName, status, startTime, reason string, includeReason bool) []map[string]string {
+func createBackupElements(
+	namespace, backupName, status, startTime, reason string,
+	includeReason bool,
+) []map[string]string {
 	elements := []map[string]string{
 		{"label": "集群环境", "value": api.ClusterName},
 		{"label": "命名空间", "value": namespace},
@@ -432,7 +455,7 @@ func createBackupElements(namespace, backupName, status, startTime, reason strin
 	return elements
 }
 
-func marshalCard(card map[string]interface{}) (string, error) {
+func marshalCard(card map[string]any) (string, error) {
 	databaseMessage, err := json.Marshal(card)
 	if err != nil {
 		return "", fmt.Errorf("error marshaling JSON: %w", err)
@@ -440,8 +463,10 @@ func marshalCard(card map[string]interface{}) (string, error) {
 	return string(databaseMessage), nil
 }
 
-func GetBackupMessage(notificationType, namespace, backupName, status, startTime, reason string) string {
-	var card map[string]interface{}
+func GetBackupMessage(
+	notificationType, namespace, backupName, status, startTime, reason string,
+) string {
+	var card map[string]any
 	if notificationType == ExceptionType {
 		elements := createBackupElements(namespace, backupName, status, startTime, reason, true)
 		card = createCard("red", "备份异常通知", elements)
