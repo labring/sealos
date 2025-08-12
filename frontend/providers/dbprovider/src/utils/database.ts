@@ -126,11 +126,26 @@ export async function fetchDBSecret(
     'utf-8'
   );
 
-  const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+  let host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
 
-  const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64').toString(
+  let port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64').toString(
     'utf-8'
   );
+
+  if (dbType === DBTypeEnum.mongodb) {
+    port = '27017';
+    host = `${dbName}-mongodb.ns-${dbName}.svc`;
+  }
+
+  if (dbType === DBTypeEnum.redis) {
+    port = '6379';
+    host = `${dbName}-redis-redis.ns-${dbName}.svc`;
+  }
+
+  if (dbType === DBTypeEnum.clickhouse) {
+    port = '8123';
+    host = `${dbName}-clickhouse.ns-${dbName}.svc`;
+  }
 
   return {
     username,
