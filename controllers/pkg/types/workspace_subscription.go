@@ -26,23 +26,23 @@ type WorkspaceSubscription struct {
 
 // TODO CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);
 type WorkspaceSubscriptionTransaction struct {
-	ID            uuid.UUID                     `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`                               // ID
-	From          TransactionFrom               `gorm:"type:varchar(50);column:from;type:text"`                                                 // 变更来源, 例如: "user" / "admin" / "referral"
-	Workspace     string                        `gorm:"type:varchar(50);not null;uniqueIndex:idx_workspace_region_domain;column:workspace"`     // Workspace 名称
-	RegionDomain  string                        `gorm:"type:varchar(50);not null;uniqueIndex:idx_workspace_region_domain;column:region_domain"` // Region Domain
-	OldPlanName   string                        `gorm:"type:varchar(50);column:old_plan_name"`                                                  // 旧的订阅计划名称
-	NewPlanName   string                        `gorm:"type:varchar(50);column:new_plan_name"`                                                  // 新的订阅计划名称
-	OldPlanStatus SubscriptionStatus            `gorm:"type:subscription_status;column:old_plan_status"`                                        // 旧的订阅状态
-	Operator      SubscriptionOperator          `gorm:"type:subscription_operator;column:operator"`                                             // 操作类型(created/upgraded/downgraded/canceled/renewed)
-	StartAt       time.Time                     `gorm:"column:start_at"`                                                                        // 变更开始时间
-	CreatedAt     time.Time                     `gorm:"column:created_at;autoCreateTime"`                                                       // 创建时间
-	UpdatedAt     time.Time                     `gorm:"column:updated_at;autoUpdateTime"`                                                       // 更新时间
-	Status        SubscriptionTransactionStatus `gorm:"type:subscription_status;column:status"`                                                 // 状态
-	StatusDesc    string                        `gorm:"type:varchar(255);column:status_desc"`                                                   // 状态描述
-	PayStatus     SubscriptionPayStatus         `gorm:"type:subscription_pay_status;column:pay_status"`                                         // 支付状态
-	PayID         string                        `gorm:"type:text;column:pay_id"`                                                                // 支付订单号
-	Period        SubscriptionPeriod            `gorm:"type:subscription_period;column:period"`                                                 // 周期, 默认1一个月，年或者月
-	Amount        int64                         `gorm:"type:bigint;column:amount"`                                                              // 金额
+	ID            uuid.UUID                     `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`                         // ID
+	From          TransactionFrom               `gorm:"type:varchar(50);column:from;type:text"`                                           // 变更来源, 例如: "user" / "admin" / "referral"
+	Workspace     string                        `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:workspace"`     // Workspace 名称
+	RegionDomain  string                        `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:region_domain"` // Region Domain
+	OldPlanName   string                        `gorm:"type:varchar(50);column:old_plan_name"`                                            // 旧的订阅计划名称
+	NewPlanName   string                        `gorm:"type:varchar(50);column:new_plan_name"`                                            // 新的订阅计划名称
+	OldPlanStatus SubscriptionStatus            `gorm:"type:subscription_status;column:old_plan_status"`                                  // 旧的订阅状态
+	Operator      SubscriptionOperator          `gorm:"type:subscription_operator;column:operator"`                                       // 操作类型(created/upgraded/downgraded/canceled/renewed)
+	StartAt       time.Time                     `gorm:"column:start_at"`                                                                  // 变更开始时间
+	CreatedAt     time.Time                     `gorm:"column:created_at;autoCreateTime"`                                                 // 创建时间
+	UpdatedAt     time.Time                     `gorm:"column:updated_at;autoUpdateTime"`                                                 // 更新时间
+	Status        SubscriptionTransactionStatus `gorm:"type:subscription_status;column:status"`                                           // 状态
+	StatusDesc    string                        `gorm:"type:varchar(255);column:status_desc"`                                             // 状态描述
+	PayStatus     SubscriptionPayStatus         `gorm:"type:subscription_pay_status;column:pay_status"`                                   // 支付状态
+	PayID         string                        `gorm:"type:text;column:pay_id"`                                                          // 支付订单号
+	Period        SubscriptionPeriod            `gorm:"type:subscription_period;column:period"`                                           // 周期, 默认1一个月，年或者月
+	Amount        int64                         `gorm:"type:bigint;column:amount"`                                                        // 金额
 }
 
 type WorkspaceSubscriptionPlan struct {

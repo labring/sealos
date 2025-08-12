@@ -59,8 +59,8 @@ type WorkspaceTraffic struct {
 	CreatedAt               time.Time              `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
 	UpdatedAt               time.Time              `gorm:"type:timestamp(3) with time zone;autoUpdateTime;default:current_timestamp"`
 	ExpiredAt               time.Time              `gorm:"type:timestamp(3) with time zone;default:current_timestamp"`
-	Workspace               string                 `gorm:"type:varchar(50);not null;index:idx_workspace_region;column:workspace"` // Workspace 名称
-	RegionDomain            string                 `gorm:"type:varchar(50);not null;index;column:region_domain"`                  // Region Domain
+	Workspace               string                 `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:workspace"`     // Workspace 名称
+	RegionDomain            string                 `gorm:"type:varchar(50);not null;index:idx_workspace_region_domain;column:region_domain"` // Region Domain
 	WorkspaceSubscriptionID uuid.UUID              `gorm:"type:uuid;primaryKey" json:"workspace_subscription_id" bson:"workspace_subscription_id"`
 	Status                  WorkspaceTrafficStatus `gorm:"type:varchar(20);default:'active'" json:"status" bson:"status"`
 	From                    WorkspaceTrafficFrom   `gorm:"type:varchar(50)" json:"from" bson:"from"`
