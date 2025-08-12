@@ -84,6 +84,7 @@ spec:
       labels:
         app: object-storage-monitor
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
       - args:
         - /config/config.yml
@@ -107,6 +108,15 @@ spec:
           requests:
             cpu: 5m
             memory: 64Mi
+        startupProbe:
+          httpGet:
+            port: 9090
+            path: /health
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          failureThreshold: 30
+          successThreshold: 1
+          timeoutSeconds: 1
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
