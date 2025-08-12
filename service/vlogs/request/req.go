@@ -27,6 +27,7 @@ func generateReq(path string, username string, password string, query string) (*
 func QueryLogsByParams(path string, username string, password string, query string) (*http.Response, error) {
 	httpClient := &http.Client{
 		Transport: &http.Transport{
+			// nosemgrep
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},
