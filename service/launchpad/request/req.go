@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -13,9 +14,15 @@ import (
 	"github.com/labring/sealos/service/pkg/api"
 )
 
-func Request(addr string, params *bytes.Buffer) ([]byte, error) {
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
+func Request(ctx context.Context, addr string, params *bytes.Buffer) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, addr, params)
+	if err != nil {
+		return nil, err
+	}
 
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +69,7 @@ func getPodName(str string) string {
 	return firstPart
 }
 
-func VMNew(query *api.VMRequest) ([]byte, error) {
+func VMNew(ctx context.Context, query *api.VMRequest) ([]byte, error) {
 	result, _ := GetQuery(query)
 
 	formData := url.Values{}
@@ -83,9 +90,9 @@ func VMNew(query *api.VMRequest) ([]byte, error) {
 	}
 
 	if len(formData.Get("start")) == 0 {
-		return Request(vmHost+"/api/v1/query", bf)
+		return Request(ctx, vmHost+"/api/v1/query", bf)
 	}
-	return Request(vmHost+"/api/v1/query_range", bf)
+	return Request(ctx, vmHost+"/api/v1/query_range", bf)
 }
 
 func GetVMServerFromEnv() string {

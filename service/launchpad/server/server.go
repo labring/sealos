@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,10 +9,9 @@ import (
 	"net/url"
 	"text/template"
 
-	"github.com/labring/sealos/service/pkg/auth"
-
 	"github.com/labring/sealos/service/launchpad/request"
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 )
 
 type VMServer struct {
@@ -29,8 +29,11 @@ func (vs *VMServer) Authenticate(vr *api.VMRequest) error {
 	return auth.Authenticate(vr.NS, vr.Pwd)
 }
 
-func (vs *VMServer) DBReq(vr *api.VMRequest) (*api.LaunchpadQueryResult, error) {
-	body, err := request.VMNew(vr)
+func (vs *VMServer) DBReq(
+	ctx context.Context,
+	vr *api.VMRequest,
+) (*api.LaunchpadQueryResult, error) {
+	body, err := request.VMNew(ctx, vr)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +94,11 @@ func (vs *VMServer) ParseRequest(req *http.Request) (*api.VMRequest, error) {
 // 获取客户端请求的信息
 func (vs *VMServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
-	switch {
-	case req.URL.Path == pathPrefix+"/query":
+	switch req.URL.Path {
+	case pathPrefix + "/query":
 		vs.doReqNew(rw, req)
+	case pathPrefix + "/health":
+		rw.WriteHeader(http.StatusOK)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
 		return
@@ -109,12 +114,16 @@ func (vs *VMServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := vs.Authenticate(vr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}
 
-	res, err := vs.DBReq(vr)
+	res, err := vs.DBReq(req.Context(), vr)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
 		log.Printf("Query failed (%s)\n", err)
