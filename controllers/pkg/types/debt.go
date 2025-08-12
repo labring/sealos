@@ -6,6 +6,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	NormalDebtNamespaceAnnoStatus                    = "Normal"
+	SuspendDebtNamespaceAnnoStatus                   = "Suspend"
+	SuspendCompletedDebtNamespaceAnnoStatus          = "SuspendCompleted"
+	FinalDeletionDebtNamespaceAnnoStatus             = "FinalDeletion"
+	FinalDeletionCompletedDebtNamespaceAnnoStatus    = "FinalDeletionCompleted"
+	ResumeDebtNamespaceAnnoStatus                    = "Resume"
+	ResumeCompletedDebtNamespaceAnnoStatus           = "ResumeCompleted"
+	TerminateSuspendDebtNamespaceAnnoStatus          = "TerminateSuspend"
+	TerminateSuspendCompletedDebtNamespaceAnnoStatus = "TerminateSuspendCompleted"
+
+	NetworkStatusAnnoKey        = "network.sealos.io/status"
+	WorkspaceStatusAnnoKey      = "workspace.sealos.io/status"
+	WorkspaceStatusSubscription = "subscription"
+	NetworkSuspend              = "Suspend"
+	NetworkSuspendCompleted     = "SuspendCompleted"
+	NetworkResume               = "Resume"
+	NetworkResumeCompleted      = "ResumeCompleted"
+)
+
 // DebtStatusType 定义债务状态类型
 type DebtStatusType string
 
@@ -17,12 +37,6 @@ const (
 	DebtPeriod            DebtStatusType = "DebtPeriod"
 	DebtDeletionPeriod    DebtStatusType = "DebtDeletionPeriod"
 	FinalDeletionPeriod   DebtStatusType = "FinalDeletionPeriod"
-
-	NormalDebtNamespaceAnnoStatus           = "Normal"
-	SuspendDebtNamespaceAnnoStatus          = "Suspend"
-	FinalDeletionDebtNamespaceAnnoStatus    = "FinalDeletion"
-	ResumeDebtNamespaceAnnoStatus           = "Resume"
-	TerminateSuspendDebtNamespaceAnnoStatus = "TerminateSuspend"
 )
 
 const (

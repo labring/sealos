@@ -21,14 +21,6 @@ type Subscription struct {
 	NextCycleDate time.Time          `gorm:"column:next_cycle_date"`                                   // 下一个周期的日期
 }
 
-type SubscriptionStatus string
-
-const (
-	SubscriptionStatusNormal   SubscriptionStatus = "NORMAL"
-	SubscriptionStatusDebt     SubscriptionStatus = "DEBT"
-	SubscriptionStatusLockUser SubscriptionStatus = "LOCK_USER"
-)
-
 // 订阅变更记录表
 type SubscriptionTransaction struct {
 	ID             uuid.UUID                     `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // ID
@@ -49,34 +41,6 @@ type SubscriptionTransaction struct {
 	Amount         int64                         `gorm:"type:bigint;column:amount"`                                // 金额
 }
 
-type SubscriptionTransactionStatus string
-
-type SubscriptionOperator string
-
-type SubscriptionPayStatus string
-
-const (
-	SubscriptionTransactionTypeCreated    SubscriptionOperator = "created"
-	SubscriptionTransactionTypeUpgraded   SubscriptionOperator = "upgraded"
-	SubscriptionTransactionTypeDowngraded SubscriptionOperator = "downgraded"
-	SubscriptionTransactionTypeCanceled   SubscriptionOperator = "canceled"
-	SubscriptionTransactionTypeRenewed    SubscriptionOperator = "renewed"
-
-	SubscriptionTransactionStatusCompleted  SubscriptionTransactionStatus = "completed"
-	SubscriptionTransactionStatusPending    SubscriptionTransactionStatus = "pending"
-	SubscriptionTransactionStatusProcessing SubscriptionTransactionStatus = "processing"
-	SubscriptionTransactionStatusFailed     SubscriptionTransactionStatus = "failed"
-
-	SubscriptionPayStatusPending SubscriptionPayStatus = "pending"
-	SubscriptionPayStatusPaid    SubscriptionPayStatus = "paid"
-	SubscriptionPayStatusNoNeed  SubscriptionPayStatus = "no_need"
-	SubscriptionPayStatusFailed  SubscriptionPayStatus = "failed"
-)
-
-const (
-	FreeSubscriptionPlanName = "Free"
-)
-
 type SubscriptionPlan struct {
 	ID                uuid.UUID      `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"` // 计划 ID
 	Name              string         `gorm:"unique;not null;column:name;type:text"`                    // 计划名称
@@ -96,6 +60,54 @@ type SubscriptionPlan struct {
 	MostPopular bool `gorm:"column:most_popular"`
 }
 
+type (
+	TransactionFrom string
+	BillingCycle    string
+)
+
+const (
+	FreeSubscriptionPlanName = "Free"
+
+	ProductPriceBillingCycleYearly    BillingCycle = "yearly"
+	ProductPriceBillingCycleQuarterly BillingCycle = "quarterly"
+	ProductPriceBillingCycleMonthly   BillingCycle = "monthly"
+	ProductPriceBillingCycleWeekly    BillingCycle = "weekly"
+	ProductPriceBillingCycleDaily     BillingCycle = "daily"
+	ProductPriceBillingCycleOneTime   BillingCycle = "one_time"
+
+	TransactionFromUser     TransactionFrom = "user"
+	TransactionFromAdmin    TransactionFrom = "admin"
+	TransactionFromReferral TransactionFrom = "referral"
+)
+
+func ParsePeriod(period SubscriptionPeriod) (time.Duration, error) {
+	switch period {
+	case SubscriptionPeriodMonthly:
+		return 30 * 24 * time.Hour, nil // 30 days
+	case SubscriptionPeriodYearly:
+		return 365 * 24 * time.Hour, nil // 365 days
+	default:
+		return 0, nil // Unrecognized period, return zero duration
+	}
+}
+
+type ProductPrice struct {
+	ID           uuid.UUID    `gorm:"type:uuid;not null;primaryKey;column:id"`
+	ProductID    uuid.UUID    `gorm:"type:uuid;not null;index:idx_product_cycle,unique"`
+	BillingCycle BillingCycle `gorm:"type:varchar(20);not null;index:idx_product_cycle,unique"` // 计费周期, 年/季/月/周/天/次
+	Price        int64        `gorm:"type:bigint;column:price"`                                 // 价格
+	// Currency  string    `gorm:"type:varchar(10);not null;column:currency"`  // 货币
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"` // 创建时间
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"` // 更新时间
+}
+
+func (p SubscriptionPlan) GetName() string {
+	return p.Name
+}
+func (p SubscriptionPlan) GetMaxResources() string {
+	return p.MaxResources
+}
+
 func (Subscription) TableName() string {
 	return "Subscription"
 }
@@ -106,6 +118,10 @@ func (SubscriptionPlan) TableName() string {
 
 func (SubscriptionTransaction) TableName() string {
 	return "SubscriptionTransaction"
+}
+
+func (ProductPrice) TableName() string {
+	return "ProductPrice"
 }
 
 type AccountRegionUserTask struct {
