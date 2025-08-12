@@ -2544,6 +2544,9 @@ importers:
       '@replit/codemirror-vscode-keymap':
         specifier: ^6.0.2
         version: 6.0.2(@codemirror/autocomplete@6.18.6)(@codemirror/commands@6.3.2)(@codemirror/language@6.9.3)(@codemirror/lint@6.8.5)(@codemirror/search@6.5.5)(@codemirror/state@6.3.2)(@codemirror/view@6.22.1)
+      '@scalar/api-reference-react':
+        specifier: ^0.6.23
+        version: 0.6.23(@hyperjump/browser@1.3.0)(axios@1.6.2)(nprogress@0.2.0)(react@18.2.0)(tailwindcss@3.4.1)(typescript@5.2.2)
       '@sealos/driver':
         specifier: workspace:^
         version: link:../../packages/driver
@@ -2664,6 +2667,12 @@ importers:
       swiper:
         specifier: ^11.0.7
         version: 11.0.7
+      zod:
+        specifier: ^4.0.5
+        version: 4.0.14
+      zod-openapi:
+        specifier: ^5.2.0
+        version: 5.3.0(zod@4.0.14)
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
@@ -13143,7 +13152,7 @@ packages:
       '@typescript-eslint/scope-manager': 5.62.0
       '@typescript-eslint/types': 5.62.0
       '@typescript-eslint/typescript-estree': 5.62.0(typescript@5.2.2)
-      debug: 4.3.6
+      debug: 4.3.4
       eslint: 8.38.0
       typescript: 5.2.2
     transitivePeerDependencies:
