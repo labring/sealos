@@ -2,9 +2,9 @@
 
   <a href="https://sealos.io" target="_blank" rel="noopener">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="./docs/4.0/img/sealos-left-dark.png" />
-      <source media="(prefers-color-scheme: light)" srcset="./docs/4.0/img/sealos-left.png" />
-      <img src="./docs/4.0/img/sealos-left.png" />
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/img/sealos-left-dark.png" />
+      <source media="(prefers-color-scheme: light)" srcset="./docs/img/sealos-left.png" />
+      <img src="./docs/img/sealos-left.png" />
     </picture>
   </a>
   
