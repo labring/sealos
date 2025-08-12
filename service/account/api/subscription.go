@@ -268,6 +268,28 @@ func getOwnNsListWithClt(clt client.Client, user string) ([]string, error) {
 	return nsListStr, nil
 }
 
+func getOwnNsListWithCltWithOutWorkspaceSubscription(clt client.Client, user string) ([]string, error) {
+	if user == "" {
+		return nil, fmt.Errorf("user is empty")
+	}
+	nsList := &corev1.NamespaceList{}
+	err := clt.List(context.Background(), nsList, client.MatchingLabels{dao.UserOwnerLabel: user})
+	if err != nil {
+		return nil, fmt.Errorf("list namespace failed: %w", err)
+	}
+	var nsListStr []string
+	for i := range nsList.Items {
+		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
+			continue
+		}
+		if nsList.Items[i].Annotations != nil && nsList.Items[i].Annotations[types.WorkspaceStatusAnnoKey] == types.WorkspaceStatusSubscription {
+			continue
+		}
+		nsListStr = append(nsListStr, nsList.Items[i].Name)
+	}
+	return nsListStr, nil
+}
+
 func getDefaultResourceQuota(ns, name string, hard corev1.ResourceList) *corev1.ResourceQuota {
 	return &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{

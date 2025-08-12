@@ -122,6 +122,7 @@ type AccountV2 interface {
 	NewAccount(user *types.UserQueryOpts) (*types.Account, error)
 	NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts) (*types.Account, error)
 	GetSubscriptionPlan(planName string) (*types.SubscriptionPlan, error)
+	GetWorkspaceSubscriptionPlan(planName string) (*types.WorkspaceSubscriptionPlan, error)
 	Payment(payment *types.Payment) error
 	PaymentWithFunc(payment *types.Payment, preDo, postDo func(tx *gorm.DB) error) error
 	GlobalTransactionHandler(funcs ...func(tx *gorm.DB) error) error
@@ -134,6 +135,7 @@ type AccountV2 interface {
 	GetAllCardInfo(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
+	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
 	SetSubscriptionPlanList(plans []types.SubscriptionPlan) error
 	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error

@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/types"
+
 	"github.com/labring/sealos/controllers/pkg/utils/env"
 
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -267,7 +269,10 @@ func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 		annos := ns.GetAnnotations()
 		if annos != nil {
-			if status, ok := annos["debt.sealos/status"]; ok && status != "Normal" {
+			if status, ok := annos[types.DebtNamespaceAnnoStatusKey]; ok && status != types.NormalDebtNamespaceAnnoStatus {
+				return false
+			}
+			if status, ok := annos[types.WorkspaceStatusAnnoKey]; ok && status == types.WorkspaceStatusSubscription {
 				return false
 			}
 		}

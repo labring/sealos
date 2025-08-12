@@ -167,7 +167,7 @@ func Init(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("get subscription plan list error: %v", err)
 		}
-		SubPlanResourceQuota, err = resources.ParseResourceLimitWithSubscription(plans)
+		SubPlanResourceQuota, err = resources.ParseResourceLimitWithPlans(plans)
 		if err != nil {
 			return fmt.Errorf("parse resource limit with subscription error: %v", err)
 		}

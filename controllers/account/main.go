@@ -304,14 +304,13 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupManagerError(err, "Payment")
 	}
-
+	trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
+	if err != nil {
+		setupLog.Error(err, "unable to connect to traffic mongo")
+		os.Exit(1)
+	}
 	var userTrafficMonitor *controllers.UserTrafficMonitor
-	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" && os.Getenv(database.TrafficMongoURI) != "" {
-		trafficDBClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.TrafficMongoURI))
-		if err != nil {
-			setupLog.Error(err, "unable to connect to traffic mongo")
-			os.Exit(1)
-		}
+	if os.Getenv(controllers.EnvSubscriptionEnabled) == "true" {
 		userTrafficCtrl := controllers.NewUserTrafficController(accountReconciler, trafficDBClient)
 		go userTrafficCtrl.ProcessTrafficWithTimeRange()
 		if env.GetEnvWithDefault("SUPPORT_MONITOR_USER_TRAFFIC", "false") == _true {
@@ -325,6 +324,15 @@ func main() {
 	} else {
 		setupLog.Info("skip user traffic controller")
 	}
+	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(accountReconciler, trafficDBClient)
+	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
+	workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
+	if err != nil {
+		setupLog.Error(err, "unable to create workspace subscription processor")
+		os.Exit(1)
+	}
+	workspaceSubscriptionProcessor.Start(context.Background())
+
 	defer func() {
 		if userTrafficMonitor != nil {
 			userTrafficMonitor.Stop()

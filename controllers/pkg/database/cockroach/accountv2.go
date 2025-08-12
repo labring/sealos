@@ -51,6 +51,7 @@ type Cockroach struct {
 	accountConfig     *types.AccountConfig
 	tasks             map[uuid.UUID]types.Task
 	subscriptionPlans *sync.Map
+	workspaceSubPlans *sync.Map
 	// use sync.map : More suitable for writing once read multiple scenarios & Lock contention can be reduced when multiple processes operate on different keys
 	ownerUsrUIDMap *sync.Map
 	ownerUsrIDMap  *sync.Map
@@ -1742,12 +1743,45 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
+	// Create ENUM types if not exists
+	err := c.DB.Exec(`
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_status') THEN
+                CREATE TYPE subscription_status AS ENUM ('NORMAL', 'DEBT', 'LOCK_USER');
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_operator') THEN
+                CREATE TYPE subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed');
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_pay_status') THEN
+                CREATE TYPE subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed');
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_period') THEN
+                CREATE TYPE subscription_period AS ENUM ('monthly', 'yearly');
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workspace_traffic_status') THEN
+                CREATE TYPE workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired');
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_transaction_status') THEN
+                CREATE TYPE subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed');
+            END IF;
+        END $$;
+    `).Error
+	if err != nil {
+		return fmt.Errorf("failed to create ENUM types: %w", err)
+	}
+	err = c.DB.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
+	if err != nil {
+		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %v", err)
+	}
+	err = CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
 		types.AccountRegionUserTask{}, types.UserKYC{}, types.RegionConfig{}, types.Debt{}, types.DebtStatusRecord{}, types.DebtResumeDeductionBalanceTransaction{},
-		types.UserTimeRangeTraffic{})
+		types.UserTimeRangeTraffic{},
+		types.WorkspaceSubscription{}, types.WorkspaceSubscriptionTransaction{}, types.WorkspaceSubscriptionPlan{}, types.WorkspaceTraffic{}, types.ProductPrice{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
 	}
@@ -1884,6 +1918,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	cockroach.ownerUsrUIDMap = &sync.Map{}
 	cockroach.ownerUsrIDMap = &sync.Map{}
 	cockroach.subscriptionPlans = &sync.Map{}
+	cockroach.workspaceSubPlans = &sync.Map{}
 	//TODO region with local
 	localRegionStr := os.Getenv(EnvLocalRegion)
 	if localRegionStr != "" {

@@ -178,6 +178,7 @@ const (
 	// 0: 未结算 1: 已结算
 	Unsettled BillingStatus = iota
 	Settled
+	Subscription
 )
 
 const (
@@ -493,6 +494,56 @@ func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[str
 			}
 			subPlansLimit[plans[i].Name] = rl
 		}
+	}
+	return subPlansLimit, nil
+}
+
+type HasNameAndMaxResources interface {
+	GetName() string
+	GetMaxResources() string
+}
+
+func ParseResourceLimitWithPlans[T HasNameAndMaxResources](plans []T) (map[string]corev1.ResourceList, error) {
+	subPlansLimit := make(map[string]corev1.ResourceList)
+
+	for _, plan := range plans {
+		res := plan.GetMaxResources()
+		if res == "" {
+			subPlansLimit[plan.GetName()] = DefaultResourceQuotaHard()
+			continue
+		}
+
+		var maxResources map[string]string
+		if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
+			return nil, fmt.Errorf("parse max_resources failed: %v", err)
+		}
+
+		rl := make(corev1.ResourceList)
+		for k, v := range maxResources {
+			_v, err := ParseCustomQuantity(v)
+			if err != nil {
+				return nil, fmt.Errorf("parse %s failed: %v", k, err)
+			}
+			switch k {
+			case "cpu":
+				rl[corev1.ResourceLimitsCPU] = _v
+			case "memory":
+				rl[corev1.ResourceLimitsMemory] = _v
+			case "storage":
+				rl[corev1.ResourceRequestsStorage] = _v
+			case "nodeports":
+				rl[corev1.ResourceServicesNodePorts] = _v
+			case corev1.ResourcePods.String():
+				rl[corev1.ResourcePods] = _v
+			case corev1.ResourceServices.String():
+				rl[corev1.ResourceServices] = _v
+			case ResourceObjectStorageSize.String():
+				rl[ResourceObjectStorageSize] = _v
+			case ResourceObjectStorageBucket.String():
+				rl[ResourceObjectStorageBucket] = _v
+			}
+		}
+		subPlansLimit[plan.GetName()] = rl
 	}
 	return subPlansLimit, nil
 }
