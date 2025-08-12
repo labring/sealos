@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -13,9 +14,14 @@ import (
 	"github.com/labring/sealos/service/pkg/api"
 )
 
-func Request(addr string, params *bytes.Buffer) ([]byte, error) {
-	resp, err := http.Post(addr, "application/x-www-form-urlencoded", params)
+func Request(ctx context.Context, addr string, params *bytes.Buffer) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, addr, params)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +40,7 @@ func Request(addr string, params *bytes.Buffer) ([]byte, error) {
 	return body, nil
 }
 
-func PrometheusPre(query *api.PromRequest) ([]byte, error) {
+func PrometheusPre(ctx context.Context, query *api.PromRequest) ([]byte, error) {
 	result := strings.ReplaceAll(query.Query, "$", "namespace=~\""+query.NS+"\"")
 	result = strings.ReplaceAll(result, "{", "{namespace=~\""+query.NS+"\",")
 	log.Println(result)
@@ -59,9 +65,9 @@ func PrometheusPre(query *api.PromRequest) ([]byte, error) {
 	log.Println(bf)
 
 	if len(formData.Get("start")) == 0 {
-		return Request(prometheusHost+"/api/v1/query", bf)
+		return Request(ctx, prometheusHost+"/api/v1/query", bf)
 	}
-	return Request(prometheusHost+"/api/v1/query_range", bf)
+	return Request(ctx, prometheusHost+"/api/v1/query_range", bf)
 }
 
 func GetQuery(query *api.PromRequest) (string, error) {
@@ -95,7 +101,7 @@ func GetQuery(query *api.PromRequest) (string, error) {
 	return result, nil
 }
 
-func PrometheusNew(query *api.PromRequest) ([]byte, error) {
+func PrometheusNew(ctx context.Context, query *api.PromRequest) ([]byte, error) {
 	result, _ := GetQuery(query)
 	log.Println(result)
 
@@ -119,9 +125,9 @@ func PrometheusNew(query *api.PromRequest) ([]byte, error) {
 	log.Println(bf)
 
 	if len(formData.Get("start")) == 0 {
-		return Request(prometheusHost+"/api/v1/query", bf)
+		return Request(ctx, prometheusHost+"/api/v1/query", bf)
 	}
-	return Request(prometheusHost+"/api/v1/query_range", bf)
+	return Request(ctx, prometheusHost+"/api/v1/query_range", bf)
 }
 
 func GetPromServerFromEnv() string {

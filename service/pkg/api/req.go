@@ -25,8 +25,8 @@ type QueryResult struct {
 		ResultType string `json:"resultType"`
 		Result     []struct {
 			Metric map[string]string `json:"metric"`
-			Values [][]interface{}   `json:"values"`
-			Value  []interface{}     `json:"value"`
+			Values [][]any           `json:"values"`
+			Value  []any             `json:"value"`
 		} `json:"result"`
 	} `json:"data"`
 }
@@ -62,8 +62,8 @@ type Data struct {
 
 type Result struct {
 	Metric map[string]string `json:"metric"`
-	Value  []interface{}     `json:"value"`
-	Values [][]interface{}   `json:"values"`
+	Value  []any             `json:"value"`
+	Values [][]any           `json:"values"`
 }
 
 type Stats struct {

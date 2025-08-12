@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -28,8 +29,8 @@ func (ps *PromServer) Authenticate(pr *api.PromRequest) error {
 	return auth.Authenticate(pr.NS, pr.Pwd)
 }
 
-func (ps *PromServer) Request(pr *api.PromRequest) (*api.QueryResult, error) {
-	body, err := request.PrometheusPre(pr)
+func (ps *PromServer) Request(ctx context.Context, pr *api.PromRequest) (*api.QueryResult, error) {
+	body, err := request.PrometheusPre(ctx, pr)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +41,8 @@ func (ps *PromServer) Request(pr *api.PromRequest) (*api.QueryResult, error) {
 	return result, err
 }
 
-func (ps *PromServer) DBReq(pr *api.PromRequest) (*api.QueryResult, error) {
-	body, err := request.PrometheusNew(pr)
+func (ps *PromServer) DBReq(ctx context.Context, pr *api.PromRequest) (*api.QueryResult, error) {
+	body, err := request.PrometheusNew(ctx, pr)
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +102,12 @@ func (ps *PromServer) ParseRequest(req *http.Request) (*api.PromRequest, error) 
 // 获取客户端请求的信息
 func (ps *PromServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	pathPrefix := ""
-	switch {
-	case req.URL.Path == pathPrefix+"/query": // 将废弃
+	switch req.URL.Path {
+	case pathPrefix + "/query": // 将废弃
 		ps.doReqPre(rw, req)
-	case req.URL.Path == pathPrefix+"/q":
+	case pathPrefix + "/q":
 		ps.doReqNew(rw, req)
-	case req.URL.Path == pathPrefix+"/health":
+	case pathPrefix + "/health":
 		rw.WriteHeader(http.StatusOK)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
@@ -132,7 +133,7 @@ func (ps *PromServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	res, err := ps.DBReq(pr)
+	res, err := ps.DBReq(req.Context(), pr)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
 		log.Printf("Query failed (%s)\n", err)
@@ -180,7 +181,7 @@ func (ps *PromServer) doReqPre(rw http.ResponseWriter, req *http.Request) {
 		log.Printf("Kubeconfig (%s)\n", pr.Pwd)
 	}
 
-	res, err := ps.Request(pr)
+	res, err := ps.Request(req.Context(), pr)
 	if err != nil {
 		http.Error(rw, fmt.Sprintf("Query failed (%s)", err), http.StatusInternalServerError)
 		log.Printf("Query failed (%s)\n", err)
