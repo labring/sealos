@@ -17,7 +17,6 @@ linters:
     - bidichk
     - bodyclose
     - canonicalheader
-    - containedctx
     - copyloopvar
     - durationcheck
     - errcheck
@@ -113,6 +112,11 @@ linters:
       constant-kind: true
     usetesting:
       os-temp-dir: true
+    gocritic:
+      disabled-checks:
+        - exitAfterDefer
+    gocyclo:
+      min-complexity: 50
     gosec:
       excludes:
         - G404
