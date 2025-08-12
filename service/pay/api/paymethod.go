@@ -13,18 +13,27 @@ import (
 func CreatePayMethod(c *gin.Context, client *mongo.Client) {
 	request, err := helper.Init(c, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before create paymethod: %v, %v", request, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf("init failed before create paymethod: %v, %v", request, err),
+			},
+		)
 		return
 	}
 
-	if ok, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); ok && err == nil {
+	if ok, err := handler.CheckPayMethodExistOrNot(client, request.Currency, request.PayMethod); ok &&
+		err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "paymethod is exist"})
 		return
 	}
 
 	result, err := handler.InsertPayMethod(request, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("create pay method failed when insert into db: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("create pay method failed when insert into db: %v", err)},
+		)
 		return
 	}
 

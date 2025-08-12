@@ -61,6 +61,11 @@ func (vl *VLogsServer) queryConvert(
 		return vl.queryLogsByParams, nil
 	case "/queryPodList":
 		return vl.queryPodList, nil
+	case "/helath":
+		return func(rw http.ResponseWriter, req *http.Request) error {
+			rw.WriteHeader(http.StatusOK)
+			return nil
+		}, nil
 	default:
 		return nil, errors.New("unknown url path")
 	}

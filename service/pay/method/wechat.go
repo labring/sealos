@@ -16,7 +16,10 @@ func GetWechatURL(c *gin.Context, request *helper.Request, client *mongo.Client)
 	amountStr := request.Amount
 	amount, err := strconv.ParseInt(amountStr, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("error amount : %d, %v", amount, err)},
+		)
 		return
 	}
 
@@ -27,7 +30,10 @@ func GetWechatURL(c *gin.Context, request *helper.Request, client *mongo.Client)
 	}
 	// check the app collection to see if the cluster is allowed to use this payment method
 	if err := handler.CheckAppAllowOrNot(client, request.AppID, helper.Wechat); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("error pay method or currency in this app : %v", err)},
+		)
 		return
 	}
 
@@ -35,12 +41,15 @@ func GetWechatURL(c *gin.Context, request *helper.Request, client *mongo.Client)
 	tradeNO := pay.GetRandomString(32)
 	codeURL, err := pay.WechatPay(amount, user, tradeNO, "", "")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("error codeURL : %s, %v", codeURL, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("error codeURL : %s, %v", codeURL, err)},
+		)
 		return
 	}
 	appID := request.AppID
 	currency := request.Currency
-	wechatDetails := map[string]interface{}{
+	wechatDetails := map[string]any{
 		"tradeNO": tradeNO,
 		"codeURL": codeURL,
 	}
@@ -51,9 +60,22 @@ func GetWechatURL(c *gin.Context, request *helper.Request, client *mongo.Client)
 	// and if either fails, they are rolled back
 
 	// insert payment details into database
-	orderID, err := handler.InsertDetails(client, user, helper.Wechat, amountStr, currency, appID, wechatDetails)
+	orderID, err := handler.InsertDetails(
+		client,
+		user,
+		helper.Wechat,
+		amountStr,
+		currency,
+		appID,
+		wechatDetails,
+	)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("insert wechat payment details failed: %s, %v", codeURL, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf("insert wechat payment details failed: %s, %v", codeURL, err),
+			},
+		)
 		return
 	}
 
@@ -78,7 +100,10 @@ func GetWechatPaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	// check the payment status in the database first
 	status, err := handler.GetPaymentStatus(client, request.OrderID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("get payment status failed from db: %s, %v", status, err)},
+		)
 		return
 	}
 	// If the payment has been successful, return directly
@@ -94,16 +119,33 @@ func GetWechatPaymentStatus(c *gin.Context, request *helper.Request, client *mon
 	// If it is not successful, then go to the payment provider server query
 	orderResp, err := pay.QueryOrder(request.TradeNO)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("query order failed when get wechat payment status: %v, %v", orderResp, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": fmt.Sprintf(
+					"query order failed when get wechat payment status: %v, %v",
+					orderResp,
+					err,
+				),
+			},
+		)
 		return
 	}
 	switch *orderResp.TradeState {
 	case pay.StatusSuccess:
 		// change the status of the database to pay.Payment Success
-		paymentStatus, err := handler.UpdatePaymentStatus(client, request.OrderID, pay.PaymentSuccess)
+		paymentStatus, err := handler.UpdatePaymentStatus(
+			client,
+			request.OrderID,
+			pay.PaymentSuccess,
+		)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": fmt.Sprintf("update payment status failed when wechat order status is success: %s, %v", paymentStatus, err),
+				"error": fmt.Sprintf(
+					"update payment status failed when wechat order status is success: %s, %v",
+					paymentStatus,
+					err,
+				),
 			})
 			return
 		}

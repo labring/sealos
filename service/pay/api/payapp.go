@@ -16,14 +16,20 @@ import (
 func CreatePayApp(c *gin.Context, client *mongo.Client) {
 	request, err := helper.Init(c, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before create payapp: %v, %v", request, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("init failed before create payapp: %v, %v", request, err)},
+		)
 		return
 	}
 
 	appName := request.PayAppName
 	// check if the app Name already exists in appcoll
 	if err := handler.CheckAppNameExistOrNot(client, appName); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("app name already exists: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("app name already exists: %v", err)},
+		)
 		return
 	}
 
@@ -45,7 +51,10 @@ func CreatePayApp(c *gin.Context, client *mongo.Client) {
 
 	result, err := handler.InsertApp(client, appID, sign, appName, methods)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("create pay app failed when insert into db: %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("create pay app failed when insert into db: %v", err)},
+		)
 		return
 	}
 

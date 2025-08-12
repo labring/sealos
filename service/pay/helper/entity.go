@@ -12,13 +12,13 @@ type PaymentDetails struct {
 }
 
 type OrderDetails struct {
-	OrderID     string                 `bson:"orderID"`
-	User        string                 `bson:"user"`
-	Amount      string                 `bson:"amount"`
-	PayTime     string                 `bson:"paytime"`
-	PayMethod   string                 `bson:"payMethod"`
-	AppID       int64                  `bson:"appID"`
-	DetailsData map[string]interface{} `bson:"detailsdata"`
+	OrderID     string         `bson:"orderID"`
+	User        string         `bson:"user"`
+	Amount      string         `bson:"amount"`
+	PayTime     string         `bson:"paytime"`
+	PayMethod   string         `bson:"payMethod"`
+	AppID       int64          `bson:"appID"`
+	DetailsData map[string]any `bson:"detailsdata"`
 }
 
 type App struct {
