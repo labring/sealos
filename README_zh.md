@@ -113,3 +113,8 @@ Sealos 维护了一个[公开的发展路线图](https://github.com/orgs/labring
 <!-- ## License -->
 
 <!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->
+
+## 📢 **许可证**
+
+> ⚠️ **重要许可证变更通知**  
+> 自 **2025年8月1日**起，Sealos 项目正式采用 **[Sealos 商业使用许可证 v1.0](LICENSE.md)**。本次变更旨在更好地支持项目的可持续发展，同时保障社区用户的权益。

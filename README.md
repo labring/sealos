@@ -167,3 +167,8 @@ Have a look through [existing issues](https://github.com/labring/sealos/issues?q
 <!-- ## License -->
 
 <!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->
+
+## License
+
+> ⚠️ **License Change Alert**  
+> As of 2025-08-01, Sealos adopts the **[Sealos Commercial Use License v1.0](LICENSE.md)**.This change aims to better support the sustainable development of the project while safeguarding the rights and interests of community users.

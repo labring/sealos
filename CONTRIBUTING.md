@@ -213,6 +213,10 @@ Here are some dependents with specific version:
 
 When you develop the sealos project at the local environment, you should use subcommands of Makefile to help yourself to check and build the latest version of sealos. For the convenience of developers, we use the docker to build sealos. It can reduce problems of the developing environment.
 
+### License
+
+By submitting a pull request, you agree to license your contributions under the [Sealos Commercial Use License v1.0](LICENSE.md)
+
 ### Docs Contribution
 
 #### Structure and Repo
