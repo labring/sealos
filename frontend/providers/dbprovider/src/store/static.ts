@@ -51,10 +51,7 @@ export let DBVersionMap: DBVersionMapType = {
   [DBTypeEnum.qdrant]: [{ id: 'qdrant-1.5.0', label: 'qdrant-1.5.0' }],
   [DBTypeEnum.nebula]: [{ id: 'nebula-v3.5.0', label: 'nebula-v3.5.0' }],
   [DBTypeEnum.weaviate]: [{ id: 'weaviate-1.18.0', label: 'weaviate-1.18.0' }],
-  [DBTypeEnum.milvus]: [
-    { id: 'milvus-2.5.13', label: 'milvus-2.5.13' },
-    { id: 'milvus-2.3.2', label: 'milvus-2.3.2' }
-  ],
+  [DBTypeEnum.milvus]: [{ id: 'milvus-2.3.2', label: 'milvus-2.3.2' }],
   [DBTypeEnum.pulsar]: [
     { id: 'pulsar-3.0.2', label: 'pulsar-3.0.2' },
     { id: 'pulsar-2.11.2', label: 'pulsar-2.11.2' }
