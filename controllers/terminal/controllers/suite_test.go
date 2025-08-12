@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -28,9 +29,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
-	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -75,7 +73,6 @@ var _ = ginkgo.BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 	gomega.Expect(k8sClient).NotTo(gomega.BeNil())
-
 }, 60)
 
 var _ = ginkgo.AfterSuite(func() {

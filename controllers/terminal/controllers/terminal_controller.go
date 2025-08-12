@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/utils/label"
+	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	nanoid "github.com/matoous/go-nanoid/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -38,9 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
-	"github.com/labring/sealos/controllers/pkg/utils/label"
-	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const TerminalPartOf = "terminal"
@@ -222,12 +221,21 @@ func (r *TerminalReconciler) syncNginxIngress(
 	return nil
 }
 
-func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminalv1.Terminal, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncService(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	recLabels map[string]string,
+) error {
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeClusterIP,
 		Ports: []corev1.ServicePort{
-			{Name: "tty", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
+			{
+				Name:       "tty",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+				Protocol:   corev1.ProtocolTCP,
+			},
 		},
 	}
 
@@ -258,7 +266,12 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 	return nil
 }
 
-func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *terminalv1.Terminal, hostname *string, recLabels map[string]string) error {
+func (r *TerminalReconciler) syncDeployment(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+	hostname *string,
+	recLabels map[string]string,
+) error {
 	var (
 		objectMeta      metav1.ObjectMeta
 		selector        *metav1.LabelSelector
@@ -369,7 +382,10 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	return nil
 }
 
-func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *terminalv1.Terminal) error {
+func (r *TerminalReconciler) fillDefaultValue(
+	ctx context.Context,
+	terminal *terminalv1.Terminal,
+) error {
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
 		terminal.Spec.APIServer = r.Config.Host
@@ -402,7 +418,8 @@ func isExpired(terminal *terminalv1.Terminal) bool {
 }
 
 func (r *TerminalReconciler) getPort() string {
-	if r.CtrConfig.CloudPort == "" || r.CtrConfig.CloudPort == "80" || r.CtrConfig.CloudPort == "443" {
+	if r.CtrConfig.CloudPort == "" || r.CtrConfig.CloudPort == "80" ||
+		r.CtrConfig.CloudPort == "443" {
 		return ""
 	}
 	return ":" + r.CtrConfig.CloudPort

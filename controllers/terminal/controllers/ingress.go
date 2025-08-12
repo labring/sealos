@@ -19,10 +19,9 @@ package controllers
 import (
 	"fmt"
 
+	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const (
