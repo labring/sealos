@@ -355,28 +355,12 @@ const GuideModal = () => {
 
                     switch (cur.key) {
                       case 'system-applaunchpad':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'applaunchpad'
-                        });
                         return startDriver(appLaunchpadDriverObj(openDesktopApp, t));
                       case 'system-template':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'appstore'
-                        });
                         return startDriver(templateDriverObj(openDesktopApp, t));
                       case 'system-dbprovider':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'database'
-                        });
                         return startDriver(databaseDriverObj(openDesktopApp, t));
                       case 'system-devbox':
-                        track('guide_start', {
-                          module: 'guide',
-                          guide_name: 'devbox'
-                        });
                         return startDriver(devboxDriverObj(openDesktopApp, t));
                       default:
                         return;
