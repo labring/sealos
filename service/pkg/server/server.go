@@ -8,9 +8,8 @@ import (
 	"net/url"
 	"text/template"
 
-	"github.com/labring/sealos/service/pkg/auth"
-
 	"github.com/labring/sealos/service/pkg/api"
+	"github.com/labring/sealos/service/pkg/auth"
 	"github.com/labring/sealos/service/pkg/request"
 )
 
@@ -107,6 +106,8 @@ func (ps *PromServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		ps.doReqPre(rw, req)
 	case req.URL.Path == pathPrefix+"/q":
 		ps.doReqNew(rw, req)
+	case req.URL.Path == pathPrefix+"/health":
+		rw.WriteHeader(http.StatusOK)
 	default:
 		http.Error(rw, "Not found", http.StatusNotFound)
 		return
@@ -122,7 +123,11 @@ func (ps *PromServer) doReqNew(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := ps.Authenticate(pr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		return
 	}
@@ -166,7 +171,11 @@ func (ps *PromServer) doReqPre(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := ps.Authenticate(pr); err != nil {
-		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("Authentication failed (%s)", err),
+			http.StatusInternalServerError,
+		)
 		log.Printf("Authentication failed (%s)\n", err)
 		log.Printf("Kubeconfig (%s)\n", pr.Pwd)
 	}

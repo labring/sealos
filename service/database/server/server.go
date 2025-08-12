@@ -1,9 +1,13 @@
 package server
 
 import (
+	"context"
 	"fmt"
-	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/labring/sealos/service/pkg/server"
 )
@@ -19,20 +23,32 @@ func (rs *DatabaseServer) Serve(c *server.Config) {
 		return
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: ps,
+		Addr:              c.Server.ListenAddress,
+		Handler:           ps,
+		ReadHeaderTimeout: time.Second * 5,
 	}
 
-	listener, err := net.Listen("tcp", c.Server.ListenAddress)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	fmt.Printf("Serve on %s\n", c.Server.ListenAddress)
 
-	if err := hs.Serve(listener); err != nil {
-		fmt.Println(err)
+	go func() {
+		if err := hs.ListenAndServe(); err != nil {
+			fmt.Println(err)
+			return
+		}
+	}()
+
+	<-ctx.Done()
+
+	shutdownSrvCtx, shutdownSrvCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownSrvCancel()
+
+	if err := hs.Shutdown(shutdownSrvCtx); err != nil {
+		fmt.Println("server forced to shutdown: " + err.Error())
 		return
 	}
+	fmt.Println("server shutdown successfully")
 }
