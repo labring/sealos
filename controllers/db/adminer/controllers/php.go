@@ -33,9 +33,7 @@ return [
 `
 )
 
-var (
-	adminerPHPTmpl = template.Must(template.New("plugin").Parse(adminerPHPTemplate))
-)
+var adminerPHPTmpl = template.Must(template.New("plugin").Parse(adminerPHPTemplate))
 
 func buildConnectionFileContent(connections []string) string {
 	// TODO: support custom key name
@@ -56,7 +54,7 @@ func buildConnectionFileContent(connections []string) string {
 		connectionMap[hostname] = connection
 	}
 
-	content, err := renderTemplate(adminerPHPTmpl, map[string]interface{}{
+	content, err := renderTemplate(adminerPHPTmpl, map[string]any{
 		"connectionMap": connectionMap,
 	})
 	if err != nil {
@@ -65,7 +63,7 @@ func buildConnectionFileContent(connections []string) string {
 	return content
 }
 
-func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {
+func renderTemplate(tmpl *template.Template, data map[string]any) (string, error) {
 	var out bytes.Buffer
 	err := tmpl.Execute(&out, data)
 	if err != nil {

@@ -17,10 +17,9 @@ limitations under the License.
 package controllers
 
 import (
+	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
 )
 
 func (r *AdminerReconciler) createSecret(adminer *adminerv1.Adminer) *corev1.Secret {
