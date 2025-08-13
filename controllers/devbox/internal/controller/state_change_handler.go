@@ -86,6 +86,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	// step 1: do commit, push image, remove container whether commit success or not
 	baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 	commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
+	oldContentID := devbox.Status.ContentID
 	h.Logger.Info("commit devbox", "devbox", devbox.Name, "baseImage", baseImage, "commitImage", commitImage)
 	var containerID string
 	var err error
@@ -130,8 +131,8 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 		return err
 	}
 	// step 5: set lv removable
-	if err := h.Committer.SetLvRemovable(ctx, containerID, devbox.Status.ContentID); err != nil {
-		h.Logger.Error(err, "failed to set lv removable", "containerID", containerID, "contentID", devbox.Status.ContentID)
+	if err := h.Committer.SetLvRemovable(ctx, containerID, oldContentID); err != nil {
+		h.Logger.Error(err, "failed to set lv removable", "containerID", containerID, "contentID", oldContentID)
 	}
 	return nil
 }
