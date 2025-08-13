@@ -24,8 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // OperationRequestSpec defines the desired state of OperationRequest
-type OperationRequestSpec struct {
-}
+type OperationRequestSpec struct{}
 
 // OperationRequestStatus defines the observed state of OperationRequest
 type OperationRequestStatus struct {

@@ -15,23 +15,20 @@
 package helper
 
 import (
-	"fmt"
-	"sort"
-	"strings"
-
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
-
-	"golang.org/x/crypto/ssh"
-
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/utils/ptr"
+	"sort"
+	"strconv"
+	"strings"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
 	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
+	"golang.org/x/crypto/ssh"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/ptr"
 )
 
 const (
@@ -67,7 +64,10 @@ func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox) map[string]string {
 	return annotations
 }
 
-func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) devboxv1alpha1.DevboxPhase {
+func GenerateDevboxPhase(
+	devbox *devboxv1alpha1.Devbox,
+	podList corev1.PodList,
+) devboxv1alpha1.DevboxPhase {
 	if len(podList.Items) > 1 {
 		return devboxv1alpha1.DevboxPhaseError
 	}
@@ -82,7 +82,8 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 		case corev1.PodPending:
 			return devboxv1alpha1.DevboxPhasePending
 		case corev1.PodRunning:
-			if podList.Items[0].Status.ContainerStatuses[0].Ready && podList.Items[0].Status.ContainerStatuses[0].ContainerID != "" {
+			if podList.Items[0].Status.ContainerStatuses[0].Ready &&
+				podList.Items[0].Status.ContainerStatuses[0].ContainerID != "" {
 				return devboxv1alpha1.DevboxPhaseRunning
 			}
 			return devboxv1alpha1.DevboxPhasePending
@@ -101,7 +102,9 @@ func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) 
 	return devboxv1alpha1.DevboxPhaseUnknown
 }
 
-func MergeCommitHistory(devbox *devboxv1alpha1.Devbox, latestDevbox *devboxv1alpha1.Devbox) []*devboxv1alpha1.CommitHistory {
+func MergeCommitHistory(
+	devbox, latestDevbox *devboxv1alpha1.Devbox,
+) []*devboxv1alpha1.CommitHistory {
 	res := make([]*devboxv1alpha1.CommitHistory, 0)
 	historyMap := make(map[string]*devboxv1alpha1.CommitHistory)
 	for _, c := range latestDevbox.Status.CommitHistory {
@@ -195,6 +198,7 @@ func podContainerID(pod *corev1.Pod) string {
 	}
 	return ""
 }
+
 func PredicateCommitStatus(pod *corev1.Pod) devboxv1alpha1.CommitStatus {
 	if podContainerID(pod) == "" {
 		return devboxv1alpha1.CommitStatusPending
@@ -202,7 +206,10 @@ func PredicateCommitStatus(pod *corev1.Pod) devboxv1alpha1.CommitStatus {
 	return devboxv1alpha1.CommitStatusSuccess
 }
 
-func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *devboxv1alpha1.CommitHistory) []corev1.EnvVar {
+func GenerateDevboxEnvVars(
+	devbox *devboxv1alpha1.Devbox,
+	nextCommitHistory *devboxv1alpha1.CommitHistory,
+) []corev1.EnvVar {
 	// if devbox.Spec.Squash is true, and devbox.Status.CommitHistory has success commit history, we need to set SEALOS_COMMIT_IMAGE_SQUASH to true
 	doSquash := false
 	if devbox.Spec.Squash && len(devbox.Status.CommitHistory) > 0 {
@@ -225,7 +232,7 @@ func GenerateDevboxEnvVars(devbox *devboxv1alpha1.Devbox, nextCommitHistory *dev
 		},
 		{
 			Name:  "SEALOS_COMMIT_IMAGE_SQUASH",
-			Value: fmt.Sprintf("%v", doSquash),
+			Value: strconv.FormatBool(doSquash),
 		},
 		{
 			Name:  "SEALOS_DEVBOX_NAME",
@@ -259,7 +266,9 @@ func GetLastSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.
 	return nil
 }
 
-func GetLastPredicatedSuccessCommitHistory(devbox *devboxv1alpha1.Devbox) *devboxv1alpha1.CommitHistory {
+func GetLastPredicatedSuccessCommitHistory(
+	devbox *devboxv1alpha1.Devbox,
+) *devboxv1alpha1.CommitHistory {
 	if len(devbox.Status.CommitHistory) == 0 {
 		return nil
 	}
@@ -327,28 +336,37 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 }
 
 // GenerateResourceRequirements generates the resource requirements for the Devbox pod
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceRequirements {
+func GenerateResourceRequirements(
+	devbox *devboxv1alpha1.Devbox,
+	requestRate utilsresource.RequestRate,
+	ephemeralStorage utilsresource.EphemeralStorage,
+) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits:   calculateResourceLimit(devbox.Spec.Resource, ephemeralStorage),
 		Requests: calculateResourceRequest(devbox.Spec.Resource, requestRate, ephemeralStorage),
 	}
 }
 
-func calculateResourceLimit(original corev1.ResourceList, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceList {
+func calculateResourceLimit(
+	original corev1.ResourceList,
+	ephemeralStorage utilsresource.EphemeralStorage,
+) corev1.ResourceList {
 	limit := original.DeepCopy()
 	// If ephemeral storage limit is not set, set it to default limit
 	if l, ok := limit[corev1.ResourceEphemeralStorage]; !ok {
 		limit[corev1.ResourceEphemeralStorage] = ephemeralStorage.DefaultLimit
-	} else {
 		// Check if the resource limit for ephemeral storage is set and compare it, if it is exceeded the maximum limit, set it to maximum limit
-		if l.AsApproximateFloat64() > ephemeralStorage.MaximumLimit.AsApproximateFloat64() {
-			limit[corev1.ResourceEphemeralStorage] = ephemeralStorage.MaximumLimit
-		}
+	} else if l.AsApproximateFloat64() > ephemeralStorage.MaximumLimit.AsApproximateFloat64() {
+		limit[corev1.ResourceEphemeralStorage] = ephemeralStorage.MaximumLimit
 	}
 	return limit
 }
 
-func calculateResourceRequest(original corev1.ResourceList, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceList {
+func calculateResourceRequest(
+	original corev1.ResourceList,
+	requestRate utilsresource.RequestRate,
+	ephemeralStorage utilsresource.EphemeralStorage,
+) corev1.ResourceList {
 	// deep copy limit to request, only cpu and memory are calculated
 	request := original.DeepCopy()
 	// Calculate CPU request

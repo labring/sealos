@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package matcher
+package matcher_test
 
 import (
 	"testing"
 
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -156,16 +157,16 @@ func TestPodMatchExpectations(t *testing.T) {
 		},
 	}
 
-	matchers := []PodMatcher{
-		ResourceMatcher{},
-		EnvVarMatcher{},
-		PortMatcher{},
-		EphemeralStorageMatcher{},
+	matchers := []matcher.PodMatcher{
+		matcher.ResourceMatcher{},
+		matcher.EnvVarMatcher{},
+		matcher.PortMatcher{},
+		matcher.EphemeralStorageMatcher{},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := PodMatchExpectations(expectPod, tt.pod, matchers...)
+			result := matcher.PodMatchExpectations(expectPod, tt.pod, matchers...)
 			if result != tt.expected {
 				t.Errorf("CheckPodConsistency() = %v, expected %v", result, tt.expected)
 			}

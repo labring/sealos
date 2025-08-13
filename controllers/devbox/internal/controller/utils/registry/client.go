@@ -26,13 +26,11 @@ type Client struct {
 	Password string
 }
 
-var (
-	ErrorManifestNotFound = errors.New("manifest not found")
-)
+var ErrManifestNotFound = errors.New("manifest not found")
 
 // TODO: refactor tag image, use go package to do this
 
-func (t *Client) TagImage(hostName string, imageName string, oldTag string, newTag string) error {
+func (t *Client) TagImage(hostName, imageName, oldTag, newTag string) error {
 	manifest, err := t.pullManifest(t.Username, t.Password, hostName, imageName, oldTag)
 	if err != nil {
 		return err
@@ -40,12 +38,12 @@ func (t *Client) TagImage(hostName string, imageName string, oldTag string, newT
 	return t.pushManifest(t.Username, t.Password, hostName, imageName, newTag, manifest)
 }
 
-func (t *Client) pullManifest(username string, password string, hostName string, imageName string, tag string) ([]byte, error) {
+func (t *Client) pullManifest(username, password, hostName, imageName, tag string) ([]byte, error) {
 	var (
 		client = http.DefaultClient
 		url    = "http://" + hostName + "/v2/" + imageName + "/manifests/" + tag
 	)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +54,10 @@ func (t *Client) pullManifest(username string, password string, hostName string,
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrorManifestNotFound
+		return nil, ErrManifestNotFound
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -72,23 +71,27 @@ func (t *Client) pullManifest(username string, password string, hostName string,
 	return bodyText, nil
 }
 
-func (t *Client) pushManifest(username string, password string, hostName string, imageName string, tag string, manifest []byte) error {
+func (t *Client) pushManifest(
+	username, password, hostName, imageName, tag string,
+	manifest []byte,
+) error {
 	var (
 		client = http.DefaultClient
 		url    = "http://" + hostName + "/v2/" + imageName + "/manifests/" + tag
 	)
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(manifest))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(manifest))
 	if err != nil {
 		return err
 	}
 
 	req.SetBasicAuth(username, password)
-	req.Header.Set("Content-type", "application/vnd.docker.distribution.manifest.v2+json")
+	req.Header.Set("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
 
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
 		return errors.New(resp.Status)
