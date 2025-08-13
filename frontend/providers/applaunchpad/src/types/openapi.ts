@@ -5,7 +5,8 @@ import {
   CreateLaunchpadRequestSchema,
   DeleteAppByNameResponseSchema,
   GetAppByAppNameResponseSchema,
-  UpdateAppResourcesSchema
+  UpdateAppResourcesSchema,
+  UpdateConfigMapSchema
 } from './request_schema';
 
 export const ErrorResponseSchema = z.object({
@@ -349,6 +350,74 @@ export const openApiDocument = (sealosDomain: string) =>
             },
             '500': {
               description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/app/{name}/configmap': {
+        put: {
+          summary: 'Update application ConfigMap',
+          description:
+            'Update application ConfigMap configuration and synchronize volumes and volumeMounts in Deployment/StatefulSet. ' +
+            'This API uses Strategic Merge Patch to safely update only the specified ConfigMap fields without affecting other volumes or volumeMounts. ' +
+            'The ConfigMap will be created if it does not exist, or updated if it already exists.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              description: 'Application name',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: UpdateConfigMapSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'ConfigMap updated successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    data: z.object({
+                      success: z.boolean().openapi({
+                        description: 'Operation success status'
+                      })
+                    })
+                  })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request parameters or application structure',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error during ConfigMap update',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema

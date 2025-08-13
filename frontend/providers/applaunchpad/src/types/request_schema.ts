@@ -429,3 +429,12 @@ export function transformFromLegacySchema(
     }
   };
 }
+
+export const UpdateConfigMapSchema = z.object({
+  configMap: z
+    .array(StandardConfigMapSchema.pick({ path: true, value: true }))
+    .default([])
+    .openapi({
+      description: 'ConfigMap configurations'
+    })
+});
