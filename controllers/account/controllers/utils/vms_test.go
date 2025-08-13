@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package utils_test
 
 import (
 	"os"
 	"testing"
 	"time"
 
+	"github.com/labring/sealos/controllers/account/controllers/utils"
 	"github.com/volcengine/volc-sdk-golang/service/vms"
 )
 
 func TestSendVms(t *testing.T) {
-	vms.DefaultInstance.Client.SetAccessKey(os.Getenv("VMS_AK"))
-	vms.DefaultInstance.Client.SetSecretKey(os.Getenv("VMS_SK"))
-	var testData = struct {
+	vms.DefaultInstance.SetAccessKey(os.Getenv("VMS_AK"))
+	vms.DefaultInstance.SetSecretKey(os.Getenv("VMS_SK"))
+	testData := struct {
 		phone        string
 		template     string
 		numberPollNo string
@@ -36,7 +37,13 @@ func TestSendVms(t *testing.T) {
 		numberPollNo: "",
 		sendTime:     time.Now(),
 	}
-	err := SendVms(testData.phone, testData.template, testData.numberPollNo, testData.sendTime, []string{"10:00-20:00"})
+	err := utils.SendVms(
+		testData.phone,
+		testData.template,
+		testData.numberPollNo,
+		testData.sendTime,
+		[]string{"10:00-20:00"},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
