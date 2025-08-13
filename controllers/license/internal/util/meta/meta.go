@@ -15,6 +15,8 @@
 package meta
 
 import (
+	"time"
+
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
@@ -35,7 +37,7 @@ func New(license *licensev1.License) (*Meta, error) {
 	}
 	return &Meta{
 		Token:          license.Spec.Token,
-		ActivationTime: license.Status.ActivationTime.Format("2006-01-02 15:04:05"),
+		ActivationTime: license.Status.ActivationTime.Format(time.DateTime),
 		Claims:         *claims,
 	}, nil
 }

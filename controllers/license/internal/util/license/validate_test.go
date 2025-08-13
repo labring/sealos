@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package license
+package license_test
 
 import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
 	"github.com/labring/sealos/controllers/license/internal/util/cluster"
+	"github.com/labring/sealos/controllers/license/internal/util/license"
 )
 
 func TestIsLicenseValid(t *testing.T) {
@@ -57,7 +57,7 @@ func TestIsLicenseValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := IsLicenseValid(tt.args.license, tt.args.data, "")
+			got, err := license.IsLicenseValid(tt.args.license, tt.args.data, "")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IsLicenseValid() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -91,7 +91,7 @@ func TestParseLicenseToken(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseLicenseToken(tt.args.license)
+			got, err := license.ParseLicenseToken(tt.args.license)
 			t.Log(got.Claims)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseLicenseToken() error = %v, wantErr %v", err, tt.wantErr)
@@ -124,7 +124,7 @@ func TestGetClaims(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetClaims(tt.args.license)
+			got, err := license.GetClaims(tt.args.license)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetClaims() error = %v, wantErr %v", err, tt.wantErr)
 				return

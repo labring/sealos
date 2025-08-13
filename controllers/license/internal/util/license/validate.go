@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	utilclaims "github.com/labring/sealos/controllers/license/internal/util/claims"
 	"github.com/labring/sealos/controllers/license/internal/util/cluster"
@@ -30,7 +29,7 @@ import (
 
 func ParseLicenseToken(license *licensev1.License) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(license.Spec.Token, &utilclaims.Claims{},
-		func(_ *jwt.Token) (interface{}, error) {
+		func(_ *jwt.Token) (any, error) {
 			decodeKey, err := base64.StdEncoding.DecodeString(key.EncryptionKey)
 			if err != nil {
 				return nil, err
@@ -59,7 +58,11 @@ func GetClaims(license *licensev1.License) (*utilclaims.Claims, error) {
 	return claims, nil
 }
 
-func IsLicenseValid(license *licensev1.License, clusterInfo *cluster.Info, clusterID string) (licensev1.ValidationCode, error) {
+func IsLicenseValid(
+	license *licensev1.License,
+	clusterInfo *cluster.Info,
+	clusterID string,
+) (licensev1.ValidationCode, error) {
 	token, err := ParseLicenseToken(license)
 	if err != nil {
 		return licensev1.ValidationError, err

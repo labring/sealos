@@ -20,9 +20,6 @@ import (
 	"strings"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	claimsutil "github.com/labring/sealos/controllers/license/internal/util/claims"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
@@ -30,6 +27,8 @@ import (
 	database2 "github.com/labring/sealos/controllers/pkg/database"
 	types2 "github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type LicenseActivator struct {
@@ -64,7 +63,7 @@ func (l *LicenseActivator) Recharge(license *licensev1.License) error {
 		return err
 	}
 
-	var data = &claimsutil.AccountClaimData{}
+	data := &claimsutil.AccountClaimData{}
 	if err := claims.Data.SwitchToAccountData(data); err != nil {
 		return err
 	}
@@ -72,7 +71,10 @@ func (l *LicenseActivator) Recharge(license *licensev1.License) error {
 
 	logger.Info("recharge account", "crName", owner, "amount", data.Amount)
 
-	return l.accountDB.AddBalance(&types2.UserQueryOpts{Owner: owner}, data.Amount*count.CurrencyUnit)
+	return l.accountDB.AddBalance(
+		&types2.UserQueryOpts{Owner: owner},
+		data.Amount*count.CurrencyUnit,
+	)
 }
 
 func GetNameByNameSpace(ns string) string {

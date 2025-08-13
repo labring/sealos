@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package claims
+package claims_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/labring/sealos/controllers/license/internal/util/claims"
 )
 
 func TestClaimData_SwitchToAccountData(t *testing.T) {
 	type args struct {
-		data *AccountClaimData
+		data *claims.AccountClaimData
 	}
 	tests := []struct {
 		name    string
-		c       ClaimData
+		c       claims.ClaimData
 		args    args
 		wantErr bool
 	}{
 		{
 			name: "test",
-			c: ClaimData{
+			c: claims.ClaimData{
 				"amount": 100,
 			},
 			args: args{
-				data: &AccountClaimData{},
+				data: &claims.AccountClaimData{},
 			},
 			wantErr: false,
 		},
@@ -52,21 +54,21 @@ func TestClaimData_SwitchToAccountData(t *testing.T) {
 
 func TestClaimData_SwitchToClusterData(t *testing.T) {
 	type args struct {
-		data *ClusterClaimData
+		data *claims.ClusterClaimData
 	}
 	tests := []struct {
 		name    string
-		c       ClaimData
+		c       claims.ClaimData
 		args    args
 		wantErr bool
 	}{
 		{
 			name: "test",
-			c: ClaimData{
+			c: claims.ClaimData{
 				"amount": 100,
 			},
 			args: args{
-				data: &ClusterClaimData{},
+				data: &claims.ClusterClaimData{},
 			},
 			wantErr: false,
 		},

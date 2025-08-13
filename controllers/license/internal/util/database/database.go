@@ -19,7 +19,6 @@ import (
 
 	"github.com/labring/sealos/controllers/license/internal/util/meta"
 	"github.com/labring/sealos/controllers/pkg/utils/logger"
-
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	mongoOptions "go.mongodb.org/mongo-driver/mongo/options"
@@ -48,10 +47,12 @@ func New(ctx context.Context, uri string) (*DataBase, error) {
 		return nil, err
 	}
 	return &DataBase{
-		URI:                 uri,
-		Client:              client,
-		licenseCollection:   client.Database(DefaultLicenseDataBase).Collection(DefaultLicenseCollection),
-		clusterIDCollection: client.Database(DefaultLicenseDataBase).Collection(DefaultClusterIDCollection),
+		URI:    uri,
+		Client: client,
+		licenseCollection: client.Database(DefaultLicenseDataBase).
+			Collection(DefaultLicenseCollection),
+		clusterIDCollection: client.Database(DefaultLicenseDataBase).
+			Collection(DefaultClusterIDCollection),
 	}, nil
 }
 
