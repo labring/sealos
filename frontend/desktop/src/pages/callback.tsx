@@ -20,6 +20,7 @@ export default function Callback() {
   const setToken = useSessionStore((s) => s.setToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
+  const setSigninPageAction = useSessionStore((s) => s.setSigninPageAction);
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   useEffect(() => {
     if (!router.isReady) return;
@@ -69,6 +70,16 @@ export default function Callback() {
               adClickData: getAdClickData() ?? undefined
             });
             setProvider();
+
+            // Consider as conflict if no data returned.
+            if (!data || data?.code !== 200) {
+              setSigninPageAction('PROMPT_REAUTH_GITHUB');
+              await router.push({
+                pathname: '/signin'
+              });
+              return;
+            }
+
             if (data.code === 200 && data.data?.token) {
               const token = data.data?.token;
               setToken(token);

@@ -8,6 +8,7 @@ type StatePayload = {
   action: OauthAction;
 };
 export type OauthAction = 'LOGIN' | 'BIND' | 'UNBIND' | 'PROXY';
+export type SigninPageAction = 'PROMPT_REAUTH_GITHUB' | null;
 type SessionState = {
   session?: Session;
   token: string;
@@ -34,6 +35,8 @@ type SessionState = {
   setToken: (token: string, rememberMe?: boolean) => void;
   lastWorkSpaceId: string;
   setWorkSpaceId: (id: string) => void;
+  signinPageAction: SigninPageAction;
+  setSigninPageAction: (action: SigninPageAction) => void;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -106,6 +109,12 @@ const useSessionStore = create<SessionState>()(
       },
       setWorkSpaceId: (id) => {
         set({ lastWorkSpaceId: id });
+      },
+      signinPageAction: null,
+      setSigninPageAction: (action: SigninPageAction) => {
+        set({
+          signinPageAction: action
+        });
       }
     })),
     {

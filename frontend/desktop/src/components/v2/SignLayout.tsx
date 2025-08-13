@@ -1,5 +1,5 @@
 import { useConfigStore } from '@/stores/config';
-import { Box, Flex, Img, VStack } from '@chakra-ui/react';
+import { Box, Flex, Img, useDisclosure, VStack } from '@chakra-ui/react';
 import Head from 'next/head';
 import { useEffect } from 'react';
 import Script from 'next/script';
@@ -12,13 +12,14 @@ import { useTranslation } from 'next-i18next';
 import useSessionStore from '@/stores/session';
 import { useRouter } from 'next/router';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
+import { GitHubReauthPromptModal } from './GitHubReauthPromptModal';
 
 export default function SignLayout({ children }: { children: React.ReactNode }) {
   useLanguageSwitcher(); // force set language
   const { i18n } = useTranslation();
   const { layoutConfig, authConfig } = useConfigStore();
   const { setCaptchaIsLoad } = useScriptStore();
-  const { session, token } = useSessionStore();
+  const { session, token, signinPageAction, setSigninPageAction } = useSessionStore();
   const router = useRouter();
 
   useEffect(() => {
@@ -36,6 +37,18 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const {
+    isOpen: isGitHubReauthPromptOpen,
+    onOpen: onGitHubReauthPromptOpen,
+    onClose: onGitHubReauthPromptClose
+  } = useDisclosure();
+  // Execute page actions
+  useEffect(() => {
+    if (signinPageAction === 'PROMPT_REAUTH_GITHUB') {
+      onGitHubReauthPromptOpen();
+      setSigninPageAction(null);
+    }
+  }, [signinPageAction, setSigninPageAction, onGitHubReauthPromptOpen]);
   return (
     <Box>
       <Head>
@@ -65,6 +78,10 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
 
         <VStack w="full" position={'relative'}>
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
+            <GitHubReauthPromptModal
+              isOpen={isGitHubReauthPromptOpen}
+              onClose={onGitHubReauthPromptClose}
+            />
             {layoutConfig?.version === 'cn' && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}
           </Flex>
