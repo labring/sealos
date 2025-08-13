@@ -16,15 +16,13 @@ package cluster
 
 import (
 	"context"
-	"fmt"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"errors"
 
 	"github.com/labring/sealos/controllers/job/heartbeat/api/v1alpha"
 	"github.com/labring/sealos/controllers/job/heartbeat/internal/util"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetClusterResources() (*v1alpha.ClusterResource, error) {
@@ -65,7 +63,7 @@ func GetClusterID() (string, error) {
 	}
 	res := string(kubeSystemNamespace.UID)
 	if len(res) < 8 {
-		return "", fmt.Errorf("cluster id is invalid")
+		return "", errors.New("cluster id is invalid")
 	}
 	return res[0:8], nil
 }
