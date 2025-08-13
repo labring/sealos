@@ -21,20 +21,17 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
+	"errors"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
-
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -72,12 +69,22 @@ const (
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstoragebuckets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=objectstorage.sealos.io,resources=objectstoragebuckets/finalizers,verbs=update
 
-func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ObjectStorageBucketReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	// new OSClient
 	if r.OSAdminClient == nil || r.OSClient == nil {
 		secret := &corev1.Secret{}
 		if err := r.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
-			r.Logger.Error(err, "failed to get secret", "name", r.OSAdminSecret, "namespace", r.OSNamespace)
+			r.Logger.Error(
+				err,
+				"failed to get secret",
+				"name",
+				r.OSAdminSecret,
+				"namespace",
+				r.OSNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 
@@ -108,8 +115,15 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	bucket := &objectstoragev1.ObjectStorageBucket{}
 	if err := r.Get(ctx, client.ObjectKey{Name: req.Name, Namespace: namespace}, bucket); err != nil {
-		if !errors.IsNotFound(err) {
-			r.Logger.Error(err, "failed to get object storage bucket", "name", req.Name, "namespace", namespace)
+		if !kerrors.IsNotFound(err) {
+			r.Logger.Error(
+				err,
+				"failed to get object storage bucket",
+				"name",
+				req.Name,
+				"namespace",
+				namespace,
+			)
 			return ctrl.Result{}, err
 		}
 
@@ -123,7 +137,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 			if serviceAccount.AccessKey == serviceAccountName {
 				err := r.OSAdminClient.DeleteServiceAccount(ctx, serviceAccountName)
 				if err != nil {
-					r.Logger.Error(err, "failed to delete service account", "serviceAccountName", serviceAccountName, "bucketName", bucketName)
+					r.Logger.Error(
+						err,
+						"failed to delete service account",
+						"serviceAccountName",
+						serviceAccountName,
+						"bucketName",
+						bucketName,
+					)
 					return ctrl.Result{}, err
 				}
 				break
@@ -146,7 +167,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 		})
 		for object := range objects {
 			if err := r.OSClient.RemoveObject(ctx, bucketName, object.Key, minio.RemoveObjectOptions{}); err != nil {
-				r.Logger.Error(err, "failed to remove object from bucket", "object", object.Key, "bucket", bucketName)
+				r.Logger.Error(
+					err,
+					"failed to remove object from bucket",
+					"object",
+					object.Key,
+					"bucket",
+					bucketName,
+				)
 				return ctrl.Result{}, err
 			}
 		}
@@ -162,8 +190,15 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 	// check if the user cr exists
 	user := &objectstoragev1.ObjectStorageUser{}
 	if err := r.Get(ctx, client.ObjectKey{Name: username, Namespace: namespace}, user); err != nil {
-		if !errors.IsNotFound(err) {
-			r.Logger.Error(err, "failed to get object storage user", "name", username, "namespace", namespace)
+		if !kerrors.IsNotFound(err) {
+			r.Logger.Error(
+				err,
+				"failed to get object storage user",
+				"name",
+				username,
+				"namespace",
+				namespace,
+			)
 			return ctrl.Result{}, err
 		}
 
@@ -171,7 +206,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 		user.Name = username
 		user.Namespace = namespace
 		if err := r.Create(ctx, user); err != nil {
-			r.Logger.Error(err, "failed to create object storage user", "name", username, "namespace", namespace)
+			r.Logger.Error(
+				err,
+				"failed to create object storage user",
+				"name",
+				username,
+				"namespace",
+				namespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -193,7 +235,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	// set bucket policy
 	if err := r.OSClient.SetBucketPolicy(ctx, bucketName, buildPolicy(bucket.Spec.Policy, bucketName)); err != nil {
-		r.Logger.Error(err, "failed to set policy for bucket", "name", bucketName, "policy", bucket.Spec.Policy)
+		r.Logger.Error(
+			err,
+			"failed to set policy for bucket",
+			"name",
+			bucketName,
+			"policy",
+			bucket.Spec.Policy,
+		)
 		return ctrl.Result{}, err
 	}
 
@@ -206,7 +255,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	if update {
 		if err := r.Status().Update(ctx, bucket); err != nil {
-			r.Logger.Error(err, "failed to update bucket status", "name", bucket.Name, "namespace", bucket.Namespace)
+			r.Logger.Error(
+				err,
+				"failed to update bucket status",
+				"name",
+				bucket.Name,
+				"namespace",
+				bucket.Namespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -218,11 +274,19 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 	userInfo, err := r.OSAdminClient.GetUserInfo(ctx, username)
 	if err != nil {
 		if err.Error() == userIsNotFound {
-			r.Logger.V(1).Info("the minio user is being created", "user", username, "namespace", namespace)
+			r.Logger.V(1).
+				Info("the minio user is being created", "user", username, "namespace", namespace)
 			return ctrl.Result{Requeue: true}, nil
 		}
 
-		r.Logger.Error(err, "failed to get minio user info", "user", username, "namespace", namespace)
+		r.Logger.Error(
+			err,
+			"failed to get minio user info",
+			"user",
+			username,
+			"namespace",
+			namespace,
+		)
 		return ctrl.Result{}, err
 	}
 
@@ -253,7 +317,14 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 		}
 		sa, err = r.OSAdminClient.AddServiceAccount(ctx, saReq)
 		if err != nil {
-			r.Logger.Error(err, "failed to add service account", "serviceAccountName", serviceAccountName, "bucket", bucketName)
+			r.Logger.Error(
+				err,
+				"failed to add service account",
+				"serviceAccountName",
+				serviceAccountName,
+				"bucket",
+				bucketName,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -266,13 +337,27 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 	secret.Name = secretName
 	secret.Namespace = namespace
 	if err := r.Get(ctx, client.ObjectKey{Name: secretName, Namespace: namespace}, secret); err != nil {
-		if !errors.IsNotFound(err) {
-			r.Logger.Error(err, "failed to get object storage key secret", "name", secretName, "namespace", namespace)
+		if !kerrors.IsNotFound(err) {
+			r.Logger.Error(
+				err,
+				"failed to get object storage key secret",
+				"name",
+				secretName,
+				"namespace",
+				namespace,
+			)
 			return ctrl.Result{}, err
 		}
 
 		if err := r.newObjectStorageKeySecret(ctx, secret, bucket, accessKey, secretKey); err != nil {
-			r.Logger.Error(err, "failed to new object storage key secret", "name", secretName, "namespace", namespace)
+			r.Logger.Error(
+				err,
+				"failed to new object storage key secret",
+				"name",
+				secretName,
+				"namespace",
+				namespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -281,11 +366,19 @@ func (r *ObjectStorageBucketReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	if keySecretUpdated {
 		if err := r.Update(ctx, secret); err != nil {
-			r.Logger.Error(err, "failed to update object storage key secret", "name", secretName, "namespace", namespace)
+			r.Logger.Error(
+				err,
+				"failed to update object storage key secret",
+				"name",
+				secretName,
+				"namespace",
+				namespace,
+			)
 		}
 	}
 
-	r.Logger.V(1).Info("[bucket] bucket info", "name", bucket.Status.Name, "size", bucket.Status.Size, "policy", bucket.Spec.Policy)
+	r.Logger.V(1).
+		Info("[bucket] bucket info", "name", bucket.Status.Name, "size", bucket.Status.Size, "policy", bucket.Spec.Policy)
 
 	return ctrl.Result{Requeue: true, RequeueAfter: r.OSBDetectionCycle}, nil
 }
@@ -333,7 +426,12 @@ func buildBucketName(name, namespace string) string {
 	return strings.Split(namespace, "-")[1] + "-" + name
 }
 
-func (r *ObjectStorageBucketReconciler) newObjectStorageKeySecret(ctx context.Context, secret *corev1.Secret, bucket *objectstoragev1.ObjectStorageBucket, accessKey, secretKey string) error {
+func (r *ObjectStorageBucketReconciler) newObjectStorageKeySecret(
+	ctx context.Context,
+	secret *corev1.Secret,
+	bucket *objectstoragev1.ObjectStorageBucket,
+	accessKey, secretKey string,
+) error {
 	secret.Data = make(map[string][]byte)
 	secret.Data[OSKeySecretAccessKey] = []byte(accessKey)
 	secret.Data[OSKeySecretSecretKey] = []byte(secretKey)
@@ -356,8 +454,11 @@ func (r *ObjectStorageBucketReconciler) newObjectStorageKeySecret(ctx context.Co
 	return r.Create(ctx, secret)
 }
 
-func (r *ObjectStorageBucketReconciler) initObjectStorageKeySecret(secret *corev1.Secret, accessKey, secretKey, bucketName string) bool {
-	var updated = false
+func (r *ObjectStorageBucketReconciler) initObjectStorageKeySecret(
+	secret *corev1.Secret,
+	accessKey, secretKey, bucketName string,
+) bool {
+	updated := false
 
 	if !bytes.Equal(secret.Data[OSKeySecretAccessKey], []byte(accessKey)) {
 		secret.Data[OSKeySecretAccessKey] = []byte(accessKey)
@@ -414,7 +515,9 @@ func (r *ObjectStorageBucketReconciler) SetupWithManager(mgr ctrl.Manager) error
 	r.OSAdminSecret = oSAdminSecret
 
 	if internalEndpoint == "" || oSNamespace == "" || oSAdminSecret == "" {
-		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
+		return errors.New(
+			"failed to get the endpoint or namespace or admin secret env of object storage",
+		)
 	}
 
 	return ctrl.NewControllerManagedBy(mgr).
