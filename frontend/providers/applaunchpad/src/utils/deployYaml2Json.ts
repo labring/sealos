@@ -9,7 +9,7 @@ import {
 } from '@/constants/app';
 import { SEALOS_USER_DOMAINS } from '@/store/static';
 import type { AppEditType } from '@/types/app';
-import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
+import { str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
 import { customAlphabet, customRandom } from 'nanoid';

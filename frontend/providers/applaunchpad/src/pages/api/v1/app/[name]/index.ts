@@ -1,8 +1,7 @@
 import {
   GetAppByAppNameQuerySchema,
   DeleteAppByNameQuerySchema,
-  UpdateAppResourcesSchema,
-  transformFromLegacySchema
+  UpdateAppResourcesSchema
 } from '@/types/request_schema';
 import { jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
@@ -11,39 +10,9 @@ import {
   getAppByName,
   deleteAppByName,
   createK8sContext,
-  updateAppResources
+  updateAppResources,
+  processAppResponse
 } from '@/services/backend';
-import { adaptAppDetail } from '@/utils/adapt';
-import { DeployKindsType, AppDetailType } from '@/types/app';
-import { z } from 'zod';
-import { LaunchpadApplicationSchema } from '@/types/schema';
-
-async function processAppResponse(
-  response: PromiseSettledResult<any>[]
-): Promise<z.infer<typeof LaunchpadApplicationSchema>> {
-  const responseData = response
-    .map((item: any) => {
-      if (item.status === 'fulfilled') return item.value.body;
-      if (+item.reason?.body?.code === 404) return '';
-      throw new Error('Get APP Deployment Error');
-    })
-    .filter((item: any) => item)
-    .flat() as DeployKindsType[];
-
-  // Get full AppDetailType data
-  const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
-    SEALOS_DOMAIN: global.AppConfig.cloud.domain,
-    SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
-  });
-
-  // Transform to standardized schema using whitelist approach
-  const standardizedData = transformFromLegacySchema(appDetailData);
-
-  // Validate against schema to ensure only defined fields are returned
-  const validatedData = LaunchpadApplicationSchema.parse(standardizedData);
-
-  return validatedData;
-}
 
 async function validateAppExists(name: string, k8s: any, res: NextApiResponse<ApiResp>) {
   try {
