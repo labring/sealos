@@ -139,7 +139,7 @@ func main() {
 		MaxConcurrentReconciles: concurrent,
 		RateLimiter:             utils.GetRateLimiter(rateLimiterOptions),
 	}
-	dbCtx := context.Background()
+	dbCtx, ctx := context.Background(), context.Background()
 	dbClient, err := mongo.NewMongoInterface(dbCtx, os.Getenv(database.MongoURI))
 	if err != nil {
 		setupLog.Error(err, "unable to connect to mongo")
@@ -325,13 +325,15 @@ func main() {
 		setupLog.Info("skip user traffic controller")
 	}
 	workspaceTrafficProcessor := controllers.NewWorkspaceTrafficController(accountReconciler, trafficDBClient)
-	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
 	workspaceSubscriptionProcessor, err := controllers.NewWorkspaceSubscriptionProcessor(accountReconciler, workspaceTrafficProcessor)
 	if err != nil {
 		setupLog.Error(err, "unable to create workspace subscription processor")
 		os.Exit(1)
 	}
-	workspaceSubscriptionProcessor.Start(context.Background())
+	workspaceSubDebtProcessor := controllers.NewWorkspaceSubscriptionDebtProcessor(accountReconciler)
+	go workspaceTrafficProcessor.ProcessTrafficWithTimeRange()
+	workspaceSubscriptionProcessor.Start(ctx)
+	workspaceSubDebtProcessor.Start(ctx)
 
 	defer func() {
 		if userTrafficMonitor != nil {

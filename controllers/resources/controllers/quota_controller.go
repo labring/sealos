@@ -272,7 +272,7 @@ func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			if status, ok := annos[types.DebtNamespaceAnnoStatusKey]; ok && status != types.NormalDebtNamespaceAnnoStatus {
 				return false
 			}
-			if status, ok := annos[types.WorkspaceStatusAnnoKey]; ok && status == types.WorkspaceStatusSubscription {
+			if _, ok := annos[types.WorkspaceSubscriptionStatusAnnoKey]; ok {
 				return false
 			}
 		}

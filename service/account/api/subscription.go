@@ -282,7 +282,7 @@ func getOwnNsListWithCltWithOutWorkspaceSubscription(clt client.Client, user str
 		if nsList.Items[i].Status.Phase == corev1.NamespaceTerminating {
 			continue
 		}
-		if nsList.Items[i].Annotations != nil && nsList.Items[i].Annotations[types.WorkspaceStatusAnnoKey] == types.WorkspaceStatusSubscription {
+		if nsList.Items[i].Annotations != nil && nsList.Items[i].Annotations[types.WorkspaceSubscriptionStatusAnnoKey] != "" {
 			continue
 		}
 		nsListStr = append(nsListStr, nsList.Items[i].Name)

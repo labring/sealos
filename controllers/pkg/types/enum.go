@@ -8,9 +8,10 @@ import (
 type SubscriptionStatus string
 
 const (
-	SubscriptionStatusNormal   SubscriptionStatus = "NORMAL"
-	SubscriptionStatusDebt     SubscriptionStatus = "DEBT"
-	SubscriptionStatusLockUser SubscriptionStatus = "LOCK_USER"
+	SubscriptionStatusNormal            SubscriptionStatus = "NORMAL"
+	SubscriptionStatusDebt              SubscriptionStatus = "DEBT"
+	SubscriptionStatusDebtPreDeletion   SubscriptionStatus = "DEBT_PRE_DELETION"
+	SubscriptionStatusDebtFinalDeletion SubscriptionStatus = "DEBT_FINAL_DELETION"
 )
 
 func (s *SubscriptionStatus) Scan(value interface{}) error {

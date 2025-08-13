@@ -352,7 +352,7 @@ func (r *BillingReconciler) Init() error {
 	}
 	r.concurrentLimit = env.GetInt64EnvWithDefault("BILLING_CONCURRENT_LIMIT", 10)
 	r.reconcileBillingFunc = r.reconcileBilling
-	if os.Getenv("CREDITS_ENABLED") == "true" || os.Getenv("SUBSCRIPTION_ENABLED") == "true" {
+	if os.Getenv("CREDITS_ENABLED") == trueStatus || os.Getenv("SUBSCRIPTION_ENABLED") == trueStatus {
 		r.reconcileBillingFunc = r.reconcileBillingWithCredits
 	}
 	return nil
