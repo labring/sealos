@@ -173,10 +173,26 @@ func (wsp *WorkspaceSubscriptionProcessor) updateWorkspaceQuota(ctx context.Cont
 	if !ok {
 		return fmt.Errorf("plan %s not found in workspace subscription plans", planName)
 	}
-	quota := getDefaultResourceQuota(workspace, "quota-"+workspace, rs)
-	hard := quota.Spec.Hard.DeepCopy()
-	_, err := controllerutil.CreateOrUpdate(ctx, wsp.Client, quota, func() error {
-		quota.Spec.Hard = hard
+	nsQuota := resources.GetDefaultResourceQuota(workspace, "quota-"+workspace)
+	for defaultRs, quantity := range nsQuota.Spec.Hard {
+		if _, ok := rs[defaultRs]; ok {
+			continue
+		}
+		rs[defaultRs] = quantity.DeepCopy()
+	}
+	_, err := controllerutil.CreateOrUpdate(ctx, wsp.Client, nsQuota, func() error {
+		if nsQuota.Spec.Hard != nil {
+			for usedRs, usedQuantity := range nsQuota.Status.Used {
+				if quantity, ok := rs[usedRs]; ok {
+					if usedQuantity.Cmp(quantity) > 0 {
+						// TODO situations exceeding the quota need to be handled
+						// restart the space resource deploy sts
+						return fmt.Errorf("used resource %s exceeds the limit in plan %s: used %s, limit %s", usedRs, planName, usedQuantity.String(), quantity.String())
+					}
+				}
+			}
+		}
+		nsQuota.Spec.Hard = rs
 		return nil
 	})
 	if err != nil {
@@ -189,18 +205,14 @@ func (wsp *WorkspaceSubscriptionProcessor) updateWorkspaceQuota(ctx context.Cont
 	if ns.Annotations == nil {
 		ns.Annotations = make(map[string]string)
 	}
-	if ns.Annotations[types.WorkspaceStatusAnnoKey] != types.WorkspaceStatusSubscription {
-		ns.Annotations[types.WorkspaceStatusAnnoKey] = types.WorkspaceStatusSubscription
+	if ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] == "" {
+		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = types.NormalDebtNamespaceAnnoStatus
+		ns.Annotations[types.DebtNamespaceAnnoStatusKey] = types.NormalDebtNamespaceAnnoStatus
 		if err := wsp.Update(ctx, ns); err != nil {
 			return fmt.Errorf("failed to update workspace namespace annotations: %w", err)
 		}
 	}
 	return nil
-}
-
-type AdminFlushWorkspaceQuotaReq struct {
-	Workspace string `json:"workspace" bson:"workspace"`
-	PlanName  string `json:"planName" bson:"planName"`
 }
 
 // handleCreated 处理创建工作空间订阅
@@ -280,8 +292,6 @@ func (wsp *WorkspaceSubscriptionProcessor) handleUpgrade(ctx context.Context, db
 	if err := wsp.updateWorkspaceQuota(ctx, sub.Workspace, tx.NewPlanName); err != nil {
 		return err
 	}
-
-	// 注意：工作空间订阅不需要处理积分
 
 	tx.Status = types.SubscriptionTransactionStatusCompleted
 	tx.UpdatedAt = time.Now().UTC()
