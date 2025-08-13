@@ -16,6 +16,13 @@ import { customAlphabet } from 'nanoid';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+export const yamlString2Objects = (yamlString: string): object[] => {
+  if (!yamlString.trim()) return [];
+
+  const documents = yamlString.split(/\n---\n/);
+  return documents.filter((doc) => doc.trim()).map((doc) => yaml.load(doc.trim()) as object);
+};
+
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
 
@@ -444,6 +451,14 @@ export const json2Ingress = (data: AppEditType) => {
     });
 
   return result.join('\n---\n');
+};
+
+export const json2ServiceObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Service(data));
+};
+
+export const json2IngressObjects = (data: AppEditType): object[] => {
+  return yamlString2Objects(json2Ingress(data));
 };
 
 export const json2ConfigMap = (data: AppEditType) => {

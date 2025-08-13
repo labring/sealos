@@ -7,7 +7,7 @@ import { UpdateConfigMapSchema } from '@/types/request_schema';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    if (req.method !== 'PUT') {
+    if (req.method !== 'PATCH') {
       return jsonRes(res, {
         code: 405,
         error: `Method ${req.method} Not Allowed`

@@ -438,3 +438,24 @@ export const UpdateConfigMapSchema = z.object({
       description: 'ConfigMap configurations'
     })
 });
+
+export const UpdatePortsSchema = z.object({
+  ports: z
+    .array(
+      z.object({
+        port: z.number().default(80),
+        protocol: z.enum(['TCP', 'UDP', 'SCTP']),
+        appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
+        exposesPublicDomain: z.boolean(),
+
+        networkName: z.string().optional(),
+        portName: z.string().optional(),
+        serviceName: z.string().optional()
+      })
+    )
+    .min(1)
+    .openapi({
+      description:
+        'Port/Network configurations to update. Include networkName/portName/serviceName for updates, omit for new ports'
+    })
+});
