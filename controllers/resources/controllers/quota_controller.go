@@ -8,16 +8,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-
 	"github.com/go-logr/logr"
+	"github.com/labring/sealos/controllers/pkg/utils/env"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -38,10 +36,14 @@ type NamespaceQuotaReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch
 
 // Reconcile handles namespace events
-func (r *NamespaceQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NamespaceQuotaReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	evt := &corev1.Event{}
 	if err := r.Get(ctx, req.NamespacedName, evt); err == nil {
-		if strings.Contains(evt.Message, "exceeded quota") && (evt.Reason == "FailedCreate" || evt.Reason == "Devbox is exceeded quota") {
+		if strings.Contains(evt.Message, "exceeded quota") &&
+			(evt.Reason == "FailedCreate" || evt.Reason == "Devbox is exceeded quota") {
 			// lock
 			if r.namespaceLocks[evt.Namespace] == nil {
 				r.namespaceLocks[evt.Namespace] = &sync.Mutex{}
@@ -54,7 +56,14 @@ func (r *NamespaceQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{}, nil
 			}
 			if err := r.handleQuotaExceeded(ctx, evt); err != nil {
-				r.Logger.Error(err, "failed to handle quota exceeded", "namespace", evt.Namespace, "event", evt.Message)
+				r.Logger.Error(
+					err,
+					"failed to handle quota exceeded",
+					"namespace",
+					evt.Namespace,
+					"event",
+					evt.Message,
+				)
 				return ctrl.Result{RequeueAfter: 5 * time.Minute}, err
 			}
 		}
@@ -65,7 +74,10 @@ func (r *NamespaceQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 }
 
 // handleQuotaExceeded increases quota by 50% if not already increased
-func (r *NamespaceQuotaReconciler) handleQuotaExceeded(ctx context.Context, evt *corev1.Event) error {
+func (r *NamespaceQuotaReconciler) handleQuotaExceeded(
+	ctx context.Context,
+	evt *corev1.Event,
+) error {
 	ns := evt.Namespace
 	quotas := &corev1.ResourceQuotaList{}
 	if err := r.List(ctx, quotas, client.InNamespace(ns)); err != nil {
@@ -109,15 +121,31 @@ func (r *NamespaceQuotaReconciler) handleQuotaExceeded(ctx context.Context, evt 
 		if err := r.Update(ctx, newQuota); err != nil {
 			return fmt.Errorf("failed to update ResourceQuota %s: %w", newQuota.Name, err)
 		}
-		r.Logger.Info("Quota updated", "namespace", ns, "history count", num, "newQuota", newQuota.Spec.Hard)
-		r.Recorder.Event(evt, corev1.EventTypeNormal, "QuotaAdjusted", fmt.Sprintf("Increased quota by 50%% due to event msg: '%s'", evt.Message))
+		r.Logger.Info(
+			"Quota updated",
+			"namespace",
+			ns,
+			"history count",
+			num,
+			"newQuota",
+			newQuota.Spec.Hard,
+		)
+		r.Recorder.Event(
+			evt,
+			corev1.EventTypeNormal,
+			"QuotaAdjusted",
+			fmt.Sprintf("Increased quota by 50%% due to event msg: '%s'", evt.Message),
+		)
 	}
 
 	return nil
 }
 
 // getResourceUsage retrieves the used quantity for a given resource from the ResourceQuota status.
-func getResourceUsage(resourceName corev1.ResourceName, status corev1.ResourceQuotaStatus) (resource.Quantity, error) {
+func getResourceUsage(
+	resourceName corev1.ResourceName,
+	status corev1.ResourceQuotaStatus,
+) (resource.Quantity, error) {
 	usedQuantity, exists := status.Used[resourceName]
 	if !exists {
 		return resource.Quantity{}, fmt.Errorf("resource %s not found in status", resourceName)
@@ -173,7 +201,9 @@ func AdjustQuota(quota *corev1.ResourceQuota) bool {
 				newQuantity := resource.MustParse(
 					fmt.Sprintf("%.0f", float64(quantity.Value())*2),
 				)
-				quota.Spec.Hard[resourceName] = resource.MustParse(formatQuantity(newQuantity, resourceName))
+				quota.Spec.Hard[resourceName] = resource.MustParse(
+					formatQuantity(newQuantity, resourceName),
+				)
 				updateRequired = true
 				continue
 			}
@@ -202,7 +232,9 @@ func AdjustQuota(quota *corev1.ResourceQuota) bool {
 				if newQuantity.Cmp(limit.upperLimit) > 0 {
 					newQuantity = limit.upperLimit
 				}
-				quota.Spec.Hard[resourceName] = resource.MustParse(formatQuantity(newQuantity, resourceName))
+				quota.Spec.Hard[resourceName] = resource.MustParse(
+					formatQuantity(newQuantity, resourceName),
+				)
 				updateRequired = true
 			}
 		}
@@ -244,11 +276,17 @@ func formatQuantity(quantity resource.Quantity, resourceName corev1.ResourceName
 func (r *NamespaceQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName("namespace-quota-controller")
 	r.namespaceLocks = make(map[string]*sync.Mutex)
-	r.limitExpansionCycle = env.GetDurationEnvWithDefault("LIMIT_QUOTA_EXPANSION_CYCLE", 24*time.Hour)
+	r.limitExpansionCycle = env.GetDurationEnvWithDefault(
+		"LIMIT_QUOTA_EXPANSION_CYCLE",
+		24*time.Hour,
+	)
 
 	checkEventPredicate := func(obj client.Object) bool {
 		eventObj, ok := obj.(*corev1.Event)
-		if !ok || (eventObj.Reason != "FailedCreate" && eventObj.Reason != "Devbox is exceeded quota") || !strings.Contains(eventObj.Message, "exceeded quota") || strings.Contains(eventObj.Message, "debt-limit0") {
+		if !ok ||
+			(eventObj.Reason != "FailedCreate" && eventObj.Reason != "Devbox is exceeded quota") ||
+			!strings.Contains(eventObj.Message, "exceeded quota") ||
+			strings.Contains(eventObj.Message, "debt-limit0") {
 			return false
 		}
 
