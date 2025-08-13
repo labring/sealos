@@ -84,7 +84,7 @@ type DefaultConfig struct {
 	expirationSeconds int32
 }
 
-func NewConfig(user string, clusterName string, expirationSeconds int32) *DefaultConfig {
+func NewConfig(user, clusterName string, expirationSeconds int32) *DefaultConfig {
 	if clusterName == "" {
 		clusterName = "sealos"
 	}
@@ -98,7 +98,11 @@ func NewConfig(user string, clusterName string, expirationSeconds int32) *Defaul
 	}
 }
 
-func (d *DefaultConfig) WithCertConfig(caKeyFile string, groups []string, dnsNames []string, ipAddrs []net.IP) Interface {
+func (d *DefaultConfig) WithCertConfig(
+	caKeyFile string,
+	groups, dnsNames []string,
+	ipAddrs []net.IP,
+) Interface {
 	return &CertConfig{
 		DefaultConfig: d,
 		caKeyFile:     caKeyFile,
@@ -108,7 +112,11 @@ func (d *DefaultConfig) WithCertConfig(caKeyFile string, groups []string, dnsNam
 	}
 }
 
-func (d *DefaultConfig) WithCsrConfig(groups []string, dnsNames []string, ipAddrs []net.IP, csr *csrv1.CertificateSigningRequest) Interface {
+func (d *DefaultConfig) WithCsrConfig(
+	groups, dnsNames []string,
+	ipAddrs []net.IP,
+	csr *csrv1.CertificateSigningRequest,
+) Interface {
 	return &CsrConfig{
 		DefaultConfig: d,
 		groups:        groups,
@@ -118,7 +126,10 @@ func (d *DefaultConfig) WithCsrConfig(groups []string, dnsNames []string, ipAddr
 	}
 }
 
-func (d *DefaultConfig) WithServiceAccountConfig(namespace string, sa *v1.ServiceAccount) Interface {
+func (d *DefaultConfig) WithServiceAccountConfig(
+	namespace string,
+	sa *v1.ServiceAccount,
+) Interface {
 	if namespace == "" {
 		namespace = "default"
 	}

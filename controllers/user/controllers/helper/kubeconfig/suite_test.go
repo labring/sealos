@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubeconfig
+package kubeconfig_test
 
 import (
 	"context"
@@ -24,6 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	csrv1 "k8s.io/api/certificates/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -31,23 +34,20 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"k8s.io/client-go/tools/clientcmd"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+)
 
 func TestUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -80,7 +80,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -117,99 +116,111 @@ var _ = Describe("user kubeconfig ", func() {
 				},
 			}
 
-			_, err := clientSet.RbacV1().RoleBindings("default").Create(context.TODO(), rb, metav1.CreateOptions{})
+			_, err := clientSet.RbacV1().
+				RoleBindings("default").
+				Create(context.TODO(), rb, metav1.CreateOptions{})
 			Expect(err).NotTo(HaveOccurred())
-
 		})
 		AfterEach(func() {
 			clientSet, _ := kubernetes.NewForConfig(cfg)
-			_ = clientSet.RbacV1().RoleBindings("default").Delete(context.TODO(), "cuisongliu-rolebinding", metav1.DeleteOptions{})
+			_ = clientSet.RbacV1().
+				RoleBindings("default").
+				Delete(context.TODO(), "cuisongliu-rolebinding", metav1.DeleteOptions{})
 			_ = os.RemoveAll("output")
 		})
 		It("empty csr generate", func() {
-			defaultConfig := NewConfig("cuisongliu", "", 100000000)
-			gen := defaultConfig.WithCsrConfig([]string{}, []string{"apiserver.cluster.local"}, nil, nil)
+			defaultConfig := kubeconfig.NewConfig("cuisongliu", "", 100000000)
+			gen := defaultConfig.WithCsrConfig(
+				[]string{},
+				[]string{"apiserver.cluster.local"},
+				nil,
+				nil,
+			)
 			By("start to get kubeconfig")
 			config, err := gen.Apply(cfg, k8sClient)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(config).NotTo(BeNil())
 			if info, ok := config.AuthInfos["cuisongliu"]; ok {
 				if info != nil {
-					cert, err := DecodeX509CertificateBytes(info.ClientCertificateData)
+					cert, err := kubeconfig.DecodeX509CertificateBytes(info.ClientCertificateData)
 					if err != nil {
-						Expect(err).To(BeNil())
+						Expect(err).ToNot(HaveOccurred())
 					}
 					if cert.NotAfter.Before(time.Now()) {
 						config = nil
 						By(fmt.Sprintf("ClientCertificateData %s is expired", "cuisongliu"))
 						return
 					}
-					By(fmt.Sprintf("Cert NotAfter is  %s", cert.NotAfter.String()))
+					By("Cert NotAfter is  " + cert.NotAfter.String())
 				}
 			}
 
 			kubeData, err := clientcmd.Write(*config)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(kubeData).NotTo(BeNil())
 			By("start to write kubeconfig")
-			err = os.WriteFile("output", kubeData, 0600)
-			Expect(err).To(BeNil())
+			err = os.WriteFile("output", kubeData, 0o600)
+			Expect(err).ToNot(HaveOccurred())
 
 			newCfg, err := clientcmd.BuildConfigFromFlags("", "output")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(newCfg).NotTo(BeNil())
 			newCfg.QPS = 1e6
 			newCfg.Burst = 1e6
 			clientSet, err := kubernetes.NewForConfig(newCfg)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			_, err = clientSet.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
-			Expect(err).To(BeNil())
-			_, err = clientSet.CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{})
+			Expect(err).ToNot(HaveOccurred())
+			_, err = clientSet.CoreV1().
+				Pods("kube-system").
+				List(context.TODO(), metav1.ListOptions{})
 			errStatus := errors.ReasonForError(err)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
 		})
 		It("token generate", func() {
-			defaultConfig := NewConfig("cuisongliu", "", 100000000)
+			defaultConfig := kubeconfig.NewConfig("cuisongliu", "", 100000000)
 			gen := defaultConfig.WithServiceAccountConfig("test", nil)
 			By("start to get kubeconfig")
 			config, err := gen.Apply(cfg, k8sClient)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(config).NotTo(BeNil())
 			kubeData, err := clientcmd.Write(*config)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(kubeData).NotTo(BeNil())
 			By("start to write kubeconfig")
-			err = os.WriteFile("output", kubeData, 0600)
-			Expect(err).To(BeNil())
+			err = os.WriteFile("output", kubeData, 0o600)
+			Expect(err).ToNot(HaveOccurred())
 
 			newCfg, err := clientcmd.BuildConfigFromFlags("", "output")
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(newCfg).NotTo(BeNil())
 			newCfg.QPS = 1e6
 			newCfg.Burst = 1e6
 			clientSet, err := kubernetes.NewForConfig(newCfg)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			_, err = clientSet.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
-			Expect(err).To(BeNil())
-			_, err = clientSet.CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{})
+			Expect(err).ToNot(HaveOccurred())
+			_, err = clientSet.CoreV1().
+				Pods("kube-system").
+				List(context.TODO(), metav1.ListOptions{})
 			errStatus := errors.ReasonForError(err)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
 		})
 		It("webhook generate", func() {
-			defaultConfig := NewConfig("cuisongliu", "", 100000000)
+			defaultConfig := kubeconfig.NewConfig("cuisongliu", "", 100000000)
 			gen := defaultConfig.WithWebhookConfigConfig("https://192.168.64.1:6443")
 			By("start to get kubeconfig")
 			config, err := gen.Apply(cfg, k8sClient)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(config).NotTo(BeNil())
 			kubeData, err := clientcmd.Write(*config)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(kubeData).NotTo(BeNil())
 			By("start to write kubeconfig")
-			err = os.WriteFile("output-webhook", kubeData, 0600)
-			Expect(err).To(BeNil())
+			err = os.WriteFile("output-webhook", kubeData, 0o600)
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 })

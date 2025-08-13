@@ -19,13 +19,15 @@ package kubeconfig
 import (
 	"crypto/rand"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
 )
 
 // DecodeX509CertificateChainBytes will decode a PEM encoded x509 Certificate chain.
 func DecodeX509CertificateChainBytes(certBytes []byte) ([]*x509.Certificate, error) {
-	var certs []*x509.Certificate
+	certs := make([]*x509.Certificate, 0)
 
 	var block *pem.Block
 
@@ -45,7 +47,7 @@ func DecodeX509CertificateChainBytes(certBytes []byte) ([]*x509.Certificate, err
 	}
 
 	if len(certs) == 0 {
-		return nil, fmt.Errorf("error decoding certificate PEM block")
+		return nil, errors.New("error decoding certificate PEM block")
 	}
 
 	return certs, nil
@@ -66,7 +68,7 @@ func GetRandomString(n int) string {
 	if _, err := rand.Read(randBytes); err != nil {
 		return ""
 	}
-	return fmt.Sprintf("%x", randBytes)
+	return hex.EncodeToString(randBytes)
 }
 
 func SecretName(name string) string {
