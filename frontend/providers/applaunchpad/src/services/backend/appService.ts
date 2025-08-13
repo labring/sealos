@@ -663,34 +663,31 @@ export async function updateAppResources(
   }
 }
 
-/**
- * Process application response data and transform it to standardized application detail format
- * @param response - Response data from getAppByName
- * @returns Standardized application detail data
- */
-export async function processAppResponse(
-  response: PromiseSettledResult<any>[]
-): Promise<z.infer<typeof LaunchpadApplicationSchema>> {
+export async function processAppResponse<T extends boolean = true>(
+  response: PromiseSettledResult<any>[],
+  transform?: T
+): Promise<T extends false ? AppDetailType : z.infer<typeof LaunchpadApplicationSchema>> {
   const responseData = response
-    .map((item: any) => {
+    .map((item: PromiseSettledResult<any>) => {
       if (item.status === 'fulfilled') return item.value.body;
-      if (+item.reason?.body?.code === 404) return '';
-      throw new Error('Get APP Deployment Error');
+      if (item.status === 'rejected' && +item.reason?.body?.code === 404) return null;
+      if (item.status === 'rejected') {
+        throw new Error(`Get APP Deployment Error: ${item.reason?.message || 'Unknown error'}`);
+      }
+      return null;
     })
-    .filter((item: any) => item)
+    .filter((item): item is DeployKindsType => item !== null)
     .flat() as DeployKindsType[];
 
-  // Get full AppDetailType data
   const appDetailData: AppDetailType = await adaptAppDetail(responseData, {
     SEALOS_DOMAIN: global.AppConfig.cloud.domain,
     SEALOS_USER_DOMAINS: global.AppConfig.cloud.userDomains
   });
 
-  // Transform to standardized schema using whitelist approach
+  if (transform === false) {
+    return appDetailData as any;
+  }
+
   const standardizedData = transformFromLegacySchema(appDetailData);
-
-  // Validate against schema to ensure only defined fields are returned
-  const validatedData = LaunchpadApplicationSchema.parse(standardizedData);
-
-  return validatedData;
+  return LaunchpadApplicationSchema.parse(standardizedData) as any;
 }

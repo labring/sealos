@@ -6,7 +6,8 @@ import {
   DeleteAppByNameResponseSchema,
   GetAppByAppNameResponseSchema,
   UpdateAppResourcesSchema,
-  UpdateConfigMapSchema
+  UpdateConfigMapSchema,
+  UpdatePortsSchema
 } from './request_schema';
 
 export const ErrorResponseSchema = z.object({
@@ -253,7 +254,7 @@ export const openApiDocument = (sealosDomain: string) =>
         }
       },
       '/api/v1/app/{name}/start': {
-        get: {
+        post: {
           summary: 'Start application',
           description: 'Start a paused application by restoring its replicas and HPA configuration',
           parameters: [
@@ -306,7 +307,7 @@ export const openApiDocument = (sealosDomain: string) =>
         }
       },
       '/api/v1/app/{name}/pause': {
-        get: {
+        post: {
           summary: 'Pause application',
           description:
             'Pause an application by setting replicas to 0 and storing current configuration',
@@ -360,7 +361,7 @@ export const openApiDocument = (sealosDomain: string) =>
         }
       },
       '/api/v1/app/{name}/configmap': {
-        put: {
+        patch: {
           summary: 'Update application ConfigMap',
           description:
             'Update application ConfigMap configuration and synchronize volumes and volumeMounts in Deployment/StatefulSet. ' +
@@ -391,11 +392,7 @@ export const openApiDocument = (sealosDomain: string) =>
               content: {
                 'application/json': {
                   schema: z.object({
-                    data: z.object({
-                      success: z.boolean().openapi({
-                        description: 'Operation success status'
-                      })
-                    })
+                    data: LaunchpadApplicationSchema
                   })
                 }
               }
@@ -418,6 +415,70 @@ export const openApiDocument = (sealosDomain: string) =>
             },
             '500': {
               description: 'Internal server error during ConfigMap update',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/app/{name}/ports': {
+        patch: {
+          summary: 'Update application ports',
+          description:
+            'Update application port configurations including container ports, services, and ingresses. ' +
+            'This API applies YAML-based updates to network resources, preserving existing configurations ' +
+            'for ports not specified in the request. Only the specified ports will be updated or added.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              description: 'Application name',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: UpdatePortsSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Ports updated successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    data: LaunchpadApplicationSchema
+                  })
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request parameters or application structure',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error during ports update',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
