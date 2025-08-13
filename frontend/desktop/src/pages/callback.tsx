@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
 import useSessionStore from '@/stores/session';
+import useSigninPageStore from '@/stores/signinPageStore';
 import { ApiResp } from '@/types';
 import { Flex, Spinner } from '@chakra-ui/react';
 import { isString } from 'lodash';
@@ -20,7 +21,7 @@ export default function Callback() {
   const setToken = useSessionStore((s) => s.setToken);
   const provider = useSessionStore((s) => s.provider);
   const compareState = useSessionStore((s) => s.compareState);
-  const setSigninPageAction = useSessionStore((s) => s.setSigninPageAction);
+  const { setSigninPageAction } = useSigninPageStore();
   const { setMergeUserData, setMergeUserStatus } = useCallbackStore();
   useEffect(() => {
     if (!router.isReady) return;

@@ -15,13 +15,7 @@ import {
   Text
 } from '@chakra-ui/react';
 
-export function GitHubReauthPromptModal({
-  isOpen,
-  onClose
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
+export function GitHubReauthPrompt({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { authConfig } = useConfigStore();
   const { generateState, setProvider } = useSessionStore();
 
