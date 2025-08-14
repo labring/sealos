@@ -273,6 +273,7 @@
   "normal_shutdown_mode_desc_2": "You can <black>directly perform boot and restart operations through the IDE</black>.",
   "not_allow_standalone_use": "Not allowed to use standalone",
   "notice": "Notice",
+  "official_content": "Official Content",
   "oldest_first": "Oldest",
   "one_click_config": "SSH Connection Setup",
   "open_link": "Open link",

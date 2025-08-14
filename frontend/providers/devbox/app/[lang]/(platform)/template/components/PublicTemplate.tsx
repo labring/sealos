@@ -167,7 +167,10 @@ const PublicTemplate = ({ search }: { search: string }) => {
       <div className="flex w-50 flex-shrink-0 flex-col items-start gap-1">
         <span className="truncate px-2 py-1.5 text-sm text-zinc-900">{t('tags')}</span>
         <ScrollArea className="flex h-[calc(100vh-200px)] w-full flex-col gap-1 pr-2">
-          <TagItem tag={tagListCollection[TagType.OFFICIAL_CONTENT][0]} />
+          <TagList
+            tags={tagListCollection[TagType.OFFICIAL_CONTENT]}
+            title={t('official_content')}
+          />
           <TagList tags={tagListCollection[TagType.USE_CASE]} title={t('use_case')} />
           <TagList
             tags={tagListCollection[TagType.PROGRAMMING_LANGUAGE]}
