@@ -38,6 +38,8 @@ import type { CoreV1EventList, V1Pod } from '@kubernetes/client-node';
 import dayjs from 'dayjs';
 import { has } from 'lodash';
 import type { BackupItemType } from '../types/db';
+import z from 'zod';
+import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
 export const getDBSource = (
   db: KbPgClusterType
