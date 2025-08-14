@@ -14,9 +14,6 @@ on:
 jobs:
   config:
     runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,6 +50,6 @@ jobs:
           branch: tagpr-new-${{ inputs.version }}
           signoff: true
           delete-branch: true
-          token: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          token: ${{ secrets.GHCR_TOKEN || secrets.GH_CI_PAT }}
+          committer: sealos-ci-robot <sealos-ci-robot@sealos.io>
+          author: sealos-ci-robot <sealos-ci-robot@sealos.io>
