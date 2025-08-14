@@ -209,8 +209,53 @@ export const adaptDBDetail = (db: KbPgClusterType): DBDetailType => {
     }
   } else {
     // Fallback: if kb.io/database is not available, try other sources
-    dbType = labels['clusterdefinition.kubeblocks.io/name'] || 'kafka';
+    // First try clusterdefinition label
+    dbType = labels['clusterdefinition.kubeblocks.io/name'] || '';
+
+    // If still no dbType, try to infer from componentSpecs or helm chart
+    if (!dbType) {
+      const componentDefRef = db.spec?.componentSpecs?.[0]?.componentDefRef;
+      const helmChart = labels['helm.sh/chart'];
+
+      if (componentDefRef) {
+        dbType = componentDefRef;
+        // Handle special case for MySQL
+        if (componentDefRef === ('mysql' as any)) {
+          dbType = 'apecloud-mysql';
+        }
+      } else if (helmChart) {
+        // Infer from helm chart name
+        if (helmChart.includes('mongodb')) {
+          dbType = 'mongodb';
+        } else if (helmChart.includes('redis')) {
+          dbType = 'redis';
+        } else if (helmChart.includes('mysql')) {
+          dbType = 'apecloud-mysql';
+        } else if (helmChart.includes('postgresql')) {
+          dbType = 'postgresql';
+        } else if (helmChart.includes('kafka')) {
+          dbType = 'kafka';
+        } else if (helmChart.includes('clickhouse')) {
+          dbType = 'clickhouse';
+        }
+      }
+    }
+
+    // If still no dbType, try clusterversion label
     dbVersion = labels['clusterversion.kubeblocks.io/name'] || '';
+
+    // If no clusterversion, try app.kubernetes.io/version or serviceVersion
+    if (!dbVersion) {
+      dbVersion =
+        labels['app.kubernetes.io/version'] ||
+        (db.spec?.componentSpecs?.[0] as any)?.serviceVersion ||
+        '';
+    }
+
+    // Final fallback for dbType if still not determined
+    if (!dbType) {
+      dbType = 'postgresql'; // Default fallback
+    }
   }
 
   const newLabels = { ...labels };

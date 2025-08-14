@@ -202,7 +202,6 @@ export const json2CreateCluster = (
     const mongoRes = resources['mongodb'];
     if (!mongoRes) return [];
 
-    // For MongoDB using ComponentVersion, remove the prefix to get clean version (e.g., "mongodb-7.0.16" -> "7.0.16")
     const serviceVersion = data.dbVersion.startsWith('mongodb-')
       ? data.dbVersion.replace('mongodb-', '')
       : data.dbVersion;
@@ -229,7 +228,7 @@ export const json2CreateCluster = (
           },
           componentSpecs: [
             {
-              componentDefRef: 'mongodb',
+              componentDef: 'mongodb',
               name: 'mongodb',
               replicas: mongoRes.other?.replicas ?? data.replicas,
               resources: mongoRes.cpuMemory,
@@ -266,7 +265,6 @@ export const json2CreateCluster = (
 
     if (!redisRes) return [];
 
-    // For Redis using ComponentVersion, remove the prefix to get clean version (e.g., "redis-7.2.7" -> "7.2.7")
     const serviceVersion = data.dbVersion.startsWith('redis-')
       ? data.dbVersion.replace('redis-', '')
       : data.dbVersion.split('-').pop() || '';
@@ -275,9 +273,8 @@ export const json2CreateCluster = (
       'kb.io/database': data.dbVersion,
       'app.kubernetes.io/instance': data.dbName,
       'app.kubernetes.io/version': serviceVersion,
-      // 'kb.io/database': data.dbVersion, // Keep full version for database label
       'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion, // Keep full version
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
       'helm.sh/chart': 'redis-cluster-0.9.0',
       ...data.labels
     };
@@ -321,7 +318,7 @@ export const json2CreateCluster = (
           {
             componentDef: 'redis-sentinel-7',
             name: 'redis-sentinel',
-            replicas: 3,
+            replicas: redisRes.other?.replicas ?? data.replicas,
             resources: sentinelRes.cpuMemory,
             serviceVersion: serviceVersion,
             volumeClaimTemplates: [
@@ -329,7 +326,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `1Gi` } }
+                  resources: { requests: { storage: `2Gi` } }
                 }
               }
             ]

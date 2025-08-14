@@ -75,14 +75,8 @@ export const buildConnectionInfo = (
       connection: `${host}:${port}`
     };
   } else if (dbTypeMap[dbType].connectKey === 'kafka') {
-    const kafkaHost = port.split(':')[0].replace('-server', '-broker');
-    const kafkaPort = port.split(':')[1];
-    const host = kafkaHost + '.' + namespace + '.svc';
-
     return {
-      host,
-      port: kafkaPort,
-      connection: `${host}:${kafkaPort}`
+      connection: `${host}:${port}`
     };
   } else {
     return {
@@ -97,46 +91,45 @@ export async function fetchDBSecret(
   dbType: DBType,
   namespace: string
 ) {
-  // get secret
-  let secretName = dbName + '-conn-credential';
-  if (dbType === DBTypeEnum.redis) {
-    secretName = dbName + '-redis-account-default';
+  // get secret: try multiple common naming conventions, but DO NOT throw if not found
+  const candidates: string[] = [];
+  if (dbType === DBTypeEnum.mongodb) candidates.push(`${dbName}-mongodb-account-root`);
+  if (dbType === DBTypeEnum.redis) candidates.push(`${dbName}-redis-account-default`);
+  if (dbType === DBTypeEnum.kafka) candidates.push(`${dbName}-broker-account-admin`);
+  candidates.push(`${dbName}-conn-credential`);
+
+  let secret: k8s.V1Secret | undefined;
+  for (const name of candidates) {
+    try {
+      console.log('[fetchDBSecret] Name:', name);
+      console.log('[fetchDBSecret] Namespace:', namespace);
+      const res = await k8sCore.readNamespacedSecret(name, namespace);
+      console.log('[fetchDBSecret] Res: Get');
+      if (res?.body) {
+        secret = res.body;
+        console.log('[fetchDBSecret] Secret:', secret);
+        break;
+      }
+    } catch (e: any) {
+      // continue trying next candidate on 404; do not interrupt
+      const statusCode = e?.response?.statusCode || e?.statusCode;
+      if (statusCode && Number(statusCode) === 404) {
+        continue;
+      }
+      continue;
+    }
   }
-  if (dbType === DBTypeEnum.mongodb) {
-    secretName = dbName + '-mongodb-account-root';
+
+  // If still not found, return empty placeholders to avoid interruption
+  if (!secret || !secret.data) {
+    return {
+      username: '',
+      password: '',
+      host: '',
+      port: '',
+      body: secret
+    };
   }
-
-  const secret = await k8sCore.readNamespacedSecret(secretName, namespace);
-
-  if (!secret.body?.data) {
-    throw Error('secret is empty');
-  }
-
-  const username = Buffer.from(secret.body.data[dbTypeMap[dbType].usernameKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  const password = Buffer.from(secret.body.data[dbTypeMap[dbType].passwordKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  const hostKey = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  let host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
-
-  const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64')
-    .toString('utf-8')
-    .trim();
-
-  return {
-    username,
-    password,
-    host,
-    port,
-    body: secret.body
-  };
 }
 
 type resourcesDistributeMap = Partial<
@@ -227,7 +220,7 @@ export function distributeResources(data: {
           cpuMemory: sentinelResource,
           storage: sentinelStorage,
           other: {
-            replicas: 3
+            replicas: data.replicas
           }
         }
       };

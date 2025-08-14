@@ -16,14 +16,13 @@ export type Response = Record<
 const MOCK: Response = DBVersionMap;
 
 // Databases that use ComponentVersion (cmpv) instead of ClusterVersion (cv)
-const COMPONENT_VERSION_DBS = [DBTypeEnum.mongodb, DBTypeEnum.redis];
+const COMPONENT_VERSION_DBS = [DBTypeEnum.mongodb, DBTypeEnum.redis, DBTypeEnum.clickhouse];
 
 // Helper function to parse component versions
 const parseComponentVersions = (cmpvItem: any): Array<{ id: string; label: string }> => {
   const versions =
     cmpvItem?.status?.serviceVersions || cmpvItem?.spec?.compatibilityRules?.[0]?.releases || [];
   if (typeof versions === 'string') {
-    // Handle comma-separated version strings like "7.0.6,7.2.4,7.2.7"
     return versions.split(',').map((version: string) => ({
       id: version.trim(),
       label: version.trim()
