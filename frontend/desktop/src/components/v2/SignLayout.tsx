@@ -25,14 +25,6 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
 
   useEffect(() => {
-    const url = sessionStorage.getItem('accessTemplatesNoLogin');
-    if (!!url) {
-      sessionStorage.clear();
-      window.location.replace(url);
-    }
-  }, []);
-
-  useEffect(() => {
     if (session && token) {
       router.replace('/');
     }
@@ -59,21 +51,6 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <Box>
-      <Head>
-        <title>{layoutConfig?.meta.title}</title>
-        <meta name="description" content={layoutConfig?.meta.description} />
-      </Head>
-      {authConfig?.captcha.enabled && (
-        <Script
-          src="https://o.alicdn.com/captcha-frontend/aliyunCaptcha/AliyunCaptcha.js"
-          onLoad={() => {
-            setCaptchaIsLoad();
-          }}
-        />
-      )}
-      {/* {layoutConfig?.meta.scripts?.map((item, i) => {
-        return <Script key={i} {...item} />;
-      })} */}
       <Flex width={'full'}>
         <Img
           objectFit={'cover'}
