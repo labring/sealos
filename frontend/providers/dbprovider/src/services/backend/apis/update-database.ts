@@ -7,6 +7,7 @@ import { json2ResourceOps } from '@/utils/json2Yaml';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { updateTerminationPolicyApi } from '@/pages/api/createDB';
+import { raw2schema } from './get-database';
 
 export async function updateDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -79,8 +80,16 @@ export async function updateDatabase(
       });
     }
   }
-
+  const { body: body2 } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
+    'apps.kubeblocks.io',
+    'v1alpha1',
+    k8s.namespace,
+    'clusters',
+    request.params.databaseName
+  )) as {
+    body: KbPgClusterType;
+  };
   return {
-    opsRequests
+    data: raw2schema(adaptDBDetail(body2))
   };
 }

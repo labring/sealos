@@ -1,5 +1,5 @@
 import * as z from 'zod';
-import { dbEditSchema } from '../schemas/db';
+import { dbEditSchema } from '../../schemas/db';
 
 export const pathParams = z.object({
   databaseName: z.string()
@@ -8,11 +8,7 @@ export const pathParams = z.object({
 export const body = z.object({
   dbForm: dbEditSchema
     .pick({
-      cpu: true,
-      memory: true,
-      replicas: true,
-      storage: true,
-      terminationPolicy: true
+      resource: true
     })
     .partial()
 });
