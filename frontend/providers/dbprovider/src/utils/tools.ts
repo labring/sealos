@@ -2,13 +2,18 @@ import { I18nCommonKey } from '@/types/i18next';
 import { useMessage } from '@sealos/ui';
 import { addHours, format, set, startOfDay } from 'date-fns';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { useTranslation } from 'next-i18next';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import yaml from 'js-yaml';
 import ini from 'ini';
 import { DBType, PodDetailType } from '@/types/db';
 
 export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH:mm:ss') => {
-  return dayjs(time).format(format);
+  return dayjs(time).tz('Asia/Shanghai').format(format);
 };
 
 /**

@@ -52,7 +52,7 @@ const EditVersionDesDialog = ({ version, onClose, open, onSuccess }: EditVersion
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="min-w-[450px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('edit_version_description')}</DialogTitle>
         </DialogHeader>

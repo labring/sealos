@@ -136,3 +136,6 @@ export const getTables = (payload: { dbName: string; dbType: DBType; databaseNam
   POST<Array<string>>(`/api/db/getTables`, payload);
 
 export const editPassword = (payload: EditPasswordReq) => POST('/api/db/editPassword', payload);
+
+export const setDBRemark = (payload: { dbName: string; remark: string }) =>
+  POST('/api/remark', payload);

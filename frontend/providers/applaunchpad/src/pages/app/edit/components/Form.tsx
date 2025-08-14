@@ -1293,7 +1293,7 @@ const Form = ({
                           />
                         </Flex>
                       ))}
-                      {storeList.map((item) => (
+                      {persistentVolumes.map((item) => (
                         <Flex key={item.path} _notLast={{ mb: 5 }} alignItems={'center'}>
                           <Flex
                             alignItems={'center'}

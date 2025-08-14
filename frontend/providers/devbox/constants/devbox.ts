@@ -8,6 +8,7 @@ export const gpuNodeSelectorKey = 'nvidia.com/gpu.product';
 export const devboxIdKey = 'cloud.sealos.io/app-devbox-id';
 export const ingressProtocolKey = 'nginx.ingress.kubernetes.io/backend-protocol';
 export const publicDomainKey = `cloud.sealos.io/app-deploy-manager-domain`;
+export const devboxRemarkKey = 'cloud.sealos.io/remark';
 
 export enum LanguageTypeEnum {
   java = 'java',

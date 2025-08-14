@@ -173,31 +173,25 @@ export default function SecondaryLinks() {
         border="1px solid rgba(0, 0, 0, 0.05)"
         minW="200px"
       >
-        {layoutConfig?.version === 'cn' && (
-          <>
-            <MenuItem
-              borderRadius="8px"
-              _hover={{ bg: 'rgba(129, 203, 252, 0.12)' }}
-              onClick={openCostCenterApp}
-              bg={
-                'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'
-              }
-              color="#2563EB"
-              fontSize="14px"
-              fontWeight="500"
-              justifyContent="center"
-            >
-              <Flex height={'16px'} alignItems="center" my="8px" px="12px">
-                <Text>{t('common:balance')}</Text>
-                <Divider orientation="vertical" mx="8px" />
-                <CurrencySymbol type={currencySymbol} />
-                <Text ml="4px">{formatMoney(balance).toFixed(2)}</Text>
-              </Flex>
-            </MenuItem>
+        <MenuItem
+          borderRadius="8px"
+          _hover={{ bg: 'rgba(129, 203, 252, 0.12)' }}
+          onClick={openCostCenterApp}
+          bg={'linear-gradient(90deg, rgba(129, 203, 252, 0.12) 0%, rgba(81, 159, 245, 0.12) 100%)'}
+          color="#2563EB"
+          fontSize="14px"
+          fontWeight="500"
+          justifyContent="center"
+        >
+          <Flex height={'16px'} alignItems="center" my="8px" px="12px">
+            <Text>{t('common:balance')}</Text>
+            <Divider orientation="vertical" mx="8px" />
+            <CurrencySymbol type={currencySymbol} />
+            <Text ml="4px">{formatMoney(balance).toFixed(2)}</Text>
+          </Flex>
+        </MenuItem>
 
-            <Divider my="8px" mx="-8px" w="calc(100% + 16px)" bg="rgba(0, 0, 0, 0.1)" />
-          </>
-        )}
+        <Divider my="8px" mx="-8px" w="calc(100% + 16px)" bg="rgba(0, 0, 0, 0.1)" />
 
         {/* // [TODO] Guide is currently not compatible with narrow screen. */}
         {/* <MenuItem

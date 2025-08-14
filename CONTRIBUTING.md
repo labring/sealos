@@ -222,10 +222,7 @@ The documentation for sealos includes:
 - [README.md](https://github.com/labring/sealos/blob/main/README.md)
 - [CONTRIBUTING.md](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md)
 - [lifecycle/DEVELOPGUIDE.md](https://github.com/labring/sealos/blob/main/lifecycle/DEVELOPGUIDE.md)
-- Files under [docs/4.0](https://github.com/labring/sealos/blob/main/docs/4.0)
-   - English docs under [docs/4.0/docs](https://github.com/labring/sealos/tree/main/docs/4.0/docs)
-   - Chinese docs under [docs/4.0/i18n/zh-Hans](https://github.com/labring/sealos/tree/main/docs/4.0/i18n/zh-Hans)
-   - Images under [docs/4.0/img](https://github.com/labring/sealos/tree/main/docs/4.0/img)
+- [Sealos Website & Documentation](https://github.com/labring/sealos.io)
 
 #### Formatting
 
