@@ -101,7 +101,7 @@ export function InvoicePaymentTable({
   }, [t, currency, needSelect]);
 
   const table = useReactTable({
-    data, // 直接使用传入的数据，因为已经在上层过滤了
+    data,
     getRowId: (row) => row.ID,
     onRowSelectionChange: setRowSelection,
     state: {
