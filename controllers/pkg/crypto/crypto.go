@@ -40,7 +40,7 @@ func Encrypt(plaintext []byte) (string, error) {
 }
 
 // EncryptWithKey encrypts the given plaintext using AES-GCM.
-func EncryptWithKey(plaintext []byte, encryptionKey []byte) (string, error) {
+func EncryptWithKey(plaintext, encryptionKey []byte) (string, error) {
 	block, err := aes.NewCipher(encryptionKey)
 	if err != nil {
 		return "", err

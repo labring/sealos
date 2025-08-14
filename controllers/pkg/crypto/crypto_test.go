@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crypto
+package crypto_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/labring/sealos/controllers/pkg/crypto"
+)
 
 func TestRechargeBalance(t *testing.T) {
-	data, _ := DecryptInt64("")
+	data, _ := crypto.DecryptInt64("")
 	t.Log(data)
 }

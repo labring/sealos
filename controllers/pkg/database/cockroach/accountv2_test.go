@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cockroach
+package cockroach_test
 
 import (
 	"os"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
 	"github.com/labring/sealos/controllers/pkg/types"
 )
 
@@ -31,8 +32,8 @@ type TestConfig struct {
 var testConfig = TestConfig{}
 
 func TestCockroach_GetUserOauthProvider(t *testing.T) {
-	os.Setenv("LOCAL_REGION", testConfig.RegionID)
-	ck, err := NewCockRoach(testConfig.V2GlobalDBURI, testConfig.V2LocalDBURI)
+	t.Setenv("LOCAL_REGION", testConfig.RegionID)
+	ck, err := cockroach.NewCockRoach(testConfig.V2GlobalDBURI, testConfig.V2LocalDBURI)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -50,7 +51,10 @@ func TestCockroach_GetUserOauthProvider(t *testing.T) {
 }
 
 func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
-	ck, err := NewCockRoach(os.Getenv("GLOBAL_COCKROACH_URI"), os.Getenv("LOCAL_COCKROACH_URI"))
+	ck, err := cockroach.NewCockRoach(
+		os.Getenv("GLOBAL_COCKROACH_URI"),
+		os.Getenv("LOCAL_COCKROACH_URI"),
+	)
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
@@ -58,7 +62,6 @@ func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
 	defer ck.Close()
 
 	account, err := ck.GetAccountWithWorkspace("ns-1c6gn6e0")
-
 	if err != nil {
 		t.Errorf("GetAccountWithWorkspace() error = %v", err)
 		return
@@ -67,22 +70,22 @@ func TestCockroach_GetAccountWithWorkspace(t *testing.T) {
 }
 
 func TestCockroach_InitTables(t *testing.T) {
-	os.Setenv("LOCAL_REGION", "")
-	ck, err := NewCockRoach("", "")
+	t.Setenv("LOCAL_REGION", "")
+	ck, err := cockroach.NewCockRoach("", "")
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return
 	}
 	defer ck.Close()
 
-	//uid, err := uuid.Parse("9477dc81-de9a-48b0-b88e-5b3ec6c33a54")
-	//if err != nil {
+	// uid, err := uuid.Parse("9477dc81-de9a-48b0-b88e-5b3ec6c33a54")
+	// if err != nil {
 	//	t.Fatalf("uuid.Parse() error = %v", err)
 	//}
 	//-2.77
 	ops := &types.UserQueryOpts{
-		//UID: uid,
-		//ID: "9F5NY4_lbS",
+		// UID: uid,
+		// ID: "9F5NY4_lbS",
 		Owner:       "6it2bra2",
 		IgnoreEmpty: true,
 	}
@@ -93,33 +96,33 @@ func TestCockroach_InitTables(t *testing.T) {
 	}
 	t.Logf("userUID: %+v", userUID)
 
-	//err = ck.InitTables()
-	//if err != nil {
+	// err = ck.InitTables()
+	// if err != nil {
 	//	t.Errorf("InitTables() error = %v", err)
 	//	return
 	//}
 	//
 	//
-	//err = ck.CreateCredits(&types.Credits{
+	// err = ck.CreateCredits(&types.Credits{
 	//	UserUID:  uid,
 	//	Amount:   100000000,
 	//	ExpireAt: time.Now().UTC().Add(10 * 365 * 24 * time.Hour),
 	//	StartAt:  time.Now().UTC(),
 	//	Status:   types.CreditsStatusActive,
-	//})
-	//if err != nil {
+	// })
+	// if err != nil {
 	//	t.Fatalf("CreateCredits() error = %v", err)
 	//}
 	//
-	//err = ck.AddDeductionBalanceWithCredits(ops, 10_000000, []string{"order1", "order2"})
-	//if err != nil {
+	// err = ck.AddDeductionBalanceWithCredits(ops, 10_000000, []string{"order1", "order2"})
+	// if err != nil {
 	//	t.Fatalf("AddDeductionBalanceWithCredits() error = %v", err)
 	//}
 }
 
 func TestCockroach_CreateCorporate(t *testing.T) {
-	os.Setenv("LOCAL_REGION", "")
-	ck, err := NewCockRoach("/", "")
+	t.Setenv("LOCAL_REGION", "")
+	ck, err := cockroach.NewCockRoach("/", "")
 	if err != nil {
 		t.Errorf("NewCockRoach() error = %v", err)
 		return

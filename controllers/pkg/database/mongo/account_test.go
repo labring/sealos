@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:testpackage
 package mongo
 
 import (
@@ -19,17 +20,16 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/types"
-
 	"github.com/labring/sealos/controllers/pkg/resources"
-
+	"github.com/labring/sealos/controllers/pkg/types"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var testTime = time.Date(2023, 5, 9, 5, 0, 0, 0, time.UTC)
+var testTime = time.Date(2023, time.May, 9, 5, 0, 0, 0, time.UTC)
 
 func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	type fields struct {
@@ -48,7 +48,7 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 	numRecords := 10
 	accountBalanceSpecs := make([]*resources.Billing, numRecords+10)
 
-	for i := 0; i < numRecords; i++ {
+	for i := range numRecords {
 		accountBalanceSpecs[i] = &resources.Billing{
 			Time:      testTime,
 			OrderID:   fmt.Sprintf("random_order_id_%d", i+1),
@@ -93,7 +93,10 @@ func TestMongoDB_SaveBillingsWithAccountBalance(t *testing.T) {
 			args    args
 			wantErr bool
 		}{
-			name:    fmt.Sprintf("Test case %d: Save deduction record with owner 'ns-vd1k1dk3'", i+1),
+			name: fmt.Sprintf(
+				"Test case %d: Save deduction record with owner 'ns-vd1k1dk3'",
+				i+1,
+			),
 			args:    args{accountBalanceSpec: spec},
 			wantErr: false,
 		})
@@ -316,8 +319,8 @@ func TestMongoDB_SetPropertyTypeLS(t *testing.T) {
 	for _, tp := range resources.DefaultPropertyTypeLS.Types {
 		t.Logf("propertyTypeLS type: %v", tp)
 	}
-	//err = m.SavePropertyTypes(resources.DefaultPropertyTypeLS.Types)
-	//if err != nil {
+	// err = m.SavePropertyTypes(resources.DefaultPropertyTypeLS.Types)
+	// if err != nil {
 	//	t.Fatalf("failed to save property types: %v", err)
 	//}
 }
@@ -335,7 +338,10 @@ func Test_mongoDB_GetDistinctMonitorCombinations(t *testing.T) {
 		}
 	}()
 	queryTime := time.Now().UTC()
-	monitorCombinations, err := m.GetDistinctMonitorCombinations(queryTime.Add(-time.Hour), queryTime)
+	monitorCombinations, err := m.GetDistinctMonitorCombinations(
+		queryTime.Add(-time.Hour),
+		queryTime,
+	)
 	if err != nil {
 		t.Fatalf("failed to get distinct monitor combinations: %v", err)
 	}
@@ -373,12 +379,12 @@ func Test_mongoDB_SaveObjTraffic(t *testing.T) {
 			t.Errorf("failed to disconnect mongo: error = %v", err)
 		}
 	}()
-	var traffic []*types.ObjectStorageTraffic
-	for i := 0; i < 10; i++ {
+	traffic := make([]*types.ObjectStorageTraffic, 0, 10)
+	for i := range 10 {
 		traffic = append(traffic, &types.ObjectStorageTraffic{
 			Time:      time.Now().UTC(),
-			User:      "user-" + fmt.Sprint(i),
-			Bucket:    "bucket-" + fmt.Sprint(i),
+			User:      "user-" + strconv.Itoa(i),
+			Bucket:    "bucket-" + strconv.Itoa(i),
 			TotalSent: int64(1000 + i),
 			Sent:      int64(100 + i),
 		})
@@ -425,7 +431,11 @@ func Test_mongoDB_HandlerTimeObjBucketSentTraffic(t *testing.T) {
 		}
 	}()
 
-	bytes, err := m.HandlerTimeObjBucketSentTraffic(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), "bucket-6")
+	bytes, err := m.HandlerTimeObjBucketSentTraffic(
+		time.Now().UTC().Add(-time.Hour),
+		time.Now().UTC(),
+		"bucket-6",
+	)
 	if err != nil {
 		t.Fatalf("failed to handle time object bucket usage: %v", err)
 	}
@@ -496,7 +506,12 @@ func Test_mongoDB_GenerateBillingData(t *testing.T) {
 	ownerToNS := map[string][]string{
 		"ax1uut8w": {"ns-tnw80mhk", "ns-ax1uut8w"},
 	}
-	billings, err := m.GenerateBillingData(time.Now().UTC().Add(-time.Hour), time.Now().UTC(), prols, ownerToNS)
+	billings, err := m.GenerateBillingData(
+		time.Now().UTC().Add(-time.Hour),
+		time.Now().UTC(),
+		prols,
+		ownerToNS,
+	)
 	if err != nil {
 		t.Fatalf("failed to generate billing data: %v", err)
 	}
@@ -520,7 +535,8 @@ func Test_mongoDB_GetOwnersWithoutRecentUpdates(t *testing.T) {
 		}
 	}()
 	now := time.Now().UTC()
-	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).UTC()
+	endHourTime := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.Local).
+		UTC()
 	owners, err := m.GetOwnersRecentUpdates([]string{"nfhmc74p"}, endHourTime)
 	if err != nil {
 		t.Fatalf("failed to get owners without recent updates: %v", err)

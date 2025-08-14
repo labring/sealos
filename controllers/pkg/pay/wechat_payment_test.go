@@ -1,4 +1,4 @@
-package pay
+package pay_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/account"
+	"github.com/labring/sealos/controllers/pkg/pay"
 )
 
 func setupenvWechatpayment() {
@@ -18,36 +19,39 @@ func setupenvWechatpayment() {
 		envMchCertificateSerialNumber = ""
 		envMchAPIv3Key                = ""
 		envAppID                      = ""
-		//envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
+		// envNotifyCallbackURL          = "your_notify_callback_url_here"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          // 替换为你的支付通知回调URL
 	)
 
 	// check that the environment variables are set
-	if os.Getenv(MchID) == "" {
-		err := os.Setenv(MchID, envMchID)
+	if os.Getenv(pay.MchID) == "" {
+		err := os.Setenv(pay.MchID, envMchID)
 		if err != nil {
 			log.Fatalf("Failed to set the environment variable of WeChat merchant account: %v", err)
 		}
 	}
-	if os.Getenv(WechatPrivateKey) == "" {
-		err := os.Setenv(WechatPrivateKey, envWechatPrivateKey)
+	if os.Getenv(pay.WechatPrivateKey) == "" {
+		err := os.Setenv(pay.WechatPrivateKey, envWechatPrivateKey)
 		if err != nil {
 			log.Fatalf("Failed to set the environment variable for WeChat private key: %v", err)
 		}
 	}
-	if os.Getenv(MchCertificateSerialNumber) == "" {
-		err := os.Setenv(MchCertificateSerialNumber, envMchCertificateSerialNumber)
+	if os.Getenv(pay.MchCertificateSerialNumber) == "" {
+		err := os.Setenv(pay.MchCertificateSerialNumber, envMchCertificateSerialNumber)
 		if err != nil {
-			log.Fatalf("Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v", err)
+			log.Fatalf(
+				"Failed to set the environment variable of the serial number of the WeChat merchant certificate: %v",
+				err,
+			)
 		}
 	}
-	if os.Getenv(MchAPIv3Key) == "" {
-		err := os.Setenv(MchAPIv3Key, envMchAPIv3Key)
+	if os.Getenv(pay.MchAPIv3Key) == "" {
+		err := os.Setenv(pay.MchAPIv3Key, envMchAPIv3Key)
 		if err != nil {
 			log.Fatalf("Failed to set the environment variable of the WeChat API v3 key: %v", err)
 		}
 	}
-	if os.Getenv(AppID) == "" {
-		err := os.Setenv(AppID, envAppID)
+	if os.Getenv(pay.AppID) == "" {
+		err := os.Setenv(pay.AppID, envAppID)
 		if err != nil {
 			log.Fatalf("Failed to set the WeChat AppID environment variable: %v", err)
 		}
@@ -63,7 +67,7 @@ func setupenvWechatpayment() {
 func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	setupenvWechatpayment()
 	// initialize the wechat pay object
-	wechatPayment := WechatPayment{}
+	wechatPayment := pay.WechatPayment{}
 
 	user := "test_user"
 	amount := int64(10000) // The amount to be paid is in "cents", e.g. 10,000 cents = 100 RMB
@@ -93,12 +97,12 @@ func TestWechatPayment_PaymentAndRefund(t *testing.T) {
 	fmt.Printf("payment amount %d cent\n", paidAmount)
 
 	// determine whether the payment was successful
-	//if status != StatusSuccess {
+	// if status != StatusSuccess {
 	//	t.Fatalf("The payment was unsuccessful and no refund can be made")
 	//}
 
 	// make a refund
-	refundOption := RefundOption{
+	refundOption := pay.RefundOption{
 		TradeNo: tradeNo,
 		OrderID: tradeNo, // can be set to be the same as the order number
 		Amount:  amount,  // refund amount

@@ -16,7 +16,7 @@ package retry
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -30,14 +30,21 @@ func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {
 		return err
 	}
 	if newKey := client.ObjectKeyFromObject(obj); key != newKey {
-		return fmt.Errorf("mutateFn cannot mutate object name and/or object namespace")
+		return errors.New("mutateFn cannot mutate object name and/or object namespace")
 	}
 	return nil
 }
 
 type MutateFn func() error
 
-func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f MutateFn, tryTimes int, trySleepTime time.Duration) (OperationResult, error) {
+func CreateOrUpdate(
+	ctx context.Context,
+	c client.Client,
+	obj client.Object,
+	f MutateFn,
+	tryTimes int,
+	trySleepTime time.Duration,
+) (OperationResult, error) {
 	var result OperationResult
 	err := Retry(tryTimes, trySleepTime, func() error {
 		key := client.ObjectKeyFromObject(obj)
@@ -58,7 +65,7 @@ func CreateOrUpdate(ctx context.Context, c client.Client, obj client.Object, f M
 			return nil
 		}
 
-		existing := obj.DeepCopyObject() //nolint
+		existing := obj.DeepCopyObject()
 		if err := mutate(f, key, obj); err != nil {
 			result = OperationResultNone
 			return err

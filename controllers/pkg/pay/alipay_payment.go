@@ -7,10 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labring/sealos/controllers/pkg/account"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
-	"github.com/google/uuid"
 	"github.com/smartwalle/alipay/v3"
 )
 
@@ -19,32 +18,39 @@ type AlipayPayment struct {
 }
 
 func NewAlipayPayment() (*AlipayPayment, error) {
-	client, err := alipay.New(os.Getenv(account.AlipayAppID), os.Getenv(account.AlipayPrivateKey), env.GetBoolWithDefault(account.PayIsProduction, true))
+	client, err := alipay.New(
+		os.Getenv(account.AlipayAppID),
+		os.Getenv(account.AlipayPrivateKey),
+		env.GetBoolWithDefault(account.PayIsProduction, true),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("alipay client init failed: %v", err)
+		return nil, fmt.Errorf("alipay client init failed: %w", err)
 	}
-	//err = client.LoadAliPayPublicKey(os.Getenv(account.AlipayPublicKey))
-	//if err != nil {
+	// err = client.LoadAliPayPublicKey(os.Getenv(account.AlipayPublicKey))
+	// if err != nil {
 	//	return nil, fmt.Errorf("load alipay public key failed: %v", err)
 	//}
 	if err = client.LoadAppCertPublicKey(os.Getenv(account.AlipayAppCertPublicKey)); err != nil {
-		return nil, fmt.Errorf("load appCertPublicKey failed: %v", err)
+		return nil, fmt.Errorf("load appCertPublicKey failed: %w", err)
 	}
 	if err = client.LoadAliPayRootCert(os.Getenv(account.AlipayRootCert)); err != nil {
-		return nil, fmt.Errorf("load alipayRootCert failed: %v", err)
+		return nil, fmt.Errorf("load alipayRootCert failed: %w", err)
 	}
 	if err = client.LoadAlipayCertPublicKey(os.Getenv(account.AlipayCertPublicKey)); err != nil {
-		return nil, fmt.Errorf("load alipayCertPublicKey failed: %v", err)
+		return nil, fmt.Errorf("load alipayCertPublicKey failed: %w", err)
 	}
 	return &AlipayPayment{client}, nil
 }
 
 // CreatePayment Create a payment and return the payment URL and order number
 func (a *AlipayPayment) CreatePayment(amount int64, _, _ string) (string, string, error) {
-	var p = alipay.TradePagePay{}
+	p := alipay.TradePagePay{}
 	p.Subject = "sealos_cloud_pay"
 	p.OutTradeNo = uuid.NewString()
-	p.TotalAmount = fmt.Sprintf("%.2f", float64(amount)/1_000_000) // the unit of the amount is converted to a dollar
+	p.TotalAmount = fmt.Sprintf(
+		"%.2f",
+		float64(amount)/1_000_000,
+	) // the unit of the amount is converted to a dollar
 	p.ProductCode = "FAST_INSTANT_TRADE_PAY"
 	p.QRPayMode = "2"
 	p.TimeoutExpress = "10m"
@@ -103,19 +109,25 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 		OutTradeNo: option.TradeNo,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("failed to query Alipay order: %v", err)
+		return "", "", fmt.Errorf("failed to query Alipay order: %w", err)
 	}
 
 	// use sendpaydate to verify the time
 	if qresp.SendPayDate == "" {
-		return "", "", fmt.Errorf("the payment time of order %s is unknown, and it is impossible to determine the refund time", option.TradeNo)
+		return "", "", fmt.Errorf(
+			"the payment time of order %s is unknown, and it is impossible to determine the refund time",
+			option.TradeNo,
+		)
 	}
-	paidAt, err := time.ParseInLocation("2006-01-02 15:04:05", qresp.SendPayDate, time.Local)
+	paidAt, err := time.ParseInLocation(time.DateTime, qresp.SendPayDate, time.Local)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to parse the payment time %v", err)
+		return "", "", fmt.Errorf("failed to parse the payment time %w", err)
 	}
 	if time.Since(paidAt) > 365*24*time.Hour {
-		return "", "", fmt.Errorf("order %s has exceeded the one-year refund period and cannot be refunded", option.TradeNo)
+		return "", "", fmt.Errorf(
+			"order %s has exceeded the one-year refund period and cannot be refunded",
+			option.TradeNo,
+		)
 	}
 
 	outRequestNo := uuid.NewString()
@@ -127,12 +139,12 @@ func (a *AlipayPayment) RefundPayment(option RefundOption) (string, string, erro
 		OutTradeNo:   option.TradeNo, // Merchant's original order number, choose one of the two with TradeNo
 		OutRequestNo: outRequestNo,   // The number of this refund request, guaranteed idempotent
 		RefundAmount: refundAmt,      // The amount of this refund, in "yuan", supports two decimal places
-		RefundReason: fmt.Sprintf("refund for order %s", option.OrderID),
+		RefundReason: "refund for order " + option.OrderID,
 	}
 
 	resp, err := a.client.TradeRefund(context.Background(), req)
 	if err != nil {
-		return "", "", fmt.Errorf("alipay TradeRefund error: %v", err)
+		return "", "", fmt.Errorf("alipay TradeRefund error: %w", err)
 	}
 
 	// Response parsing: resp. RefundFee is the amount of the refund, in yuan and string type

@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package pay
+package pay_test
 
 import (
 	"testing"
+
+	"github.com/labring/sealos/controllers/pkg/pay"
 )
 
 func TestCreateCheckoutSession(t *testing.T) {
-	stripe, err := CreateCheckoutSession(2000, "cny", "http://localhost:8080", "http://localhost:8080")
+	stripe, err := pay.CreateCheckoutSession(
+		2000,
+		"cny",
+		"http://localhost:8080",
+		"http://localhost:8080",
+	)
 	if err != nil {
 		t.Error(err)
 	}
 	t.Log(stripe.ID)
 }
 
-//func setupEnv_stripe() {
+// func setupEnv_stripe() {
 //	const (
 //		APIKEY = ""
 //	)
@@ -45,7 +52,7 @@ func TestCreateCheckoutSession(t *testing.T) {
 //	}
 //}
 
-//func TestStripsPayment_PaymentAndRefund(t *testing.T) {
+// func TestStripsPayment_PaymentAndRefund(t *testing.T) {
 //	setupEnv_stripe()
 //	stripe.Key = os.Getenv(StripeAPIKEY)
 //
