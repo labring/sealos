@@ -14,8 +14,10 @@ import {
   VStack,
   Text
 } from '@chakra-ui/react';
+import { useTranslation } from 'react-i18next';
 
 export function GitHubReauthPrompt({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
   const { authConfig } = useConfigStore();
   const { generateState, setProvider } = useSessionStore();
 
@@ -49,22 +51,19 @@ export function GitHubReauthPrompt({ isOpen, onClose }: { isOpen: boolean; onClo
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>GitHub 登录失败</ModalHeader>
+          <ModalHeader>{t('v2:github_login_failed')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack gap="6">
               <Box>
-                <Text fontSize="md">
-                  你尝试登录的 GitHub 账户所使用的邮件地址已被另一个 Sealos 账户使用。
-                </Text>
-                <Text fontSize="md">你可以重新选择 GitHub账户，或换用其他登录方式。</Text>
+                <Text fontSize="md">{t('v2:github_login_email_conflict_description')}</Text>
               </Box>
               <VStack w="full" gap="2">
                 <Button w="full" onClick={handleGitHubOAuth}>
-                  使用其他 GitHub 账户登录
+                  {t('v2:github_reauth_select_account')}
                 </Button>
                 <Button variant="outline" w="full" onClick={onClose}>
-                  更换登录方式
+                  {t('v2:change_login_method')}
                 </Button>
               </VStack>
             </VStack>
