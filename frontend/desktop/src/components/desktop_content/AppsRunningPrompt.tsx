@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogBody,
@@ -12,6 +12,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CloseButton,
   Flex,
   HStack,
   Image,
@@ -27,61 +28,81 @@ import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 interface RunningApp {
   id: string;
   name: string;
-  description: string;
+  description: (count: number) => string;
   icon: string;
-  status: 'running';
 }
 
 const AppsRunningPrompt = () => {
+  const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { dontShowAgain, setDontShowAgain } = useAppsRunningPromptStore();
   const cancelRef = React.useRef<HTMLButtonElement>(null);
+  const [allowClose, setAllowClose] = useState(false);
 
   const runningApps = useQuery({
     queryKey: ['getRunningApps'],
     queryFn: getRunningApps,
-    enabled: false, // We fetch manually on event listeners
+    enabled: false, // We fetch manually
     refetchOnWindowFocus: false
   });
 
-  // Check for running apps and show dialog if needed
-  const checkRunningAppsAndShowDialog = useCallback(async () => {
-    if (dontShowAgain) {
-      return false;
-    }
-
+  const checkRunningApps = useCallback(async (): Promise<boolean> => {
     try {
       const result = await runningApps.refetch();
-      const hasRunningApps =
+
+      if (result.isError) {
+        // On error, assume no running apps to avoid blocking page close
+        return false;
+      }
+
+      const hasRunning =
         Object.entries(result.data?.data?.runningCount ?? {}).reduce(
           (acc, [_name, count]) => acc + count,
           0
         ) > 0;
 
-      if (hasRunningApps) {
-        onOpen();
-        return true; // Prevent default browser behavior
-      }
-      return false; // Allow normal page close
+      return hasRunning;
     } catch (error) {
       console.error('Error checking running apps:', error);
+      // On error, assume no running apps to avoid blocking page close
       return false;
     }
-  }, [dontShowAgain, runningApps, onOpen]);
+  }, [runningApps]);
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (dontShowAgain) {
+      if (dontShowAgain || allowClose) {
         return; // Don't prevent unload
       }
 
+      // Prevent default to give us time to check
       event.preventDefault();
-      // Some browsers need this
       event.returnValue = '';
 
-      setTimeout(() => {
-        checkRunningAppsAndShowDialog();
-      }, 100);
+      // Start async check
+      checkRunningApps()
+        .then((hasRunningApps) => {
+          if (hasRunningApps) {
+            // Show dialog if there are running apps
+            setTimeout(() => onOpen(), 100);
+          } else {
+            // No running apps, allow future closes
+            setAllowClose(true);
+            // Trigger close again
+            setTimeout(() => {
+              window.close();
+            }, 100);
+          }
+        })
+        .catch((error) => {
+          console.error('Error checking running apps:', error);
+          // On error, allow future closes
+          setAllowClose(true);
+          // Trigger close again
+          setTimeout(() => {
+            window.close();
+          }, 100);
+        });
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -89,29 +110,26 @@ const AppsRunningPrompt = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dontShowAgain, checkRunningAppsAndShowDialog]);
+  }, [dontShowAgain, allowClose, onOpen, checkRunningApps, setAllowClose]);
 
   const appsToCheck: RunningApp[] = [
     {
       id: 'devbox',
-      name: 'DevBox',
-      description: '个开发环境正在运行',
-      icon: '/icons/devbox.svg',
-      status: 'running'
+      name: t('common:apps_running_app_devbox'),
+      description: (count) => t('common:apps_running_desc_devbox', { count }),
+      icon: '/icons/devbox.svg'
     },
     {
       id: 'database',
-      name: 'Database',
-      description: '个数据库服务运行中',
-      icon: '/icons/database.svg',
-      status: 'running'
+      name: t('common:apps_running_app_database'),
+      description: (count) => t('common:apps_running_prompt_desc_devbox', { count }),
+      icon: '/icons/database.svg'
     },
     {
       id: 'applaunchpad',
-      name: 'App Launchpad',
-      description: '个应用运行中',
-      icon: '/icons/app_launchpad.svg',
-      status: 'running'
+      name: t('common:apps_running_app_applaunchpad'),
+      description: (count) => t('common:apps_running_prompt_desc_applaunchpad', { count }),
+      icon: '/icons/app_launchpad.svg'
     }
   ];
 
@@ -129,17 +147,18 @@ const AppsRunningPrompt = () => {
     >
       <AlertDialogOverlay>
         <AlertDialogContent borderRadius="8px" maxW="480px" mx={4}>
-          <AlertDialogHeader fontSize="18px" fontWeight="600" pb={4}>
-            确认关闭页面？
+          <AlertDialogHeader fontSize="18px" fontWeight="600" pb={4} position="relative">
+            <Flex justify="space-between" align="center">
+              <Text>{t('common:apps_running_title')}</Text>
+              <CloseButton onClick={onClose} size="sm" />
+            </Flex>
           </AlertDialogHeader>
 
           <AlertDialogBody pb={6}>
             <VStack spacing={4} align="stretch">
               <Alert status="warning" borderRadius="6px">
                 <AlertIcon />
-                <Text fontSize="14px">
-                  检测到以下应用正在运行，请确认是否停止项目运行，避免消耗余额。
-                </Text>
+                <Text fontSize="14px">{t('common:apps_running_alert')}</Text>
               </Alert>
 
               <VStack spacing={3} align="stretch">
@@ -186,7 +205,7 @@ const AppsRunningPrompt = () => {
                             {app.name}
                           </Text>
                           <Text fontSize="12px" color="gray.600">
-                            {runningCount + ' ' + app.description}
+                            {app.description(runningCount)}
                           </Text>
                         </VStack>
                       </HStack>
@@ -198,7 +217,7 @@ const AppsRunningPrompt = () => {
                         py={1}
                         borderRadius="4px"
                       >
-                        运行中
+                        {t('common:apps_running_running_badge')}
                       </Badge>
                     </Flex>
                   ))}
@@ -211,7 +230,7 @@ const AppsRunningPrompt = () => {
                 fontSize="14px"
                 color="gray.600"
               >
-                不再显示此提示
+                {t('common:apps_running_do_not_show_again')}
               </Checkbox>
             </VStack>
           </AlertDialogBody>
@@ -219,7 +238,7 @@ const AppsRunningPrompt = () => {
           <AlertDialogFooter pt={0}>
             <HStack spacing={3}>
               <Button ref={cancelRef} onClick={handleShutdown} bg={'red.600'} size="md" px={6}>
-                去关机
+                {t('common:apps_running_shutdown')}
               </Button>
             </HStack>
           </AlertDialogFooter>
