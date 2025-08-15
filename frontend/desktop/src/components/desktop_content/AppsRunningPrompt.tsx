@@ -156,9 +156,11 @@ const AppsRunningPrompt = () => {
 
           <AlertDialogBody pb={6}>
             <VStack spacing={4} align="stretch">
-              <Alert status="warning" borderRadius="6px">
+              <Alert status="warning" borderRadius="6px" bg={'#FEFCE8'}>
                 <AlertIcon />
-                <Text fontSize="14px">{t('common:apps_running_alert')}</Text>
+                <Text fontSize="14px" color={'#A16207'}>
+                  {t('common:apps_running_alert')}
+                </Text>
               </Alert>
 
               <VStack spacing={3} align="stretch">
