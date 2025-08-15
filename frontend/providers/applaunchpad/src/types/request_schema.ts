@@ -459,3 +459,23 @@ export const UpdatePortsSchema = z.object({
         'Port/Network configurations to update. Include networkName/portName/serviceName for updates, omit for new ports'
     })
 });
+
+export const SimpleStorageSchema = z
+  .object({
+    path: z.string().openapi({
+      description: 'Mount path in the container'
+    }),
+    size: z.string().default('1Gi').openapi({
+      description: 'Storage size (e.g., "10Gi", "1Ti")'
+    })
+  })
+  .openapi({
+    description: 'Simplified storage configuration (name auto-generated from path)'
+  });
+
+export const UpdateStorageSchema = z.object({
+  storage: z.array(SimpleStorageSchema).default([]).openapi({
+    description:
+      'Storage configurations to update (incremental). Only includes storage to add or modify, existing storage not listed will be preserved. Name is auto-generated from path.'
+  })
+});
