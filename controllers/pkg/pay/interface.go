@@ -23,8 +23,8 @@ type RefundOption struct {
 
 type Interface interface {
 	// amount = sealos amount
-	CreatePayment(amount int64, user, describe string) (tradeNo string, codeURL string, err error)
-	RefundPayment(option RefundOption) (refundNo string, refundID string, err error)
+	CreatePayment(amount int64, user, describe string) (tradeNo, codeURL string, err error)
+	RefundPayment(option RefundOption) (refundNo, refundID string, err error)
 	GetPaymentDetails(sessionID string) (string, int64, error)
 	ExpireSession(payment string) error
 }
@@ -38,8 +38,8 @@ func NewPayHandler(paymentMethod string) (Interface, error) {
 	case "alipay":
 		return NewAlipayPayment()
 	default:
-		//return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
-		//TODO Now set it as the default wechat, and modify it a few days later
+		// return nil, fmt.Errorf("unsupported payment method: %s", paymentMethod)
+		// TODO Now set it as the default wechat, and modify it a few days later
 		return &WechatPayment{}, nil
 	}
 }

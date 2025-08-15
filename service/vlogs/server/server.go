@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,8 +22,10 @@ type VLogsServer struct {
 	password string
 }
 
-const modeTrue = "true"
-const modeFalse = "false"
+const (
+	modeTrue  = "true"
+	modeFalse = "false"
+)
 
 func NewVLogsServer(config *Config) (*VLogsServer, error) {
 	vl := &VLogsServer{
@@ -36,37 +39,52 @@ func NewVLogsServer(config *Config) (*VLogsServer, error) {
 func (vl *VLogsServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	query, err := vl.queryConvert(req)
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("query %s error: %s", req.URL.Path, err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("query %s error: %s", req.URL.Path, err),
+			http.StatusInternalServerError,
+		)
 		return
 	}
 	err = query(rw, req)
 	if err != nil {
-		http.Error(rw, fmt.Sprintf("query %s error: %s", req.URL.Path, err), http.StatusInternalServerError)
+		http.Error(
+			rw,
+			fmt.Sprintf("query %s error: %s", req.URL.Path, err),
+			http.StatusInternalServerError,
+		)
 		slog.Error("%s error: %s", req.URL.Path, err)
 		return
 	}
 }
 
-func (vl *VLogsServer) queryConvert(req *http.Request) (func(rw http.ResponseWriter, req *http.Request) error, error) {
+func (vl *VLogsServer) queryConvert(
+	req *http.Request,
+) (func(rw http.ResponseWriter, req *http.Request) error, error) {
 	switch req.URL.Path {
 	case "/queryLogsByParams":
 		return vl.queryLogsByParams, nil
 	case "/queryPodList":
 		return vl.queryPodList, nil
+	case "/helath":
+		return func(rw http.ResponseWriter, req *http.Request) error {
+			rw.WriteHeader(http.StatusOK)
+			return nil
+		}, nil
 	default:
-		return nil, fmt.Errorf("unknown url path")
+		return nil, errors.New("unknown url path")
 	}
 }
 
 func (vl *VLogsServer) authenticate(req *http.Request) (string, error) {
 	kubeConfig, namespace, query, err := vl.generateParamsRequest(req)
 	if err != nil {
-		return "", fmt.Errorf("bad request (%s)", err)
+		return "", fmt.Errorf("bad request (%w)", err)
 	}
 
 	err = auth.Authenticate(namespace, kubeConfig)
 	if err != nil {
-		return "", fmt.Errorf("authentication failed (%s)", err)
+		return "", fmt.Errorf("authentication failed (%w)", err)
 	}
 	return query, nil
 }
@@ -78,7 +96,7 @@ func (vl *VLogsServer) queryLogsByParams(rw http.ResponseWriter, req *http.Reque
 	}
 	resp, err := request.QueryLogsByParams(vl.path, vl.username, vl.password, query)
 	if err != nil {
-		return fmt.Errorf("query failed (%s)", err)
+		return fmt.Errorf("query failed (%w)", err)
 	}
 	defer resp.Body.Close()
 	_, err = io.Copy(rw, resp.Body)
@@ -95,20 +113,20 @@ func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) e
 	}
 	resp, err := request.QueryLogsByParams(vl.path, vl.username, vl.password, query)
 	if err != nil {
-		return fmt.Errorf("query failed (%s)", err)
+		return fmt.Errorf("query failed (%w)", err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %v", err)
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	if len(body) == 0 {
-		return fmt.Errorf("response body is empty")
+		return errors.New("response body is empty")
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(body)))
-	var logs []api.VlogsResponse
 
+	uniquePods := make(map[string]struct{})
 	for scanner.Scan() {
 		var entry api.VlogsResponse
 		line := scanner.Text()
@@ -116,21 +134,17 @@ func (vl *VLogsServer) queryPodList(rw http.ResponseWriter, req *http.Request) e
 		if err != nil {
 			continue
 		}
-		logs = append(logs, entry)
+		uniquePods[entry.Pod] = struct{}{}
 	}
 
-	uniquePods := make(map[string]struct{})
-	for _, log := range logs {
-		uniquePods[log.Pod] = struct{}{}
-	}
-	var podList []string
+	podList := make([]string, 0, len(uniquePods))
 	for pod := range uniquePods {
 		podList = append(podList, pod)
 	}
 
 	rw.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(rw).Encode(podList); err != nil {
-		return fmt.Errorf("failed to write response: %v", err)
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 	return nil
 }
@@ -140,21 +154,21 @@ func (vl *VLogsServer) generateParamsRequest(req *http.Request) (string, string,
 	if config, err := url.PathUnescape(kubeConfig); err == nil {
 		kubeConfig = config
 	} else {
-		return "", "", "", fmt.Errorf("failed to PathUnescape : %s", err)
+		return "", "", "", fmt.Errorf("failed to PathUnescape : %w", err)
 	}
 	var query string
 	vlogsReq := &api.VlogsRequest{}
 	err := json.NewDecoder(req.Body).Decode(&vlogsReq)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse request body: %s", err)
+		return "", "", "", fmt.Errorf("failed to parse request body: %w", err)
 	}
 	if vlogsReq.Namespace == "" {
-		return "", "", "", fmt.Errorf("failed to get namespace")
+		return "", "", "", errors.New("failed to get namespace")
 	}
 	var vlogs VLogsQuery
 	query, err = vlogs.getQuery(vlogsReq)
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to parse request body: %s", err)
+		return "", "", "", fmt.Errorf("failed to parse request body: %w", err)
 	}
 	return kubeConfig, vlogsReq.Namespace, query, nil
 }
@@ -183,7 +197,12 @@ func (v *VLogsQuery) getQuery(req *api.VlogsRequest) (string, error) {
 
 func (v *VLogsQuery) generatePodListQuery(req *api.VlogsRequest) string {
 	var builder strings.Builder
-	item := fmt.Sprintf(`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`, req.Namespace, req.Time, req.App)
+	item := fmt.Sprintf(
+		`{namespace="%s"} _time:%s app:="%s" | Drop _stream_id,_stream,app,job,namespace,node`,
+		req.Namespace,
+		req.Time,
+		req.App,
+	)
 	builder.WriteString(item)
 	v.query += builder.String()
 	return v.query
@@ -227,18 +246,21 @@ func (v *VLogsQuery) generateJSONQuery(req *api.VlogsRequest) error {
 func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 	var builder strings.Builder
 
-	if len(req.Pod) == 0 && len(req.Container) == 0 {
+	switch {
+	case len(req.Pod) == 0 && len(req.Container) == 0:
 		// Generate query based only on namespace
 		builder.WriteString(fmt.Sprintf(`{namespace="%s"}`, req.Namespace))
-	} else if len(req.Pod) == 0 {
+	case len(req.Pod) == 0:
 		// Generate query based on container
 		for i, container := range req.Container {
-			builder.WriteString(fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace))
+			builder.WriteString(
+				fmt.Sprintf(`{container="%s",namespace="%s"}`, container, req.Namespace),
+			)
 			if i != len(req.Container)-1 {
 				builder.WriteString(" OR ")
 			}
 		}
-	} else if len(req.Container) == 0 {
+	case len(req.Container) == 0:
 		// Generate query based on pod
 		for i, pod := range req.Pod {
 			builder.WriteString(fmt.Sprintf(`{pod="%s",namespace="%s"}`, pod, req.Namespace))
@@ -246,11 +268,18 @@ func (v *VLogsQuery) generateStreamQuery(req *api.VlogsRequest) {
 				builder.WriteString(" OR ")
 			}
 		}
-	} else {
+	default:
 		// Generate query based on both pod and container
 		for i, container := range req.Container {
 			for j, pod := range req.Pod {
-				builder.WriteString(fmt.Sprintf(`{container="%s",namespace="%s",pod="%s"}`, container, req.Namespace, pod))
+				builder.WriteString(
+					fmt.Sprintf(
+						`{container="%s",namespace="%s",pod="%s"}`,
+						container,
+						req.Namespace,
+						pod,
+					),
+				)
 				if i != len(req.Container)-1 || j != len(req.Pod)-1 {
 					builder.WriteString(" OR ")
 				}

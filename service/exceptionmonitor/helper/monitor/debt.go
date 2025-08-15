@@ -10,7 +10,9 @@ import (
 
 func checkDebt(namespace string) (bool, string, error) {
 	// find quota crd
-	_, err := api.DynamicClient.Resource(quotaGVR).Namespace(namespace).Get(context.TODO(), "debt-limit0", metav1.GetOptions{})
+	_, err := api.DynamicClient.Resource(quotaGVR).
+		Namespace(namespace).
+		Get(context.TODO(), "debt-limit0", metav1.GetOptions{})
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
 			return true, "NormalPeriod", nil

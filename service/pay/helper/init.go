@@ -2,6 +2,7 @@ package helper
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -17,11 +18,11 @@ func Init(c *gin.Context, client *mongo.Client) (*Request, error) {
 	payRequest := &Request{}
 	err := c.ShouldBindJSON(payRequest)
 	if err != nil {
-		return nil, fmt.Errorf("bind json error : %v", err)
+		return nil, fmt.Errorf("bind json error : %w", err)
 	}
 	// Identity authentication
 	if err = Authenticate(payRequest, client); err != nil {
-		return nil, fmt.Errorf("authenticate error : %v", err)
+		return nil, fmt.Errorf("authenticate error : %w", err)
 	}
 	return payRequest, nil
 }
@@ -40,20 +41,20 @@ func Authenticate(r *Request, client *mongo.Client) error {
 	var result bson.M
 	if err := coll.FindOne(context.TODO(), filter).Decode(&result); err != nil {
 		// processing query error
-		if err == mongo.ErrNoDocuments {
+		if errors.Is(err, mongo.ErrNoDocuments) {
 			// no matching document found, error returned
-			return fmt.Errorf("no matching app found: %v", err)
+			return fmt.Errorf("no matching app found: %w", err)
 		}
 		// for other errors, print the error message and handle it
-		return fmt.Errorf("unknown error: %v", err)
+		return fmt.Errorf("unknown error: %w", err)
 	}
 	return nil
 }
 
-func InitMongoClient(URI string) *mongo.Client {
+func InitMongoClient(url string) *mongo.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URI))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(url))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,7 +64,7 @@ func InitMongoClient(URI string) *mongo.Client {
 	return client
 }
 
-func InitDBAndColl(client *mongo.Client, datebase string, collection string) *mongo.Collection {
+func InitDBAndColl(client *mongo.Client, datebase, collection string) *mongo.Collection {
 	coll := client.Database(datebase).Collection(collection)
 	return coll
 }

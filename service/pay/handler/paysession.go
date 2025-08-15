@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/pay"
-
 	"github.com/labring/sealos/service/pay/helper"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,7 +14,12 @@ import (
 )
 
 // InsertDetails inserts data into both the payment_details and order_details tables and ensures transactionality
-func InsertDetails(client *mongo.Client, user, payMethod, amount, currency string, appID int64, details map[string]interface{}) (string, error) {
+func InsertDetails(
+	client *mongo.Client,
+	user, payMethod, amount, currency string,
+	appID int64,
+	details map[string]any,
+) (string, error) {
 	// create transaction options
 	maxCommitTime := 5 * time.Second
 	transactionOptions := options.Transaction().SetMaxCommitTime(&maxCommitTime)
@@ -28,40 +32,48 @@ func InsertDetails(client *mongo.Client, user, payMethod, amount, currency strin
 	defer session.EndSession(context.Background())
 
 	// execute transaction
-	result, err := session.WithTransaction(context.Background(), func(_ mongo.SessionContext) (interface{}, error) {
-		// perform an operation to insert data into paymentDetails in a transaction
-		orderID, err := InsertPaymentDetails(client, user, payMethod, amount, currency, appID)
-		if err != nil {
-			fmt.Println("insert payment details failed:", err)
-			return nil, fmt.Errorf("insert payment details failed: %v", err)
-		}
+	result, err := session.WithTransaction(
+		context.Background(),
+		func(_ mongo.SessionContext) (any, error) {
+			// perform an operation to insert data into paymentDetails in a transaction
+			orderID, err := InsertPaymentDetails(client, user, payMethod, amount, currency, appID)
+			if err != nil {
+				fmt.Println("insert payment details failed:", err)
+				return nil, fmt.Errorf("insert payment details failed: %w", err)
+			}
 
-		// the insertion of data to the orderDetailsColl in a transaction
-		if err := InsertOrderDetails(client, appID, user, orderID, amount, payMethod, currency, details); err != nil {
-			fmt.Println("insert order details failed:", err)
-			return nil, fmt.Errorf("insert order details failed: %v", err)
-		}
+			// the insertion of data to the orderDetailsColl in a transaction
+			if err := InsertOrderDetails(client, appID, user, orderID, amount, payMethod, currency, details); err != nil {
+				fmt.Println("insert order details failed:", err)
+				return nil, fmt.Errorf("insert order details failed: %w", err)
+			}
 
-		return orderID, nil
-	}, transactionOptions)
+			return orderID, nil
+		},
+		transactionOptions,
+	)
 	if err != nil {
 		fmt.Println("transaction execution failure:", err)
 	}
 
-	orderID := result.(string)
+	orderID, _ := result.(string)
 	fmt.Println("Order ID:", orderID)
 	return orderID, nil
 }
 
-func InsertPaymentDetails(client *mongo.Client, user, payMethod, amount, currency string, appID int64) (string, error) {
+func InsertPaymentDetails(
+	client *mongo.Client,
+	user, payMethod, amount, currency string,
+	appID int64,
+) (string, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PaymentDetailsColl)
 	orderID, err := gonanoid.New(18)
 	// switched to the Chinese time zone and optimized the format
-	payTime := time.Now().UTC().In(time.FixedZone("CST", 8*60*60)).Format("2006-01-02 15:04:05")
+	payTime := time.Now().UTC().In(time.FixedZone("CST", 8*60*60)).Format(time.DateTime)
 	if err != nil {
 		return "", fmt.Errorf("create order id failed: %w", err)
 	}
-	docs := []interface{}{
+	docs := []any{
 		helper.PaymentDetails{
 			OrderID:   orderID,
 			User:      user,
@@ -82,10 +94,15 @@ func InsertPaymentDetails(client *mongo.Client, user, payMethod, amount, currenc
 	return orderID, nil
 }
 
-func InsertOrderDetails(client *mongo.Client, appID int64, user, orderID, amount, payMethod, currency string, details map[string]interface{}) error {
+func InsertOrderDetails(
+	client *mongo.Client,
+	appID int64,
+	user, orderID, amount, payMethod, currency string,
+	details map[string]any,
+) error {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.OrderDetailsColl)
 	// switched to the Chinese time zone and optimized the format
-	payTime := time.Now().UTC().In(time.FixedZone("CST", 8*60*60)).Format("2006-01-02 15:04:05")
+	payTime := time.Now().UTC().In(time.FixedZone("CST", 8*60*60)).Format(time.DateTime)
 	// get the exchange rate corresponding to the currency,
 	// and then calculate the corresponding RMB amount / sealos amount
 	exchangeRate, err := GetExchangeRate(client, payMethod, currency)
@@ -101,7 +118,7 @@ func InsertOrderDetails(client *mongo.Client, appID int64, user, orderID, amount
 	newAmount := amountFloat * exchangeRate
 	newAmountStr := strconv.FormatFloat(newAmount, 'f', 2, 64)
 
-	docs := []interface{}{
+	docs := []any{
 		helper.OrderDetails{
 			OrderID:     orderID,
 			Amount:      newAmountStr,

@@ -82,7 +82,12 @@ func (r *GpuReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Res
 	return r.applyGPUInfoCM(ctx, nodeList, podList, nil)
 }
 
-func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.NodeList, podList *corev1.PodList, clientSet *kubernetes.Clientset) (ctrl.Result, error) {
+func (r *GpuReconciler) applyGPUInfoCM(
+	ctx context.Context,
+	nodeList *corev1.NodeList,
+	podList *corev1.PodList,
+	clientSet *kubernetes.Clientset,
+) (ctrl.Result, error) {
 	/*
 		"nodeMap": {
 			"sealos-poc-gpu-master-0":{},
@@ -127,7 +132,8 @@ func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.Nod
 			if !ok {
 				continue
 			}
-			r.Logger.V(1).Info("pod using GPU", "name", pod.Name, "namespace", pod.Namespace, "gpuCount", gpuCount, "gpuProduct", gpuProduct)
+			r.Logger.V(1).
+				Info("pod using GPU", "name", pod.Name, "namespace", pod.Namespace, "gpuCount", gpuCount, "gpuProduct", gpuProduct)
 			oldCount, err := strconv.ParseInt(nodeMap[nodeName][GPUCount], 10, 64)
 			if err != nil {
 				r.Logger.Error(err, "failed to parse gpu.count string to int64")
@@ -150,7 +156,9 @@ func (r *GpuReconciler) applyGPUInfoCM(ctx context.Context, nodeList *corev1.Nod
 	configmap := &corev1.ConfigMap{}
 
 	if clientSet != nil {
-		configmap, err = clientSet.CoreV1().ConfigMaps(GPUInfoNameSpace).Get(ctx, GPUInfo, metaV1.GetOptions{})
+		configmap, err = clientSet.CoreV1().
+			ConfigMaps(GPUInfoNameSpace).
+			Get(ctx, GPUInfo, metaV1.GetOptions{})
 	} else {
 		err = r.Get(ctx, types.NamespacedName{Name: GPUInfo, Namespace: GPUInfoNameSpace}, configmap)
 	}
@@ -238,7 +246,10 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// build index for node which have GPU
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Node{}, NodeIndexKey, func(rawObj client.Object) []string {
-		node := rawObj.(*corev1.Node)
+		node, ok := rawObj.(*corev1.Node)
+		if !ok {
+			return nil
+		}
 		if _, ok := node.Labels[NvidiaGPUProduct]; !ok {
 			return nil
 		}
@@ -248,7 +259,10 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	// build index for pod which use GPU
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, PodIndexKey, func(rawObj client.Object) []string {
-		pod := rawObj.(*corev1.Pod)
+		pod, ok := rawObj.(*corev1.Pod)
+		if !ok {
+			return nil
+		}
 		if _, ok := pod.Spec.NodeSelector[NvidiaGPUProduct]; !ok {
 			return nil
 		}
@@ -266,12 +280,24 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return useGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
-				_, ok := event.ObjectNew.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+				pod, ok := event.ObjectNew.(*corev1.Pod)
 				if !ok {
 					return false
 				}
-				phaseOld := event.ObjectOld.(*corev1.Pod).Status.Phase
-				phaseNew := event.ObjectNew.(*corev1.Pod).Status.Phase
+				_, ok = pod.Spec.NodeSelector[NvidiaGPUProduct]
+				if !ok {
+					return false
+				}
+				podOld, ok := event.ObjectOld.(*corev1.Pod)
+				if !ok {
+					return false
+				}
+				podNew, ok := event.ObjectNew.(*corev1.Pod)
+				if !ok {
+					return false
+				}
+				phaseOld := podOld.Status.Phase
+				phaseNew := podNew.Status.Phase
 				return phaseOld != phaseNew
 			},
 			DeleteFunc: func(event event.DeleteEvent) bool {
@@ -283,8 +309,16 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return hasGPU(event.Object)
 			},
 			UpdateFunc: func(event event.UpdateEvent) bool {
-				oldVal, oldOk := event.ObjectOld.(*corev1.Node).Status.Allocatable[NvidiaGPU]
-				newVal, newOk := event.ObjectNew.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+				nodeOld, ok := event.ObjectOld.(*corev1.Node)
+				if !ok {
+					return false
+				}
+				nodeNew, ok := event.ObjectNew.(*corev1.Node)
+				if !ok {
+					return false
+				}
+				oldVal, oldOk := nodeOld.Status.Allocatable[NvidiaGPU]
+				newVal, newOk := nodeNew.Status.Allocatable[NvidiaGPU]
 
 				return oldOk && newOk && oldVal != newVal
 			},
@@ -296,13 +330,21 @@ func (r *GpuReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func useGPU(obj client.Object) bool {
-	_, ok := obj.(*corev1.Pod).Spec.NodeSelector[NvidiaGPUProduct]
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		return false
+	}
+	_, ok = pod.Spec.NodeSelector[NvidiaGPUProduct]
 	return ok
 }
 
 func hasGPU(obj client.Object) bool {
-	_, ok1 := obj.(*corev1.Node).Labels[NvidiaGPUMemory]
-	_, ok2 := obj.(*corev1.Node).Labels[NvidiaGPUProduct]
-	_, ok3 := obj.(*corev1.Node).Status.Allocatable[NvidiaGPU]
+	node, ok := obj.(*corev1.Node)
+	if !ok {
+		return false
+	}
+	_, ok1 := node.Labels[NvidiaGPUMemory]
+	_, ok2 := node.Labels[NvidiaGPUProduct]
+	_, ok3 := node.Status.Allocatable[NvidiaGPU]
 	return ok1 && ok2 && ok3
 }

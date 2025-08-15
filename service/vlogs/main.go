@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	vlogsServer "github.com/labring/sealos/service/vlogs/server"
 )
@@ -16,28 +19,38 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *vlogsServer.Config) {
-	var vs, err = vlogsServer.NewVLogsServer(c)
+	vs, err := vlogsServer.NewVLogsServer(c)
 	if err != nil {
 		fmt.Printf("Failed to create auth server: %s\n", err)
 		return
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	hs := &http.Server{
-		Addr:    c.Server.ListenAddress,
-		Handler: vs,
+		Addr:              c.Server.ListenAddress,
+		Handler:           vs,
+		ReadHeaderTimeout: time.Second * 5,
 	}
 
-	var listener net.Listener
-	listener, err = net.Listen("tcp", c.Server.ListenAddress)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	fmt.Printf("Serve on %s\n", c.Server.ListenAddress)
-	if err := hs.Serve(listener); err != nil {
-		fmt.Println(err)
-		return
+	go func() {
+		if err := hs.ListenAndServe(); err != nil {
+			fmt.Println(err)
+			return
+		}
+	}()
+
+	<-ctx.Done()
+
+	shutdownSrvCtx, shutdownSrvCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownSrvCancel()
+
+	if err := hs.Shutdown(shutdownSrvCtx); err != nil {
+		fmt.Println("server forced to shutdown: " + err.Error())
 	}
+	fmt.Println("server shutdown successfully")
 }
 
 func main() {

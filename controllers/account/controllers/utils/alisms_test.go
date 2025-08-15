@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package utils_test
 
 import (
 	"fmt"
@@ -21,20 +21,23 @@ import (
 
 	"github.com/alibabacloud-go/dysmsapi-20170525/v3/client"
 	"github.com/alibabacloud-go/tea/tea"
+	"github.com/labring/sealos/controllers/account/controllers/utils"
 )
 
 func TestSendSms(t *testing.T) {
-	clt, err := CreateSMSClient(os.Getenv("ak"), os.Getenv("sk"), "dysmsapi.aliyuncs.com")
+	clt, err := utils.CreateSMSClient(os.Getenv("ak"), os.Getenv("sk"), "dysmsapi.aliyuncs.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 	userID, oweAmount := "uid", "1234"
-	err = SendSms(clt, &client.SendSmsRequest{
+	err = utils.SendSms(clt, &client.SendSmsRequest{
 		PhoneNumbers: tea.String(os.Getenv("phone")),
 		SignName:     tea.String(os.Getenv("sign_name")),
 		TemplateCode: tea.String(os.Getenv("template_code")),
 		// user_id:, oweAmount
-		TemplateParam: tea.String("{\"user_id\":\"" + userID + "\",\"oweamount\":\"" + oweAmount + "\"}"),
+		TemplateParam: tea.String(
+			"{\"user_id\":\"" + userID + "\",\"oweamount\":\"" + oweAmount + "\"}",
+		),
 	})
 	if err != nil {
 		t.Fatal(fmt.Errorf("send sms failed: %w", err))

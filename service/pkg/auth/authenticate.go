@@ -11,7 +11,6 @@ import (
 
 	authorizationapi "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,7 +31,7 @@ func AddWhiteListKubernetesHosts(host string) {
 func GetKcHost(kc string) (string, error) {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
-		return "", fmt.Errorf("kubeconfig failed  %v", err)
+		return "", fmt.Errorf("kubeconfig failed  %w", err)
 	}
 	return config.Host, nil
 }
@@ -40,12 +39,12 @@ func GetKcHost(kc string) (string, error) {
 func GetKcUser(kc string) (string, error) {
 	config, err := clientcmd.Load([]byte(kc))
 	if err != nil {
-		return "", fmt.Errorf("kubeconfig failed  %v", err)
+		return "", fmt.Errorf("kubeconfig failed  %w", err)
 	}
 	for user := range config.AuthInfos {
 		return user, nil
 	}
-	return "", fmt.Errorf("no user found")
+	return "", errors.New("no user found")
 }
 
 func CheckK8sHost(host string) error {
@@ -68,7 +67,7 @@ func Authenticate(ns, kc string) error {
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(kc))
 	if err != nil {
 		log.Printf("kubeconfig failed (%s)\n", kc)
-		return fmt.Errorf("kubeconfig failed  %v", err)
+		return fmt.Errorf("kubeconfig failed  %w", err)
 	}
 	if !IsWhitelistKubernetesHost(config.Host) {
 		if k8shost := GetKubernetesHostFromEnv(); k8shost != "" {
@@ -80,16 +79,16 @@ func Authenticate(ns, kc string) error {
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return fmt.Errorf("failed to new client: %v", err)
+		return fmt.Errorf("failed to new client: %w", err)
 	}
 	discovery, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
-		return fmt.Errorf("failed to new discovery client: %v", err)
+		return fmt.Errorf("failed to new discovery client: %w", err)
 	}
 	res, err := discovery.RESTClient().Get().AbsPath("/readyz").DoRaw(context.Background())
 	if err != nil {
 		log.Println("Authenticate false, ping apiserver error")
-		return fmt.Errorf("ping apiserver error: %v", err)
+		return fmt.Errorf("ping apiserver error: %w", err)
 	}
 	if string(res) != "ok" {
 		log.Println("Authenticate false, response not ok")
@@ -98,7 +97,7 @@ func Authenticate(ns, kc string) error {
 
 	if err := CheckResourceAccess(client, ns, "get", "pods"); err != nil {
 		// fmt.Println(err.Error())
-		return fmt.Errorf("check resource access error: %v", err)
+		return fmt.Errorf("check resource access error: %w", err)
 	}
 
 	return nil
@@ -134,7 +133,9 @@ func CheckResourceAccess(client *kubernetes.Clientset, namespace, verb, resource
 			},
 		},
 	}
-	resp, err := client.AuthorizationV1().SelfSubjectAccessReviews().Create(context.TODO(), review, metav1.CreateOptions{})
+	resp, err := client.AuthorizationV1().
+		SelfSubjectAccessReviews().
+		Create(context.TODO(), review, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

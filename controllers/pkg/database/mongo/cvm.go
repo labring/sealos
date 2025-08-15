@@ -16,19 +16,20 @@ package mongo
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-
 	"github.com/labring/sealos/controllers/pkg/types"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (m *mongoDB) GetPendingStateInstance(regionUID string) (cvmMap map[string][]types.CVMBilling, err error) {
+func (m *mongoDB) GetPendingStateInstance(
+	regionUID string,
+) (cvmMap map[string][]types.CVMBilling, err error) {
 	if regionUID == "" {
-		return nil, fmt.Errorf("region UID is empty")
+		return nil, errors.New("region UID is empty")
 	}
 	filter := bson.M{
 		"state": bson.M{
@@ -40,7 +41,7 @@ func (m *mongoDB) GetPendingStateInstance(regionUID string) (cvmMap map[string][
 	}
 	cur, err := m.getCVMCollection().Find(context.Background(), filter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find with filter: %v", err)
+		return nil, fmt.Errorf("failed to find with filter: %w", err)
 	}
 	defer cur.Close(context.Background())
 	cvm := make([]types.CVMBilling, 0)
@@ -61,7 +62,7 @@ func (m *mongoDB) GetPendingStateInstance(regionUID string) (cvmMap map[string][
 
 func (m *mongoDB) SetDoneStateInstance(instanceIDs ...primitive.ObjectID) error {
 	if len(instanceIDs) == 0 {
-		return fmt.Errorf("instanceIDs is empty")
+		return errors.New("instanceIDs is empty")
 	}
 	filter := bson.M{
 		"_id": bson.M{
@@ -75,7 +76,7 @@ func (m *mongoDB) SetDoneStateInstance(instanceIDs ...primitive.ObjectID) error 
 	}
 	_, err := m.getCVMCollection().UpdateMany(context.Background(), filter, update)
 	if err != nil {
-		return fmt.Errorf("failed to update with filter: %v", err)
+		return fmt.Errorf("failed to update with filter: %w", err)
 	}
 	return nil
 }

@@ -13,13 +13,19 @@ import (
 func GetBill(c *gin.Context, client *mongo.Client) {
 	request, err := helper.Init(c, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("init failed before get bills: %v, %v", request, err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("init failed before get bills: %v, %v", request, err)},
+		)
 		return
 	}
 
 	billDetails, err := handler.GetBillDetails(request, client)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("get bill details failed : %v", err)})
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{"error": fmt.Sprintf("get bill details failed : %v", err)},
+		)
 		return
 	}
 

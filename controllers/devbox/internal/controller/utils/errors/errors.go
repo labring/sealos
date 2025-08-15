@@ -16,6 +16,4 @@ package errors
 
 import "errors"
 
-var (
-	ErrPodNotLastCommitHistory = errors.New("pod is not the last commit history pod")
-)
+var ErrPodNotLastCommitHistory = errors.New("pod is not the last commit history pod")

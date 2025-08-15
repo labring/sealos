@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
+	"github.com/labring/sealos/controllers/pkg/utils/label"
 	nanoid "github.com/matoous/go-nanoid/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -35,9 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	adminerv1 "github.com/labring/sealos/controllers/db/adminer/api/v1"
-	"github.com/labring/sealos/controllers/pkg/utils/label"
 )
 
 const (
@@ -60,9 +59,7 @@ const (
 	DefaultImage           = "docker.io/labring4docker/adminer:v4.8.1"
 )
 
-var (
-	defaultReplicas = int32(1)
-)
+var defaultReplicas = int32(1)
 
 // request and limit for adminer pod
 const (
@@ -112,7 +109,7 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if adminer.ObjectMeta.DeletionTimestamp.IsZero() {
+	if adminer.DeletionTimestamp.IsZero() {
 		if controllerutil.AddFinalizer(adminer, FinalizerName) {
 			if err := r.Update(ctx, adminer); err != nil {
 				return ctrl.Result{}, err
@@ -176,7 +173,13 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// 	return ctrl.Result{}, err
 	// }
 
-	r.recorder.Eventf(adminer, corev1.EventTypeNormal, "Created", "create adminer success: %v", adminer.Name)
+	r.recorder.Eventf(
+		adminer,
+		corev1.EventTypeNormal,
+		"Created",
+		"create adminer success: %v",
+		adminer.Name,
+	)
 	duration, _ := time.ParseDuration(adminer.Spec.Keepalived)
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
@@ -209,7 +212,11 @@ func (r *AdminerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 // 	})
 // }
 
-func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.Adminer, recLabels map[string]string) error {
+func (r *AdminerReconciler) syncSecret(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+	recLabels map[string]string,
+) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      adminer.Name,
@@ -229,7 +236,12 @@ func (r *AdminerReconciler) syncSecret(ctx context.Context, adminer *adminerv1.A
 	return nil
 }
 
-func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminerv1.Adminer, hostname *string, recLabels map[string]string) error {
+func (r *AdminerReconciler) syncDeployment(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+	hostname *string,
+	recLabels map[string]string,
+) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      adminer.Name,
 		Namespace: adminer.Namespace,
@@ -342,7 +354,7 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 		// only update some specific fields
 		deployment.Spec.Replicas = expectDeployment.Spec.Replicas
 		deployment.Spec.Selector = expectDeployment.Spec.Selector
-		deployment.Spec.Template.ObjectMeta.Labels = expectDeployment.Spec.Template.Labels
+		deployment.Spec.Template.Labels = expectDeployment.Spec.Template.Labels
 		if len(deployment.Spec.Template.Spec.Containers) == 0 {
 			deployment.Spec.Template.Spec.Containers = containers
 		} else {
@@ -380,12 +392,21 @@ func (r *AdminerReconciler) syncDeployment(ctx context.Context, adminer *adminer
 	return r.Status().Update(ctx, adminer)
 }
 
-func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.Adminer, recLabels map[string]string) error {
+func (r *AdminerReconciler) syncService(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+	recLabels map[string]string,
+) error {
 	expectServiceSpec := corev1.ServiceSpec{
 		Selector: recLabels,
 		Type:     corev1.ServiceTypeClusterIP,
 		Ports: []corev1.ServicePort{
-			{Name: "adminer", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
+			{
+				Name:       "adminer",
+				Port:       8080,
+				TargetPort: intstr.FromInt(8080),
+				Protocol:   corev1.ProtocolTCP,
+			},
 		},
 	}
 
@@ -416,17 +437,26 @@ func (r *AdminerReconciler) syncService(ctx context.Context, adminer *adminerv1.
 	return nil
 }
 
-func (r *AdminerReconciler) syncIngress(ctx context.Context, adminer *adminerv1.Adminer, hostname string, recLabels map[string]string) error {
+func (r *AdminerReconciler) syncIngress(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+	hostname string,
+	recLabels map[string]string,
+) error {
 	var err error
 	host := hostname + "." + r.adminerDomain
-	switch adminer.Spec.IngressType {
-	case adminerv1.Nginx:
+	if adminer.Spec.IngressType == adminerv1.Nginx {
 		err = r.syncNginxIngress(ctx, adminer, host, recLabels)
 	}
 	return err
 }
 
-func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *adminerv1.Adminer, host string, recLabels map[string]string) error {
+func (r *AdminerReconciler) syncNginxIngress(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+	host string,
+	recLabels map[string]string,
+) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      adminer.Name,
@@ -436,7 +466,7 @@ func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *admin
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
 		expectIngress := r.createNginxIngress(adminer, host)
-		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
+		ingress.Annotations = expectIngress.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
 		return controllerutil.SetControllerReference(adminer, ingress, r.Scheme)
@@ -458,11 +488,14 @@ func (r *AdminerReconciler) syncNginxIngress(ctx context.Context, adminer *admin
 	return nil
 }
 
-func (r *AdminerReconciler) fillDefaultValue(ctx context.Context, adminer *adminerv1.Adminer) error {
+func (r *AdminerReconciler) fillDefaultValue(
+	ctx context.Context,
+	adminer *adminerv1.Adminer,
+) error {
 	hasUpdate := false
 
-	if _, ok := adminer.ObjectMeta.Annotations[KeepaliveAnnotation]; !ok {
-		adminer.ObjectMeta.Annotations[KeepaliveAnnotation] = time.Now().Format(time.RFC3339)
+	if _, ok := adminer.Annotations[KeepaliveAnnotation]; !ok {
+		adminer.Annotations[KeepaliveAnnotation] = time.Now().Format(time.RFC3339)
 		hasUpdate = true
 	}
 
@@ -475,7 +508,7 @@ func (r *AdminerReconciler) fillDefaultValue(ctx context.Context, adminer *admin
 
 // isExpired return true if the adminer has expired
 func isExpired(adminer *adminerv1.Adminer) bool {
-	anno := adminer.ObjectMeta.Annotations
+	anno := adminer.Annotations
 	lastUpdateTime, err := time.Parse(time.RFC3339, anno[KeepaliveAnnotation])
 	if err != nil {
 		// treat parse errors as not expired
@@ -537,6 +570,7 @@ func (r *AdminerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Config = mgr.GetConfig()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&adminerv1.Adminer{}).
-		Owns(&appsv1.Deployment{}).Owns(&corev1.Service{}).Owns(&corev1.Secret{}).Owns(&networkingv1.Ingress{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).Owns(&corev1.Secret{}).Owns(&networkingv1.Ingress{}).
 		Complete(r)
 }

@@ -14,37 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package controllers_test
 
 import (
 	"fmt"
 	"path/filepath"
 	"testing"
 
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers"
 	"github.com/labring/sealos/controllers/user/controllers/helper/kubeconfig"
-
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	csrv1 "k8s.io/api/certificates/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"k8s.io/client-go/tools/clientcmd"
-
-	v1 "github.com/labring/sealos/controllers/user/api/v1"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	//+kubebuilder:scaffold:imports
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -80,7 +78,6 @@ var _ = BeforeSuite(func() {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 }, 60)
 
 var _ = AfterSuite(func() {
@@ -92,14 +89,13 @@ var _ = AfterSuite(func() {
 var _ = Describe("user kubeconfig ", func() {
 	Context("syncReNewConfig test", func() {
 		AfterEach(func() {
-
 		})
 		It("empty kubeconfig", func() {
 			usr := &v1.User{}
 			usr.Name = "cuisongliu"
-			cfg, event, err := syncReNewConfig(usr)
-			//Expect(err).NotTo(HaveOccurred())
-			Expect(err).To(BeNil())
+			cfg, event, err := controllers.SyncReNewConfig(usr)
+			// Expect(err).NotTo(HaveOccurred())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(BeNil())
 			Expect(cfg).To(BeNil())
 		})
@@ -128,9 +124,9 @@ users:
     client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBM0JkRWtFRTcvbU40WllTUkIvSW5JSGpMeW9DNHZKeUUreHM2bkczdXc3VjROdm1iCmtETklPbktnL0FvbjRNUzVoR2xydUtFcnZyVkk0L0pjTnFNMXFxTTVWVWVMRXVjVzU3cXE3QkdDbmZQSW9ndEcKdWJqWUUyaVl4YWFPMkhVbkhxdFVjVGo2Q203dU1PWVA2di9tMkRZWjNxTDdjYTRjc1MzcVp1aW5oTG5ML1hJQQpzMGVIN0pkZ0JCSEltWlVJa0VvbnlDbzcyOVRpZkFEdWhiQjZ1REtiRmFsMlAwQzZ5a1ltU2VVNHVHaytXQ0pDCngxdjZHeUxyM1l6NXB4em13eHJOQlFBdndoWE9QMFczVUZ1Rnc5MGlwQTN1dXpaT09aakxpd2U1N1ZnT1ZxbFEKaTBmOEhRZmFkQVFPL05xVXNZU0E5OStmc0lxaFJWK3Z5RUtITndJREFRQUJBb0lCQUdDVHZUeG53OEd2T0dlagpzbGlBUS9jVnlxZERzTXpqQ2Q5K1pVdTdXYWg3ZXhMMG1QUy83QlBwdFFha0ZqZWxXNXJrLzZYMjQxRStENHduCkQ1dlNKbnlJUDJKU2tJNXM1VG91U1U1cHFKMVRHbGt4QlluOXVLTmJwSjRtcGt3SnJHN2kwNTBUV1hVMmxFTFUKMFd0WGU1Nm9ydFZwUTFqeEJCb2pnZFpDaFMvUjMzM2dnUW9uRFI4NGx2aDc2cC9zM2x4MHFPbUE4K25nbURJdwpyUGdobzBuOFhVZFFaUDk0alYzVlREcklZNHFOZFlYbzRsODZqUUozTHhndkp4YzV2MUJuUk9MYXJ0N2FaR01iCnB6VzhsRXpKd2pkYlFiQ1hGRkc4bXFZTU42RkREaGl1YmRnb1h6dUd5RXNobSswRVk4clpOcWxhVzcvc0lzNjkKcUIxa0VqRUNnWUVBOFh3OWtjbjVBbGhEbnQ3SEg5bUszeUZ4TTU5Q3BRZVA0b0FPWXJuOFNZSkpvRTdzU1dvVwpXZmFmTmFBVnFQL3lCZFFnUTdSbFZYTlVSdHVibXN0MW5JKzFnbTJVQ0tEQ1VuWGR2Ylp1eHZiYnFSdlJXc0EyCmdTNG03eVBoR1hDb1lVMzhHQy9qcXB3UmFHMnVHWFp5T1M0TjVDN1lBUDMyMWpKNEp6cExzWHNDZ1lFQTZWSFUKUDlDS2VUUVFuV2RzdFRiVXJVYVZpVjhadGo3U0JkRWFtQnZWUnRoeGluU1QzaCtmOGxuaTY1czVXUzNvZUQycApYZW5oeXZwWDkvOFhrT2FtRXdzZVVHNFdCVk16Y1kzVm9CdDNlTVE2WGRaaHgwOWRRek5zZXhUMkN4bTZHTWpUCjV5cXR6TUtOTVBoOFB0cGlsUFNHbytKSXdRVkxaWkVnK24wNkhuVUNnWUVBbmttLzJlWTRFSzltYzZhM2cwc0gKV2tjRGVzRHo0RlRhbmE4dXZzd0djUEN6N2g2TmgzbkFlT3ZOWkVzd3AzeE5Xa0MzZldtcjJwMGtLdVljVXhUMgpYTTllUE1ZeStJelhrMUdyTFlWOWkzR1lmbnE3ZWU3d1N6RERXSkYrSlR6UlFpYnFEYmltVk5qRUdGMThkemhLCm11eHpNcFQ2Qlh4eTVlaGpGZU9DWmkwQ2dZRUFsR2RVL3FZUmZkaE0vU0ZzdHJMQ2dkaFVnd1QzWU1FQ2EycSsKWktQSGU0RnVicWVKNmczcGVZZ00ydGxubDc2b2o5cUFvTmlEb3N5cktYV2FzckxTVFdpVUJvcU8vU0lYcFpHVwpvSGozKzl1c1dFVmsraFlUOXd0OVk2aEllM1VJdG56K3M1bWs1SW1XcnVCT2Z0Zi9Qa2x1WGswdkEzN3ZueEc1CmpUb2J2b1VDZ1lFQTUvUDhBc1kzdjVVL24yUk5EWWczNEJPN1Awb3ZDVHo5V09TMmkybHBIcUxqMGR4V2RPUjcKU1VpNVN1UDBFK1RQODNwRGo3R3l0NVVVYmRaKys5RU4xMll2cHVxUmpIM3NMRFo3Qi8xN0tocWk3QVRIRExLcwpDalp4YmpQRlA5RUduUkxqbXJHaFd0YTlzaUN0YXhyb3ZlbVk4ME5rK2V1STBNQ1oyMklGZFdRPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
 `
 			usr.Status.KubeConfig = kubeConfig
-			cfg, event, err := syncReNewConfig(usr)
+			cfg, event, err := controllers.SyncReNewConfig(usr)
 			eventStr := fmt.Sprintf("ClientCertificateData %s is expired", usr.Name)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(Equal(&eventStr))
 			Expect(cfg).To(BeNil())
 		})
@@ -141,16 +137,16 @@ users:
 			defaultExpirationDuration := int32(100000000)
 			user.Spec.CSRExpirationSeconds = defaultExpirationDuration
 			defaultConfig := kubeconfig.NewConfig("cuisongliu", "", 100000000)
-			config, err := defaultConfig.WithServiceAccountConfig("default", nil).Apply(cfg, k8sClient)
-			Expect(err).To(BeNil())
+			config, err := defaultConfig.WithServiceAccountConfig("default", nil).
+				Apply(cfg, k8sClient)
+			Expect(err).ToNot(HaveOccurred())
 			kubeData, err := clientcmd.Write(*config)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			user.Status.KubeConfig = string(kubeData)
-			newCfg, event, err := syncReNewConfig(user)
-			Expect(err).To(BeNil())
+			newCfg, event, err := controllers.SyncReNewConfig(user)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(event).To(BeNil())
 			Expect(newCfg).NotTo(BeNil())
 		})
-
 	})
 })

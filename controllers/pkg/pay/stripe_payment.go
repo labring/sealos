@@ -22,13 +22,13 @@ import (
 	"github.com/stripe/stripe-go/v74/checkout/session"
 )
 
-const StripeAPIKEY = "STRIPE_API_KEY"
+//nolint:gosec
+const StripeAPIKey = "STRIPE_API_KEY"
 
-type StripePayment struct {
-}
+type StripePayment struct{}
 
 func init() {
-	stripe.Key = os.Getenv(StripeAPIKEY)
+	stripe.Key = os.Getenv(StripeAPIKey)
 }
 
 // const currency
@@ -39,7 +39,10 @@ const (
 
 const sessionExpirationTime = 30 * time.Minute
 
-func CreateCheckoutSession(amount int64, currency, successURL, cancelURL string) (*stripe.CheckoutSession, error) {
+func CreateCheckoutSession(
+	amount int64,
+	currency, successURL, cancelURL string,
+) (*stripe.CheckoutSession, error) {
 	expireAt := time.Now().UTC().Add(sessionExpirationTime).Unix()
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v1_test
 
 import (
 	"context"
@@ -25,9 +25,9 @@ import (
 	"testing"
 	"time"
 
+	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,10 +41,11 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var ctx context.Context
-var cancel context.CancelFunc
+var (
+	k8sClient client.Client
+	testEnv   *envtest.Environment
+	cancel    context.CancelFunc
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -57,7 +58,8 @@ func TestAPIs(t *testing.T) {
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
-	ctx, cancel = context.WithCancel(context.TODO())
+	ctx, cancel := context.WithCancel(context.TODO())
+	defer cancel()
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -73,7 +75,7 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	scheme := runtime.NewScheme()
-	err = AddToScheme(scheme)
+	err = v1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = admissionv1beta1.AddToScheme(scheme)
@@ -95,18 +97,18 @@ var _ = BeforeSuite(func() {
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme,
-		//Host:               webhookInstallOptions.LocalServingHost,
-		//Port:               webhookInstallOptions.LocalServingPort,
-		//CertDir:            webhookInstallOptions.LocalServingCertDir,
+		// Host:               webhookInstallOptions.LocalServingHost,
+		// Port:               webhookInstallOptions.LocalServingPort,
+		// CertDir:            webhookInstallOptions.LocalServingCertDir,
 		LeaderElection: false,
-		//MetricsBindAddress: "0",
+		// MetricsBindAddress: "0",
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&User{}).SetupWebhookWithManager(mgr)
+	err = (&v1.User{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Operationrequest{}).SetupWebhookWithManager(mgr)
+	err = (&v1.Operationrequest{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook
@@ -119,16 +121,25 @@ var _ = BeforeSuite(func() {
 
 	// wait for the webhook server to get ready
 	dialer := &net.Dialer{Timeout: time.Second}
-	addrPort := fmt.Sprintf("%s:%d", webhookInstallOptions.LocalServingHost, webhookInstallOptions.LocalServingPort)
+	addrPort := fmt.Sprintf(
+		"%s:%d",
+		webhookInstallOptions.LocalServingHost,
+		webhookInstallOptions.LocalServingPort,
+	)
 	Eventually(func() error {
-		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		conn, err := tls.DialWithDialer(
+			dialer,
+			"tcp",
+			addrPort,
+			//nolint:gosec
+			&tls.Config{InsecureSkipVerify: true},
+		)
 		if err != nil {
 			return err
 		}
 		conn.Close()
 		return nil
 	}).Should(Succeed())
-
 }, 60)
 
 var _ = AfterSuite(func() {

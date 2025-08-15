@@ -18,11 +18,11 @@ type ServeConfig struct {
 func InitConfig(configPath string) (*Config, error) {
 	configData, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, fmt.Errorf("could not read %s: %s", configPath, err)
+		return nil, fmt.Errorf("could not read %s: %w", configPath, err)
 	}
 	c := &Config{}
 	if err := yaml.Unmarshal(configData, c); err != nil {
-		return nil, fmt.Errorf("could not parse config: %s", err)
+		return nil, fmt.Errorf("could not parse config: %w", err)
 	}
 
 	return c, nil

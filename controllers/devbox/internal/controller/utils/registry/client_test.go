@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package registry_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
+)
 
 func TestClient_TagImage(t1 *testing.T) {
 	type fields struct {
@@ -49,7 +53,7 @@ func TestClient_TagImage(t1 *testing.T) {
 	}
 	for _, tt := range tests {
 		t1.Run(tt.name, func(t1 *testing.T) {
-			t := &Client{
+			t := &registry.Client{
 				Username: tt.fields.Username,
 				Password: tt.fields.Password,
 			}

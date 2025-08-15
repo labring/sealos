@@ -12,23 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mongo
+package mongo_test
 
 import (
 	"context"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/labring/sealos/controllers/pkg/database/mongo"
 )
 
-//import (
+// import (
 //	"context"
 //	"os"
 //	"testing"
 //	"time"
 //)
 //
-//func Test_mongoDB_GetPodTrafficSentBytes(t *testing.T) {
+// func Test_mongoDB_GetPodTrafficSentBytes(t *testing.T) {
 //	dbCTX := context.Background()
 //
 //	m, err := NewMongoInterface(dbCTX, os.Getenv("MONGO_URL"))
@@ -55,7 +57,7 @@ import (
 func Test_mongoDB_GetNamespaceTraffic(t *testing.T) {
 	dbCTX := context.Background()
 
-	m, err := NewMongoInterface(dbCTX, "")
+	m, err := mongo.NewMongoInterface(dbCTX, "")
 	if err != nil {
 		t.Errorf("failed to connect mongo: error = %v", err)
 	}

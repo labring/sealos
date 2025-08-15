@@ -20,17 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/types"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
-
 	"github.com/google/uuid"
-
 	"github.com/labring/sealos/controllers/pkg/common"
-
 	"github.com/labring/sealos/controllers/pkg/gpu"
+	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,65 +40,65 @@ Storage: Mebibytes (MiB) 0.0021 / 1024 * 1000000 = 2 unit price
 Network bandwidth: Mebibytes (MiB) 0.00078125 / 1024 * 1000000 = 781 unit price
 */
 
-//| property     | Price | Detail         |
-//| ------------ | ----- | -------------- |
-//| Cpu          | 67    | mCore unit     |
-//| Memory       | 33    | Mebibytes unit |
-//| Disk         | 2     | Mebibytes unit |
-//| Mongodb      | 1     | feature...     |
-//| Minio        | 1     | Mebibytes unit |
-//| Infra-Cpu    | 67    | mCore unit     |
-//| Infra-Memory | 33    | Mebibytes unit |
-//| Infra-Disk   | 2     | Mebibytes unit |
+// | property     | Price | Detail         |
+// | ------------ | ----- | -------------- |
+// | Cpu          | 67    | mCore unit     |
+// | Memory       | 33    | Mebibytes unit |
+// | Disk         | 2     | Mebibytes unit |
+// | Mongodb      | 1     | feature...     |
+// | Minio        | 1     | Mebibytes unit |
+// | Infra-Cpu    | 67    | mCore unit     |
+// | Infra-Memory | 33    | Mebibytes unit |
+// | Infra-Disk   | 2     | Mebibytes unit |
 //
 // price: 1000000 = 1¥
 
 type Price struct {
 	Property string `json:"property" bson:"property"`
-	Price    int64  `json:"price" bson:"price"`
-	Detail   string `json:"detail" bson:"detail"`
-	//Unit     string  `json:"unit" bson:"unit"`
+	Price    int64  `json:"price"    bson:"price"`
+	Detail   string `json:"detail"   bson:"detail"`
+	// Unit     string  `json:"unit" bson:"unit"`
 }
 
-//| Category   | property     | Time       | value |      |
-//| ---------- | ------------ | -------    | ----- | ---- |
-//| Namespace1 | cpu          | timestamp1 | 5     |      |
-//| Namespace1 | memory       | timestamp1 | 100   |      |
-//| Namespace1 | disk         | timestamp1 | 30    |      |
-//| appid1     | mongodb      | timestamp1 | 100   |      |
-//| appid1     | Minio        | timestamp1 | 100   |      |
-//| Namespace2 | Infra-Cpu    | timestamp1 | 5     |      |
-//| Namespace2 | cpu          | timestamp1 | 100   |      |
-//| Namespace2 | Infra-Memory | timestamp1 | 30    |      |
-//| Namespace2 | Infra-Disk   | timestamp1 | 100   |      |
-//| Namespace2 | memory       | timestamp1 | 100   |      |
-//| Namespace2 |  disk        | timestamp1 | 100   |      |
+// | Category   | property     | Time       | value |      |
+// | ---------- | ------------ | -------    | ----- | ---- |
+// | Namespace1 | cpu          | timestamp1 | 5     |      |
+// | Namespace1 | memory       | timestamp1 | 100   |      |
+// | Namespace1 | disk         | timestamp1 | 30    |      |
+// | appid1     | mongodb      | timestamp1 | 100   |      |
+// | appid1     | Minio        | timestamp1 | 100   |      |
+// | Namespace2 | Infra-Cpu    | timestamp1 | 5     |      |
+// | Namespace2 | cpu          | timestamp1 | 100   |      |
+// | Namespace2 | Infra-Memory | timestamp1 | 30    |      |
+// | Namespace2 | Infra-Disk   | timestamp1 | 100   |      |
+// | Namespace2 | memory       | timestamp1 | 100   |      |
+// | Namespace2 |  disk        | timestamp1 | 100   |      |
 
 // Composite index: category, property, time, speed up query
 type Monitor struct {
-	Time time.Time `json:"time" bson:"time"`
+	Time time.Time `json:"time"               bson:"time"`
 	// equal namespace
-	Category   string      `json:"category" bson:"category"`
-	Type       uint8       `json:"type" bson:"type"`
-	ParentType uint8       `json:"parent_type" bson:"parent_type"`
-	ParentName string      `json:"parent_name" bson:"parent_name"`
-	Name       string      `json:"name" bson:"name"`
-	Used       EnumUsedMap `json:"used" bson:"used"`
+	Category   string      `json:"category"           bson:"category"`
+	Type       uint8       `json:"type"               bson:"type"`
+	ParentType uint8       `json:"parent_type"        bson:"parent_type"`
+	ParentName string      `json:"parent_name"        bson:"parent_name"`
+	Name       string      `json:"name"               bson:"name"`
+	Used       EnumUsedMap `json:"used"               bson:"used"`
 	Property   string      `json:"property,omitempty" bson:"property,omitempty"`
 }
 
 type ActiveBilling struct {
-	ID        primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
+	ID        primitive.ObjectID `json:"_id,omitempty"  bson:"_id,omitempty"`
 	Time      time.Time          `json:"time,omitempty" bson:"time"`
-	Namespace string             `json:"namespace" bson:"namespace"`
-	AppType   string             `json:"app_type" bson:"app_type"`
-	AppName   string             `json:"app_name" bson:"app_name"`
+	Namespace string             `json:"namespace"      bson:"namespace"`
+	AppType   string             `json:"app_type"       bson:"app_type"`
+	AppName   string             `json:"app_name"       bson:"app_name"`
 	Used      UsedMap            `json:"used,omitempty" bson:"used,omitempty"`
-	Amount    int64              `json:"amount" bson:"amount,omitempty"`
-	Owner     string             `json:"owner" bson:"owner,omitempty"`
-	UserUID   uuid.UUID          `json:"user_uid" bson:"user_uid"`
-	Status    ConsumptionStatus  `json:"status" bson:"status"`
-	//Rule      string            `json:"rule" bson:"rule,omitempty"`
+	Amount    int64              `json:"amount"         bson:"amount,omitempty"`
+	Owner     string             `json:"owner"          bson:"owner,omitempty"`
+	UserUID   uuid.UUID          `json:"user_uid"       bson:"user_uid"`
+	Status    ConsumptionStatus  `json:"status"         bson:"status"`
+	// Rule      string            `json:"rule" bson:"rule,omitempty"`
 }
 
 type ConsumptionStatus string
@@ -118,33 +113,33 @@ const (
 type BillingType int
 
 type Billing struct {
-	Time    time.Time   `json:"time" bson:"time"`
-	OrderID string      `json:"order_id" bson:"order_id"`
-	Type    common.Type `json:"type" bson:"type"`
-	//Name      string      `json:"name" bson:"name"`
+	Time    time.Time   `json:"time"      bson:"time"`
+	OrderID string      `json:"order_id"  bson:"order_id"`
+	Type    common.Type `json:"type"      bson:"type"`
+	// Name      string      `json:"name" bson:"name"`
 	Namespace string `json:"namespace" bson:"namespace"`
-	//Used       Used        `json:"used" bson:"used"`
-	//UsedAmount Used        `json:"used_amount" bson:"used_amount"`
+	// Used       Used        `json:"used" bson:"used"`
+	// UsedAmount Used        `json:"used_amount" bson:"used_amount"`
 
 	AppCosts []AppCost `json:"app_costs,omitempty" bson:"app_costs,omitempty"`
-	AppName  string    `json:"app_name,omitempty" bson:"app_name,omitempty"`
-	AppType  uint8     `json:"app_type,omitempty" bson:"app_type,omitempty"`
+	AppName  string    `json:"app_name,omitempty"  bson:"app_name,omitempty"`
+	AppType  uint8     `json:"app_type,omitempty"  bson:"app_type,omitempty"`
 
-	Amount int64  `json:"amount" bson:"amount,omitempty"`
-	Owner  string `json:"owner" bson:"owner,omitempty"`
+	Amount int64  `json:"amount"   bson:"amount,omitempty"`
+	Owner  string `json:"owner"    bson:"owner,omitempty"`
 	// 0: 未结算 1: 已结算
-	Status BillingStatus `json:"status" bson:"status"`
+	Status BillingStatus `json:"status"   bson:"status"`
 	// if type = Consumption, then payment is not nil
-	Payment *Payment `json:"payment" bson:"payment,omitempty"`
+	Payment *Payment `json:"payment"  bson:"payment,omitempty"`
 	// if type = Transfer, then transfer is not nil
 	Transfer *Transfer `json:"transfer" bson:"transfer,omitempty"`
-	Detail   string    `json:"detail" bson:"detail,omitempty"`
-	//UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
+	Detail   string    `json:"detail"   bson:"detail,omitempty"`
+	// UserUID  uuid.UUID `json:"user_uid" bson:"user_uid,omitempty"`
 }
 
 type Payment struct {
-	Method  string `json:"method" bson:"method"`
-	UserID  string `json:"user_id" bson:"user_id"`
+	Method  string `json:"method"            bson:"method"`
+	UserID  string `json:"user_id"           bson:"user_id"`
 	Amount  int64  `json:"amount,omitempty"`
 	TradeNO string `json:"tradeNO,omitempty"`
 	// CodeURL is the codeURL of wechatpay
@@ -152,24 +147,24 @@ type Payment struct {
 }
 
 type Transfer struct {
-	From   string `json:"from" bson:"from,omitempty"`
-	To     string `json:"to" bson:"to,omitempty"`
+	From   string `json:"from"   bson:"from,omitempty"`
+	To     string `json:"to"     bson:"to,omitempty"`
 	Amount int64  `json:"amount" bson:"amount"`
 }
 
 type AppCost struct {
-	Type       uint8       `json:"type" bson:"type"`
-	Used       EnumUsedMap `json:"used" bson:"used"`
+	Type       uint8       `json:"type"        bson:"type"`
+	Used       EnumUsedMap `json:"used"        bson:"used"`
 	UsedAmount EnumUsedMap `json:"used_amount" bson:"used_amount"`
-	Amount     int64       `json:"amount" bson:"amount,omitempty"`
-	Name       string      `json:"name" bson:"name"`
+	Amount     int64       `json:"amount"      bson:"amount,omitempty"`
+	Name       string      `json:"name"        bson:"name"`
 }
 
 type BillingHandler struct {
 	OrderID string        `json:"order_id" bson:"order_id"`
-	Time    time.Time     `json:"time" bson:"time"`
-	Amount  int64         `json:"amount" bson:"amount,omitempty"`
-	Status  BillingStatus `json:"status" bson:"status,omitempty"`
+	Time    time.Time     `json:"time"     bson:"time"`
+	Amount  int64         `json:"amount"   bson:"amount,omitempty"`
+	Status  BillingStatus `json:"status"   bson:"status,omitempty"`
 }
 
 type BillingStatus int
@@ -183,7 +178,7 @@ const (
 const (
 	// Consumption 消费
 	Consumption common.Type = iota
-	//Subconsumption 子消费
+	// Subconsumption 子消费
 	SubConsumption
 )
 
@@ -237,16 +232,16 @@ type UsedMap map[string]float64
 type PropertyType struct {
 	// For the monitoring storage enumeration type, use uint 8 to save memory
 	// 0 cpu, 1 memory, 2 storage, 3 network ... expandable
-	Name  string `json:"name" bson:"name"`
-	Alias string `json:"alias" bson:"alias"`
-	Enum  uint8  `json:"enum" bson:"enum"`
-	//AVG, SUM, DIF value. The cumulative value is the average value by default
-	PriceType string `json:"price_type,omitempty" bson:"price_type,omitempty"`
+	Name  string `json:"name"                  bson:"name"`
+	Alias string `json:"alias"                 bson:"alias"`
+	Enum  uint8  `json:"enum"                  bson:"enum"`
+	// AVG, SUM, DIF value. The cumulative value is the average value by default
+	PriceType string `json:"price_type,omitempty"  bson:"price_type,omitempty"`
 	// Price = UsedAmount (avg || accumulated-value || difference-value) / Unit * UnitPrice
-	UnitPrice        float64           `json:"unit_price" bson:"unit_price"`
-	ViewPrice        float64           `json:"view_price" bson:"view_price"`
-	EncryptUnitPrice string            `json:"encrypt_unit_price" bson:"encrypt_unit_price"`
-	Unit             resource.Quantity `json:"-" bson:"-"`
+	UnitPrice        float64           `json:"unit_price"            bson:"unit_price"`
+	ViewPrice        float64           `json:"view_price"            bson:"view_price"`
+	EncryptUnitPrice string            `json:"encrypt_unit_price"    bson:"encrypt_unit_price"`
+	Unit             resource.Quantity `json:"-"                     bson:"-"`
 	// <digit>           ::= 0 | 1 | ... | 9
 	// <digits>          ::= <digit> | <digit><digits>
 	// <number>          ::= <digits> | <digits>.<digits> | <digits>. | .<digits>
@@ -262,8 +257,8 @@ type PropertyType struct {
 	//	(Note that 1024 = 1Ki but 1000 = 1k; I didn't choose the capitalization.)
 	//
 	// <decimalExponent> ::= "e" <signedNumber> | "E" <signedNumber>
-	UnitString string `json:"unit" bson:"unit"`
-	//charging cycle second
+	UnitString string `json:"unit"                  bson:"unit"`
+	// charging cycle second
 	UnitPeriod string `json:"unit_period,omitempty" bson:"unit_period,omitempty"`
 }
 
@@ -364,8 +359,10 @@ type PropertyList []PropertyType
 // GpuResourcePrefix GPUResource = gpu- + gpu.Product ; ex. gpu-tesla-v100
 const GpuResourcePrefix = "gpu-"
 
-const ResourceGPU corev1.ResourceName = gpu.NvidiaGpuKey
-const ResourceNetwork = "network"
+const (
+	ResourceGPU     corev1.ResourceName = gpu.NvidiaGpuKey
+	ResourceNetwork                     = "network"
+)
 
 const (
 	ResourceRequestGpu          corev1.ResourceName = "requests." + gpu.NvidiaGpuKey
@@ -377,9 +374,11 @@ const (
 func NewGpuResource(product string) corev1.ResourceName {
 	return corev1.ResourceName(GpuResourcePrefix + product)
 }
+
 func IsGpuResource(resource string) bool {
 	return strings.HasPrefix(resource, GpuResourcePrefix)
 }
+
 func GetGpuResourceProduct(resource string) string {
 	return strings.TrimPrefix(resource, GpuResourcePrefix)
 }
@@ -440,37 +439,59 @@ const (
 
 func DefaultResourceQuotaHard() corev1.ResourceList {
 	return corev1.ResourceList{
-		ResourceRequestGpu:                    resource.MustParse(env.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
-		ResourceLimitGpu:                      resource.MustParse(env.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU)),
-		corev1.ResourceLimitsCPU:              resource.MustParse(env.GetEnvWithDefault(QuotaLimitsCPU, DefaultQuotaLimitsCPU)),
-		corev1.ResourceLimitsMemory:           resource.MustParse(env.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory)),
-		corev1.ResourceRequestsStorage:        resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
-		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage)),
-		corev1.ResourcePods:                   resource.MustParse(env.GetEnvWithDefault(QuotaLimitsPods, DefaultQuotaLimitsPods)),
-		corev1.ResourceServicesNodePorts:      resource.MustParse(env.GetEnvWithDefault(QuotaLimitsNodePorts, DefaultQuotaLimitsNodePorts)),
-		ResourceObjectStorageSize:             resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageSize, DefaultQuotaObjectStorageSize)),
-		ResourceObjectStorageBucket:           resource.MustParse(env.GetEnvWithDefault(QuotaObjectStorageBucket, DefaultQuotaObjectStorageBucket)),
-		//TODO storage.diskio.read, storage.diskio.write
+		ResourceRequestGpu: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU),
+		),
+		ResourceLimitGpu: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsGPU, DefaultQuotaLimitsGPU),
+		),
+		corev1.ResourceLimitsCPU: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsCPU, DefaultQuotaLimitsCPU),
+		),
+		corev1.ResourceLimitsMemory: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsMemory, DefaultQuotaLimitsMemory),
+		),
+		corev1.ResourceRequestsStorage: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage),
+		),
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsStorage, DefaultQuotaLimitsStorage),
+		),
+		corev1.ResourcePods: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsPods, DefaultQuotaLimitsPods),
+		),
+		corev1.ResourceServicesNodePorts: resource.MustParse(
+			env.GetEnvWithDefault(QuotaLimitsNodePorts, DefaultQuotaLimitsNodePorts),
+		),
+		ResourceObjectStorageSize: resource.MustParse(
+			env.GetEnvWithDefault(QuotaObjectStorageSize, DefaultQuotaObjectStorageSize),
+		),
+		ResourceObjectStorageBucket: resource.MustParse(
+			env.GetEnvWithDefault(QuotaObjectStorageBucket, DefaultQuotaObjectStorageBucket),
+		),
+		// TODO storage.diskio.read, storage.diskio.write
 	}
 }
 
-func ParseResourceLimitWithSubscription(plans []types.SubscriptionPlan) (map[string]corev1.ResourceList, error) {
+func ParseResourceLimitWithSubscription(
+	plans []types.SubscriptionPlan,
+) (map[string]corev1.ResourceList, error) {
 	subPlansLimit := make(map[string]corev1.ResourceList)
 	for i := range plans {
-		//max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
+		// max_resources: {"cpu":"128","memory":"256Gi","storage":"500Gi"}
 		res := plans[i].MaxResources
 		if res == "" {
 			subPlansLimit[plans[i].Name] = DefaultResourceQuotaHard()
 		} else {
 			var maxResources map[string]string
 			if err := json.Unmarshal([]byte(res), &maxResources); err != nil {
-				return nil, fmt.Errorf("parse max_resources failed: %v", err)
+				return nil, fmt.Errorf("parse max_resources failed: %w", err)
 			}
 			rl := make(corev1.ResourceList)
 			for k, v := range maxResources {
 				_v, err := ParseCustomQuantity(v)
 				if err != nil {
-					return nil, fmt.Errorf("parse %s failed: %v", k, err)
+					return nil, fmt.Errorf("parse %s failed: %w", k, err)
 				}
 				switch k {
 				case "cpu":
@@ -517,7 +538,13 @@ var defaultLimitRange, defaultLimitRangeReq = getLimitRangeDefault(), getLimitRa
 
 func getLimitRangeDefault() corev1.ResourceList {
 	rcList := corev1.ResourceList{}
-	cpu, memory, ephemeralStorage := resource.MustParse(env.GetEnvWithDefault(LimitRangeCPU, "50m")), resource.MustParse(env.GetEnvWithDefault(LimitRangeMemory, "64Mi")), resource.MustParse(env.GetEnvWithDefault(LimitRangeEphemeralStorage, "100Mi"))
+	cpu, memory, ephemeralStorage := resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeCPU, "50m"),
+	), resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeMemory, "64Mi"),
+	), resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeEphemeralStorage, "100Mi"),
+	)
 	if !cpu.IsZero() {
 		rcList[corev1.ResourceCPU] = cpu
 	}
@@ -532,7 +559,13 @@ func getLimitRangeDefault() corev1.ResourceList {
 
 func getLimitRangeReq() corev1.ResourceList {
 	rcList := corev1.ResourceList{}
-	cpu, memory, ephemeralStorage := resource.MustParse(env.GetEnvWithDefault(LimitRangeRepCPU, "50m")), resource.MustParse(env.GetEnvWithDefault(LimitRangeRepMemory, "64Mi")), resource.MustParse(env.GetEnvWithDefault(LimitRangeRepEphemeralStorage, "100Mi"))
+	cpu, memory, ephemeralStorage := resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeRepCPU, "50m"),
+	), resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeRepMemory, "64Mi"),
+	), resource.MustParse(
+		env.GetEnvWithDefault(LimitRangeRepEphemeralStorage, "100Mi"),
+	)
 	if !cpu.IsZero() {
 		rcList[corev1.ResourceCPU] = cpu
 	}

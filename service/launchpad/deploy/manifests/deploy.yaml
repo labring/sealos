@@ -50,6 +50,15 @@ spec:
             requests:
               cpu: 5m
               memory: 64Mi
+          startupProbe:
+            httpGet:
+              port: 8428
+              path: /health
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 30
+            successThreshold: 1
+            timeoutSeconds: 1
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

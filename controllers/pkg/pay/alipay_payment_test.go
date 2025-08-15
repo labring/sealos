@@ -1,12 +1,12 @@
-package pay
+package pay_test
 
 import (
 	"os"
+	"testing"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/account"
-
-	"testing"
+	"github.com/labring/sealos/controllers/pkg/pay"
 )
 
 func setupenvAlipay() {
@@ -58,9 +58,12 @@ func setupenvAlipay() {
 
 // TestCreatePaymentIntegration test payment creation
 func TestCreatePaymentIntegration(t *testing.T) {
-	ap, err := NewAlipayPayment()
+	ap, err := pay.NewAlipayPayment()
 	if err != nil {
-		t.Skipf("Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v", err)
+		t.Skipf(
+			"Skip test: NewAlipayPayment failed, possibly because the sandbox was not fully configured：%v",
+			err,
+		)
 	}
 	// place an order of $1
 	tradeNo, qrURL, err := ap.CreatePayment(1_000_000, "test-user", "unit tests create payments")
@@ -73,14 +76,18 @@ func TestCreatePaymentIntegration(t *testing.T) {
 // Full E2E Test: Payment → Inquiries → Refunds
 func TestSandbox_EndToEnd(t *testing.T) {
 	setupenvAlipay()
-	ap, err := NewAlipayPayment()
+	ap, err := pay.NewAlipayPayment()
 	if err != nil {
 		t.Fatalf("NewAlipayPayment() failed: %v", err)
 	}
 
 	// place an order
 	const amount = 20_000
-	outTradeNo, qrURL, err := ap.CreatePayment(amount, "sandbox-user", "sandbox_environment_testing")
+	outTradeNo, qrURL, err := ap.CreatePayment(
+		amount,
+		"sandbox-user",
+		"sandbox_environment_testing",
+	)
 	if err != nil {
 		t.Fatalf("CreatePayment() failed: %v", err)
 	}
@@ -95,13 +102,13 @@ func TestSandbox_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetPaymentDetails() failed: %v", err)
 	}
-	if status != PaymentSuccess {
-		t.Fatalf("expected status %s, got %s", PaymentSuccess, status)
+	if status != pay.PaymentSuccess {
+		t.Fatalf("expected status %s, got %s", pay.PaymentSuccess, status)
 	}
 	t.Logf("payment status：%s", status)
 
 	// refund process
-	refundNo, refundFee, err := ap.RefundPayment(RefundOption{
+	refundNo, refundFee, err := ap.RefundPayment(pay.RefundOption{
 		OrderID: "sandbox-order-001",
 		TradeNo: outTradeNo,
 		Amount:  0.7 * amount,

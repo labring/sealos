@@ -18,15 +18,13 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	licensev1 "github.com/labring/sealos/controllers/license/api/v1"
 	"github.com/labring/sealos/controllers/license/internal/util/claims"
 	"github.com/labring/sealos/controllers/license/internal/util/cluster"
 	licenseutil "github.com/labring/sealos/controllers/license/internal/util/license"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type LicenseValidator struct {
@@ -37,7 +35,7 @@ type LicenseValidator struct {
 
 func (v *LicenseValidator) Validate(license *licensev1.License) (licensev1.ValidationCode, error) {
 	nodeList := &v1.NodeList{}
-	if err := v.Client.List(context.Background(), nodeList); err != nil {
+	if err := v.List(context.Background(), nodeList); err != nil {
 		return licensev1.ValidationError, err
 	}
 	nodeCount := len(nodeList.Items)
@@ -58,6 +56,12 @@ func (v *LicenseValidator) Validate(license *licensev1.License) (licensev1.Valid
 			TotalMemory: int(totalMemory.Value() / (1024 * 1024 * 1024)),
 		},
 	}
-	v.Logger.Info("Validating license", "cluster info", clusterInfo, "license token", license.Spec.Token)
+	v.Logger.Info(
+		"Validating license",
+		"cluster info",
+		clusterInfo,
+		"license token",
+		license.Spec.Token,
+	)
 	return licenseutil.IsLicenseValid(license, clusterInfo, v.ClusterID)
 }

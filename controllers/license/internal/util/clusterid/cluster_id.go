@@ -16,7 +16,7 @@ package clusterid
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
@@ -36,7 +36,7 @@ func GetClusterID(config *rest.Config) (string, error) {
 	}
 	res := string(ns.UID)
 	if res == "" || len(res) < 8 {
-		return "", fmt.Errorf("failed to get cluster id")
+		return "", errors.New("failed to get cluster id")
 	}
 	return res[0:8], nil
 }

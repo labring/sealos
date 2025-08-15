@@ -7,9 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/types"
-
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/types"
 	"gorm.io/gorm"
 )
 
@@ -73,7 +72,11 @@ func (sc *SubscriptionCache) loadFullCache(ctx context.Context) error {
 	}
 
 	sc.lastUpdate = time.Now()
-	log.Printf("Full cache loaded with %d entries at %s", len(sc.cache), sc.lastUpdate.Format(time.RFC3339))
+	log.Printf(
+		"Full cache loaded with %d entries at %s",
+		len(sc.cache),
+		sc.lastUpdate.Format(time.RFC3339),
+	)
 	return nil
 }
 
@@ -96,18 +99,29 @@ func (sc *SubscriptionCache) updateCacheSinceLast(ctx context.Context) error {
 
 	// Update cache with changed entries
 	for _, sub := range subscriptions {
-		if currentEntry, exists := sc.cache[sub.UserUID]; !exists || currentEntry.Status != sub.Status || currentEntry.PlanName != sub.PlanName {
+		if currentEntry, exists := sc.cache[sub.UserUID]; !exists ||
+			currentEntry.Status != sub.Status ||
+			currentEntry.PlanName != sub.PlanName {
 			sc.cache[sub.UserUID] = CacheEntry{
 				UserUID:  sub.UserUID,
 				Status:   sub.Status,
 				PlanName: sub.PlanName,
 			}
-			log.Printf("Updated cache for UserUID %s with status %s and plan_name %s", sub.UserUID, sub.Status, sub.PlanName)
+			log.Printf(
+				"Updated cache for UserUID %s with status %s and plan_name %s",
+				sub.UserUID,
+				sub.Status,
+				sub.PlanName,
+			)
 		}
 	}
 
 	sc.lastUpdate = currentTime
-	log.Printf("Cache updated with %d changed entries at %s", len(subscriptions), currentTime.Format(time.RFC3339))
+	log.Printf(
+		"Cache updated with %d changed entries at %s",
+		len(subscriptions),
+		currentTime.Format(time.RFC3339),
+	)
 	return nil
 }
 
@@ -158,7 +172,7 @@ func (sc *SubscriptionCache) Close() {
 }
 
 // Example usage
-//func main() {
+// func main() {
 //	// Assuming db is a configured *gorm.DB instance
 //	var db *gorm.DB // Initialize your GORM DB here
 //

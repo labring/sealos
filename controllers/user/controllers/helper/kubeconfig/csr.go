@@ -26,22 +26,21 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"net"
 	"time"
 
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
-
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/util/retry"
-
 	csrv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -57,21 +56,25 @@ func newPrivateKey(keyType x509.PublicKeyAlgorithm) (crypto.Signer, error) {
 func (csr *CsrConfig) newSignedToCsrKey() (csrData, keyPEM []byte, err error) {
 	key, err := newPrivateKey(x509.RSA)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new signed private failed %s", err)
+		return nil, nil, fmt.Errorf("new signed private failed %w", err)
 	}
-	pk := x509.MarshalPKCS1PrivateKey(key.(*rsa.PrivateKey))
+	pkey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		return nil, nil, errors.New("key is not *rsa.PrivateKey type")
+	}
+	pk := x509.MarshalPKCS1PrivateKey(pkey)
 	keyPEM = pem.EncodeToMemory(&pem.Block{
 		Type: "RSA PRIVATE KEY", Bytes: pk,
 	})
 	_, csrObj, err := csr.generateCSR(key)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new signed csr failed %s", err)
+		return nil, nil, fmt.Errorf("new signed csr failed %w", err)
 	}
 	csrData = pem.EncodeToMemory(&pem.Block{
 		Type: "CERTIFICATE REQUEST", Bytes: csrObj,
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("new signed csr failed %s", err)
+		return nil, nil, fmt.Errorf("new signed csr failed %w", err)
 	}
 
 	return
@@ -123,7 +126,7 @@ func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
 	if csr.csr != nil {
 		csrResource = csr.csr.DeepCopy()
 	} else {
-		csrName := fmt.Sprintf("sealos-generater-%s", csr.user)
+		csrName := "sealos-generater-" + csr.user
 		csrResource = &csrv1.CertificateSigningRequest{}
 		csrResource.Name = csrName
 		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
@@ -141,7 +144,7 @@ func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
 
 			err := cli.Create(context.TODO(), insertCSR)
 			if err != nil {
-				if !errors.IsAlreadyExists(err) {
+				if !kerrors.IsAlreadyExists(err) {
 					return err
 				}
 			}
@@ -165,12 +168,16 @@ func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
 			Message: "This CSR was approved by user certificate approve.",
 		},
 	}
-	_, err = clientset.CertificatesV1().CertificateSigningRequests().UpdateApproval(context.TODO(), csrResource.Name, csrResource, v1.UpdateOptions{})
+	_, err = clientset.CertificatesV1().
+		CertificateSigningRequests().
+		UpdateApproval(context.TODO(), csrResource.Name, csrResource, v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
 
-	w, err := clientset.CertificatesV1().CertificateSigningRequests().Watch(context.TODO(), v1.ListOptions{FieldSelector: fmt.Sprintf("metadata.name=%s", csrResource.Name)})
+	w, err := clientset.CertificatesV1().
+		CertificateSigningRequests().
+		Watch(context.TODO(), v1.ListOptions{FieldSelector: "metadata.name=" + csrResource.Name})
 	if err != nil {
 		return err
 	}
@@ -178,10 +185,13 @@ func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
 	for {
 		select {
 		case <-time.After(time.Second * 10):
-			return errors.NewBadRequest("The CSR is not ready.")
+			return kerrors.NewBadRequest("The CSR is not ready.")
 		case event := <-w.ResultChan():
 			if event.Type == watch.Modified || event.Type == watch.Added {
-				certificateSigningRequest := event.Object.(*csrv1.CertificateSigningRequest)
+				certificateSigningRequest, ok := event.Object.(*csrv1.CertificateSigningRequest)
+				if !ok {
+					return nil
+				}
 				if certificateSigningRequest.Status.Certificate != nil {
 					csr.ctxTLSCrt = certificateSigningRequest.Status.Certificate
 					dis := time.Since(start).Milliseconds()
@@ -199,7 +209,7 @@ func (csr *CsrConfig) updateCsr(config *rest.Config, cli client.Client) error {
 // to the x509.CreateCertificateRequest function.
 func (csr *CsrConfig) generateCSR(key crypto.Signer) (*x509.CertificateRequest, []byte, error) {
 	if len(csr.user) == 0 {
-		return nil, nil, errors.NewBadRequest("must specify a CommonName")
+		return nil, nil, kerrors.NewBadRequest("must specify a CommonName")
 	}
 
 	var dnsNames []string

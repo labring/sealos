@@ -3,12 +3,11 @@ package main
 import (
 	"log"
 
-	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
-
 	"github.com/labring/sealos/service/exceptionmonitor/api"
 	"github.com/labring/sealos/service/exceptionmonitor/dao"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/client"
 	"github.com/labring/sealos/service/exceptionmonitor/helper/monitor"
+	"github.com/labring/sealos/service/exceptionmonitor/helper/notification"
 )
 
 func main() {

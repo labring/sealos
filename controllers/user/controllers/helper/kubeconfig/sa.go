@@ -23,7 +23,6 @@ import (
 	"time"
 
 	config2 "github.com/labring/sealos/controllers/user/controllers/helper/config"
-
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -32,7 +31,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (sac *ServiceAccountConfig) Apply(config *rest.Config, client client.Client) (*api.Config, error) {
+func (sac *ServiceAccountConfig) Apply(
+	config *rest.Config,
+	client client.Client,
+) (*api.Config, error) {
 	if err := sac.applyServiceAccount(config, client); err != nil {
 		return nil, err
 	}
@@ -88,7 +90,9 @@ func (sac *ServiceAccountConfig) applySecret(_ *rest.Config, client client.Clien
 		}
 		secret.Type = v1.SecretTypeServiceAccountToken
 		secret.Annotations[v1.ServiceAccountNameKey] = sac.user
-		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(int(sac.expirationSeconds))
+		secret.Annotations["sealos.io/user.expirationSeconds"] = strconv.Itoa(
+			int(sac.expirationSeconds),
+		)
 		return nil
 	})
 	sac.sa = &v1.ServiceAccount{}
@@ -126,7 +130,13 @@ func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
 			}
 			if secret.Data != nil && secret.Data[v1.ServiceAccountTokenKey] != nil {
 				dis := time.Since(start).Milliseconds()
-				defaultLog.Info("The serviceAccount secret is ready.", "secretName", secret.Name, "using Milliseconds", dis)
+				defaultLog.Info(
+					"The serviceAccount secret is ready.",
+					"secretName",
+					secret.Name,
+					"using Milliseconds",
+					dis,
+				)
 				return string(secret.Data[v1.ServiceAccountTokenKey]), nil
 			}
 		case <-ctx.Done():
@@ -136,7 +146,10 @@ func (sac *ServiceAccountConfig) fetchToken(cli client.Client) (string, error) {
 	}
 }
 
-func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token string) (*api.Config, error) {
+func (sac *ServiceAccountConfig) generatorKubeConfig(
+	cfg *rest.Config,
+	token string,
+) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(cfg); err != nil {
 		return nil, err
@@ -146,7 +159,7 @@ func (sac *ServiceAccountConfig) generatorKubeConfig(cfg *rest.Config, token str
 		Clusters: map[string]*api.Cluster{
 			sac.clusterName: {
 				Server:                   GetKubernetesHost(cfg),
-				CertificateAuthorityData: cfg.TLSClientConfig.CAData,
+				CertificateAuthorityData: cfg.CAData,
 			},
 		},
 		Contexts: map[string]*api.Context{

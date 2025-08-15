@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/service/pay/helper"
@@ -19,17 +20,20 @@ func GetExchangeRate(client *mongo.Client, payMethod, currency string) (float64,
 	var result bson.M
 	if err := coll.FindOne(context.Background(), filter).Decode(&result); err != nil {
 		fmt.Println("read data of the collection paymethod failed:", err)
-		return 0, fmt.Errorf("read data of the collection paymethod failed: %v", err)
+		return 0, fmt.Errorf("read data of the collection paymethod failed: %w", err)
 	}
 	exchangeRate, ok := result["exchangeRate"].(float64)
 	if !ok {
 		fmt.Println("status type assertion failed")
-		return 0, fmt.Errorf("status type assertion failed")
+		return 0, errors.New("status type assertion failed")
 	}
 	return exchangeRate, nil
 }
 
-func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.InsertManyResult, error) {
+func InsertPayMethod(
+	request *helper.Request,
+	client *mongo.Client,
+) (*mongo.InsertManyResult, error) {
 	payMethod := request.PayMethod
 	currency := request.Currency
 	amountOptions := request.AmountOptions
@@ -38,7 +42,7 @@ func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.Inse
 
 	coll := helper.InitDBAndColl(client, helper.Database, helper.PayMethodColl)
 
-	docs := []interface{}{
+	docs := []any{
 		helper.PayMethodDetail{
 			PayMethod:     payMethod,
 			Currency:      currency,
@@ -50,7 +54,7 @@ func InsertPayMethod(request *helper.Request, client *mongo.Client) (*mongo.Inse
 
 	result, err := coll.InsertMany(context.TODO(), docs)
 	if err != nil {
-		return nil, fmt.Errorf("insert the data of paymethod failed: %v", err)
+		return nil, fmt.Errorf("insert the data of paymethod failed: %w", err)
 	}
 	return result, nil
 }
@@ -65,7 +69,7 @@ func CheckPayMethodExistOrNot(client *mongo.Client, currency, payMethod string) 
 	var result bson.M
 	if err := coll.FindOne(context.Background(), filter).Decode(&result); err != nil {
 		fmt.Println("no matching payment method and currency could be found:", err)
-		return false, fmt.Errorf("no matching payment method and currency could be found: %v", err)
+		return false, fmt.Errorf("no matching payment method and currency could be found: %w", err)
 	}
 	return true, nil
 }
