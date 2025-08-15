@@ -44,6 +44,14 @@ export const getGlobalTokenSvc = createMiddleware<AuthContext, unknown>(
         message: 'Unauthorized'
       });
 
+    if (data.error) {
+      return jsonRes(res, {
+        code: 40000,
+        data,
+        message: 'Unauthorized'
+      });
+    }
+
     return jsonRes(res, {
       data,
       code: 200,

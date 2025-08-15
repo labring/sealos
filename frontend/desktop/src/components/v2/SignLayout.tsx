@@ -37,11 +37,6 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
     onClose: onGitHubReauthPromptClose
   } = useDisclosure();
 
-  const handleGitHubReauthPromptClose = () => {
-    onGitHubReauthPromptClose();
-    clearSigninPageAction();
-  };
-
   // Execute page actions (only on client side)
   useEffect(() => {
     if (signinPageAction === 'PROMPT_REAUTH_GITHUB') {
@@ -65,7 +60,7 @@ export default function SignLayout({ children }: { children: React.ReactNode }) 
           <Flex alignSelf={'flex-end'} gap={'8px'} mr={'20px'} mt={'22px'} position={'absolute'}>
             <GitHubReauthPrompt
               isOpen={isGitHubReauthPromptOpen}
-              onClose={handleGitHubReauthPromptClose}
+              onClose={onGitHubReauthPromptClose}
             />
             {layoutConfig?.version === 'cn' && <InviterPop />}
             {layoutConfig?.version === 'cn' && <LangSelectSimple />}

@@ -30,50 +30,57 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
 export const useCopyData = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
-  return {
-    copyData: (data: string, title: string = 'Copy Success') => {
-      console.log('copyData', data);
 
-      navigator.permissions.query({ name: 'clipboard-write' as PermissionName }).then((result) => {
-        if (result.state === 'granted' || result.state === 'prompt') {
-          navigator.clipboard.writeText(data).then(
-            () => {
-              toast({
-                title: t(title),
-                status: 'success',
-                duration: 1000
-              });
-            },
-            (clipboardError) => {
-              console.error(clipboardError);
+  const copyData = async (data: string, title: string = 'Copy Success') => {
+    console.log('Attempting to copy:', data);
 
-              // Try execCommand copy if clipboard is not allowed or not supported
-              try {
-                const textarea = document.createElement('textarea');
-                textarea.value = data;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                toast({
-                  title: t(title),
-                  status: 'success',
-                  duration: 1000
-                });
-              } catch (error) {
-                // Both methods failed.
-                console.error(error);
-                toast({
-                  title: t('Copy Failed'),
-                  status: 'error'
-                });
-              }
-            }
-          );
-        }
+    // Modern browsers (Chrome, Edge, Safari, Firefox) support the Clipboard API.
+    // This is the preferred method. It only works in secure contexts (HTTPS or localhost).
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(data);
+        toast({
+          title: t(title),
+          status: 'success',
+          duration: 1000
+        });
+        return; // Exit the function after successful copy
+      } catch (err) {
+        console.error('Clipboard API failed, falling back...', err);
+        // The error will be caught, and we'll proceed to the fallback method.
+      }
+    }
+
+    // Fallback for older browsers or if the Clipboard API fails (e.g., due to permissions).
+    try {
+      const textarea = document.createElement('textarea');
+      textarea.value = data;
+      // Make the textarea invisible
+      textarea.style.position = 'fixed';
+      textarea.style.top = '-9999px';
+      textarea.style.left = '-9999px';
+
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+
+      toast({
+        title: t(title),
+        status: 'success',
+        duration: 1000
+      });
+    } catch (error) {
+      // If both methods fail, show an error.
+      console.error('Fallback copy method failed', error);
+      toast({
+        title: t('Copy Failed'),
+        status: 'error'
       });
     }
   };
+
+  return { copyData };
 };
 
 /**

@@ -69,11 +69,22 @@ export default function Callback() {
               inviterId: getInviterId() ?? undefined,
               semData: getUserSemData() ?? undefined,
               adClickData: getAdClickData() ?? undefined
-            });
+            }).catch((e) => e);
+            if (data instanceof Error) {
+              throw data;
+            }
             setProvider();
+            // Consider unknown error if no data returned.
+            if (!data) {
+              return;
+            }
 
-            // Consider as conflict if no data returned.
-            if (!data || data?.code !== 200) {
+            // GitHub email conflicts with another user.
+            if (
+              data.data &&
+              'error' in data.data &&
+              data.data.error === 'OAUTH_PROVIDER_CONFLICT'
+            ) {
               setSigninPageAction('PROMPT_REAUTH_GITHUB');
               await router.push({
                 pathname: '/signin'
@@ -81,7 +92,7 @@ export default function Callback() {
               return;
             }
 
-            if (data.code === 200 && data.data?.token) {
+            if (data.data && data.code === 200 && !('error' in data.data)) {
               const token = data.data?.token;
               setToken(token);
               const needInit = data.data.needInit;
