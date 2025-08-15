@@ -34,23 +34,13 @@ export default function SigninComponent() {
   const { t, i18n } = useTranslation();
   const { toast } = useCustomToast();
   const conf = useConfigStore();
-  const [tabIndex, setTabIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const router = useRouter();
   const needPhone = conf.authConfig?.idp.sms?.enabled && conf.authConfig.idp.sms.ali.enabled;
   const needEmail = conf.authConfig?.idp.email.enabled;
   const { setSignupData, signupData } = useSignupStore();
   const authConfig = conf.authConfig;
-  const { generateState, setProvider, setToken, session, token } = useSessionStore();
-  const {
-    register: registerSignin,
-    handleSubmit: handleSigninSubmit,
-    formState: { errors: signinErrors }
-  } = useForm<ILoginParams>({
-    resolver: zodResolver(loginParamsSchema),
-    mode: 'onChange'
-  });
+  const { generateState, setProvider } = useSessionStore();
+
   let protocol_data: Parameters<typeof useProtocol>[0];
   if (['zh', 'zh-Hans'].includes(i18n.language))
     protocol_data = {
@@ -76,6 +66,10 @@ export default function SigninComponent() {
       window.location.href = url;
     };
 
+    /**
+     * Redirect to proxied OAuth2 initiator url.
+     * @deprecated - Use `getProxiedOAuth2InitiatorUrl` from `utils/oauth2.ts` instead
+     */
     const oauthProxyLogin = async ({
       state,
       provider,

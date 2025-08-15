@@ -477,7 +477,9 @@ export const getGlobalToken = async ({
           }
         });
         if (!!emailUser) {
-          return null;
+          return {
+            error: 'OAUTH_PROVIDER_CONFLICT'
+          };
         }
         signUpResult = await signUpWithEmail({
           provider,

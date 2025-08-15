@@ -126,13 +126,16 @@ export const _oauthProviderSignIn =
   (data: { code: string; inviterId?: string; semData?: SemData; adClickData?: AdClickData }) =>
     request.post<
       typeof data,
-      ApiResp<{
-        token: string;
-        realUser: {
-          realUserUid: string;
-        };
-        needInit: boolean;
-      }>
+      ApiResp<
+        | {
+            token: string;
+            realUser: {
+              realUserUid: string;
+            };
+            needInit: boolean;
+          }
+        | { error: string }
+      >
     >(`/api/auth/oauth/${provider.toLocaleLowerCase()}`, data);
 export const _oauthProviderBind =
   (request: AxiosInstance) =>
