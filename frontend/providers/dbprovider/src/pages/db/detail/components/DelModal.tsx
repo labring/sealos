@@ -65,14 +65,6 @@ const DelModal = ({
         module: 'database',
         context: 'app'
       });
-      // 3. 再删数据源
-      if (dataSourceId) {
-        try {
-          await deleteDatasource(dataSourceId, apiKey);
-        } catch (e) {
-          console.log('deleteDatasource error', e);
-        }
-      }
 
       toast({
         title: t('delete_successful'),
