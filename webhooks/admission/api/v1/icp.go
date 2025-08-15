@@ -16,6 +16,7 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"time"
@@ -46,7 +47,7 @@ type IcpValidator struct {
 	cache *cache.Cache
 }
 
-func NewIcpValidator(icpEnabled bool, icpEndpoint string, icpKey string) *IcpValidator {
+func NewIcpValidator(icpEnabled bool, icpEndpoint, icpKey string) *IcpValidator {
 	return &IcpValidator{
 		enabled:  icpEnabled,
 		endpoint: icpEndpoint,
@@ -64,7 +65,11 @@ func (i *IcpValidator) Query(rule *netv1.IngressRule) (*IcpResponse, error) {
 	// Check if result is already cached
 	cached, found := i.cache.Get(domainName)
 	if found {
-		return cached.(*IcpResponse), nil
+		icpResponse, ok := cached.(*IcpResponse)
+		if !ok {
+			return nil, errors.New("cached is not *IcpResponse type")
+		}
+		return icpResponse, nil
 	}
 
 	// Query ICP

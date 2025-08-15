@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:testpackage
 package v1
 
 import (
@@ -22,7 +23,7 @@ import (
 
 func TestIcpValidator_Query(t *testing.T) {
 	icpValidator := NewIcpValidator(true, "http://v.juhe.cn/siteTools/app/NewDomain/query.php", "")
-	for i := 0; i <= 3; i++ {
+	for range 4 {
 		rule := &v1.IngressRule{
 			Host: "sealos.cn",
 		}

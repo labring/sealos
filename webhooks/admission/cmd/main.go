@@ -22,18 +22,15 @@ import (
 	"strings"
 
 	v1 "github.com/labring/sealos/webhook/admission/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
-
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -44,7 +41,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	//utilruntime.Must(netv1.AddToScheme(scheme))
+	// utilruntime.Must(netv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -54,12 +51,27 @@ func main() {
 	var probeAddr string
 	var ingressAnnotationString string
 	var domains v1.DomainList
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&ingressAnnotationString, "ingress-mutating-annotations", "", "Ingress annotations: 'key1=value1,key2=value2'")
+	flag.StringVar(
+		&ingressAnnotationString,
+		"ingress-mutating-annotations",
+		"",
+		"Ingress annotations: 'key1=value1,key2=value2'",
+	)
 	flag.Var(&domains, "domains", "Domains to be used for check ingress cname")
 	opts := zap.Options{
 		Development: true,
