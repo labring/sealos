@@ -24,6 +24,7 @@ import (
 	"time"
 
 	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
@@ -308,6 +309,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 				helper.WithPodImage(currentRecord.BaseImage),
 				helper.WithPodContentID(devbox.Status.ContentID),
 				helper.WithPodNodeName(currentRecord.Node),
+				helper.WithPodInit(commit.AnnotationImageFromValue),
 			)
 			if err := r.Create(ctx, pod); err != nil {
 				return err
