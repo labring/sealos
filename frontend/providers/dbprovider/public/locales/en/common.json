@@ -34,6 +34,7 @@
   "Pod": "Pod",
   "Pod Name": "Pod Name",
   "Port": "Port",
+  "ParameterConfig": "Parameter Configure",
   "Replicas": "Replicas",
   "Resources": "Resources",
   "Restart": "Restart",
