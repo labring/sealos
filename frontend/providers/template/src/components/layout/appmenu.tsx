@@ -21,6 +21,8 @@ import { useGuideStore } from '@/store/guide';
 import { X } from 'lucide-react';
 import { quitGuideDriverObj, startDriver } from '@/hooks/driver';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
+import { useEffect } from 'react';
+import { track } from '@sealos/gtm';
 
 export default function AppMenu() {
   const { t, i18n } = useTranslation();
@@ -39,6 +41,15 @@ export default function AppMenu() {
   };
   const isClientSide = useClientSideValue();
   const { listCompleted, setListCompleted, createCompleted } = useGuideStore();
+
+  // Set guide start time on first step.
+  useEffect(() => {
+    if (!listCompleted && isClientSide) {
+      useGuideStore.setState({
+        startTimeMs: Date.now()
+      });
+    }
+  }, [listCompleted, isClientSide]);
 
   return (
     <Flex flexDirection={'column'} px="16px" position={'relative'} className="guide-appmenu">
@@ -156,6 +167,14 @@ export default function AppMenu() {
               cursor={'pointer'}
               ml={'auto'}
               onClick={() => {
+                track('guide_exit', {
+                  module: 'guide',
+                  guide_name: 'appstore',
+                  duration_seconds:
+                    (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                  progress_step: 2
+                });
+
                 setListCompleted(true);
                 startDriver(quitGuideDriverObj(t));
               }}

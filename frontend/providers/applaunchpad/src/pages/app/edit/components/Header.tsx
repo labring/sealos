@@ -6,6 +6,7 @@ import { useGuideStore } from '@/store/guide';
 import type { YamlItemType } from '@/types/index';
 import { downLoadBold } from '@/utils/tools';
 import { Box, Button, Center, Flex, Text } from '@chakra-ui/react';
+import { track } from '@sealos/gtm';
 import dayjs from 'dayjs';
 import { Info, X } from 'lucide-react';
 import { useTranslation } from 'next-i18next';
@@ -40,7 +41,7 @@ const Header = ({
     );
   }, [appName, yamlList]);
 
-  const { createCompleted } = useGuideStore();
+  const { createCompleted, startTimeMs } = useGuideStore();
 
   return (
     <Flex flexDirection={'column'} w={'100%'}>
@@ -91,7 +92,7 @@ const Header = ({
             h={'40px'}
             onClick={applyCb}
             _focusVisible={{ boxShadow: '' }}
-            outline={isClientSide && !createCompleted ? '1px solid #1C4EF5' : 'none'}
+            outline={isClientSide && !createCompleted ? '2px solid #1C4EF5' : 'none'}
             outlineOffset={isClientSide && !createCompleted ? '2px' : '0'}
           >
             {t(applyBtnText)}
@@ -116,6 +117,13 @@ const Header = ({
                   cursor={'pointer'}
                   ml={'auto'}
                   onClick={() => {
+                    track('guide_exit', {
+                      module: 'guide',
+                      guide_name: 'applaunchpad',
+                      duration_seconds: (Date.now() - (startTimeMs ?? Date.now())) / 1000,
+                      progress_step: 3
+                    });
+
                     startDriver(quitGuideDriverObj(t));
                   }}
                 >

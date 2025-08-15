@@ -33,6 +33,7 @@ import { useGuideStore } from '@/store/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { X } from 'lucide-react';
 import { startDriver, quitGuideDriverObj } from '@/hooks/driver';
+import { track } from '@sealos/gtm';
 
 const Header = ({
   appName,
@@ -351,6 +352,14 @@ const Header = ({
                 cursor={'pointer'}
                 ml={'auto'}
                 onClick={() => {
+                  track('guide_exit', {
+                    module: 'guide',
+                    guide_name: 'appstore',
+                    duration_seconds:
+                      (Date.now() - (useGuideStore.getState().startTimeMs ?? Date.now())) / 1000,
+                    progress_step: 3
+                  });
+
                   startDriver(quitGuideDriverObj(t));
                 }}
               >
