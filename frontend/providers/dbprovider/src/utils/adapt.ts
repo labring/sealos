@@ -44,6 +44,8 @@ import { has } from 'lodash';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 import type { BackupItemType } from '../types/db';
+import z from 'zod';
+import { dbDetailSchema, dbEditSchema, dbTypeSchema } from '@/types/schemas/db';
 
 export const getDBSource = (
   db: KbPgClusterType

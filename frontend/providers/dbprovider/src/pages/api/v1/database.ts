@@ -39,12 +39,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      await createDatabase(k8s, {
+      const result = await createDatabase(k8s, {
         body: bodyParseResult.data
       });
 
-      jsonRes(res, {
-        data: 'success create db'
+      return jsonRes(res, {
+        message: 'success create db',
+        data: result
       });
     } catch (err: any) {
       console.log('error create db', err);
