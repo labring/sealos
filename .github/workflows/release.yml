@@ -96,44 +96,6 @@ jobs:
           SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
           SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
 
-  changelog:
-    runs-on: ubuntu-24.04
-    needs:
-      - goreleaser
-    permissions:
-      contents: write
-      pull-requests: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Fetch Current version
-        id: get-current-tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - run: git fetch --prune --prune-tags
-      - run: git tag -l 'v*'
-      - name: Generator changelog
-        env:
-          REPOSITORY: ${{ github.repository }}
-        run: ./scripts/changelog.sh "${REPOSITORY}"
-      - uses: peter-evans/create-pull-request@v5
-        with:
-          title: "docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}"
-          body: |
-            copilot:all
-
-            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
-          commit-message: |
-            🤖 add release changelog using rebot.
-          branch: changelog-${{steps.get-current-tag.outputs.tag }}
-          base: main
-          signoff: true
-          delete-branch: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-          committer: sealos-release-robot <sealos-release-robot@sealos.io>
-          author: sealos-release-robot <sealos-release-robot@sealos.io>
-
   cloud-release:
     uses: ./.github/workflows/cloud-release.yml
     needs:
