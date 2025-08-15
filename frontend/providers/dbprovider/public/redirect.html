@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>redirect</title>
+  </head>
+  <body>
+
+    <script>
+      function showStatus(message, type = 'info') {
+        const statusEl = document.getElementById('status');
+      }
+
+      function isValidUrl(string) {
+        try {
+          const url = new URL(string);
+          return url.protocol === 'http:' || url.protocol === 'https:';
+        } catch (_) {
+          return false;
+        }
+      }
+
+      function safeRedirect(url) {
+        if (!url) {
+          showStatus('failed', 'error');
+          return;
+        }
+
+        if (!isValidUrl(url)) {
+          showStatus('failed', 'error');
+          return;   
+        }
+
+        showStatus(`redirect to ${url}`, 'success');
+
+        window.location.replace(url);
+      }
+
+      function checkUrlParams() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUrl = urlParams.get('url');
+
+        if (targetUrl) {
+          safeRedirect(targetUrl);
+          return true;
+        }
+        return false;
+      }
+
+      function setupPostMessageListener() {
+        window.addEventListener('message', function (event) {
+          let targetUrl;
+
+          if (typeof event.data === 'string') {
+            targetUrl = event.data;
+          } else if (event.data && typeof event.data === 'object') {
+            targetUrl = event.data.url || event.data.targetUrl || event.data.redirect;
+          }
+
+          if (targetUrl) {
+            safeRedirect(targetUrl);
+          } else {
+            showStatus('failed', 'error');
+          }
+        });
+      }
+
+      function testPostMessage(url) {
+        showStatus(`sending testing message to ${url}`, 'info');
+
+        window.postMessage({ url: url }, '*');
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        setupPostMessageListener();
+
+        if (!checkUrlParams()) {
+          showStatus('ready', 'info');
+        }
+      });
+
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'redirector-ready' }, '*');
+      }
+    </script>
+  </body>
+</html>

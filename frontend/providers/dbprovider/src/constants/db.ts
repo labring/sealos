@@ -292,12 +292,13 @@ export const defaultDBEditValue: DBEditType = {
     start: true,
     type: 'day',
     week: [],
-    hour: '23',
+    hour: '12',
     minute: '00',
-    saveTime: 7,
+    saveTime: 100,
     saveType: 'd'
   },
-  terminationPolicy: 'Delete'
+  terminationPolicy: 'Delete',
+  dataSourceId: undefined
 };
 
 export const RedisHAConfig = (ha = true) => {

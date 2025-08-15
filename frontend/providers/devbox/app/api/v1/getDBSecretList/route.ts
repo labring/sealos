@@ -155,24 +155,32 @@ export async function GET(req: NextRequest) {
       const username = Buffer.from(
         secret.body.data[dbTypeMap[dbType].usernameKey] || '',
         'base64'
-      ).toString('utf-8');
+      )
+        .toString('utf-8')
+        .trim();
 
       const password = Buffer.from(
         secret.body.data[dbTypeMap[dbType].passwordKey] || '',
         'base64'
-      ).toString('utf-8');
+      )
+        .toString('utf-8')
+        .trim();
 
       const hostKey = Buffer.from(
         secret.body.data[dbTypeMap[dbType].hostKey] || '',
         'base64'
-      ).toString('utf-8');
+      )
+        .toString('utf-8')
+        .trim();
 
       const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
 
       const port = Buffer.from(
         secret.body.data[dbTypeMap[dbType].portKey] || '',
         'base64'
-      ).toString('utf-8');
+      )
+        .toString('utf-8')
+        .trim();
 
       const connectionInfo = buildConnectionInfo(dbType, username, password, host, port, namespace);
 

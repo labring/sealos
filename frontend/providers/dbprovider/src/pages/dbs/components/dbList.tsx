@@ -1,4 +1,4 @@
-import { pauseDBByName, restartDB, startDBByName } from '@/api/db';
+import { pauseDBByName, restartDB, startDBByName, getDBSecret } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
@@ -22,10 +22,22 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import { useTranslation } from 'next-i18next';
+import {
+  ThemeAppearance,
+  PrimaryColorsType,
+  LangType,
+  yowantLayoutConfig,
+  mapDBType
+} from '@/constants/chat2db';
+import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { generateLoginUrl } from '@/services/chat2db/user';
+import { syncDatasource, syncDatasourceFirst } from '@/services/chat2db/datasource';
+import { useDBStore } from '@/store/db';
+import { getLangStore } from '@/utils/cookieUtils';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import {
   Modal,
@@ -161,6 +173,144 @@ const DBList = ({
       refetchApps();
     },
     [refetchApps, setLoading, t, toast]
+  );
+
+  const { getDataSourceId, setDataSourceId } = useDBStore();
+
+  const handleManageData = useCallback(
+    async (db: DBListItemType) => {
+      const orgId = '34';
+      const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+      const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
+      const userStr = localStorage.getItem('session');
+      const userObj = userStr ? JSON.parse(userStr) : null;
+      const userId = userObj?.user.id;
+      const userNS = userObj?.user.nsid;
+      const userKey = `${userId}/${userNS}`;
+
+      try {
+        const conn = await getDBSecret({
+          dbName: db.name,
+          dbType: db.dbType,
+          mock: false
+        });
+
+        if (!conn) {
+          return toast({
+            title: 'Connection info not ready',
+            status: 'error'
+          });
+        }
+
+        const { host, port, connection, username, password } = conn;
+
+        let connectionUrl = connection;
+        switch (db.dbType) {
+          case 'mongodb':
+            connectionUrl = `mongodb://${host}:${port}`;
+            break;
+          case 'apecloud-mysql':
+            connectionUrl = `jdbc:mysql://${host}:${port}`;
+            break;
+          case 'postgresql':
+            connectionUrl = `jdbc:postgresql://${host}:${port}/postgres`;
+            break;
+          case 'redis':
+            connectionUrl = `jdbc:redis://${host}:${port}`;
+            break;
+          default:
+            // keep original connection
+            break;
+        }
+
+        const payload = {
+          alias: db.name,
+          environmentId: 2 as 1 | 2,
+          storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
+          host: host,
+          port: String(port),
+          user: username,
+          password: password,
+          url: connectionUrl,
+          type: mapDBType(db.dbType)
+        };
+        console.log(JSON.stringify(payload));
+
+        let currentDataSourceId = getDataSourceId(db.name);
+        console.log('currentDataSourceId', currentDataSourceId);
+        if (!currentDataSourceId) {
+          try {
+            const res = await syncDatasourceFirst(payload, apiKey, userKey);
+            currentDataSourceId = res.data;
+            if (currentDataSourceId) {
+              setDataSourceId(db.name, currentDataSourceId);
+              console.log('Created datasource with ID:', currentDataSourceId);
+            }
+          } catch (err: any) {
+            if (err.data) {
+              currentDataSourceId = err.data;
+              if (currentDataSourceId) {
+                setDataSourceId(db.name, currentDataSourceId);
+                console.log('Datasource already exists with ID:', currentDataSourceId);
+              }
+            } else {
+              throw err;
+            }
+          }
+        } else {
+          try {
+            const syncPayload = {
+              ...payload,
+              id: currentDataSourceId
+            };
+            console.log('syncPayload', syncPayload);
+            await syncDatasource(syncPayload, apiKey, userKey);
+            console.log('Synced existing datasource with ID:', currentDataSourceId);
+          } catch (err) {
+            console.log('sync datasource:', err);
+          }
+        }
+
+        if (!currentDataSourceId) {
+          throw new Error('Failed to get or create datasource ID');
+        }
+
+        const currentLang = getLangStore() || i18n?.language || 'zh';
+        const chat2dbLanguage = currentLang === 'en' ? LangType.EN_US : LangType.ZH_CN;
+
+        const baseUrl = await generateLoginUrl({
+          userId,
+          userNS,
+          orgId,
+          secretKey,
+          ui: {
+            theme: ThemeAppearance.Light,
+            primaryColor: PrimaryColorsType.bw,
+            language: chat2dbLanguage,
+            hideAvatar: yowantLayoutConfig.hideAvatar
+          }
+        });
+
+        const chat2dbUrl = new URL(baseUrl);
+        chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
+        console.log('base url', chat2dbUrl.toString());
+
+        sealosApp.runEvents('openDesktopApp', {
+          appKey: 'system-chat2db',
+          pathname: '',
+          query: {
+            url: chat2dbUrl.toString()
+          }
+        });
+      } catch (err) {
+        console.log(err);
+        toast({
+          title: t('chat2db_redirect_failed'),
+          status: 'error'
+        });
+      }
+    },
+    [router, t, toast, getDataSourceId, setDataSourceId]
   );
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
@@ -315,6 +465,20 @@ const DBList = ({
         cell: ({ row }) => (
           <Flex key={row.id}>
             <Button
+              mr={'10px'}
+              size={'sm'}
+              h={'32px'}
+              bg={'grayModern.150'}
+              color={'grayModern.900'}
+              _hover={{ color: 'brightBlue.600' }}
+              leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+              onClick={() => handleManageData(row.original)}
+              isDisabled={row.original.status.value !== DBStatusEnum.Running}
+            >
+              {t('manage_data')}
+            </Button>
+
+            <Button
               mr={'4px'}
               height={'32px'}
               size={'sm'}
@@ -348,7 +512,7 @@ const DBList = ({
                   w={'32px'}
                   h={'32px'}
                 >
-                  <MyIcon name={'more'} px={3} />
+                  <MyIcon name={'more'} px={3} transform="rotate(90deg)" />
                 </Button>
               }
               menuList={[
@@ -487,6 +651,7 @@ const DBList = ({
     }
   }, [applistCompleted, t, router, isClientSide]);
 
+  const delApp = dbList.find((i) => i.name === delAppName);
   return (
     <Box
       backgroundColor={'white'}
@@ -551,9 +716,9 @@ const DBList = ({
       />
 
       <PauseChild />
-      {!!delAppName && (
+      {!!delApp && (
         <DelModal
-          source={dbList.find((i) => i.name === delAppName)?.source}
+          source={delApp.source}
           dbName={delAppName}
           onClose={() => setDelAppName('')}
           onSuccess={refetchApps}

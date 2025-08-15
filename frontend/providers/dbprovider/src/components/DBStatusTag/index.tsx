@@ -32,8 +32,8 @@ const DBStatusTag = ({
   return (
     <>
       <Flex
-        color={status.color}
-        backgroundColor={status.backgroundColor}
+        // color={status.color}
+        // backgroundColor={status.backgroundColor}
         border={showBorder ? '1px solid' : 'none'}
         borderColor={status.color}
         py={2}
