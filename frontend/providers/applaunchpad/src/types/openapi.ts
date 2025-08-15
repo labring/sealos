@@ -7,7 +7,8 @@ import {
   GetAppByAppNameResponseSchema,
   UpdateAppResourcesSchema,
   UpdateConfigMapSchema,
-  UpdatePortsSchema
+  UpdatePortsSchema,
+  UpdateStorageSchema
 } from './request_schema';
 
 export const ErrorResponseSchema = z.object({
@@ -479,6 +480,74 @@ export const openApiDocument = (sealosDomain: string) =>
             },
             '500': {
               description: 'Internal server error during ports update',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/app/{name}/storage': {
+        patch: {
+          summary: 'Update application storage',
+          description:
+            'Incrementally update application persistent storage configuration for StatefulSet applications. ' +
+            'This API manages PVC (Persistent Volume Claims) and volumeClaimTemplates in the StatefulSet. ' +
+            'It supports PVC expansion but prevents shrinking due to Kubernetes limitations. ' +
+            'Only specified storage configurations are updated/added, existing storage not listed will be preserved. ' +
+            'Storage names are auto-generated from paths using mountPathToConfigMapKey function. ' +
+            'StatefulSet will be deleted and recreated due to volumeClaimTemplates immutability.',
+          parameters: [
+            {
+              name: 'name',
+              in: 'path',
+              description: 'Application name',
+              required: true,
+              schema: {
+                type: 'string'
+              }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: UpdateStorageSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Storage updated successfully',
+              content: {
+                'application/json': {
+                  schema: z.object({
+                    data: LaunchpadApplicationSchema
+                  })
+                }
+              }
+            },
+            '400': {
+              description:
+                'Invalid request parameters, duplicate paths, or unsupported application type (only StatefulSet supported)',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Application not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error during storage update or PVC expansion',
               content: {
                 'application/json': {
                   schema: ErrorResponseSchema
