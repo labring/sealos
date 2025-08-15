@@ -5,7 +5,7 @@ import { BackupSupportedDBTypeList } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
-import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
+import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
 import { DBEditType, EditType } from '@/types/db';
 import { raw2schema } from './get-database';
 const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
@@ -34,7 +34,26 @@ export async function createDatabase(
     storageClassName: process.env.STORAGE_CLASSNAME
   });
 
-  await k8s.applyYamlList([account, cluster], 'create');
+  const yamlList = [account, cluster];
+
+  if (['postgresql', 'mysql', 'mongodb', 'redis'].includes(request.body.dbForm.dbType)) {
+    const parameterConfig = request.body.dbForm.parameterConfig || {
+      walLevel: 'logical',
+      sharedPreloadLibraries: 'wal2json'
+    };
+
+    const config = json2ParameterConfig(
+      request.body.dbForm.dbName,
+      request.body.dbForm.dbType,
+      request.body.dbForm.dbVersion,
+      parameterConfig.walLevel,
+      parameterConfig.sharedPreloadLibraries
+    );
+
+    yamlList.push(config);
+  }
+
+  await k8s.applyYamlList(yamlList, 'create');
   const { body } = (await k8s.k8sCustomObjects.getNamespacedCustomObject(
     'apps.kubeblocks.io',
     'v1alpha1',

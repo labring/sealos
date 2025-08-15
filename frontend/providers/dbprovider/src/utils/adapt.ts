@@ -74,27 +74,51 @@ export const getDBSource = (
   };
 };
 
+/**
+ * Calculate resource usage for a cluster.
+ * cpu/memory/storage: only the main node (first component) resources.
+ * totalCpu/totalMemory/totalStorage: sum of all nodes.
+ */
 function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
   let cpu = 0;
   let memory = 0;
+  let storage = 0;
   let totalCpu = 0;
   let totalMemory = 0;
-  let storage = 0;
   let totalStorage = 0;
 
+  if (!Array.isArray(obj) || obj.length === 0) {
+    return {
+      cpu: 0,
+      memory: 0,
+      totalCpu: 0,
+      totalMemory: 0,
+      storage: 0,
+      totalStorage: 0
+    };
+  }
+
+  // Calculate main node (first component) resources
+  const mainComp = obj[0];
+  const mainCpu = cpuFormatToM(mainComp?.resources?.limits?.cpu || '0');
+  const mainMemory = memoryFormatToMi(mainComp?.resources?.limits?.memory || '0');
+  const mainStorage = storageFormatToNum(
+    mainComp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
+  );
+  cpu = mainCpu;
+  memory = mainMemory;
+  storage = mainStorage;
+
+  // Calculate total resources for all nodes
   obj.forEach((comp) => {
     const parseCpu = cpuFormatToM(comp?.resources?.limits?.cpu || '0');
     const parseMemory = memoryFormatToMi(comp?.resources?.limits?.memory || '0');
     const parseStorage = storageFormatToNum(
       comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
     );
-    cpu += parseCpu;
-    memory += parseMemory;
-    totalCpu += parseCpu * comp.replicas;
-    totalMemory += parseMemory * comp.replicas;
-
-    storage += parseStorage;
-    totalStorage += parseStorage * comp.replicas;
+    totalCpu += parseCpu * (comp.replicas || 1);
+    totalMemory += parseMemory * (comp.replicas || 1);
+    totalStorage += parseStorage * (comp.replicas || 1);
   });
 
   return {

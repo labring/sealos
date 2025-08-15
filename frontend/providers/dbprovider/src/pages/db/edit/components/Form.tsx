@@ -205,8 +205,13 @@ const Form = ({
     register,
     setValue,
     getValues,
+    watch,
     formState: { errors }
   } = formHook;
+
+  const walLevel = watch('parameterConfig' as any)?.walLevel || 'logical';
+  const sharedPreloadLibraries =
+    watch('parameterConfig' as any)?.sharedPreloadLibraries || 'wal2json';
 
   const dynamicCpuMarks = useMemo(() => {
     const base = CpuSlideMarkList.slice(0, 9);
@@ -219,21 +224,44 @@ const Form = ({
     return base;
   }, [cpuCores]);
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
-    () => [
+  const supportBackup = useMemo(
+    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+    [getValues('dbType')]
+  );
+
+  const supportParameterConfig = useMemo(
+    () => ['postgresql', 'mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
+    [getValues('dbType')]
+  );
+
+  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(() => {
+    const baseNav: { id: string; label: I18nCommonKey; icon: string }[] = [
       {
         id: 'baseInfo',
         label: 'basic',
         icon: 'formInfo'
-      },
-      {
+      }
+    ];
+
+    if (supportBackup) {
+      baseNav.push({
         id: 'backupSettings',
         label: 'backup_settings',
         icon: 'backupSettings'
-      }
-    ],
-    []
-  );
+      });
+    }
+
+    if (supportParameterConfig) {
+      baseNav.push({
+        id: 'parameterConfig',
+        label: 'ParameterConfig',
+        icon: 'slider'
+      });
+    }
+
+    return baseNav;
+  }, [supportBackup, supportParameterConfig]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
 
@@ -276,12 +304,6 @@ const Form = ({
     backgroundColor: 'grayModern.50'
   };
 
-  const supportBackup = useMemo(
-    () => BackupSupportedDBTypeList.includes(getValues('dbType')),
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-    [getValues('dbType')]
-  );
-
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
     let minStorageChange = 1,
@@ -323,10 +345,18 @@ const Form = ({
       setValue('memory', minMemory);
     }
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
+
+    if (!getValues('parameterConfig' as any)) {
+      setValue('parameterConfig' as any, {
+        walLevel: 'logical',
+        sharedPreloadLibraries: 'wal2json'
+      });
+    }
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
+  const parameterConfigRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const tempRef = backupSettingsRef.current;
@@ -356,6 +386,38 @@ const Form = ({
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backupSettingsRef, supportBackup]);
+
+  useEffect(() => {
+    const tempRef = parameterConfigRef.current;
+    const observerCallback = (
+      entries: IntersectionObserverEntry[],
+      observer: IntersectionObserver
+    ) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
+          const paramConfigIndex = navList.findIndex((item) => item.id === 'parameterConfig');
+          if (paramConfigIndex !== -1) {
+            setActiveNav(navList[paramConfigIndex].id);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      threshold: 0.85
+    });
+
+    if (tempRef && supportParameterConfig) {
+      observer.observe(tempRef);
+    }
+
+    return () => {
+      if (tempRef) {
+        observer.unobserve(tempRef);
+      }
+    };
+  }, [parameterConfigRef, supportParameterConfig, navList]);
 
   return (
     <>
@@ -390,7 +452,7 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}
           >
-            {navList.slice(0, supportBackup ? 2 : 1).map((item) => (
+            {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
                   borderRadius={'base'}
@@ -767,6 +829,7 @@ const Form = ({
               />
             </Box>
           </Box>
+
           {supportBackup && (
             <Box id={'backupSettings'} ref={backupSettingsRef} {...boxStyles}>
               <Box {...headerStyles}>
@@ -994,6 +1057,140 @@ const Form = ({
                     </Flex>
                   </Flex>
                 </Box>
+              </Box>
+            </Box>
+          )}
+
+          {/* parameter congif */}
+          {supportParameterConfig && (
+            <Box id={'parameterConfig'} {...boxStyles}>
+              <Box {...headerStyles}>
+                <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.600'} />
+                {t('ParameterConfig')}
+              </Box>
+              <Box px={'42px'} py={'24px'}>
+                <TableContainer>
+                  <Table variant="unstyled" width={'full'}>
+                    <Thead>
+                      <Tr>
+                        <Th
+                          fontSize={'14px'}
+                          // py="13px"
+                          // px={'24px'}
+                          color={'grayModern.900'}
+                          border={'none'}
+                          _first={{
+                            borderLeftRadius: '6px'
+                          }}
+                          _last={{
+                            borderRightRadius: '6px'
+                          }}
+                        >
+                          {t('dbconfig.parameter_name')}
+                        </Th>
+                        <Th
+                          fontSize={'14px'}
+                          // py="13px"
+                          // px={'24px'}
+                          color={'grayModern.900'}
+                          border={'none'}
+                          _first={{
+                            borderLeftRadius: '6px'
+                          }}
+                          _last={{
+                            borderRightRadius: '6px'
+                          }}
+                        >
+                          {t('dbconfig.parameter_value')}
+                        </Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      <Tr>
+                        <Td w="190px">
+                          <Text fontSize={'14px'} color={'grayModern.900'}>
+                            wal_level
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Input
+                            value={walLevel}
+                            size="sm"
+                            borderRadius={'md'}
+                            borderColor={'#E8EBF0'}
+                            bg={'#F7F8FA'}
+                            _focusVisible={{
+                              borderColor: 'brightBlue.500',
+                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                              bg: '#FFF',
+                              color: '#111824'
+                            }}
+                            _hover={{
+                              borderColor: 'brightBlue.300'
+                            }}
+                            onChange={(e) => {
+                              setValue('parameterConfig' as any, {
+                                ...getValues('parameterConfig' as any),
+                                walLevel: e.target.value
+                              });
+                            }}
+                          />
+                          <MyIcon
+                            name="edit"
+                            w={'16px'}
+                            h={'16px'}
+                            color={'grayModern.500'}
+                            cursor={'pointer'}
+                            _hover={{
+                              color: 'brightBlue.500'
+                            }}
+                          />
+                        </Td>
+                      </Tr>
+                      <Tr>
+                        <Td w="190px">
+                          <Text fontSize={'14px'} color={'grayModern.900'}>
+                            shared_preload_libraries
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Input
+                            value={sharedPreloadLibraries}
+                            size="sm"
+                            borderRadius={'md'}
+                            borderColor={'#E8EBF0'}
+                            bg={'#F7F8FA'}
+                            _focusVisible={{
+                              borderColor: 'brightBlue.500',
+                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                              bg: '#FFF',
+                              color: '#111824'
+                            }}
+                            _hover={{
+                              borderColor: 'brightBlue.300'
+                            }}
+                            onChange={(e) => {
+                              setValue('parameterConfig' as any, {
+                                ...getValues('parameterConfig' as any),
+                                sharedPreloadLibraries: e.target.value
+                              });
+                            }}
+                          />
+                          <MyIcon
+                            name="edit"
+                            w={'16px'}
+                            h={'16px'}
+                            color={'grayModern.500'}
+                            cursor={'pointer'}
+                            _hover={{
+                              color: 'brightBlue.500'
+                            }}
+                          />
+                        </Td>
+                      </Tr>
+                    </Tbody>
+                  </Table>
+                </TableContainer>
               </Box>
             </Box>
           )}
