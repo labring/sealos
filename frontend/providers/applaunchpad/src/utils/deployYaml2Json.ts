@@ -12,6 +12,9 @@ import type { AppEditType } from '@/types/app';
 import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
+import { customAlphabet } from 'nanoid';
+
+const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
@@ -256,7 +259,13 @@ export const json2Service = (data: AppEditType) => {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: data.appName,
+      name:
+        // Find existing service name first (ports will have same `serviceName` if they were in the same category),
+        // and only generate new name on YAML creation.
+        // So editing an existing port will not change the service name, creating / deleting a YAML will.
+        data.networks.find((network) =>
+          closedPublicPorts.some((port) => port.port === network.port)
+        )?.serviceName ?? `${data.appName}-${nanoid()}`,
       labels: {
         [appDeployKey]: data.appName
       }
@@ -273,7 +282,10 @@ export const json2Service = (data: AppEditType) => {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name: `${data.appName}-nodeport`,
+      name:
+        // Same as above.
+        data.networks.find((network) => openPublicPorts.some((port) => port.port === network.port))
+          ?.serviceName ?? `${data.appName}-${nanoid()}`,
       labels: {
         [appDeployKey]: data.appName
       }
