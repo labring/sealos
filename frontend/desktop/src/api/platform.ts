@@ -106,3 +106,16 @@ export const getUserBilling = () => {
     }>
   >('/api/desktop/getBilling');
 };
+
+export const getRunningApps = () => {
+  return request.post<
+    any,
+    ApiResp<{
+      runningCount: {
+        devbox: number;
+        database: number;
+        applaunchpad: number;
+      };
+    }>
+  >('/api/desktop/getRunningApps');
+};
