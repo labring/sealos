@@ -115,13 +115,8 @@ const AppsRunningPrompt = () => {
     }
   ];
 
-  const handleCloseModal = () => {
-    onClose();
-  };
-
   const handleShutdown = () => {
     onClose();
-    // ! ======================================= Handle close apps
   };
 
   return (
@@ -223,10 +218,7 @@ const AppsRunningPrompt = () => {
 
           <AlertDialogFooter pt={0}>
             <HStack spacing={3}>
-              <Button ref={cancelRef} onClick={handleCloseModal} variant="outline" size="md" px={6}>
-                关闭本提示
-              </Button>
-              <Button onClick={handleShutdown} bg={'red.600'} size="md" px={6}>
+              <Button ref={cancelRef} onClick={handleShutdown} bg={'red.600'} size="md" px={6}>
                 去关机
               </Button>
             </HStack>
