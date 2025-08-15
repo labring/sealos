@@ -5,7 +5,7 @@ import { ApiResp, RechargeBillingData, RechargeBillingItem, ReqGenInvoice } from
 import { TabPanel } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { InvoicePaymentTable } from '../table/InovicePaymentTable';
 
 export default function PaymentPanel({
@@ -40,41 +40,54 @@ export default function PaymentPanel({
       method: 'POST'
     });
   });
+
+  const filteredPayments = useMemo(() => {
+    if (!data?.data?.payments) return [];
+    return data.data.payments.filter((item) => !item.InvoicedAt && item.Status !== 'REFUNDED');
+  }, [data?.data?.payments]);
+
+  const paginationInfo = useMemo(() => {
+    const total = filteredPayments.length;
+    const totalPage = Math.ceil(total / pageSize) || 1;
+
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPageData = filteredPayments.slice(startIndex, endIndex);
+
+    return {
+      total,
+      totalPage,
+      currentPageData
+    };
+  }, [filteredPayments, page, pageSize]);
+
   useEffect(() => {
-    if (!data?.data) {
-      return;
-    }
-    const { total, totalPage } = data.data;
-    if (totalPage === 0) {
-      // search reset
-      setTotalPage(1);
-      setTotalItem(1);
-    } else {
-      setTotalItem(total);
-      setTotalPage(totalPage);
-    }
-    if (totalPage < page) {
+    setTotalItem(paginationInfo.total);
+    setTotalPage(paginationInfo.totalPage);
+
+    if (paginationInfo.totalPage > 0 && page > paginationInfo.totalPage) {
       setPage(1);
     }
-  }, [data?.data]);
+  }, [paginationInfo.total, paginationInfo.totalPage, page]);
+
   return (
     <TabPanel p="0" display={'flex'} flexDirection={'column'} flex={'auto'}>
       <InvoicePaymentTable
         selectbillings={selectbillings}
-        data={(data?.data?.payments || []).filter((item) => !item.InvoicedAt)}
+        data={paginationInfo.currentPageData}
         setSelectBillings={setSelectBillings}
-      ></InvoicePaymentTable>
+      />
       <SwitchPage
         marginTop={'16px'}
         mx={'auto'}
         currentPage={page}
-        totalPage={totalPage}
-        totalItem={totalItem}
+        totalPage={paginationInfo.totalPage}
+        totalItem={paginationInfo.total}
         pageSize={pageSize}
         setCurrentPage={function (idx: number): void {
           setPage(idx);
         }}
-      ></SwitchPage>
+      />
     </TabPanel>
   );
 }

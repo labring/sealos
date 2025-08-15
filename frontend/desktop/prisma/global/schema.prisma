@@ -340,6 +340,45 @@ model GiftCode {
   comment      String?
 }
 
+
+model UserAccountType {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid       String          @unique @db.Uuid
+  userType      UserType        @default(EXTERNAL_USER)
+  productSeries ProductSeries[]
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  @@map("UserAccountType")
+}
+
+model GiftCodeCreation {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  giftCodeId       String           @unique @db.Uuid // 添加 @unique
+  createdByUserUid String           @db.Uuid
+  rechargeType     RechargeCodeType
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+  @@map("GiftCodeCreation")
+}
+
+enum UserType {
+  EXTERNAL_USER 
+  INTERNAL_EMPLOYEE 
+}
+
+enum ProductSeries {
+  SEALOS
+  FASTGPT
+  LAF_SEALAF
+  AI_PROXY
+}
+
+enum RechargeCodeType {
+  TEST_RECHARGE 
+  COMPENSATION_RECHARGE 
+  ACTIVITY_RECHARGE 
+  CORPORATE_RECHARGE 
+}
+
 enum ProviderType {
   PHONE
   GITHUB
