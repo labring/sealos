@@ -27,6 +27,7 @@ import { dbTypeMap } from '@/utils/database';
 import { error } from 'console';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
+import { getDBSecret } from '@/api/db';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -151,6 +152,13 @@ const Header = ({
     const userNS = userObj?.user.nsid;
     const userKey = `${userId}/${userNS}`;
 
+    const conn = await getDBSecret({
+      dbName: db.dbName,
+      dbType: db.dbType,
+      mock: false
+    });
+    console.log('conn', conn);
+
     if (!conn) {
       return toast({
         title: 'Connection info not ready',
@@ -158,10 +166,10 @@ const Header = ({
       });
     }
 
-    const { host, port, connection, username, password, dbType, dbName } = conn;
+    const { host, port, connection, username, password } = conn;
 
     let connectionUrl = connection;
-    switch (dbType) {
+    switch (db.dbType) {
       case 'mongodb':
         connectionUrl = `mongodb://${host}:${port}`;
         break;
@@ -175,12 +183,11 @@ const Header = ({
         connectionUrl = `jdbc:redis://${host}:${port}`;
         break;
       default:
-        // keep original connection
         break;
     }
 
     const payload = {
-      alias: dbName,
+      alias: db.dbName,
       environmentId: 2 as 1 | 2,
       storageType: 'CLOUD' as 'LOCAL' | 'CLOUD',
       host: host,
@@ -188,7 +195,7 @@ const Header = ({
       user: username,
       password: password,
       url: connectionUrl,
-      type: mapDBType(dbType)
+      type: mapDBType(db.dbType)
     };
 
     console.log(JSON.stringify(payload));
