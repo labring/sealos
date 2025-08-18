@@ -988,9 +988,6 @@ func (c *Cockroach) CreateAccount(ops *types.UserQueryOpts, account *types.Accou
 		ops.UID = userUID
 	}
 	account.UserUID = ops.UID
-	if account.EncryptBalance == "" || account.EncryptDeductionBalance == "" {
-		return nil, fmt.Errorf("empty encrypt balance")
-	}
 
 	if err := c.DB.FirstOrCreate(account).Error; err != nil {
 		return nil, fmt.Errorf("failed to create account: %w", err)
@@ -1522,14 +1519,10 @@ func (c *Cockroach) NewAccount(ops *types.UserQueryOpts) (*types.Account, error)
 		ops.UID = userUID
 	}
 	account := &types.Account{
-		UserUID:                 ops.UID,
-		EncryptDeductionBalance: c.ZeroAccount.EncryptDeductionBalance,
-		EncryptBalance:          c.ZeroAccount.EncryptBalance,
-		Balance:                 c.ZeroAccount.Balance,
-		DeductionBalance:        c.ZeroAccount.DeductionBalance,
-		CreateRegionID:          c.LocalRegion.UID.String(),
-		CreatedAt:               time.Now(),
-		UpdatedAt:               time.Now(),
+		UserUID:        ops.UID,
+		CreateRegionID: c.LocalRegion.UID.String(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	}
 
 	if err := c.DB.FirstOrCreate(account).Error; err != nil {
@@ -1550,13 +1543,11 @@ func (c *Cockroach) NewAccountWithFreeSubscriptionPlan(ops *types.UserQueryOpts)
 	}
 	now := time.Now().UTC()
 	account := &types.Account{
-		UserUID:                 ops.UID,
-		EncryptDeductionBalance: c.ZeroAccount.EncryptDeductionBalance,
-		EncryptBalance:          c.ZeroAccount.EncryptBalance,
-		Balance:                 0,
-		DeductionBalance:        0,
-		CreateRegionID:          c.LocalRegion.UID.String(),
-		CreatedAt:               now,
+		UserUID:          ops.UID,
+		Balance:          0,
+		DeductionBalance: 0,
+		CreateRegionID:   c.LocalRegion.UID.String(),
+		CreatedAt:        now,
 	}
 	// 1. create credits
 	// 2. create account
@@ -1743,39 +1734,20 @@ func (c *Cockroach) transferAccount(from, to *types.UserQueryOpts, amount int64,
 }
 
 func (c *Cockroach) InitTables() error {
-	// Create ENUM types if not exists
-	err := c.DB.Exec(`
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_status') THEN
-                CREATE TYPE subscription_status AS ENUM ('NORMAL', 'DEBT', 'LOCK_USER');
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_operator') THEN
-                CREATE TYPE subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed');
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_pay_status') THEN
-                CREATE TYPE subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed');
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_period') THEN
-                CREATE TYPE subscription_period AS ENUM ('monthly', 'yearly');
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'workspace_traffic_status') THEN
-                CREATE TYPE workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired');
-            END IF;
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'subscription_transaction_status') THEN
-                CREATE TYPE subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed');
-            END IF;
-        END $$;
-    `).Error
-	if err != nil {
-		return fmt.Errorf("failed to create ENUM types: %w", err)
+	enumTypes := []string{
+		`CREATE TYPE IF NOT EXISTS subscription_status AS ENUM ('NORMAL', 'DEBT', 'DEBT_PRE_DELETION', 'DEBT_FINAL_DELETION')`,
+		`CREATE TYPE IF NOT EXISTS subscription_operator AS ENUM ('created', 'upgraded', 'downgraded', 'canceled', 'renewed')`,
+		`CREATE TYPE IF NOT EXISTS subscription_pay_status AS ENUM ('pending', 'paid', 'no_need', 'failed')`,
+		`CREATE TYPE IF NOT EXISTS workspace_traffic_status AS ENUM ('active', 'exhausted', 'used_up', 'expired')`,
+		`CREATE TYPE IF NOT EXISTS subscription_transaction_status AS ENUM ('completed', 'pending', 'processing', 'failed')`,
 	}
-	err = c.DB.Exec(`
-		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
-	if err != nil {
-		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %v", err)
+	for _, query := range enumTypes {
+		err := c.DB.Exec(query).Error
+		if err != nil {
+			return fmt.Errorf("failed to create ENUM : %w", err)
+		}
 	}
-	err = CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
+	err := CreateTableIfNotExist(c.DB, types.Account{}, types.AccountTransaction{}, types.Payment{}, types.Transfer{}, types.Region{}, types.Invoice{},
 		types.InvoicePayment{}, types.Configs{}, types.Credits{}, types.CreditsTransaction{},
 		types.CardInfo{}, types.PaymentOrder{}, types.PaymentRefund{}, types.Corporate{},
 		types.SubscriptionPlan{}, types.Subscription{}, types.SubscriptionTransaction{},
@@ -1784,6 +1756,11 @@ func (c *Cockroach) InitTables() error {
 		types.WorkspaceSubscription{}, types.WorkspaceSubscriptionTransaction{}, types.WorkspaceSubscriptionPlan{}, types.WorkspaceTraffic{}, types.ProductPrice{})
 	if err != nil {
 		return fmt.Errorf("failed to create table: %v", err)
+	}
+	err = c.DB.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_pending_transactions ON "WorkspaceSubscriptionTransaction" (pay_status, start_at, status, region_domain);`).Error
+	if err != nil {
+		return fmt.Errorf("failed to create index on WorkspaceSubscriptionTransaction: %v", err)
 	}
 
 	// TODO: remove this after migration
@@ -1794,6 +1771,11 @@ func (c *Cockroach) InitTables() error {
 		if err != nil {
 			return fmt.Errorf("failed to add column activityType: %v", err)
 		}
+	}
+
+	// 设置默认值 ''
+	if err := migrateColumns(c.DB); err != nil {
+		return fmt.Errorf("failed to migrate columns: %v", err)
 	}
 	if !c.DB.Migrator().HasColumn(&types.Credits{}, `updated_at`) {
 		fmt.Println("add table `Credits` column updated_at")
@@ -1873,6 +1855,44 @@ func (c *Cockroach) InitTables() error {
 	return nil
 }
 
+func migrateColumns(c *gorm.DB) error {
+	// 处理 encryptBalance 列
+	if c.Migrator().HasColumn(&types.Account{}, "encryptBalance") {
+		// 将现有 NULL 值更新为 ''
+		//fmt.Println("updating NULL values to '' for encryptBalance")
+		//err := c.Exec(`UPDATE "Account" SET "encryptBalance" = '' WHERE "encryptBalance" IS NULL`).Error
+		//if err != nil {
+		//	return fmt.Errorf("failed to update NULL values for encryptBalance: %v", err)
+		//}
+
+		// 设置默认值 ''
+		fmt.Println("setting default value '' for encryptBalance")
+		err := c.Exec(`ALTER TABLE "Account" ALTER COLUMN "encryptBalance" SET DEFAULT ''`).Error
+		if err != nil {
+			return fmt.Errorf("failed to set default value for encryptBalance: %v", err)
+		}
+	}
+
+	// 处理 encryptDeductionBalance 列
+	if c.Migrator().HasColumn(&types.Account{}, "encryptDeductionBalance") {
+		//// 将现有 NULL 值更新为 ''
+		//fmt.Println("updating NULL values to '' for encryptDeductionBalance")
+		//err := c.Exec(`UPDATE "Account" SET "encryptDeductionBalance" = '' WHERE "encryptDeductionBalance" IS NULL`).Error
+		//if err != nil {
+		//	return fmt.Errorf("failed to update NULL values for encryptDeductionBalance: %v", err)
+		//}
+
+		// 设置默认值 ''
+		fmt.Println("setting default value '' for encryptDeductionBalance")
+		err := c.Exec(`ALTER TABLE "Account" ALTER COLUMN "encryptDeductionBalance" SET DEFAULT ''`).Error
+		if err != nil {
+			return fmt.Errorf("failed to set default value for encryptDeductionBalance: %v", err)
+		}
+	}
+
+	return nil
+}
+
 func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	dbLogger := logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), logger.Config{
 		SlowThreshold:             200 * time.Millisecond,
@@ -1906,15 +1926,7 @@ func NewCockRoach(globalURI, localURI string) (*Cockroach, error) {
 	if err == nil {
 		BaseBalance = baseBalance
 	}
-	newEncryptBalance, err := crypto.EncryptInt64(BaseBalance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt zero value")
-	}
-	newEncryptDeductionBalance, err := crypto.EncryptInt64(0)
-	if err != nil {
-		return nil, fmt.Errorf("failed to encrypt zero value")
-	}
-	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{EncryptBalance: *newEncryptBalance, EncryptDeductionBalance: *newEncryptDeductionBalance, Balance: baseBalance, DeductionBalance: 0}}
+	cockroach := &Cockroach{DB: db, Localdb: localdb, ZeroAccount: &types.Account{Balance: baseBalance, DeductionBalance: 0}}
 	cockroach.ownerUsrUIDMap = &sync.Map{}
 	cockroach.ownerUsrIDMap = &sync.Map{}
 	cockroach.subscriptionPlans = &sync.Map{}

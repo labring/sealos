@@ -17,12 +17,13 @@ const (
 	TerminateSuspendDebtNamespaceAnnoStatus          = "TerminateSuspend"
 	TerminateSuspendCompletedDebtNamespaceAnnoStatus = "TerminateSuspendCompleted"
 
-	NetworkStatusAnnoKey               = "network.sealos.io/status"
-	WorkspaceSubscriptionStatusAnnoKey = "subscription.sealos.io/status"
-	NetworkSuspend                     = "Suspend"
-	NetworkSuspendCompleted            = "SuspendCompleted"
-	NetworkResume                      = "Resume"
-	NetworkResumeCompleted             = "ResumeCompleted"
+	NetworkStatusAnnoKey                         = "network.sealos.io/status"
+	WorkspaceSubscriptionStatusAnnoKey           = "subscription.sealos.io/status"
+	WorkspaceSubscriptionStatusUpdateTimeAnnoKey = "subscription.sealos.io/status-update-time"
+	NetworkSuspend                               = "Suspend"
+	NetworkSuspendCompleted                      = "SuspendCompleted"
+	NetworkResume                                = "Resume"
+	NetworkResumeCompleted                       = "ResumeCompleted"
 )
 
 // DebtStatusType 定义债务状态类型

@@ -33,9 +33,11 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
+	"github.com/labring/sealos/controllers/pkg/types"
 	"github.com/labring/sealos/controllers/pkg/utils"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
@@ -113,23 +115,25 @@ var SubscriptionEnabled = false
 // AccountReconciler reconciles an Account object
 type AccountReconciler struct {
 	client.Client
-	AccountV2                   database.AccountV2
-	InitUserAccountFunc         func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
-	Scheme                      *runtime.Scheme
-	Logger                      logr.Logger
-	accountSystemNamespace      string
-	DBClient                    database.Account
-	CVMDBClient                 database.CVM
-	MongoDBURI                  string
-	Activities                  pkgtypes.Activities
-	DefaultDiscount             pkgtypes.RechargeDiscount
-	SubscriptionQuotaLimit      map[string]corev1.ResourceList
-	SyncNSQuotaFunc             func(ctx context.Context, owner, nsName string) error
-	SkipExpiredUserTimeDuration time.Duration
-	localDomain                 string
-	allRegionDomain             []string
-	jwtManager                  *utils.JWTManager
-	desktopJwtManager           *utils.JWTManager
+	AccountV2                      database.AccountV2
+	InitUserAccountFunc            func(user *pkgtypes.UserQueryOpts) (*pkgtypes.Account, error)
+	Scheme                         *runtime.Scheme
+	Logger                         logr.Logger
+	accountSystemNamespace         string
+	DBClient                       database.Account
+	CVMDBClient                    database.CVM
+	MongoDBURI                     string
+	Activities                     pkgtypes.Activities
+	DefaultDiscount                pkgtypes.RechargeDiscount
+	SubscriptionQuotaLimit         map[string]corev1.ResourceList
+	SyncNSQuotaFunc                func(ctx context.Context, owner, nsName string) error
+	SkipExpiredUserTimeDuration    time.Duration
+	localDomain                    string
+	allRegionDomain                []string
+	jwtManager                     *utils.JWTManager
+	desktopJwtManager              *utils.JWTManager
+	workspaceSubPlans              []types.WorkspaceSubscriptionPlan
+	workspaceSubPlansResourceLimit map[string]v1.ResourceList
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -293,7 +297,7 @@ func convertDebtStatus(statusType accountv1.DebtStatusType) pkgtypes.DebtStatusT
 }
 
 func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, _, nsName string) error {
-	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName)), client.Object(resources.GetDefaultResourceQuota(nsName, ResourceQuotaPrefix+nsName))}
+	objs := []client.Object{client.Object(resources.GetDefaultLimitRange(nsName, nsName))}
 	for i := range objs {
 		err := retry.Retry(10, 1*time.Second, func() error {
 			_, err := controllerutil.CreateOrUpdate(ctx, r.Client, objs[i], func() error {
@@ -305,6 +309,26 @@ func (r *AccountReconciler) syncResourceQuotaAndLimitRange(ctx context.Context, 
 			return fmt.Errorf("sync resource %T failed: %v", objs[i], err)
 		}
 	}
+	plan, err := r.AccountV2.GetWorkspaceSubscriptionPlan(types.FreeSubscriptionPlanName)
+	if err != nil {
+		return fmt.Errorf("get workspace subscription plan failed: %v", err)
+	}
+	r.Logger.Info("get workspace subscription plan", "plan", plan)
+	// TODO Check if the quota exists. If it doesn't, treat it as a new space and create a space subscription
+	err = r.AccountV2.GetGlobalDB().Transaction(func(tx *gorm.DB) error {
+		return r.handleWorkspaceSubscriptionCreated(ctx, tx, &types.WorkspaceSubscriptionTransaction{
+			ID:           plan.ID,
+			Workspace:    nsName,
+			RegionDomain: r.localDomain,
+			Operator:     types.SubscriptionTransactionTypeCreated,
+			NewPlanName:  plan.Name,
+			Period:       "14d",
+		})
+	})
+	if err != nil {
+		return fmt.Errorf("handle workspace subscription created failed: %v", err)
+	}
+	r.Logger.Info("handle workspace subscription created", "namespace", nsName)
 	return nil
 }
 
@@ -403,9 +427,19 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager, rateOpts controll
 		}
 		r.desktopJwtManager = utils.NewJWTManager(os.Getenv(EnvDesktopJwtSecret), 10*time.Minute)
 	} else {
+		plans, err := r.AccountV2.GetWorkspaceSubscriptionPlanList()
+		if err != nil {
+			return fmt.Errorf("failed to get workspace subscription plans: %w", err)
+		}
+		res, err := resources.ParseResourceLimitWithPlans(plans)
+		if err != nil {
+			return fmt.Errorf("failed to parse resource limits with plans: %w", err)
+		}
+		r.workspaceSubPlans = plans
+		r.workspaceSubPlansResourceLimit = res
 		r.InitUserAccountFunc = r.AccountV2.NewAccount
-		r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	}
+	r.SyncNSQuotaFunc = r.syncResourceQuotaAndLimitRange
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}, builder.WithPredicates(OnlyCreatePredicate{})).
 		WithOptions(rateOpts).

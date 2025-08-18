@@ -136,6 +136,7 @@ type AccountV2 interface {
 	GetSubscription(ops *types.UserQueryOpts) (*types.Subscription, error)
 	GetSubscriptionPlanList() ([]types.SubscriptionPlan, error)
 	GetWorkspaceSubscriptionPlanList() ([]types.WorkspaceSubscriptionPlan, error)
+	SetWorkspaceSubscriptionPlanList(plans ...*types.WorkspaceSubscriptionPlan) error
 	SetSubscriptionPlanList(plans []types.SubscriptionPlan) error
 	GetCardList(ops *types.UserQueryOpts) ([]types.CardInfo, error)
 	DeleteCardInfo(id uuid.UUID, userUID uuid.UUID) error

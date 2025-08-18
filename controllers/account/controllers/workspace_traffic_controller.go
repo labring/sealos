@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+
 	corev1 "k8s.io/api/core/v1"
 	types2 "k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -243,83 +245,59 @@ func (c *WorkspaceTrafficController) ProcessTrafficWithTimeRange() {
 	}
 }
 
-// AddTrafficPackage adds a new traffic package to workspace
-func (c *WorkspaceTrafficController) AddTrafficPackage(subscriptionID uuid.UUID, totalMiB int64, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
-	totalBytes := totalMiB * 1024 * 1024 // Convert MiB to Bytes
-	// Get workspace subscription
-	var subscription types.WorkspaceSubscription
-	err := c.GlobalDB.First(&subscription, "id = ?", subscriptionID).Error
+func (r *AccountReconciler) addTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+	totalBytes := plan.Traffic * 1024 * 1024 // Convert MiB to Bytes
+	err := cockroach.AddWorkspaceSubscriptionTrafficPackage(globalDB, sub.ID, plan.Traffic, expireAt, from, fromID)
 	if err != nil {
-		return fmt.Errorf("failed to get workspace subscription: %v", err)
-	}
-
-	// TODO idempotence skip if the id already exists
-	// Create new traffic package
-	trafficPackage := types.WorkspaceTraffic{
-		WorkspaceSubscriptionID: subscriptionID,
-		Workspace:               subscription.Workspace,
-		RegionDomain:            subscription.RegionDomain,
-		From:                    from,
-		FromID:                  fromID,
-		TotalBytes:              totalBytes,
-		UsedBytes:               0,
-		ExpiredAt:               expireAt,
-		Status:                  types.WorkspaceTrafficStatusActive,
-		CreatedAt:               time.Now(),
-		UpdatedAt:               time.Now(),
-	}
-
-	tx := c.GlobalDB.Begin()
-	if tx.Error != nil {
-		return fmt.Errorf("failed to begin transaction: %v", tx.Error)
-	}
-
-	// Insert traffic package
-	err = tx.Create(&trafficPackage).Error
-	if err != nil {
-		tx.Rollback()
 		return fmt.Errorf("failed to create traffic package: %v", err)
 	}
-
 	// Check if workspace was previously exhausted and needs to be resumed
-	if subscription.TrafficStatus == types.WorkspaceTrafficStatusUsedUp || subscription.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
+	if sub.TrafficStatus == types.WorkspaceTrafficStatusUsedUp || sub.TrafficStatus == types.WorkspaceTrafficStatusExhausted {
 		// Update workspace status to available
-		err = tx.Model(&types.WorkspaceSubscription{}).
-			Where("id = ?", subscriptionID).
+		err = globalDB.Model(&types.WorkspaceSubscription{}).
+			Where("id = ?", sub.ID).
 			Update("traffic_status", types.WorkspaceTrafficStatusActive).Error
 		if err != nil {
-			tx.Rollback()
 			return fmt.Errorf("failed to update workspace traffic status: %v", err)
 		}
-
-		// Commit transaction first
-		err = tx.Commit().Error
-		if err != nil {
-			return fmt.Errorf("failed to commit transaction: %v", err)
-		}
-
 		// Send resume request (outside transaction)
-		err = c.resumeWorkspaceTraffic(subscription.Workspace)
+		err = r.resumeWorkspaceTraffic(sub.Workspace)
 		if err != nil {
-			c.Logger.Error(err, "failed to resume workspace traffic",
-				"workspace", subscription.Workspace,
-				"region", subscription.RegionDomain)
+			r.Logger.Error(err, "failed to resume workspace traffic",
+				"workspace", sub.Workspace,
+				"region", sub.RegionDomain)
 			// Note: We don't rollback here as the traffic package was successfully added
-		}
-	} else {
-		// Just commit the transaction
-		err = tx.Commit().Error
-		if err != nil {
-			return fmt.Errorf("failed to commit transaction: %v", err)
 		}
 	}
 
-	c.Logger.Info("successfully added traffic package",
-		"workspace", subscription.Workspace,
-		"region", subscription.RegionDomain,
+	r.Logger.Info("successfully added traffic package",
+		"workspace", sub.Workspace,
+		"region", sub.RegionDomain,
 		"totalBytes", totalBytes)
 
 	return nil
+}
+
+// AddTrafficPackage adds a new traffic package to workspace
+func (r *AccountReconciler) AddTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+	if sub.ID == uuid.Nil {
+		return fmt.Errorf("workspace subscription ID cannot be nil")
+	}
+	// Get workspace subscription
+	var subscription types.WorkspaceSubscription
+	err := globalDB.First(&subscription, "id = ?", sub.ID).Error
+	if err != nil {
+		return fmt.Errorf("failed to get workspace subscription: %v", err)
+	}
+	return r.addTrafficPackage(globalDB, &subscription, plan, expireAt, from, fromID)
+}
+
+// 与AddTrafficPackage不同的点在于容忍 Subscription是否存在
+func (r *AccountReconciler) NewTrafficPackage(globalDB *gorm.DB, sub *types.WorkspaceSubscription, plan *types.WorkspaceSubscriptionPlan, expireAt time.Time, from types.WorkspaceTrafficFrom, fromID string) error {
+	if sub.ID == uuid.Nil {
+		return fmt.Errorf("workspace subscription ID cannot be nil")
+	}
+	return r.addTrafficPackage(globalDB, sub, plan, expireAt, from, fromID)
 }
 
 // CleanupExpiredPackages marks expired traffic packages
@@ -359,8 +337,8 @@ func (c *WorkspaceTrafficController) suspendWorkspaceTraffic(workspace string) e
 	return updateNamespaceStatus(c.Client, context.Background(), types.NetworkSuspend, []string{workspace})
 }
 
-func (c *WorkspaceTrafficController) resumeWorkspaceTraffic(workspace string) error {
-	return updateNamespaceStatus(c.Client, context.Background(), types.NetworkResume, []string{workspace})
+func (r *AccountReconciler) resumeWorkspaceTraffic(workspace string) error {
+	return updateNamespaceStatus(r.Client, context.Background(), types.NetworkResume, []string{workspace})
 }
 
 // WorkspaceTrafficManager provides high-level traffic management operations
