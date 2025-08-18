@@ -398,12 +398,11 @@ const Header = ({
 
       {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
         <Button
+          className="create-app-btn"
           minW={'75px'}
           h={'32px'}
           fontSize={'12px'}
-          variant={'outline'}
-          bg={'black'}
-          color={'white'}
+          variant={'solid'}
           leftIcon={<MyIcon name="settings" w={'16px'} />}
           isLoading={loading}
           isDisabled={db.status.value !== 'Running'}
