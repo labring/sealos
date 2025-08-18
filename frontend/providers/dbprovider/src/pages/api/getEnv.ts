@@ -14,6 +14,7 @@ export type SystemEnvResponse = {
   STORAGE_MAX_SIZE: number;
   CLIENT_DOMAIN_NAME: string;
   GATEWAY_DOMAIN_NAME: string;
+  MANAGED_DB_ENABLED: boolean;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -37,7 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       CurrencySymbol: (process.env.CURRENCY_SYMBOL || 'shellCoin') as 'shellCoin' | 'cny' | 'usd',
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
       CLIENT_DOMAIN_NAME: process.env.CLIENT_DOMAIN_NAME || '',
-      GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || ''
+      GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || '',
+      MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED === 'true' || true
     }
   });
 }

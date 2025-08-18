@@ -81,6 +81,7 @@ const DBList = ({
   const [remarkValue, setRemarkValue] = useState('');
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
+  const [managedDbEnabled, setManagedDbEnabled] = useState(true);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -464,19 +465,21 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => (
           <Flex key={row.id}>
-            <Button
-              mr={'10px'}
-              size={'sm'}
-              h={'32px'}
-              bg={'grayModern.150'}
-              color={'grayModern.900'}
-              _hover={{ color: 'brightBlue.600' }}
-              leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
-              onClick={() => handleManageData(row.original)}
-              isDisabled={row.original.status.value !== DBStatusEnum.Running}
-            >
-              {t('manage_data')}
-            </Button>
+            {managedDbEnabled && (
+              <Button
+                mr={'10px'}
+                size={'sm'}
+                h={'32px'}
+                bg={'grayModern.150'}
+                color={'grayModern.900'}
+                _hover={{ color: 'brightBlue.600' }}
+                leftIcon={<MyIcon name={'settings'} w={'18px'} h={'18px'} />}
+                onClick={() => handleManageData(row.original)}
+                isDisabled={row.original.status.value !== DBStatusEnum.Running}
+              >
+                {t('manage_data')}
+              </Button>
+            )}
 
             <Button
               mr={'4px'}
@@ -512,7 +515,7 @@ const DBList = ({
                   w={'32px'}
                   h={'32px'}
                 >
-                  <MyIcon name={'more'} px={3} transform="rotate(90deg)" />
+                  <MyIcon name={'more'} px={3} />
                 </Button>
               }
               menuList={[
@@ -645,6 +648,21 @@ const DBList = ({
 
   const isClientSide = useClientSideValue(true);
   const { applistCompleted } = useGuideStore();
+
+  useEffect(() => {
+    const fetchEnv = async () => {
+      try {
+        const response = await fetch('/api/getEnv');
+        const data = await response.json();
+        setManagedDbEnabled(data.data?.MANAGED_DB_ENABLED);
+      } catch (error) {
+        console.error('Failed to fetch environment variables:', error);
+        setManagedDbEnabled(false);
+      }
+    };
+    fetchEnv();
+  }, []);
+
   useEffect(() => {
     if (!applistCompleted && isClientSide) {
       startDriver(applistDriverObj(t, () => router.push('/db/edit')));
