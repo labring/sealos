@@ -81,7 +81,6 @@ const DBList = ({
   const [remarkValue, setRemarkValue] = useState('');
   const [delAppName, setDelAppName] = useState('');
   const [updateAppName, setUpdateAppName] = useState('');
-  const [managedDbEnabled, setManagedDbEnabled] = useState(true);
 
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
@@ -465,7 +464,7 @@ const DBList = ({
         header: () => t('operation'),
         cell: ({ row }) => (
           <Flex key={row.id}>
-            {managedDbEnabled && (
+            {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
               <Button
                 mr={'10px'}
                 size={'sm'}
@@ -648,20 +647,6 @@ const DBList = ({
 
   const isClientSide = useClientSideValue(true);
   const { applistCompleted } = useGuideStore();
-
-  useEffect(() => {
-    const fetchEnv = async () => {
-      try {
-        const response = await fetch('/api/getEnv');
-        const data = await response.json();
-        setManagedDbEnabled(data.data?.MANAGED_DB_ENABLED);
-      } catch (error) {
-        console.error('Failed to fetch environment variables:', error);
-        setManagedDbEnabled(false);
-      }
-    };
-    fetchEnv();
-  }, []);
 
   useEffect(() => {
     if (!applistCompleted && isClientSide) {

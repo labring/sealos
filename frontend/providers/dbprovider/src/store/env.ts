@@ -25,7 +25,7 @@ const useEnvStore = create<EnvState>()(
       STORAGE_MAX_SIZE: 300,
       CLIENT_DOMAIN_NAME: '',
       GATEWAY_DOMAIN_NAME: '',
-      MANAGED_DB_ENABLED: true
+      MANAGED_DB_ENABLED: ''
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

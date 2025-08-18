@@ -14,7 +14,6 @@ export default function Index(props: ServiceEnv) {
   const { setSession, isUserLogin } = useSessionStore();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [redirectUrl, setRedirectUrl] = useState('');
 
   useEffect(() => {
     return createSealosApp();

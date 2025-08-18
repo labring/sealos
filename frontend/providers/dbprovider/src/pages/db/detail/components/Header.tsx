@@ -28,6 +28,7 @@ import { error } from 'console';
 import { useDBStore } from '@/store/db';
 import { getLangStore } from '@/utils/cookieUtils';
 import { getDBSecret } from '@/api/db';
+import useEnvStore from '@/store/env';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
@@ -64,8 +65,8 @@ const Header = ({
   });
 
   const [loading, setLoading] = useState(false);
-  const [managedDbEnabled, setManagedDbEnabled] = useState(true);
   const { getDataSourceId, setDataSourceId } = useDBStore();
+  const { SystemEnv } = useEnvStore();
 
   const handleRestartApp = useCallback(async () => {
     try {
@@ -268,16 +269,6 @@ const Header = ({
     });
   }, [toast, router, conn, db.dbName, getDataSourceId, setDataSourceId, t]);
 
-  useEffect(() => {
-    const fetchEnv = async () => {
-      const response = await fetch('/api/getEnv');
-      const data = await response.json();
-      setManagedDbEnabled(data.data?.MANAGED_DB_ENABLED);
-      console.log('managedDbEnabled', data.data?.MANAGED_DB_ENABLED);
-    };
-    fetchEnv();
-  }, []);
-
   return (
     <Flex h={'60px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
@@ -405,7 +396,7 @@ const Header = ({
         {t('Delete')}
       </Button>
 
-      {managedDbEnabled && (
+      {SystemEnv.MANAGED_DB_ENABLED === 'true' && (
         <Button
           minW={'75px'}
           h={'32px'}
