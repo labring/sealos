@@ -12,9 +12,40 @@ import type { AppEditType } from '@/types/app';
 import { pathFormat, mountPathToConfigMapKey, str2Num, strToBase64 } from '@/utils/tools';
 import dayjs from 'dayjs';
 import yaml from 'js-yaml';
-import { customAlphabet } from 'nanoid';
+import { customAlphabet, customRandom } from 'nanoid';
+import crypto from 'crypto';
 
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
+// Create deterministic nanoid based on seed
+const createDeterministicNanoid = (seed: string): string => {
+  const deterministicNanoid = customRandom('abcdefghijklmnopqrstuvwxyz', 12, (size) => {
+    const hash = crypto.createHash('sha256').update(seed).digest();
+    const result = new Uint8Array(size);
+    for (let i = 0; i < size; i++) {
+      result[i] = hash[i % hash.length];
+    }
+    return result;
+  });
+  return deterministicNanoid();
+};
+
+// Unified service name generation function
+const getServiceName = (data: AppEditType, forNodePort: boolean = false): string => {
+  const existingServiceName = data.networks.find((network) => {
+    return network.openNodePort === forNodePort && network.serviceName;
+  })?.serviceName;
+
+  if (existingServiceName) {
+    return existingServiceName;
+  }
+
+  const portsOfType = data.networks.filter((n) => n.openNodePort === forNodePort);
+  const ports = portsOfType.map((n) => n.port).sort();
+  const seed = `${data.appName}-${forNodePort ? 'nodeport' : 'cluster'}-${ports.join(',')}`;
+  const deterministicId = createDeterministicNanoid(seed);
+  const suffix = forNodePort ? '-nodeport' : '';
+
+  return `${data.appName}${suffix}-${deterministicId}`;
+};
 
 export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefulset') => {
   const totalStorage = data.storeList.reduce((acc, item) => acc + item.value, 0);
@@ -200,7 +231,7 @@ export const json2DeployCr = (data: AppEditType, type: 'deployment' | 'statefuls
           }
         },
         minReadySeconds: 10,
-        serviceName: data.appName,
+        serviceName: getServiceName(data, false),
         template: {
           metadata: templateMetadata,
           spec: {
@@ -255,17 +286,13 @@ export const json2Service = (data: AppEditType) => {
     }
   });
 
+  const serviceName = getServiceName(data, false);
+
   const template = {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name:
-        // Find existing service name first (ports will have same `serviceName` if they were in the same category),
-        // and only generate new name on YAML creation.
-        // So editing an existing port will not change the service name, creating / deleting a YAML will.
-        data.networks.find((network) =>
-          closedPublicPorts.some((port) => port.port === network.port)
-        )?.serviceName ?? `${data.appName}-${nanoid()}`,
+      name: serviceName,
       labels: {
         [appDeployKey]: data.appName
       }
@@ -278,14 +305,13 @@ export const json2Service = (data: AppEditType) => {
     }
   };
 
+  const serviceNameNodePort = getServiceName(data, true);
+
   const templateNodePort = {
     apiVersion: 'v1',
     kind: 'Service',
     metadata: {
-      name:
-        // Same as above.
-        data.networks.find((network) => openPublicPorts.some((port) => port.port === network.port))
-          ?.serviceName ?? `${data.appName}-${nanoid()}`,
+      name: serviceNameNodePort,
       labels: {
         [appDeployKey]: data.appName
       }
@@ -342,6 +368,8 @@ export const json2Ingress = (data: AppEditType) => {
         ? network.networkName
         : SEALOS_USER_DOMAINS.find((domain) => domain.name === network.domain)?.secretName ||
           'wildcard-cert';
+      // Ingress only uses ClusterIP services, not NodePort
+      const serviceName = getServiceName(data, false);
 
       const ingress = {
         apiVersion: 'networking.k8s.io/v1',
@@ -369,7 +397,7 @@ export const json2Ingress = (data: AppEditType) => {
                     path: '/',
                     backend: {
                       service: {
-                        name: data.appName,
+                        name: serviceName,
                         port: {
                           number: network.port
                         }

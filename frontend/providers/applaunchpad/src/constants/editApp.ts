@@ -33,6 +33,7 @@ export const defaultEditVal: AppEditType = {
   memory: 256,
   networks: [
     {
+      // note: this should not have serviceName
       networkName: '',
       portName: nanoid(),
       port: 80,
