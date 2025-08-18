@@ -87,8 +87,8 @@ func (p *SubscriptionPayStatus) Value() (driver.Value, error) {
 type SubscriptionPeriod string
 
 const (
-	SubscriptionPeriodMonthly SubscriptionPeriod = "monthly"
-	SubscriptionPeriodYearly  SubscriptionPeriod = "yearly"
+	SubscriptionPeriodMonthly SubscriptionPeriod = "1m"
+	SubscriptionPeriodYearly  SubscriptionPeriod = "1y"
 )
 
 func (p *SubscriptionPeriod) Scan(value interface{}) error {

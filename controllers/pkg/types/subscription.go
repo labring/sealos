@@ -1,6 +1,9 @@
 package types
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/lib/pq"
@@ -81,18 +84,34 @@ const (
 )
 
 func ParsePeriod(period SubscriptionPeriod) (time.Duration, error) {
-	switch period {
-	case SubscriptionPeriodMonthly:
-		return 30 * 24 * time.Hour, nil // 30 days
-	case SubscriptionPeriodYearly:
-		return 365 * 24 * time.Hour, nil // 365 days
+	re := regexp.MustCompile(`^(\d+)([dhwmy])$`)
+	matches := re.FindStringSubmatch(string(period))
+	if len(matches) != 3 {
+		return 0, fmt.Errorf("invalid duration format: %s", period)
+	}
+	value, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, fmt.Errorf("invalid number in duration: %s", matches[1])
+	}
+	unit := matches[2]
+	switch unit {
+	case "h":
+		return time.Duration(value) * time.Hour, nil
+	case "d":
+		return time.Duration(value) * 24 * time.Hour, nil
+	case "w":
+		return time.Duration(value) * 7 * 24 * time.Hour, nil
+	case "m":
+		return time.Duration(value) * 30 * 24 * time.Hour, nil
+	case "y":
+		return time.Duration(value) * 365 * 24 * time.Hour, nil
 	default:
-		return 0, nil // Unrecognized period, return zero duration
+		return 0, fmt.Errorf("unsupported unit: %s", unit)
 	}
 }
 
 type ProductPrice struct {
-	ID           uuid.UUID    `gorm:"type:uuid;not null;primaryKey;column:id"`
+	ID           uuid.UUID    `gorm:"type:uuid;default:gen_random_uuid();primaryKey;column:id"`
 	ProductID    uuid.UUID    `gorm:"type:uuid;not null;index:idx_product_cycle,unique"`
 	BillingCycle BillingCycle `gorm:"type:varchar(20);not null;index:idx_product_cycle,unique"` // 计费周期, 年/季/月/周/天/次
 	Price        int64        `gorm:"type:bigint;column:price"`                                 // 价格

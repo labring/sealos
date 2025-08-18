@@ -301,7 +301,7 @@ func (wdp *WorkspaceSubscriptionDebtProcessor) updateWorkspaceDebtStatus(ctx con
 		original := ns.DeepCopy()
 		ns.Annotations[types.DebtNamespaceAnnoStatusKey] = status
 		ns.Annotations[types.WorkspaceSubscriptionStatusAnnoKey] = status
-		ns.Annotations[WorkspaceSubscriptionExpireAnnoKey] = time.Now().Format(time.RFC3339)
+		ns.Annotations[types.WorkspaceSubscriptionStatusUpdateTimeAnnoKey] = time.Now().Format(time.RFC3339)
 
 		if err := wdp.Patch(ctx, ns, client.MergeFrom(original)); err != nil {
 			return fmt.Errorf("patch workspace namespace annotation failed: %w", err)
