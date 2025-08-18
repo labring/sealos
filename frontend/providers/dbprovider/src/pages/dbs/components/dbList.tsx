@@ -560,7 +560,7 @@ const DBList = ({
                   w={'32px'}
                   h={'32px'}
                 >
-                  <MyIcon name={'more'} px={3} transform="rotate(90deg)" />
+                  <MyIcon name={'more'} px={3} />
                 </Button>
               }
               menuList={[
