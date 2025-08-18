@@ -235,33 +235,35 @@ const Form = ({
     [getValues('dbType')]
   );
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(() => {
-    const baseNav: { id: string; label: I18nCommonKey; icon: string }[] = [
-      {
-        id: 'baseInfo',
-        label: 'basic',
-        icon: 'formInfo'
+  const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
+    useMemo(() => {
+      const baseNav: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] = [
+        {
+          id: 'baseInfo',
+          label: 'basic',
+          icon: 'formInfo'
+        }
+      ];
+
+      if (supportBackup) {
+        baseNav.push({
+          id: 'backupSettings',
+          label: 'backup_settings',
+          icon: 'backupSettings'
+        });
       }
-    ];
 
-    if (supportBackup) {
-      baseNav.push({
-        id: 'backupSettings',
-        label: 'backup_settings',
-        icon: 'backupSettings'
-      });
-    }
+      if (supportParameterConfig) {
+        baseNav.push({
+          id: 'parameterConfig',
+          label: 'ParameterConfig',
+          icon: 'slider',
+          isConfig: true
+        });
+      }
 
-    if (supportParameterConfig) {
-      baseNav.push({
-        id: 'parameterConfig',
-        label: 'ParameterConfig',
-        icon: 'slider'
-      });
-    }
-
-    return baseNav;
-  }, [supportBackup, supportParameterConfig]);
+      return baseNav;
+    }, [supportBackup, supportParameterConfig]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
 
@@ -356,7 +358,6 @@ const Form = ({
   }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
-  const parameterConfigRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const tempRef = backupSettingsRef.current;
@@ -386,38 +387,6 @@ const Form = ({
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backupSettingsRef, supportBackup]);
-
-  useEffect(() => {
-    const tempRef = parameterConfigRef.current;
-    const observerCallback = (
-      entries: IntersectionObserverEntry[],
-      observer: IntersectionObserver
-    ) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
-          const paramConfigIndex = navList.findIndex((item) => item.id === 'parameterConfig');
-          if (paramConfigIndex !== -1) {
-            setActiveNav(navList[paramConfigIndex].id);
-          }
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, {
-      root: null,
-      threshold: 0.85
-    });
-
-    if (tempRef && supportParameterConfig) {
-      observer.observe(tempRef);
-    }
-
-    return () => {
-      if (tempRef) {
-        observer.unobserve(tempRef);
-      }
-    };
-  }, [parameterConfigRef, supportParameterConfig, navList]);
 
   return (
     <>
@@ -1063,136 +1032,158 @@ const Form = ({
 
           {/* parameter congif */}
           {supportParameterConfig && (
-            <Box id={'parameterConfig'} {...boxStyles}>
-              <Box {...headerStyles}>
-                <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.600'} />
-                {t('ParameterConfig')}
-              </Box>
-              <Box px={'42px'} py={'24px'}>
-                <TableContainer>
-                  <Table variant="unstyled" width={'full'}>
-                    <Thead>
-                      <Tr>
-                        <Th
-                          fontSize={'14px'}
-                          // py="13px"
-                          // px={'24px'}
-                          color={'grayModern.900'}
-                          border={'none'}
-                          _first={{
-                            borderLeftRadius: '6px'
-                          }}
-                          _last={{
-                            borderRightRadius: '6px'
-                          }}
-                        >
-                          {t('dbconfig.parameter_name')}
-                        </Th>
-                        <Th
-                          fontSize={'14px'}
-                          // py="13px"
-                          // px={'24px'}
-                          color={'grayModern.900'}
-                          border={'none'}
-                          _first={{
-                            borderLeftRadius: '6px'
-                          }}
-                          _last={{
-                            borderRightRadius: '6px'
-                          }}
-                        >
-                          {t('dbconfig.parameter_value')}
-                        </Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      <Tr>
-                        <Td w="190px">
-                          <Text fontSize={'14px'} color={'grayModern.900'}>
-                            wal_level
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Input
-                            value={walLevel}
-                            size="sm"
-                            borderRadius={'md'}
-                            borderColor={'#E8EBF0'}
-                            bg={'#F7F8FA'}
-                            _focusVisible={{
-                              borderColor: 'brightBlue.500',
-                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                              bg: '#FFF',
-                              color: '#111824'
+            <Accordion pb={'100px'} id={'parameterConfig'} allowToggle defaultIndex={[]}>
+              <AccordionItem {...boxStyles}>
+                <AccordionButton
+                  {...headerStyles}
+                  justifyContent={'space-between'}
+                  _hover={{ bg: '' }}
+                >
+                  <Flex alignItems={'center'}>
+                    <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.200'} />
+                    {t('ParameterConfig')}
+                    <Center
+                      bg={'grayModern.200'}
+                      minW={'48px'}
+                      px={'8px'}
+                      height={'28px'}
+                      ml={'14px'}
+                      fontSize={'11px'}
+                      borderRadius={'33px'}
+                      color={'grayModern.700'}
+                    >
+                      {t('Option')}
+                    </Center>
+                  </Flex>
+                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
+                </AccordionButton>
+
+                <AccordionPanel px={'42px'} py={'24px'}>
+                  <TableContainer>
+                    <Table variant="unstyled" width={'full'}>
+                      <Thead>
+                        <Tr>
+                          <Th
+                            fontSize={'14px'}
+                            // py="13px"
+                            // px={'24px'}
+                            color={'grayModern.900'}
+                            border={'none'}
+                            _first={{
+                              borderLeftRadius: '6px'
                             }}
-                            _hover={{
-                              borderColor: 'brightBlue.300'
+                            _last={{
+                              borderRightRadius: '6px'
                             }}
-                            onChange={(e) => {
-                              setValue('parameterConfig' as any, {
-                                ...getValues('parameterConfig' as any),
-                                walLevel: e.target.value
-                              });
+                          >
+                            {t('dbconfig.parameter_name')}
+                          </Th>
+                          <Th
+                            fontSize={'14px'}
+                            // py="13px"
+                            // px={'24px'}
+                            color={'grayModern.900'}
+                            border={'none'}
+                            _first={{
+                              borderLeftRadius: '6px'
                             }}
-                          />
-                          <MyIcon
-                            name="edit"
-                            w={'16px'}
-                            h={'16px'}
-                            color={'grayModern.500'}
-                            cursor={'pointer'}
-                            _hover={{
-                              color: 'brightBlue.500'
+                            _last={{
+                              borderRightRadius: '6px'
                             }}
-                          />
-                        </Td>
-                      </Tr>
-                      <Tr>
-                        <Td w="190px">
-                          <Text fontSize={'14px'} color={'grayModern.900'}>
-                            shared_preload_libraries
-                          </Text>
-                        </Td>
-                        <Td>
-                          <Input
-                            value={sharedPreloadLibraries}
-                            size="sm"
-                            borderRadius={'md'}
-                            borderColor={'#E8EBF0'}
-                            bg={'#F7F8FA'}
-                            _focusVisible={{
-                              borderColor: 'brightBlue.500',
-                              boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
-                              bg: '#FFF',
-                              color: '#111824'
-                            }}
-                            _hover={{
-                              borderColor: 'brightBlue.300'
-                            }}
-                            onChange={(e) => {
-                              setValue('parameterConfig' as any, {
-                                ...getValues('parameterConfig' as any),
-                                sharedPreloadLibraries: e.target.value
-                              });
-                            }}
-                          />
-                          <MyIcon
-                            name="edit"
-                            w={'16px'}
-                            h={'16px'}
-                            color={'grayModern.500'}
-                            cursor={'pointer'}
-                            _hover={{
-                              color: 'brightBlue.500'
-                            }}
-                          />
-                        </Td>
-                      </Tr>
-                    </Tbody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            </Box>
+                          >
+                            {t('dbconfig.parameter_value')}
+                          </Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        <Tr>
+                          <Td w="190px">
+                            <Text fontSize={'14px'} color={'grayModern.900'}>
+                              wal_level
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Input
+                              value={walLevel}
+                              size="sm"
+                              borderRadius={'md'}
+                              borderColor={'#E8EBF0'}
+                              bg={'#F7F8FA'}
+                              _focusVisible={{
+                                borderColor: 'brightBlue.500',
+                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                bg: '#FFF',
+                                color: '#111824'
+                              }}
+                              _hover={{
+                                borderColor: 'brightBlue.300'
+                              }}
+                              onChange={(e) => {
+                                setValue('parameterConfig' as any, {
+                                  ...getValues('parameterConfig' as any),
+                                  walLevel: e.target.value
+                                });
+                              }}
+                            />
+                            <MyIcon
+                              name="edit"
+                              w={'16px'}
+                              h={'16px'}
+                              color={'grayModern.500'}
+                              cursor={'pointer'}
+                              _hover={{
+                                color: 'brightBlue.500'
+                              }}
+                            />
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td w="190px">
+                            <Text fontSize={'14px'} color={'grayModern.900'}>
+                              shared_preload_libraries
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Input
+                              value={sharedPreloadLibraries}
+                              size="sm"
+                              borderRadius={'md'}
+                              borderColor={'#E8EBF0'}
+                              bg={'#F7F8FA'}
+                              _focusVisible={{
+                                borderColor: 'brightBlue.500',
+                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                bg: '#FFF',
+                                color: '#111824'
+                              }}
+                              _hover={{
+                                borderColor: 'brightBlue.300'
+                              }}
+                              onChange={(e) => {
+                                setValue('parameterConfig' as any, {
+                                  ...getValues('parameterConfig' as any),
+                                  sharedPreloadLibraries: e.target.value
+                                });
+                              }}
+                            />
+                            <MyIcon
+                              name="edit"
+                              w={'16px'}
+                              h={'16px'}
+                              color={'grayModern.500'}
+                              cursor={'pointer'}
+                              _hover={{
+                                color: 'brightBlue.500'
+                              }}
+                            />
+                          </Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
           )}
         </Box>
       </Grid>
