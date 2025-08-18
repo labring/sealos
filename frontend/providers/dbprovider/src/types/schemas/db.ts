@@ -67,5 +67,11 @@ export const dbEditSchema = z.object({
   storage: z.number(),
   labels: z.record(z.string(), z.string()),
   terminationPolicy: kubeBlockClusterTerminationPolicySchema,
-  autoBackup: z.optional(autoBackupFormSchema)
+  autoBackup: z.optional(autoBackupFormSchema),
+  parameterConfig: z.optional(
+    z.object({
+      walLevel: z.string(),
+      sharedPreloadLibraries: z.string()
+    })
+  )
 });

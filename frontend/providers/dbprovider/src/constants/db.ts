@@ -228,10 +228,10 @@ export const DBTypeList = [
   { id: DBTypeEnum.mysql, label: 'MySQL' },
   { id: DBTypeEnum.redis, label: 'Redis' },
   { id: DBTypeEnum.kafka, label: 'Kafka' },
-  { id: DBTypeEnum.milvus, label: 'Milvus' }
+  { id: DBTypeEnum.milvus, label: 'Milvus' },
   // { id: DBTypeEnum.qdrant, label: 'qdrant' },
   // { id: DBTypeEnum.pulsar, label: 'pulsar' },
-  // { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
+  { id: DBTypeEnum.clickhouse, label: 'clickhouse' }
   // { id: DBTypeEnum.nebula, label: 'nebula' },
   // { id: DBTypeEnum.weaviate, label: 'weaviate' }
 ];
@@ -241,7 +241,7 @@ export const DBComponentNameMap: Record<DBType, Array<DBComponentsName>> = {
   [DBTypeEnum.mongodb]: ['mongodb'],
   [DBTypeEnum.mysql]: ['mysql'],
   [DBTypeEnum.redis]: ['redis', 'redis-sentinel'],
-  [DBTypeEnum.kafka]: ['kafka-server', 'kafka-broker', 'controller', 'kafka-exporter'],
+  [DBTypeEnum.kafka]: ['kafka-broker', 'controller', 'kafka-exporter'],
   [DBTypeEnum.qdrant]: ['qdrant'],
   [DBTypeEnum.nebula]: ['nebula-console', 'nebula-graphd', 'nebula-metad', 'nebula-storaged'],
   [DBTypeEnum.weaviate]: ['weaviate'],
@@ -292,9 +292,9 @@ export const defaultDBEditValue: DBEditType = {
     start: true,
     type: 'day',
     week: [],
-    hour: '23',
+    hour: '12',
     minute: '00',
-    saveTime: 7,
+    saveTime: 100,
     saveType: 'd'
   },
   terminationPolicy: 'Delete'
@@ -511,3 +511,28 @@ export const BackupSupportedDBTypeList: DBType[] = [
   'apecloud-mysql',
   'redis'
 ];
+
+const DB_TYPE_MAP: Record<string, string> = {
+  mysql: 'MySQL',
+  clickhouse: 'ClickHouse',
+  mongodb: 'MongoDB',
+  snowflake: 'Snowflake',
+  h2: 'H2',
+  oracle: 'Oracle',
+  postgresql: 'PostgreSQL',
+  dm: 'DM',
+  oceanbase: 'OceanBase',
+  hive: 'HIVE',
+  kingbase: 'Kingbase',
+  redis: 'Redis',
+  opengauss: 'OpenGauss',
+  sqlserver: 'SQLServer',
+  sqlite: 'SQLite',
+  db2: 'DB2',
+  duckdb: 'DuckDB',
+  gaussdb: 'GaussDB'
+};
+
+export function mapDBType(dbType: string): string {
+  return DB_TYPE_MAP[dbType.toLowerCase()] ?? dbType;
+}

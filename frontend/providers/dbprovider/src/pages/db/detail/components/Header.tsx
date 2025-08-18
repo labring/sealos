@@ -1,26 +1,34 @@
 import { delDBServiceByName, pauseDBByName, restartDB, startDBByName } from '@/api/db';
 import DBStatusTag from '@/components/DBStatusTag';
 import MyIcon from '@/components/Icon';
-import { defaultDBDetail } from '@/constants/db';
+import { defaultDBDetail, mapDBType } from '@/constants/db';
 import { useConfirm } from '@/hooks/useConfirm';
 import type { DBDetailType } from '@/types/db';
-import { Box, Button, Flex, useDisclosure } from '@chakra-ui/react';
+import { Box, Button, Flex, useDisclosure, IconButton, ButtonGroup } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';
-import { useTranslation } from 'next-i18next';
+import { i18n, useTranslation } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import React, { Dispatch, useCallback, useState } from 'react';
 import UpdateModal from './UpdateModal';
-
+import {
+  ThemeAppearance,
+  PrimaryColorsType,
+  LangType,
+  yowantLayoutConfig
+} from '@/constants/chat2db';
+import { ConnectionInfo } from './AppBaseInfo';
 const DelModal = dynamic(() => import('./DelModal'));
 
 const Header = ({
   db = defaultDBDetail,
+  conn,
   isLargeScreen = true,
   setShowSlider
 }: {
   db: DBDetailType;
+  conn: ConnectionInfo | null;
   isLargeScreen: boolean;
   setShowSlider: Dispatch<boolean>;
 }) => {
@@ -126,9 +134,15 @@ const Header = ({
 
   return (
     <Flex h={'60px'} alignItems={'center'}>
-      <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.replace('/dbs')}>
+      <Flex
+        alignItems={'center'}
+        cursor={'pointer'}
+        onClick={() => {
+          router.replace('/dbs');
+        }}
+      >
         <MyIcon name="arrowLeft" w={'24px'} h={'24px'} color={'grayModern.600'} />
-        <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'18px'}>
+        <Box ml={'4px'} mr={'12px'} fontWeight={'500'} color={'grayModern.900'} fontSize={'24px'}>
           {router.query.name || db.dbName}
         </Box>
       </Flex>
@@ -166,6 +180,7 @@ const Header = ({
       >
         {t('Migrate')}
       </Button> */}
+
       {db.status.value !== 'Stopped' && (
         <Button
           mr={'12px'}
@@ -257,7 +272,9 @@ const Header = ({
           dbName={db.dbName}
           source={db.source}
           onClose={onCloseDelModal}
-          onSuccess={() => router.replace('/dbs')}
+          onSuccess={() => {
+            router.push('/dbs');
+          }}
         />
       )}
 

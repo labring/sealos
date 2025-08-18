@@ -22,7 +22,13 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table';
-import { useTranslation } from 'next-i18next';
+import {
+  ThemeAppearance,
+  PrimaryColorsType,
+  LangType,
+  yowantLayoutConfig
+} from '@/constants/chat2db';
+import { useTranslation, i18n } from 'next-i18next';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -162,6 +168,33 @@ const DBList = ({
     },
     [refetchApps, setLoading, t, toast]
   );
+
+  // const handleManageData = useCallback(async () => {
+  //   const userStr = localStorage.getItem('session');
+  //   const orgId = '34';
+  //   const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
+  //   const userObj = userStr ? JSON.parse(userStr) : null;
+  //   const userId = userObj?.user.id;
+  //   try {
+  //     const url = await generateLoginUrl({
+  //       userId,
+  //       orgId,
+  //       secretKey,
+  //       ui: {
+  //         theme: ThemeAppearance.Light,
+  //         primaryColor: PrimaryColorsType.bw,
+  //         language: LangType.ZH_CN,
+  //         hideAvatar: yowantLayoutConfig.hideAvatar
+  //       }
+  //     });
+  //     router.push(url);
+  //   } catch (err) {
+  //     toast({
+  //       title: t('chat2db_redirect_failed'),
+  //       status: 'error'
+  //     });
+  //   }
+  // }, [router, t, toast]);
 
   const columns = useMemo<Array<ColumnDef<DBListItemType>>>(
     () => [

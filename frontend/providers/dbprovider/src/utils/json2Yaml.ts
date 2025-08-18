@@ -27,6 +27,9 @@ import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { distributeResources } from './database';
+import { Controller } from 'react-hook-form';
+import { te } from 'date-fns/locale';
+import { template } from 'lodash';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -41,111 +44,637 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 export const json2CreateCluster = (
   rawData: Partial<DBEditType> = {},
   backupInfo?: BackupItemType,
-  options?: {
-    storageClassName?: string;
-  }
-) => {
+  options?: { storageClassName?: string }
+): string => {
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
 
-  const metadata = {
-    finalizers: ['cluster.kubeblocks.io/finalizer'],
-    labels: {
-      ...data.labels,
-      'clusterdefinition.kubeblocks.io/name': data.dbType,
-      'clusterversion.kubeblocks.io/name': data.dbVersion,
-      [crLabelKey]: data.dbName
-    },
-    annotations: {
-      ...(backupInfo?.name
-        ? {
-            [BACKUP_LABEL_KEY]: JSON.stringify({
-              [data.dbType === 'apecloud-mysql' ? 'mysql' : data.dbType]: {
-                name: backupInfo.name,
-                namespace: backupInfo.namespace,
-                connectionPassword: backupInfo.connectionPassword
-              }
-            })
-          }
-        : {})
-    },
-    name: data.dbName
-  };
+  const terminationPolicy =
+    backupInfo?.name &&
+    ![DBTypeEnum.postgresql, DBTypeEnum.mysql, DBTypeEnum.mongodb, DBTypeEnum.redis].includes(
+      data.dbType as DBTypeEnum
+    )
+      ? 'WipeOut'
+      : data.terminationPolicy;
 
-  const storageClassName =
-    options?.storageClassName || StorageClassName
-      ? { storageClassName: options?.storageClassName || StorageClassName }
-      : {};
-
-  function createDBObject(dbType: DBType) {
-    // Special circumstances process here
-    let terminationPolicy = backupInfo?.name ? 'WipeOut' : 'Delete';
-
-    switch (dbType) {
-      case DBTypeEnum.postgresql:
-      case DBTypeEnum.mysql:
-      case DBTypeEnum.mongodb:
-      case DBTypeEnum.redis:
-        terminationPolicy = data.terminationPolicy;
-        break;
-      default:
-        break;
-    }
+  function buildMySQLYaml() {
+    const mysqlRes = resources['mysql'];
+    if (!mysqlRes) return [];
 
     return [
       {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Cluster',
-        metadata,
+        metadata: {
+          labels: {
+            'kb.io/database': data.dbVersion,
+            'clusterdefinition.kubeblocks.io/name': data.dbType,
+            'clusterversion.kubeblocks.io/name': data.dbVersion
+          },
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
         spec: {
           affinity: {
-            nodeLabels: {},
             podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
+            tenancy: 'SharedNode'
           },
-          clusterDefinitionRef: dbType,
+          clusterDefinitionRef: data.dbType,
           clusterVersionRef: data.dbVersion,
-          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
-            return {
-              componentDefRef: key,
-              monitor: true,
-              name: key,
-              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
-              resources: resourceData.cpuMemory,
-              serviceAccountName: data.dbName,
-              switchPolicy: {
-                type: 'Noop'
-              },
-              ...(resourceData.storage > 0
-                ? {
-                    volumeClaimTemplates: [
-                      {
-                        name: 'data',
-                        spec: {
-                          accessModes: ['ReadWriteOnce'],
-                          resources: {
-                            requests: {
-                              storage: `${resourceData.storage}Gi`
-                            }
-                          },
-                          ...storageClassName
-                        }
-                      }
-                    ]
+          componentSpecs: [
+            {
+              componentDefRef: 'mysql',
+              disableExporter: true,
+              enabledLogs: ['auditlog', 'error', 'general', 'slow'],
+              name: 'mysql',
+              replicas: mysqlRes.other?.replicas ?? data.replicas,
+              resources: mysqlRes.cpuMemory,
+              serviceAccountName: `kb-${data.dbName}`,
+              ...(mysqlRes.storage > 0 && {
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${mysqlRes.storage}Gi` } }
+                    }
                   }
-                : {})
-            };
-          }),
-          terminationPolicy,
-          tolerations: []
+                ]
+              })
+            }
+          ],
+          resources: { cpu: '0', memory: '0' },
+          storage: { size: '0' },
+          terminationPolicy
         }
       }
     ];
   }
 
+  function buildPostgresYaml() {
+    const pgRes = resources['postgresql'];
+    if (!pgRes) return [];
+
+    return [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata: {
+          labels: {
+            'kb.io/database': data.dbVersion,
+            'clusterdefinition.kubeblocks.io/name': data.dbType,
+            'clusterversion.kubeblocks.io/name': data.dbVersion
+          },
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode'
+          },
+          clusterDefinitionRef: DBTypeEnum.postgresql,
+          clusterVersionRef: data.dbVersion,
+          componentSpecs: [
+            {
+              componentDefRef: 'postgresql',
+              disableExporter: true,
+              enabledLogs: ['running'],
+              name: 'postgresql',
+              replicas: pgRes.other?.replicas ?? data.replicas,
+              resources: pgRes.cpuMemory,
+              serviceAccountName: `kb-${data.dbName}`,
+              switchPolicy: { type: 'Noop' },
+              ...(pgRes.storage > 0 && {
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${pgRes.storage}Gi` } }
+                    }
+                  }
+                ]
+              })
+            }
+          ],
+          resources: { cpu: '0', memory: '0' },
+          storage: { size: '0' },
+          terminationPolicy
+        }
+      }
+    ];
+  }
+
+  function buildMongoYaml() {
+    const mongoRes = resources['mongodb'];
+    if (!mongoRes) return [];
+
+    const serviceVersion = data.dbVersion.startsWith('mongodb-')
+      ? data.dbVersion.replace('mongodb-', '')
+      : data.dbVersion;
+
+    return [
+      {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Cluster',
+        metadata: {
+          labels: {
+            'kb.io/database': data.dbVersion,
+            'app.kubernetes.io/instance': data.dbName,
+            'app.kubernetes.io/version': serviceVersion,
+            'helm.sh/chart': 'mongodb-cluster-0.9.1'
+          },
+          name: data.dbName,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          affinity: {
+            podAntiAffinity: 'Preferred',
+            tenancy: 'SharedNode',
+            topologyKeys: ['kubernetes.io/hostname']
+          },
+          componentSpecs: [
+            {
+              componentDef: 'mongodb',
+              name: 'mongodb',
+              replicas: mongoRes.other?.replicas ?? data.replicas,
+              resources: mongoRes.cpuMemory,
+              ...(mongoRes.storage > 0 && {
+                serviceVersion: serviceVersion,
+                volumeClaimTemplates: [
+                  {
+                    name: 'data',
+                    spec: {
+                      accessModes: ['ReadWriteOnce'],
+                      resources: { requests: { storage: `${mongoRes.storage}Gi` } }
+                    }
+                  }
+                ]
+              })
+            }
+          ],
+          terminationPolicy
+        }
+      }
+    ];
+  }
+
+  function buildRedisYaml() {
+    const redisRes = resources['redis'];
+    const sentinelRes = resources['redis-sentinel'] ?? {
+      cpuMemory: {
+        limits: { cpu: '200m', memory: '256Mi' },
+        requests: { cpu: '200m', memory: '256Mi' }
+      },
+      storage: 20,
+      other: { replicas: 3 }
+    };
+
+    if (!redisRes) return [];
+
+    const serviceVersion = data.dbVersion.startsWith('redis-')
+      ? data.dbVersion.replace('redis-', '')
+      : data.dbVersion.split('-').pop() || '';
+
+    const metaLabels = {
+      'kb.io/database': data.dbVersion,
+      'app.kubernetes.io/instance': data.dbName,
+      'app.kubernetes.io/version': serviceVersion,
+      'clusterdefinition.kubeblocks.io/name': data.dbType,
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      'helm.sh/chart': 'redis-cluster-0.9.0',
+      ...data.labels
+    };
+
+    const redisObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels: metaLabels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['kubernetes.io/hostname']
+        },
+        clusterDefinitionRef: 'redis',
+        componentSpecs: [
+          {
+            componentDef: 'redis-7',
+            name: 'redis',
+            replicas: redisRes.other?.replicas ?? data.replicas,
+            enabledLogs: ['running'],
+            env: [{ name: 'CUSTOM_SENTINEL_MASTER_NAME' }],
+            resources: redisRes.cpuMemory,
+            serviceVersion: serviceVersion,
+            switchPolicy: { type: 'Noop' },
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${redisRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            componentDef: 'redis-sentinel-7',
+            name: 'redis-sentinel',
+            replicas: redisRes.other?.replicas ?? data.replicas,
+            resources: sentinelRes.cpuMemory,
+            serviceVersion: serviceVersion,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `2Gi` } }
+                }
+              }
+            ]
+          }
+        ],
+        terminationPolicy: terminationPolicy,
+        topology: 'replication'
+      }
+    };
+
+    return [redisObj];
+  }
+
+  function buildClickhouseYaml() {
+    const zkRes = resources['zookeeper'];
+    if (!zkRes) return [];
+
+    const chRes = resources['clickhouse'] || {
+      cpuMemory: {
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '1', memory: '1Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+
+    const keeperRes = resources['ch-keeper'] || {
+      cpuMemory: {
+        limits: { cpu: '1', memory: '1Gi' },
+        requests: { cpu: '1', memory: '1Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+
+    const labels = {
+      'kb.io/database': data.dbVersion,
+      'clusterdefinition.kubeblocks.io/name': data.dbType,
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      ...data.labels
+    };
+
+    const clickhouseObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['cluster']
+        },
+        clusterDefinitionRef: 'clickhouse',
+        componentSpecs: [
+          {
+            componentDefRef: 'zookeeper',
+            disableExporter: true,
+            name: 'zookeeper',
+            replicas: data.replicas,
+            resources: {
+              limits: { ...zkRes.cpuMemory.limits },
+              requests: { ...zkRes.cpuMemory.requests }
+            },
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${data.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            componentDefRef: 'clickhouse',
+            disableExporter: true,
+            name: 'clickhouse',
+            replicas: data.replicas,
+            resources: {
+              limits: { ...chRes.cpuMemory.limits },
+              requests: { ...chRes.cpuMemory.requests }
+            },
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${data.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            componentDefRef: 'ch-keeper',
+            disableExporter: true,
+            name: 'ch-keeper',
+            replicas: data.replicas,
+            resources: keeperRes.cpuMemory,
+            serviceAccountName: `kb-${data.dbName}`,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${data.storage}Gi` } }
+                }
+              }
+            ]
+          }
+        ],
+        resources: { cpu: '0', memory: '0' },
+        storage: { size: '0' },
+        terminationPolicy
+      }
+    };
+
+    return [clickhouseObj];
+  }
+
+  function buildKafkaYaml() {
+    const brokerRes = resources['kafka-broker'] || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+    const controllerRes = resources['controller'] || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 20,
+      other: { replicas: 1 }
+    };
+    const exporterRes = resources['kafka-exporter'] || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 0,
+      other: { replicas: 1 }
+    };
+
+    const kafkaObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels: {
+          'kb.io/database': data.dbVersion,
+          'clusterdefinition.kubeblocks.io/name': data.dbType,
+          'clusterversion.kubeblocks.io/name': data.dbVersion
+        },
+        name: data.dbName,
+        namespace: getUserNamespace(),
+        annotations: {
+          'kubeblocks.io/extra-env':
+            '{"KB_KAFKA_ENABLE_SASL":"false","KB_KAFKA_BROKER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_CONTROLLER_HEAP":"-XshowSettings:vm -XX:MaxRAMPercentage=100 -Ddepth=64","KB_KAFKA_PUBLIC_ACCESS":"false"}'
+        }
+      },
+      spec: {
+        terminationPolicy,
+        componentSpecs: [
+          {
+            name: 'broker',
+            componentDef: 'kafka-broker',
+            tls: false,
+            replicas: data.replicas,
+            affinity: {
+              podAntiAffinity: 'Preferred',
+              topologyKeys: ['kubernetes.io/hostname'],
+              tenancy: 'SharedNode'
+            },
+            tolerations: [
+              {
+                key: 'kb-data',
+                operator: 'Equal',
+                value: 'true',
+                effect: 'NoSchedule'
+              }
+            ],
+            resources: brokerRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${brokerRes.storage}Gi` } }
+                }
+              },
+              {
+                name: 'metadata',
+                spec: {
+                  storageClassName: null,
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `5Gi` } }
+                }
+              }
+            ]
+          },
+          {
+            name: 'controller',
+            componentDefRef: 'controller',
+            componentDef: 'kafka-controller',
+            tls: false,
+            replicas: data.replicas,
+            resources: controllerRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'metadata',
+                spec: {
+                  storageClassName: null,
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${controllerRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+          {
+            name: 'metrics-exp',
+            componentDef: 'kafka-exporter',
+            replicas: data.replicas,
+            resources: {
+              limits: { ...exporterRes.cpuMemory.limits },
+              requests: { ...exporterRes.cpuMemory.requests }
+            }
+          }
+        ]
+      }
+    };
+
+    return [kafkaObj];
+  }
+
+  function buildMilvusYaml() {
+    const milvusRes = (resources['milvus'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
+    const etcdRes = (resources['etcd'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
+    const minioRes = (resources['minio'] as any) || {
+      cpuMemory: {
+        limits: { cpu: '0.5', memory: '0.5Gi' },
+        requests: { cpu: '0.5', memory: '0.5Gi' }
+      },
+      storage: 3,
+      other: { replicas: 1 }
+    };
+
+    const labels = {
+      'kb.io/database': data.dbVersion,
+      'clusterversion.kubeblocks.io/name': data.dbVersion,
+      ...data.labels
+    };
+
+    const milvusObj = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Cluster',
+      metadata: {
+        labels,
+        name: data.dbName,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        topology: 'standalone',
+        clusterDefinitionRef: 'milvus',
+        terminationPolicy,
+        affinity: {
+          podAntiAffinity: 'Preferred',
+          tenancy: 'SharedNode',
+          topologyKeys: ['kubernetes.io/hostname']
+        },
+        tolerations: [
+          {
+            key: 'kb-data',
+            operator: 'Equal',
+            value: 'true',
+            effect: 'NoSchedule'
+          }
+        ],
+        componentSpecs: [
+          {
+            name: 'milvus',
+            disableExporter: true,
+            serviceAccountName: `kb-${data.dbName}`,
+            replicas: data.replicas ?? 1,
+            resources: milvusRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${milvusRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            name: 'etcd',
+            replicas: data.replicas,
+            resources: etcdRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${etcdRes.storage}Gi` } }
+                }
+              }
+            ]
+          },
+
+          {
+            name: 'minio',
+            replicas: data.replicas,
+            resources: minioRes.cpuMemory,
+            volumeClaimTemplates: [
+              {
+                name: 'data',
+                spec: {
+                  accessModes: ['ReadWriteOnce'],
+                  resources: { requests: { storage: `${minioRes.storage}Gi` } }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    return [milvusObj];
+  }
+
+  function createDBObject(dbType: DBType) {
+    switch (dbType) {
+      case DBTypeEnum.mysql:
+      case 'apecloud-mysql':
+        return buildMySQLYaml();
+      case DBTypeEnum.postgresql:
+        return buildPostgresYaml();
+      case DBTypeEnum.mongodb:
+        return buildMongoYaml();
+      case DBTypeEnum.redis:
+        return buildRedisYaml();
+      case DBTypeEnum.clickhouse:
+        return buildClickhouseYaml();
+      case DBTypeEnum.kafka:
+        return buildKafkaYaml();
+      case DBTypeEnum.milvus:
+        return buildMilvusYaml();
+      default:
+        throw new Error(`json2CreateCluster: unsupported dbType ${dbType}`);
+    }
+  }
+
   return createDBObject(data.dbType)
-    .map((item) => yaml.dump(item))
+    .map((obj) => yaml.dump(obj))
     .join('\n---\n');
 };
 
@@ -835,3 +1364,364 @@ export function json2SwitchMsNode(data: SwitchMsData) {
 
   return yaml.dump(template);
 }
+
+export const json2ParameterConfig = (
+  dbName: string,
+  dbType: string,
+  dbVersion: string,
+  walLevel: string,
+  sharedPreloadLibraries: string
+) => {
+  function buildPostgresYaml() {
+    // Parse PostgreSQL version to get major version (e.g., "16.4.0" -> "16")
+    const majorVersion = dbVersion.split('.')[0];
+
+    if (majorVersion === '16') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql16-cc',
+                defaultMode: 511,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql16-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 511,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql16-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+    } else if (majorVersion === '15') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql15-cc',
+                defaultMode: 511,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql15-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 511,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql15-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+    } else if (majorVersion === '14') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql14-cc',
+                defaultMode: 292,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql14-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            }
+          ]
+        }
+      };
+    } else if (majorVersion === '12') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql12-cc',
+                defaultMode: 292,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+    }
+    return yaml.dump(template);
+  }
+
+  function buildMysqlYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'mysql'
+        },
+        name: `${dbName}-mysql`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mysql',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'mysql8.0-config-constraints',
+              name: 'mysql-consensusset-config',
+              namespace: 'kb-system',
+              reRenderResourceTypes: ['vscale'],
+              templateRef: 'mysql8.0-config-template',
+              volumeName: 'mysql-config'
+            },
+            name: 'mysql-consensusset-config'
+          },
+          {
+            configSpec: {
+              constraintRef: 'mysql-scale-vttablet-config-constraints',
+              name: 'vttablet-config',
+              namespace: 'kb-system',
+              templateRef: 'vttablet-config-template',
+              volumeName: 'mysql-scale-config'
+            },
+            name: 'vttablet-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  function buildMongodbYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'mongodb'
+        },
+        name: `${dbName}-mongodb`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mongodb',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'mongodb-config-constraints',
+              defaultMode: 256,
+              keys: ['mongodb.conf'],
+              name: 'mongodb-config',
+              namespace: 'kb-system',
+              templateRef: 'mongodb5.0-config-template',
+              volumeName: 'mongodb-config'
+            },
+            name: 'mongodb-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  function buildRedisYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'redis'
+        },
+        name: `${dbName}-redis`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'redis',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'redis7-config-constraints',
+              name: 'redis-replication-config',
+              namespace: 'kb-system',
+              reRenderResourceTypes: ['vscale'],
+              templateRef: 'redis7-config-template',
+              volumeName: 'redis-config'
+            },
+            name: 'redis-replication-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'redis-metrics-config',
+              namespace: 'kb-system',
+              templateRef: 'redis-metrics-config',
+              volumeName: 'redis-metrics-config'
+            },
+            name: 'redis-metrics-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  console.log(template);
+  // Only PostgreSQL is supported for now
+  if (dbType === 'postgresql' || dbType === undefined) {
+    return buildPostgresYaml();
+  } else if (dbType === 'mysql') {
+    return buildMysqlYaml();
+  } else if (dbType === 'mongodb') {
+    return buildMongodbYaml();
+  } else if (dbType === 'redis') {
+    return buildRedisYaml();
+  }
+  throw new Error(`json2ParameterConfig: unsupported dbType ${dbType}`);
+};

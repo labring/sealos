@@ -75,14 +75,8 @@ export const buildConnectionInfo = (
       connection: `${host}:${port}`
     };
   } else if (dbTypeMap[dbType].connectKey === 'kafka') {
-    const kafkaHost = port.split(':')[0].replace('-server', '-broker');
-    const kafkaPort = port.split(':')[1];
-    const host = kafkaHost + '.' + namespace + '.svc';
-
     return {
-      host,
-      port: kafkaPort,
-      connection: `${host}:${kafkaPort}`
+      connection: `${host}:${port}`
     };
   } else {
     return {
@@ -97,41 +91,91 @@ export async function fetchDBSecret(
   dbType: DBType,
   namespace: string
 ) {
-  // get secret
-  const secretName = dbName + '-conn-credential';
+  // get secret: try multiple common naming conventions, but DO NOT throw if not found
+  const candidates: string[] = [];
+  if (dbType === DBTypeEnum.mongodb) candidates.push(`${dbName}-mongodb-account-root`);
+  if (dbType === DBTypeEnum.redis) candidates.push(`${dbName}-redis-account-default`);
+  if (dbType === DBTypeEnum.kafka) candidates.push(`${dbName}-broker-account-admin`);
+  candidates.push(`${dbName}-conn-credential`);
 
-  const secret = await k8sCore.readNamespacedSecret(secretName, namespace);
-
-  if (!secret.body?.data) {
-    throw Error('secret is empty');
+  let secret: k8s.V1Secret | undefined;
+  for (const name of candidates) {
+    try {
+      console.log('[fetchDBSecret] Name:', name);
+      console.log('[fetchDBSecret] Namespace:', namespace);
+      const res = await k8sCore.readNamespacedSecret(name, namespace);
+      console.log('[fetchDBSecret] Res: Get');
+      if (res?.body) {
+        secret = res.body;
+        console.log('[fetchDBSecret] Secret:', secret);
+        break;
+      }
+    } catch (e: any) {
+      // continue trying next candidate on 404; do not interrupt
+      const statusCode = e?.response?.statusCode || e?.statusCode;
+      if (statusCode && Number(statusCode) === 404) {
+        continue;
+      }
+      continue;
+    }
   }
 
-  const username = Buffer.from(
-    secret.body.data[dbTypeMap[dbType].usernameKey] || '',
-    'base64'
-  ).toString('utf-8');
+  // If still not found, return empty placeholders to avoid interruption
+  if (!secret || !secret.data) {
+    return {
+      username: '',
+      password: '',
+      host: '',
+      port: '',
+      body: secret
+    };
+  }
+
+  const username = Buffer.from(secret.data[dbTypeMap[dbType].usernameKey] || '', 'base64').toString(
+    'utf-8'
+  );
 
   const password = Buffer.from(
-    secret.body.data[dbTypeMap[dbType].passwordKey] || '',
+    secret.data[dbTypeMap[dbType].passwordKey] || secret.data['admin-password'] || '',
     'base64'
   ).toString('utf-8');
 
-  const hostKey = Buffer.from(secret.body.data[dbTypeMap[dbType].hostKey] || '', 'base64').toString(
+  const hostKey = Buffer.from(secret.data[dbTypeMap[dbType].hostKey] || '', 'base64').toString(
     'utf-8'
   );
 
-  const host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
+  let host = hostKey.includes('.svc') ? hostKey : hostKey + `.${namespace}.svc`;
 
-  const port = Buffer.from(secret.body.data[dbTypeMap[dbType].portKey] || '', 'base64').toString(
-    'utf-8'
-  );
+  let port = Buffer.from(secret.data[dbTypeMap[dbType].portKey] || '', 'base64').toString('utf-8');
+
+  if (dbType === DBTypeEnum.mongodb) {
+    port = '27017';
+    host = `${dbName}-mongodb.${namespace}.svc`;
+  }
+
+  if (dbType === DBTypeEnum.redis) {
+    port = '6379';
+    host = `${dbName}-redis-redis.${namespace}.svc`;
+  }
+
+  if (dbType === DBTypeEnum.clickhouse) {
+    port = '8123';
+    host = `${dbName}-clickhouse.${namespace}.svc`;
+  }
+
+  if (dbType === DBTypeEnum.kafka) {
+    port = '9092';
+    host = `${dbName}-broker-advertised-listner-0.${namespace}.svc`;
+  }
+
+  console.log('[fetchDBSecret] Parsed data:', { username, password, host, port });
 
   return {
     username,
     password,
     host,
     port,
-    body: secret.body
+    body: secret
   };
 }
 
@@ -211,45 +255,64 @@ export function distributeResources(data: {
         }
       };
     case DBTypeEnum.redis:
-      // Please ref RedisHAConfig in  /constants/db.ts
-      let rsRes = RedisHAConfig(data.replicas > 1);
+      const redisResource = getPercentResource(1);
+      const sentinelResource = allocateCM(cpu * 0.5, memory * 0.5);
+      const sentinelStorage = Math.round(data.storage * 0.5);
       return {
         redis: {
-          cpuMemory: getPercentResource(1),
-          storage: Math.max(data.storage - 1, 1)
+          cpuMemory: redisResource,
+          storage: data.storage
         },
         'redis-sentinel': {
-          cpuMemory: allocateCM(rsRes.cpu, rsRes.memory),
-          storage: rsRes.storage,
+          cpuMemory: sentinelResource,
+          storage: sentinelStorage,
           other: {
-            replicas: rsRes.replicas
+            replicas: data.replicas
           }
         }
       };
     case DBTypeEnum.kafka:
+      const brokerResource = {
+        cpuMemory: getPercentResource(0.5),
+        storage: Math.max(Math.round(data.storage * 0.5), 1)
+      };
       const quarterResource = {
         cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round(data.storage / DBComponentNameMap[dbType].length), 1)
+        storage: Math.max(Math.round(data.storage * 0.25), 1)
       };
       return {
-        'kafka-server': quarterResource,
-        'kafka-broker': quarterResource,
+        'kafka-broker': brokerResource,
         controller: quarterResource,
         'kafka-exporter': quarterResource
       };
     case DBTypeEnum.milvus:
       return {
         milvus: {
-          cpuMemory: getPercentResource(0.4),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
         },
         etcd: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         },
         minio: {
-          cpuMemory: getPercentResource(0.3),
-          storage: Math.max(Math.round(data.storage / 3), 1)
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        }
+      };
+    case DBTypeEnum.clickhouse:
+      return {
+        clickhouse: {
+          cpuMemory: getPercentResource(0.5),
+          storage: Math.max(Math.round(data.storage * 0.5), 1)
+        },
+        'ch-keeper': {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
+        },
+        zookeeper: {
+          cpuMemory: getPercentResource(0.25),
+          storage: Math.max(Math.round(data.storage * 0.25), 1)
         }
       };
     default:

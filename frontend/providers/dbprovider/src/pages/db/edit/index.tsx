@@ -25,6 +25,7 @@ import { FieldErrors, useForm } from 'react-hook-form';
 import Form from './components/Form';
 import Header from './components/Header';
 import Yaml from './components/Yaml';
+import yaml from 'js-yaml';
 import { ResponseCode } from '@/types/response';
 import { useGuideStore } from '@/store/guide';
 
@@ -70,6 +71,13 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     defaultValues: defaultEdit
   });
 
+  useEffect(() => {
+    if (!dbName) {
+      const hour = Math.floor(Math.random() * 10) + 14;
+      formHook.setValue('autoBackup.hour', hour.toString().padStart(2, '0'));
+    }
+  }, []);
+
   const generateYamlList = (data: DBEditType) => {
     return [
       ...(isEdit
@@ -86,6 +94,25 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       }
     ];
   };
+
+  function getCpuCores(yamlString: string): number {
+    try {
+      const doc = yaml.load(yamlString) as any;
+      const cpuStr: string | undefined = doc?.spec?.componentSpecs?.[0]?.resources?.limits?.cpu;
+      if (!cpuStr) return 8;
+      const cpu = parseInt(cpuStr.replace('m', ''));
+      return Math.ceil(cpu / 1000);
+    } catch (error) {
+      return 8;
+    }
+  }
+
+  const cpu = useMemo(() => {
+    if (yamlList.length === 0) return 8;
+    const clusterYaml = yamlList.find((item) => item.filename === 'cluster.yaml');
+    if (!clusterYaml) return 8;
+    return getCpuCores(clusterYaml.value);
+  }, [yamlList]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
@@ -131,7 +158,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
       //     isClosable: true
       //   });
       // }
-
       await createDB({ dbForm: formData, isEdit });
 
       track({
@@ -275,7 +301,12 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
 
         <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
-            <Form formHook={formHook} allocatedStorage={allocatedStorage} pxVal={pxVal} />
+            <Form
+              formHook={formHook}
+              allocatedStorage={allocatedStorage}
+              pxVal={pxVal}
+              cpuCores={cpu}
+            />
           ) : (
             <Yaml yamlList={yamlList} pxVal={pxVal} />
           )}
