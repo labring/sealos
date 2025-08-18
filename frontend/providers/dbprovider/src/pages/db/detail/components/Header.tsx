@@ -232,36 +232,93 @@ const Header = ({
         </Button>
       )}
 
-      {db.status.value !== 'Stopped' && (
-        <Button
-          mr={'12px'}
-          minW={'75px'}
-          h={'32px'}
-          fontSize={'12px'}
-          variant={'outline'}
-          leftIcon={<MyIcon name="restart" w={'16px'} />}
-          isDisabled={db.status.value === 'Updating'}
-          onClick={openRestartConfirm(handleRestartApp)}
-          isLoading={loading}
-        >
-          {t('Restart')}
-        </Button>
-      )}
+      <ButtonGroup
+        isAttached
+        size={'sm'}
+        variant={'outline'}
+        mr={3}
+        h={'40px'}
+        alignItems={'center'}
+      >
+        {db.status.value === 'Stopped' ? (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isLoading={loading}
+            onClick={handleStartApp}
+          >
+            {t('Continue')}
+          </Button>
+        ) : (
+          <Button
+            _hover={{
+              bg: 'gray.200'
+            }}
+            h={'40px'}
+            w={'88px'}
+            isLoading={loading}
+            isDisabled={db.status.value === 'Updating'}
+            onClick={onOpenPause(handlePauseApp)}
+          >
+            {t('Pause')}
+          </Button>
+        )}
+
+        {db.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isLoading={loading}
+            isDisabled={db.status.value === 'Updating' && !db.isDiskSpaceOverflow}
+            onClick={() => {
+              if (db.source.hasSource && db.source.sourceType === 'sealaf') {
+                setUpdateAppName(db.dbName);
+                onOpenUpdateModal();
+              } else {
+                router.replace(`/db/edit?name=${db.dbName}`);
+              }
+            }}
+          >
+            {t('update')}
+          </Button>
+        )}
+
+        {db.status.value !== 'Stopped' && (
+          <Button
+            h={'40px'}
+            w={'88px'}
+            _hover={{
+              bg: 'gray.200'
+            }}
+            isDisabled={db.status.value === 'Updating'}
+            onClick={openRestartConfirm(handleRestartApp)}
+            isLoading={loading}
+          >
+            {t('Restart')}
+          </Button>
+        )}
+      </ButtonGroup>
 
       <Button
         minW={'75px'}
-        h={'32px'}
+        h={'40px'}
         fontSize={'12px'}
         variant={'outline'}
-        leftIcon={<MyIcon name="delete" w={'16px'} />}
+        bg={'black'}
+        color={'white'}
+        leftIcon={<MyIcon name="settings" w={'16px'} />}
         isLoading={loading}
-        isDisabled={db.status.value === 'Updating'}
-        _hover={{
-          color: '#FF324A'
-        }}
-        onClick={onOpenDelModal}
+        isDisabled={db.status.value !== 'Running'}
+        // onClick={handleManageData}
+        alignItems={'center'}
       >
-        {t('Delete')}
+        {t('manage_data')}
       </Button>
 
       {/* modal */}
