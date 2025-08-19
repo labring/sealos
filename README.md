@@ -59,7 +59,7 @@ Spin up full-stack environments in seconds, effortlessly push releases, and scal
 | [![Deploy on Sealos][deploy-badge]][deploy-link]  | [![Deploy on Sealos - China][deploy-badge]][deploy-link-cn] |
 
 
-https://github.com/user-attachments/assets/2fc03676-3310-4f81-8f1c-dd1ab225dde0
+https://objectstorageapi.hzh.sealos.run/ecv14ujz-appstore/GitHub-2.mp4
 
 <img width="916" alt="image" src="https://github.com/labring/sealos/assets/8912557/9e8c1d76-718e-4910-a9ab-94f220a61a9c">
 
