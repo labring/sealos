@@ -50,6 +50,7 @@ export const json2CreateCluster = (
 ) => {
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
+  console.log(resources);
 
   // Remove sealaf-app label for restored databases to allow normal deletion
   const filteredLabels = { ...data.labels };
@@ -400,7 +401,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${data.storage}Gi` } }
+                  resources: { requests: { storage: `${zkRes.storage}Gi` } }
                 }
               }
             ]
@@ -421,7 +422,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${data.storage}Gi` } }
+                  resources: { requests: { storage: `${chRes.storage}Gi` } }
                 }
               }
             ]
@@ -439,7 +440,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${data.storage}Gi` } }
+                  resources: { requests: { storage: `${keeperRes.storage}Gi` } }
                 }
               }
             ]

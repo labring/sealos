@@ -324,7 +324,7 @@ const Form = ({
         [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       case DBTypeEnum.clickhouse:
-        minStorageChange = 4;
+        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
         break;
       default:
         break;
@@ -387,6 +387,10 @@ const Form = ({
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backupSettingsRef, supportBackup]);
+
+  useEffect(() => {
+    console.log(getValues('cpu'), getValues('memory'));
+  }, [getValues('cpu'), getValues('memory')]);
 
   return (
     <>
@@ -534,7 +538,6 @@ const Form = ({
                           onClick={() => {
                             if (isEdit) return;
                             setValue('dbType', item.id);
-                            // Use item.id directly instead of getValues('dbType') to avoid timing issues
                             const versions = DBVersionMap[item.id];
                             if (versions && versions.length > 0) {
                               setValue('dbVersion', versions[0].id);
@@ -1065,8 +1068,6 @@ const Form = ({
                         <Tr>
                           <Th
                             fontSize={'14px'}
-                            // py="13px"
-                            // px={'24px'}
                             color={'grayModern.900'}
                             border={'none'}
                             _first={{
@@ -1080,8 +1081,6 @@ const Form = ({
                           </Th>
                           <Th
                             fontSize={'14px'}
-                            // py="13px"
-                            // px={'24px'}
                             color={'grayModern.900'}
                             border={'none'}
                             _first={{
