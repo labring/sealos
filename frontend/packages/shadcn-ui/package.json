@@ -1,0 +1,40 @@
+{
+  "name": "@sealos/shadcn-ui",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.540.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.12",
+    "tw-animate-css": "^1.3.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "exports": {
+    "./shadcn.css": [
+      "./src/styles/shadcn.css"
+    ],
+    "./styles.css": [
+      "./src/styles/styles.css"
+    ],
+    "./*": [
+      "./src/components/*"
+    ],
+    ".": [
+      "./src/index.ts"
+    ]
+  }
+}

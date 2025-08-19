@@ -1,3 +1,6 @@
+@import '@sealos/shadcn-ui/shadcn.css';
+@import '@sealos/shadcn-ui/styles.css';
+
 body,
 h1,
 h2,
@@ -68,8 +71,8 @@ div.rdp {
   --rdp-accent-color: black;
   --rdp-background-color: #f4f6f8;
   /* Switch to dark colors for dark themes */
-  // --rdp-accent-color-dark: #3003e1;
-  // --rdp-background-color-dark: #180270;
+  /* --rdp-accent-color-dark: #3003e1; */
+  /* --rdp-background-color-dark: #180270; */
   /* Outline border for focused elements */
   --rdp-outline: 2px solid var(--rdp-accent-color);
   /* Outline border for focused and selected elements */

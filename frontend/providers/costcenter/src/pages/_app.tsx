@@ -1,3 +1,5 @@
+import '@/styles/globals.css';
+
 import Layout from '@/layout';
 import { Response as initDataRes } from '@/pages/api/platform/getAppConfig';
 import request from '@/service/request';
@@ -5,7 +7,6 @@ import useAppTypeStore from '@/stores/appType';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { theme } from '@/styles/chakraTheme';
-import '@/styles/globals.scss';
 import { ApiResp } from '@/types/api';
 import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
