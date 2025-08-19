@@ -520,7 +520,7 @@ const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
   });
 
 const applaunchpadDocument = {
-  '/api/v1/createApp': {
+  '/api/v1alpha/createApp': {
     post: {
       tags: ['Application'],
       summary: 'Create a new application',
@@ -849,7 +849,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1/getApps': {
+  '/api/v1alpha/getApps': {
     get: {
       tags: ['Application'],
       summary: 'Get all applications',
@@ -1047,7 +1047,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1/getAppByAppName': {
+  '/api/v1alpha/getAppByAppName': {
     get: {
       tags: ['Application'],
       summary: 'Get application by name',
@@ -1129,7 +1129,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1/delAppByName': {
+  '/api/v1alpha/delAppByName': {
     delete: {
       tags: ['Application'],
       summary: 'Delete application',
@@ -1209,7 +1209,7 @@ const applaunchpadDocument = {
       }
     }
   },
-  '/api/v1/getAppPodsByAppName': {
+  '/api/v1alpha/getAppPodsByAppName': {
     get: {
       tags: ['Application'],
       summary: 'Get application pods',
