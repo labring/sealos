@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package checker
+package checker_test
 
 import (
 	"testing"
+
+	checker "github.com/labring/sealos/pkg/checker"
 )
 
 func TestGenerateAll(t *testing.T) {
-	checker := &ClusterChecker{}
-	var data []ClusterStatus
-	data = append(data, ClusterStatus{
+	ch := &checker.ClusterChecker{}
+	var data []checker.ClusterStatus
+	data = append(data, checker.ClusterStatus{
 		IP:                    "1.1.1.1",
 		Node:                  "test1",
 		KubeAPIServer:         "Running",
 		KubeControllerManager: "Running",
 		KubeScheduler:         "Running",
-		KubeletErr:            Nil,
+		KubeletErr:            checker.Nil,
 	})
-	data = append(data, ClusterStatus{
+	data = append(data, checker.ClusterStatus{
 		IP:                    "2.2.2.2",
 		Node:                  "test2",
 		KubeAPIServer:         "Running",
@@ -37,7 +39,7 @@ func TestGenerateAll(t *testing.T) {
 		KubeScheduler:         "Running",
 		KubeletErr:            "[kubelet-check] It seems like the kubelet isn't running or healthy.",
 	})
-	if err := checker.Output(data); err != nil {
+	if err := ch.Output(data); err != nil {
 		t.Error(err)
 	}
 }

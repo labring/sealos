@@ -25,11 +25,6 @@ import (
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/types"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sreg/pkg/registry/handler"
-	"github.com/labring/sreg/pkg/registry/sync"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/filesystem"
@@ -38,6 +33,9 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	httputils "github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/registry/handler"
+	"github.com/labring/sreg/pkg/registry/sync"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -79,7 +77,8 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 			logger.Debug("running temporary registry on host %s", host)
 			if err := s.execer.CmdAsyncWithContext(ctx, host, getRegistryServeCommand(s.pathResolver, defaultTemporaryPort)); err != nil {
 				// ignore expected signal killed error when context cancel
-				if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "context canceled") {
+				if !strings.Contains(err.Error(), "signal: killed") &&
+					!strings.Contains(err.Error(), "context canceled") {
 					logger.Error(err)
 				}
 			}
@@ -99,7 +98,11 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 				defer cancel()
 				ep := sync.ParseRegistryAddress(trimPortStr(target), defaultTemporaryPort)
 				if err := httputils.WaitUntilEndpointAlive(probeCtx, "http://"+ep); err != nil {
-					logger.Warn("cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead", ep, err)
+					logger.Warn(
+						"cannot connect to remote temporary registry %s: %v, fallback using ssh mode instead",
+						ep,
+						err,
+					)
 					syncOptionChan <- &syncOption{target: target, typ: sshMode}
 				} else {
 					syncOptionChan <- &syncOption{target: ep, typ: httpMode}
@@ -109,7 +112,7 @@ func (s *impl) Sync(ctx context.Context, hosts ...string) error {
 	}()
 
 	eg, _ := errgroup.WithContext(ctx)
-	for i := 0; i < len(hosts); i++ {
+	for range hosts {
 		opt, ok := <-syncOptionChan
 		if !ok {
 			break
@@ -146,11 +149,11 @@ func getRegistryServeCommand(pathResolver constants.PathResolver, port string) s
 	)
 }
 
-func syncViaSSH(_ context.Context, s *impl, target string, localDir string) error {
+func syncViaSSH(_ context.Context, s *impl, target, localDir string) error {
 	return ssh.CopyDir(s.execer, target, localDir, s.pathResolver.RootFSRegistryPath(), nil)
 }
 
-func syncViaHTTP(ctx context.Context, target string, localDir string) error {
+func syncViaHTTP(ctx context.Context, target, localDir string) error {
 	sys := &types.SystemContext{
 		DockerInsecureSkipTLSVerify: types.OptionalBoolTrue,
 	}
@@ -182,12 +185,17 @@ func syncViaHTTP(ctx context.Context, target string, localDir string) error {
 		OmitError: true,
 	}
 
-	if err = sync.ToRegistry(ctx, opts); err != nil && !strings.Contains(err.Error(), "manifest unknown") {
+	if err = sync.ToRegistry(ctx, opts); err != nil &&
+		!strings.Contains(err.Error(), "manifest unknown") {
 		return err
 	}
 	return nil
 }
 
-func New(pathResolver constants.PathResolver, execer exec.Interface, mounts []v2.MountImage) filesystem.RegistrySyncer {
+func New(
+	pathResolver constants.PathResolver,
+	execer exec.Interface,
+	mounts []v2.MountImage,
+) filesystem.RegistrySyncer {
 	return &impl{pathResolver, execer, mounts}
 }

@@ -17,23 +17,21 @@ limitations under the License.
 package buildah
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/labring/sealos/pkg/image"
-
-	"github.com/containers/buildah/pkg/parse"
-
 	"github.com/containers/buildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/buildah/util"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/cobra"
-
+	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/cobra"
 )
 
 func newMergeCommand() *cobra.Command {
@@ -65,7 +63,7 @@ func newMergeCommand() *cobra.Command {
 			if flagChanged(cmd, "platform") {
 				platformFlags := getPlatformFromFlags(cmd)
 				if len(platformFlags) != 1 {
-					return fmt.Errorf("only one platform is allowed")
+					return errors.New("only one platform is allowed")
 				}
 				oss, arch, variant, err := parse.Platform(platformFlags[0])
 				if err != nil {
@@ -111,9 +109,18 @@ func newMergeCommand() *cobra.Command {
 
 	// build is a all common flags
 	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
-	buildFlags.StringVar(&buildFlagResults.Runtime, "runtime", util.Runtime(), "`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.")
+	buildFlags.StringVar(
+		&buildFlagResults.Runtime,
+		"runtime",
+		util.Runtime(),
+		"`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.",
+	)
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
-	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
+	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(
+		&fromAndBudResults,
+		&userNSResults,
+		&namespaceResults,
+	)
 	bailOnError(err, "failed to setup From and Build flags")
 
 	sopts.RegisterFlags(flags)
@@ -123,11 +130,20 @@ func newMergeCommand() *cobra.Command {
 	flags.SetNormalizeFunc(buildahcli.AliasFlags)
 	bailOnError(markFlagsHidden(flags, "save-image"), "")
 	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
-	bailOnError(markFlagsHidden(flags, append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...), "")
+	bailOnError(
+		markFlagsHidden(
+			flags,
+			append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...),
+		"",
+	)
 	return mergeCommand
 }
 
-func mergeImagesWithScratchContainer(newImageName string, images []string, setters []FlagSetter) (*buildah.BuilderInfo, error) {
+func mergeImagesWithScratchContainer(
+	newImageName string,
+	images []string,
+	setters []FlagSetter,
+) (*buildah.BuilderInfo, error) {
 	b, err := New("")
 	if err != nil {
 		return nil, err
@@ -158,7 +174,7 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 		return nil, err
 	}
 	mergeDir := bInfo.MountPoint
-	err = os.WriteFile(path.Join(mergeDir, "Sealfile"), []byte(dockerfile), 0755)
+	err = os.WriteFile(path.Join(mergeDir, "Sealfile"), []byte(dockerfile), 0o755)
 	if err != nil {
 		return nil, err
 	}

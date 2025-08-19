@@ -19,9 +19,8 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -51,10 +50,14 @@ func (k *KubeadmRuntime) copyStaticFiles(nodes []string) error {
 	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
 		staticFilePath := filepath.Join(k.pathResolver.RootFSStaticsPath(), file.Name)
-		cmdLinkStatic := fmt.Sprintf(copyFileToDirCommand, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
+		cmdLinkStatic := fmt.Sprintf(
+			copyFileToDirCommand,
+			file.DestinationDir,
+			staticFilePath,
+			filepath.Join(file.DestinationDir, file.Name),
+		)
 		eg, _ := errgroup.WithContext(context.Background())
 		for _, host := range nodes {
-			host := host
 			eg.Go(func() error {
 				err := k.sshCmdAsync(host, cmdLinkStatic)
 				if err != nil {

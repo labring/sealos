@@ -81,9 +81,21 @@ func newDefaultImageResults() *imageResults {
 
 func (opts *imageResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
-	fs.BoolVarP(&opts.all, "all", "a", opts.all, "show all images, including intermediate images from a build")
+	fs.BoolVarP(
+		&opts.all,
+		"all",
+		"a",
+		opts.all,
+		"show all images, including intermediate images from a build",
+	)
 	fs.BoolVar(&opts.digests, "digests", opts.digests, "show digests")
-	fs.StringSliceVarP(&opts.filter, "filter", "f", opts.filter, "filter output based on conditions provided")
+	fs.StringSliceVarP(
+		&opts.filter,
+		"filter",
+		"f",
+		opts.filter,
+		"filter output based on conditions provided",
+	)
 	fs.StringVar(&opts.format, "format", opts.format, "pretty-print images using a Go template")
 	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
 	fs.BoolVarP(&opts.noHeading, "noheading", "n", opts.noHeading, "do not print column headings")
@@ -133,7 +145,9 @@ func newImagesCommand() *cobra.Command {
 func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 	if len(args) > 0 {
 		if iopts.all {
-			return errors.New("when using the --all switch, you may not pass any images names or IDs")
+			return errors.New(
+				"when using the --all switch, you may not pass any images names or IDs",
+			)
 		}
 
 		if err := buildahcli.VerifyFlagsArgsOrder(args); err != nil {
@@ -179,8 +193,16 @@ func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 	return formatImages(images, opts)
 }
 
-func readImages(store storage.Store, systemContext *types.SystemContext, names []string, iopts *imageResults) ([]*libimage.Image, error) {
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+func readImages(
+	store storage.Store,
+	systemContext *types.SystemContext,
+	names []string,
+	iopts *imageResults,
+) ([]*libimage.Image, error) {
+	runtime, err := libimage.RuntimeFromStore(
+		store,
+		&libimage.RuntimeOptions{SystemContext: systemContext},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +222,7 @@ func readImages(store storage.Store, systemContext *types.SystemContext, names [
 
 func outputHeader(opts imageOptions) string {
 	if opts.format != "" {
-		return strings.Replace(opts.format, `\t`, "\t", -1)
+		return strings.ReplaceAll(opts.format, `\t`, "\t")
 	}
 	if opts.quiet {
 		return formats.IDString
@@ -309,7 +331,11 @@ func formatImages(images []*libimage.Image, opts imageOptions) error {
 	}
 
 	sort.Sort(outputData)
-	out := formats.StdoutTemplateArray{Output: imagesToGeneric(outputData), Template: outputHeader(opts), Fields: imagesHeader}
+	out := formats.StdoutTemplateArray{
+		Output:   imagesToGeneric(outputData),
+		Template: outputHeader(opts),
+		Fields:   imagesHeader,
+	}
 	return formats.Writer(out).Out()
 }
 
@@ -338,10 +364,10 @@ func truncateID(id string, truncate bool) string {
 	return id
 }
 
-func imagesToGeneric(templParams []imageOutputParams) (genericParams []interface{}) {
+func imagesToGeneric(templParams []imageOutputParams) (genericParams []any) {
 	if len(templParams) > 0 {
 		for _, v := range templParams {
-			genericParams = append(genericParams, interface{}(v))
+			genericParams = append(genericParams, any(v))
 		}
 	}
 	return genericParams

@@ -21,18 +21,17 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func (k *KubeadmRuntime) runPipelines(phase string, pipelines ...func() error) error {
 	for i := range pipelines {
 		if err := pipelines[i](); err != nil {
-			return fmt.Errorf("failed to %s: %v", phase, err)
+			return fmt.Errorf("failed to %s: %w", phase, err)
 		}
 	}
 	return nil
@@ -59,13 +58,12 @@ func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 	return k.sendFileToHosts(hosts, k.pathResolver.PkiPath(), kubernetesEtcPKI)
 }
 
-func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
+func (k *KubeadmRuntime) sendFileToHosts(hosts []string, src, dst string) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range Hosts {
-		node := node
+	for _, node := range hosts {
 		eg.Go(func() error {
 			if err := k.sshCopy(node, src, dst); err != nil {
-				return fmt.Errorf("send file failed %v", err)
+				return fmt.Errorf("send file failed %w", err)
 			}
 			return nil
 		})
@@ -83,10 +81,13 @@ func (k *KubeadmRuntime) removeNode(ip string) error {
 	exp := kubernetes.NewKubeExpansion(client.Kubernetes())
 	hostname, err := exp.FetchHostNameFromInternalIP(ctx, ip)
 	if err != nil {
-		return fmt.Errorf("cannot get node with ip address %s: %v", ip, err)
+		return fmt.Errorf("cannot get node with ip address %s: %w", ip, err)
 	}
 	deletePropagation := v1.DeletePropagationBackground
-	err = client.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
+	err = client.Kubernetes().
+		CoreV1().
+		Nodes().
+		Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}

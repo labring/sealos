@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package types
+package types_test
 
 import (
 	"testing"
 
 	"github.com/labring/sealos/pkg/runtime/decode"
+	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -300,7 +301,7 @@ func TestKubeadmRuntime_setFeatureGatesConfigurationLowerVersion(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(testLowerKubeadmConfig, false, decode.CRDFromString)
+			k, err := types.LoadKubeadmConfigs(testLowerKubeadmConfig, false, decode.CRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
@@ -320,6 +321,7 @@ func TestKubeadmRuntime_setFeatureGatesConfigurationLowerVersion(t *testing.T) {
 		})
 	}
 }
+
 func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -344,7 +346,11 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(DefaultKubeadmInitConfiguration(), false, decode.CRDFromString)
+			k, err := types.LoadKubeadmConfigs(
+				types.DefaultKubeadmInitConfiguration(),
+				false,
+				decode.CRDFromString,
+			)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}
@@ -364,6 +370,7 @@ func TestKubeadmRuntime_setFeatureGatesConfiguration(t *testing.T) {
 		})
 	}
 }
+
 func TestKubeadmRuntime_setFeatureGatesConfiguration4Controller(t *testing.T) {
 	testyaml := `apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
@@ -453,7 +460,7 @@ etcd:
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			k, err := LoadKubeadmConfigs(testyaml, false, decode.CRDFromString)
+			k, err := types.LoadKubeadmConfigs(testyaml, false, decode.CRDFromString)
 			if err != nil {
 				t.Fatalf("error loading default kubeadm config: %v", err)
 			}

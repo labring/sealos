@@ -60,11 +60,11 @@ func checkHostnameUnique(s exec.Interface, ipList []string) error {
 	for _, ip := range ipList {
 		hostname, err := s.CmdToString(ip, "hostname", "")
 		if err != nil {
-			return fmt.Errorf("failed to get host %s hostname, %v", ip, err)
+			return fmt.Errorf("failed to get host %s hostname, %w", ip, err)
 		}
 
 		if hostnameList[hostname] {
-			return fmt.Errorf("hostname cannot be repeated, please set different hostname")
+			return errors.New("hostname cannot be repeated, please set different hostname")
 		}
 		hostnameList[hostname] = true
 	}
@@ -77,11 +77,11 @@ func checkTimeSync(s exec.Interface, ipList []string) error {
 	for _, ip := range ipList {
 		timestamp, err := s.CmdToString(ip, "date +%s", "")
 		if err != nil {
-			return fmt.Errorf("failed to get %s timestamp, %v", ip, err)
+			return fmt.Errorf("failed to get %s timestamp, %w", ip, err)
 		}
 		ts, err := strconv.Atoi(timestamp)
 		if err != nil {
-			return fmt.Errorf("failed to reverse timestamp %s, %v", timestamp, err)
+			return fmt.Errorf("failed to reverse timestamp %s, %w", timestamp, err)
 		}
 		timeDiff := time.Since(time.Unix(int64(ts), 0)).Seconds()
 		if timeDiff <= -5 || timeDiff >= 5 {

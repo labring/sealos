@@ -19,10 +19,8 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/labring/sealos/test/e2e/suites/operators"
-
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -36,34 +34,73 @@ var _ = Describe("E2E_sealos_images_test", func() {
 	Context("sealos images basic suit", func() {
 		It("images pull", func() {
 			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.0")
-			utils.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.0: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.0: %v", err),
+			)
 			id, err := fakeClient.Image.FetchImageID("docker.io/labring/kubernetes:v1.20.0")
-			utils.CheckErr(err, fmt.Sprintf("failed to fetch image id docker.io/labring/kubernetes:v1.20.0: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf(
+					"failed to fetch image id docker.io/labring/kubernetes:v1.20.0: %v",
+					err,
+				),
+			)
 			Expect(id).NotTo(BeEmpty())
 		})
 		It("images create local image", func() {
 			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.0", false)
-			utils.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.0: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.0: %v", err),
+			)
 		})
 		It("images create remote image", func() {
 			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.1", false)
-			utils.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.1: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.1: %v", err),
+			)
 		})
 		It("images create remote image by short", func() {
 			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.2", true)
-			utils.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.2: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.2: %v", err),
+			)
 		})
 		It("images more image", func() {
-			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
-			utils.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
+			err = fakeClient.Image.PullImage(
+				"docker.io/labring/kubernetes:v1.20.3",
+				"labring/helm:v3.8.2",
+			)
+			utils.CheckErr(
+				err,
+				fmt.Sprintf(
+					"failed to pull image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v",
+					err,
+				),
+			)
 		})
 		It("images rm more image", func() {
-			err = fakeClient.Image.RemoveImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
-			utils.CheckErr(err, fmt.Sprintf("failed to remove image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
+			err = fakeClient.Image.RemoveImage(
+				"docker.io/labring/kubernetes:v1.20.3",
+				"labring/helm:v3.8.2",
+			)
+			utils.CheckErr(
+				err,
+				fmt.Sprintf(
+					"failed to remove image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v",
+					err,
+				),
+			)
 		})
 		It("images save image", func() {
 			err = fakeClient.Image.SaveImage("docker.io/labring/kubernetes:v1.20.1", "k8s.tar")
-			utils.CheckErr(err, fmt.Sprintf("failed to save image docker.io/labring/kubernetes:v1.20.1: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf("failed to save image docker.io/labring/kubernetes:v1.20.1: %v", err),
+			)
 		})
 		It("images load image", func() {
 			err = fakeClient.Image.LoadImage("k8s.tar")
@@ -71,9 +108,16 @@ var _ = Describe("E2E_sealos_images_test", func() {
 		})
 
 		It("images SaveMultiImage", func() {
-			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2")
+			err = fakeClient.Image.PullImage(
+				"docker.io/labring/kubernetes:v1.20.1",
+				"labring/helm:v3.8.2",
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull images: %v", err))
-			err = fakeClient.Image.SaveMultiImage("k8s-multi.tar", "docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2")
+			err = fakeClient.Image.SaveMultiImage(
+				"k8s-multi.tar",
+				"docker.io/labring/kubernetes:v1.20.1",
+				"labring/helm:v3.8.2",
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to SaveMultiImage : %v", err))
 		})
 		It("images load multi image", func() {
@@ -82,11 +126,13 @@ var _ = Describe("E2E_sealos_images_test", func() {
 		})
 
 		It("images merge image", func() {
-			err = fakeClient.Image.Merge("new:0.1.0", []string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"})
+			err = fakeClient.Image.Merge(
+				"new:0.1.0",
+				[]string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to merge image new:0.1.0: %v", err))
 			_, err := fakeClient.Image.ListImages(true)
 			utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 		})
-
 	})
 })

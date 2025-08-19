@@ -16,24 +16,25 @@ package clusterfile
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 	decodeClusters, err := decodeCRD(filepath, constants.Cluster)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode cluster from %s, %v", filepath, err)
+		return nil, fmt.Errorf("failed to decode cluster from %s, %w", filepath, err)
 	}
+	//nolint:errcheck
 	clusters = decodeClusters.([]v1beta1.Cluster)
 	return
 }
@@ -41,27 +42,28 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 func Configs(filepath string) (configs []v1beta1.Config, err error) {
 	decodeConfigs, err := decodeCRD(filepath, constants.Config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode config from %s, %v", filepath, err)
+		return nil, fmt.Errorf("failed to decode config from %s, %w", filepath, err)
 	}
+	//nolint:errcheck
 	configs = decodeConfigs.([]v1beta1.Config)
 	return
 }
 
-func decodeCRD(filepath string, kind string) (out interface{}, err error) {
+func decodeCRD(filepath, kind string) (out any, err error) {
 	data, err := fileutil.ReadAll(filepath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file %v", err)
+		return nil, fmt.Errorf("failed to read file %w", err)
 	}
 
 	return CRDForBytes(data, kind)
 }
 
-func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
-	keyFunc := func(v interface{}) string {
+func CRDForBytes(data []byte, kind string) (out any, err error) {
+	keyFunc := func(v any) string {
 		if acc, ok := v.(metav1.ObjectMetaAccessor); ok {
 			return fmt.Sprintf("%s/%s", kind, acc.GetObjectMeta().GetName())
 		}
-		return fmt.Sprintf("%s/unknown", kind)
+		return kind + "/unknown"
 	}
 
 	var (
@@ -75,7 +77,7 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 	for {
 		ext := runtime.RawExtension{}
 		if err = d.Decode(&ext); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, err
@@ -98,7 +100,7 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 			cluster := v1beta1.Cluster{}
 			err = yaml.Unmarshal(ext.Raw, &cluster)
 			if err != nil {
-				return nil, fmt.Errorf("decode cluster failed %v", err)
+				return nil, fmt.Errorf("decode cluster failed %w", err)
 			}
 			k := keyFunc(&cluster)
 			if idx, ok := tmp[k]; !ok {
@@ -113,7 +115,7 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 			config := v1beta1.Config{}
 			err = yaml.Unmarshal(ext.Raw, &config)
 			if err != nil {
-				return nil, fmt.Errorf("decode config failed %v", err)
+				return nil, fmt.Errorf("decode config failed %w", err)
 			}
 			k := keyFunc(&config)
 			if idx, ok := tmp[k]; !ok {

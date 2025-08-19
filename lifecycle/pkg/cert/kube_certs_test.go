@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cert
+package cert_test
 
 import (
 	"testing"
+
+	"github.com/labring/sealos/pkg/cert"
 )
 
 func TestGenerateAll(t *testing.T) {
@@ -30,7 +32,15 @@ func TestGenerateAll(t *testing.T) {
 			false,
 		},
 	}
-	certMeta, err := NewSealosCertMetaData(BasePath, EtcdBasePath, []string{"test.com", "192.168.1.2", "kubernetes.default.svc.sealos"}, "10.64.0.0/10", "master1", "172.27.139.11", "cluster.local")
+	certMeta, err := cert.NewSealosCertMetaData(
+		BasePath,
+		EtcdBasePath,
+		[]string{"test.com", "192.168.1.2", "kubernetes.default.svc.sealos"},
+		"10.64.0.0/10",
+		"master1",
+		"172.27.139.11",
+		"cluster.local",
+	)
 	if err != nil {
 		t.Error(err)
 	}

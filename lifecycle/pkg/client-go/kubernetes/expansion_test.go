@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubernetes
+package kubernetes_test
 
 import (
 	"context"
 	"testing"
 
+	klient "github.com/labring/sealos/pkg/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -27,7 +28,7 @@ func TestGetKubeadmConfig(t *testing.T) {
 	type args struct {
 		client kubernetes.Interface
 	}
-	cli, _ := NewKubernetesClient("", "")
+	cli, _ := klient.NewKubernetesClient("", "")
 	tests := []struct {
 		name    string
 		args    args
@@ -43,7 +44,7 @@ func TestGetKubeadmConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ke := NewKubeExpansion(tt.args.client)
+			ke := klient.NewKubeExpansion(tt.args.client)
 			got, err := ke.FetchKubeadmConfig(context.Background())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetConfig() error = %v, wantErr %v", err, tt.wantErr)

@@ -28,15 +28,16 @@ import (
 
 	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/labring/image-cri-shim/pkg/types"
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
+	"github.com/spf13/cobra"
 )
 
-var cfg *types.Config
-var shimAuth *types.ShimAuthConfig
-var cfgFile string
+var (
+	cfg      *types.Config
+	shimAuth *types.ShimAuthConfig
+	cfgFile  string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -76,7 +77,12 @@ func init() {
 }
 
 func run(cfg *types.Config, auth *types.ShimAuthConfig) {
-	logger.Info("socket info shim: %v ,image: %v, registry: %v", cfg.ImageShimSocket, cfg.RuntimeSocket, cfg.Address)
+	logger.Info(
+		"socket info shim: %v ,image: %v, registry: %v",
+		cfg.ImageShimSocket,
+		cfg.RuntimeSocket,
+		cfg.Address,
+	)
 	imgShim, err := shim.NewShim(cfg, auth)
 	if err != nil {
 		logger.Fatal("failed to new image_shim, %s", err)

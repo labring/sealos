@@ -47,7 +47,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: bash ./scripts/resolve-modules.sh .
+        run: bash ./scripts/resolve-modules.sh ./lifecycle
 
   golangci-lint:
     needs: [ resolve-modules ]

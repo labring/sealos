@@ -15,9 +15,9 @@
 package bootstrap
 
 type Applier interface {
-	Filter(Context, string) bool
-	Apply(Context, string) error
-	Undo(Context, string) error
+	Filter(ctx Context, host string) bool
+	Apply(ctx Context, host string) error
+	Undo(ctx Context, host string) error
 }
 
 type common struct{}

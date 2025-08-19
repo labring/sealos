@@ -19,8 +19,6 @@ package apply
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/runtime/factory"
@@ -28,6 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/spf13/cobra"
 )
 
 func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []string) ([]byte, error) {
@@ -37,12 +36,12 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		cluster:     cluster,
 	}
 
-	if len(args.Cluster.Masters) == 0 {
+	if len(args.Masters) == 0 {
 		localIpv4 := iputils.GetLocalIpv4()
-		args.Cluster.Masters = localIpv4
+		args.Masters = localIpv4
 	}
 
-	if err := c.runArgs(cmd, args, imageNames); err != nil {
+	if err := c.RunArgs(cmd, args, imageNames); err != nil {
 		return nil, err
 	}
 	if flagChanged(cmd, "env") {
@@ -51,7 +50,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 		cluster.Spec.Env = append(cluster.Spec.Env, v...)
 	}
 
-	img, err := genImageInfo(imageNames[0])
+	img, err := GenImageInfo(imageNames[0])
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +71,7 @@ func NewClusterFromGenArgs(cmd *cobra.Command, args *RunArgs, imageNames []strin
 	return rt.GetRawConfig()
 }
 
-func genImageInfo(imageName string) (*v1beta1.MountImage, error) {
+func GenImageInfo(imageName string) (*v1beta1.MountImage, error) {
 	bder, err := buildah.New("")
 	if err != nil {
 		return nil, err

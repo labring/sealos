@@ -20,13 +20,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/labring/image-cri-shim/pkg/types"
-
-	"google.golang.org/grpc"
-
 	"github.com/labring/image-cri-shim/pkg/server"
-
+	"github.com/labring/image-cri-shim/pkg/types"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -144,6 +141,6 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 }
 
 // shimError creates a formatted shim-specific error.
-var shimError = func(format string, args ...interface{}) error {
+var shimError = func(format string, args ...any) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
 }

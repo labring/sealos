@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package template
+package template_test
 
 import (
 	"testing"
+
+	"github.com/labring/sealos/pkg/template"
 )
 
 func TestTemplateSemverCompare(t *testing.T) {
 	staticPodIPVSTemplate := `static-pod lvscare --path {{.path}} --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}} --masters  {{$h}}  {{end}} {{range $o := .options}} --options  {{$o}} {{end}} `
-	data := map[string]interface{}{
+	data := map[string]any{
 		"vip":     "127.0.0.1",
 		"image":   "test",
 		"masters": []string{"127.0.0.2"},
@@ -28,7 +30,7 @@ func TestTemplateSemverCompare(t *testing.T) {
 		"path":    "/etc/kubernetes",
 		"options": nil,
 	}
-	out, err := RenderTemplate("lvscare", staticPodIPVSTemplate, data)
+	out, err := template.RenderTemplate("lvscare", staticPodIPVSTemplate, data)
 	if err != nil {
 		t.Errorf("%+v", err)
 	}

@@ -18,7 +18,6 @@ package terraform
 
 import (
 	bindata "github.com/go-bindata/go-bindata"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 

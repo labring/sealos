@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package config_test
 
 import (
 	"bytes"
 	"os"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDumper_Dump(t *testing.T) {
@@ -51,7 +51,7 @@ func TestDumper_Dump(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewDefaultConfiguration(tt.fields.clusterName)
+			c := config.NewDefaultConfiguration(tt.fields.clusterName)
 			if err := c.Dump(); (err != nil) != tt.wantErr {
 				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -100,10 +100,10 @@ func Test_NewConfiguration_Dump(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := file.AtomicWriteFile(filename, []byte(tt.fields.origin), 0644); err != nil {
+			if err := file.AtomicWriteFile(filename, []byte(tt.fields.origin), 0o644); err != nil {
 				t.Errorf("failed to write file %v", err)
 			}
-			c := NewConfiguration(tt.fields.name, tt.fields.rootPath, tt.fields.configs)
+			c := config.NewConfiguration(tt.fields.name, tt.fields.rootPath, tt.fields.configs)
 			if err := c.Dump(); (err != nil) != tt.wantErr {
 				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -136,19 +136,21 @@ func Test_getMergeConfig(t *testing.T) {
 		}, {
 			name: "test",
 			args: args{
-				data: []byte("spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss"),
+				data: []byte(
+					"spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss",
+				),
 				path: "tigera-operator.yaml",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getMergeConfigData(tt.args.path, tt.args.data)
+			got, err := config.GetMergeConfigData(tt.args.path, tt.args.data)
 			if err != nil {
 				t.Error(err)
 				return
 			}
-			err = os.WriteFile("test_"+tt.args.path, got, 0644)
+			err = os.WriteFile("test_"+tt.args.path, got, 0o644)
 			if err != nil {
 				t.Error(err)
 			}
@@ -179,9 +181,13 @@ func Test_getAppendOrInsertConfigData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getAppendOrInsertConfigData(tt.args.path, tt.args.data, tt.args.insert)
+			got, err := config.GetAppendOrInsertConfigData(
+				tt.args.path,
+				tt.args.data,
+				tt.args.insert,
+			)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getAppendOrInsertConfigData() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetAppendOrInsertConfigData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			t.Log(string(got))
@@ -209,7 +215,9 @@ func Test_getOverrideConfig(t *testing.T) {
 		}, {
 			name: "test",
 			args: args{
-				data: []byte("spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss"),
+				data: []byte(
+					"spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss",
+				),
 				path: "tigera-operator.yaml",
 			},
 		},
@@ -219,7 +227,7 @@ func Test_getOverrideConfig(t *testing.T) {
 			got := tt.args.data
 
 			output := "test_" + tt.args.path
-			err := os.WriteFile(output, got, 0644)
+			err := os.WriteFile(output, got, 0o644)
 			if err != nil {
 				t.Error(err)
 			}

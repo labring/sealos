@@ -15,17 +15,16 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/archive"
 	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/spf13/cobra"
 )
 
 func newTarCmd() *cobra.Command {
 	var (
 		compressionF flags.Compression
 		output       string
-		clear        bool
+		clearFlag    bool
 	)
 	cmd := &cobra.Command{
 		Use:           "tar",
@@ -33,12 +32,13 @@ func newTarCmd() *cobra.Command {
 		Args:          cobra.ExactArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return archive.Tar(args[0], output, compressionF, clear)
+			return archive.Tar(args[0], output, compressionF, clearFlag)
 		},
 	}
-	cmd.Flags().Var(&compressionF, "compression", "compression algorithm, available options are tar/gzip/zstd/disable")
+	cmd.Flags().
+		Var(&compressionF, "compression", "compression algorithm, available options are tar/gzip/zstd/disable")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "path of archive file")
-	cmd.Flags().BoolVar(&clear, "clear", false, "remove source after compression finished")
+	cmd.Flags().BoolVar(&clearFlag, "clear", false, "remove source after compression finished")
 	_ = cmd.MarkFlagRequired("output")
 	_ = cmd.MarkFlagRequired("compression")
 	return cmd
@@ -46,8 +46,8 @@ func newTarCmd() *cobra.Command {
 
 func newUntarCmd() *cobra.Command {
 	var (
-		clear  bool
-		output string
+		clearFlag bool
+		output    string
 	)
 	cmd := &cobra.Command{
 		Use:           "untar",
@@ -55,11 +55,11 @@ func newUntarCmd() *cobra.Command {
 		Args:          cobra.MinimumNArgs(1),
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return archive.Untar(args, output, clear)
+			return archive.Untar(args, output, clearFlag)
 		},
 	}
 	cmd.Flags().StringVarP(&output, "output", "o", "", "path to uncompress archive files")
-	cmd.Flags().BoolVar(&clear, "clear", false, "remove source after uncompression finished")
+	cmd.Flags().BoolVar(&clearFlag, "clear", false, "remove source after uncompression finished")
 	_ = cmd.MarkFlagRequired("output")
 	return cmd
 }

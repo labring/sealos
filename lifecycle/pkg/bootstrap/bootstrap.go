@@ -18,10 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 type Phase string
@@ -34,7 +33,7 @@ const (
 
 type Interface interface {
 	Apply(hosts ...string) error
-	RegisterApplier(Phase, ...Applier) error
+	RegisterApplier(phase Phase, appliers ...Applier) error
 	Delete(hosts ...string) error
 }
 
@@ -154,7 +153,15 @@ func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
 
 func init() {
 	defaultPreflights = append(defaultPreflights, &defaultChecker{})
-	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultCRIInitializer{}, &apiServerHostApplier{}, &lvscareHostApplier{}, &defaultInitializer{})
+	defaultInitializers = append(
+		defaultInitializers,
+		&registryHostApplier{},
+		&registryApplier{},
+		&defaultCRIInitializer{},
+		&apiServerHostApplier{},
+		&lvscareHostApplier{},
+		&defaultInitializer{},
+	)
 }
 
 func RegisterApplier(phase Phase, appliers ...Applier) error {

@@ -59,7 +59,9 @@ func rmCmd(c *cobra.Command, args []string, iopts rmResults) error {
 		return errors.New("container ID must be specified")
 	}
 	if len(args) > 0 && iopts.all {
-		return errors.New("when using the --all switch, you may not pass any containers names or IDs")
+		return errors.New(
+			"when using the --all switch, you may not pass any containers names or IDs",
+		)
 	}
 
 	if err := buildahcli.VerifyFlagsArgsOrder(args); err != nil {
@@ -81,7 +83,11 @@ func rmCmd(c *cobra.Command, args []string, iopts rmResults) error {
 		for _, builder := range builders {
 			id := builder.ContainerID
 			if err = builder.Delete(); err != nil {
-				lastError = util.WriteError(os.Stderr, fmt.Errorf("%s %q: %w", delContainerErrStr, builder.Container, err), lastError)
+				lastError = util.WriteError(
+					os.Stderr,
+					fmt.Errorf("%s %q: %w", delContainerErrStr, builder.Container, err),
+					lastError,
+				)
 				continue
 			}
 			fmt.Printf("%s\n", id)

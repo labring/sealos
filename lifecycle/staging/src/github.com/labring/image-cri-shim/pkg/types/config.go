@@ -29,16 +29,13 @@ import (
 	"strings"
 	"time"
 
-	registry2 "github.com/labring/sreg/pkg/registry/crane"
-
 	types2 "github.com/docker/docker/api/types/registry"
-
 	"github.com/labring/image-cri-shim/pkg/cri"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
-
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	registry2 "github.com/labring/sreg/pkg/registry/crane"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -101,7 +98,7 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 		logger.Warn("url parse error: %+v", err)
 	}
 	domain := rawURL.Host
-	if c.Timeout.Duration.Milliseconds() == 0 {
+	if c.Timeout.Milliseconds() == 0 {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
 	}
@@ -162,7 +159,7 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 
 	{
 		offlineName, offlinePasswd := splitNameAndPasswd(c.Auth)
-		//offline registry auth
+		// offline registry auth
 		shimAuth.OfflineCRIConfigs = map[string]types2.AuthConfig{domain: {
 			Username:      offlineName,
 			Password:      offlinePasswd,

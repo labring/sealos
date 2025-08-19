@@ -21,26 +21,20 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/labring/sealos/pkg/guest"
-
 	"github.com/containers/buildah"
-
-	"github.com/labring/sealos/fork/golang/expansion"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-
-	stringsutil "github.com/labring/sealos/pkg/utils/strings"
-
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/storage/pkg/unshare"
+	"github.com/labring/sealos/fork/golang/expansion"
+	"github.com/labring/sealos/pkg/guest"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sreg/pkg/utils/file"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/utils/file"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 type createOptions struct {
@@ -58,15 +52,32 @@ func newDefaultCreateOptions() *createOptions {
 }
 
 func (opts *createOptions) RegisterFlags(fs *pflag.FlagSet) {
-	fs.StringVarP(&opts.name, "cluster", "c", opts.name, "name of cluster to be created but not actually run")
-	fs.StringVar(&opts.platform, "platform", opts.platform, "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)")
+	fs.StringVarP(
+		&opts.name,
+		"cluster",
+		"c",
+		opts.name,
+		"name of cluster to be created but not actually run",
+	)
+	fs.StringVar(
+		&opts.platform,
+		"platform",
+		opts.platform,
+		"set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)",
+	)
 	fs.BoolVar(&opts.short, "short", false, "if true, print just the mount path.")
-	fs.StringSliceVarP(&opts.env, "env", "e", opts.env, "set environment variables for template files")
+	fs.StringSliceVarP(
+		&opts.env,
+		"env",
+		"e",
+		opts.env,
+		"set environment variables for template files",
+	)
 }
 
 func newCreateCmd() *cobra.Command {
 	opts := newDefaultCreateOptions()
-	var createCmd = &cobra.Command{
+	createCmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a cluster without running the CMD, for inspecting image",
 		Args:  cobra.MinimumNArgs(1),
@@ -81,7 +92,10 @@ func newCreateCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				flagSetters = append(flagSetters, WithPlatformOption(v1.Platform{OS: oss, Architecture: arch, Variant: variant}))
+				flagSetters = append(
+					flagSetters,
+					WithPlatformOption(v1.Platform{OS: oss, Architecture: arch, Variant: variant}),
+				)
 			}
 			info, err := bder.Create(opts.name, args[0], flagSetters...)
 			if err != nil {
@@ -114,12 +128,17 @@ func newCreateCmd() *cobra.Command {
 				args = []string{shell}
 			}
 			// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
+			//nolint:gosec
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Env = unshare.RootlessEnv()
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			mountEnvs, unmountMounts, err := unshareMount(bder.(*realImpl).store, []string{info.ContainerID})
+			mountEnvs, unmountMounts, err := unshareMount(
+				//nolint:errcheck
+				bder.(*realImpl).store,
+				[]string{info.ContainerID},
+			)
 			if err != nil {
 				return err
 			}
@@ -133,18 +152,17 @@ func newCreateCmd() *cobra.Command {
 	return createCmd
 }
 
-func runRender(mountPoints []string, env []string) error {
+func runRender(mountPoints, env []string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	envs := maps.FromSlice(env)
 
 	for _, mountPoint := range mountPoints {
-		mp := mountPoint
 		eg.Go(func() error {
-			if !file.IsExist(mp) {
-				logger.Debug("MountPoint %s does not exist, skipping", mp)
+			if !file.IsExist(mountPoint) {
+				logger.Debug("MountPoint %s does not exist, skipping", mountPoint)
 				return nil
 			}
-			return stringsutil.RenderTemplatesWithEnv(mp, envs)
+			return stringsutil.RenderTemplatesWithEnv(mountPoint, envs)
 		})
 	}
 
@@ -159,11 +177,27 @@ func printCommands(name string, env []string, info buildah.BuilderInfo) {
 
 	cmds := make([]string, 0)
 	for i := range info.OCIv1.Config.Entrypoint {
-		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Entrypoint[i], mapping)))
+		cmds = append(
+			cmds,
+			guest.FormalizeWorkingCommand(
+				name,
+				info.Container,
+				v2.ImageType(typeKey),
+				expansion.Expand(info.OCIv1.Config.Entrypoint[i], mapping),
+			),
+		)
 	}
 
 	for i := range info.OCIv1.Config.Cmd {
-		cmds = append(cmds, guest.FormalizeWorkingCommand(name, info.Container, v2.ImageType(typeKey), expansion.Expand(info.OCIv1.Config.Cmd[i], mapping)))
+		cmds = append(
+			cmds,
+			guest.FormalizeWorkingCommand(
+				name,
+				info.Container,
+				v2.ImageType(typeKey),
+				expansion.Expand(info.OCIv1.Config.Cmd[i], mapping),
+			),
+		)
 	}
 
 	logger.Info("Shell command: %s", stringsutil.RenderShellWithEnv(strings.Join(cmds, "; "), envs))

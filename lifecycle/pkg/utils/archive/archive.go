@@ -22,11 +22,10 @@ import (
 	"strings"
 
 	"github.com/containers/storage/pkg/archive"
-	"github.com/opencontainers/go-digest"
-
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/opencontainers/go-digest"
 )
 
 type Archive interface {
@@ -44,9 +43,12 @@ func (opt *Options) UnTarOrGzip(src io.Reader, dst string) (int64, error) {
 }
 
 func (opt *Options) Digest(path string) (digest.Digest, int64, error) {
-	read, err := compress([]string{path}, Options{Compress: opt.Compress, KeepRootDir: opt.KeepRootDir})
+	read, err := compress(
+		[]string{path},
+		Options{Compress: opt.Compress, KeepRootDir: opt.KeepRootDir},
+	)
 	if err != nil {
-		return "", 0, fmt.Errorf("unable to tar on %s, err: %s", path, err)
+		return "", 0, fmt.Errorf("unable to tar on %s, err: %w", path, err)
 	}
 	return canonicalDigest(read)
 }

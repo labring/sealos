@@ -84,7 +84,13 @@ func newDefaultContainerResults() *containersResults {
 
 func (opts *containersResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.BoolVarP(&opts.all, "all", "a", opts.all, "also list non-buildah containers")
-	fs.StringVarP(&opts.filter, "filter", "f", opts.filter, "filter output based on conditions provided")
+	fs.StringVarP(
+		&opts.filter,
+		"filter",
+		"f",
+		opts.filter,
+		"filter output based on conditions provided",
+	)
 	fs.StringVar(&opts.format, "format", opts.format, "pretty-print containers using a Go template")
 	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
 	fs.BoolVarP(&opts.noheading, "noheading", "n", opts.noheading, "do not print column headings")
@@ -104,7 +110,7 @@ func newContainersCommand() *cobra.Command {
 		Short:   "List working containers and their base images",
 		Long:    containersDescription,
 		Args:    cobra.ExactArgs(0),
-		//Flags:                  sortFlags(containersFlags),
+		// Flags:                  sortFlags(containersFlags),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return containersCmd(cmd, args, opts)
 		},
@@ -155,7 +161,11 @@ func containersCmd(c *cobra.Command, args []string, iopts *containersResults) er
 	return outputContainers(store, opts, params)
 }
 
-func readContainers(store storage.Store, opts containerOptions, params *containerFilterParams) ([]containerOutputParams, []JSONContainer, error) {
+func readContainers(
+	store storage.Store,
+	opts containerOptions,
+	params *containerFilterParams,
+) ([]containerOutputParams, []JSONContainer, error) {
 	seenImages := make(map[string]string)
 	imageNameForID := func(id string) string {
 		if id == "" {
@@ -184,15 +194,23 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 		// only output containers created by buildah
 		for _, builder := range builders {
 			image := imageNameForID(builder.FromImageID)
-			if !matchesCtrFilter(builder.ContainerID, builder.Container, builder.FromImageID, image, params) {
+			if !matchesCtrFilter(
+				builder.ContainerID,
+				builder.Container,
+				builder.FromImageID,
+				image,
+				params,
+			) {
 				continue
 			}
 			if opts.json {
-				JSONContainers = append(JSONContainers, JSONContainer{ID: builder.ContainerID,
+				JSONContainers = append(JSONContainers, JSONContainer{
+					ID:            builder.ContainerID,
 					Builder:       true,
 					ImageID:       builder.FromImageID,
 					ImageName:     image,
-					ContainerName: builder.Container})
+					ContainerName: builder.Container,
+				})
 				continue
 			}
 			output := containerOutputParams{
@@ -228,11 +246,13 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 				continue
 			}
 			if opts.json {
-				JSONContainers = append(JSONContainers, JSONContainer{ID: container.ID,
+				JSONContainers = append(JSONContainers, JSONContainer{
+					ID:            container.ID,
 					Builder:       ours,
 					ImageID:       container.ImageID,
 					ImageName:     imageNameForID(container.ImageID),
-					ContainerName: name})
+					ContainerName: name,
+				})
 				continue
 			}
 			output := containerOutputParams{
@@ -248,7 +268,11 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 	return containerOutput, JSONContainers, nil
 }
 
-func outputContainers(store storage.Store, opts containerOptions, params *containerFilterParams) error {
+func outputContainers(
+	store storage.Store,
+	opts containerOptions,
+	params *containerFilterParams,
+) error {
 	containerOutput, JSONContainers, err := readContainers(store, opts, params)
 	if err != nil {
 		return err
@@ -263,7 +287,11 @@ func outputContainers(store storage.Store, opts containerOptions, params *contai
 	}
 
 	if opts.format != "" {
-		out := formats.StdoutTemplateArray{Output: containersToGeneric(containerOutput), Template: opts.format, Fields: containersHeader}
+		out := formats.StdoutTemplateArray{
+			Output:   containersToGeneric(containerOutput),
+			Template: opts.format,
+			Fields:   containersHeader,
+		}
 		return formats.Writer(out).Out()
 	}
 
@@ -277,10 +305,10 @@ func outputContainers(store storage.Store, opts containerOptions, params *contai
 	return nil
 }
 
-func containersToGeneric(templParams []containerOutputParams) (genericParams []interface{}) {
+func containersToGeneric(templParams []containerOutputParams) (genericParams []any) {
 	if len(templParams) > 0 {
 		for _, v := range templParams {
-			genericParams = append(genericParams, interface{}(v))
+			genericParams = append(genericParams, any(v))
 		}
 	}
 	return genericParams
@@ -288,7 +316,14 @@ func containersToGeneric(templParams []containerOutputParams) (genericParams []i
 
 func containerOutputUsingFormatString(truncate bool, params containerOutputParams) {
 	if truncate {
-		fmt.Printf("%-12.12s  %-8s %-12.12s %-32s %s\n", params.ContainerID, params.Builder, params.ImageID, util.TruncateString(params.ImageName, 32), params.ContainerName)
+		fmt.Printf(
+			"%-12.12s  %-8s %-12.12s %-32s %s\n",
+			params.ContainerID,
+			params.Builder,
+			params.ImageID,
+			util.TruncateString(params.ImageName, 32),
+			params.ContainerName,
+		)
 	} else {
 		fmt.Printf("%-64s %-8s %-64s %-32s %s\n", params.ContainerID, params.Builder, params.ImageID, params.ImageName, params.ContainerName)
 	}
@@ -296,7 +331,14 @@ func containerOutputUsingFormatString(truncate bool, params containerOutputParam
 
 func containerOutputHeader(truncate bool) {
 	if truncate {
-		fmt.Printf("%-12s  %-8s %-12s %-32s %s\n", "CONTAINER ID", "BUILDER", "IMAGE ID", "IMAGE NAME", "CONTAINER NAME")
+		fmt.Printf(
+			"%-12s  %-8s %-12s %-32s %s\n",
+			"CONTAINER ID",
+			"BUILDER",
+			"IMAGE ID",
+			"IMAGE NAME",
+			"CONTAINER NAME",
+		)
 	} else {
 		fmt.Printf("%-64s %-8s %-64s %-32s %s\n", "CONTAINER ID", "BUILDER", "IMAGE ID", "IMAGE NAME", "CONTAINER NAME")
 	}
@@ -308,7 +350,10 @@ func parseCtrFilter(filter string) (*containerFilterParams, error) {
 	for _, param := range filters {
 		pair := strings.SplitN(param, "=", 2)
 		if len(pair) != 2 {
-			return nil, fmt.Errorf("incorrect filter value %q, should be of form filter=value", param)
+			return nil, fmt.Errorf(
+				"incorrect filter value %q, should be of form filter=value",
+				param,
+			)
 		}
 		switch strings.TrimSpace(pair[0]) {
 		case "id":

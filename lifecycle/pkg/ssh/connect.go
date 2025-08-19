@@ -22,11 +22,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
-
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 type HostClientMap struct {
@@ -56,7 +55,7 @@ func newSession(client *ssh.Client) (*ssh.Session, error) {
 		return nil, err
 	}
 	modes := ssh.TerminalModes{
-		ssh.ECHO:          0,     //disable echoing
+		ssh.ECHO:          0,     // disable echoing
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
@@ -83,9 +82,10 @@ func isErrorWorthRetry(err error) bool {
 
 func exponentialBackOffRetry(steps int, interval time.Duration, factor int,
 	fn func() error,
-	retryIfCertainError func(error) bool) error {
+	retryIfCertainError func(error) bool,
+) error {
 	var err error
-	for i := 0; i < steps; i++ {
+	for i := range steps {
 		if i > 0 {
 			logger.Debug("retrying %s later due to error occur: %v", interval, err)
 			time.Sleep(interval)
@@ -111,17 +111,17 @@ func (c *Client) newClientAndSession(host string) (*ssh.Client, *ssh.Session, er
 	return sshClient, session, err
 }
 
-func parsePrivateKey(pemBytes []byte, password []byte) (ssh.Signer, error) {
+func parsePrivateKey(pemBytes, password []byte) (ssh.Signer, error) {
 	if len(password) == 0 {
 		return ssh.ParsePrivateKey(pemBytes)
 	}
 	return ssh.ParsePrivateKeyWithPassphrase(pemBytes, password)
 }
 
-func parsePrivateKeyFile(filename string, password string) (ssh.Signer, error) {
+func parsePrivateKeyFile(filename, password string) (ssh.Signer, error) {
 	pemBytes, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read private key file %v", err)
+		return nil, fmt.Errorf("failed to read private key file %w", err)
 	}
 	return parsePrivateKey(pemBytes, []byte(password))
 }

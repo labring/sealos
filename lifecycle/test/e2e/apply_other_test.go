@@ -18,19 +18,15 @@ package e2e
 
 import (
 	"fmt"
-
-	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
-	"github.com/labring/sealos/test/e2e/testhelper/config"
-	"github.com/labring/sealos/test/e2e/testhelper/etcd"
-
-	. "github.com/onsi/ginkgo/v2"
+	"net"
 
 	"github.com/labring/sealos/test/e2e/suites/checkers"
+	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testdata/kubeadm"
+	"github.com/labring/sealos/test/e2e/testhelper/config"
+	"github.com/labring/sealos/test/e2e/testhelper/etcd"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	. "github.com/onsi/ginkgo/v2"
 )
 
 var _ = Describe("E2E_sealos_apply_other_test", func() {
@@ -92,7 +88,7 @@ var _ = Describe("E2E_sealos_apply_other_test", func() {
 				PodCIDR:     "",
 				ServiceCIDR: "100.56.0.0/16",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
-				Etcd:        []string{fmt.Sprintf("http://%s:2379", utils.GetLocalIpv4())},
+				Etcd:        []string{"http://" + net.JoinHostPort(utils.GetLocalIpv4(), "2379")},
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
@@ -100,5 +96,4 @@ var _ = Describe("E2E_sealos_apply_other_test", func() {
 			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 	})
-
 })

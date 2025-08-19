@@ -15,6 +15,7 @@
 package buildah
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -25,18 +26,17 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	storagetypes "github.com/containers/storage/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Interface interface {
 	Pull(imageNames []string, opts ...FlagSetter) error
-	Load(input string, ociType string) (string, error)
+	Load(input, ociType string) (string, error)
 	InspectImage(name string, opts ...string) (*InspectOutput, error)
-	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
+	Create(name, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
 	Delete(name string) error
 	InspectContainer(name string) (buildah.BuilderInfo, error)
 	ListContainers() ([]JSONContainer, error)
@@ -78,7 +78,7 @@ func (impl *realImpl) Runtime() *Runtime {
 
 type FlagSetter func(*pflag.FlagSet) error
 
-func newFlagSetter(k string, v string) FlagSetter {
+func newFlagSetter(k, v string) FlagSetter {
 	return func(fs *pflag.FlagSet) error {
 		if f := fs.Lookup(k); f != nil {
 			return fs.Set(k, v)
@@ -128,7 +128,10 @@ func (impl *realImpl) Pull(imageNames []string, opts ...FlagSetter) error {
 	return nil
 }
 
-func finalizeReference(transport types.ImageTransport, imgName string) (types.ImageTransport, string) {
+func finalizeReference(
+	transport types.ImageTransport,
+	imgName string,
+) (types.ImageTransport, string) {
 	parts := strings.SplitN(imgName, ":", 2)
 	if len(parts) == 2 {
 		if transport := transports.Get(parts[0]); transport != nil {
@@ -151,15 +154,15 @@ func (impl *realImpl) InspectImage(name string, opts ...string) (*InspectOutput,
 	return openImage(ctx, impl.systemContext, impl.store, transport, name)
 }
 
-func (impl *realImpl) Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error) {
+func (impl *realImpl) Create(name, image string, opts ...FlagSetter) (buildah.BuilderInfo, error) {
 	if err := impl.Delete(impl.finalizeName(name)); err != nil {
-		return buildah.BuilderInfo{}, fmt.Errorf("failed to delete: %v", err)
+		return buildah.BuilderInfo{}, fmt.Errorf("failed to delete: %w", err)
 	}
 	if _, err := impl.from(impl.finalizeName(name), image, opts...); err != nil {
-		return buildah.BuilderInfo{}, fmt.Errorf("failed to from: %v", err)
+		return buildah.BuilderInfo{}, fmt.Errorf("failed to from: %w", err)
 	}
 	if _, err := impl.mount(impl.finalizeName(name)); err != nil {
-		return buildah.BuilderInfo{}, fmt.Errorf("failed to mount: %v", err)
+		return buildah.BuilderInfo{}, fmt.Errorf("failed to mount: %w", err)
 	}
 	return impl.InspectContainer(name)
 }
@@ -167,7 +170,7 @@ func (impl *realImpl) Create(name string, image string, opts ...FlagSetter) (bui
 func (impl *realImpl) Delete(name string) error {
 	builder, err := openBuilder(getContext(), impl.store, impl.finalizeName(name))
 	if err != nil {
-		if err == storagetypes.ErrContainerUnknown {
+		if errors.Is(err, storagetypes.ErrContainerUnknown) {
 			return nil
 		}
 		return err
@@ -226,7 +229,7 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 		json:      true,
 		noHeading: true,
 	}
-	params, err := parseCtrFilter(fmt.Sprintf("name=%s", impl.id))
+	params, err := parseCtrFilter("name=" + impl.id)
 	if err != nil {
 		return nil, fmt.Errorf("parsing filter: %w", err)
 	}
@@ -234,7 +237,7 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 	return jsonContainers, err
 }
 
-func (impl *realImpl) Load(input string, transport string) (string, error) {
+func (impl *realImpl) Load(input, transport string) (string, error) {
 	ref := FormatReferenceWithTransportName(transport, input)
 	names, err := impl.runtime.PullOrLoadImages(getContext(), []string{ref}, libimage.CopyOptions{})
 	if err != nil {

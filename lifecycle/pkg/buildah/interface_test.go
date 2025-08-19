@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package buildah
+package buildah_test
 
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/spf13/cobra"
 )
 
@@ -111,9 +112,9 @@ func Test_realImpl_InspectImage(t *testing.T) {
 				Use:   "test",
 				Short: "test",
 			}
-			//storage-driver
-			RegisterRootCommand(root)
-			impl, err := New("")
+			// storage-driver
+			buildah.RegisterRootCommand(root)
+			impl, err := buildah.New("")
 			if err != nil {
 				t.Errorf("%+v", err)
 				return

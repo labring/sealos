@@ -16,7 +16,10 @@ limitations under the License.
 
 package checkers
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var _ FakeInterface = &fakeEtcdClient{}
 
@@ -26,17 +29,24 @@ type fakeEtcdClient struct {
 }
 
 func (f *fakeEtcdClient) Verify() error {
-	err := f.cmd.AsyncExec("kubectl", "get", "pods", "-A", "--kubeconfig", "/etc/kubernetes/admin.conf")
+	err := f.cmd.AsyncExec(
+		"kubectl",
+		"get",
+		"pods",
+		"-A",
+		"--kubeconfig",
+		"/etc/kubernetes/admin.conf",
+	)
 	if err != nil {
 		return err
 	}
 	if len(f.etcd) == 0 {
 		if f.ClusterConfiguration.Etcd.Local == nil {
-			return fmt.Errorf("etcd is empty when local etcd")
+			return errors.New("etcd is empty when local etcd")
 		}
 	} else {
 		if f.ClusterConfiguration.Etcd.External == nil {
-			return fmt.Errorf("etcd is empty when external etcd")
+			return errors.New("etcd is empty when external etcd")
 		}
 		if len(f.ClusterConfiguration.Etcd.External.Endpoints) != len(f.etcd) {
 			return fmt.Errorf("etcd endpoints not match, expect %v, got %v", f.etcd, f.ClusterConfiguration.Etcd.External.Endpoints)

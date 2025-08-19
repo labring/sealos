@@ -39,7 +39,7 @@ func newLogoutCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return logoutCmd(cmd, args, &opts)
 		},
-		Example: fmt.Sprintf(`%s logout quay.io`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " logout quay.io",
 	}
 	logoutCommand.SetUsageTemplate(UsageTemplate())
 

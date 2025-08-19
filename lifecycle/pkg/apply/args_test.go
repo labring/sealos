@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package apply_test
 
 import (
 	"bytes"
@@ -23,21 +23,32 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/spf13/pflag"
-
+	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/spf13/pflag"
 )
 
 func TestParseClusterFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *Cluster
-		desired *Cluster
+		flags   *apply.Cluster
+		desired *apply.Cluster
 	}{
 		{
-			[]string{"--masters", "10.74.22.22:22", "--nodes", "10.74.22.44:22", "--cluster", "default"},
-			&Cluster{},
-			&Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
+			[]string{
+				"--masters",
+				"10.74.22.22:22",
+				"--nodes",
+				"10.74.22.44:22",
+				"--cluster",
+				"default",
+			},
+			&apply.Cluster{},
+			&apply.Cluster{
+				Masters:     "10.74.22.22:22",
+				Nodes:       "10.74.22.44:22",
+				ClusterName: "default",
+			},
 		},
 	}
 
@@ -57,15 +68,20 @@ func TestParseClusterFlagsCorrect(t *testing.T) {
 }
 
 func TestParseSSHFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *SSH
-		desired *SSH
+		flags   *apply.SSH
+		desired *apply.SSH
 	}{
 		{
 			[]string{"-u", "root", "-p", "s3cret", "--port", "2222"},
-			&SSH{},
-			&SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+			&apply.SSH{},
+			&apply.SSH{
+				User:     "root",
+				Password: "s3cret",
+				Port:     2222,
+				Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+			},
 		},
 	}
 
@@ -84,17 +100,23 @@ func TestParseSSHFlagsCorrect(t *testing.T) {
 	}
 }
 
-func equal(in, out interface{}) bool {
-	inByte, _ := json.Marshal(&in)
-	outByte, _ := json.Marshal(&out)
+func equal(in, out any) bool {
+	inByte, err := json.Marshal(&in)
+	if err != nil {
+		return false
+	}
+	outByte, err := json.Marshal(&out)
+	if err != nil {
+		return false
+	}
 	return bytes.Equal(inByte, outByte)
 }
 
 func TestParseRunArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *RunArgs
-		desired *RunArgs
+		flags   *apply.RunArgs
+		desired *apply.RunArgs
 	}{
 		{
 			[]string{
@@ -103,13 +125,22 @@ func TestParseRunArgsFlagsCorrect(t *testing.T) {
 				"--env", "testk=testv",
 				"--cmd", "echo test",
 			},
-			&RunArgs{
-				Cluster: &Cluster{},
-				SSH:     &SSH{},
+			&apply.RunArgs{
+				Cluster: &apply.Cluster{},
+				SSH:     &apply.SSH{},
 			},
-			&RunArgs{
-				Cluster:           &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:               &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+			&apply.RunArgs{
+				Cluster: &apply.Cluster{
+					Masters:     "10.74.22.22:22",
+					Nodes:       "10.74.22.44:22",
+					ClusterName: "default",
+				},
+				SSH: &apply.SSH{
+					User:     "root",
+					Password: "s3cret",
+					Port:     2222,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 				CustomEnv:         []string{"testk=testv"},
 				CustomCMD:         []string{"echo test"},
 				CustomConfigFiles: []string{},
@@ -133,17 +164,17 @@ func TestParseRunArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *Args
-		desired *Args
+		flags   *apply.Args
+		desired *apply.Args
 	}{
 		{
 			[]string{
 				"--values", "test.yaml", "--set", "test.enabled=true", "--env", "testk=testv",
 			},
-			&Args{},
-			&Args{
+			&apply.Args{},
+			&apply.Args{
 				Values:            []string{"test.yaml"},
 				CustomEnv:         []string{"testk=testv"},
 				Sets:              []string{"test.enabled=true"},
@@ -168,23 +199,28 @@ func TestParseArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseResetArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *ResetArgs
-		desired *ResetArgs
+		flags   *apply.ResetArgs
+		desired *apply.ResetArgs
 	}{
 		{
 			[]string{
 				"--cluster", "default",
 				"-u", "root", "-p", "s3cret", "--port", "2222",
 			},
-			&ResetArgs{
-				ClusterName: &ClusterName{},
-				SSH:         &SSH{},
+			&apply.ResetArgs{
+				ClusterName: &apply.ClusterName{},
+				SSH:         &apply.SSH{},
 			},
-			&ResetArgs{
-				ClusterName: &ClusterName{ClusterName: "default"},
-				SSH:         &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+			&apply.ResetArgs{
+				ClusterName: &apply.ClusterName{ClusterName: "default"},
+				SSH: &apply.SSH{
+					User:     "root",
+					Password: "s3cret",
+					Port:     2222,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 			},
 		},
 	}
@@ -205,23 +241,32 @@ func TestParseResetArgsFlagsCorrect(t *testing.T) {
 }
 
 func TestParseScaleArgsFlagsCorrect(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		args    []string
-		flags   *ScaleArgs
-		desired *ScaleArgs
+		flags   *apply.ScaleArgs
+		desired *apply.ScaleArgs
 	}{
 		{
 			[]string{
 				"--masters", "10.74.22.22:22", "--nodes", "10.74.22.44:22", "--cluster", "default",
 				"-u", "root", "-p", "passwd", "--port", "22",
 			},
-			&ScaleArgs{
-				Cluster: &Cluster{},
-				SSH:     &SSH{},
+			&apply.ScaleArgs{
+				Cluster: &apply.Cluster{},
+				SSH:     &apply.SSH{},
 			},
-			&ScaleArgs{
-				Cluster: &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:     &SSH{User: "root", Password: "passwd", Port: 22, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+			&apply.ScaleArgs{
+				Cluster: &apply.Cluster{
+					Masters:     "10.74.22.22:22",
+					Nodes:       "10.74.22.44:22",
+					ClusterName: "default",
+				},
+				SSH: &apply.SSH{
+					User:     "root",
+					Password: "passwd",
+					Port:     22,
+					Pk:       path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+				},
 			},
 		},
 	}

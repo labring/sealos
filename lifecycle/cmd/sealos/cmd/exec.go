@@ -19,13 +19,12 @@ package cmd
 import (
 	"context"
 
-	"github.com/spf13/cobra"
-	"golang.org/x/sync/errgroup"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 var clusterName string
@@ -47,7 +46,7 @@ func newExecCmd() *cobra.Command {
 		ips     []string
 		cluster *v2.Cluster
 	)
-	var execCmd = &cobra.Command{
+	execCmd := &cobra.Command{
 		Use:     "exec",
 		Short:   "Execute shell command or script on specified nodes",
 		Example: exampleExec,
@@ -61,13 +60,15 @@ func newExecCmd() *cobra.Command {
 			return
 		},
 	}
-	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run commands")
-	execCmd.Flags().StringSliceVarP(&roles, "roles", "r", []string{}, "run command on nodes with role")
+	execCmd.Flags().
+		StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to run commands")
+	execCmd.Flags().
+		StringSliceVarP(&roles, "roles", "r", []string{}, "run command on nodes with role")
 	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
 	return execCmd
 }
 
-func getTargets(cluster *v2.Cluster, ips []string, roles []string) []string {
+func getTargets(cluster *v2.Cluster, ips, roles []string) []string {
 	if len(ips) > 0 {
 		return ips
 	}
@@ -81,16 +82,15 @@ func getTargets(cluster *v2.Cluster, ips []string, roles []string) []string {
 	return targets
 }
 
-func runCommand(cluster *v2.Cluster, targets []string, args []string) error {
+func runCommand(cluster *v2.Cluster, targets, args []string) error {
 	execer, err := exec.New(ssh.NewCacheClientFromCluster(cluster, true))
 	if err != nil {
 		return err
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range targets {
-		ip := ipAddr
 		eg.Go(func() error {
-			return execer.CmdAsync(ip, args...)
+			return execer.CmdAsync(ipAddr, args...)
 		})
 	}
 	return eg.Wait()

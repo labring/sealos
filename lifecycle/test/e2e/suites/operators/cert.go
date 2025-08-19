@@ -30,13 +30,13 @@ func newCertClient(sealosCmd *cmd.SealosCmd, clusterName string) FakeCertInterfa
 var _ FakeCertInterface = &fakeCertClient{}
 
 type fakeCertClient struct {
-	//cmd.Interface
+	// cmd.Interface
 	*cmd.SealosCmd
 	clusterName string
 }
 
 func (c *fakeCertClient) AddDomain(domain string) error {
-	return c.SealosCmd.Cert(&cmd.CertOptions{
+	return c.Cert(&cmd.CertOptions{
 		Cluster: c.clusterName,
 		AltName: []string{domain},
 	})

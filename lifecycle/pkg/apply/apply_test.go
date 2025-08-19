@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package apply_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/spf13/cobra"
-
+	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/spf13/cobra"
 )
 
 func Test_NewApplierFromFile(t *testing.T) {
@@ -76,17 +76,21 @@ func Test_NewApplierFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewApplierFromFile(&cobra.Command{
+			_, err := apply.NewApplierFromFile(&cobra.Command{
 				Use: "mock",
 			}, "../clusterfile/testdata/clusterfile.yaml",
-				&Args{
+				&apply.Args{
 					Values:    tt.args.values,
 					Sets:      tt.args.sets,
 					CustomEnv: tt.args.customEnv,
 				})
 			t.Log(err)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewApplierFromFile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"NewApplierFromFile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 		})
 	}
@@ -95,7 +99,7 @@ func Test_NewApplierFromFile(t *testing.T) {
 func TestNewApplierFromFile(t *testing.T) {
 	type args struct {
 		path string
-		args *Args
+		args *apply.Args
 	}
 	tests := []struct {
 		name    string
@@ -107,7 +111,7 @@ func TestNewApplierFromFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewApplierFromFile(&cobra.Command{
+			got, err := apply.NewApplierFromFile(&cobra.Command{
 				Use: "mock",
 			}, tt.args.path, tt.args.args)
 			if (err != nil) != tt.wantErr {

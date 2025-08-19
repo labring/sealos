@@ -17,20 +17,18 @@ package types
 import (
 	"fmt"
 
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
-
 	"github.com/imdario/mergo"
+	"github.com/labring/sealos/pkg/runtime/decode"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	versionutil "k8s.io/apimachinery/pkg/util/version"
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm" // internal version
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
-
-	"github.com/labring/sealos/pkg/runtime/decode"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 )
 
 //nolint:all
@@ -44,7 +42,7 @@ type KubeadmConfig struct {
 }
 
 type ConvertedKubeadmConfig struct {
-	InitConfiguration, ClusterConfiguration, JoinConfiguration, KubeProxyConfiguration, KubeletConfiguration interface{}
+	InitConfiguration, ClusterConfiguration, JoinConfiguration, KubeProxyConfiguration, KubeletConfiguration any
 }
 
 func NewKubeadmConfig() *KubeadmConfig {
@@ -108,7 +106,11 @@ func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
 // if defaultKubeadmConfig file not exist, use default raw kubeadm Config to merge k.KubeConfigSpec empty value
 func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	if kubeadmYamlPath == "" {
-		defaultKubeadmConfig, err := LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, decode.CRDFromString)
+		defaultKubeadmConfig, err := LoadKubeadmConfigs(
+			k.FetchDefaultKubeadmConfig(),
+			false,
+			decode.CRDFromString,
+		)
 		if err != nil {
 			return err
 		}
@@ -120,11 +122,11 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	logger.Debug("trying to merge kubeadm configs from file %s", kubeadmYamlPath)
 	kc, err := LoadKubeadmConfigs(kubeadmYamlPath, false, decode.CRDFromFile)
 	if err != nil {
-		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
+		return fmt.Errorf("failed to load kubeadm config from %s: %w", kubeadmYamlPath, err)
 	}
 	err = mergo.Merge(k, kc, defaultMergeOpts...)
 	if err != nil {
-		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
+		return fmt.Errorf("failed to merge kubeadm config from %s: %w", kubeadmYamlPath, err)
 	}
 	return nil
 }
@@ -213,7 +215,7 @@ func (k *KubeadmConfig) SetDefaults() {
 }
 
 func (k *KubeadmConfig) SetKubeVersion(version string) {
-	k.ClusterConfiguration.KubernetesVersion = version
+	k.KubernetesVersion = version
 }
 
 func (k *KubeadmConfig) SetAPIVersion(apiVersion string) {
@@ -223,11 +225,16 @@ func (k *KubeadmConfig) SetAPIVersion(apiVersion string) {
 }
 
 func (k *KubeadmConfig) FinalizeFeatureGatesConfiguration() {
-	if k.ClusterConfiguration.KubernetesVersion == "" {
+	if k.KubernetesVersion == "" {
 		panic("kubernetesVersion must not been null")
 	}
-	extraArgs := [][]kubeadm.Arg{k.ClusterConfiguration.ControllerManager.ExtraArgs, k.ClusterConfiguration.APIServer.ExtraArgs, k.ClusterConfiguration.Scheduler.ExtraArgs}
-	if versionutil.MustParseSemantic(k.ClusterConfiguration.KubernetesVersion).LessThan(versionutil.MustParseSemantic("1.19.0")) {
+	extraArgs := [][]kubeadm.Arg{
+		k.ControllerManager.ExtraArgs,
+		k.APIServer.ExtraArgs,
+		k.Scheduler.ExtraArgs,
+	}
+	if versionutil.MustParseSemantic(k.ClusterConfiguration.KubernetesVersion).
+		LessThan(versionutil.MustParseSemantic("1.19.0")) {
 		for i, args := range extraArgs {
 			for j, v := range args {
 				if v.Name == "cluster-signing-duration" {
@@ -247,15 +254,17 @@ func (k *KubeadmConfig) FinalizeFeatureGatesConfiguration() {
 		}
 		for j, v := range args {
 			if v.Name == "feature-gates" && v.Value != "" {
-				newValue := updateFeatureGatesConfiguration(v.Value, k.ClusterConfiguration.KubernetesVersion).(string)
+				//nolint:errcheck
+				newValue := updateFeatureGatesConfiguration(v.Value, k.KubernetesVersion).(string)
 				args[j].Value = newValue
 			}
 		}
 		extraArgs[i] = args
 	}
-
+	//nolint:errcheck
 	k.KubeletConfiguration.FeatureGates = updateFeatureGatesConfiguration(
-		k.KubeletConfiguration.FeatureGates, k.ClusterConfiguration.KubernetesVersion).(map[string]bool)
+
+		k.KubeletConfiguration.FeatureGates, k.KubernetesVersion).(map[string]bool)
 }
 
 // https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates-removed/
@@ -265,10 +274,14 @@ var featureGatesUpdate = map[string][]string{
 	"EphemeralContainers": {"AtLeast", "v1.26.0"},
 }
 
-func deleteFeatureMap[T string | bool](currentFeature map[string]T, versionStr string) map[string]T {
+func deleteFeatureMap[T string | bool](
+	currentFeature map[string]T,
+	versionStr string,
+) map[string]T {
 	for k, v := range featureGatesUpdate {
 		if v[0] == "LessThan" &&
-			versionutil.MustParseSemantic(versionStr).LessThan(versionutil.MustParseSemantic(v[1])) {
+			versionutil.MustParseSemantic(versionStr).
+				LessThan(versionutil.MustParseSemantic(v[1])) {
 			delete(currentFeature, k)
 		}
 		if v[0] == "AtLeast" &&
@@ -293,9 +306,13 @@ func updateFeatureGatesConfiguration(featureGates any, version string) any {
 	return nil
 }
 
-func LoadKubeadmConfigs(arg string, setDefaults bool, decodeFunc func(arg string, kind string) (interface{}, error)) (*KubeadmConfig, error) {
+func LoadKubeadmConfigs(
+	arg string,
+	setDefaults bool,
+	decodeFunc func(arg, kind string) (any, error),
+) (*KubeadmConfig, error) {
 	if setDefaults {
-		decodeFunc = func(arg string, kind string) (interface{}, error) {
+		decodeFunc = func(arg, kind string) (any, error) {
 			ret, err := decodeFunc(arg, kind)
 			if err != nil {
 				return nil, err
@@ -311,30 +328,35 @@ func LoadKubeadmConfigs(arg string, setDefaults bool, decodeFunc func(arg string
 	if err != nil {
 		return nil, err
 	} else if initConfig != nil {
+		//nolint:errcheck
 		kubeadmConfig.InitConfiguration = *initConfig.(*kubeadm.InitConfiguration)
 	}
 	clusterConfig, err := decodeFunc(arg, decode.ClusterConfiguration)
 	if err != nil {
 		return nil, err
 	} else if clusterConfig != nil {
+		//nolint:errcheck
 		kubeadmConfig.ClusterConfiguration = *clusterConfig.(*kubeadm.ClusterConfiguration)
 	}
 	kubeProxyConfig, err := decodeFunc(arg, decode.KubeProxyConfiguration)
 	if err != nil {
 		return nil, err
 	} else if kubeProxyConfig != nil {
+		//nolint:errcheck
 		kubeadmConfig.KubeProxyConfiguration = *kubeProxyConfig.(*kubeproxyconfigv1alpha1.KubeProxyConfiguration)
 	}
 	kubeletConfig, err := decodeFunc(arg, decode.KubeletConfiguration)
 	if err != nil {
 		return nil, err
 	} else if kubeletConfig != nil {
+		//nolint:errcheck
 		kubeadmConfig.KubeletConfiguration = *kubeletConfig.(*kubeletconfigv1beta1.KubeletConfiguration)
 	}
 	joinConfig, err := decodeFunc(arg, decode.JoinConfiguration)
 	if err != nil {
 		return nil, err
 	} else if joinConfig != nil {
+		//nolint:errcheck
 		kubeadmConfig.JoinConfiguration = *joinConfig.(*kubeadm.JoinConfiguration)
 	}
 	return kubeadmConfig, nil

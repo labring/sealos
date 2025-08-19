@@ -31,6 +31,7 @@ func WithCommands(ctx context.Context, commands []string) context.Context {
 func GetCommands(ctx context.Context) []string {
 	v := ctx.Value(commandKey)
 	if v != nil {
+		//nolint:errcheck
 		return v.([]string)
 	}
 	return nil
@@ -44,6 +45,7 @@ func WithEnvs(ctx context.Context, envs map[string]string) context.Context {
 func GetEnvs(ctx context.Context) map[string]string {
 	v := ctx.Value(commandKey)
 	if v != nil {
+		//nolint:errcheck
 		return v.(map[string]string)
 	}
 	return nil

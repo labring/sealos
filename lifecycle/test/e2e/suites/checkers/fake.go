@@ -22,20 +22,16 @@ import (
 	"os"
 	"path/filepath"
 
-	v1 "k8s.io/api/core/v1"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
 	"github.com/labring/sealos/pkg/types/v1beta1"
-
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
 type FakeInterface interface {
@@ -152,7 +148,16 @@ func (f *fakeClient) loadInitConfig() error {
 	}
 	yamls := utils.ToYalms(string(data))
 	clusterConfigFn := func() ([]byte, error) {
-		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kubeadm-config", "-o", "yaml")
+		cfg, err := f.cmd.Exec(
+			"kubectl",
+			"get",
+			"cm",
+			"-n",
+			"kube-system",
+			"kubeadm-config",
+			"-o",
+			"yaml",
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +166,16 @@ func (f *fakeClient) loadInitConfig() error {
 		return []byte(cm.Data["ClusterConfiguration"]), nil
 	}
 	kubeproxyConfigFn := func() ([]byte, error) {
-		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kube-proxy", "-o", "yaml")
+		cfg, err := f.cmd.Exec(
+			"kubectl",
+			"get",
+			"cm",
+			"-n",
+			"kube-system",
+			"kube-proxy",
+			"-o",
+			"yaml",
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +184,16 @@ func (f *fakeClient) loadInitConfig() error {
 		return []byte(cm.Data["config.conf"]), nil
 	}
 	kubeletConfigFn := func() ([]byte, error) {
-		cfg, err := f.cmd.Exec("kubectl", "get", "cm", "-n", "kube-system", "kubelet-config", "-o", "yaml")
+		cfg, err := f.cmd.Exec(
+			"kubectl",
+			"get",
+			"cm",
+			"-n",
+			"kube-system",
+			"kubelet-config",
+			"-o",
+			"yaml",
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -185,6 +208,8 @@ func (f *fakeClient) loadInitConfig() error {
 		switch kind {
 		case "InitConfiguration":
 			_ = yaml.Unmarshal([]byte(yamlString), &f.InitConfiguration)
+		case "ClusterConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &f.ClusterConfiguration)
 		}
 	}
 	kubeadmCfg, err := clusterConfigFn()

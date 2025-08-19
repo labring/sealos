@@ -20,10 +20,9 @@ import (
 	"time"
 
 	"github.com/containers/storage/pkg/homedir"
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
-
-	"github.com/labring/sealos/pkg/utils/file"
 )
 
 type Option struct {
@@ -42,10 +41,26 @@ func (o *Option) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.stdout, "stdout", o.stdout, "print logs to stdout")
 	fs.BoolVar(&o.sudo, "sudo", o.sudo, "enable sudo, user provide must be a superuser or sudoer")
 	fs.StringVarP(&o.user, "user", "u", o.user, "username to authenticate as")
-	fs.StringVarP(&o.password, "password", "p", o.password, "use given password to authenticate with")
-	fs.StringVarP(&o.privateKey, "private-key", "i", o.privateKey,
-		"selects a file from which the identity (private key) for public key authentication is read")
-	fs.StringVar(&o.passphrase, "passphrase", o.passphrase, "passphrase for decrypting a PEM encoded private key")
+	fs.StringVarP(
+		&o.password,
+		"password",
+		"p",
+		o.password,
+		"use given password to authenticate with",
+	)
+	fs.StringVarP(
+		&o.privateKey,
+		"private-key",
+		"i",
+		o.privateKey,
+		"selects a file from which the identity (private key) for public key authentication is read",
+	)
+	fs.StringVar(
+		&o.passphrase,
+		"passphrase",
+		o.passphrase,
+		"passphrase for decrypting a PEM encoded private key",
+	)
 	fs.DurationVar(&o.timeout, "timeout", o.timeout, "ssh connection establish timeout")
 }
 

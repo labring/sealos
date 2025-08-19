@@ -112,8 +112,10 @@ func tryReadVariableName(input string) (string, bool, int) {
 		// and the first rune in the string.
 		var variableName string
 		var i int
+		//nolint:intrange
 		for i = 0; i < len(input); i++ {
-			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) && input[i] != '_' {
+			if !unicode.IsLetter(rune(input[i])) && !unicode.IsDigit(rune(input[i])) &&
+				input[i] != '_' {
 				break
 			}
 			variableName += string(input[i])

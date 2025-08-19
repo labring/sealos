@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/spf13/pflag"
 )
 
 type Cluster struct {
@@ -32,9 +31,14 @@ type Cluster struct {
 }
 
 func (c *Cluster) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
-	fs.StringVar(&c.Masters, "masters", "", fmt.Sprintf("masters to %s", verb))
-	fs.StringVar(&c.Nodes, "nodes", "", fmt.Sprintf("nodes to %s", verb))
-	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
+	fs.StringVar(&c.Masters, "masters", "", "masters to "+verb)
+	fs.StringVar(&c.Nodes, "nodes", "", "nodes to "+verb)
+	fs.StringVar(
+		&c.ClusterName,
+		"cluster",
+		"default",
+		fmt.Sprintf("name of cluster to applied %s action", action),
+	)
 }
 
 type ClusterName struct {
@@ -42,7 +46,12 @@ type ClusterName struct {
 }
 
 func (c *ClusterName) RegisterFlags(fs *pflag.FlagSet, _, action string) {
-	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
+	fs.StringVar(
+		&c.ClusterName,
+		"cluster",
+		"default",
+		fmt.Sprintf("name of cluster to applied %s action", action),
+	)
 }
 
 type SSH struct {
@@ -56,9 +65,19 @@ type SSH struct {
 func (s *SSH) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&s.User, "user", "u", "", "username to authenticate as")
 	fs.StringVarP(&s.Password, "passwd", "p", "", "use given password to authenticate with")
-	fs.StringVarP(&s.Pk, "pk", "i", path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
-		"selects a file from which the identity (private key) for public key authentication is read")
-	fs.StringVar(&s.PkPassword, "pk-passwd", "", "passphrase for decrypting a PEM encoded private key")
+	fs.StringVarP(
+		&s.Pk,
+		"pk",
+		"i",
+		path.Join(constants.GetHomeDir(), ".ssh", "id_rsa"),
+		"selects a file from which the identity (private key) for public key authentication is read",
+	)
+	fs.StringVar(
+		&s.PkPassword,
+		"pk-passwd",
+		"",
+		"passphrase for decrypting a PEM encoded private key",
+	)
 	fs.Uint16Var(&s.Port, "port", 22, "port to connect to on the remote host")
 }
 
@@ -73,9 +92,20 @@ type RunArgs struct {
 func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
 	arg.Cluster.RegisterFlags(fs, "run with", "run")
 	arg.SSH.RegisterFlags(fs)
-	fs.StringSliceVarP(&arg.CustomEnv, "env", "e", []string{}, "environment variables to be set for images")
+	fs.StringSliceVarP(
+		&arg.CustomEnv,
+		"env",
+		"e",
+		[]string{},
+		"environment variables to be set for images",
+	)
 	fs.StringSliceVar(&arg.CustomCMD, "cmd", []string{}, "override CMD directive in images")
-	fs.StringSliceVar(&arg.CustomConfigFiles, "config-file", []string{}, "path of custom config files, to use to replace the resource")
+	fs.StringSliceVar(
+		&arg.CustomConfigFiles,
+		"config-file",
+		[]string{},
+		"path of custom config files, to use to replace the resource",
+	)
 }
 
 type Args struct {
@@ -88,8 +118,18 @@ type Args struct {
 func (arg *Args) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&arg.Values, "values", []string{}, "values file to apply into Clusterfile")
 	fs.StringSliceVar(&arg.Sets, "set", []string{}, "set values on the command line")
-	fs.StringSliceVar(&arg.CustomEnv, "env", []string{}, "environment variables to be set for images")
-	fs.StringSliceVar(&arg.CustomConfigFiles, "config-file", []string{}, "path of custom config files, to use to replace the resource")
+	fs.StringSliceVar(
+		&arg.CustomEnv,
+		"env",
+		[]string{},
+		"environment variables to be set for images",
+	)
+	fs.StringSliceVar(
+		&arg.CustomConfigFiles,
+		"config-file",
+		[]string{},
+		"path of custom config files, to use to replace the resource",
+	)
 }
 
 type ResetArgs struct {

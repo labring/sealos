@@ -23,11 +23,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/emirpasic/gods/maps/linkedhashmap"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	stringsutils "github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/emirpasic/gods/maps/linkedhashmap"
 )
 
 type HostFile struct {
@@ -40,15 +39,16 @@ type hostname struct {
 	IP      string
 }
 
-func newHostname(comment string, domain string, ip string) *hostname {
+func newHostname(comment, domain, ip string) *hostname {
 	return &hostname{comment, domain, ip}
 }
 
 func (h *hostname) toString() string {
 	return h.Comment + h.IP + " " + h.Domain + "\n"
 }
+
 func appendToFile(filePath string, hostname *hostname) {
-	fp, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
+	fp, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		logger.Warn("failed opening file %s : %s", filePath, err)
 		return
@@ -94,7 +94,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 		}
 		tmpHostnameArr := strings.Fields(str)
 		curDomain := strings.Join(tmpHostnameArr[1:], " ")
-		//if !iputils.CheckDomain(curDomain) {
+		// if !iputils.CheckDomain(curDomain) {
 		//	return lm, errors.New(" file contain error domain" + curDomain)
 		//}
 		curIP := stringsutils.TrimSpaceWS(tmpHostnameArr[0])
@@ -111,7 +111,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 	return lm, nil
 }
 
-func (h *HostFile) AppendHost(domain string, ip string) {
+func (h *HostFile) AppendHost(domain, ip string) {
 	if domain == "" || ip == "" {
 		return
 	}
@@ -126,14 +126,14 @@ func (h *HostFile) writeToFile(hostnameMap *linkedhashmap.Map, path string) {
 		return
 	}
 
-	fp, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0644)
+	fp, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o644)
 	if err != nil {
 		logger.Warn("open file '%s' failed: %v", path, err)
 		return
 	}
 	defer fp.Close()
 
-	hostnameMap.Each(func(key interface{}, value interface{}) {
+	hostnameMap.Each(func(key, value any) {
 		if v, ok := value.(*hostname); ok {
 			_, writeErr := fp.WriteString(v.toString())
 			if writeErr != nil {
@@ -191,7 +191,7 @@ func (h *HostFile) ListCurrentHosts() {
 	if currHostsMap == nil {
 		return
 	}
-	currHostsMap.Each(func(key interface{}, value interface{}) {
+	currHostsMap.Each(func(key, value any) {
 		if v, ok := value.(*hostname); ok {
 			fmt.Print(v.toString())
 		}

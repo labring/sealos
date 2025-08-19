@@ -23,7 +23,10 @@ import (
 	"strings"
 )
 
-func statDir(dirPath, recPath string, includeDir, isDirOnly, followSymlinks bool) ([]string, error) {
+func statDir(
+	dirPath, recPath string,
+	includeDir, isDirOnly, followSymlinks bool,
+) ([]string, error) {
 	dir, err := os.Open(dirPath)
 	if err != nil {
 		return nil, err
@@ -43,7 +46,8 @@ func statDir(dirPath, recPath string, includeDir, isDirOnly, followSymlinks bool
 
 		relPath := path.Join(recPath, fi.Name())
 		curPath := path.Join(dirPath, fi.Name())
-		if fi.IsDir() {
+		switch {
+		case fi.IsDir():
 			if includeDir {
 				statList = append(statList, relPath+"/")
 			}
@@ -52,9 +56,9 @@ func statDir(dirPath, recPath string, includeDir, isDirOnly, followSymlinks bool
 				return nil, err
 			}
 			statList = append(statList, s...)
-		} else if !isDirOnly {
+		case !isDirOnly:
 			statList = append(statList, relPath)
-		} else if followSymlinks && fi.Mode()&os.ModeSymlink != 0 {
+		case followSymlinks && fi.Mode()&os.ModeSymlink != 0:
 			link, err := os.Readlink(curPath)
 			if err != nil {
 				return nil, err
@@ -170,7 +174,7 @@ func GetFileListBySuffix(dirPath, suffix string) ([]string, error) {
 // It returns error when error occurs in underlying functions.
 func CopyDirV3(srcPath, destPath string, filters ...func(filePath string) bool) error {
 	// Check if target directory exists.
-	//if IsExist(destPath) {
+	// if IsExist(destPath) {
 	//	return errors.New("file or directory alreay exists: " + destPath)
 	//}
 

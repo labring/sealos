@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package maps
+package maps_test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 func TestMergeMap(t *testing.T) {
@@ -110,7 +112,7 @@ func TestMergeMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data := Merge(tt.args.dst, tt.args.src)
+			data := maps.Merge(tt.args.dst, tt.args.src)
 			if !reflect.DeepEqual(data, tt.want) {
 				t.Errorf("MergeMap() = %v, want %v", data, tt.want)
 			}
@@ -119,6 +121,6 @@ func TestMergeMap(t *testing.T) {
 }
 
 func TestStringToMap(_ *testing.T) {
-	data := FromString("address=reg.real-ai.cn,auth=xxx", ",")
+	data := maps.FromString("address=reg.real-ai.cn,auth=xxx", ",")
 	fmt.Println(data["address"])
 }

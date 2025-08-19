@@ -40,7 +40,7 @@ type Bash interface {
 	CheckBash(host string) string
 	InitCRIBash(host string) string
 	CleanCRIBash(host string) string
-	WrapBash(host string, shell string) string
+	WrapBash(host, shell string) string
 }
 
 type bash struct {
@@ -51,14 +51,14 @@ type bash struct {
 
 func (b *bash) getFromRenderContextOrDefault(key string) string {
 	if val, ok := b.renderContext[key]; ok {
-		return fmt.Sprintf("bash %s", val)
+		return "bash " + val
 	}
 	return fmt.Sprintf("bash %s.sh", key)
 }
 
 func (b *bash) getFromRenderContext(key string) string {
 	if val, ok := b.renderContext[key]; ok {
-		return fmt.Sprintf("bash %s", val)
+		return "bash " + val
 	}
 	return ""
 }
@@ -93,10 +93,19 @@ func (b *bash) CleanRegistryBash(host string) string {
 func (b *bash) InitCRIBash(host string) string {
 	return b.WrapBash(host, b.getFromRenderContext(renderInitCRI))
 }
+
 func (b *bash) CleanCRIBash(host string) string {
 	return b.WrapBash(host, b.getFromRenderContext(renderCleanCRI))
 }
 
-func NewBash(clusterName string, renderContext map[string]string, shellWrapper func(string, string) string) Bash {
-	return &bash{pathResolver: NewPathResolver(clusterName), renderContext: renderContext, wrap: shellWrapper}
+func NewBash(
+	clusterName string,
+	renderContext map[string]string,
+	shellWrapper func(string, string) string,
+) Bash {
+	return &bash{
+		pathResolver:  NewPathResolver(clusterName),
+		renderContext: renderContext,
+		wrap:          shellWrapper,
+	}
 }

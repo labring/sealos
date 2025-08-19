@@ -18,8 +18,7 @@ package bootstrap
 
 import (
 	"fmt"
-
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -36,12 +35,12 @@ func (*apiServerHostApplier) Undo(ctx Context, host string) error {
 func (a *apiServerHostApplier) Apply(ctx Context, host string) error {
 	if slices.Contains(ctx.GetCluster().GetMasterIPAndPortList(), host) {
 		if err := ctx.GetRemoter().HostsAdd(host, ctx.GetCluster().GetMaster0IP(), constants.DefaultAPIServerDomain); err != nil {
-			return fmt.Errorf("failed to add hosts: %v", err)
+			return fmt.Errorf("failed to add hosts: %w", err)
 		}
 		return nil
 	}
 	if err := ctx.GetRemoter().HostsAdd(host, ctx.GetCluster().GetVIP(), constants.DefaultAPIServerDomain); err != nil {
-		return fmt.Errorf("failed to add hosts: %v", err)
+		return fmt.Errorf("failed to add hosts: %w", err)
 	}
 
 	return nil
@@ -61,7 +60,7 @@ func (*lvscareHostApplier) Undo(ctx Context, host string) error {
 
 func (a *lvscareHostApplier) Apply(ctx Context, host string) error {
 	if err := ctx.GetRemoter().HostsAdd(host, iputils.GetHostIP(host), constants.DefaultLvscareDomain); err != nil {
-		return fmt.Errorf("failed to add hosts: %v", err)
+		return fmt.Errorf("failed to add hosts: %w", err)
 	}
 	return nil
 }

@@ -19,19 +19,31 @@ package cert
 import "fmt"
 
 // GenerateCert generate all cert.
-func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error {
-	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain)
+func GenerateCert(
+	certPATH, certEtcdPATH string,
+	altNames []string,
+	hostIP, hostName, serviceCIRD, dnsDomain string,
+) error {
+	certConfig, err := NewSealosCertMetaData(
+		certPATH,
+		certEtcdPATH,
+		altNames,
+		serviceCIRD,
+		hostName,
+		hostIP,
+		dnsDomain,
+	)
 	if err != nil {
-		return fmt.Errorf("generator cert config failed %v", err)
+		return fmt.Errorf("generator cert config failed %w", err)
 	}
 	return certConfig.GenerateAll()
 }
 
-func GenerateRegistryCert(registryCertPath string, BaseName string) error {
+func GenerateRegistryCert(registryCertPath, baseName string) error {
 	regCertConfig := Config{
 		Path:         registryCertPath,
-		BaseName:     BaseName,
-		CommonName:   BaseName,
+		BaseName:     baseName,
+		CommonName:   baseName,
 		Organization: []string{"labring"},
 		Year:         100,
 	}

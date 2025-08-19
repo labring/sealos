@@ -35,11 +35,19 @@ func (f *fakeCgroupClient) Verify() error {
 		return err
 	}
 	if strings.TrimSpace(string(cgroup)) != f.data {
-		return fmt.Errorf("cgroup driver %s not match %s from sealctl", strings.TrimSpace(string(cgroup)), f.data)
+		return fmt.Errorf(
+			"cgroup driver %s not match %s from sealctl",
+			strings.TrimSpace(string(cgroup)),
+			f.data,
+		)
 	}
 
 	if f.KubeletConfiguration.CgroupDriver != f.data {
-		return fmt.Errorf("kubelet config cgroup driver %s not match %s", f.KubeletConfiguration.CgroupDriver, f.data)
+		return fmt.Errorf(
+			"kubelet config cgroup driver %s not match %s",
+			f.KubeletConfiguration.CgroupDriver,
+			f.data,
+		)
 	}
 
 	return nil

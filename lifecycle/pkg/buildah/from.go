@@ -30,11 +30,10 @@ import (
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
-
 	"github.com/labring/sealos/pkg/buildah/internal/util"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 type fromReply struct {
@@ -85,25 +84,91 @@ func newDefaultFromReply() *fromReply {
 
 func (opts *fromReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
-	fs.StringVar(&opts.authfile, "authfile", opts.authfile, "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&opts.certDir, "cert-dir", opts.certDir, "use certificates at the specified path to access the registry")
+	fs.StringVar(
+		&opts.authfile,
+		"authfile",
+		opts.authfile,
+		"path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override",
+	)
+	fs.StringVar(
+		&opts.certDir,
+		"cert-dir",
+		opts.certDir,
+		"use certificates at the specified path to access the registry",
+	)
 	fs.StringVar(&opts.cidfile, "cidfile", opts.cidfile, "write the container ID to the file")
-	fs.StringVar(&opts.creds, "creds", opts.creds, "use `[username[:password]]` for accessing the registry")
-	fs.StringVarP(&opts.format, "format", "f", opts.format, "`format` of the image manifest and metadata")
+	fs.StringVar(
+		&opts.creds,
+		"creds",
+		opts.creds,
+		"use `[username[:password]]` for accessing the registry",
+	)
+	fs.StringVarP(
+		&opts.format,
+		"format",
+		"f",
+		opts.format,
+		"`format` of the image manifest and metadata",
+	)
 	fs.StringVar(&opts.name, "name", opts.name, "`name` for the working container")
-	fs.StringVar(&opts.pull, "pull", opts.pull, "pull the image from the registry if newer or not present in store, if false, only pull the image if not present, if always, pull the image even if the named image is present in store, if never, only use the image present in store if available")
-	fs.Lookup("pull").NoOptDefVal = "true" //allow `--pull ` to be set to `true` as expected.
+	fs.StringVar(
+		&opts.pull,
+		"pull",
+		opts.pull,
+		"pull the image from the registry if newer or not present in store, if false, only pull the image if not present, if always, pull the image even if the named image is present in store, if never, only use the image present in store if available",
+	)
+	fs.Lookup("pull").NoOptDefVal = "true" // allow `--pull ` to be set to `true` as expected.
 
-	fs.BoolVar(&opts.pullAlways, "pull-always", opts.pullAlways, "pull the image even if the named image is present in store")
-	fs.BoolVar(&opts.pullNever, "pull-never", opts.pullNever, "do not pull the image, use the image present in store if available")
-	fs.BoolVarP(&opts.quiet, "quiet", "q", opts.quiet, "don't output progress information when pulling images")
-	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
+	fs.BoolVar(
+		&opts.pullAlways,
+		"pull-always",
+		opts.pullAlways,
+		"pull the image even if the named image is present in store",
+	)
+	fs.BoolVar(
+		&opts.pullNever,
+		"pull-never",
+		opts.pullNever,
+		"do not pull the image, use the image present in store if available",
+	)
+	fs.BoolVarP(
+		&opts.quiet,
+		"quiet",
+		"q",
+		opts.quiet,
+		"don't output progress information when pulling images",
+	)
+	fs.StringVar(
+		&opts.signaturePolicy,
+		"signature-policy",
+		opts.signaturePolicy,
+		"`pathname` of signature policy file (not usually used)",
+	)
 	fs.StringVar(&suffix, "suffix", "", "suffix to add to intermediate containers")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	bailOnError(markFlagsHidden(fs, "pull-always", "pull-never", "suffix", "signature-policy", "tls-verify"), "")
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		opts.tlsVerify,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	bailOnError(
+		markFlagsHidden(
+			fs,
+			"pull-always",
+			"pull-never",
+			"suffix",
+			"signature-policy",
+			"tls-verify",
+		),
+		"",
+	)
 
 	// Add in the common flags
-	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(opts.FromAndBudResults, opts.UserNSResults, opts.NameSpaceResults)
+	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(
+		opts.FromAndBudResults,
+		opts.UserNSResults,
+		opts.NameSpaceResults,
+	)
 	bailOnError(err, "failed to setup From and Bud flags")
 
 	fs.AddFlagSet(&fromAndBudFlags)
@@ -139,7 +204,7 @@ func newFromCommand() *cobra.Command {
 func onBuild(builder *buildah.Builder, quiet bool) error {
 	ctr := 0
 	for _, onBuildSpec := range builder.OnBuild() {
-		ctr = ctr + 1
+		ctr++
 		commands := strings.Split(onBuildSpec, " ")
 		command := strings.ToUpper(commands[0])
 		args := commands[1:]
@@ -270,7 +335,7 @@ func fromCmd(c *cobra.Command, args []string, iopts *fromReply) error {
 	}
 	if iopts.cidfile != "" {
 		filePath := iopts.cidfile
-		if err := os.WriteFile(filePath, []byte(builder.ContainerID), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(builder.ContainerID), 0o644); err != nil {
 			return fmt.Errorf("failed to write container ID file %q: %w", filePath, err)
 		}
 	}
@@ -345,7 +410,9 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 		return nil, err
 	}
 
-	commonOpts.Ulimit = append(defaultContainerConfig.Containers.DefaultUlimits, commonOpts.Ulimit...)
+	commonOpts.Ulimit = append(
+		defaultContainerConfig.Containers.DefaultUlimits,
+		commonOpts.Ulimit...)
 
 	decConfig, err := util.DecryptConfig(iopts.DecryptionKeys)
 	if err != nil {
@@ -355,7 +422,11 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 	var pullPushRetryDelay time.Duration
 	pullPushRetryDelay, err = time.ParseDuration(iopts.RetryDelay)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse value provided %q as --retry-delay: %w", iopts.RetryDelay, err)
+		return nil, fmt.Errorf(
+			"unable to parse value provided %q as --retry-delay: %w",
+			iopts.RetryDelay,
+			err,
+		)
 	}
 
 	options := buildah.BuilderOptions{

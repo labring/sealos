@@ -14,20 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package apply_test
 
 import (
 	"testing"
 
-	"github.com/spf13/cobra"
-
+	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/buildah"
+	"github.com/spf13/cobra"
 )
 
 func TestNewClusterFromGenArgs(t *testing.T) {
 	type args struct {
 		imageName []string
-		args      *RunArgs
+		args      *apply.RunArgs
 	}
 	tests := []struct {
 		name    string
@@ -38,8 +38,8 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 			name: "default",
 			args: args{
 				imageName: []string{"docker.io/labring/kubernetes:v1.25.3"},
-				args: &RunArgs{
-					Cluster: &Cluster{
+				args: &apply.RunArgs{
+					Cluster: &apply.Cluster{
 						Masters:     "172.16.1.35",
 						Nodes:       "",
 						ClusterName: "default",
@@ -56,8 +56,8 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 			name: "Success_EmptyHostsAndSSH",
 			args: args{
 				imageName: []string{"docker.io/labring/kubernetes:v1.25.3"},
-				args: &RunArgs{
-					Cluster: &Cluster{
+				args: &apply.RunArgs{
+					Cluster: &apply.Cluster{
 						Masters:     "",
 						Nodes:       "",
 						ClusterName: "default",
@@ -77,7 +77,7 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 			Short: "test",
 		})
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := NewClusterFromGenArgs(&cobra.Command{
+			got, _ := apply.NewClusterFromGenArgs(&cobra.Command{
 				Use: "mock",
 			}, tt.args.args, tt.args.imageName)
 			t.Logf("%s", string(got))
@@ -104,7 +104,7 @@ func Test_genImageInfo(t *testing.T) {
 				Use:   "test",
 				Short: "test",
 			})
-			got, _ := genImageInfo(tt.args.imageName[0])
+			got, _ := apply.GenImageInfo(tt.args.imageName[0])
 			t.Logf("%+v", got)
 		})
 	}

@@ -57,7 +57,8 @@ nohup /tmp/etcd-download-test/etcd --listen-client-urls http://0.0.0.0:2379 \
 `
 
 func (e *Etcd) Install() error {
-	err := os.WriteFile("/tmp/install_etcd.sh", []byte(installScript), 0755)
+	//nolint:gosec
+	err := os.WriteFile("/tmp/install_etcd.sh", []byte(installScript), 0o755)
 	if err != nil {
 		return err
 	}

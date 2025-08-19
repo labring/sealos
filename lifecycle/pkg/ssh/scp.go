@@ -23,13 +23,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/sftp"
-	"github.com/schollz/progressbar/v3"
-	"golang.org/x/crypto/ssh"
-
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/progress"
+	"github.com/pkg/sftp"
+	"github.com/schollz/progressbar/v3"
+	"golang.org/x/crypto/ssh"
 )
 
 func (c *Client) RemoteSha256Sum(host, remoteFilePath string) string {
@@ -41,7 +40,7 @@ func (c *Client) RemoteSha256Sum(host, remoteFilePath string) string {
 	return remoteHash
 }
 
-func getOnelineResult(output string, sep string) string {
+func getOnelineResult(output, sep string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", sep), "\n", sep)
 }
 
@@ -76,7 +75,7 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 		return nil, nil, err
 	}
 	// create sftp client
-	if c.Option.sudo || c.Option.user != defaultUsername {
+	if c.sudo || c.user != defaultUsername {
 		sftpClient, err = NewSudoSftpClient(sshClient, c.password)
 	} else {
 		sftpClient, err = sftp.NewClient(sshClient)
@@ -93,7 +92,10 @@ func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client,
 	return sshClient, sftpClient, err
 }
 
-func (c *Client) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
+//nolint:unparam
+func (c *Client) sftpConnect(
+	host string,
+) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
 	err = exponentialBackOffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
 		sshClient, sftpClient, err = c.newClientAndSftpClient(host)
 		return err
@@ -106,12 +108,12 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
 	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
-		return fmt.Errorf("failed to connect: %s", err)
+		return fmt.Errorf("failed to connect: %w", err)
 	}
 
 	f, err := os.Stat(localPath)
 	if err != nil {
-		return fmt.Errorf("get file stat failed %s", err)
+		return fmt.Errorf("get file stat failed %w", err)
 	}
 
 	remoteDir := filepath.Dir(remotePath)
@@ -121,7 +123,7 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 			return err
 		}
 		if err = sftpClient.MkdirAll(remoteDir); err != nil {
-			return fmt.Errorf("failed to Mkdir remote: %v", err)
+			return fmt.Errorf("failed to Mkdir remote: %w", err)
 		}
 	} else if !rfp.IsDir() {
 		return fmt.Errorf("dir of remote file %s is not a directory", remotePath)
@@ -139,28 +141,29 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 		_ = bar.Close()
 	}()
 
-	return c.doCopy(sftpClient, host, localPath, remotePath, bar)
+	return c.doCopy(sftpClient, localPath, remotePath, bar)
 }
 
 func (c *Client) Fetch(host, src, dst string) error {
 	logger.Debug("fetch remote file %s to %s", src, dst)
 	_, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
-		return fmt.Errorf("failed to connect: %s", err)
+		return fmt.Errorf("failed to connect: %w", err)
 	}
 
 	rfp, err := sftpClient.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open remote file %s: %v", src, err)
+		return fmt.Errorf("failed to open remote file %s: %w", src, err)
 	}
 	defer func() {
 		_ = rfp.Close()
 	}()
-	if file.IsDir(dst) {
+	switch {
+	case file.IsDir(dst):
 		dst = filepath.Join(dst, filepath.Base(src))
-	} else if file.IsFile(dst) {
+	case file.IsFile(dst):
 		return fmt.Errorf("local file %s already exists", dst)
-	} else {
+	default:
 		if err := file.MkDirs(filepath.Dir(dst)); err != nil {
 			return err
 		}
@@ -175,28 +178,32 @@ func (c *Client) Fetch(host, src, dst string) error {
 	return err
 }
 
-func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
+func (c *Client) doCopy(
+	client *sftp.Client,
+	src, dest string,
+	epu *progressbar.ProgressBar,
+) error {
 	lfp, err := os.Stat(src)
 	if err != nil {
-		return fmt.Errorf("failed to Stat local: %v", err)
+		return fmt.Errorf("failed to Stat local: %w", err)
 	}
 	if lfp.IsDir() {
 		entries, err := os.ReadDir(src)
 		if err != nil {
-			return fmt.Errorf("failed to ReadDir: %v", err)
+			return fmt.Errorf("failed to ReadDir: %w", err)
 		}
 		if err = client.MkdirAll(dest); err != nil {
-			return fmt.Errorf("failed to Mkdir remote: %v", err)
+			return fmt.Errorf("failed to Mkdir remote: %w", err)
 		}
 		for _, entry := range entries {
-			if err = c.doCopy(client, host, path.Join(src, entry.Name()), path.Join(dest, entry.Name()), epu); err != nil {
+			if err = c.doCopy(client, path.Join(src, entry.Name()), path.Join(dest, entry.Name()), epu); err != nil {
 				return err
 			}
 		}
 	} else {
 		lf, err := os.Open(filepath.Clean(src))
 		if err != nil {
-			return fmt.Errorf("failed to open: %v", err)
+			return fmt.Errorf("failed to open: %w", err)
 		}
 		defer lf.Close()
 
@@ -204,15 +211,15 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		if err = func(tmpName string) error {
 			dstfp, err := client.Create(tmpName)
 			if err != nil {
-				return fmt.Errorf("failed to create: %v", err)
+				return fmt.Errorf("failed to create: %w", err)
 			}
 			defer dstfp.Close()
 
 			if err = dstfp.Chmod(lfp.Mode()); err != nil {
-				return fmt.Errorf("failed to Chmod dst: %v", err)
+				return fmt.Errorf("failed to Chmod dst: %w", err)
 			}
 			if _, err = io.Copy(dstfp, lf); err != nil {
-				return fmt.Errorf("failed to Copy: %v", err)
+				return fmt.Errorf("failed to Copy: %w", err)
 			}
 			return nil
 		}(destTmp); err != nil {
@@ -220,7 +227,7 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		}
 
 		if err = client.PosixRename(destTmp, dest); err != nil {
-			return fmt.Errorf("failed to rename %s to %s: %v", destTmp, dest, err)
+			return fmt.Errorf("failed to rename %s to %s: %w", destTmp, dest, err)
 		}
 
 		_ = epu.Add(1)

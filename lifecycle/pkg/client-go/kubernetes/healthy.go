@@ -21,17 +21,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	netutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // Healthy is an interface for waiting for criteria in Kubernetes to happen
@@ -65,16 +66,29 @@ func (w *kubeHealthy) ForAPI() error {
 	start := time.Now()
 	ctx, cancel := context.WithTimeout(context.Background(), w.timeout)
 	defer cancel()
-	return wait.PollUntilContextCancel(ctx, APICallRetryInterval, true, func(ctx context.Context) (done bool, err error) {
-		healthStatus := 0
-		w.client.Discovery().RESTClient().Get().AbsPath("/healthz").Do(context.TODO()).StatusCode(&healthStatus)
-		if healthStatus != http.StatusOK {
-			return false, nil
-		}
+	return wait.PollUntilContextCancel(
+		ctx,
+		APICallRetryInterval,
+		true,
+		func(ctx context.Context) (done bool, err error) {
+			healthStatus := 0
+			w.client.Discovery().
+				RESTClient().
+				Get().
+				AbsPath("/healthz").
+				Do(context.TODO()).
+				StatusCode(&healthStatus)
+			if healthStatus != http.StatusOK {
+				return false, nil
+			}
 
-		logger.Debug("[apiclient] All control plane components are healthy after %f seconds\n", time.Since(start).Seconds())
-		return true, nil
-	})
+			logger.Debug(
+				"[apiclient] All control plane components are healthy after %f seconds\n",
+				time.Since(start).Seconds(),
+			)
+			return true, nil
+		},
+	)
 }
 
 // ForHealthyKubelet blocks until the kubelet /healthz endpoint returns 'ok',port is 10248
@@ -84,29 +98,49 @@ func (w *kubeHealthy) ForHealthyKubelet(initialTimeout time.Duration, host strin
 	return tryRunCommand(func() error {
 		trans := netutil.SetOldTransportDefaults(&http.Transport{})
 		client := &http.Client{Transport: trans}
-
-		healthzEndpoint, _ := url.JoinPath(fmt.Sprintf("http://%s:%d", host, KubeletHealthzPort), "healthz")
+		hostPort := net.JoinHostPort(host, strconv.Itoa(KubeletHealthzPort))
+		baseURL := "http://" + hostPort
+		healthzEndpoint, _ := url.JoinPath(
+			baseURL,
+			"healthz",
+		)
 		resp, err := client.Get(healthzEndpoint)
 		if err != nil {
 			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n", healthzEndpoint, err)
+			logger.Warn(
+				"[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n",
+				healthzEndpoint,
+				err,
+			)
 			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
 			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
+			logger.Warn(
+				"[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n",
+				healthzEndpoint,
+				resp.StatusCode,
+			)
 			return errors.New("the kubelet healthz endpoint is unhealthy")
 		}
 		b, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n", healthzEndpoint, err)
+			logger.Warn(
+				"[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n",
+				healthzEndpoint,
+				err,
+			)
 			return err
 		}
 		if string(b) != "ok" {
 			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
+			logger.Warn(
+				"[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n",
+				healthzEndpoint,
+				resp.StatusCode,
+			)
 			return errors.New("the kubelet healthz endpoint is unhealthy: resp is " + string(b))
 		}
 
@@ -180,19 +214,27 @@ func printPod(pod *v1.Pod) string {
 					lastRestartDate = terminatedDate
 				}
 			}
-			if container.State.Waiting != nil && container.State.Waiting.Reason != "" {
+
+			switch {
+			case container.State.Waiting != nil && container.State.Waiting.Reason != "":
 				reason = container.State.Waiting.Reason
-			} else if container.State.Terminated != nil && container.State.Terminated.Reason != "" {
-				reason = container.State.Terminated.Reason
-			} else if container.State.Terminated != nil && container.State.Terminated.Reason == "" {
-				if container.State.Terminated.Signal != 0 {
-					reason = fmt.Sprintf("Signal:%d", container.State.Terminated.Signal)
+
+			case container.State.Terminated != nil:
+				if container.State.Terminated.Reason != "" {
+					reason = container.State.Terminated.Reason
 				} else {
-					reason = fmt.Sprintf("ExitCode:%d", container.State.Terminated.ExitCode)
+					if container.State.Terminated.Signal != 0 {
+						reason = fmt.Sprintf("Signal:%d", container.State.Terminated.Signal)
+					} else {
+						reason = fmt.Sprintf("ExitCode:%d", container.State.Terminated.ExitCode)
+					}
 				}
-			} else if container.Ready && container.State.Running != nil {
+
+			case container.Ready && container.State.Running != nil:
 				hasRunning = true
 				readyContainers++
+			default:
+				reason = "UnknownState"
 			}
 		}
 
