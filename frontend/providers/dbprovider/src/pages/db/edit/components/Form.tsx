@@ -192,6 +192,7 @@ const Form = ({
     register,
     setValue,
     getValues,
+    watch,
     formState: { errors }
   } = formHook;
 
@@ -206,23 +207,7 @@ const Form = ({
     return base;
   }, [cpuCores]);
 
-  const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
-    () => [
-      {
-        id: 'baseInfo',
-        label: 'basic',
-        icon: 'formInfo'
-      },
-      {
-        id: 'backupSettings',
-        label: 'backup_settings',
-        icon: 'backupSettings'
-      }
-    ],
-    []
-  );
 
-  const [activeNav, setActiveNav] = useState(navList[0].id);
 
   const Label = ({
     children,
@@ -269,6 +254,43 @@ const Form = ({
     [getValues('dbType')]
   );
 
+  const supportParameterConfig = useMemo(
+    () => ['postgresql', 'mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
+    [getValues('dbType')]
+  );
+
+  const navList: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] =
+    useMemo(() => {
+      const baseNav: { id: string; label: I18nCommonKey; icon: string; isConfig?: boolean }[] = [
+        {
+          id: 'baseInfo',
+          label: 'basic',
+          icon: 'formInfo'
+        }
+      ];
+
+      if (supportBackup) {
+        baseNav.push({
+          id: 'backupSettings',
+          label: 'backup_settings',
+          icon: 'backupSettings'
+        });
+      }
+
+      if (supportParameterConfig) {
+        baseNav.push({
+          id: 'parameterConfig',
+          label: 'ParameterConfig',
+          icon: 'slider',
+          isConfig: true
+        });
+      }
+
+      return baseNav;
+    }, [supportBackup, supportParameterConfig]);
+
+  const [activeNav, setActiveNav] = useState(navList[0].id);
+
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
     let minStorageChange = 1,
@@ -308,6 +330,12 @@ const Form = ({
     }
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
     //eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!getValues('parameterConfig' as any)) {
+      setValue('parameterConfig' as any, {
+        walLevel: 'logical',
+        sharedPreloadLibraries: 'wal2json'
+      });
+    }
   }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
@@ -976,6 +1004,162 @@ const Form = ({
                 </Box>
               </Box>
             </Box>
+          )}
+
+          {/* parameter congif */}
+          {supportParameterConfig && (
+            <Accordion pb={'100px'} id={'parameterConfig'} allowToggle defaultIndex={[]}>
+              <AccordionItem {...boxStyles}>
+                <AccordionButton
+                  {...headerStyles}
+                  justifyContent={'space-between'}
+                  _hover={{ bg: '' }}
+                >
+                  <Flex alignItems={'center'}>
+                    <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.200'} />
+                    {t('ParameterConfig')}
+                    <Center
+                      bg={'grayModern.200'}
+                      minW={'48px'}
+                      px={'8px'}
+                      height={'28px'}
+                      ml={'14px'}
+                      fontSize={'11px'}
+                      borderRadius={'33px'}
+                      color={'grayModern.700'}
+                    >
+                      {t('Option')}
+                    </Center>
+                  </Flex>
+                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
+                </AccordionButton>
+
+                <AccordionPanel px={'42px'} py={'24px'}>
+                  <TableContainer>
+                    <Table variant="unstyled" width={'full'}>
+                      <Thead>
+                        <Tr>
+                          <Th
+                            fontSize={'14px'}
+                            // py="13px"
+                            // px={'24px'}
+                            color={'grayModern.900'}
+                            border={'none'}
+                            _first={{
+                              borderLeftRadius: '6px'
+                            }}
+                            _last={{
+                              borderRightRadius: '6px'
+                            }}
+                          >
+                            {t('dbconfig.parameter_name')}
+                          </Th>
+                          <Th
+                            fontSize={'14px'}
+                            // py="13px"
+                            // px={'24px'}
+                            color={'grayModern.900'}
+                            border={'none'}
+                            _first={{
+                              borderLeftRadius: '6px'
+                            }}
+                            _last={{
+                              borderRightRadius: '6px'
+                            }}
+                          >
+                            {t('dbconfig.parameter_value')}
+                          </Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        <Tr>
+                          <Td w="190px">
+                            <Text fontSize={'14px'} color={'grayModern.900'}>
+                              wal_level
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Input
+                              value={getValues('parameterConfig' as any)?.walLevel || 'logical'}
+                              size="sm"
+                              borderRadius={'md'}
+                              borderColor={'#E8EBF0'}
+                              bg={'#F7F8FA'}
+                              _focusVisible={{
+                                borderColor: 'brightBlue.500',
+                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                bg: '#FFF',
+                                color: '#111824'
+                              }}
+                              _hover={{
+                                borderColor: 'brightBlue.300'
+                              }}
+                              onChange={(e) => {
+                                setValue('parameterConfig' as any, {
+                                  ...getValues('parameterConfig' as any),
+                                  walLevel: e.target.value
+                                });
+                              }}
+                            />
+                            <MyIcon
+                              name="edit"
+                              w={'16px'}
+                              h={'16px'}
+                              color={'grayModern.500'}
+                              cursor={'pointer'}
+                              _hover={{
+                                color: 'brightBlue.500'
+                              }}
+                            />
+                          </Td>
+                        </Tr>
+                        <Tr>
+                          <Td w="190px">
+                            <Text fontSize={'14px'} color={'grayModern.900'}>
+                              shared_preload_libraries
+                            </Text>
+                          </Td>
+                          <Td>
+                            <Input
+                              value={getValues('parameterConfig' as any)?.sharedPreloadLibraries || 'wal2json'}
+                              size="sm"
+                              borderRadius={'md'}
+                              borderColor={'#E8EBF0'}
+                              bg={'#F7F8FA'}
+                              _focusVisible={{
+                                borderColor: 'brightBlue.500',
+                                boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                bg: '#FFF',
+                                color: '#111824'
+                              }}
+                              _hover={{
+                                borderColor: 'brightBlue.300'
+                              }}
+                              onChange={(e) => {
+                                setValue('parameterConfig' as any, {
+                                  ...getValues('parameterConfig' as any),
+                                  sharedPreloadLibraries: e.target.value
+                                });
+                              }}
+                            />
+                            <MyIcon
+                              name="edit"
+                              w={'16px'}
+                              h={'16px'}
+                              color={'grayModern.500'}
+                              cursor={'pointer'}
+                              _hover={{
+                                color: 'brightBlue.500'
+                              }}
+                            />
+                          </Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                </AccordionPanel>
+              </AccordionItem>
+            </Accordion>
           )}
         </Box>
       </Grid>

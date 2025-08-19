@@ -844,3 +844,367 @@ export function json2SwitchMsNode(data: SwitchMsData) {
 
   return yaml.dump(template);
 }
+
+export const json2ParameterConfig = (
+  dbName: string,
+  dbType: string,
+  dbVersion: string,
+  walLevel: string,
+  sharedPreloadLibraries: string
+) => {
+  function buildPostgresYaml() {
+    // Parse PostgreSQL version to get major version (e.g., "16.4.0" -> "16")
+    const majorVersion = dbVersion.split('.')[0];
+
+    if (majorVersion === '16') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql16-cc',
+                defaultMode: 511,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql16-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 511,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql16-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    } else if (majorVersion === '15') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql15-cc',
+                defaultMode: 511,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql15-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 511,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql15-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    } else if (majorVersion === '14') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql14-cc',
+                defaultMode: 292,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql14-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    } else if (majorVersion === '12') {
+      const template = {
+        apiVersion: 'apps.kubeblocks.io/v1alpha1',
+        kind: 'Configuration',
+        metadata: {
+          labels: {
+            'app.kubernetes.io/instance': `${dbName}`,
+            'app.kubernetes.io/managed-by': 'kubeblocks',
+            'apps.kubeblocks.io/component-name': 'postgresql'
+          },
+          name: `${dbName}-postgresql`,
+          namespace: getUserNamespace()
+        },
+        spec: {
+          clusterRef: `${dbName}`,
+          componentName: 'postgresql',
+          configItemDetails: [
+            {
+              configSpec: {
+                constraintRef: 'postgresql12-cc',
+                defaultMode: 292,
+                keys: ['postgresql.conf'],
+                name: 'postgresql-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-configuration',
+                volumeName: 'postgresql-config'
+              },
+              name: 'postgresql-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                keys: ['pgbouncer.ini'],
+                name: 'pgbouncer-configuration',
+                namespace: 'kb-system',
+                templateRef: 'pgbouncer-configuration',
+                volumeName: 'pgbouncer-config'
+              },
+              name: 'pgbouncer-configuration'
+            }
+          ]
+        }
+      };
+      return yaml.dump(template);
+    }
+    throw new Error(`Unsupported PostgreSQL version: ${dbVersion}`);
+  }
+
+  function buildMysqlYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'mysql'
+        },
+        name: `${dbName}-mysql`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mysql',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'mysql8.0-config-constraints',
+              name: 'mysql-consensusset-config',
+              namespace: 'kb-system',
+              reRenderResourceTypes: ['vscale'],
+              templateRef: 'mysql8.0-config-template',
+              volumeName: 'mysql-config'
+            },
+            name: 'mysql-consensusset-config'
+          },
+          {
+            configSpec: {
+              constraintRef: 'mysql-scale-vttablet-config-constraints',
+              name: 'vttablet-config',
+              namespace: 'kb-system',
+              templateRef: 'vttablet-config-template',
+              volumeName: 'mysql-scale-config'
+            },
+            name: 'vttablet-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  function buildMongodbYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'mongodb'
+        },
+        name: `${dbName}-mongodb`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'mongodb',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'mongodb-config-constraints',
+              defaultMode: 256,
+              keys: ['mongodb.conf'],
+              name: 'mongodb-config',
+              namespace: 'kb-system',
+              templateRef: 'mongodb5.0-config-template',
+              volumeName: 'mongodb-config'
+            },
+            name: 'mongodb-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  function buildRedisYaml() {
+    const template = {
+      apiVersion: 'apps.kubeblocks.io/v1alpha1',
+      kind: 'Configuration',
+      metadata: {
+        labels: {
+          'app.kubernetes.io/instance': dbName,
+          'app.kubernetes.io/managed-by': 'kubeblocks',
+          'apps.kubeblocks.io/component-name': 'redis'
+        },
+        name: `${dbName}-redis`,
+        namespace: getUserNamespace()
+      },
+      spec: {
+        clusterRef: dbName,
+        componentName: 'redis',
+        configItemDetails: [
+          {
+            configSpec: {
+              constraintRef: 'redis7-config-constraints',
+              name: 'redis-replication-config',
+              namespace: 'kb-system',
+              reRenderResourceTypes: ['vscale'],
+              templateRef: 'redis7-config-template',
+              volumeName: 'redis-config'
+            },
+            name: 'redis-replication-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'redis-metrics-config',
+              namespace: 'kb-system',
+              templateRef: 'redis-metrics-config',
+              volumeName: 'redis-metrics-config'
+            },
+            name: 'redis-metrics-config'
+          }
+        ]
+      }
+    };
+    return yaml.dump(template);
+  }
+  // Only PostgreSQL is supported for now
+  if (dbType === 'postgresql' || dbType === undefined) {
+    return buildPostgresYaml();
+  } else if (dbType === 'mysql') {
+    return buildMysqlYaml();
+  } else if (dbType === 'mongodb') {
+    return buildMongodbYaml();
+  } else if (dbType === 'redis') {
+    return buildRedisYaml();
+  }
+  throw new Error(`json2ParameterConfig: unsupported dbType ${dbType}`);
+};
