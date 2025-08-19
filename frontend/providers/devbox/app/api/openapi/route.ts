@@ -47,7 +47,7 @@ import {
   ErrorResponseSchema as LifecycleDevboxErrorResponseSchema
 } from '../v1/DevBox/lifecycle/schema';
 import { NextResponse } from 'next/server';
-import {getToolsList} from 'sealos-mcp-sdk';
+import { getToolsList } from 'sealos-mcp-sdk';
 import path from 'path';
 
 const ErrorResponseSchema = z.object({
@@ -57,471 +57,467 @@ const ErrorResponseSchema = z.object({
 });
 
 // generate openapi document
-const tmpOpenApiDocument = (sealosDomain: string,mcpTool:string) => createDocument({
-  openapi: '3.0.0',
-  info: {
-    title: 'Devbox API',
-    version: '1.0.0',
-    description: mcpTool,
-  },
-  tags: [
-    {
-      name: 'Lifecycle',
-      description: 'Devbox lifecycle management operations'
+const tmpOpenApiDocument = (sealosDomain: string, mcpTool: string) =>
+  createDocument({
+    openapi: '3.0.0',
+    info: {
+      title: 'Devbox API',
+      version: '1.0.0',
+      description: mcpTool
     },
-    {
-      name: 'Release',
-      description: 'Devbox release management and deployment'
-    },
-    {
-      name: 'Query',
-      description: 'Devbox information retrieval operations'
-    },
-    {
-      name: 'Runtime',
-      description: 'Devbox Runtime management'
-    },
-    {
-      name: 'Port',
-      description: 'Devbox port management'
-    },
-    {
-      name: 'Application',
-      description: 'Application management'
-    }
-  ],
-  'x-tagGroups': [
-    {
-      name: 'API',
-      tags: [
-        'Lifecycle',
-        'Release',
-        'Query',
-        'Runtime',
-        'Port'
-      ]
-    }
-  ],
-  servers: [
-    {
-      url: `http://127.0.0.1:3000`,
-      description: 'Development'
-    },
-    {
-      url: `https://devbox.${sealosDomain}`,
-      description: 'Production'
-    }
-  ],
-  components: {
-    securitySchemes: {
-      kubeconfigAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'Authorization',
-        description: 'Kubeconfig for authentication'
+    tags: [
+      {
+        name: 'Lifecycle',
+        description: 'Devbox lifecycle management operations'
       },
-      jwtAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'Authorization-Bearer',
-        description: 'JWT token for authentication'
+      {
+        name: 'Release',
+        description: 'Devbox release management and deployment'
+      },
+      {
+        name: 'Query',
+        description: 'Devbox information retrieval operations'
+      },
+      {
+        name: 'Runtime',
+        description: 'Devbox Runtime management'
+      },
+      {
+        name: 'Port',
+        description: 'Devbox port management'
+      },
+      {
+        name: 'Application',
+        description:
+          'Application management,you need change baseUrl to application.{{sealosDomain}}, not devbox.{{sealosDomain}}'
+      }
+    ],
+    'x-tagGroups': [
+      {
+        name: 'API',
+        tags: ['Lifecycle', 'Release', 'Query', 'Runtime', 'Port', 'Application']
+      }
+    ],
+    servers: [
+      {
+        url: `http://127.0.0.1:3000`,
+        description: 'Development'
+      },
+      {
+        url: `https://devbox.${sealosDomain}`,
+        description: 'Production'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        kubeconfigAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Authorization',
+          description: 'Kubeconfig for authentication'
+        },
+        jwtAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'Authorization-Bearer',
+          description: 'JWT token for authentication'
+        }
+      }
+    },
+    security: [
+      {
+        kubeconfigAuth: [],
+        jwtAuth: []
+      }
+    ],
+    paths: {
+      '/api/deployDevbox': {
+        post: {
+          tags: ['Release'],
+          summary: 'Deploy a devbox',
+          description: 'Deploy a devbox',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: DeployDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox deployed successfully',
+              content: {
+                'application/json': {
+                  schema: DeployDevboxSuccessResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/create': {
+        post: {
+          tags: ['Lifecycle'],
+          summary: 'Create a new devbox with a simple runtime',
+          description:
+            'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: CreateSimpleDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox created successfully',
+              content: {
+                'application/json': {
+                  schema: CreateSimpleDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Template not found',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '409': {
+              description: 'Devbox already exists',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/lifecycle': {
+        post: {
+          tags: ['Lifecycle'],
+          summary: 'Lifecycle a devbox',
+          description: 'Lifecycle a devbox',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: LifecycleDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox lifecycle updated successfully',
+              content: {
+                'application/json': {
+                  schema: LifecycleDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: LifecycleDevboxErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/release': {
+        post: {
+          tags: ['Release'],
+          summary: 'Release a devbox version',
+          description:
+            'Create a new release for an existing devbox with a specific tag and description. You can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/v1/getDevboxVersionListDefault interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: ReleaseDevboxRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Devbox release created successfully',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema
+                }
+              }
+            },
+            '409': {
+              description: 'Devbox release already exists',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ReleaseDevboxErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/delete': {
+        delete: {
+          tags: ['Lifecycle'],
+          summary: 'Delete a devbox',
+          description: 'Delete a devbox and its associated resources (service, ingress, etc.)',
+          requestParams: {
+            query: DelDevboxRequestSchema
+          },
+          responses: {
+            '200': {
+              description: 'Devbox deleted successfully',
+              content: {
+                'application/json': {
+                  schema: DelDevboxSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request parameters',
+              content: {
+                'application/json': {
+                  schema: DelDevboxErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: DelDevboxErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/ports/create': {
+        post: {
+          tags: ['Port'],
+          summary: 'Create a new devbox port',
+          description:
+            'Create a new devbox port,if the port is already exists,it will return the port information directly',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: CreateDevboxPortRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Successfully created devbox port',
+              content: {
+                'application/json': {
+                  schema: CreateDevboxPortSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: CreateDevboxPortErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: CreateDevboxPortErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/ports/remove': {
+        post: {
+          tags: ['Port'],
+          summary: 'Remove a devbox port',
+          description: 'Remove a port from devbox and delete its associated ingress',
+          requestBody: {
+            content: {
+              'application/json': {
+                schema: RemoveDevboxPortRequestSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Successfully removed devbox port',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request body',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
+                }
+              }
+            },
+            '404': {
+              description: 'Service or port not found',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: RemoveDevboxPortErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/releases': {
+        get: {
+          tags: ['Release'],
+          summary: 'Get devbox release list',
+          description:
+            'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
+          requestParams: {
+            query: GetDevboxVersionListRequestSchema
+          },
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox version list',
+              content: {
+                'application/json': {
+                  schema: GetDevboxVersionListSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request parameters',
+              content: {
+                'application/json': {
+                  schema: GetDevboxVersionListErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: GetDevboxVersionListErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/get': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get devbox by name',
+          description: 'Get detailed information about a specific devbox by its name',
+          requestParams: {
+            query: GetDevboxByNameRequestSchema
+          },
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox information',
+              content: {
+                'application/json': {
+                  schema: GetDevboxByNameSuccessResponseSchema
+                }
+              }
+            },
+            '400': {
+              description: 'Invalid request parameters',
+              content: {
+                'application/json': {
+                  schema: GetDevboxByNameErrorResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: GetDevboxByNameErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/v1/DevBox/list': {
+        get: {
+          tags: ['Query'],
+          summary: 'Get devbox list',
+          description: 'Get all devboxes in the current namespace',
+          responses: {
+            '200': {
+              description: 'Successfully retrieved devbox list',
+              content: {
+                'application/json': {
+                  schema: GetDevboxListResponseSchema
+                }
+              }
+            },
+            '500': {
+              description: 'Internal server error',
+              content: {
+                'application/json': {
+                  schema: ErrorResponseSchema
+                }
+              }
+            }
+          }
+        }
       }
     }
-  },
-  security: [
-    {
-      kubeconfigAuth: [],
-      jwtAuth: []
-    }
-  ],
-  paths: {
-    '/api/deployDevbox': {
-      post: {
-        tags: ['Release'],
-        summary: 'Deploy a devbox',
-        description: 'Deploy a devbox',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: DeployDevboxRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Devbox deployed successfully',
-            content: {
-              'application/json': {
-                schema: DeployDevboxSuccessResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/create': {
-      post: {
-        tags: ['Lifecycle'],
-        summary: 'Create a new devbox with a simple runtime',
-        description:
-          'Create a new devbox, you need to use the /api/templateRepository/listOfficial interface to get the runtime list before using this interface, for the requestBody templateRepositoryUid; you need to use the /api/templateRepository/template/list interface to get the specific version list of the runtime, for the requestBody templateUid, templateConfig and image',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: CreateSimpleDevboxRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Devbox created successfully',
-            content: {
-              'application/json': {
-                schema: CreateSimpleDevboxSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request body',
-            content: {
-              'application/json': {
-                schema: ErrorResponseSchema
-              }
-            }
-          },
-          '404': {
-            description: 'Template not found',
-            content: {
-              'application/json': {
-                schema: ErrorResponseSchema
-              }
-            }
-          },
-          '409': {
-            description: 'Devbox already exists',
-            content: {
-              'application/json': {
-                schema: ErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: ErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/lifecycle': {
-      post: {
-        tags: ['Lifecycle'],
-        summary: 'Lifecycle a devbox',
-        description: 'Lifecycle a devbox',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: LifecycleDevboxRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Devbox lifecycle updated successfully',
-            content: {
-              'application/json': {
-                schema: LifecycleDevboxSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request body',
-            content: {
-              'application/json': {
-                schema: LifecycleDevboxErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/release': {
-      post: {
-        tags: ['Release'],
-        summary: 'Release a devbox version',
-        description:
-          'Create a new release for an existing devbox with a specific tag and description. You can use the /api/v1/getDevboxVersionListDefault interface to get the devbox version list. Since the release process takes a long time, this interface will not return any data. Please use the /api/v1/getDevboxVersionListDefault interface to check the release status.Beside,you need to stopped the devbox(stopped is ok,no need to shutdown) before releasing it.',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: ReleaseDevboxRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Devbox release created successfully',
-            content: {
-              'application/json': {
-                schema: ReleaseDevboxSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request body',
-            content: {
-              'application/json': {
-                schema: ReleaseDevboxErrorResponseSchema
-              }
-            }
-          },
-          '409': {
-            description: 'Devbox release already exists',
-            content: {
-              'application/json': {
-                schema: ReleaseDevboxErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: ReleaseDevboxErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/delete': {
-      delete: {
-        tags: ['Lifecycle'],
-        summary: 'Delete a devbox',
-        description: 'Delete a devbox and its associated resources (service, ingress, etc.)',
-        requestParams: {
-          query: DelDevboxRequestSchema
-        },
-        responses: {
-          '200': {
-            description: 'Devbox deleted successfully',
-            content: {
-              'application/json': {
-                schema: DelDevboxSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request parameters',
-            content: {
-              'application/json': {
-                schema: DelDevboxErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: DelDevboxErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/ports/create': {
-      post: {
-        tags: ['Port'],
-        summary: 'Create a new devbox port',
-        description:
-          'Create a new devbox port,if the port is already exists,it will return the port information directly',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: CreateDevboxPortRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Successfully created devbox port',
-            content: {
-              'application/json': {
-                schema: CreateDevboxPortSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request body',
-            content: {
-              'application/json': {
-                schema: CreateDevboxPortErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: CreateDevboxPortErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/ports/remove': {
-      post: {
-        tags: ['Port'],
-        summary: 'Remove a devbox port',
-        description: 'Remove a port from devbox and delete its associated ingress',
-        requestBody: {
-          content: {
-            'application/json': {
-              schema: RemoveDevboxPortRequestSchema
-            }
-          }
-        },
-        responses: {
-          '200': {
-            description: 'Successfully removed devbox port',
-            content: {
-              'application/json': {
-                schema: RemoveDevboxPortSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request body',
-            content: {
-              'application/json': {
-                schema: RemoveDevboxPortErrorResponseSchema
-              }
-            }
-          },
-          '404': {
-            description: 'Service or port not found',
-            content: {
-              'application/json': {
-                schema: RemoveDevboxPortErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: RemoveDevboxPortErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/releases': {
-      get: {
-        tags: ['Release'],
-        summary: 'Get devbox release list',
-        description:
-          'Get all versions of a specific devbox,you need to use the /api/getDevboxByName interface to get the devbox uid',
-        requestParams: {
-          query: GetDevboxVersionListRequestSchema
-        },
-        responses: {
-          '200': {
-            description: 'Successfully retrieved devbox version list',
-            content: {
-              'application/json': {
-                schema: GetDevboxVersionListSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request parameters',
-            content: {
-              'application/json': {
-                schema: GetDevboxVersionListErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: GetDevboxVersionListErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/get': {
-      get: {
-        tags: ['Query'],
-        summary: 'Get devbox by name',
-        description: 'Get detailed information about a specific devbox by its name',
-        requestParams: {
-          query: GetDevboxByNameRequestSchema
-        },
-        responses: {
-          '200': {
-            description: 'Successfully retrieved devbox information',
-            content: {
-              'application/json': {
-                schema: GetDevboxByNameSuccessResponseSchema
-              }
-            }
-          },
-          '400': {
-            description: 'Invalid request parameters',
-            content: {
-              'application/json': {
-                schema: GetDevboxByNameErrorResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: GetDevboxByNameErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    },
-    '/api/v1/DevBox/list': {
-      get: {
-        tags: ['Query'],
-        summary: 'Get devbox list',
-        description: 'Get all devboxes in the current namespace',
-        responses: {
-          '200': {
-            description: 'Successfully retrieved devbox list',
-            content: {
-              'application/json': {
-                schema: GetDevboxListResponseSchema
-              }
-            }
-          },
-          '500': {
-            description: 'Internal server error',
-            content: {
-              'application/json': {
-                schema: ErrorResponseSchema
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-});
+  });
 
 const applaunchpadDocument = {
   '/api/v1/createApp': {
@@ -1435,22 +1431,19 @@ const applaunchpadDocument = {
 export async function GET(request: Request) {
   const domain = process.env.SEALOS_DOMAIN || '';
   //Since the API currently only has English documentation, we'll use EN here for now
-  const mcp = getToolsList(path.join(process.cwd(), 'public', "devbox.json"),"en")
+  const mcp = getToolsList(path.join(process.cwd(), 'public', 'devbox.json'), 'en');
   try {
-    const baseDoc = tmpOpenApiDocument(domain,mcp);
+    const baseDoc = tmpOpenApiDocument(domain, mcp);
     const openApiDoc = {
       ...baseDoc,
       paths: {
         ...baseDoc.paths,
-        ...applaunchpadDocument,
+        ...applaunchpadDocument
       }
     };
     return NextResponse.json(openApiDoc);
   } catch (error) {
     console.error('Error generating OpenAPI document:', error);
-    return NextResponse.json(
-      { error: 'Failed to generate API documentation' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to generate API documentation' }, { status: 500 });
   }
 }
