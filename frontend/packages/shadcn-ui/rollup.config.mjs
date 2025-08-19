@@ -1,9 +1,11 @@
 import path from 'node:path';
+import preserveDirectives from 'rollup-plugin-preserve-directives';
 import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import * as tsc from 'typescript';
 
-const external = ['react', 'react-dom', 'next'];
+const external = ['react', 'react-dom', 'react/jsx-runtime', 'next'];
 
 const publicEntries = {
   index: './src/index.ts'
@@ -23,7 +25,13 @@ export default [
       entryFileNames: '[name].mjs'
     },
     plugins: [
+      preserveDirectives(),
       resolve({ extensions: ['.ts', '.tsx'], browser: true }),
+      commonjs({
+        include: /node_modules/,
+        transformMixedEsModules: true,
+        requireReturnsDefault: 'auto'
+      }),
       typescript({
         typescript: tsc,
         tsconfig: path.resolve('tsconfig.json'),
@@ -31,6 +39,10 @@ export default [
         emitDeclarationOnly: false,
         noEmitOnError: true
       })
-    ]
+    ],
+    onwarn: (warning) => {
+      if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+      else console.warn(warning.message);
+    }
   }
 ];
