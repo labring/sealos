@@ -2,7 +2,7 @@
   "name": "@sealos/shadcn-ui",
   "version": "1.0.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc && rollup -c"
   },
   "license": "ISC",
   "type": "module",
@@ -15,26 +15,46 @@
     "tw-animate-css": "^1.3.4"
   },
   "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.4",
+    "@types/node": "^24.3.0",
     "@types/react": "^18.2.37",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "rollup": "2.79.1",
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": ">=18",
+    "react-dom": ">=18"
   },
+  "files": [
+    "dist",
+    "src"
+  ],
   "exports": {
-    "./shadcn.css": [
-      "./src/styles/shadcn.css"
-    ],
-    "./styles.css": [
-      "./src/styles/styles.css"
-    ],
-    "./*": [
-      "./src/components/*"
-    ],
-    ".": [
-      "./src/index.ts"
-    ]
+    "./shadcn.css": "./src/styles/shadcn.css",
+    "./styles.css": "./src/styles/styles.css",
+    ".": {
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./*": {
+      "import": [
+        "./dist/components/ui/*.mjs",
+        "./dist/components/*/index.mjs",
+        "./dist/components/*.mjs"
+      ]
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.ts",
+        "dist/components/ui/*.d.ts",
+        "dist/components/*/index.d.ts",
+        "dist/components/*.d.ts"
+      ]
+    }
   }
 }
