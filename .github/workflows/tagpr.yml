@@ -1,15 +1,14 @@
 name: 🚀 Tagpr for GitHub Actions
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 jobs:
   tagpr:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
       - run: | 
           wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
           tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog
