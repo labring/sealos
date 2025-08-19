@@ -318,7 +318,7 @@ const Form = ({
         specialUse = 2;
         break;
       case DBTypeEnum.kafka:
-        [minStorageChange, minCPU, minMemory] = [4, 2, 2];
+        [minStorageChange, minCPU, minMemory] = [3, 2, 2];
         break;
       case DBTypeEnum.milvus:
         [minStorageChange, minCPU, minMemory] = [4, 2, 2];

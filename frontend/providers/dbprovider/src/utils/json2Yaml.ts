@@ -524,7 +524,7 @@ export const json2CreateCluster = (
                 name: 'data',
                 spec: {
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `${brokerRes.storage}Gi` } }
+                  resources: { requests: { storage: `${brokerRes.storage / 2}Gi` } }
                 }
               },
               {
@@ -532,7 +532,7 @@ export const json2CreateCluster = (
                 spec: {
                   storageClassName: null,
                   accessModes: ['ReadWriteOnce'],
-                  resources: { requests: { storage: `5Gi` } }
+                  resources: { requests: { storage: `${brokerRes.storage / 2}Gi` } }
                 }
               }
             ]

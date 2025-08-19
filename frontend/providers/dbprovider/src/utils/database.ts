@@ -227,16 +227,19 @@ export function distributeResources(data: {
     case DBTypeEnum.kafka:
       const brokerResource = {
         cpuMemory: getPercentResource(0.5),
-        storage: Math.max(Math.round(data.storage * 0.5), 1)
+        storage: Math.max(Math.round((data.storage * 2) / 3), 1)
       };
       const quarterResource = {
         cpuMemory: getPercentResource(0.25),
-        storage: Math.max(Math.round(data.storage * 0.25), 1)
+        storage: Math.max(Math.round((data.storage * 1) / 3), 1)
       };
       return {
         'kafka-broker': brokerResource,
         controller: quarterResource,
-        'kafka-exporter': quarterResource
+        'kafka-exporter': {
+          ...quarterResource,
+          storage: 0
+        }
       };
     case DBTypeEnum.milvus:
       return {
