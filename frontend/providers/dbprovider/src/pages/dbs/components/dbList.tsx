@@ -238,7 +238,7 @@ const DBList = ({
         let currentDataSourceId = getDataSourceId(db.name);
         if (!currentDataSourceId) {
           try {
-            const res = await syncDatasourceFirst(payload, apiKey, userKey);
+            const res = await syncDatasourceFirst(payload, userKey);
             currentDataSourceId = res.data;
             if (currentDataSourceId) {
               setDataSourceId(db.name, currentDataSourceId);
@@ -259,7 +259,7 @@ const DBList = ({
               ...payload,
               id: currentDataSourceId
             };
-            await syncDatasource(syncPayload, apiKey, userKey);
+            await syncDatasource(syncPayload, userKey);
           } catch (err) {}
         }
 

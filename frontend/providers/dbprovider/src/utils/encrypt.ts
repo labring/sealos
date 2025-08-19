@@ -24,5 +24,5 @@ export async function encryptCbcBrowser(plainText: string, key: string): Promise
   result.set(iv);
   result.set(new Uint8Array(encrypted), iv.length);
 
-  return btoa(String.fromCharCode(...result));
+  return Buffer.from(result).toString('base64');
 }

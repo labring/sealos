@@ -1,5 +1,5 @@
 import { GET, POST } from '@/services/request';
-import { encryptCbcBrowser } from '@/api/encrypt';
+import { encryptCbcBrowser } from '@/utils/encrypt';
 import { GenerateLoginUrlOpts, UserInfo, CreateApiResponse } from '@/constants/chat2db';
 import { getAppEnv } from '@/api/platform';
 

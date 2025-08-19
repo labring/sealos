@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -8,10 +9,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const apiUrl = `${process.env.GATEWAY_DOMAIN_NAME}/api/open/enterprise/sync_data_source_a`;
 
+  const apiKey = process.env.CHAT2DB_API_KEY;
+
+  const { userKey, ...requestBody } = req.body as any;
+
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      ...(userKey ? { sync_user: userKey } : {}),
       ...(req.headers.authorization ? { Authorization: req.headers.authorization } : {}),
       ...(req.headers['auth_user']
         ? {
@@ -31,9 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         ? req.headers['time-zone'][0]
         : req.headers['time-zone'] || 'Asia/Shanghai'
     },
-    body: JSON.stringify(req.body)
+    body: JSON.stringify(requestBody)
   });
 
-  const data = await response.json();
-  res.status(response.status).json(data);
+  jsonRes(res, await response.json());
 }

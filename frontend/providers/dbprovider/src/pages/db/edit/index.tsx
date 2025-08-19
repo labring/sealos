@@ -47,7 +47,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
   const [errorCode, setErrorCode] = useState<ResponseCode>();
   const [forceUpdate, setForceUpdate] = useState(false);
   const [allocatedStorage, setAllocatedStorage] = useState(1);
-  const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
   const { message: toast } = useMessage();
   const { Loading, setIsLoading } = useLoading();
   const { loadDBDetail, dbDetail } = useDBStore();
@@ -153,19 +152,6 @@ const EditApp = ({ dbName, tabType }: { dbName?: string; tabType?: 'form' | 'yam
     () => (dbName ? getDBSecret({ dbName, dbType: formHook.getValues('dbType') }) : null),
     { enabled: !!dbName && supportConnect }
   );
-
-  useEffect(() => {
-    if (!secret) return;
-    setConnInfo({
-      host: secret.host,
-      port: secret.port,
-      connection: secret.connection,
-      username: secret.username,
-      password: secret.password,
-      dbType: formHook.getValues('dbType') as DBType,
-      dbName: formHook.getValues('dbName')
-    });
-  }, [secret, formHook]);
 
   const submitSuccess = async (formData: DBEditType) => {
     if (!createCompleted) {

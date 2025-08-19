@@ -146,8 +146,7 @@ const Header = ({
 
   const handleManageData = useCallback(async () => {
     const orgId = '34';
-    const secretKey = process.env.NEXT_PUBLIC_CHAT2DB_AES_KEY!;
-    const apiKey = process.env.NEXT_PUBLIC_CHAT2DB_API_KEY!;
+    const secretKey = process.env.CHAT2DB_AES_KEY!;
     const userStr = localStorage.getItem('session');
     const userObj = userStr ? JSON.parse(userStr) : null;
     const userId = userObj?.user.id;
@@ -203,7 +202,7 @@ const Header = ({
 
     if (!currentDataSourceId) {
       try {
-        const res = await syncDatasourceFirst(payload, apiKey, userKey);
+        const res = await syncDatasourceFirst(payload, userKey);
         currentDataSourceId = res.data;
         if (currentDataSourceId) {
           setDataSourceId(db.dbName, currentDataSourceId);
@@ -224,7 +223,7 @@ const Header = ({
           ...payload,
           id: currentDataSourceId
         };
-        await syncDatasource(syncPayload, apiKey, userKey);
+        await syncDatasource(syncPayload, userKey);
       } catch (err) {
         console.error('sync datasource:', JSON.stringify(err));
       }
