@@ -17,11 +17,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@sealos/shadcn-ui/select';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 
 interface DatePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   isDisabled?: boolean;

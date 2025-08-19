@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 import { cn } from '@/lib/utils';
 
 interface PaginationProps {

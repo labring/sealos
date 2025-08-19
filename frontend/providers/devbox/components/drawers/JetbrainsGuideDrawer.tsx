@@ -4,13 +4,13 @@ import { useTranslations } from 'next-intl';
 import { ArrowUpRight, OctagonAlert, Settings } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
-import { Stepper, Step, StepIndicator } from '@/components/ui/stepper';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
+import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
 
 import { cn } from '@/lib/utils';
 import { execCommandInDevboxPod } from '@/api/devbox';

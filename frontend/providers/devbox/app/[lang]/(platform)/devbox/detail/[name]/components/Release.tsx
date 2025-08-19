@@ -35,18 +35,18 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
+} from '@sealos/shadcn-ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Loading } from '@/components/ui/loading';
+} from '@sealos/shadcn-ui/dropdown-menu';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Loading } from '@sealos/shadcn-ui/loading';
 import DevboxStatusTag from '@/components/StatusTag';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 import ReleaseModal from '@/components/dialogs/ReleaseDialog';
 import EditVersionDesModal from '@/components/dialogs/EditVersionDesDialog';
 import CreateTemplateDrawer from '@/components/drawers/CreateTemplateDrawer';

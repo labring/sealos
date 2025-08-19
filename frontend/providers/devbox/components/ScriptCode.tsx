@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useCopyData } from '@/utils/tools';
 
 import Code from './Code';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 
 interface ScriptCodeProps {
   platform: string;

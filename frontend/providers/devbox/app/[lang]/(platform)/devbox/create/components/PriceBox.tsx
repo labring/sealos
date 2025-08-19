@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
 export const colorMap = {
   cpu: '#33BABB',

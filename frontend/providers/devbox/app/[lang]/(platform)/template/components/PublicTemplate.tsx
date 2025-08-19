@@ -12,13 +12,13 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { useDevboxStore } from '@/stores/devbox';
 import { destroyDriver, startDriver, startGuide3 } from '@/hooks/driver';
 
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 
 import TemplateCard from './TemplateCard';
-import { Pagination } from '@/components/ui/pagination';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
 import Empty from './Empty';
 
 const PublicTemplate = ({ search }: { search: string }) => {

@@ -13,10 +13,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+} from '@sealos/shadcn-ui/dialog';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Button } from '@sealos/shadcn-ui/button';
+import { RadioGroup, RadioGroupItem } from '@sealos/shadcn-ui/radio-group';
 import { track } from '@sealos/gtm';
 
 interface ShutdownDialogPros {

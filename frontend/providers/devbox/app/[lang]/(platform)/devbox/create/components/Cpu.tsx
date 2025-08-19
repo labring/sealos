@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useFormContext } from 'react-hook-form';
 
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Slider } from '@sealos/shadcn-ui/slider';
 
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { CpuSlideMarkList } from '@/constants/devbox';

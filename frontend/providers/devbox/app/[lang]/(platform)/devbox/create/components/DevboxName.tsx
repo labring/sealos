@@ -5,8 +5,8 @@ import { nanoid } from '@/utils/tools';
 import { DevboxEditTypeV2 } from '@/types/devbox';
 import { devboxNameSchema } from '@/utils/validate';
 
-import { Input } from '@/components/ui/input';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@sealos/shadcn-ui/input';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@sealos/shadcn-ui/form';
 
 export default function DevboxName({ isEdit }: { isEdit: boolean }) {
   const t = useTranslations();

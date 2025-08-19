@@ -8,9 +8,14 @@ import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUserStore } from '@/stores/user';
 
-import { Progress } from '@/components/ui/progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Progress } from '@sealos/shadcn-ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@sealos/shadcn-ui/tooltip';
+import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
 const sourceMap = {
   cpu: {

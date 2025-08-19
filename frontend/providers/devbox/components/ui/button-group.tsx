@@ -1,6 +1,6 @@
 import { Children, ReactElement, cloneElement } from 'react';
 
-import { ButtonProps } from '@/components/ui/button';
+import { ButtonProps } from '@sealos/shadcn-ui/button';
 import { cn } from '@/lib/utils';
 
 interface ButtonGroupProps {

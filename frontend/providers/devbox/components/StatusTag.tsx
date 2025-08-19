@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { DevboxReleaseStatusMapType, DevboxStatusMapType } from '@/types/devbox';
 
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 interface StatusTagProps {
   status: DevboxStatusMapType | DevboxReleaseStatusMapType;

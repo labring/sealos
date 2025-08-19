@@ -18,10 +18,10 @@ import {
   TableHead,
   TableHeader,
   TableRow
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+} from '@sealos/shadcn-ui/table';
+import { Button } from '@sealos/shadcn-ui/button';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 const Network = () => {
   const locale = useLocale();

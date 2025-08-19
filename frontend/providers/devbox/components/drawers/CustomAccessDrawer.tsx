@@ -8,9 +8,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerFooter
-} from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+} from '@sealos/shadcn-ui/drawer';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
 
 import { postAuthCname } from '@/api/platform';
 import { useRequest } from '@/hooks/useRequest';

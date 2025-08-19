@@ -11,11 +11,11 @@ import { getTemplateConfig } from '@/api/template';
 import { downLoadBlob, parseTemplateConfig, useCopyData } from '@/utils/tools';
 
 import GPUItem from '@/components/GPUItem';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@sealos/shadcn-ui/tooltip';
 
 const Basic = () => {
   const t = useTranslations();

@@ -24,9 +24,9 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { FormItem, FormLabel } from '@/components/ui/form';
+} from '@sealos/shadcn-ui/select';
+import { Button } from '@sealos/shadcn-ui/button';
+import { FormItem, FormLabel } from '@sealos/shadcn-ui/form';
 
 interface RuntimeProps {
   isEdit?: boolean;

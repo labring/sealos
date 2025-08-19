@@ -5,7 +5,7 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import { cn } from '@/lib/utils';
 import { codeTheme } from '@/constants/hljs';
 
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@sealos/shadcn-ui/scroll-area';
 
 interface CodeProps {
   content: string;

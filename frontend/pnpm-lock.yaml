@@ -1790,6 +1790,9 @@ importers:
       '@sealos/gtm':
         specifier: workspace:^
         version: link:../../packages/gtm
+      '@sealos/shadcn-ui':
+        specifier: workspace:^
+        version: link:../../packages/shadcn-ui
       '@sealos/ui':
         specifier: workspace:^
         version: link:../../packages/ui

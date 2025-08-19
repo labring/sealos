@@ -2,11 +2,11 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { ArrowUpRight, Settings } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 import { JetBrainsGuideData } from '@/components/IDEButton';
 import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
-import { Stepper, Step, StepIndicator } from '@/components/ui/stepper';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 
 interface ToolboxModalProps {
   open: boolean;

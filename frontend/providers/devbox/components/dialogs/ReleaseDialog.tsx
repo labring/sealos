@@ -15,13 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
+} from '@sealos/shadcn-ui/dialog';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Button } from '@sealos/shadcn-ui/button';
+import { Textarea } from '@sealos/shadcn-ui/textarea';
+import { Checkbox } from '@sealos/shadcn-ui/checkbox';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import { track } from '@sealos/gtm';
 
 interface ReleaseDialogProps {

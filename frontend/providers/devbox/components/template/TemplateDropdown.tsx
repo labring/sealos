@@ -5,9 +5,8 @@ import { Check, ChevronDown } from 'lucide-react';
 import { tagColorMap, defaultTagColor } from '@/constants/tag';
 import { Tag, type Tag as TTag } from '@/prisma/generated/client';
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@sealos/shadcn-ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 import { cn } from '@/lib/utils';
 
 interface TRepositoryItem {

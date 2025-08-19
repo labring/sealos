@@ -4,10 +4,10 @@ import { Copy, FileCode } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 import Code from '@/components/Code';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@sealos/shadcn-ui/card';
+import { Button } from '@sealos/shadcn-ui/button';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n';
