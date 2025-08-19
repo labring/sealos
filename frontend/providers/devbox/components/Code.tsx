@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { codeTheme } from '@/constants/hljs';
 
 import { ScrollArea, ScrollBar } from '@sealos/shadcn-ui/scroll-area';

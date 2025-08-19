@@ -7,7 +7,7 @@ import { Tag, type Tag as TTag } from '@/prisma/generated/client';
 
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 
 interface TRepositoryItem {
   iconId: string | null;

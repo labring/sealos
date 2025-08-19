@@ -7,7 +7,7 @@ import { ChangeEventHandler, useMemo, useState } from 'react';
 import { endOfDay, format, isAfter, isBefore, isMatch, isValid, parse, startOfDay } from 'date-fns';
 import { DateRange, DayPicker, SelectRangeEventHandler } from 'react-day-picker';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useDateTimeStore } from '@/stores/date';
 import { formatTimeRange, parseTimeRange } from '@/utils/timeRange';
 

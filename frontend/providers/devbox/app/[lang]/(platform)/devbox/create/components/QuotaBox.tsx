@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useUserStore } from '@/stores/user';
 
 import { Progress } from '@sealos/shadcn-ui/progress';

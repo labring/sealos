@@ -3,7 +3,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { versionSchema, versionErrorEnum } from '@/utils/validate';
 import { DevboxListItemTypeV2, DevboxVersionListItemType } from '@/types/devbox';

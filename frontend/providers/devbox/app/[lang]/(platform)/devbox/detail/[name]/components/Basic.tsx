@@ -3,7 +3,7 @@ import { useTranslations } from 'next-intl';
 import { Copy, Download, Settings } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 import { useDevboxStore } from '@/stores/devbox';

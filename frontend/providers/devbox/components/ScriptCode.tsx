@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ChevronRight, Copy } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useCopyData } from '@/utils/tools';
 
 import Code from './Code';

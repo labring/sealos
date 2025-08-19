@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { Ellipsis, GitFork, PencilLine, Trash2 } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { listTemplate } from '@/api/template';
 import { useGuideStore } from '@/stores/guide';

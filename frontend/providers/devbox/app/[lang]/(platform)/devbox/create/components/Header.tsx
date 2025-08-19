@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 
 import { Button } from '@sealos/shadcn-ui/button';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { downLoadBlob } from '@/utils/tools';
 import { useGuideStore } from '@/stores/guide';

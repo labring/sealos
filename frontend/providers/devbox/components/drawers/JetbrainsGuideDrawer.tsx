@@ -12,7 +12,7 @@ import SshConnectDrawer from '@/components/drawers/SshConnectDrawer';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@sealos/shadcn-ui/drawer';
 import { Stepper, Step, StepIndicator } from '@sealos/shadcn-ui/stepper';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { execCommandInDevboxPod } from '@/api/devbox';
 
 interface JetBrainsGuideDrawerProps {

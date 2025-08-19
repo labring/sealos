@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
 import { CircleHelp, Network as NetworkIcon } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { useEnvStore } from '@/stores/env';
 import { useCopyData } from '@/utils/tools';

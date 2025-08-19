@@ -2,7 +2,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useRouter } from '@/i18n';
 import { useGuideStore } from '@/stores/guide';
 import { Tag, TagType } from '@/prisma/generated/client';
