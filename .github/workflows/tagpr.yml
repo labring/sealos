@@ -1,0 +1,71 @@
+name: 🚀 Tagpr for GitHub Actions
+on:
+  push:
+    branches:
+      - main
+jobs:
+  tagpr:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - run: | 
+          wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
+          tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog
+          sudo mv git-chglog /usr/local/bin/
+          git-chglog --version
+          rm -rf git-chglog_0.15.4_linux_amd64.tar.gz
+        name: Install git-chglog
+      - run: |
+          # check if .tagpr.json exists
+          if [ ! -f .tagpr.json ]; then
+            echo "No .tagpr.json file found."
+            exit 1
+          else
+            echo ".tagpr.json file already exists."
+          fi
+          version=$(cat .tagpr.json | jq -r '.version')
+          command=$(cat .tagpr.json | jq -r '.command')
+          name=$(cat .tagpr.json | jq -r '.name')
+          echo "version: $version"
+          echo "command: $command"
+          echo "name: $name"
+          echo "release: $release"
+          echo name=${name} >> $GITHUB_OUTPUT
+          echo version=${version} >> $GITHUB_OUTPUT
+          echo command=${command} >> $GITHUB_OUTPUT
+        id: tagpr
+        name: Print git-chglog tag
+      - name: Use command to generate version
+        if: "steps.tagpr.outputs.version != ''"
+        run: |
+          echo "Running command: ${{ steps.tagpr.outputs.command }}"
+          eval "${{ steps.tagpr.outputs.command }}"
+      - uses: peter-evans/create-pull-request@v5
+        if: "steps.tagpr.outputs.version != ''"
+        with:
+          title: 'Release ${{ steps.tagpr.outputs.name }} for ${{ steps.tagpr.outputs.version }}'
+          body: |
+            
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 New release for ${{ steps.tagpr.outputs.name }} using robot.
+          branch: tagpr-${{ steps.tagpr.outputs.version }}
+          draft: true
+          signoff: true
+          delete-branch: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+#      - name: Trigger Release Workflow(only when tagged)
+#        uses: actions/github-script@v6
+#        if: "steps.tagpr.outputs.tag != ''"
+#        with:
+#          script: |
+#            github.rest.actions.createWorkflowDispatch({
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              workflow_id: 'release.yml',
+#              ref: "refs/tags/${{ steps.tagpr.outputs.tag }}",
+#            })
