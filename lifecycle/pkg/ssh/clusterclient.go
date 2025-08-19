@@ -53,12 +53,12 @@ func OverSSHConfig(original, override *v1beta1.SSH) {
 	}
 }
 
-func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
+func (cc *clusterClient) getSSHOptionForHost(host string) *Option {
 	cc.mutex.RLock()
 	v, ok := cc.configs[host]
 	cc.mutex.RUnlock()
 	if ok {
-		return v, nil
+		return v
 	}
 	sshConfig := cc.cluster.Spec.SSH.DeepCopy()
 	for i := range cc.cluster.Spec.Hosts {
@@ -73,14 +73,11 @@ func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
 	cc.mutex.Lock()
 	cc.configs[host] = opt
 	cc.mutex.Unlock()
-	return opt, nil
+	return opt
 }
 
 func (cc *clusterClient) getClientForHost(host string) (Interface, error) {
-	sshConfig, err := cc.getSSHOptionForHost(host)
-	if err != nil {
-		return nil, err
-	}
+	sshConfig := cc.getSSHOptionForHost(host)
 	cc.mutex.RLock()
 	client := cc.cache[sshConfig]
 	cc.mutex.RUnlock()
@@ -121,7 +118,11 @@ func (cc *clusterClient) CmdAsync(host string, cmds ...string) error {
 	return client.CmdAsync(host, cmds...)
 }
 
-func (cc *clusterClient) CmdAsyncWithContext(ctx context.Context, host string, cmds ...string) error {
+func (cc *clusterClient) CmdAsyncWithContext(
+	ctx context.Context,
+	host string,
+	cmds ...string,
+) error {
 	client, err := cc.getClientForHost(host)
 	if err != nil {
 		return err

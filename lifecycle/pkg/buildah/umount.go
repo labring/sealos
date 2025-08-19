@@ -45,10 +45,8 @@ func newUmountCommand() *cobra.Command {
 }
 
 func umountCmd(c *cobra.Command, args []string) error {
-	umountAll := false
-	if flagChanged(c, "all") {
-		umountAll = true
-	}
+	umountAll := flagChanged(c, "all")
+
 	if len(args) == 0 && !umountAll {
 		return errors.New("at least one container ID must be specified")
 	}
@@ -72,7 +70,7 @@ func umountCmd(c *cobra.Command, args []string) error {
 
 func doUMounts(store storage.Store, args []string) ([]string, error) {
 	umountContainerErrStr := "error unmounting container"
-	var ids []string
+	ids := make([]string, 0)
 	if len(args) > 0 {
 		for _, name := range args {
 			builder, err := openBuilder(getContext(), store, name)

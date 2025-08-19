@@ -47,7 +47,13 @@ func (f *fakeTaintsClient) Verify() error {
 	for _, node := range nodes.Items {
 		for _, taint := range node.Spec.Taints {
 			if f.data[taint.Key] != taint.Value {
-				return fmt.Errorf("expect taint %s=%s, but got %s=%s", taint.Key, f.data[taint.Key], taint.Key, taint.Value)
+				return fmt.Errorf(
+					"expect taint %s=%s, but got %s=%s",
+					taint.Key,
+					f.data[taint.Key],
+					taint.Key,
+					taint.Value,
+				)
 			}
 		}
 	}

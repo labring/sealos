@@ -16,6 +16,7 @@
 package net
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -27,7 +28,7 @@ import (
 )
 
 // WaitForServer waits for a gRPC server to start accepting connections on a socket.
-func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) error {
+func WaitForServer(socket string, timeout time.Duration, opts ...any) error {
 	var errChecker []func(error) bool
 	var dialOpts []grpc.DialOption
 	var connp **grpc.ClientConn
@@ -42,7 +43,7 @@ func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) er
 			dialOpts = append(dialOpts, o...)
 		case **grpc.ClientConn:
 			if connp != nil {
-				return fmt.Errorf("waitForServer: multiple net.Conn pointer options given")
+				return errors.New("waitForServer: multiple net.Conn pointer options given")
 			}
 			connp = o
 		default:
@@ -143,18 +144,31 @@ func isFatalDialError(err error) bool {
 			}
 		}
 
-		switch err.(type) { //nolint:gosimple
-		case *net.OpError:
-			err = err.(*net.OpError).Err //nolint:gosimple
+		var opError *net.OpError
+		var syscallError *os.SyscallError
+		switch {
+		case errors.As(err, &opError):
+
+			err = func() *net.OpError {
+				target := &net.OpError{}
+				_ = errors.As(err, &target)
+				return target
+			}().Err
 			continue
-		case *os.SyscallError:
-			ne := err.(*os.SyscallError) //nolint:gosimple
+		case errors.As(err, &syscallError):
+
+			ne := func() *os.SyscallError {
+				target := &os.SyscallError{}
+				_ = errors.As(err, &target)
+				return target
+			}()
 			switch {
 			case os.IsPermission(ne):
 				return true
 			case os.IsNotExist(ne):
 				return false
-			case ne.Err == syscall.ECONNREFUSED:
+
+			case errors.Is(ne.Err, syscall.ECONNREFUSED):
 				return true
 			default:
 				err = ne

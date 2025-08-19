@@ -117,7 +117,8 @@ func Cmp(src, dest string, chunkSize int) (same bool, err error) {
 			return false, nil
 		}
 
-		if (err1 == io.EOF && err2 == io.EOF) || (err1 == io.ErrUnexpectedEOF && err2 == io.ErrUnexpectedEOF) {
+		if (err1 == io.EOF && err2 == io.EOF) ||
+			(err1 == io.ErrUnexpectedEOF && err2 == io.ErrUnexpectedEOF) {
 			return true, nil
 		}
 

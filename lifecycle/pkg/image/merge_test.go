@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package image
+package image_test
 
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/image"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -110,12 +111,10 @@ COPY --from=cccc  . .`,
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if data, err := MergeDockerfileFromImages(tt.args.ociList); (err != nil) != tt.wantErr {
+			if data, err := image.MergeDockerfileFromImages(tt.args.ociList); (err != nil) != tt.wantErr {
 				t.Errorf("MergeDockerfileFromImages() error = %v, wantErr %v", err, tt.wantErr)
-			} else {
-				if data != tt.wantData {
-					t.Errorf("MergeDockerfileFromImages() data = %v, wantData %v", data, tt.wantData)
-				}
+			} else if data != tt.wantData {
+				t.Errorf("MergeDockerfileFromImages() data = %v, wantData %v", data, tt.wantData)
 			}
 		})
 	}
@@ -161,7 +160,7 @@ func Test_replaceDao(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := escapeDollarSign(tt.args.s, true); got != tt.want {
+			if got := image.EscapeDollarSign(tt.args.s, true); got != tt.want {
 				t.Errorf("escapeDollarSign() = %v, want %v", got, tt.want)
 			}
 		})

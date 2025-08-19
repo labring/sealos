@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package env_test
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/labring/sealos/pkg/env"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -68,10 +69,7 @@ func Test_processor_WrapperShell(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &processor{
-				Cluster: tt.fields.Cluster,
-				cache:   make(map[string]map[string]string),
-			}
+			p := env.NewEnvProcessor(tt.fields.Cluster)
 			got := p.WrapShell(tt.args.host, tt.args.shell)
 			for _, want := range tt.want {
 				if !strings.Contains(got, want) {
@@ -109,10 +107,7 @@ func Test_processor_RenderAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &processor{
-				Cluster: tt.fields.Cluster,
-				cache:   make(map[string]map[string]string),
-			}
+			p := env.NewEnvProcessor(tt.fields.Cluster)
 			if err := p.RenderAll(tt.args.host, tt.args.dir, nil); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
 			}

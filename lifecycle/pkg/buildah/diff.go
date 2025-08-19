@@ -25,10 +25,9 @@ import (
 
 	"github.com/containers/common/libimage"
 	"github.com/containers/storage/pkg/archive"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func parseDiffType(v string) (DiffType, error) {
@@ -94,11 +93,10 @@ func changesToJSON(out io.Writer, diffs []archive.Change) error {
 	return enc.Encode(body)
 }
 
-func changesToTable(out io.Writer, diffs []archive.Change) error {
+func changesToTable(out io.Writer, diffs []archive.Change) {
 	for _, row := range diffs {
 		fmt.Fprintln(out, row.String())
 	}
-	return nil
 }
 
 type patchOption struct {
@@ -108,9 +106,25 @@ type patchOption struct {
 }
 
 func (o *patchOption) RegisterFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.enabled, "patch", false, "if enabled then create a named archive file contains changes that we interested")
-	fs.StringVarP(&o.tag, "tag", "t", "", `tag name, diff will auto build a new image with the generated changes if flag specified and --patch=true`)
-	fs.BoolVar(&o.save, "save", false, `if enabled and --tag flag is specified, diff will save the built image into a oci-archive file with the name of --output`)
+	fs.BoolVar(
+		&o.enabled,
+		"patch",
+		false,
+		"if enabled then create a named archive file contains changes that we interested",
+	)
+	fs.StringVarP(
+		&o.tag,
+		"tag",
+		"t",
+		"",
+		`tag name, diff will auto build a new image with the generated changes if flag specified and --patch=true`,
+	)
+	fs.BoolVar(
+		&o.save,
+		"save",
+		false,
+		`if enabled and --tag flag is specified, diff will save the built image into a oci-archive file with the name of --output`,
+	)
 }
 
 type diffOption struct {
@@ -148,12 +162,23 @@ func newDiffCommand() *cobra.Command {
 }
 
 func (o *diffOption) RegisterFlags(fs *pflag.FlagSet) {
-	fs.StringVar(&o.diffType, "diff-type", DiffImage.String(), "type of object to diff, available options are [container, image, all]")
-	fs.StringVarP(&o.output, "output", "o", "json", "change the output format, available options are [json, table]")
+	fs.StringVar(
+		&o.diffType,
+		"diff-type",
+		DiffImage.String(),
+		"type of object to diff, available options are [container, image, all]",
+	)
+	fs.StringVarP(
+		&o.output,
+		"output",
+		"o",
+		"json",
+		"change the output format, available options are [json, table]",
+	)
 }
 
 func (o *diffOption) ValidateAndSetDefaults() error {
-	if o.patchOption.enabled {
+	if o.enabled {
 		tmpFn := o.filterFn
 		o.filterFn = func(c archive.Change) bool {
 			return tmpFn(c) && filterPatchFileRequired(c)
@@ -215,7 +240,7 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 	if err != nil {
 		return err
 	}
-	changes, err := r.Store.Changes(from, to)
+	changes, err := r.Changes(from, to)
 	if err != nil {
 		return err
 	}
@@ -225,23 +250,24 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 			diffs = append(diffs, c)
 		}
 	}
-	if !opts.patchOption.enabled {
+	if !opts.enabled {
 		switch opts.output {
 		case "json":
 			return changesToJSON(os.Stdout, diffs)
 		case "table":
-			return changesToTable(os.Stdout, diffs)
+			changesToTable(os.Stdout, diffs)
+			return nil
 		default:
 			return fmt.Errorf("unknown output format %s", opts.output)
 		}
 	}
-	img, err := r.Store.Image(args[1])
+	img, err := r.Image(args[1])
 	if err != nil {
 		return err
 	}
-	target, err := r.Store.DifferTarget(img.TopLayer)
+	target, err := r.DifferTarget(img.TopLayer)
 	if err != nil {
-		return fmt.Errorf("failed to get diff target: %v", err)
+		return fmt.Errorf("failed to get diff target: %w", err)
 	}
 	rc, err := archive.ExportChanges(target, diffs, nil, nil)
 	if err != nil {
@@ -249,12 +275,12 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 	}
 	defer rc.Close()
 	// save into archive file only
-	if opts.patchOption.tag == "" {
+	if opts.tag == "" {
 		compression := guessCompression(opts.output)
 		extension := "." + compression.Extension()
 		out := opts.output
 		if !strings.HasSuffix(out, extension) {
-			out = out + extension
+			out += extension
 		}
 		file, err := os.Create(out)
 		if err != nil {
@@ -283,17 +309,17 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 	}
 	debug, _ := c.Flags().GetBool("debug")
 	if err = rerun("build",
-		fmt.Sprintf("--debug=%s", strconv.FormatBool(debug)),
-		fmt.Sprintf("-t=%s", opts.patchOption.tag),
+		"--debug="+strconv.FormatBool(debug),
+		"-t="+opts.tag,
 		"--save-image=false", tmpDir,
 	); err != nil {
 		return err
 	}
 	// save new image
-	if opts.patchOption.save {
+	if opts.save {
 		if err = rerun("save",
-			fmt.Sprintf("--debug=%s", strconv.FormatBool(debug)),
-			fmt.Sprintf("--output=%s", opts.output), opts.patchOption.tag,
+			"--debug="+strconv.FormatBool(debug),
+			"--output="+opts.output, opts.tag,
 		); err != nil {
 			return err
 		}
@@ -302,6 +328,7 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 }
 
 func rerun(command string, args ...string) error {
+	//nolint:gosec
 	cmd := exec.Command("/proc/self/exe", append([]string{command}, args...)...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

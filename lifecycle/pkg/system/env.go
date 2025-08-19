@@ -24,7 +24,6 @@ import (
 
 	"github.com/containers/buildah"
 	"github.com/containers/storage/pkg/homedir"
-
 	"github.com/labring/sealos/pkg/constants"
 )
 
@@ -64,7 +63,7 @@ var configOptions = []ConfigOption{
 	{
 		Key:          RuntimeRootConfigKey,
 		Description:  "root directory for persistent runtime actions/configs.",
-		DefaultValue: filepath.Join(homedir.Get(), fmt.Sprintf(".%s", constants.AppName)),
+		DefaultValue: filepath.Join(homedir.Get(), "."+constants.AppName),
 	},
 	{
 		Key:          DataRootConfigKey,
@@ -108,7 +107,11 @@ func (*envSystemConfig) getValueOrDefault(key string) (*ConfigOption, error) {
 	for _, option := range configOptions {
 		if option.Key == key {
 			if option.OSEnv == "" {
-				option.OSEnv = strings.ReplaceAll(strings.ToUpper(constants.AppName+"_"+option.Key), "-", "_")
+				option.OSEnv = strings.ReplaceAll(
+					strings.ToUpper(constants.AppName+"_"+option.Key),
+					"-",
+					"_",
+				)
 			}
 			if value, ok := os.LookupEnv(option.OSEnv); ok {
 				option.DefaultValue = value

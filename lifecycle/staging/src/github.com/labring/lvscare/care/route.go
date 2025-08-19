@@ -16,7 +16,6 @@ package care
 
 import (
 	"github.com/labring/lvscare/pkg/route"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -24,10 +23,10 @@ type routeImpl struct {
 	*route.Route
 }
 
-func newRouteImpl(target, gw string) (Ruler, error) {
+func newRouteImpl(target, gw string) Ruler {
 	return &routeImpl{
 		route.New(target, gw),
-	}, nil
+	}
 }
 
 func (impl *routeImpl) Setup() error {

@@ -16,26 +16,26 @@ package kubernetes
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	v1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
 	"github.com/labring/sealos/pkg/runtime/decode"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	v1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 )
 
 const (
 	upgradeApplyCmd = "kubeadm upgrade apply --certificate-renewal=false --config %s --yes"
 	upradeNodeCmd   = "kubeadm upgrade node --certificate-renewal=false --skip-phases preflight"
-	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
+	// drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	cordonNodeCmd   = "kubectl cordon %s"
 	uncordonNodeCmd = "kubectl uncordon %s"
 	daemonReload    = "systemctl daemon-reload"
@@ -56,15 +56,16 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	if err != nil {
 		return err
 	}
-	//upgrade master0
+	// upgrade master0
 	logger.Info("start to upgrade master0")
 	err = k.upgradeMaster0(conversion, version)
 	if err != nil {
 		return err
 	}
-	//upgrade other control-planes and worker nodes
-	var upgradeNodes []string
-	for _, node := range append(k.getMasterIPAndPortList(), k.getNodeIPAndPortList()...) {
+	// upgrade other control-planes and worker nodes
+	nds := append(k.getMasterIPAndPortList(), k.getNodeIPAndPortList()...)
+	upgradeNodes := make([]string, 0, len(nds))
+	for _, node := range nds {
 		if node == k.getMaster0IPAndPort() {
 			continue
 		}
@@ -74,7 +75,10 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	return k.upgradeOtherNodes(upgradeNodes, version)
 }
 
-func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig, version string) error {
+func (k *KubeadmRuntime) upgradeMaster0(
+	conversion *types.ConvertedKubeadmConfig,
+	version string,
+) error {
 	master0ip := k.getMaster0IP()
 	sver := semver.MustParse(version)
 	if gte(sver, V1260) {
@@ -93,10 +97,10 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 	if err != nil {
 		return err
 	}
-	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
+	// default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 	master0Name = strings.ToLower(master0Name)
 	kubeBinaryPath := k.pathResolver.RootFSBinPath()
-	//assure the connection to api-server succeed before executing upgrade cmds
+	// assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
 		return err
 	}
@@ -107,7 +111,10 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 		logger.Warn("image pull pre-upgrade failed: %s", err.Error())
 	}
 
-	config, err := yaml.MarshalConfigs(&conversion.InitConfiguration, &conversion.ClusterConfiguration)
+	config, err := yaml.MarshalConfigs(
+		&conversion.InitConfiguration,
+		&conversion.ClusterConfiguration,
+	)
 	if err != nil {
 		logger.Error("kubeadm config marshal failed: %s", err.Error())
 		return err
@@ -117,18 +124,18 @@ func (k *KubeadmRuntime) upgradeMaster0(conversion *types.ConvertedKubeadmConfig
 	upgradeConfigPath := path.Join(k.pathResolver.EtcPath(), upgradeConfigName)
 
 	err = k.sshCmdAsync(master0ip,
-		//install kubeadm:{version} at master0
+		// install kubeadm:{version} at master0
 		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 		// write kubeadm config to file
 		fmt.Sprintf(writeKubeadmConfig, upgradeConfigPath, string(config)),
-		//execute  kubeadm upgrade apply {version} at master0
+		// execute  kubeadm upgrade apply {version} at master0
 		fmt.Sprintf(upgradeApplyCmd, upgradeConfigPath),
-		//kubectl cordon <node-to-cordon>
+		// kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
-		//install kubelet:{version},kubectl{version} at master0
+		// install kubelet:{version},kubectl{version} at master0
 		fmt.Sprintf(installKubectlCmd, kubeBinaryPath),
 		fmt.Sprintf(installKubeletCmd, kubeBinaryPath),
-		//reload kubelet daemon
+		// reload kubelet daemon
 		daemonReload,
 		restartKubelet,
 	)
@@ -157,10 +164,10 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 		if err != nil {
 			return err
 		}
-		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
+		// default nodeName in k8s is the lower case of their hostname because of DNS protocol.
 		nodename = strings.ToLower(nodename)
 		kubeBinaryPath := k.pathResolver.RootFSBinPath()
-		//assure the connection to api-server succeed before executing upgrade cmds
+		// assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
 			return err
 		}
@@ -173,16 +180,16 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 
 		logger.Info("upgrade node %s", nodename)
 		err = k.sshCmdAsync(ip,
-			//install kubeadm:{version} at the node
+			// install kubeadm:{version} at the node
 			fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
-			//upgrade other control-plane and nodes
+			// upgrade other control-plane and nodes
 			upradeNodeCmd,
-			//kubectl cordon <node-to-cordon>
+			// kubectl cordon <node-to-cordon>
 			fmt.Sprintf(cordonNodeCmd, nodename),
-			//install kubelet:{version},kubectl{version} at the node
+			// install kubelet:{version},kubectl{version} at the node
 			fmt.Sprintf(installKubectlCmd, kubeBinaryPath),
 			fmt.Sprintf(installKubeletCmd, kubeBinaryPath),
-			//reload kubelet daemon
+			// reload kubelet daemon
 			daemonReload,
 			restartKubelet,
 		)
@@ -274,7 +281,7 @@ func (k *KubeadmRuntime) pingAPIServer() error {
 			break
 		}
 		if time.Now().After(timeout) {
-			return fmt.Errorf("restart api-server timeout within one minute")
+			return errors.New("restart api-server timeout within one minute")
 		}
 		time.Sleep(5 * time.Second)
 	}
@@ -306,7 +313,8 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 }
 
 func (k *KubeadmRuntime) changeKubeletExtraArgs(ip string) error {
-	return k.sshCmdAsync(ip,
+	return k.sshCmdAsync(
+		ip,
 		`FILE="/etc/systemd/system/kubelet.service.d/10-kubeadm.conf" && [ -f "$FILE" ] && sed -i 's/\(--container-runtime=\|--pod-infra-container-image=\)\([^ ]*\)\?//g' "$FILE"`,
 		"systemctl daemon-reload",
 		"systemctl restart kubelet",

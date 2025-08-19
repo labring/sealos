@@ -21,15 +21,13 @@ import (
 	"path/filepath"
 
 	"github.com/emirpasic/gods/sets/linkedhashset"
-
 	"github.com/imdario/mergo"
-	netutils "k8s.io/utils/net"
-
 	"github.com/labring/sealos/pkg/constants"
 	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	netutils "k8s.io/utils/net"
 )
 
 var defaultMergeOpts = []func(*mergo.Config){
@@ -57,13 +55,13 @@ func defaultingAgentConfig(c *Config) *Config {
 	if c.AgentConfig == nil {
 		c.AgentConfig = &AgentConfig{}
 	}
-	c.AgentConfig.PreferBundledBin = true
-	c.AgentConfig.DataDir = defaultDataDir
-	c.AgentConfig.ExtraKubeProxyArgs = []string{}
-	c.AgentConfig.ExtraKubeletArgs = []string{}
-	c.AgentConfig.PauseImage = "docker.io/rancher/pause:3.1"
-	c.AgentConfig.PrivateRegistry = defaultRegistryConfigPath
-	c.AgentConfig.Labels = []string{"sealos.io/distribution=k3s"}
+	c.PreferBundledBin = true
+	c.DataDir = defaultDataDir
+	c.ExtraKubeProxyArgs = []string{}
+	c.ExtraKubeletArgs = []string{}
+	c.PauseImage = "docker.io/rancher/pause:3.1"
+	c.PrivateRegistry = defaultRegistryConfigPath
+	c.Labels = []string{"sealos.io/distribution=k3s"}
 
 	return c
 }
@@ -129,22 +127,23 @@ func (k *K3s) overrideCertSans(c *Config) *Config {
 func (k *K3s) sealosCfg(c *Config) *Config {
 	vip := k.cluster.GetVIP()
 	kubeProxy := linkedhashset.New()
-	for _, v := range c.AgentConfig.ExtraKubeProxyArgs {
+	for _, v := range c.ExtraKubeProxyArgs {
 		kubeProxy.Add(v)
 	}
-	kubeProxy.Add(fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", fmt.Sprintf("%s/32", vip)))
+	kubeProxy.Add(fmt.Sprintf("%s=%s", "ipvs-exclude-cidrs", vip+"/32"))
 	kubeProxy.Add(fmt.Sprintf("%s=%s", "proxy-mode", "ipvs"))
 
-	var allArgs []string
+	allArgs := make([]string, 0, len(kubeProxy.Values()))
 	for _, v := range kubeProxy.Values() {
+		//nolint:errcheck
 		allArgs = append(allArgs, v.(string))
 	}
-	c.AgentConfig.ExtraKubeProxyArgs = allArgs
+	c.ExtraKubeProxyArgs = allArgs
 	return c
 }
 
 func (k *K3s) overrideServerConfig(c *Config) *Config {
-	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
+	c.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "token")
 	c.AgentTokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
 
 	if len(c.ClusterDNS) == 0 && len(c.ServiceCIDR) > 0 {
@@ -160,16 +159,16 @@ func (k *K3s) overrideServerConfig(c *Config) *Config {
 }
 
 func (k *K3s) overrideAgentConfig(c *Config) *Config {
-	c.AgentConfig.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
+	c.TokenFile = filepath.Join(k.pathResolver.ConfigsPath(), "agent-token")
 	return c
 }
 
-func (k *K3s) getInitConfig(callbacks ...callback) (*Config, error) {
+func (k *K3s) getInitConfig(callbacks ...callback) *Config {
 	cfg := &Config{}
 	for i := range callbacks {
 		cfg = callbacks[i](cfg)
 	}
-	return cfg, nil
+	return cfg
 }
 
 // ParseConfig return nil if data structure is not matched

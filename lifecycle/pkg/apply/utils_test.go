@@ -14,18 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package apply_test
 
 import (
 	"reflect"
 	"testing"
 
+	"github.com/labring/sealos/pkg/apply"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func TestPreProcessIPList(t *testing.T) {
 	type args struct {
-		joinArgs *Cluster
+		joinArgs *apply.Cluster
 	}
 	tests := []struct {
 		name    string
@@ -35,7 +36,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "node",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "",
 					Nodes:       "192.168.1.1",
 					ClusterName: "",
@@ -46,7 +47,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "master",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "192.168.1.1",
 					Nodes:       "",
 					ClusterName: "",
@@ -57,7 +58,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "node list",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "",
 					Nodes:       "192.168.1.1,192.168.1.2,192.168.1.5",
 					ClusterName: "",
@@ -68,7 +69,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "master list",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "192.168.1.1,192.168.1.2,192.168.1.5",
 					Nodes:       "",
 					ClusterName: "",
@@ -79,7 +80,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "node range",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "",
 					Nodes:       "192.168.1.1-192.168.1.5",
 					ClusterName: "",
@@ -90,7 +91,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "master range",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "192.168.1.1-192.168.1.5",
 					Nodes:       "",
 					ClusterName: "",
@@ -101,7 +102,7 @@ func TestPreProcessIPList(t *testing.T) {
 		{
 			name: "node cidr",
 			args: args{
-				joinArgs: &Cluster{
+				joinArgs: &apply.Cluster{
 					Masters:     "",
 					Nodes:       "192.168.1.1/28",
 					ClusterName: "",
@@ -112,7 +113,7 @@ func TestPreProcessIPList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := PreProcessIPList(tt.args.joinArgs); (err != nil) != tt.wantErr {
+			if err := apply.PreProcessIPList(tt.args.joinArgs); (err != nil) != tt.wantErr {
 				t.Errorf("PreProcessIPList() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -158,7 +159,7 @@ func TestIsIPList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if ok := IsIPList(tt.args); ok != tt.want {
+			if ok := apply.IsIPList(tt.args); ok != tt.want {
 				t.Errorf("IsIPList() = %v, want %v", ok, tt.want)
 			}
 		})
@@ -180,7 +181,7 @@ func TestGetImagesDiff(t *testing.T) {
 		"hub.sealos.cn/labring/nginx:v1.23.3",
 	}
 
-	diff := GetImagesDiff(current, desired)
+	diff := apply.GetImagesDiff(current, desired)
 
 	expected := []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
 
@@ -203,7 +204,7 @@ func TestCompareImageSpecHash(t *testing.T) {
 		"hub.sealos.cn/labring/calico:v3.24.5",
 	}
 
-	if !CompareImageSpecHash(currentImages, newImages) {
+	if !apply.CompareImageSpecHash(currentImages, newImages) {
 		t.Errorf("CompareImageSpecHash(%v, %v) = false; want true", currentImages, newImages)
 	}
 
@@ -222,14 +223,14 @@ func TestCompareImageSpecHash(t *testing.T) {
 		"hub.sealos.cn/labring/nginx:v1.23.1",
 	}
 
-	if CompareImageSpecHash(currentImages, newImages) {
+	if apply.CompareImageSpecHash(currentImages, newImages) {
 		t.Errorf("CompareImageSpecHash(%v, %v) = true; want false", currentImages, newImages)
 	}
 }
 
 func TestGetNewImages(t *testing.T) {
 	// Test case 1
-	actual := GetNewImages(nil, nil)
+	actual := apply.GetNewImages(nil, nil)
 	if actual != nil {
 		t.Errorf("GetNewImages(nil, nil) = %v, expected nil", actual)
 	}
@@ -245,7 +246,7 @@ func TestGetNewImages(t *testing.T) {
 			},
 		},
 	}
-	actual = GetNewImages(currentCluster, nil)
+	actual = apply.GetNewImages(currentCluster, nil)
 	if actual != nil {
 		t.Errorf("GetNewImages(currentCluster, nil) = %v, expected nil", actual)
 	}
@@ -261,7 +262,7 @@ func TestGetNewImages(t *testing.T) {
 			},
 		},
 	}
-	actual = GetNewImages(currentCluster, desiredCluster)
+	actual = apply.GetNewImages(currentCluster, desiredCluster)
 	if actual != nil {
 		t.Errorf("GetNewImages(currentCluster, desiredCluster) = %v, expected nil", actual)
 	}
@@ -276,7 +277,7 @@ func TestGetNewImages(t *testing.T) {
 	}
 
 	expected := []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
-	actual = GetNewImages(currentCluster, desiredCluster)
+	actual = apply.GetNewImages(currentCluster, desiredCluster)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("GetNewImages(currentCluster, desiredCluster) = %v, expected %v", actual, expected)
 	}
@@ -297,7 +298,7 @@ func TestGetNewImages(t *testing.T) {
 		"hub.sealos.cn/labring/calico:v3.24.5",
 		"hub.sealos.cn/labring/nginx:v1.23.3",
 	}
-	actual = GetNewImages(nil, desiredCluster)
+	actual = apply.GetNewImages(nil, desiredCluster)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("GetNewImages(nil, desiredCluster) = %v, expected %v", actual, expected)
 	}

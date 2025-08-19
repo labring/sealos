@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package env
+package env_test
 
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/env"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func getShimCluster1() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
@@ -51,10 +57,16 @@ func getShimCluster1() *v2.Cluster {
 		},
 	}
 }
+
 func getShimCluster2() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
@@ -82,10 +94,16 @@ func getShimCluster2() *v2.Cluster {
 		},
 	}
 }
+
 func getShimCluster3() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env: []string{"registryDomain=sealos.hub", "registryPort=5000", "registryUsername=admin", "registryPassword=passw0rd"},
+			Env: []string{
+				"registryDomain=sealos.hub",
+				"registryPort=5000",
+				"registryUsername=admin",
+				"registryPassword=passw0rd",
+			},
 			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
@@ -143,10 +161,7 @@ func Test_shim_RenderAll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &processor{
-				Cluster: tt.fields.Cluster,
-				cache:   make(map[string]map[string]string),
-			}
+			p := env.NewEnvProcessor(tt.fields.Cluster)
 			if err := p.RenderAll(tt.args.host, tt.args.dir, map[string]string{}); (err != nil) != tt.wantErr {
 				t.Errorf("RenderAll() error = %v, wantErr %v", err, tt.wantErr)
 			}

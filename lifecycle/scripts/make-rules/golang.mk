@@ -89,14 +89,10 @@ go.tidy:
 .PHONY: go.lint
 go.lint: tools.verify.golangci-lint
 	@echo "===========> Run golangci to lint source codes"
-	@$(TOOLS_DIR)/golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml
-
-.PHONY: go.format
-go.format: tools.verify.goimports
-	@echo "===========> Formating codes"
-	@$(FIND) -type f -name '*.go' | xargs gofmt -s -w
-	@$(FIND) -type f -name '*.go' | xargs $(TOOLS_DIR)/goimports -l -w -local $(ROOT_PACKAGE)
-	@$(GO) mod edit -fmt
+	@$(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v
+	@$(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v test/e2e/...
+	@$(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v staging/src/github.com/labring/image-cri-shim/...
+	@$(TOOLS_DIR)/golangci-lint run --color=always --build-tags musl,containers_image_openpgp,netgo,exclude_graphdriver_devicemapper,static,osusergo,exclude_graphdriver_btrfs -c $(ROOT_DIR)/../.golangci.yml --fix -v staging/src/github.com/labring/lvscare/...
 
 .PHONY: go.coverage
 go.coverage:

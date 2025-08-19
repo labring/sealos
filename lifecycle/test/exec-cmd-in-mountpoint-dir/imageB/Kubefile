@@ -1,3 +1,0 @@
-FROM scratch
-COPY . .
-CMD ["kubectl apply -f pod.yaml"]

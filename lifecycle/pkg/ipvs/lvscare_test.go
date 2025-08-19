@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ipvs
+package ipvs_test
 
 import (
 	"testing"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ipvs"
 )
 
 var want = []string{
@@ -90,7 +91,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, constants.LvsCareStaticPodName, []string{"--aa"}); got != tt.want {
+			if got, _ := ipvs.LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, constants.LvsCareStaticPodName, []string{"--aa"}); got != tt.want {
 				t.Errorf("LvsStaticPodYaml() = %v, want %v", got, tt.want)
 			}
 		})

@@ -57,7 +57,6 @@ linters:
     - spancheck
     - sqlclosecheck
     - staticcheck
-    - testpackage
     - thelper
     - tparallel
     - unconvert
@@ -120,6 +119,9 @@ linters:
     gosec:
       excludes:
         - G404
+        - G306
+        - G101
+        - G402
 
 formatters:
   enable:

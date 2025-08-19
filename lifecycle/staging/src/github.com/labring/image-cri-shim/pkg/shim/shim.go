@@ -20,13 +20,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/labring/image-cri-shim/pkg/types"
-
-	"google.golang.org/grpc"
-
 	"github.com/labring/image-cri-shim/pkg/server"
-
+	"github.com/labring/image-cri-shim/pkg/types"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -73,7 +70,7 @@ func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 		Socket:            cfg.ImageShimSocket,
 		User:              -1,
 		Group:             -1,
-		Mode:              0660,
+		Mode:              0o660,
 		CRIConfigs:        auth.CRIConfigs,
 		OfflineCRIConfigs: auth.OfflineCRIConfigs,
 	}
@@ -116,7 +113,7 @@ func (r *shim) Stop() {
 	r.server.Stop()
 }
 
-func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {
+func (r *shim) dialNotify(socket string, uid, gid int, mode os.FileMode, err error) {
 	if err != nil {
 		logger.Error("failed to determine permissions/ownership of client socket %q: %v",
 			socket, err)
@@ -133,6 +130,6 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 }
 
 // shimError creates a formatted shim-specific error.
-var shimError = func(format string, args ...interface{}) error {
+var shimError = func(format string, args ...any) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
 }

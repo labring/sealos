@@ -24,9 +24,8 @@ import (
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/util"
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func newBuildCommand() *cobra.Command {
@@ -71,10 +70,19 @@ func newBuildCommand() *cobra.Command {
 
 	// build is a all common flags
 	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
-	buildFlags.StringVar(&buildFlagResults.Runtime, "runtime", util.Runtime(), "`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.")
+	buildFlags.StringVar(
+		&buildFlagResults.Runtime,
+		"runtime",
+		util.Runtime(),
+		"`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.",
+	)
 
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
-	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
+	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(
+		&fromAndBudResults,
+		&userNSResults,
+		&namespaceResults,
+	)
 	bailOnError(err, "failed to setup From and Build flags")
 
 	sopts.RegisterFlags(flags)
@@ -84,15 +92,25 @@ func newBuildCommand() *cobra.Command {
 	flags.SetNormalizeFunc(buildahcli.AliasFlags)
 
 	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
-	bailOnError(markFlagsHidden(flags, append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...), "")
+	bailOnError(
+		markFlagsHidden(
+			flags,
+			append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...),
+		"",
+	)
 	buildCommand.SetUsageTemplate(UsageTemplate())
 
 	return buildCommand
 }
 
-func buildCmd(c *cobra.Command, inputArgs []string, sopts saverOptions, iopts buildahcli.BuildOptions) error {
+func buildCmd(
+	c *cobra.Command,
+	inputArgs []string,
+	sopts saverOptions,
+	iopts buildahcli.BuildOptions,
+) error {
 	if flagChanged(c, "logfile") {
-		logfile, err := os.OpenFile(iopts.Logfile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		logfile, err := os.OpenFile(iopts.Logfile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
 		if err != nil {
 			return err
 		}
@@ -125,7 +143,10 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saverOptions, iopts bu
 			}
 		}
 		if len(iopts.File) == 0 {
-			return fmt.Errorf("cannot find any of %v in context directory", strings.Join(defaultFileNames, ", "))
+			return fmt.Errorf(
+				"cannot find any of %v in context directory",
+				strings.Join(defaultFileNames, ", "),
+			)
 		}
 	}
 	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
@@ -166,7 +187,7 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saverOptions, iopts bu
 }
 
 func getContextDir(inputArgs []string) (string, error) {
-	contextDir := ""
+	var contextDir string
 	cliArgs := inputArgs
 	var err error
 	// Nothing provided, we assume the current working directory as build
@@ -174,7 +195,10 @@ func getContextDir(inputArgs []string) (string, error) {
 	if len(cliArgs) == 0 {
 		contextDir, err = os.Getwd()
 		if err != nil {
-			return "", fmt.Errorf("unable to choose current working directory as build context: %w", err)
+			return "", fmt.Errorf(
+				"unable to choose current working directory as build context: %w",
+				err,
+			)
 		}
 	} else {
 		// The context directory could be a URL.  Try to handle that.

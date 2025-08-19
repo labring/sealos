@@ -16,15 +16,13 @@ package apply
 
 import (
 	"errors"
-	"fmt"
-
-	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.Interface, error) {
@@ -32,7 +30,7 @@ func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.
 	cf := clusterfile.NewClusterFile(clusterPath)
 	err := cf.Process()
 	// incase we want to reset force
-	if err != nil && err != clusterfile.ErrClusterFileNotExists {
+	if err != nil && !errors.Is(err, clusterfile.ErrClusterFileNotExists) {
 		return nil, err
 	}
 	cluster := cf.GetCluster()
@@ -51,14 +49,14 @@ func NewApplierFromResetArgs(cmd *cobra.Command, args *ResetArgs) (applydrivers.
 
 func (r *ClusterArgs) resetArgs(cmd *cobra.Command, args *ResetArgs) error {
 	if args.ClusterName.ClusterName == "" {
-		return fmt.Errorf("cluster name can not be empty")
+		return errors.New("cluster name can not be empty")
 	}
 	override := getSSHFromCommand(cmd)
 	if override != nil {
 		ssh.OverSSHConfig(&r.cluster.Spec.SSH, override)
 	}
 
-	if r.cluster.ObjectMeta.CreationTimestamp.IsZero() {
+	if r.cluster.CreationTimestamp.IsZero() {
 		return errors.New("creation time must be specified in clusterfile")
 	}
 	if len(r.cluster.Spec.Hosts) == 0 {
