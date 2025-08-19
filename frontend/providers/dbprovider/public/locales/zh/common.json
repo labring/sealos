@@ -34,6 +34,7 @@
   "Pod": "实例",
   "Pod Name": "实例名",
   "Port": "端口",
+  "ParameterConfig": "参数配置",
   "Replicas": "实例数",
   "Resources": "资源",
   "Restart": "重启",
