@@ -65,6 +65,11 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 	needsCommit := (currentState == devboxv1alpha1.DevboxStateRunning || currentState == devboxv1alpha1.DevboxStateStopped) && targetState == devboxv1alpha1.DevboxStateShutdown
 
 	if needsCommit {
+		// Check if commit is already in progress to prevent duplicate requests
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus == devboxv1alpha1.CommitStatusCommitting {
+			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
+			return nil
+		}
 		if err := h.commitDevbox(ctx, devbox); err != nil {
 			h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 			return err
@@ -83,6 +88,15 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 
 func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
 	// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
+	// step 0: set commit status to committing to prevent duplicate requests
+	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusCommitting
+	devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
+	if err := h.Client.Status().Update(ctx, devbox); err != nil {
+		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
+		return err
+	}
+	h.Logger.Info("set commit status to committing", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
+
 	// step 1: do commit, push image, remove container whether commit success or not
 	baseImage := devbox.Status.CommitRecords[devbox.Status.ContentID].BaseImage
 	commitImage := devbox.Status.CommitRecords[devbox.Status.ContentID].CommitImage
@@ -98,10 +112,22 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	}()
 	if containerID, err = h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 		h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
+		// Update commit status to failed on commit error
+		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusFailed
+		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
+		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
+			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
+		}
 		return err
 	}
 	if err := h.Committer.Push(ctx, commitImage); err != nil {
 		h.Logger.Error(err, "failed to push commit image", "commitImage", commitImage)
+		// Update commit status to failed on push error
+		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusFailed
+		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
+		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
+			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
+		}
 		return err
 	}
 	// remove after push image whether push success

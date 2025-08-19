@@ -175,9 +175,10 @@ type NetworkStatus struct {
 type CommitStatus string
 
 const (
-	CommitStatusSuccess CommitStatus = "Success"
-	CommitStatusFailed  CommitStatus = "Failed"
-	CommitStatusPending CommitStatus = "Pending"
+	CommitStatusSuccess    CommitStatus = "Success"
+	CommitStatusFailed     CommitStatus = "Failed"
+	CommitStatusPending    CommitStatus = "Pending"
+	CommitStatusCommitting CommitStatus = "Committing"
 )
 
 type DevboxPhase string
@@ -231,7 +232,7 @@ type CommitRecord struct {
 	CommitTime metav1.Time `json:"commitTime"`
 
 	// CommitStatus is the status of the commit
-	// +kubebuilder:validation:Enum=Success;Failed;Pending
+	// +kubebuilder:validation:Enum=Success;Failed;Pending;Committing
 	// +kubebuilder:default=Pending
 	CommitStatus CommitStatus `json:"commitStatus"`
 }
