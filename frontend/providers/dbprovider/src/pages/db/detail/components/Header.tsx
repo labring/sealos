@@ -159,7 +159,6 @@ const Header = ({
       dbType: db.dbType,
       mock: false
     });
-    console.log('conn', conn);
 
     if (!conn) {
       return toast({
@@ -200,9 +199,7 @@ const Header = ({
       type: mapDBType(db.dbType)
     };
 
-    console.log(JSON.stringify(payload));
     let currentDataSourceId = getDataSourceId(db.dbName);
-    console.log('currentDataSourceId', currentDataSourceId);
 
     if (!currentDataSourceId) {
       try {
@@ -210,14 +207,12 @@ const Header = ({
         currentDataSourceId = res.data;
         if (currentDataSourceId) {
           setDataSourceId(db.dbName, currentDataSourceId);
-          console.log('Created datasource with ID:', currentDataSourceId);
         }
       } catch (err: any) {
         if (err.data) {
           currentDataSourceId = err.data;
           if (currentDataSourceId) {
             setDataSourceId(db.dbName, currentDataSourceId);
-            console.log('Datasource already exists with ID:', currentDataSourceId);
           }
         } else {
           throw err;
@@ -230,9 +225,8 @@ const Header = ({
           id: currentDataSourceId
         };
         await syncDatasource(syncPayload, apiKey, userKey);
-        console.log('Synced existing datasource with ID:', currentDataSourceId);
       } catch (err) {
-        console.log('sync datasource:', JSON.stringify(err));
+        console.error('sync datasource:', JSON.stringify(err));
       }
     }
 
@@ -258,7 +252,6 @@ const Header = ({
 
     const chat2dbUrl = new URL(baseUrl);
     chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-    console.log('base url', chat2dbUrl.toString());
 
     sealosApp.runEvents('openDesktopApp', {
       appKey: 'system-chat2db',

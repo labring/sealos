@@ -234,24 +234,20 @@ const DBList = ({
           url: connectionUrl,
           type: mapDBType(db.dbType)
         };
-        console.log(JSON.stringify(payload));
 
         let currentDataSourceId = getDataSourceId(db.name);
-        console.log('currentDataSourceId', currentDataSourceId);
         if (!currentDataSourceId) {
           try {
             const res = await syncDatasourceFirst(payload, apiKey, userKey);
             currentDataSourceId = res.data;
             if (currentDataSourceId) {
               setDataSourceId(db.name, currentDataSourceId);
-              console.log('Created datasource with ID:', currentDataSourceId);
             }
           } catch (err: any) {
             if (err.data) {
               currentDataSourceId = err.data;
               if (currentDataSourceId) {
                 setDataSourceId(db.name, currentDataSourceId);
-                console.log('Datasource already exists with ID:', currentDataSourceId);
               }
             } else {
               throw err;
@@ -263,12 +259,8 @@ const DBList = ({
               ...payload,
               id: currentDataSourceId
             };
-            console.log('syncPayload', syncPayload);
             await syncDatasource(syncPayload, apiKey, userKey);
-            console.log('Synced existing datasource with ID:', currentDataSourceId);
-          } catch (err) {
-            console.log('sync datasource:', err);
-          }
+          } catch (err) {}
         }
 
         if (!currentDataSourceId) {
@@ -293,7 +285,6 @@ const DBList = ({
 
         const chat2dbUrl = new URL(baseUrl);
         chat2dbUrl.searchParams.set('dataSourceIds', String(currentDataSourceId));
-        console.log('base url', chat2dbUrl.toString());
 
         sealosApp.runEvents('openDesktopApp', {
           appKey: 'system-chat2db',
@@ -303,7 +294,6 @@ const DBList = ({
           }
         });
       } catch (err) {
-        console.log(err);
         toast({
           title: t('chat2db_redirect_failed'),
           status: 'error'
@@ -759,7 +749,6 @@ const DBList = ({
                   refetchApps();
                   onCloseRemarkModal();
                 } catch (error) {
-                  console.log('remark error', error);
                   toast({
                     title: t('update_remark_failed'),
                     status: 'error'

@@ -105,7 +105,6 @@ const EditApp = ({
 
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    console.log(data);
     data && formOnchangeDebounce(data as MigrateForm);
   });
 

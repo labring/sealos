@@ -18,7 +18,6 @@ export async function generateLoginUrl(opts: GenerateLoginUrlOpts): Promise<stri
 
   const envData = await getAppEnv();
   const clientDomain = envData.CLIENT_DOMAIN_NAME;
-  console.log('clientDomain', clientDomain);
 
   if (!clientDomain) {
     throw new Error('CLIENT_DOMAIN_NAME environment variable is not set');
