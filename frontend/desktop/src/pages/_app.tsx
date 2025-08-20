@@ -12,6 +12,7 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import '@sealos/driver/src/driver.css';
 import '@/styles/globals.scss';
+import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,12 @@ Router.events.on('routeChangeError', () => NProgress.done());
 const App = ({ Component, pageProps }: AppProps) => {
   const { i18n } = useTranslation();
   const { initAppConfig, layoutConfig } = useConfigStore();
+  const { setBlockingPageUnload } = useAppsRunningPromptStore();
+
+  useEffect(() => {
+    // Reset blocking status when opening desktop
+    setBlockingPageUnload(true);
+  }, []);
 
   useEffect(() => {
     initAppConfig();

@@ -29,11 +29,13 @@ import CreateTeam from './CreateTeam';
 import BoringAvatar from 'boring-avatars';
 import { useEffect, useMemo, useRef } from 'react';
 import { track } from '@sealos/gtm';
+import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 
 export default function WorkspaceToggle() {
   const modalDisclosure = useDisclosure();
   const createTeamDisclosure = useDisclosure();
   const { session } = useSessionStore();
+  const { setBlockingPageUnload } = useAppsRunningPromptStore();
   const { t } = useTranslation();
   const user = session?.user;
   const ns_uid = user?.ns_uid || '';
@@ -107,6 +109,8 @@ export default function WorkspaceToggle() {
                   key={ns.uid}
                   width={'full'}
                   onClick={() => {
+                    // Do not show AppRunningPrompt when changing workspaces, as it prevents the page from reloading.
+                    setBlockingPageUnload(false);
                     switchTeam({ uid: ns.uid });
                   }}
                   displayPoint={true}

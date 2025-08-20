@@ -35,7 +35,7 @@ interface RunningApp {
 const AppsRunningPrompt = () => {
   const { t } = useTranslation();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { dontShowAgain, setDontShowAgain } = useAppsRunningPromptStore();
+  const { dontShowAgain, setDontShowAgain, blockingPageUnload } = useAppsRunningPromptStore();
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const [allowClose, setAllowClose] = useState(false);
 
@@ -71,7 +71,7 @@ const AppsRunningPrompt = () => {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (dontShowAgain || allowClose) {
+      if (dontShowAgain || !blockingPageUnload || allowClose) {
         return; // Don't prevent unload
       }
 
@@ -110,7 +110,7 @@ const AppsRunningPrompt = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dontShowAgain, allowClose, onOpen, checkRunningApps, setAllowClose]);
+  }, [dontShowAgain, allowClose, onOpen, checkRunningApps, setAllowClose, blockingPageUnload]);
 
   const appsToCheck: RunningApp[] = [
     {
