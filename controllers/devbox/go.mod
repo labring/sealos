@@ -3,7 +3,7 @@ module github.com/labring/sealos/controllers/devbox
 go 1.24.0
 
 require (
-	github.com/containerd/containerd/v2 v2.1.3
+	github.com/containerd/containerd/v2 v2.1.4
 	github.com/containerd/errdefs v1.0.0
 	github.com/containerd/nerdctl/v2 v2.1.3
 	github.com/go-logr/logr v1.4.2
@@ -21,11 +21,11 @@ require (
 	sigs.k8s.io/controller-runtime v0.20.4
 )
 
-replace github.com/containerd/nerdctl => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27
+replace github.com/containerd/nerdctl => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250820041017-57f3084bf6c6
 
-replace github.com/containerd/nerdctl/v2 => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250731025443-879dbf5c7d27
+replace github.com/containerd/nerdctl/v2 => github.com/luanshaotong/nerdctl/v2 v2.0.0-20250820041017-57f3084bf6c6
 
-replace github.com/containerd/nerdctl/mod/tigron => github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250731025443-879dbf5c7d27
+replace github.com/containerd/nerdctl/mod/tigron => github.com/luanshaotong/nerdctl/mod/tigron v0.0.0-20250820041017-57f3084bf6c6
 
 require (
 	cel.dev/expr v0.20.0 // indirect
