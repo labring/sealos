@@ -32,7 +32,6 @@ jobs:
           echo "version: $version"
           echo "command: $command"
           echo "name: $name"
-          echo "release: $release"
           echo name=${name} >> $GITHUB_OUTPUT
           echo version=${version} >> $GITHUB_OUTPUT
           echo command=${command} >> $GITHUB_OUTPUT
