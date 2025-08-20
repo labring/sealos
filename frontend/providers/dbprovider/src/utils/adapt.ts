@@ -98,24 +98,22 @@ function calcTotalResource(obj: KubeBlockClusterSpec['componentSpecs']) {
     };
   }
 
-  // Calculate main node (first component) resources
   const mainComp = obj[0];
   const mainCpu = cpuFormatToM(mainComp?.resources?.limits?.cpu || '0');
   const mainMemory = memoryFormatToMi(mainComp?.resources?.limits?.memory || '0');
-  const mainStorage = storageFormatToNum(
-    mainComp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
-  );
+  const mainStorage = (mainComp?.volumeClaimTemplates || []).reduce((total, volume) => {
+    return total + storageFormatToNum(volume?.spec?.resources?.requests?.storage || '0');
+  }, 0);
   cpu = mainCpu;
   memory = mainMemory;
   storage = mainStorage;
 
-  // Calculate total resources for all nodes
   obj.forEach((comp) => {
     const parseCpu = cpuFormatToM(comp?.resources?.limits?.cpu || '0');
     const parseMemory = memoryFormatToMi(comp?.resources?.limits?.memory || '0');
-    const parseStorage = storageFormatToNum(
-      comp?.volumeClaimTemplates?.[0]?.spec?.resources?.requests?.storage || '0'
-    );
+    const parseStorage = (comp?.volumeClaimTemplates || []).reduce((total, volume) => {
+      return total + storageFormatToNum(volume?.spec?.resources?.requests?.storage || '0');
+    }, 0);
     totalCpu += parseCpu * (comp.replicas || 1);
     totalMemory += parseMemory * (comp.replicas || 1);
     totalStorage += parseStorage * (comp.replicas || 1);

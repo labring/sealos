@@ -50,7 +50,6 @@ export const json2CreateCluster = (
 ) => {
   const data: DBEditType = { ...defaultDBEditValue, ...rawData };
   const resources = distributeResources(data);
-  console.log(resources);
 
   // Remove sealaf-app label for restored databases to allow normal deletion
   const filteredLabels = { ...data.labels };
