@@ -1,33 +1,6 @@
 @import '@sealos/shadcn-ui/shadcn.css';
 @import '@sealos/shadcn-ui/styles.css';
 
-body,
-h1,
-h2,
-h3,
-h4,
-hr,
-p,
-blockquote,
-dl,
-dt,
-dd,
-ul,
-ol,
-li,
-pre,
-form,
-fieldset,
-legend,
-button,
-input,
-textarea,
-th,
-td,
-svg {
-  margin: 0;
-}
-
 body {
   height: 100vh;
   width: 100vw;

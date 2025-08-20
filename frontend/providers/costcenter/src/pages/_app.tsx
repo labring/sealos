@@ -109,7 +109,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme}>
+        <ChakraProvider theme={theme} resetScope=".ck-reset">
           <Layout>
             <Component {...pageProps} />
           </Layout>
