@@ -173,11 +173,13 @@ function ResourcesDistributeTable({ data }: { data: Parameters<typeof distribute
 const Form = ({
   formHook,
   pxVal,
-  allocatedStorage
+  allocatedStorage,
+  cpuCores
 }: {
   formHook: UseFormReturn<DBEditType, any>;
   pxVal: number;
   allocatedStorage: number;
+  cpuCores: number;
 }) => {
   if (!formHook) return null;
   const { t } = useTranslation();
@@ -192,6 +194,17 @@ const Form = ({
     getValues,
     formState: { errors }
   } = formHook;
+
+  const dynamicCpuMarks = useMemo(() => {
+    const base = CpuSlideMarkList.slice(0, 9);
+    if (cpuCores > 8) {
+      base.push({
+        label: cpuCores,
+        value: Math.round(cpuCores * 1000)
+      });
+    }
+    return base;
+  }, [cpuCores]);
 
   const navList: { id: string; label: I18nCommonKey; icon: string }[] = useMemo(
     () => [
@@ -536,21 +549,21 @@ const Form = ({
               <Flex mb={10} pr={3} alignItems={'flex-start'}>
                 <Label w={100}>CPU</Label>
                 <MySlider
-                  markList={CpuSlideMarkList}
+                  markList={dynamicCpuMarks}
                   activeVal={getValues('cpu')}
                   setVal={(e) => {
-                    if (CpuSlideMarkList[e].value < minCPU) {
+                    if (dynamicCpuMarks[e].value < minCPU) {
                       setValue('cpu', minCPU);
                     } else {
-                      setValue('cpu', CpuSlideMarkList[e].value);
+                      setValue('cpu', dynamicCpuMarks[e].value);
                     }
                   }}
-                  max={CpuSlideMarkList.length - 1}
+                  max={dynamicCpuMarks.length - 1}
                   min={minCPU / 1000}
                   step={1}
                 />
                 <Box ml={5} transform={'translateY(10px)'} color={'grayModern.600'}>
-                  (Core)
+                  (Cores)
                 </Box>
               </Flex>
               <Flex mb={'50px'} pr={3} alignItems={'center'}>

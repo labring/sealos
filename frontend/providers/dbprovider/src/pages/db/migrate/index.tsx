@@ -112,17 +112,6 @@ const EditApp = ({
     setIsLoading(true);
     try {
       const yamlList = generateYamlList(formData).map((item) => item.value);
-      // quote check
-      // const quoteCheckRes = checkQuotaAllow(formData);
-      // if (quoteCheckRes) {
-      //   setIsLoading(false);
-      //   return toast({
-      //     status: 'warning',
-      //     title: t(quoteCheckRes),
-      //     duration: 5000,
-      //     isClosable: true
-      //   });
-      // }
       await applyYamlList(yamlList, 'create');
       toast({
         title: t('migration_task_created_successfully'),
@@ -136,9 +125,8 @@ const EditApp = ({
           listType: 'dataImport'
         }
       });
-    } catch (error) {
-      console.error(error);
-      setErrorMessage(JSON.stringify(error));
+    } catch (err) {
+      setErrorMessage(JSON.stringify(err));
     }
     setIsLoading(false);
   };
