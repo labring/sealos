@@ -19,21 +19,20 @@ package controllers
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
-	"github.com/minio/madmin-go/v3"
-	"github.com/minio/minio-go/v7"
-
 	myObjectStorage "github.com/labring/sealos/controllers/pkg/objectstorage"
 	"github.com/labring/sealos/controllers/pkg/utils/env"
-
+	"github.com/minio/madmin-go/v3"
+	"github.com/minio/minio-go/v7"
 	objectstoragev1 "github/labring/sealos/controllers/objectstorage/api/v1"
-
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,13 +88,17 @@ const (
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=resourcequotas/status,verbs=get;list;watch;create;update;patch;delete
 
-func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ObjectStorageUserReconciler) Reconcile(
+	ctx context.Context,
+	req ctrl.Request,
+) (ctrl.Result, error) {
 	username := req.Name
 	userNamespace := req.Namespace
 
 	// check object storage user name if correct or not
 	if username != strings.Split(userNamespace, "-")[1] {
-		r.Logger.V(1).Info("object storage user name is not correspond to the namespace", "name", username, "namespace", userNamespace)
+		r.Logger.V(1).
+			Info("object storage user name is not correspond to the namespace", "name", username, "namespace", userNamespace)
 		return ctrl.Result{}, nil
 	}
 
@@ -103,7 +106,14 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if r.OSAdminClient == nil || r.OSClient == nil {
 		secret := &corev1.Secret{}
 		if err := r.Get(ctx, client.ObjectKey{Name: r.OSAdminSecret, Namespace: r.OSNamespace}, secret); err != nil {
-			r.Logger.Error(err, "failed to get secret", "name", r.OSAdminSecret, "namespace", r.OSNamespace)
+			r.Logger.Error(
+				err,
+				"failed to get secret",
+				"name",
+				r.OSAdminSecret,
+				"namespace",
+				r.OSNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 
@@ -129,13 +139,27 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	user := &objectstoragev1.ObjectStorageUser{}
 	if err := r.Get(ctx, client.ObjectKey{Name: username, Namespace: userNamespace}, user); err != nil {
-		if !errors.IsNotFound(err) {
-			r.Logger.Error(err, "failed to get object storage user", "name", username, "namespace", userNamespace)
+		if !kerrors.IsNotFound(err) {
+			r.Logger.Error(
+				err,
+				"failed to get object storage user",
+				"name",
+				username,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 
 		if err := r.deleteObjectStorageUser(ctx, username, userNamespace); err != nil {
-			r.Logger.Error(err, "failed to delete object storage user", "name", username, "namespace", userNamespace)
+			r.Logger.Error(
+				err,
+				"failed to delete object storage user",
+				"name",
+				username,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 
@@ -144,7 +168,14 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	resourceQuota := &corev1.ResourceQuota{}
 	if err := r.Get(ctx, client.ObjectKey{Name: ResourceQuotaPrefix + userNamespace, Namespace: userNamespace}, resourceQuota); err != nil {
-		r.Logger.Error(err, "failed to get resource quota", "name", ResourceQuotaPrefix+userNamespace, "namespace", userNamespace)
+		r.Logger.Error(
+			err,
+			"failed to get resource quota",
+			"name",
+			ResourceQuotaPrefix+userNamespace,
+			"namespace",
+			userNamespace,
+		)
 		return ctrl.Result{}, err
 	}
 
@@ -183,18 +214,33 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if err := r.OSAdminClient.SetUser(ctx, accessKey, secretKey, madmin.AccountEnabled); err != nil {
 			r.Logger.Error(err, "failed to set user secret key", "name", accessKey)
 		}
-		r.Logger.V(1).Info("[user] password change info", "name", user.Name, "spec secret key version", user.Spec.SecretKeyVersion)
+		r.Logger.V(1).
+			Info("[user] password change info", "name", user.Name, "spec secret key version", user.Spec.SecretKeyVersion)
 	}
 
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, client.ObjectKey{Name: OSKeySecret, Namespace: userNamespace}, secret); err != nil {
-		if !errors.IsNotFound(err) {
-			r.Logger.Error(err, "failed to get object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+		if !kerrors.IsNotFound(err) {
+			r.Logger.Error(
+				err,
+				"failed to get object storage key secret",
+				"name",
+				OSKeySecret,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 
 		if err := r.newObjectStorageKeySecret(ctx, secret, user, accessKey, secretKey); err != nil {
-			r.Logger.Error(err, "failed to new object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+			r.Logger.Error(
+				err,
+				"failed to new object storage key secret",
+				"name",
+				OSKeySecret,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -203,14 +249,28 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	if keySecretUpdated {
 		if err := r.Update(ctx, secret); err != nil {
-			r.Logger.Error(err, "failed to update object storage key secret", "name", OSKeySecret, "namespace", userNamespace)
+			r.Logger.Error(
+				err,
+				"failed to update object storage key secret",
+				"name",
+				OSKeySecret,
+				"namespace",
+				userNamespace,
+			)
 		}
 	}
 
 	// check whether the space used exceeds the quota
 	size, objectsCount, err := myObjectStorage.GetUserObjectStorageSize(r.OSClient, user.Name)
 	if err != nil {
-		r.Logger.Error(err, "failed to get user space used", "name", username, "namespace", userNamespace)
+		r.Logger.Error(
+			err,
+			"failed to get user space used",
+			"name",
+			username,
+			"namespace",
+			userNamespace,
+		)
 		return ctrl.Result{}, err
 	}
 
@@ -224,7 +284,14 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	if used.String() != stringSize {
 		resourceQuota.Status.Used[ResourceObjectStorageSize] = resource.MustParse(stringSize)
 		if err := r.Status().Update(ctx, resourceQuota); err != nil {
-			r.Logger.Error(err, "failed to update status", "name", resourceQuota.Name, "namespace", userNamespace)
+			r.Logger.Error(
+				err,
+				"failed to update status",
+				"name",
+				resourceQuota.Name,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
@@ -236,12 +303,20 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	if updated {
 		if err := r.Status().Update(ctx, user); err != nil {
-			r.Logger.Error(err, "failed to update status", "name", username, "namespace", userNamespace)
+			r.Logger.Error(
+				err,
+				"failed to update status",
+				"name",
+				username,
+				"namespace",
+				userNamespace,
+			)
 			return ctrl.Result{}, err
 		}
 	}
 
-	r.Logger.V(1).Info("[user] user info", "name", user.Name, "quota", user.Status.Quota, "size", size, "objectsCount", user.Status.ObjectsCount)
+	r.Logger.V(1).
+		Info("[user] user info", "name", user.Name, "quota", user.Status.Quota, "size", size, "objectsCount", user.Status.ObjectsCount)
 
 	if r.QuotaEnabled && size > user.Status.Quota {
 		if err := r.addUserToGroup(ctx, accessKey, UserDenyWriteGroup); err != nil {
@@ -258,7 +333,10 @@ func (r *ObjectStorageUserReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	return ctrl.Result{Requeue: true, RequeueAfter: r.OSUDetectionCycle}, nil
 }
 
-func (r *ObjectStorageUserReconciler) NewObjectStorageUser(ctx context.Context, accessKey, secretKey string) error {
+func (r *ObjectStorageUserReconciler) NewObjectStorageUser(
+	ctx context.Context,
+	accessKey, secretKey string,
+) error {
 	if err := r.OSAdminClient.AddUser(ctx, accessKey, secretKey); err != nil {
 		r.Logger.Error(err, "failed to create object storage user")
 		return err
@@ -272,7 +350,12 @@ func (r *ObjectStorageUserReconciler) NewObjectStorageUser(ctx context.Context, 
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) newObjectStorageKeySecret(ctx context.Context, secret *corev1.Secret, user *objectstoragev1.ObjectStorageUser, accessKey, secretKey string) error {
+func (r *ObjectStorageUserReconciler) newObjectStorageKeySecret(
+	ctx context.Context,
+	secret *corev1.Secret,
+	user *objectstoragev1.ObjectStorageUser,
+	accessKey, secretKey string,
+) error {
 	secret.SetName(OSKeySecret)
 	secret.SetNamespace(user.Namespace)
 
@@ -297,7 +380,10 @@ func (r *ObjectStorageUserReconciler) newObjectStorageKeySecret(ctx context.Cont
 	return r.Create(ctx, secret)
 }
 
-func (r *ObjectStorageUserReconciler) addUserToGroup(ctx context.Context, user string, group string) error {
+func (r *ObjectStorageUserReconciler) addUserToGroup(
+	ctx context.Context,
+	user, group string,
+) error {
 	newGroupDesc := madmin.GroupAddRemove{}
 
 	groupDesc, err := r.OSAdminClient.GetGroupDescription(ctx, group)
@@ -310,7 +396,7 @@ func (r *ObjectStorageUserReconciler) addUserToGroup(ctx context.Context, user s
 	newGroupDesc.Members = member
 	newGroupDesc.Status = madmin.GroupStatus(groupDesc.Status)
 
-	var isExist = false
+	isExist := false
 	for _, member := range groupDesc.Members {
 		if user == member {
 			isExist = true
@@ -328,7 +414,10 @@ func (r *ObjectStorageUserReconciler) addUserToGroup(ctx context.Context, user s
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) removeUserFromGroup(ctx context.Context, user string, group string) error {
+func (r *ObjectStorageUserReconciler) removeUserFromGroup(
+	ctx context.Context,
+	user, group string,
+) error {
 	newGroupDesc := madmin.GroupAddRemove{}
 
 	groupDesc, err := r.OSAdminClient.GetGroupDescription(ctx, group)
@@ -351,10 +440,22 @@ func (r *ObjectStorageUserReconciler) removeUserFromGroup(ctx context.Context, u
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(ctx context.Context, username, userNamespace string) error {
+func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(
+	ctx context.Context,
+	username, userNamespace string,
+) error {
 	// delete all bucket cr of user
-	if err := r.Client.DeleteAllOf(ctx, &objectstoragev1.ObjectStorageBucket{}, client.InNamespace(userNamespace)); client.IgnoreNotFound(err) != nil {
-		r.Logger.Error(err, "failed to delete all bucket of user", "name", username, "namespace", userNamespace)
+	if err := r.DeleteAllOf(ctx, &objectstoragev1.ObjectStorageBucket{}, client.InNamespace(userNamespace)); client.IgnoreNotFound(
+		err,
+	) != nil {
+		r.Logger.Error(
+			err,
+			"failed to delete all bucket of user",
+			"name",
+			username,
+			"namespace",
+			userNamespace,
+		)
 		return err
 	}
 
@@ -378,8 +479,12 @@ func (r *ObjectStorageUserReconciler) deleteObjectStorageUser(ctx context.Contex
 	return nil
 }
 
-func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev1.ObjectStorageUser, username string, quota int64) bool {
-	var updated = false
+func (r *ObjectStorageUserReconciler) initObjectStorageUser(
+	user *objectstoragev1.ObjectStorageUser,
+	username string,
+	quota int64,
+) bool {
+	updated := false
 
 	if user.Status.Quota != quota {
 		user.Status.Quota = quota
@@ -409,8 +514,11 @@ func (r *ObjectStorageUserReconciler) initObjectStorageUser(user *objectstoragev
 	return updated
 }
 
-func (r *ObjectStorageUserReconciler) initObjectStorageKeySecret(secret *corev1.Secret, accessKey, secretKey string) bool {
-	var updated = false
+func (r *ObjectStorageUserReconciler) initObjectStorageKeySecret(
+	secret *corev1.Secret,
+	accessKey, secretKey string,
+) bool {
+	updated := false
 
 	if !bytes.Equal(secret.Data[OSKeySecretAccessKey], []byte(accessKey)) {
 		secret.Data[OSKeySecretAccessKey] = []byte(accessKey)
@@ -453,7 +561,7 @@ func ConvertBytesToString(bytes int64) string {
 		value = float64(bytes) / (1 << 10)
 		unit = "Ki"
 	default:
-		return fmt.Sprintf("%d", bytes)
+		return strconv.FormatInt(bytes, 10)
 	}
 
 	return fmt.Sprintf("%.0f%s", value, unit)
@@ -479,8 +587,11 @@ func (r *ObjectStorageUserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	oSAdminSecret := env.GetEnvWithDefault(OSAdminSecret, "")
 	r.OSAdminSecret = oSAdminSecret
 
-	if internalEndpoint == "" || externalEndpoint == "" || oSNamespace == "" || oSAdminSecret == "" {
-		return fmt.Errorf("failed to get the endpoint or namespace or admin secret env of object storage")
+	if internalEndpoint == "" || externalEndpoint == "" || oSNamespace == "" ||
+		oSAdminSecret == "" {
+		return errors.New(
+			"failed to get the endpoint or namespace or admin secret env of object storage",
+		)
 	}
 
 	quotaEnabled := env.GetBoolWithDefault(QuotaEnabled, true)

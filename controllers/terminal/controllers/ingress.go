@@ -19,14 +19,13 @@ package controllers
 import (
 	"fmt"
 
+	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const (
-	//TODO : higress currently do not support
+	// TODO: higress currently do not support
 	safeConfigurationSnippet = `
 set $flag 0;
 if ($http_upgrade = 'websocket') {set $flag "${flag}1";}
@@ -34,8 +33,14 @@ if ($http_sec_fetch_site !~ 'same-.*') {set $flag "${flag}2";}
 if ($flag = '02'){ return 403; }`
 )
 
-func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
-	cors := fmt.Sprintf("https://%s,https://*.%s", r.CtrConfig.Global.CloudDomain+r.getPort(), r.CtrConfig.Global.CloudDomain+r.getPort())
+func (r *TerminalReconciler) createNginxIngress(
+	terminal *terminalv1.Terminal, host string,
+) *networkingv1.Ingress {
+	cors := fmt.Sprintf(
+		"https://%s,https://*.%s",
+		r.CtrConfig.CloudDomain+r.getPort(),
+		r.CtrConfig.CloudDomain+r.getPort(),
+	)
 
 	secretHeader := terminal.Status.SecretHeader
 	configurationSnippet := safeConfigurationSnippet + `

@@ -20,19 +20,15 @@ tools.install: $(addprefix tools.install., $(BUILD_TOOLS))
 .PHONY: tools.install.%
 tools.install.%:
 	@echo "===========> Installing $*"
-	@$(MAKE) install.$*
+	@$(MAKE) tools.verify.$*
 
 .PHONY: tools.verify.%
 tools.verify.%:
-	@if [ ! -f $(TOOLS_DIR)/$* ]; then GOBIN=$(TOOLS_DIR) $(MAKE) tools.install.$*; fi
+	@if [ ! -f $(TOOLS_DIR)/$* ]; then GOBIN=$(TOOLS_DIR) $(MAKE) install.$*; fi
 
 .PHONY: install.golangci-lint
 install.golangci-lint:
-	@$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-.PHONY: install.goimports
-install.goimports:
-	@$(GO) install golang.org/x/tools/cmd/goimports@latest
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(TOOLS_DIR) v2.3.1
 
 .PHONY: install.addlicense
 install.addlicense:
@@ -40,8 +36,8 @@ install.addlicense:
 
 .PHONY: install.deepcopy-gen
 install.deepcopy-gen:
-	@$(GO) install k8s.io/code-generator/cmd/deepcopy-gen@latest
+	@$(GO) install k8s.io/code-generator/cmd/deepcopy-gen@v0.30.3
 
 .PHONY: install.conversion-gen
 install.conversion-gen:
-	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@latest
+	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@v0.30.3

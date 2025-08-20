@@ -18,20 +18,16 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/onsi/gomega"
-
-	"github.com/labring/sealos/test/e2e/testhelper/utils"
-
-	"github.com/labring/sealos/test/e2e/suites/operators"
-
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
-	"github.com/onsi/ginkgo/v2"
-	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
-
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/test/e2e/suites/image"
+	"github.com/labring/sealos/test/e2e/suites/operators"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+	"github.com/onsi/ginkgo/v2"
+	"github.com/onsi/gomega"
+	k8sv1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
 const (
@@ -45,6 +41,7 @@ var defaultImageListingBenchmarkImages = []string{
 	defaultImageListingPrefix + "busybox:1-musl",
 	"docker.io/library/busybox:1.28",
 }
+
 var defaultImageNotExsitBenchmarkImages = []string{
 	"docker.io/library/kubernetes:v1.23.8",
 }
@@ -55,7 +52,6 @@ const (
 )
 
 var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
-
 	var (
 		imageShimService image.FakeImageCRIShimInterface
 		clt              server.Client
@@ -63,12 +59,12 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		fakeClient       *operators.FakeClient
 	)
 	fakeClient = operators.NewFakeClient("")
-	var listTestCases = func() {
+	listTestCases := func() {
 		images, err := imageShimService.ListImages()
 		utils.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 		logger.Info("list images: %v", images)
 	}
-	var pullTestCases = func() {
+	pullTestCases := func() {
 		for _, image := range defaultImageListingBenchmarkImages {
 			id, err := imageShimService.PullImage(image)
 			utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", image, err))
@@ -76,7 +72,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var statusExitImagesTestCases = func() {
+	statusExitImagesTestCases := func() {
 		for _, imageName := range defaultImageListingBenchmarkImages {
 			img, err := imageShimService.ImageStatus(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -87,7 +83,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var pullAgainImagesTestCases = func() {
+	pullAgainImagesTestCases := func() {
 		err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 		utils.CheckErr(err)
 		for _, imageName := range defaultImageListingBenchmarkImages {
@@ -100,7 +96,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		err = fakeClient.CmdInterface.AsyncExec("crictl", "images")
 		utils.CheckErr(err)
 	}
-	var statusNotExitImagesTestCases = func() {
+	statusNotExitImagesTestCases := func() {
 		for _, imageName := range defaultImageNotExsitBenchmarkImages {
 			img, err := imageShimService.ImageStatus(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -112,7 +108,7 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var removeTestCases = func() {
+	removeTestCases := func() {
 		for _, imageName := range defaultImageListingBenchmarkImages {
 			err := imageShimService.RemoveImage(imageName)
 			utils.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", imageName, err))
@@ -129,29 +125,54 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		}
 	}
 
-	var removeByIDTestCases = func() {
+	removeByIDTestCases := func() {
 		id, err := imageShimService.PullImage("docker.io/labring/kubernetes-docker:v1.23.8")
-		utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", "docker.io/labring/kubernetes-docker:v1.23.8", err))
-		logger.Info("pull images %s success, return image id %s \n", "docker.io/labring/kubernetes-docker:v1.23.8", id)
+		utils.CheckErr(
+			err,
+			fmt.Sprintf(
+				"failed to pull image %s: %v",
+				"docker.io/labring/kubernetes-docker:v1.23.8",
+				err,
+			),
+		)
+		logger.Info(
+			"pull images %s success, return image id %s \n",
+			"docker.io/labring/kubernetes-docker:v1.23.8",
+			id,
+		)
 		err = imageShimService.RemoveImage(id)
 		utils.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", id, err))
 		logger.Info("remove images %s success \n", id)
 	}
 
-	var statusByIDTestCases = func() {
+	statusByIDTestCases := func() {
 		id, err := imageShimService.PullImage("docker.io/labring/kubernetes-docker:v1.23.8")
-		utils.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", "docker.io/labring/kubernetes-docker:v1.23.8", err))
-		logger.Info("pull images %s success, return image id %s \n", "docker.io/labring/kubernetes-docker:v1.23.8", id)
+		utils.CheckErr(
+			err,
+			fmt.Sprintf(
+				"failed to pull image %s: %v",
+				"docker.io/labring/kubernetes-docker:v1.23.8",
+				err,
+			),
+		)
+		logger.Info(
+			"pull images %s success, return image id %s \n",
+			"docker.io/labring/kubernetes-docker:v1.23.8",
+			id,
+		)
 		img, err := imageShimService.ImageStatus(id)
 		utils.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", id, err))
 		if img == nil || img.Image == nil || img.Image.Id == "" {
-			utils.CheckErr(errors.New("image is not found"), fmt.Sprintf("failed to get image %s status: %+v", id, img))
+			utils.CheckErr(
+				errors.New("image is not found"),
+				fmt.Sprintf("failed to get image %s status: %+v", id, img),
+			)
 		} else {
 			logger.Info("test get images by id  %s success\n", id)
 		}
 	}
 
-	var fsInfoTestCases = func() {
+	fsInfoTestCases := func() {
 		fss, err := imageShimService.ImageFsInfo()
 		utils.CheckErr(err, fmt.Sprintf("failed to get image fs info: %v", err))
 		ginkgo.By("success get fs info: ")
@@ -161,12 +182,16 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 	}
 	ginkgo.Context("install cluster using hack image shim", func() {
 		ginkgo.It("init cluster", func() {
-			//checkout image-cri-shim status running
+			// checkout image-cri-shim status running
 			sealFile := `FROM labring/kubernetes:v1.25.0
 COPY image-cri-shim cri`
 			err = utils.WriteFile("Dockerfile", []byte(sealFile))
 			utils.CheckErr(err)
-			err = fakeClient.Image.BuildImage("kubernetes-hack:v1.25.0", ".", operators.BuildOptions{})
+			err = fakeClient.Image.BuildImage(
+				"kubernetes-hack:v1.25.0",
+				".",
+				operators.BuildOptions{},
+			)
 			utils.CheckErr(err)
 			err = fakeClient.Cluster.Run("kubernetes-hack:v1.25.0")
 			utils.CheckErr(err)
@@ -179,14 +204,24 @@ COPY image-cri-shim cri`
 			_, err = exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))
 			utils.CheckErr(err, "image-cri-shim service not exist, skip image-cri-shim test")
 			shimConfig, err := shimType.Unmarshal(DefaultImageCRIShimConfig)
-			utils.CheckErr(err, fmt.Sprintf("failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v", err))
+			utils.CheckErr(
+				err,
+				fmt.Sprintf(
+					"failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v",
+					err,
+				),
+			)
 			_, err = shimConfig.PreProcess()
 			utils.CheckErr(err)
-			clt, err = server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
+			clt, err = server.NewClient(
+				server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket},
+			)
 			utils.CheckErr(err, fmt.Sprintf("failed to get new shim client: %v", err))
 			gCon, err := clt.Connect(server.ConnectOptions{Wait: true})
 			utils.CheckErr(err, fmt.Sprintf("failed to get connect shim client: %v", err))
-			imageShimService = image.NewFakeImageServiceClientWithV1(k8sv1.NewImageServiceClient(gCon))
+			imageShimService = image.NewFakeImageServiceClientWithV1(
+				k8sv1.NewImageServiceClient(gCon),
+			)
 		})
 
 		ginkgo.It("list image", listTestCases)
@@ -202,5 +237,4 @@ COPY image-cri-shim cri`
 			clt.Close()
 		})
 	})
-
 })

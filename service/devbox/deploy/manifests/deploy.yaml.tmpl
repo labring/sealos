@@ -40,6 +40,7 @@ spec:
       labels:
         app: devbox-service
     spec:
+      terminationGracePeriodSeconds: 60
       containers:
         - name: devbox-service
           image: ghcr.io/labring/sealos-devbox-service:latest
@@ -56,5 +57,14 @@ spec:
           ports:
             - containerPort: 8092
           imagePullPolicy: Always
+          startupProbe:
+            httpGet:
+              port: 8092
+              path: /health
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            failureThreshold: 30
+            successThreshold: 1
+            timeoutSeconds: 1
       serviceAccountName: default
       automountServiceAccountToken: false

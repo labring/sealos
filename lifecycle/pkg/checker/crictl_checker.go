@@ -23,9 +23,6 @@ import (
 	"os"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	executils "k8s.io/utils/exec"
-
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/exec"
 	"github.com/labring/sealos/pkg/registry/helpers"
@@ -36,10 +33,11 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	executils "k8s.io/utils/exec"
 )
 
-type CRICtlChecker struct {
-}
+type CRICtlChecker struct{}
 
 type Container struct {
 	Container string
@@ -115,7 +113,11 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	root := constants.NewPathResolver(cluster.Name).RootFSPath()
 	regInfo := helpers.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 
-	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))
+	regStatus, err := n.getRegistryStatus(
+		crictlPath,
+		pauseImage,
+		fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port),
+	)
 	if err != nil {
 		status.Error = fmt.Errorf("pull registry image error: %w", err).Error()
 	}
@@ -192,7 +194,7 @@ func (n *CRICtlChecker) getCRICtlContainerList(crictlPath string) ([]Container, 
 			Image struct {
 				Image string
 			}
-			State       string //CONTAINER_RUNNING
+			State       string // CONTAINER_RUNNING
 			Labels      map[string]string
 			Annotations map[string]string
 		}
@@ -203,6 +205,7 @@ func (n *CRICtlChecker) getCRICtlContainerList(crictlPath string) ([]Container, 
 	if err != nil {
 		return nil, err
 	}
+	//nolint:musttag
 	_ = json.Unmarshal([]byte(psOut), ps)
 
 	containerList := make([]Container, 0)
@@ -220,7 +223,9 @@ func (n *CRICtlChecker) getCRICtlContainerList(crictlPath string) ([]Container, 
 	return containerList, nil
 }
 
-func (n *CRICtlChecker) getRegistryStatus(crictlPath string, pauseImage string, registry string) (status string, err error) {
+func (n *CRICtlChecker) getRegistryStatus(
+	crictlPath, pauseImage, registry string,
+) (status string, err error) {
 	pullCmd := `%s  pull %s/%s`
 	regStatus, err := exec2.RunBashCmd(fmt.Sprintf(pullCmd, crictlPath, registry, pauseImage))
 	regStatus = strings.ReplaceAll(regStatus, "\n", "")

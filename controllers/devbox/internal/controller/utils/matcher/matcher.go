@@ -21,12 +21,12 @@ import (
 )
 
 type PodMatcher interface {
-	Match(expectPod *corev1.Pod, pod *corev1.Pod) bool
+	Match(expectPod, pod *corev1.Pod) bool
 }
 
 type ResourceMatcher struct{}
 
-func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func (r ResourceMatcher) Match(expectPod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
@@ -42,7 +42,9 @@ func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 		slog.Info("CPU limits are not equal")
 		return false
 	}
-	if container.Resources.Requests.Memory().Cmp(*expectContainer.Resources.Requests.Memory()) != 0 {
+	if container.Resources.Requests.Memory().
+		Cmp(*expectContainer.Resources.Requests.Memory()) !=
+		0 {
 		slog.Info("Memory requests are not equal")
 		return false
 	}
@@ -55,7 +57,7 @@ func (r ResourceMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 
 type EphemeralStorageMatcher struct{}
 
-func (e EphemeralStorageMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func (e EphemeralStorageMatcher) Match(expectPod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
@@ -63,11 +65,15 @@ func (e EphemeralStorageMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) b
 	container := pod.Spec.Containers[0]
 	expectContainer := expectPod.Spec.Containers[0]
 
-	if container.Resources.Limits.StorageEphemeral().Cmp(*expectContainer.Resources.Limits.StorageEphemeral()) != 0 {
+	if container.Resources.Limits.StorageEphemeral().
+		Cmp(*expectContainer.Resources.Limits.StorageEphemeral()) !=
+		0 {
 		slog.Info("Ephemeral-Storage limits are not equal")
 		return false
 	}
-	if container.Resources.Requests.StorageEphemeral().Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) != 0 {
+	if container.Resources.Requests.StorageEphemeral().
+		Cmp(*expectContainer.Resources.Requests.StorageEphemeral()) !=
+		0 {
 		slog.Info("Ephemeral-Storage requests are not equal")
 		return false
 	}
@@ -76,7 +82,7 @@ func (e EphemeralStorageMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) b
 
 type EnvVarMatcher struct{}
 
-func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func (e EnvVarMatcher) Match(expectPod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
@@ -102,7 +108,13 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 			}
 		}
 		if !found {
-			slog.Info("Environment variables are not equal", "env not found", env.Name, "env value", env.Value)
+			slog.Info(
+				"Environment variables are not equal",
+				"env not found",
+				env.Name,
+				"env value",
+				env.Value,
+			)
 			return false
 		}
 	}
@@ -111,7 +123,7 @@ func (e EnvVarMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 
 type PortMatcher struct{}
 
-func (p PortMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
+func (p PortMatcher) Match(expectPod, pod *corev1.Pod) bool {
 	if len(pod.Spec.Containers) == 0 {
 		slog.Info("Pod has no containers")
 		return false
@@ -127,7 +139,8 @@ func (p PortMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 	for _, expectPort := range expectContainer.Ports {
 		found := false
 		for _, podPort := range container.Ports {
-			if expectPort.ContainerPort == podPort.ContainerPort && expectPort.Protocol == podPort.Protocol {
+			if expectPort.ContainerPort == podPort.ContainerPort &&
+				expectPort.Protocol == podPort.Protocol {
 				found = true
 				break
 			}
@@ -144,7 +157,7 @@ func (p PortMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 // if the pod container id is empty, it means the pod is pending or has't started, we can assume the image has not been committed
 // otherwise, it means the pod has been started, we can assume the image has been committed
 
-func PodMatchExpectations(expectPod *corev1.Pod, pod *corev1.Pod, matchers ...PodMatcher) bool {
+func PodMatchExpectations(expectPod, pod *corev1.Pod, matchers ...PodMatcher) bool {
 	for _, matcher := range matchers {
 		if !matcher.Match(expectPod, pod) {
 			return false

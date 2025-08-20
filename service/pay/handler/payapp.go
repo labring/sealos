@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/service/pay/helper"
@@ -9,9 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func InsertApp(client *mongo.Client, appID int64, sign, appName string, methods []string) (*mongo.InsertManyResult, error) {
+func InsertApp(
+	client *mongo.Client,
+	appID int64,
+	sign, appName string,
+	methods []string,
+) (*mongo.InsertManyResult, error) {
 	coll := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
-	docs := []interface{}{
+	docs := []any{
 		helper.App{
 			AppID:      appID,
 			Sign:       sign,
@@ -22,8 +28,8 @@ func InsertApp(client *mongo.Client, appID int64, sign, appName string, methods 
 
 	result, err := coll.InsertMany(context.TODO(), docs)
 	if err != nil {
-		//fmt.Println("insert the data of app failed:", err)
-		return nil, fmt.Errorf("insert the data of app failed: %v", err)
+		// fmt.Println("insert the data of app failed:", err)
+		return nil, fmt.Errorf("insert the data of app failed: %w", err)
 	}
 	fmt.Println("insert the data of app success:", result)
 	return result, nil
@@ -36,16 +42,19 @@ func CheckAppAllowOrNot(client *mongo.Client, appID int64, payMethod string) err
 	var result bson.M
 	if err := coll.FindOne(context.Background(), filter).Decode(&result); err != nil {
 		fmt.Println("no allowed appID could be found:", err)
-		return fmt.Errorf("no allowed appID could be found: %v", err)
+		return fmt.Errorf("no allowed appID could be found: %w", err)
 	}
 
-	methods := result["methods"].(bson.A)
+	methods, ok := result["methods"].(bson.A)
+	if !ok {
+		return errors.New("result[methods] is not bson.A")
+	}
 	for _, method := range methods {
 		if method == payMethod {
 			return nil
 		}
 	}
-	return fmt.Errorf("this payment method is not allowed in this app")
+	return errors.New("this payment method is not allowed in this app")
 }
 
 func CheckAppNameExistOrNot(client *mongo.Client, appName string) error {
@@ -54,14 +63,14 @@ func CheckAppNameExistOrNot(client *mongo.Client, appName string) error {
 
 	var result bson.M
 	err := coll.FindOne(context.Background(), filter).Decode(&result)
-	if err == mongo.ErrNoDocuments {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 		// appName does not exist, return nil
 		return nil
 	} else if err != nil {
 		// query error
-		return fmt.Errorf("query error: %v", err)
+		return fmt.Errorf("query error: %w", err)
 	}
 
 	// payAppName already exist
-	return fmt.Errorf("app name already exists")
+	return errors.New("app name already exists")
 }

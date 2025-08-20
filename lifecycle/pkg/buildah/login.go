@@ -22,11 +22,10 @@ import (
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"k8s.io/client-go/tools/clientcmd"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 type loginReply struct {
@@ -50,11 +49,27 @@ func newDefaultLoginReply() loginReply {
 
 func (opts *loginReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.getLogin, "get-login", opts.getLogin, "return the current login user for the registry")
+	fs.BoolVar(
+		&opts.tlsVerify,
+		"tls-verify",
+		opts.tlsVerify,
+		"require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.",
+	)
+	fs.BoolVar(
+		&opts.getLogin,
+		"get-login",
+		opts.getLogin,
+		"return the current login user for the registry",
+	)
 	fs.AddFlagSet(auth.GetLoginFlags(&opts.loginOpts))
 	// e.g sealos login --kubeconfig /root/.kube/config hub.sealos.io
-	fs.StringVarP(&opts.kubeconfig, "kubeconfig", "k", opts.kubeconfig, "Login to sealos registry: hub.sealos.io by kubeconfig")
+	fs.StringVarP(
+		&opts.kubeconfig,
+		"kubeconfig",
+		"k",
+		opts.kubeconfig,
+		"Login to sealos registry: hub.sealos.io by kubeconfig",
+	)
 	bailOnError(markFlagsHidden(fs, "tls-verify"), "")
 }
 
@@ -98,7 +113,13 @@ func newLoginCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			sealosKubeConfdir := fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME"), ".sealos", registryHost, opts.loginOpts.Username)
+			sealosKubeConfdir := fmt.Sprintf(
+				"%s/%s/%s/%s",
+				os.Getenv("HOME"),
+				".sealos",
+				registryHost,
+				opts.loginOpts.Username,
+			)
 			if err := fileutil.MkDirs(sealosKubeConfdir); err != nil {
 				return err
 			}
@@ -106,7 +127,7 @@ func newLoginCommand() *cobra.Command {
 			// copy file, will overwrite the original file
 			return fileutil.Copy(opts.kubeconfig, sealosKubeconfPath)
 		},
-		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.CommandPath()),
+		Example: rootCmd.CommandPath() + " login quay.io",
 	}
 	loginCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(loginCommand.Flags())

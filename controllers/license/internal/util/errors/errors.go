@@ -14,13 +14,13 @@
 
 package errors
 
-import (
-	"fmt"
-)
+import "errors"
 
-var ErrLicenseInvalid = fmt.Errorf("the license provided appears to be invalid")
-var ErrLicenseTypeNotMatch = fmt.Errorf("the license type provided appears to be invalid")
-var ErrClaimsConvent = fmt.Errorf("the claims data provided appears to be invalid")
-var ErrClusterIDNotMatch = fmt.Errorf("the cluster id provided appears to be invalid")
-var ErrClusterLicenseNotMatch = fmt.Errorf("the cluster license provided appears to be invalid")
-var ErrLicenseExpired = fmt.Errorf("the license provided appears to be expired")
+var (
+	ErrLicenseInvalid         = errors.New("the license provided appears to be invalid")
+	ErrLicenseTypeNotMatch    = errors.New("the license type provided appears to be invalid")
+	ErrClaimsConvent          = errors.New("the claims data provided appears to be invalid")
+	ErrClusterIDNotMatch      = errors.New("the cluster id provided appears to be invalid")
+	ErrClusterLicenseNotMatch = errors.New("the cluster license provided appears to be invalid")
+	ErrLicenseExpired         = errors.New("the license provided appears to be expired")
+)

@@ -17,18 +17,22 @@ limitations under the License.
 package apply
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/spf13/cobra"
 )
 
-func NewApplierFromFile(cmd *cobra.Command, path string, args *Args) (applydrivers.Interface, error) {
+func NewApplierFromFile(
+	cmd *cobra.Command,
+	path string,
+	args *Args,
+) (applydrivers.Interface, error) {
 	if !filepath.IsAbs(path) {
 		pa, err := os.Getwd()
 		if err != nil {
@@ -57,7 +61,7 @@ func NewApplierFromFile(cmd *cobra.Command, path string, args *Args) (applydrive
 	localpath := constants.Clusterfile(cluster.Name)
 	cf := clusterfile.NewClusterFile(localpath)
 	err := cf.Process()
-	if err != nil && err != clusterfile.ErrClusterFileNotExists {
+	if err != nil && !errors.Is(err, clusterfile.ErrClusterFileNotExists) {
 		return nil, err
 	}
 	currentCluster := cf.GetCluster()

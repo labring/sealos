@@ -35,15 +35,16 @@ type initSystem struct {
 }
 
 func (s *initSystem) ServiceEnable(service string) error {
-	cmd := s.InitSystem.EnableCommand(service)
+	cmd := s.EnableCommand(service)
 	parts := strings.Split(cmd, " ")
 	if parts[0] == "systemctl" {
 		if err := exec.Command("systemctl", "daemon-reload").Run(); err != nil {
-			return fmt.Errorf("failed to reload init system: %v", err)
+			return fmt.Errorf("failed to reload init system: %w", err)
 		}
 	}
 	args := parts[1:]
 	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
+	//nolint:gosec
 	return exec.Command(parts[0], args...).Run()
 }
 

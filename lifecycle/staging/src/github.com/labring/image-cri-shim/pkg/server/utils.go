@@ -20,14 +20,12 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/registry"
-
-	"github.com/labring/sreg/pkg/registry/crane"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/registry/crane"
 )
 
 // ListImages gets all images currently on the machine.
-//func (m *kubeGenericRuntimeManager) ListImages() ([]kubecontainer.Image, error) {
+// func (m *kubeGenericRuntimeManager) ListImages() ([]kubecontainer.Image, error) {
 //	var images []kubecontainer.Image
 //
 //	allImages, err := m.imageService.ListImages(nil)
@@ -48,7 +46,7 @@ import (
 //
 //	return images, nil
 //}
-//for _, image := range images {
+// for _, image := range images {
 //		klog.V(5).InfoS("Adding image ID to currentImages", "imageID", image.ID)
 //		currentImages.Insert(image.ID)
 //
@@ -74,7 +72,10 @@ import (
 //	}
 
 // replaceImage replaces the image name to a new valid image name with the private registry.
-func replaceImage(image, action string, authConfig map[string]registry.AuthConfig) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
+func replaceImage(
+	image, action string,
+	authConfig map[string]registry.AuthConfig,
+) (newImage string, isReplace bool, cfg *registry.AuthConfig) {
 	// TODO we can change the image name of req, and make the cri pull the image we need.
 	// for example:
 	// req.Image.Image = "sealos.hub:5000/library/nginx:1.1.1"
@@ -82,7 +83,7 @@ func replaceImage(image, action string, authConfig map[string]registry.AuthConfi
 	// note:
 	// but kubelet sometimes will invoke imageService.RemoveImage() or something else. The req.Image.Image will the original name.
 	// so we'd better tag "sealos.hub:5000/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
-	//for image id] this is mistake, we should replace the image name, not the image id.
+	// for image id] this is mistake, we should replace the image name, not the image id.
 	newImage, _, cfg, err := crane.GetImageManifestFromAuth(image, authConfig)
 	if err != nil {
 		if strings.Contains(image, "@") {

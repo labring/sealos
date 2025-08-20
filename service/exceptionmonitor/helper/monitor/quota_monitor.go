@@ -16,19 +16,19 @@ import (
 
 func QuotaMonitor() {
 	for api.QuotaMonitor {
-		if err := checkQuota(api.ClusterNS); err != nil {
-			log.Printf("Failed to check qouta: %v", err)
-		}
+		checkQuota(api.ClusterNS)
 		time.Sleep(3 * time.Hour)
 	}
 }
 
-func checkQuota(namespaces []string) error {
+func checkQuota(namespaces []string) {
 	var namespaceList []v1.Namespace
 
 	// Fetch namespaces based on MonitorType
 	if api.MonitorType == api.MonitorTypeALL {
-		namespaces, _ := api.ClientSet.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
+		namespaces, _ := api.ClientSet.CoreV1().
+			Namespaces().
+			List(context.Background(), metav1.ListOptions{})
 		namespaceList = namespaces.Items
 	} else {
 		for _, ns := range namespaces {
@@ -40,11 +40,13 @@ func checkQuota(namespaces []string) error {
 		if !strings.Contains(ns.Name, "ns-") {
 			continue
 		}
-		quotaList, err := api.ClientSet.CoreV1().ResourceQuotas(ns.Name).List(context.Background(), metav1.ListOptions{})
+		quotaList, err := api.ClientSet.CoreV1().
+			ResourceQuotas(ns.Name).
+			List(context.Background(), metav1.ListOptions{})
 		if err != nil {
 			log.Printf("Failed to check quota: %v", err)
 		}
-		//user debt
+		// user debt
 		if len(quotaList.Items) != 1 || quotaList.Items[0].Name != "quota-"+ns.Name {
 			continue
 		}
@@ -65,7 +67,6 @@ func checkQuota(namespaces []string) error {
 			}
 		}
 	}
-	return nil
 }
 
 func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *api.NameSpaceQuota) bool {
@@ -76,17 +77,8 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *api.NameSpaceQuota) 
 			usedQuantity = *resource.NewQuantity(0, hardQuantity.Format)
 		}
 
-		hardValue, err := quantityToFloat64(hardQuantity, string(resourceName))
-		if err != nil {
-			log.Printf("Analytic hard constraint error : %s , %v\n", resourceName, err)
-			continue
-		}
-
-		usedValue, err := quantityToFloat64(usedQuantity, string(resourceName))
-		if err != nil {
-			fmt.Printf("Analytic usage error :  %s , %v\n", resourceName, err)
-			continue
-		}
+		hardValue := quantityToFloat64(hardQuantity, string(resourceName))
+		usedValue := quantityToFloat64(usedQuantity, string(resourceName))
 
 		// usage
 		utilization := (usedValue / hardValue) * 100
@@ -120,18 +112,18 @@ func processQuota(quotaList *v1.ResourceQuotaList, nsQuota *api.NameSpaceQuota) 
 	return send
 }
 
-func quantityToFloat64(q resource.Quantity, resourceName string) (float64, error) {
+func quantityToFloat64(q resource.Quantity, resourceName string) float64 {
 	switch resourceName {
 	case "limits.cpu", "requests.cpu", "cpu",
 		"limits.nvidia.com/gpu", "requests.nvidia.com/gpu":
-		return float64(q.MilliValue()), nil
+		return float64(q.MilliValue())
 	case "limits.memory", "requests.memory", "memory",
 		"limits.ephemeral-storage", "requests.ephemeral-storage",
 		"requests.storage", "objectstorage/size":
-		return float64(q.Value()), nil
+		return float64(q.Value())
 	case "services.nodeports":
-		return float64(q.Value()), nil
+		return float64(q.Value())
 	default:
-		return q.AsApproximateFloat64(), nil
+		return q.AsApproximateFloat64()
 	}
 }

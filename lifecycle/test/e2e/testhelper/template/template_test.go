@@ -32,7 +32,7 @@ version: {{if (semverCompare "^1.26.0" (default "" .ENV)) }}v1{{ else }}v1alpha2
 	}
 
 	out := bytes.NewBuffer(nil)
-	execErr := v.Execute(out, map[string]interface{}{
+	execErr := v.Execute(out, map[string]any{
 		// comment out this to test true return
 		// "ENV": "v1.26.1",
 		// comment out this to test false return

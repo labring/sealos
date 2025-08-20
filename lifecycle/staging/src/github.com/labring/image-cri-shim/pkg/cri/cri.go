@@ -23,11 +23,10 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	toml "github.com/pelletier/go-toml"
-	utilsexec "k8s.io/utils/exec"
-
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	toml "github.com/pelletier/go-toml"
+	utilsexec "k8s.io/utils/exec"
 )
 
 // defaultKnownCRISockets holds the set of known CRI endpoints
@@ -57,7 +56,7 @@ type ContainerdRuntime struct {
 
 // CRIORuntime is a struct that interfaces with the CRI
 //
-//nolint:all
+
 type CRIORuntime struct {
 	ContainerdRuntime
 }
@@ -68,10 +67,17 @@ func (runtime *CRIORuntime) CGroupDriver() (string, error) {
 	}
 	var outBytes []byte
 	var err error
-	driverCmd := fmt.Sprintf("crio-status -s %s  info | grep \"cgroup driver\" | awk '{print $3}'", runtime.criSocket)
+	driverCmd := fmt.Sprintf(
+		"crio-status -s %s  info | grep \"cgroup driver\" | awk '{print $3}'",
+		runtime.criSocket,
+	)
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if outBytes, err = runtime.exec.Command("bash", "-c", driverCmd).CombinedOutput(); err != nil {
-		return DefaultCgroupDriver, fmt.Errorf("container cgroup driver: output: %s, error: %w", string(outBytes), err)
+		return DefaultCgroupDriver, fmt.Errorf(
+			"container cgroup driver: output: %s, error: %w",
+			string(outBytes),
+			err,
+		)
 	}
 	return strings.TrimSpace(string(outBytes)), nil
 }
@@ -82,7 +88,10 @@ type DockerRuntime struct {
 }
 
 // NewContainerRuntime sets up and returns a ContainerRuntime struct
-func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config string) (ContainerRuntime, error) {
+func NewContainerRuntime(
+	execer utilsexec.Interface,
+	criSocket, config string,
+) (ContainerRuntime, error) {
 	var toolNames string
 	var runtime ContainerRuntime
 
@@ -120,7 +129,11 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config st
 func (runtime *ContainerdRuntime) IsRunning() error {
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "info").CombinedOutput(); err != nil {
-		return fmt.Errorf("container runtime is not running: output: %s, error: %w", string(out), err)
+		return fmt.Errorf(
+			"container runtime is not running: output: %s, error: %w",
+			string(out),
+			err,
+		)
 	}
 	return nil
 }
@@ -129,7 +142,11 @@ func (runtime *ContainerdRuntime) IsRunning() error {
 func (runtime *DockerRuntime) IsRunning() error {
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err := runtime.exec.Command("docker", "info").CombinedOutput(); err != nil {
-		return fmt.Errorf("container runtime is not running: output: %s, error: %w", string(out), err)
+		return fmt.Errorf(
+			"container runtime is not running: output: %s, error: %w",
+			string(out),
+			err,
+		)
 	}
 	return nil
 }
@@ -142,7 +159,11 @@ func (runtime *DockerRuntime) CGroupDriver() (string, error) {
 	var out []byte
 	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err = runtime.exec.Command("docker", "info", "--format", "{{.CgroupDriver}}").CombinedOutput(); err != nil {
-		return "", fmt.Errorf("container runtime is not running: output: %s, error: %w", string(out), err)
+		return "", fmt.Errorf(
+			"container runtime is not running: output: %s, error: %w",
+			string(out),
+			err,
+		)
 	}
 	return string(out), nil
 }
@@ -229,7 +250,10 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 		return foundCRISockets[0], nil
 	default:
 		// Multiple CRIs installed?
-		return "", fmt.Errorf("found multiple CRI sockets, please use --cri-socket to select one: %s", strings.Join(foundCRISockets, ", "))
+		return "", fmt.Errorf(
+			"found multiple CRI sockets, please use --cri-socket to select one: %s",
+			strings.Join(foundCRISockets, ", "),
+		)
 	}
 }
 

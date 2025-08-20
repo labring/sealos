@@ -22,16 +22,13 @@ import (
 	"os"
 
 	"github.com/labring/image-cri-shim/pkg/types"
-
-	"github.com/labring/sreg/pkg/buildimage"
-
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sreg/pkg/buildimage"
 )
 
-type CRIShimChecker struct {
-}
+type CRIShimChecker struct{}
 
 type CRIShimStatus struct {
 	Config    map[string]string

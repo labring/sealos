@@ -21,23 +21,20 @@ import (
 	"fmt"
 	str "strings"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-var (
-	// ControlPlaneComponents defines the control-plane component names
-	ControlPlaneComponents = []string{KubeAPIServer, KubeControllerManager, KubeScheduler}
-)
+// ControlPlaneComponents defines the control-plane component names
+var ControlPlaneComponents = []string{KubeAPIServer, KubeControllerManager, KubeScheduler}
 
 type Expansion interface {
-	FetchStaticPod(ctx context.Context, nodeName string, component string) (*v1.Pod, error)
+	FetchStaticPod(ctx context.Context, nodeName, component string) (*v1.Pod, error)
 	FetchKubeadmConfig(ctx context.Context) (string, error)
 	UpdateKubeadmConfig(ctx context.Context, clusterConfig string) error
 	FetchKubeletConfig(ctx context.Context) (string, error)
@@ -55,31 +52,50 @@ func NewKubeExpansion(client clientset.Interface) Expansion {
 	}
 }
 
-func (ke *kubeExpansion) FetchStaticPod(ctx context.Context, nodeName string, component string) (*v1.Pod, error) {
+func (ke *kubeExpansion) FetchStaticPod(
+	ctx context.Context,
+	nodeName, component string,
+) (*v1.Pod, error) {
 	staticPodName := fmt.Sprintf("%s-%s", component, nodeName)
-	return ke.client.CoreV1().Pods(metav1.NamespaceSystem).Get(ctx, staticPodName, metav1.GetOptions{})
+	return ke.client.CoreV1().
+		Pods(metav1.NamespaceSystem).
+		Get(ctx, staticPodName, metav1.GetOptions{})
 }
+
 func (ke *kubeExpansion) FetchKubeadmConfig(ctx context.Context) (string, error) {
-	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
+	cm, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
 	return cm.Data[ckubeadm.ClusterConfigurationConfigMapKey], nil
 }
+
 func (ke *kubeExpansion) UpdateKubeadmConfig(ctx context.Context, clusterConfig string) error {
-	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
+	cm, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Get(ctx, ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	cm.Data[ckubeadm.ClusterConfigurationConfigMapKey] = clusterConfig
-	_, err = ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Update(ctx, cm, metav1.UpdateOptions{})
+	_, err = ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Update(ctx, cm, metav1.UpdateOptions{})
 	return err
 }
+
 func (ke *kubeExpansion) FetchKubeletConfig(ctx context.Context) (string, error) {
-	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
+	cm, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			logger.Info("cannot find configMap %q, try to detect older versions", ckubeadm.KubeletBaseConfigurationConfigMap)
+			logger.Info(
+				"cannot find configMap %q, try to detect older versions",
+				ckubeadm.KubeletBaseConfigurationConfigMap,
+			)
 			data, err := ke.fetchOldKubeletConfig(ctx)
 			if err != nil {
 				return "", err
@@ -93,20 +109,29 @@ func (ke *kubeExpansion) FetchKubeletConfig(ctx context.Context) (string, error)
 	}
 	return cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey], nil
 }
+
 func (ke *kubeExpansion) UpdateKubeletConfig(ctx context.Context, kubeletConfig string) error {
-	cm, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
+	cm, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Get(ctx, ckubeadm.KubeletBaseConfigurationConfigMap, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMap] = kubeletConfig
-	_, err = ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Update(ctx, cm, metav1.UpdateOptions{})
+	_, err = ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Update(ctx, cm, metav1.UpdateOptions{})
 	return err
 }
-func (ke *kubeExpansion) FetchHostNameFromInternalIP(ctx context.Context, nodeIP string) (string, error) {
+
+func (ke *kubeExpansion) FetchHostNameFromInternalIP(
+	ctx context.Context,
+	nodeIP string,
+) (string, error) {
 	ip := iputils.GetHostIP(nodeIP)
 	nodeList, err := ke.client.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return "", fmt.Errorf("get node list failed: %v", err)
+		return "", fmt.Errorf("get node list failed: %w", err)
 	}
 	for _, node := range nodeList.Items {
 		for _, address := range node.Status.Addresses {
@@ -121,8 +146,10 @@ func (ke *kubeExpansion) FetchHostNameFromInternalIP(ctx context.Context, nodeIP
 }
 
 func (ke *kubeExpansion) fetchOldKubeletConfig(ctx context.Context) (string, error) {
-	kubeletBaseConfigurationConfigMapPrefix := fmt.Sprintf("%s-", ckubeadm.KubeletBaseConfigurationConfigMap)
-	cms, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).List(ctx, metav1.ListOptions{})
+	kubeletBaseConfigurationConfigMapPrefix := ckubeadm.KubeletBaseConfigurationConfigMap + "-"
+	cms, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return "", err
 	}
@@ -131,14 +158,19 @@ func (ke *kubeExpansion) fetchOldKubeletConfig(ctx context.Context) (string, err
 			return cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey], nil
 		}
 	}
-	return "", fmt.Errorf("cannot find config map with prefix %q", kubeletBaseConfigurationConfigMapPrefix)
+	return "", fmt.Errorf(
+		"cannot find config map with prefix %q",
+		kubeletBaseConfigurationConfigMapPrefix,
+	)
 }
 
 func (ke *kubeExpansion) cloneOldKubeletConfig(ctx context.Context, data string) error {
 	cm := &v1.ConfigMap{Data: map[string]string{}}
 	cm.Name = ckubeadm.KubeletBaseConfigurationConfigMap
 	cm.Data[ckubeadm.KubeletBaseConfigurationConfigMapKey] = data
-	_, err := ke.client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Create(ctx, cm, metav1.CreateOptions{})
+	_, err := ke.client.CoreV1().
+		ConfigMaps(metav1.NamespaceSystem).
+		Create(ctx, cm, metav1.CreateOptions{})
 	if err != nil {
 		return err
 	}

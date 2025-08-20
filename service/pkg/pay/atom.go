@@ -1,19 +1,18 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
-
-	"github.com/alipay/global-open-sdk-go/com/alipay/api/tools"
-
-	"github.com/labring/sealos/controllers/pkg/types"
 
 	defaultAlipayClient "github.com/alipay/global-open-sdk-go/com/alipay/api"
 	"github.com/alipay/global-open-sdk-go/com/alipay/api/model"
 	"github.com/alipay/global-open-sdk-go/com/alipay/api/request/pay"
 	responsePay "github.com/alipay/global-open-sdk-go/com/alipay/api/response/pay"
+	"github.com/alipay/global-open-sdk-go/com/alipay/api/tools"
 	"github.com/google/uuid"
+	"github.com/labring/sealos/controllers/pkg/types"
 )
 
 type AtomPaymentService struct {
@@ -22,7 +21,10 @@ type AtomPaymentService struct {
 	PaymentNotifyURL   string
 }
 
-func NewPaymentService(client *defaultAlipayClient.DefaultAlipayClient, notifyURL, redirectURL string) *AtomPaymentService {
+func NewPaymentService(
+	client *defaultAlipayClient.DefaultAlipayClient,
+	notifyURL, redirectURL string,
+) *AtomPaymentService {
 	return &AtomPaymentService{
 		Client:             client,
 		PaymentNotifyURL:   notifyURL,
@@ -41,44 +43,100 @@ type PaymentRequest struct {
 	DeviceTokenID string
 }
 
-func (s *AtomPaymentService) CheckRspSign(requestURI, httpMethod, clientID, respTime, responseBody, signature string) (bool, error) {
-	return tools.CheckSignature(requestURI, httpMethod, clientID, respTime, responseBody, signature, s.Client.AlipayPublicKey)
+func (s *AtomPaymentService) CheckRspSign(
+	requestURI, httpMethod, clientID, respTime, responseBody, signature string,
+) (bool, error) {
+	return tools.CheckSignature(
+		requestURI,
+		httpMethod,
+		clientID,
+		respTime,
+		responseBody,
+		signature,
+		s.Client.AlipayPublicKey,
+	)
 }
 
-func (s *AtomPaymentService) GenSign(httpMethod string, path string, reqTime string, reqBody string) (string, error) {
-	return tools.GenSign(httpMethod, path, s.Client.ClientId, reqTime, reqBody, s.Client.MerchantPrivateKey)
+func (s *AtomPaymentService) GenSign(httpMethod, path, reqTime, reqBody string) (string, error) {
+	return tools.GenSign(
+		httpMethod,
+		path,
+		s.Client.ClientId,
+		reqTime,
+		reqBody,
+		s.Client.MerchantPrivateKey,
+	)
 }
 
-func (s *AtomPaymentService) CreateNewPayment(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE", s.PaymentNotifyURL+"/payment/v1alpha1/notify")
+func (s *AtomPaymentService) CreateNewPayment(
+	req PaymentRequest,
+) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(
+		req,
+		s.createNewCardPaymentMethod(),
+		s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE",
+		s.PaymentNotifyURL+"/payment/v1alpha1/notify",
+	)
 }
 
-func (s *AtomPaymentService) CreatePaymentWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createCardPaymentMethod(card), s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE", s.PaymentNotifyURL+"/payment/v1alpha1/notify")
+func (s *AtomPaymentService) CreatePaymentWithCard(
+	req PaymentRequest,
+	card *types.CardInfo,
+) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(
+		req,
+		s.createCardPaymentMethod(card),
+		s.PaymentRedirectURL+"/?paymentType=ACCOUNT_RECHARGE",
+		s.PaymentNotifyURL+"/payment/v1alpha1/notify",
+	)
 }
 
-func (s *AtomPaymentService) CreateNewSubscriptionPay(req PaymentRequest) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.createNewCardPaymentMethod(), s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION", s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
+func (s *AtomPaymentService) CreateNewSubscriptionPay(
+	req PaymentRequest,
+) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(
+		req,
+		s.createNewCardPaymentMethod(),
+		s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION",
+		s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify",
+	)
 }
 
-func (s *AtomPaymentService) CreateSubscriptionPayWithCard(req PaymentRequest, card *types.CardInfo) (*responsePay.AlipayPayResponse, error) {
-	return s.createPaymentWithMethod(req, s.CreateSubscriptionPay(card), s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION", s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify")
+func (s *AtomPaymentService) CreateSubscriptionPayWithCard(
+	req PaymentRequest,
+	card *types.CardInfo,
+) (*responsePay.AlipayPayResponse, error) {
+	return s.createPaymentWithMethod(
+		req,
+		s.CreateSubscriptionPay(card),
+		s.PaymentRedirectURL+"/?paymentType=SUBSCRIPTION",
+		s.PaymentNotifyURL+"/payment/v1alpha1/subscription/notify",
+	)
 }
 
-func (s *AtomPaymentService) GetPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayQueryResponse, error) {
+func (s *AtomPaymentService) GetPayment(
+	paymentRequestID, paymentID string,
+) (*responsePay.AlipayPayQueryResponse, error) {
 	queryRequest := pay.AlipayPayQueryRequest{}
 	queryRequest.PaymentRequestId = paymentRequestID
 	queryRequest.PaymentId = paymentID
 	request := queryRequest.NewRequest()
 	execute, err := s.Client.Execute(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query request: %v", err)
+		return nil, fmt.Errorf("failed to execute query request: %w", err)
 	}
-	response := execute.(*responsePay.AlipayPayQueryResponse)
+	response, ok := execute.(*responsePay.AlipayPayQueryResponse)
+	if !ok {
+		return nil, errors.New("response is not AlipayPayQueryResponse type")
+	}
 	return response, nil
 }
 
-func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method *model.PaymentMethod, redirectPath, notifyPath string) (*responsePay.AlipayPayResponse, error) {
+func (s *AtomPaymentService) createPaymentWithMethod(
+	req PaymentRequest,
+	method *model.PaymentMethod,
+	redirectPath, notifyPath string,
+) (*responsePay.AlipayPayResponse, error) {
 	payRequest, request := pay.NewAlipayPayRequest()
 	request.PaymentRequestId = req.RequestID
 
@@ -117,7 +175,11 @@ func (s *AtomPaymentService) createPaymentWithMethod(req PaymentRequest, method 
 	if err != nil {
 		return nil, err
 	}
-	return execute.(*responsePay.AlipayPayResponse), nil
+	resp, ok := execute.(*responsePay.AlipayPayResponse)
+	if !ok {
+		return nil, errors.New("resp is not AlipayPayResponse type")
+	}
+	return resp, nil
 }
 
 func (s *AtomPaymentService) createOrder(req PaymentRequest) *model.Order {
@@ -187,29 +249,36 @@ func (s *AtomPaymentService) CreateSubscriptionPay(card *types.CardInfo) *model.
 }
 
 // QueryPayment 查询支付状态
-func (s *AtomPaymentService) QueryPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayQueryResponse, error) {
+func (s *AtomPaymentService) QueryPayment(
+	paymentRequestID, paymentID string,
+) (*responsePay.AlipayPayQueryResponse, error) {
 	if paymentRequestID == "" && paymentID == "" {
-		return nil, fmt.Errorf("paymentRequestID and paymentID cannot both be empty")
+		return nil, errors.New("paymentRequestID and paymentID cannot both be empty")
 	}
 	resp, err := s.GetPayment(paymentRequestID, paymentID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query payment: %v", err)
+		return nil, fmt.Errorf("failed to query payment: %w", err)
 	}
 	return resp, nil
 }
 
 // check resultStatus = "S" And ResultCode = "SUCCESS"
-func (s *AtomPaymentService) CancelPayment(paymentRequestID, paymentID string) (*responsePay.AlipayPayCancelResponse, error) {
+func (s *AtomPaymentService) CancelPayment(
+	paymentRequestID, paymentID string,
+) (*responsePay.AlipayPayCancelResponse, error) {
 	if paymentRequestID == "" && paymentID == "" {
-		return nil, fmt.Errorf("paymentRequestID and paymentID cannot both be empty")
+		return nil, errors.New("paymentRequestID and paymentID cannot both be empty")
 	}
 	request, cancelRequest := pay.NewAlipayPayCancelRequest()
 	cancelRequest.PaymentRequestId = paymentRequestID
 	cancelRequest.PaymentId = paymentID
 	execute, err := s.Client.Execute(request)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute cancel request: %v", err)
+		return nil, fmt.Errorf("failed to execute cancel request: %w", err)
 	}
-	response := execute.(*responsePay.AlipayPayCancelResponse)
+	response, ok := execute.(*responsePay.AlipayPayCancelResponse)
+	if !ok {
+		return nil, errors.New("response is not AlipayPayCancelResponse type")
+	}
 	return response, nil
 }

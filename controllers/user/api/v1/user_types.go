@@ -76,21 +76,21 @@ const (
 )
 
 type Condition struct {
-	Type ConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
+	Type ConditionType `json:"type"                         protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
 	// Status is the status of the condition. One of True, False, Unknown.
-	Status v1.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
+	Status v1.ConditionStatus `json:"status"                       protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
 	// LastHeartbeatTime is the last time this condition was updated.
 	// +optional
-	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty" protobuf:"bytes,3,opt,name=lastHeartbeatTime"`
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty"  protobuf:"bytes,3,opt,name=lastHeartbeatTime"`
 	// LastTransitionTime is the last time the condition changed from one status to another.
 	// +optional
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty" protobuf:"bytes,4,opt,name=lastTransitionTime"`
 	// Reason is a (brief) reason for the condition's last status change.
 	// +optional
-	Reason string `json:"reason,omitempty" protobuf:"bytes,5,opt,name=reason"`
+	Reason string `json:"reason,omitempty"             protobuf:"bytes,5,opt,name=reason"`
 	// Message is a human-readable message indicating details about the last status change.
 	// +optional
-	Message string `json:"message,omitempty" protobuf:"bytes,6,opt,name=message"`
+	Message string `json:"message,omitempty"            protobuf:"bytes,6,opt,name=message"`
 }
 
 // +kubebuilder:object:root=true
@@ -113,8 +113,8 @@ type User struct {
 
 // UserList contains a list of User
 type UserList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta `       json:",inline"`
+	metav1.ListMeta `       json:"metadata,omitempty"`
 	Items           []User `json:"items"`
 }
 

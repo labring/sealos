@@ -17,10 +17,9 @@ package cmd
 import (
 	"errors"
 
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 )
 
 const exampleAdd = `
@@ -42,7 +41,7 @@ func newAddCmd() *cobra.Command {
 		Cluster: &apply.Cluster{},
 		SSH:     &apply.SSH{},
 	}
-	var addCmd = &cobra.Command{
+	addCmd := &cobra.Command{
 		Use:     "add",
 		Short:   "Add nodes into cluster",
 		Args:    cobra.NoArgs,

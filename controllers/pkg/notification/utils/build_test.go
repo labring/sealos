@@ -14,13 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package utils_test
 
 import (
 	"fmt"
 	"testing"
+
+	"github.com/labring/sealos/controllers/pkg/notification/utils"
 )
 
 func TestEncodeTime(_ *testing.T) {
-	fmt.Println(encodeTime())
+	fmt.Println(utils.EncodeTime())
 }

@@ -22,26 +22,23 @@ import (
 	"os"
 	"time"
 
-	"k8s.io/apimachinery/pkg/runtime"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/config"
-	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers"
 	configpkg "github.com/labring/sealos/controllers/user/controllers/helper/config"
 	ratelimiter "github.com/labring/sealos/controllers/user/controllers/helper/ratelimiter"
-	//+kubebuilder:scaffold:imports
+	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/utils/ptr"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/config"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 )
 
 var (
@@ -70,18 +67,63 @@ func main() {
 		restartPredicateDuration   time.Duration
 		operationReqRetentionTime  time.Duration
 	)
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(
+		&metricsAddr,
+		"metrics-bind-address",
+		":8080",
+		"The address the metric endpoint binds to.",
+	)
+	flag.StringVar(
+		&probeAddr,
+		"health-probe-bind-address",
+		":8081",
+		"The address the probe endpoint binds to.",
+	)
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.DurationVar(&syncPeriod, "sync-period", time.Hour*24*30, "SyncPeriod determines the minimum frequency at which watched resources are reconciled.")
-	flag.DurationVar(&minRequeueDuration, "min-requeue-duration", time.Hour*24, "The minimum duration between requeue options of a resource.")
-	flag.DurationVar(&maxRequeueDuration, "max-requeue-duration", time.Hour*24*2, "The maximum duration between requeue options of a resource.")
-	flag.DurationVar(&operationReqExpirationTime, "operation-req-expiration-time", time.Minute*3, "Sets the expiration time duration for an operation request. By default, the duration is set to 3 minutes.")
-	flag.DurationVar(&operationReqRetentionTime, "operation-req-retention-time", time.Minute*3, "Sets the retention time duration for an operation request. By default, the duration is set to 3 minutes.")
-	flag.DurationVar(&restartPredicateDuration, "restart-predicate-time", time.Hour*2, "Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.")
-	flag.StringVar(&configFilePath, "config-file-path", "/config.yaml", "The path to the configuration file.")
+	flag.DurationVar(
+		&syncPeriod,
+		"sync-period",
+		time.Hour*24*30,
+		"SyncPeriod determines the minimum frequency at which watched resources are reconciled.",
+	)
+	flag.DurationVar(
+		&minRequeueDuration,
+		"min-requeue-duration",
+		time.Hour*24,
+		"The minimum duration between requeue options of a resource.",
+	)
+	flag.DurationVar(
+		&maxRequeueDuration,
+		"max-requeue-duration",
+		time.Hour*24*2,
+		"The maximum duration between requeue options of a resource.",
+	)
+	flag.DurationVar(
+		&operationReqExpirationTime,
+		"operation-req-expiration-time",
+		time.Minute*3,
+		"Sets the expiration time duration for an operation request. By default, the duration is set to 3 minutes.",
+	)
+	flag.DurationVar(
+		&operationReqRetentionTime,
+		"operation-req-retention-time",
+		time.Minute*3,
+		"Sets the retention time duration for an operation request. By default, the duration is set to 3 minutes.",
+	)
+	flag.DurationVar(
+		&restartPredicateDuration,
+		"restart-predicate-time",
+		time.Hour*2,
+		"Sets the restrat predicate time duration for user controller restart. By default, the duration is set to 2 hours.",
+	)
+	flag.StringVar(
+		&configFilePath,
+		"config-file-path",
+		"/config.yaml",
+		"The path to the configuration file.",
+	)
 	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
@@ -96,9 +138,9 @@ func main() {
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},
-		//WebhookServer: webhook.NewServer(webhook.Options{
+		// WebhookServer: webhook.NewServer(webhook.Options{
 		//	Port: 9443,
-		//}),
+		// }),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "785548a1.sealos.io",
@@ -167,10 +209,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "DeleteRequest")
 		os.Exit(1)
 	}
-	//if err = (&controllers.AdaptRoleBindingReconciler{
+	// if err = (&controllers.AdaptRoleBindingReconciler{
 	//	Client: mgr.GetClient(),
 	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
+	// }).SetupWithManager(mgr); err != nil {
 	//	setupLog.Error(err, "unable to create controller", "controller", "AdaptRoleBinding")
 	//	os.Exit(1)
 	//}
@@ -194,8 +236,8 @@ func main() {
 }
 
 func setConfigToEnv(cfg configpkg.Config) error {
-	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.Global.CloudDomain); err != nil {
+	if err := os.Setenv("SEALOS_CLOUD_HOST", cfg.CloudDomain); err != nil {
 		return err
 	}
-	return os.Setenv("APISERVER_PORT", cfg.Kube.APIServerPort)
+	return os.Setenv("APISERVER_PORT", cfg.APIServerPort)
 }

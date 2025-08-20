@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:testpackage
 package controllers
 
 import (
@@ -27,22 +28,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/labring/sealos/controllers/pkg/database/cockroach"
-
-	"k8s.io/client-go/tools/clientcmd"
-
-	"gorm.io/gorm"
-
+	"github.com/google/uuid"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	"github.com/labring/sealos/controllers/pkg/database"
+	"github.com/labring/sealos/controllers/pkg/database/cockroach"
+	"github.com/labring/sealos/controllers/pkg/types"
+	"github.com/labring/sealos/controllers/pkg/utils"
+	"gorm.io/gorm"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/google/uuid"
-	"github.com/labring/sealos/controllers/pkg/types"
-
-	"github.com/labring/sealos/controllers/pkg/database"
-	"github.com/labring/sealos/controllers/pkg/utils"
 )
 
 func Test_splitSmsCodeMap(t *testing.T) {
@@ -66,13 +62,13 @@ func Test_splitSmsCodeMap(t *testing.T) {
 }
 
 func TestGetTimeInUTCPlus8(t *testing.T) {
-	t1 := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-	t2 := time.Date(2023, 1, 1, 1, 0, 0, 0, time.UTC)
-	t3 := time.Date(2023, 1, 1, 9, 0, 0, 0, time.UTC)
-	t4 := time.Date(2023, 1, 1, 11, 0, 0, 0, time.UTC)
-	t5 := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
-	t6 := time.Date(2023, 1, 1, 13, 0, 0, 0, time.UTC)
-	t7 := time.Date(2023, 1, 1, 23, 0, 0, 0, time.UTC)
+	t1 := time.Date(2023, time.January, 1, 0, 0, 0, 0, time.UTC)
+	t2 := time.Date(2023, time.January, 1, 1, 0, 0, 0, time.UTC)
+	t3 := time.Date(2023, time.January, 1, 9, 0, 0, 0, time.UTC)
+	t4 := time.Date(2023, time.January, 1, 11, 0, 0, 0, time.UTC)
+	t5 := time.Date(2023, time.January, 1, 12, 0, 0, 0, time.UTC)
+	t6 := time.Date(2023, time.January, 1, 13, 0, 0, 0, time.UTC)
+	t7 := time.Date(2023, time.January, 1, 23, 0, 0, 0, time.UTC)
 	for _, _t := range []time.Time{t1, t2, t3, t4, t5, t6, t7} {
 		t.Logf("time: %v, timeInUTCPlus8: %v", _t, GetSendVmsTimeInUTCPlus8(_t))
 	}
@@ -84,8 +80,11 @@ const (
 
 // TestReconcileAllFinalUser 测试方法
 func TestReconcileAllFinalUser(t *testing.T) {
-	os.Setenv("LOCAL_REGION", "4b55d7c5-ff65-4eb7-9bcf-726c730a0fad")
-	account, err := database.NewAccountV2("postgresql://sealos:fb9jg8te4x78ocqrr2vgbs99qauh9flfd1u6g300kq7ywjay3ah7cndr60udd6wg@192.168.10.35:32749/global", "postgresql://sealos:vtzfqp8hbkn7jdstzkbac6cd4u84n6w3s28f8wnqzrts2b96xcs7v58r1a18ihds@192.168.10.35:32749/local")
+	t.Setenv("LOCAL_REGION", "4b55d7c5-ff65-4eb7-9bcf-726c730a0fad")
+	account, err := database.NewAccountV2(
+		"postgresql://sealos:fb9jg8te4x78ocqrr2vgbs99qauh9flfd1u6g300kq7ywjay3ah7cndr60udd6wg@192.168.10.35:32749/global",
+		"postgresql://sealos:vtzfqp8hbkn7jdstzkbac6cd4u84n6w3s28f8wnqzrts2b96xcs7v58r1a18ihds@192.168.10.35:32749/local",
+	)
 	if err != nil {
 		t.Fatalf("failed to new account: %v", err)
 	}
@@ -106,11 +105,18 @@ func TestReconcileAllFinalUser(t *testing.T) {
 		}
 	}
 
-	jwtManager := utils.NewJWTManager("98r7c1zjllv4kgn67trj1cknprnpcwup3hh38b44puhfrbkmzy9bjipbw4tclr3f", time.Hour*24)
+	jwtManager := utils.NewJWTManager(
+		"98r7c1zjllv4kgn67trj1cknprnpcwup3hh38b44puhfrbkmzy9bjipbw4tclr3f",
+		time.Hour*24,
+	)
 
 	// 获取全部 Debt 状态为 FinalDeletionPeriod 的用户
 	allUserUID := make([]uuid.UUID, 0)
-	err = account.GetGlobalDB().Model(&types.Debt{}).Where("account_debt_status = ?", types.FinalDeletionPeriod).Pluck("user_uid", &allUserUID).Error
+	err = account.GetGlobalDB().
+		Model(&types.Debt{}).
+		Where("account_debt_status = ?", types.FinalDeletionPeriod).
+		Pluck("user_uid", &allUserUID).
+		Error
 	if err != nil {
 		t.Fatalf("failed to get all user: %v", err)
 	}
@@ -120,7 +126,7 @@ func TestReconcileAllFinalUser(t *testing.T) {
 	}
 
 	// 创建临时文件路径
-	tempDir := os.TempDir()
+	tempDir := t.TempDir()
 	processedFilePath := filepath.Join(tempDir, processedUsersFile)
 
 	// 加载已处理的用户 UID
@@ -135,7 +141,12 @@ func TestReconcileAllFinalUser(t *testing.T) {
 			continue
 		}
 
-		err = sendFlushDebtResourceStatusRequest(allRegionDomain, jwtManager, user, processedFilePath)
+		err = sendFlushDebtResourceStatusRequest(
+			allRegionDomain,
+			jwtManager,
+			user,
+			processedFilePath,
+		)
 		if err != nil {
 			t.Fatalf("failed to send flush debt resource status request for user %s: %v", user, err)
 		}
@@ -146,7 +157,7 @@ func TestReconcileAllFinalUser(t *testing.T) {
 	}
 	t.Logf("all users processed successfully")
 	// 删除临时文件
-	//if err := os.Remove(processedFilePath); err != nil {
+	// if err := os.Remove(processedFilePath); err != nil {
 	//	t.Fatalf("failed to remove processed users file: %v", err)
 	//}
 }
@@ -179,7 +190,7 @@ func loadProcessedUsers(filePath string) (map[uuid.UUID]bool, error) {
 
 // recordProcessedUser 将处理成功的用户 UID 追加到文件中
 func recordProcessedUser(filePath string, userUID uuid.UUID) error {
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open processed users file: %w", err)
 	}
@@ -192,7 +203,12 @@ func recordProcessedUser(filePath string, userUID uuid.UUID) error {
 }
 
 // sendFlushDebtResourceStatusRequest 发送请求并记录成功处理的用户
-func sendFlushDebtResourceStatusRequest(allRegionDomain []string, jwtManager *utils.JWTManager, userUID uuid.UUID, processedFilePath string) error {
+func sendFlushDebtResourceStatusRequest(
+	allRegionDomain []string,
+	jwtManager *utils.JWTManager,
+	userUID uuid.UUID,
+	_ string,
+) error {
 	for _, domain := range allRegionDomain {
 		fmt.Println("domain:", domain, " userUID:", userUID)
 		token, err := jwtManager.GenerateToken(utils.JwtUser{
@@ -202,7 +218,10 @@ func sendFlushDebtResourceStatusRequest(allRegionDomain []string, jwtManager *ut
 			return fmt.Errorf("failed to generate token: %w", err)
 		}
 
-		url := fmt.Sprintf("https://account-api.%s/admin/v1alpha1/flush-debt-resource-status", domain)
+		url := fmt.Sprintf(
+			"https://account-api.%s/admin/v1alpha1/flush-debt-resource-status",
+			domain,
+		)
 
 		quotaReqBody, err := json.Marshal(AdminFlushResourceStatusReq{
 			LastDebtStatus:    types.DebtDeletionPeriod,
@@ -217,7 +236,7 @@ func sendFlushDebtResourceStatusRequest(allRegionDomain []string, jwtManager *ut
 		backoffTime := time.Second
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			req, err := http.NewRequest("POST", url, bytes.NewBuffer(quotaReqBody))
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(quotaReqBody))
 			if err != nil {
 				return fmt.Errorf("failed to create request: %w", err)
 			}
@@ -240,7 +259,12 @@ func sendFlushDebtResourceStatusRequest(allRegionDomain []string, jwtManager *ut
 			}
 
 			if attempt < maxRetries {
-				fmt.Printf("Attempt %d failed: %v. Retrying in %v...\n", attempt, lastErr, backoffTime)
+				fmt.Printf(
+					"Attempt %d failed: %v. Retrying in %v...\n",
+					attempt,
+					lastErr,
+					backoffTime,
+				)
 				time.Sleep(backoffTime)
 				backoffTime *= 2
 			}
@@ -267,8 +291,12 @@ var regions = []regionConfig{}
 // 3. upgrade and restore the account controller
 func TestConvertDebt(t *testing.T) {
 	for i := range regions {
-		//先获取全部的debt crd
-		fmt.Printf("Start converting debts for region %s at %s\n", regions[i].Region, time.Now().Format(time.RFC3339))
+		// 先获取全部的debt crd
+		fmt.Printf(
+			"Start converting debts for region %s at %s\n",
+			regions[i].Region,
+			time.Now().Format(time.RFC3339),
+		)
 		config, err := clientcmd.BuildConfigFromFlags("", regions[i].KCPath)
 		if err != nil {
 			t.Fatalf("failed to get in cluster config: %v", err)
@@ -280,7 +308,7 @@ func TestConvertDebt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create client: %v", err)
 		}
-		os.Setenv("LOCAL_REGION", regions[i].RegionUID)
+		t.Setenv("LOCAL_REGION", regions[i].RegionUID)
 		account, err := database.NewAccountV2(regions[i].GlobalDB, regions[i].LocalDB)
 		if err != nil {
 			t.Fatalf("failed to new account: %v", err)
@@ -307,7 +335,11 @@ func TestConvertDebt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to convert all debt cr: %v", err)
 		}
-		fmt.Printf("Finished converting debts for region %s at %s\n", regions[i].Region, time.Now().Format(time.RFC3339))
+		fmt.Printf(
+			"Finished converting debts for region %s at %s\n",
+			regions[i].Region,
+			time.Now().Format(time.RFC3339),
+		)
 	}
 }
 
@@ -325,7 +357,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 	existing := make(map[uuid.UUID]struct{})
 	var existingUIDs []uuid.UUID
 	if err := account.GetGlobalDB().Model(&types.Debt{}).Pluck("user_uid", &existingUIDs).Error; err != nil {
-		return fmt.Errorf("failed to preload existing debts: %v", err)
+		return fmt.Errorf("failed to preload existing debts: %w", err)
 	}
 	for _, uid := range existingUIDs {
 		existing[uid] = struct{}{}
@@ -333,7 +365,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 
 	userIDToUIDMap, err := GetUserIDToUIDMap(account.GetGlobalDB())
 	if err != nil {
-		return fmt.Errorf("failed to preload user UID map: %v", err)
+		return fmt.Errorf("failed to preload user UID map: %w", err)
 	}
 
 	var allDebts []accountv1.Debt
@@ -341,7 +373,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 	for {
 		debtCRList := &accountv1.DebtList{}
 		if err := clt.List(context.Background(), debtCRList, listOpts); err != nil {
-			return fmt.Errorf("failed to list debts: %v", err)
+			return fmt.Errorf("failed to list debts: %w", err)
 		}
 
 		for _, debt := range debtCRList.Items {
@@ -373,7 +405,7 @@ func convertAllDebtCr(account database.AccountV2, clt client.Client) error {
 	var firstErr error
 	var errMu sync.Mutex
 
-	for i := 0; i < workerCount; i++ {
+	for range workerCount {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -424,7 +456,7 @@ func GetUserIDToUIDMap(db *gorm.DB) (map[string]uuid.UUID, error) {
 	}
 	var users []user
 	if err := db.Model(&types.User{}).Select("id, uid").Find(&users).Error; err != nil {
-		return nil, fmt.Errorf("failed to preload users: %v", err)
+		return nil, fmt.Errorf("failed to preload users: %w", err)
 	}
 
 	result := make(map[string]uuid.UUID, len(users))
@@ -435,7 +467,11 @@ func GetUserIDToUIDMap(db *gorm.DB) (map[string]uuid.UUID, error) {
 }
 
 func insertDebts(account database.AccountV2, debts []*types.Debt) error {
-	return cockroach.RetryableTransaction(account.GetGlobalDB().Session(&gorm.Session{PrepareStmt: true}), 3, func(tx *gorm.DB) error {
-		return tx.Create(&debts).Error
-	})
+	return cockroach.RetryableTransaction(
+		account.GetGlobalDB().Session(&gorm.Session{PrepareStmt: true}),
+		3,
+		func(tx *gorm.DB) error {
+			return tx.Create(&debts).Error
+		},
+	)
 }

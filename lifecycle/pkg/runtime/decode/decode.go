@@ -16,27 +16,26 @@ package decode
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 	kubeadmv1beta4 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta4"
 	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
 	proxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
-
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -62,13 +61,15 @@ func init() {
 	utilruntime.Must(proxyconfig.AddToScheme(scheme))
 }
 
-func overrideKubeletDefaults(obj interface{}) {
+func overrideKubeletDefaults(obj any) {
+	//nolint:errcheck
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
+	//nolint:errcheck
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 
-func CRDFromFile(filePath string, kind string) (interface{}, error) {
+func CRDFromFile(filePath, kind string) (any, error) {
 	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
 		return nil, err
@@ -77,13 +78,13 @@ func CRDFromFile(filePath string, kind string) (interface{}, error) {
 	return CRDFromReader(file, kind)
 }
 
-func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
+func CRDFromReader(r io.Reader, kind string) (any, error) {
 	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
 		ext := k8sruntime.RawExtension{}
 		if err := d.Decode(&ext); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return nil, err
@@ -96,7 +97,7 @@ func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
 		metaType := &metav1.TypeMeta{}
 		err := yaml.Unmarshal(ext.Raw, metaType)
 		if err != nil {
-			return nil, fmt.Errorf("decode Cluster failed %v", err)
+			return nil, fmt.Errorf("decode Cluster failed %w", err)
 		}
 		// ext.Raw
 		if metaType.Kind == kind {
@@ -106,11 +107,11 @@ func CRDFromReader(r io.Reader, kind string) (interface{}, error) {
 	return nil, nil
 }
 
-func CRDFromString(config string, kind string) (interface{}, error) {
+func CRDFromString(config, kind string) (any, error) {
 	return CRDFromReader(strings.NewReader(config), kind)
 }
 
-func typeConversion(raw []byte, metaType *metav1.TypeMeta) (interface{}, error) {
+func typeConversion(raw []byte, metaType *metav1.TypeMeta) (any, error) {
 	var obj k8sruntime.Object
 	switch metaType.Kind {
 	case Cluster:
@@ -120,13 +121,19 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (interface{}, error) 
 		if metaType.APIVersion == kubeadmv1beta3.SchemeGroupVersion.String() {
 			newObj := &kubeadmv1beta3.InitConfiguration{}
 			if err := yaml.Unmarshal(raw, newObj); err != nil {
-				return nil, fmt.Errorf("decode kubeadmv1beta3 InitConfiguration failed %v", err)
+				return nil, fmt.Errorf("decode kubeadmv1beta3 InitConfiguration failed %w", err)
 			}
 			// Convert to v1beta4
+			//nolint:errcheck
 			if err := kubeadmv1beta3.Convert_v1beta3_InitConfiguration_To_kubeadm_InitConfiguration(newObj, obj.(*kubeadm.InitConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 InitConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 InitConfiguration to v1beta4 failed %w",
+					err,
+				)
 			}
+			//nolint:errcheck
 			obj.(*kubeadm.InitConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
+			//nolint:errcheck
 			obj.(*kubeadm.InitConfiguration).Kind = metaType.Kind
 			return obj, nil
 		}
@@ -135,13 +142,19 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (interface{}, error) 
 		if metaType.APIVersion == kubeadmv1beta3.SchemeGroupVersion.String() {
 			newObj := &kubeadmv1beta3.JoinConfiguration{}
 			if err := yaml.Unmarshal(raw, newObj); err != nil {
-				return nil, fmt.Errorf("decode kubeadmv1beta3 JoinConfiguration failed %v", err)
+				return nil, fmt.Errorf("decode kubeadmv1beta3 JoinConfiguration failed %w", err)
 			}
 			// Convert to v1beta4
+			//nolint:errcheck
 			if err := kubeadmv1beta3.Convert_v1beta3_JoinConfiguration_To_kubeadm_JoinConfiguration(newObj, obj.(*kubeadm.JoinConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 JoinConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 JoinConfiguration to v1beta4 failed %w",
+					err,
+				)
 			}
+			//nolint:errcheck
 			obj.(*kubeadm.JoinConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
+			//nolint:errcheck
 			obj.(*kubeadm.JoinConfiguration).Kind = metaType.Kind
 			return obj, nil
 		}
@@ -150,13 +163,19 @@ func typeConversion(raw []byte, metaType *metav1.TypeMeta) (interface{}, error) 
 		if metaType.APIVersion == kubeadmv1beta3.SchemeGroupVersion.String() {
 			newObj := &kubeadmv1beta3.ClusterConfiguration{}
 			if err := yaml.Unmarshal(raw, newObj); err != nil {
-				return nil, fmt.Errorf("decode kubeadmv1beta3 ClusterConfiguration failed %v", err)
+				return nil, fmt.Errorf("decode kubeadmv1beta3 ClusterConfiguration failed %w", err)
 			}
 			// Convert to v1beta4
+			//nolint:errcheck
 			if err := kubeadmv1beta3.Convert_v1beta3_ClusterConfiguration_To_kubeadm_ClusterConfiguration(newObj, obj.(*kubeadm.ClusterConfiguration), nil); err != nil {
-				return nil, fmt.Errorf("convert kubeadmv1beta3 ClusterConfiguration to v1beta4 failed %v", err)
+				return nil, fmt.Errorf(
+					"convert kubeadmv1beta3 ClusterConfiguration to v1beta4 failed %w",
+					err,
+				)
 			}
+			//nolint:errcheck
 			obj.(*kubeadm.ClusterConfiguration).APIVersion = kubeadmv1beta3.SchemeGroupVersion.String()
+			//nolint:errcheck
 			obj.(*kubeadm.ClusterConfiguration).Kind = metaType.Kind
 			return obj, nil
 		}

@@ -27,8 +27,7 @@ type InstanceSpec struct {
 }
 
 // InstanceStatus defines the observed state of Instance
-type InstanceStatus struct {
-}
+type InstanceStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

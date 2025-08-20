@@ -19,14 +19,13 @@ import (
 	"errors"
 	"os"
 
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type PodChecker struct {
@@ -56,7 +55,10 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	n.client = c
 
-	nsList, err := n.client.Kubernetes().CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	nsList, err := n.client.Kubernetes().
+		CoreV1().
+		Namespaces().
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
@@ -66,7 +68,10 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 		var notRunningCount uint32
 		var podCount uint32
 		var notRunningPodList []*corev1.Pod
-		namespacePodList, err := n.client.Kubernetes().CoreV1().Pods(podNamespace.Name).List(context.TODO(), metav1.ListOptions{})
+		namespacePodList, err := n.client.Kubernetes().
+			CoreV1().
+			Pods(podNamespace.Name).
+			List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return err
 		}

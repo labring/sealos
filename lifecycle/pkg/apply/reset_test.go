@@ -14,17 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apply
+package apply_test
 
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/apply"
 	"github.com/spf13/cobra"
 )
 
 func TestNewApplierFromResetArgs(t *testing.T) {
 	type args struct {
-		args *ResetArgs
+		args *apply.ResetArgs
 	}
 	tests := []struct {
 		name    string
@@ -34,9 +35,9 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 		{
 			name: "error",
 			args: args{
-				args: &ResetArgs{
-					ClusterName: &ClusterName{},
-					SSH:         &SSH{},
+				args: &apply.ResetArgs{
+					ClusterName: &apply.ClusterName{},
+					SSH:         &apply.SSH{},
 				},
 			},
 			wantErr: true,
@@ -44,11 +45,11 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				args: &ResetArgs{
-					ClusterName: &ClusterName{
+				args: &apply.ResetArgs{
+					ClusterName: &apply.ClusterName{
 						ClusterName: "default",
 					},
-					SSH: &SSH{},
+					SSH: &apply.SSH{},
 				},
 			},
 			wantErr: true, // clusterfile must exist
@@ -56,7 +57,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewApplierFromResetArgs(&cobra.Command{
+			_, err := apply.NewApplierFromResetArgs(&cobra.Command{
 				Use: "mock",
 			}, tt.args.args)
 			if (err != nil) != tt.wantErr {

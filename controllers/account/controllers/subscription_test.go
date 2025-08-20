@@ -1,23 +1,21 @@
+//nolint:testpackage
 package controllers
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/labring/sealos/controllers/pkg/database"
-
 	"github.com/labring/sealos/controllers/pkg/types"
-	"gorm.io/gorm"
-
 	"github.com/labring/sealos/controllers/pkg/utils"
+	"gorm.io/gorm"
 )
 
 func Test_sendFlushQuotaRequest(t *testing.T) {
 	regions := []string{""}
 	jwtManager := utils.NewJWTManager("", time.Hour)
-	os.Setenv("LOCAL_REGION", "")
+	t.Setenv("LOCAL_REGION", "")
 	account, err := database.NewAccountV2("", "")
 	if err != nil {
 		t.Fatalf("failed to new account: %v", err)
@@ -34,7 +32,11 @@ func Test_sendFlushQuotaRequest(t *testing.T) {
 	t.Logf("successfully fetch and flush subscriptions")
 }
 
-func FetchAndFlushSubscriptions(db *gorm.DB, allRegion []string, jwtManager *utils.JWTManager) error {
+func FetchAndFlushSubscriptions(
+	db *gorm.DB,
+	allRegion []string,
+	jwtManager *utils.JWTManager,
+) error {
 	var subscriptions []types.Subscription
 
 	// Query subscriptions where PlanName is not "Free"
@@ -49,7 +51,12 @@ func FetchAndFlushSubscriptions(db *gorm.DB, allRegion []string, jwtManager *uti
 	for _, sub := range subscriptions {
 		if sub.PlanName == "Free" || sub.Status == "DEBT" {
 			// Skip subscriptions with PlanName "Free" or status "DEBT"
-			fmt.Printf("Skipping subscription for user %s with plan %s and status %s\n", sub.UserUID, sub.PlanName, sub.Status)
+			fmt.Printf(
+				"Skipping subscription for user %s with plan %s and status %s\n",
+				sub.UserUID,
+				sub.PlanName,
+				sub.Status,
+			)
 			continue
 		}
 		err := sendFlushQuotaRequest(allRegion, jwtManager, sub.UserUID, sub.PlanID, sub.PlanName)

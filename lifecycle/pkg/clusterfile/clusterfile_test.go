@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clusterfile
+package clusterfile_test
 
 import (
 	"reflect"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-
+	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/runtime/kubernetes/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 )
 
 func Test_NewClusterFile(t *testing.T) {
@@ -64,7 +64,11 @@ func Test_NewClusterFile(t *testing.T) {
 						},
 						Hosts: []v2.Host{
 							{
-								IPS:   []string{"10.74.16.27:22", "10.74.16.140:22", "10.74.16.101:22"},
+								IPS: []string{
+									"10.74.16.27:22",
+									"10.74.16.140:22",
+									"10.74.16.101:22",
+								},
 								Roles: []string{v2.MASTER, string(v2.AMD64)},
 							},
 						},
@@ -98,16 +102,20 @@ func Test_NewClusterFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cf := NewClusterFile("testdata/clusterfile.yaml",
-				WithCustomEnvs(tt.args.customEnv),
-				WithCustomSets(tt.args.sets),
-				WithCustomValues(tt.args.values),
-				WithCustomConfigFiles(tt.args.customConfigs),
+			cf := clusterfile.NewClusterFile("testdata/clusterfile.yaml",
+				clusterfile.WithCustomEnvs(tt.args.customEnv),
+				clusterfile.WithCustomSets(tt.args.sets),
+				clusterfile.WithCustomValues(tt.args.values),
+				clusterfile.WithCustomConfigFiles(tt.args.customConfigs),
 			)
 			err := cf.Process()
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)
 			if !equal {
@@ -145,10 +153,14 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cf := NewClusterFile("")
+			cf := clusterfile.NewClusterFile("")
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 
 			if cf.GetCluster() != nil {
@@ -204,7 +216,11 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 						},
 						Hosts: []v2.Host{
 							{
-								IPS:   []string{"10.74.16.27:22", "10.74.16.140:22", "10.74.16.101:22"},
+								IPS: []string{
+									"10.74.16.27:22",
+									"10.74.16.140:22",
+									"10.74.16.101:22",
+								},
 								Roles: []string{v2.MASTER, string(v2.AMD64)},
 							},
 						},
@@ -251,16 +267,20 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cf := NewClusterFile("testdata/clusterfile.yaml",
-				WithCustomEnvs(tt.args.customEnv),
-				WithCustomSets(tt.args.sets),
-				WithCustomValues(tt.args.values),
-				WithCustomConfigFiles(tt.args.customConfigs),
-				WithCustomRuntimeConfigFiles(tt.args.customKubeadmFiles),
+			cf := clusterfile.NewClusterFile("testdata/clusterfile.yaml",
+				clusterfile.WithCustomEnvs(tt.args.customEnv),
+				clusterfile.WithCustomSets(tt.args.sets),
+				clusterfile.WithCustomValues(tt.args.values),
+				clusterfile.WithCustomConfigFiles(tt.args.customConfigs),
+				clusterfile.WithCustomRuntimeConfigFiles(tt.args.customKubeadmFiles),
 			)
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
-				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"newClusterfile(string, ...OptionFunc) error = %v, wantErr %v",
+					err,
+					tt.wantErr,
+				)
 			}
 
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)

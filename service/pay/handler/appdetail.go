@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/service/pay/helper"
@@ -9,18 +10,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func GetAppDetails(request *helper.Request, client *mongo.Client) ([]helper.PayMethodDetail, error) {
+func GetAppDetails(
+	request *helper.Request,
+	client *mongo.Client,
+) ([]helper.PayMethodDetail, error) {
 	appID := request.AppID
 	filter := bson.D{{Key: "appID", Value: appID}}
 	appColl := helper.InitDBAndColl(client, helper.Database, helper.AppColl)
 
 	var appResult bson.M
 	if err := appColl.FindOne(context.TODO(), filter).Decode(&appResult); err != nil {
-		return nil, fmt.Errorf("read data of the collection app failed: %v", err)
+		return nil, fmt.Errorf("read data of the collection app failed: %w", err)
 	}
 	methods, ok := appResult["methods"].(bson.A)
 	if !ok {
-		return nil, fmt.Errorf("methods type assertion failed")
+		return nil, errors.New("methods type assertion failed")
 	}
 	var payDetails []helper.PayMethodDetail
 	for _, method := range methods {
@@ -30,12 +34,12 @@ func GetAppDetails(request *helper.Request, client *mongo.Client) ([]helper.PayM
 		// query operation
 		cursor, err := pmColl.Find(context.TODO(), filter)
 		if err != nil {
-			return nil, fmt.Errorf("query error: %v", err)
+			return nil, fmt.Errorf("query error: %w", err)
 		}
 		// Retrieve documents for the current payment method
 		var methodPayDetails []helper.PayMethodDetail
 		if err := cursor.All(context.TODO(), &methodPayDetails); err != nil {
-			return nil, fmt.Errorf("cursor error: %v", err)
+			return nil, fmt.Errorf("cursor error: %w", err)
 		}
 
 		// Add the matching method of the documents to the payDetails slice

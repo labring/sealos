@@ -25,7 +25,6 @@ type Token struct {
 	Expires                  *metav1.Time `json:"expires,omitempty"`
 }
 
-//nolint:all
 type Config struct {
 	*KubeadmConfig
 	APIServerDomain string

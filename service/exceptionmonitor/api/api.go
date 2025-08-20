@@ -16,8 +16,8 @@ type QueryResult struct {
 		ResultType string `json:"resultType"`
 		Result     []struct {
 			Metric map[string]string `json:"metric"`
-			Values [][]interface{}   `json:"values"`
-			Value  []interface{}     `json:"value"`
+			Values [][]any           `json:"values"`
+			Value  []any             `json:"value"`
 		} `json:"result"`
 	} `json:"data"`
 }
@@ -41,8 +41,8 @@ type Info struct {
 	RecoveryTime        string
 	DatabaseClusterUID  string
 	FeishuWebHook       string
-	//struct
-	FeishuInfo []map[string]interface{}
+	// struct
+	FeishuInfo []map[string]any
 }
 
 type NameSpaceQuota struct {
@@ -69,7 +69,7 @@ const (
 	StatusStopping = "Stopping"
 	StatusStopped  = "Stopped"
 	StatusRunning  = "Running"
-	//StatusUpdating = "Updating"
+	// StatusUpdating = "Updating"
 	StatusUnknown  = ""
 	MonitorTypeALL = "all"
 	DiskChinese    = "磁盘"
@@ -140,10 +140,22 @@ func GetENV() error {
 	BackupMonitor, _ = strconv.ParseBool(getEnvWithCheck("BackupMonitor", &missingEnvVars))
 	QuotaMonitor, _ = strconv.ParseBool(getEnvWithCheck("QuotaMonitor", &missingEnvVars))
 	CockroachMonitor, _ = strconv.ParseBool(getEnvWithCheck("CockroachMonitor", &missingEnvVars))
-	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars), 64)
-	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars), 64)
-	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars), 64)
-	DatabaseMemMonitorThreshold, _ = strconv.ParseFloat(getEnvWithCheck("DatabaseMemMonitorThreshold", &missingEnvVars), 64)
+	DatabaseDiskMonitorThreshold, _ = strconv.ParseFloat(
+		getEnvWithCheck("DatabaseDiskMonitorThreshold", &missingEnvVars),
+		64,
+	)
+	DatabaseExceptionMonitorThreshold, _ = strconv.ParseFloat(
+		getEnvWithCheck("DatabaseExceptionMonitorThreshold", &missingEnvVars),
+		64,
+	)
+	DatabaseCPUMonitorThreshold, _ = strconv.ParseFloat(
+		getEnvWithCheck("DatabaseCPUMonitorThreshold", &missingEnvVars),
+		64,
+	)
+	DatabaseMemMonitorThreshold, _ = strconv.ParseFloat(
+		getEnvWithCheck("DatabaseMemMonitorThreshold", &missingEnvVars),
+		64,
+	)
 	QuotaThreshold, _ = strconv.ParseFloat(getEnvWithCheck("QuotaThreshold", &missingEnvVars), 64)
 
 	if clusterNS != "" {
@@ -152,19 +164,19 @@ func GetENV() error {
 
 	// Get FeishuWebhookURLMap
 	getEnvMapWithCheck([]string{
-		//Updating、Failed、Abnormal
+		// Updating、Failed、Abnormal
 		"FeishuWebhookURLUFA",
-		//Creating、Stopping、Deleteting
+		// Creating、Stopping、Deleteting
 		"FeishuWebhookURLCSD",
-		//Exceeded Quota、Disk Is Full
+		// Exceeded Quota、Disk Is Full
 		"FeishuWebhookURLOther",
-		//Important Cluster NS
+		// Important Cluster NS
 		"FeishuWebhookURLImportant",
-		//Backup
+		// Backup
 		"FeishuWebhookURLBackup",
-		//Quota
+		// Quota
 		"FeishuWebhookURLQuota",
-		//CockroachDB
+		// CockroachDB
 		"FeishuWebhookURLCockroachDB",
 	}, FeishuWebhookURLMap, &missingEnvVars)
 

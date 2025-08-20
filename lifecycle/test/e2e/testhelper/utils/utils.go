@@ -28,18 +28,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/sealos/test/e2e/testhelper/consts"
-
-	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/onsi/ginkgo/v2"
-
 	"github.com/labring/sealos/pkg/utils/exec"
-
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/test/e2e/testhelper/consts"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
 )
 
@@ -75,7 +70,7 @@ func WriteFile(fileName string, content []byte) error {
 func GetBinArch(filepath string) (string, error) {
 	f, err := elf.Open(filepath)
 	if err != nil {
-		return "", fmt.Errorf("error opening file: %v", err)
+		return "", fmt.Errorf("error opening file: %w", err)
 	}
 	defer f.Close()
 	switch f.Machine {
@@ -97,7 +92,7 @@ func IsFileExist(filename string) bool {
 	return !os.IsNotExist(err)
 }
 
-func UnmarshalYamlFile(file string, obj interface{}) error {
+func UnmarshalYamlFile(file string, obj any) error {
 	data, err := os.ReadFile(filepath.Clean(file))
 	if err != nil {
 		return err
@@ -106,8 +101,8 @@ func UnmarshalYamlFile(file string, obj interface{}) error {
 	return err
 }
 
-func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
-	var data map[string]interface{}
+func UnmarshalData(metadata []byte) (map[string]any, error) {
+	var data map[string]any
 	err := yaml.Unmarshal(metadata, &data)
 	if err != nil {
 		return nil, err
@@ -115,7 +110,7 @@ func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
 	return data, nil
 }
 
-func MarshalYamlToFile(file string, obj interface{}) error {
+func MarshalYamlToFile(file string, obj any) error {
 	data, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
@@ -125,7 +120,7 @@ func MarshalYamlToFile(file string, obj interface{}) error {
 
 // GetFileDataLocally get file data for cloud apply
 func GetFileDataLocally(filePath string) string {
-	cmd := fmt.Sprintf("sudo -E cat %s", filePath)
+	cmd := "sudo -E cat " + filePath
 	result, err := exec.RunBashCmd(cmd)
 	CheckErr(err)
 	return result
@@ -133,7 +128,7 @@ func GetFileDataLocally(filePath string) string {
 
 // DeleteFileLocally delete file for cloud apply
 func DeleteFileLocally(filePath string) {
-	cmd := fmt.Sprintf("sudo -E rm -rf %s", filePath)
+	cmd := "sudo -E rm -rf " + filePath
 	_, err := exec.RunBashCmd(cmd)
 	CheckErr(err)
 }
@@ -160,51 +155,53 @@ func Log(msg string) {
 	Logf(msg)
 }
 
-func Logf(format string, args ...interface{}) {
+func Logf(format string, args ...any) {
 	fmt.Fprintf(ginkgo.GinkgoWriter, "INFO: "+format, args...)
 }
 
 func Failf(msg string) {
-	ginkgo.Fail(fmt.Sprintf("FAIL: %s", msg), 1)
+	ginkgo.Fail("FAIL: "+msg, 1)
 }
 
-func CheckNotNil(obj interface{}) {
+func CheckNotNil(obj any) {
 	gomega.Expect(obj).NotTo(gomega.BeNil())
 }
 
-func CheckEqual(obj1 interface{}, obj2 interface{}) {
+func CheckEqual(obj1, obj2 any) {
 	gomega.Expect(obj1).To(gomega.Equal(obj2))
 }
 
-func CheckNotEqual(obj1 interface{}, obj2 interface{}) {
+func CheckNotEqual(obj1, obj2 any) {
 	gomega.Expect(obj1).NotTo(gomega.Equal(obj2))
 }
 
 func CheckExit0(sess *gexec.Session, waitTime time.Duration) {
 	gomega.Eventually(sess, waitTime).Should(gexec.Exit(0))
 }
+
 func CheckNotExit0(sess *gexec.Session, waitTime time.Duration) {
 	gomega.Eventually(sess, waitTime).ShouldNot(gexec.Exit(0))
 }
 
 func CheckFuncBeTrue(f func() bool, t time.Duration) {
-	gomega.Eventually(f(), t).Should(gomega.BeTrue())
+	gomega.Eventually(f, t).Should(gomega.BeTrue())
 }
 
 func CheckBeTrue(b bool) {
 	gomega.Eventually(b).Should(gomega.BeTrue())
 }
+
 func CheckNotBeTrue(b bool) {
 	gomega.Eventually(b).ShouldNot(gomega.BeTrue())
 }
 
 func ToYalms(bs string) (yamls []string) {
-	buf := bytes.NewBuffer([]byte(bs))
+	buf := bytes.NewBufferString(bs)
 	reader := utilyaml.NewYAMLReader(bufio.NewReader(buf))
 	for {
 		patch, err := reader.Read()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			break
@@ -239,7 +236,7 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		return nil, err
 	}
 	var allAddrs []net.Addr
-	for i := 0; i < len(netInterfaces); i++ {
+	for i := range netInterfaces {
 		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
 			continue
 		}
@@ -247,16 +244,15 @@ func ListLocalHostAddrs() (*[]net.Addr, error) {
 		if err != nil {
 			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
-		for j := 0; j < len(addrs); j++ {
-			allAddrs = append(allAddrs, addrs[j])
-		}
+		allAddrs = append(allAddrs, addrs...)
 	}
 	return &allAddrs, nil
 }
 
 func LocalIP(addrs *[]net.Addr) string {
 	for _, address := range *addrs {
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() &&
+			ipnet.IP.To4() != nil {
 			return ipnet.IP.String()
 		}
 	}
@@ -275,5 +271,5 @@ func MkTmpdir(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return tempDir, os.MkdirAll(tempDir, 0755)
+	return tempDir, os.MkdirAll(tempDir, 0o755)
 }

@@ -16,9 +16,8 @@ package claims
 
 import (
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/mitchellh/mapstructure"
-
 	v1 "github.com/labring/sealos/controllers/license/api/v1"
+	"github.com/mitchellh/mapstructure"
 )
 
 // Claims is the data structure of license claims
@@ -30,13 +29,15 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type ClaimData map[string]interface{}
+type ClaimData map[string]any
 
 func (c *ClaimData) SwitchToAccountData(data *AccountClaimData) error {
+	//nolint:musttag
 	return mapstructure.Decode(c, data)
 }
 
 func (c *ClaimData) SwitchToClusterData(data *ClusterClaimData) error {
+	//nolint:musttag
 	return mapstructure.Decode(c, data)
 }
 
@@ -61,7 +62,8 @@ type ClusterClaimData struct {
 // Compare compares the claims with the data
 // return true if the claims is equal or lager to the data
 func (c *ClusterClaimData) Compare(data *ClusterClaimData) bool {
-	if c.NodeCount > data.NodeCount || c.TotalCPU > data.TotalCPU || c.TotalMemory > data.TotalMemory {
+	if c.NodeCount > data.NodeCount || c.TotalCPU > data.TotalCPU ||
+		c.TotalMemory > data.TotalMemory {
 		return false
 	}
 	return true
