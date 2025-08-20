@@ -134,6 +134,7 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     } else if (startedTemplate && !templateRepositoryUid) {
       // Only set templateRepositoryUid if it's not already set
       setValue('templateRepositoryUid', startedTemplate.uid);
+      // Also set the templateUid if it exists in startedTemplate
     }
     // do not add dependency
   }, [
@@ -144,7 +145,8 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     templateRepositoryQuery.isSuccess,
     searchParams,
     templateRepositoryQuery.data?.templateRepositoryList,
-    templateRepositoryUid
+    templateRepositoryUid,
+    setStartedTemplate
   ]);
 
   useEffect(() => {
@@ -153,7 +155,20 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
 
     const curTemplate = templateList.find((t) => t.uid === templateUid);
     const isExist = !!curTemplate;
+
     if (!isExist) {
+      if (startedTemplate?.templateUid) {
+        const startedTemplateVersion = templateList.find(
+          (t) => t.uid === startedTemplate.templateUid
+        );
+        if (startedTemplateVersion) {
+          setValue('templateUid', startedTemplate.templateUid);
+          afterUpdateTemplate(startedTemplate.templateUid);
+          resetNetwork();
+          return;
+        }
+      }
+
       const defaultTemplate = templateList[0];
       setValue('templateUid', defaultTemplate.uid);
       afterUpdateTemplate(defaultTemplate.uid);
@@ -166,7 +181,8 @@ export default function Runtime({ isEdit = false }: RuntimeProps) {
     templateUid,
     afterUpdateTemplate,
     resetNetwork,
-    setValue
+    setValue,
+    startedTemplate?.templateUid
   ]);
 
   if (!startedTemplate && !isEdit) return null;
