@@ -8,8 +8,8 @@
 # Tailwind CSS and PostCSS
 pnpm install tailwindcss @tailwindcss/postcss postcss
 
-# RHF (for `Form` component)
-pnpm install react-hook-form
+# RHF (for `Form` component), Sonner (for `Sonner` component)
+pnpm install react-hook-form sonner
 ```
 
 ```jsonc
@@ -73,13 +73,3 @@ import { cn } from '@sealos/shadcn-ui';
 ### Adding a component/hook using shadcn CLI
 
 See: [shadcn/ui document](https://ui.shadcn.com/docs/cli)
-
-### Building
-
-You need to rebuild the package after making changes.
-
-This will not clean `dist/` folder before building. You can manually delete it if you run into any problem.
-
-```sh
-pnpm run build
-```

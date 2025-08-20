@@ -13,9 +13,6 @@
     "jsx": "react",
     "types": ["node"],
     "importHelpers": true,
-    "target": "esnext",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "target": "esnext"
   }
 }
