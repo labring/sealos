@@ -5,7 +5,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from '@rollup/plugin-typescript';
 import * as tsc from 'typescript';
 
-const external = ['react', 'react-dom', 'react/jsx-runtime', 'next'];
+const external = ['react', 'react-dom', 'react/jsx-runtime', 'next', 'react-hook-form'];
 
 const publicEntries = {
   index: './src/index.ts'
