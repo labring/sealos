@@ -15,6 +15,8 @@ export type SystemEnvResponse = {
   CLIENT_DOMAIN_NAME: string;
   GATEWAY_DOMAIN_NAME: string;
   MANAGED_DB_ENABLED: string;
+  CHAT2DB_AES_KEY: string;
+  CHAT2DB_API_KEY: string;
 };
 
 process.on('unhandledRejection', (reason, promise) => {
@@ -39,7 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       STORAGE_MAX_SIZE: Number(process.env.STORAGE_MAX_SIZE) || 300,
       CLIENT_DOMAIN_NAME: process.env.CLIENT_DOMAIN_NAME || '',
       GATEWAY_DOMAIN_NAME: process.env.GATEWAY_DOMAIN_NAME || '',
-      MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED || ''
+      MANAGED_DB_ENABLED: process.env.MANAGED_DB_ENABLED || '',
+      CHAT2DB_AES_KEY: process.env.CHAT2DB_AES_KEY || '',
+      CHAT2DB_API_KEY: process.env.CHAT2DB_API_KEY || ''
     }
   });
 }

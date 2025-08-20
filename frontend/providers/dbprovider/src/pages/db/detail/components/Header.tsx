@@ -146,7 +146,7 @@ const Header = ({
 
   const handleManageData = useCallback(async () => {
     const orgId = '34';
-    const secretKey = process.env.CHAT2DB_AES_KEY!;
+    const secretKey = SystemEnv.CHAT2DB_AES_KEY!;
     const userStr = localStorage.getItem('session');
     const userObj = userStr ? JSON.parse(userStr) : null;
     const userId = userObj?.user.id;
