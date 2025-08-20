@@ -26,8 +26,7 @@ const useEnvStore = create<EnvState>()(
       CLIENT_DOMAIN_NAME: '',
       GATEWAY_DOMAIN_NAME: '',
       MANAGED_DB_ENABLED: '',
-      CHAT2DB_AES_KEY: '',
-      CHAT2DB_API_KEY: ''
+      CHAT2DB_AES_KEY: ''
     },
     initSystemEnv: async () => {
       const data = await getAppEnv();

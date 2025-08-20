@@ -1,7 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { jsonRes } from '@/services/backend/response';
-import useEnvStore from '@/store/env';
-const { SystemEnv } = useEnvStore.getState();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -11,7 +9,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const apiUrl = `${process.env.GATEWAY_DOMAIN_NAME}/api/open/enterprise/sync_data_source_a`;
 
-  const apiKey = SystemEnv.CHAT2DB_API_KEY;
+  const apiKey = process.env.CHAT2DB_API_KEY;
 
   const { userKey, ...requestBody } = req.body as any;
 
