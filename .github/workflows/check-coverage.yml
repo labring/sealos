@@ -9,7 +9,6 @@ on:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
-      - "CONTRIBUTORS"
       - "CHANGELOG/**"
   pull_request:
     branches: [ "*" ]
@@ -17,7 +16,6 @@ on:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
-      - "CONTRIBUTORS"
       - "CHANGELOG/**"
 env:
   # Common versions
