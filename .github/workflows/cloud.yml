@@ -193,18 +193,3 @@ jobs:
           fi
 
       # todo: build multi-arch images
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud:${{ steps.prepare.outputs.tag_name }}"

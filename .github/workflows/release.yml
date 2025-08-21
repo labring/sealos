@@ -51,56 +51,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
-  sync:
-    runs-on: ubuntu-24.04
-    needs:
-      - goreleaser
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Fetch Current version
-        id: get-current-tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-      - name: Renew issue and Sync Patch Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos-patch ${{steps.get-current-tag.outputs.tag }}"
-
-      - name: Renew issue and Sync Images
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}"
-
   cloud-release:
     uses: ./.github/workflows/cloud-release.yml
     needs:
       - goreleaser
-      - sync
     permissions:
       contents: read
       packages: write
