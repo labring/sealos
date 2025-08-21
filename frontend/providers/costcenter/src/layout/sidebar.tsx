@@ -77,6 +77,14 @@ export default function SideBar() {
       icon: invoice_icon,
       aicon: invoice_a_icon,
       display: invoiceEnabled
+    },
+    {
+      id: 'Testing',
+      url: '/testing',
+      value: 'SideBar.CreateInvoice',
+      icon: invoice_icon,
+      aicon: invoice_a_icon,
+      display: true
     }
   ];
   return (
