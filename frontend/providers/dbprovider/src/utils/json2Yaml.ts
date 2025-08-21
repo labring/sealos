@@ -27,6 +27,8 @@ import { V1StatefulSet } from '@kubernetes/client-node';
 import { customAlphabet } from 'nanoid';
 import { SwitchMsData } from '@/pages/api/pod/switchPodMs';
 import { distributeResources } from './database';
+import z from 'zod';
+import { backupBaseSchema } from '@/types/schemas/backup';
 
 const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
 
@@ -40,7 +42,7 @@ const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 5);
  */
 export const json2CreateCluster = (
   rawData: Partial<DBEditType> = {},
-  backupInfo?: BackupItemType,
+  backupInfo?: z.Infer<typeof backupBaseSchema>,
   options?: {
     storageClassName?: string;
   }

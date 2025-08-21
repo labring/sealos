@@ -7,6 +7,5 @@ export default function ApiDocs() {
   const config = {
     content: document
   };
-
   return <ApiReferenceReact configuration={config} />;
 }
