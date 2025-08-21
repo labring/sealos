@@ -978,6 +978,83 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  appPorts:
+                    default:
+                    - name: devbox-app-port
+                      port: 8080
+                      protocol: TCP
+                    items:
+                      description: ServicePort contains information on service's port.
+                      properties:
+                        appProtocol:
+                          description: |-
+                            The application protocol for this port.
+                            This is used as a hint for implementations to offer richer behavior for protocols that they understand.
+                            This field follows standard Kubernetes label syntax.
+                            Valid values are either:
+
+                            * Un-prefixed protocol names - reserved for IANA standard service names (as per
+                            RFC-6335 and https://www.iana.org/assignments/service-names).
+
+                            * Kubernetes-defined prefixed names:
+                              * 'kubernetes.io/h2c' - HTTP/2 prior knowledge over cleartext as described in https://www.rfc-editor.org/rfc/rfc9113.html#name-starting-http-2-with-prior-
+                              * 'kubernetes.io/ws'  - WebSocket over cleartext as described in https://www.rfc-editor.org/rfc/rfc6455
+                              * 'kubernetes.io/wss' - WebSocket over TLS as described in https://www.rfc-editor.org/rfc/rfc6455
+
+                            * Other protocols should use implementation-defined prefixed names such as
+                            mycompany.com/my-custom-protocol.
+                          type: string
+                        name:
+                          description: |-
+                            The name of this port within the service. This must be a DNS_LABEL.
+                            All ports within a ServiceSpec must have unique names. When considering
+                            the endpoints for a Service, this must match the 'name' field in the
+                            EndpointPort.
+                            Optional if only one ServicePort is defined on this service.
+                          type: string
+                        nodePort:
+                          description: |-
+                            The port on each node on which this service is exposed when type is
+                            NodePort or LoadBalancer.  Usually assigned by the system. If a value is
+                            specified, in-range, and not in use it will be used, otherwise the
+                            operation will fail.  If not specified, a port will be allocated if this
+                            Service requires one.  If this field is specified when creating a
+                            Service which does not need it, creation will fail. This field will be
+                            wiped when updating a Service to no longer need it (e.g. changing type
+                            from NodePort to ClusterIP).
+                            More info: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                          format: int32
+                          type: integer
+                        port:
+                          description: The port that will be exposed by this service.
+                          format: int32
+                          type: integer
+                        protocol:
+                          allOf:
+                          - default: TCP
+                          - default: TCP
+                          description: |-
+                            The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
+                            Default is TCP.
+                          type: string
+                        targetPort:
+                          anyOf:
+                          - type: integer
+                          - type: string
+                          description: |-
+                            Number or name of the port to access on the pods targeted by the service.
+                            Number must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
+                            If this is a string, it will be looked up as a named port in the
+                            target Pod's container ports. If this is not specified, the value
+                            of the 'port' field is used (an identity map).
+                            This field is ignored for services with clusterIP=None, and should be
+                            omitted or set equal to the 'port' field.
+                            More info: https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service
+                          x-kubernetes-int-or-string: true
+                      required:
+                      - port
+                      type: object
+                    type: array
                   args:
                     description: kubebuilder:validation:Optional
                     items:
@@ -1110,6 +1187,50 @@ spec:
                     additionalProperties:
                       type: string
                     type: object
+                  ports:
+                    default:
+                    - containerPort: 22
+                      name: devbox-ssh-port
+                      protocol: TCP
+                    items:
+                      description: ContainerPort represents a network port in a single
+                        container.
+                      properties:
+                        containerPort:
+                          description: |-
+                            Number of port to expose on the pod's IP address.
+                            This must be a valid port number, 0 < x < 65536.
+                          format: int32
+                          type: integer
+                        hostIP:
+                          description: What host IP to bind the external port to.
+                          type: string
+                        hostPort:
+                          description: |-
+                            Number of port to expose on the host.
+                            If specified, this must be a valid port number, 0 < x < 65536.
+                            If HostNetwork is specified, this must match ContainerPort.
+                            Most containers do not need this.
+                          format: int32
+                          type: integer
+                        name:
+                          description: |-
+                            If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
+                            named port in a pod must have a unique name. Name for the port that can be
+                            referred to by services.
+                          type: string
+                        protocol:
+                          allOf:
+                          - default: TCP
+                          - default: TCP
+                          description: |-
+                            Protocol for port. Must be UDP, TCP, or SCTP.
+                            Defaults to "TCP".
+                          type: string
+                      required:
+                      - containerPort
+                      type: object
+                    type: array
                   releaseArgs:
                     default:
                     - /home/devbox/project/entrypoint.sh
@@ -2987,6 +3108,47 @@ spec:
                 type: string
               network:
                 properties:
+                  extraPorts:
+                    description: // +kubebuilder:validation:Optional
+                    items:
+                      description: ContainerPort represents a network port in a single
+                        container.
+                      properties:
+                        containerPort:
+                          description: |-
+                            Number of port to expose on the pod's IP address.
+                            This must be a valid port number, 0 < x < 65536.
+                          format: int32
+                          type: integer
+                        hostIP:
+                          description: What host IP to bind the external port to.
+                          type: string
+                        hostPort:
+                          description: |-
+                            Number of port to expose on the host.
+                            If specified, this must be a valid port number, 0 < x < 65536.
+                            If HostNetwork is specified, this must match ContainerPort.
+                            Most containers do not need this.
+                          format: int32
+                          type: integer
+                        name:
+                          description: |-
+                            If specified, this must be an IANA_SVC_NAME and unique within the pod. Each
+                            named port in a pod must have a unique name. Name for the port that can be
+                            referred to by services.
+                          type: string
+                        protocol:
+                          allOf:
+                          - default: TCP
+                          - default: TCP
+                          description: |-
+                            Protocol for port. Must be UDP, TCP, or SCTP.
+                            Defaults to "TCP".
+                          type: string
+                      required:
+                      - containerPort
+                      type: object
+                    type: array
                   type:
                     enum:
                     - NodePort

@@ -53,9 +53,11 @@ const (
 	DevboxStateRunning DevboxState = "Running"
 	// DevboxStatePending means the Devbox is pending
 	DevboxStatePending DevboxState = "Pending"
-	// DevboxStateStopped means the Devbox is stopped
+	// DevboxStatePaused means the Devbox is paused, pod will be released
+	DevboxStatePaused DevboxState = "Paused"
+	// DevboxStateStopped means the Devbox is stopped, pod and content lv will be released
 	DevboxStateStopped DevboxState = "Stopped"
-	// DevboxStateShutdown means the devbox is shutdown
+	// DevboxStateShutdown means the devbox is shutdown, pod, content lv and nodeport service will be released
 	DevboxStateShutdown DevboxState = "Shutdown"
 )
 
@@ -78,7 +80,7 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
 	// // +kubebuilder:validation:Optional
-	// ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
+	ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
 }
 
 type Config struct {
@@ -109,10 +111,12 @@ type Config struct {
 	ReleaseArgs []string `json:"releaseArgs,omitempty"`
 
 	// TODO: in v1alpha2 api we need fix the port and app port into one field and create a new type for it.
-	// // +kubebuilder:validation:Optional
-	// Ports []corev1.ContainerPort `json:"ports,omitempty"`
-	// // +kubebuilder:validation:Optional
-	// AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={{name:"devbox-ssh-port",containerPort:22,protocol:TCP}}
+	Ports []corev1.ContainerPort `json:"ports,omitempty"`
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default={{name:"devbox-app-port",port:8080,protocol:TCP}}
+	AppPorts []corev1.ServicePort `json:"appPorts,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
