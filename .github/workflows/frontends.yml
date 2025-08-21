@@ -1,8 +1,6 @@
 name: Build Frontends Image
 
 on:
-  create:
-    tags:
   workflow_call:
     inputs:
       push_image:

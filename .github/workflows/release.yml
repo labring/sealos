@@ -7,9 +7,6 @@ env:
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - "*"
 
 jobs:
   goreleaser:
