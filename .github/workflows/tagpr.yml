@@ -1,6 +1,10 @@
 name: 🚀 Tagpr for GitHub Actions
 on:
   workflow_dispatch:
+  push:
+    branches: [ "**" ]
+    paths:
+      - "CHANGELOG/CHANGELOG.md"
 jobs:
   tagpr:
     runs-on: ubuntu-24.04
@@ -9,15 +13,9 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        if: ${{ (github.event_name == 'workflow_dispatch') }}
         with:
           fetch-depth: 0
-      - run: | 
-          wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
-          tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog
-          sudo mv git-chglog /usr/local/bin/
-          git-chglog --version
-          rm -rf git-chglog_0.15.4_linux_amd64.tar.gz
-        name: Install git-chglog
       - run: |
           # check if .tagpr.json exists
           if [ ! -f .tagpr.json ]; then
@@ -29,21 +27,19 @@ jobs:
           version=$(cat .tagpr.json | jq -r '.version')
           command=$(cat .tagpr.json | jq -r '.command')
           name=$(cat .tagpr.json | jq -r '.name')
-          echo "version: $version"
-          echo "command: $command"
-          echo "name: $name"
           echo name=${name} >> $GITHUB_OUTPUT
           echo version=${version} >> $GITHUB_OUTPUT
           echo command=${command} >> $GITHUB_OUTPUT
         id: tagpr
         name: Print git-chglog tag
+        if: ${{ (github.event_name == 'workflow_dispatch') }}
       - name: Use command to generate version
-        if: "steps.tagpr.outputs.version != ''"
+        if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
         run: |
           echo "Running command: ${{ steps.tagpr.outputs.command }}"
           eval "${{ steps.tagpr.outputs.command }}"
       - uses: peter-evans/create-pull-request@v5
-        if: "steps.tagpr.outputs.version != ''"
+        if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
         with:
           title: 'Release ${{ steps.tagpr.outputs.name }} for ${{ steps.tagpr.outputs.version }}'
           body: |
