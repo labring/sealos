@@ -1,7 +1,5 @@
-import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
-import { DBTypeEnum } from '@/constants/db';
 import * as z from 'zod';
-import { autoBackupFormSchema, backupInfoSchema } from './backup';
+import { autoBackupFormSchema } from './backup';
 
 export const dbTypeSchema = z.enum([
   'postgresql',
@@ -18,13 +16,23 @@ export const dbTypeSchema = z.enum([
 ]);
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
 export const baseResourceSchema = z.object({
-  cpu: z.string(),
-  memory: z.string(),
-  storage: z.string()
+  cpu: z
+    .number()
+    .refine((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val), {
+      message: 'CPU must be one of: 0.5, 1, 2, 3, 4, 5, 6, 7, 8'
+    })
+    .default(1),
+  memory: z
+    .number()
+    .refine((val) => [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val), {
+      message: 'Memory must be one of: 0.5, 1, 2, 4, 6, 8, 12, 16, 32'
+    })
+    .default(1),
+  storage: z.number().min(1).max(300).default(3)
 });
 export const allResourceSchema = baseResourceSchema.and(
   z.object({
-    replicas: z.number().min(1).max(3)
+    replicas: z.number().min(1).max(20).default(1)
   })
 );
 export const dbEditSchema = z.object({
@@ -76,7 +84,8 @@ export const dbDetailSchema = dbEditSchema.and(
     createTime: z.string(),
     totalResource: baseResourceSchema,
     isDiskSpaceOverflow: z.boolean(),
-    source: dbSourceSchema
+    source: dbSourceSchema,
+    autoBackup: autoBackupFormSchema.optional()
   })
 );
 export const dblistItemSchema = dbEditSchema.and(
@@ -86,8 +95,8 @@ export const dblistItemSchema = dbEditSchema.and(
     createTime: z.string(),
     totalResource: baseResourceSchema,
     isDiskSpaceOverflow: z.boolean(),
-    source: dbSourceSchema
-    // autoBackup: autoBackupFormSchema.optional()
+    source: dbSourceSchema,
+    autoBackup: autoBackupFormSchema.optional()
   })
 );
 

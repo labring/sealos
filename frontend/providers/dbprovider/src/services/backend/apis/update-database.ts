@@ -26,9 +26,27 @@ export async function updateDatabase(
     body: KbPgClusterType;
   };
   const existingDatabase = adaptDBDetail(body);
+
+  // Convert resource units if provided
+  const convertedBody = {
+    ...request.body,
+    ...(request.body.resource?.cpu && {
+      resource: {
+        ...request.body.resource,
+        cpu: request.body.resource.cpu * 1000 // Convert cores to millicores
+      }
+    }),
+    ...(request.body.resource?.memory && {
+      resource: {
+        ...request.body.resource,
+        memory: request.body.resource.memory * 1024 // Convert GB to MB
+      }
+    })
+  };
+
   const mergedDatabase = {
     ...existingDatabase,
-    ...request.body.dbForm
+    ...convertedBody
   };
 
   const opsRequests = [];
