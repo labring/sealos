@@ -10,7 +10,7 @@ import { track } from '@sealos/gtm';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useRouter } from 'next/router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppBaseInfo, { ConnectionInfo } from './components/AppBaseInfo';
 import BackupTable, { type ComponentRef } from './components/BackupTable';
 import Header from './components/Header';
@@ -23,6 +23,7 @@ import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
 import OperationLog from './components/OperationLog';
+import { getMockDatabaseAlerts, type DatabaseAlertItem } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -131,6 +132,17 @@ const AppDetail = ({
   const [showSlider, setShowSlider] = useState(false);
   const [podsCount, setPodsCount] = useState(0);
   const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
+  const [alerts, setAlerts] = useState<Record<string, DatabaseAlertItem>>({});
+
+  // Load alerts data
+  useEffect(() => {
+    const mockAlerts = getMockDatabaseAlerts();
+    const alertsMap = (mockAlerts || []).reduce((acc, cur) => {
+      acc[cur.name] = cur;
+      return acc;
+    }, {} as Record<string, DatabaseAlertItem>);
+    setAlerts(alertsMap);
+  }, []);
 
   useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
@@ -171,6 +183,7 @@ const AppDetail = ({
           conn={connInfo}
           setShowSlider={setShowSlider}
           isLargeScreen={isLargeScreen}
+          alerts={alerts}
         />
       </Box>
       <Flex position={'relative'} flex={'1 0 0'} h={0} gap={'8px'} minH={'600px'}>

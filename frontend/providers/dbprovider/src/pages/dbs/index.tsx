@@ -6,10 +6,12 @@ import { useLoading } from '@/hooks/useLoading';
 import { useEffect, useState } from 'react';
 import { serviceSideProps } from '@/utils/i18n';
 import Sidebar from '@/components/Sidebar';
-import { Flex } from '@chakra-ui/react';
+import { Box, Flex, Switch, Text } from '@chakra-ui/react';
 import { useGuideStore } from '@/store/guide';
 import { useRouter } from 'next/router';
 import { track } from '@sealos/gtm';
+import { getUserNamespace } from '@/utils/user';
+import { getDatabaseAlerts, getMockDatabaseAlerts, type DatabaseAlertItem } from '@/api/db';
 
 function Home() {
   const { dbList, setDBList } = useDBStore();
@@ -17,6 +19,7 @@ function Home() {
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
   const { resetGuideState } = useGuideStore();
+  const [alerts, setAlerts] = useState<Record<string, DatabaseAlertItem>>({});
 
   const { refetch } = useQuery(['initDbData'], setDBList, {
     refetchInterval: 3000,
@@ -24,6 +27,18 @@ function Home() {
       setInitialized(true);
     }
   });
+
+  // fetch database alerts as soon as page loads
+  useEffect(() => {
+    const mockAlerts = getMockDatabaseAlerts();
+    // const ns = getUserNamespace();
+    // list = await getDatabaseAlerts(ns);
+    const map = (mockAlerts || []).reduce((acc, cur) => {
+      acc[cur.name] = cur;
+      return acc;
+    }, {} as Record<string, DatabaseAlertItem>);
+    setAlerts(map);
+  }, []);
 
   useEffect(() => {
     if (router.isReady) {
@@ -44,7 +59,7 @@ function Home() {
         {dbList.length === 0 && initialized ? (
           <Empty />
         ) : (
-          <DBList dbList={dbList} refetchApps={refetch} />
+          <DBList dbList={dbList} refetchApps={refetch} alerts={alerts} />
         )}
       </Flex>
       <Loading loading={!initialized} />
