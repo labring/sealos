@@ -33,7 +33,7 @@ export type DatabaseAlertItem = {
 };
 
 export const getDatabaseAlerts = (namespace: string) =>
-  GET<DatabaseAlertItem[]>(`http://database-alert.sealos.svc:8000/v1/databases`, {
+  GET<DatabaseAlertItem[]>(`/api/proxy/get_db_alerts`, {
     namespace
   });
 

@@ -23,7 +23,7 @@ import MyIcon from '@/components/Icon';
 import { BackupSupportedDBTypeList } from '@/constants/db';
 import DataImport from './components/DataImport';
 import OperationLog from './components/OperationLog';
-import { getMockDatabaseAlerts, type DatabaseAlertItem } from '@/api/db';
+import { type DatabaseAlertItem } from '@/api/db';
 
 enum TabEnum {
   pod = 'pod',
@@ -128,21 +128,16 @@ const AppDetail = ({
   const { Loading } = useLoading();
   const { screenWidth } = useGlobalStore();
   const isLargeScreen = useMemo(() => screenWidth > 1280, [screenWidth]);
-  const { dbDetail, loadDBDetail } = useDBStore();
+  const { dbDetail, loadDBDetail, alerts, loadAlerts } = useDBStore();
   const [showSlider, setShowSlider] = useState(false);
   const [podsCount, setPodsCount] = useState(0);
   const [connInfo, setConnInfo] = useState<ConnectionInfo | null>(null);
-  const [alerts, setAlerts] = useState<Record<string, DatabaseAlertItem>>({});
 
-  // Load alerts data
-  useEffect(() => {
-    const mockAlerts = getMockDatabaseAlerts();
-    const alertsMap = (mockAlerts || []).reduce((acc, cur) => {
-      acc[cur.name] = cur;
-      return acc;
-    }, {} as Record<string, DatabaseAlertItem>);
-    setAlerts(alertsMap);
-  }, []);
+  // Load alerts data once when page loads
+  useQuery(['databaseAlertsDetail'], loadAlerts, {
+    staleTime: Infinity,
+    cacheTime: 5 * 60 * 1000
+  });
 
   useQuery(
     ['loadDBDetail', 'intervalLoadPods', dbName],
