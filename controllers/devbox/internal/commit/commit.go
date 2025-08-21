@@ -131,7 +131,7 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 	createOpt := types.ContainerCreateOptions{
 		GOptions:       *c.globalOptions,
 		Runtime:        DefaultRuntime, // user devbox runtime
-		Name:           fmt.Sprintf("devbox-%s-container-%d", devboxName, time.Now().Unix()),
+		Name:           fmt.Sprintf("devbox-%s-container-%d", devboxName, time.Now().UnixMicro()),
 		Pull:           "missing",
 		InRun:          false, // not start container
 		Rm:             false,
@@ -238,6 +238,11 @@ func (c *CommitterImpl) SetLvRemovable(ctx context.Context, containerID string, 
 
 // RemoveContainer remove container
 func (c *CommitterImpl) RemoveContainer(ctx context.Context, containerID string) error {
+	// check containerID is not empty
+	if containerID == "" {
+		return fmt.Errorf("[RemoveContainer]containerID is empty")
+	}
+
 	fmt.Println("========>>>> remove container", containerID)
 	ctx = namespaces.WithNamespace(ctx, DefaultNamespace)
 
