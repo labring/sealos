@@ -27,7 +27,7 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
-    name: v1alpha1
+    name: v1alpha2
     schema:
       openAPIV3Schema:
         description: Devbox is the Schema for the devboxes API
