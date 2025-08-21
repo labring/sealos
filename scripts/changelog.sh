@@ -25,6 +25,17 @@ if [ ! -d CHANGELOG ]; then
     mkdir CHANGELOG
 fi
 
+if command -v git-chglog &> /dev/null; then
+    echo "git-chglog is installed, proceeding with changelog generation."
+else
+    echo "git-chglog is not installed. Will install it first."
+    wget -q https://github.com/git-chglog/git-chglog/releases/download/v0.15.4/git-chglog_0.15.4_linux_amd64.tar.gz
+    tar -zxvf git-chglog_0.15.4_linux_amd64.tar.gz git-chglog &> /dev/null
+    sudo mv git-chglog /usr/local/bin/
+    git-chglog --version
+    rm -rf git-chglog_0.15.4_linux_amd64.tar.gz
+fi
+
 git-chglog --repository-url https://github.com/labring/sealos --output CHANGELOG/CHANGELOG-"${TAG#v}".md --next-tag ${TAG} ${TAG}
 
 echo "# Changelog" > CHANGELOG/CHANGELOG.md
