@@ -19,10 +19,12 @@ import (
 	"github.com/containerd/nerdctl/v2/pkg/cmd/image"
 	"github.com/containerd/nerdctl/v2/pkg/containerutil"
 	ncdefaults "github.com/containerd/nerdctl/v2/pkg/defaults"
-	"github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
+
+	"github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 )
 
 type Committer interface {
@@ -114,9 +116,9 @@ func (c *CommitterImpl) CreateContainer(ctx context.Context, devboxName string, 
 
 	// create container with labels
 	originalAnnotations := map[string]string{
-		v1alpha1.AnnotationContentID:    contentID,
-		v1alpha1.AnnotationInit:         AnnotationImageFromValue,
-		v1alpha1.AnnotationStorageLimit: AnnotationUseLimitValue,
+		v1alpha2.AnnotationContentID:    contentID,
+		v1alpha2.AnnotationInit:         AnnotationImageFromValue,
+		v1alpha2.AnnotationStorageLimit: AnnotationUseLimitValue,
 		AnnotationKeyNamespace:          DefaultNamespace,
 		AnnotationKeyImageName:          baseImage,
 	}

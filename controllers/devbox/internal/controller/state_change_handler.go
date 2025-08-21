@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	"github.com/labring/sealos/controllers/devbox/internal/commit"
 
 	corev1 "k8s.io/api/core/v1"
@@ -45,7 +45,7 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		h.Logger.Info("event source host is not the node name, skip", "event", event)
 		return nil
 	}
-	devbox := &devboxv1alpha1.Devbox{}
+	devbox := &devboxv1alpha2.Devbox{}
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: event.Namespace, Name: event.InvolvedObject.Name}, devbox); err != nil {
 		h.Logger.Error(err, "failed to get devbox", "devbox", event.InvolvedObject.Name)
 		return err
@@ -55,18 +55,18 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 	targetState := devbox.Spec.State
 
 	// Handle invalid state transition
-	if currentState == devboxv1alpha1.DevboxStateShutdown && targetState == devboxv1alpha1.DevboxStateStopped {
+	if currentState == devboxv1alpha2.DevboxStateShutdown && targetState == devboxv1alpha2.DevboxStateStopped {
 		h.Recorder.Eventf(devbox, corev1.EventTypeWarning, "Shutdown state is not allowed to be changed to stopped state", "Shutdown state is not allowed to be changed to stopped state")
 		h.Logger.Error(fmt.Errorf("shutdown state is not allowed to be changed to stopped state"), "shutdown state is not allowed to be changed to stopped state", "devbox", devbox.Name)
 		return fmt.Errorf("shutdown state is not allowed to be changed to stopped state")
 	}
 
 	// Handle state transitions that require commit
-	needsCommit := (currentState == devboxv1alpha1.DevboxStateRunning || currentState == devboxv1alpha1.DevboxStateStopped) && targetState == devboxv1alpha1.DevboxStateShutdown
+	needsCommit := (currentState == devboxv1alpha2.DevboxStateRunning || currentState == devboxv1alpha2.DevboxStateStopped) && targetState == devboxv1alpha2.DevboxStateShutdown
 
 	if needsCommit {
 		// Check if commit is already in progress to prevent duplicate requests
-		if devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus == devboxv1alpha1.CommitStatusCommitting {
+		if devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus == devboxv1alpha2.CommitStatusCommitting {
 			h.Logger.Info("commit already in progress, skipping duplicate request", "devbox", devbox.Name, "contentID", devbox.Status.ContentID)
 			return nil
 		}
@@ -86,10 +86,10 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 	return nil
 }
 
-func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha1.Devbox) error {
+func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1alpha2.Devbox) error {
 	// do commit, update devbox commit record, update devbox status state to shutdown, add a new commit record for the new content id
 	// step 0: set commit status to committing to prevent duplicate requests
-	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusCommitting
+	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusCommitting
 	devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
 	if err := h.Client.Status().Update(ctx, devbox); err != nil {
 		h.Logger.Error(err, "failed to update commit status to committing", "devbox", devbox.Name)
@@ -113,7 +113,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	if containerID, err = h.Committer.Commit(ctx, devbox.Name, devbox.Status.ContentID, baseImage, commitImage); err != nil {
 		h.Logger.Error(err, "failed to commit devbox", "devbox", devbox.Name)
 		// Update commit status to failed on commit error
-		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusFailed
+		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
 		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
 		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
 			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
@@ -123,7 +123,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	if err := h.Committer.Push(ctx, commitImage); err != nil {
 		h.Logger.Error(err, "failed to push commit image", "commitImage", commitImage)
 		// Update commit status to failed on push error
-		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusFailed
+		devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusFailed
 		devbox.Status.CommitRecords[devbox.Status.ContentID].UpdateTime = metav1.Now()
 		if updateErr := h.Client.Status().Update(ctx, devbox); updateErr != nil {
 			h.Logger.Error(updateErr, "failed to update commit status to failed", "devbox", devbox.Name)
@@ -135,15 +135,15 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 		h.Logger.Error(err, "failed to remove image", "commitImage", commitImage)
 	}
 	// step 2: update devbox commit record
-	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha1.CommitStatusSuccess
+	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitStatus = devboxv1alpha2.CommitStatusSuccess
 	devbox.Status.CommitRecords[devbox.Status.ContentID].CommitTime = metav1.Now()
 	// step 3: update devbox status state to shutdown
-	devbox.Status.State = devboxv1alpha1.DevboxStateShutdown
+	devbox.Status.State = devboxv1alpha2.DevboxStateShutdown
 	// step 4: add a new commit record for the new content id
 	// make sure that always have a new commit record for shutdown state
 	devbox.Status.ContentID = uuid.New().String()
-	devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
-		CommitStatus: devboxv1alpha1.CommitStatusPending,
+	devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
+		CommitStatus: devboxv1alpha2.CommitStatusPending,
 		Node:         "",
 		BaseImage:    commitImage,
 		CommitImage:  h.generateImageName(devbox),
@@ -163,7 +163,7 @@ func (h *StateChangeHandler) commitDevbox(ctx context.Context, devbox *devboxv1a
 	return nil
 }
 
-func (h *StateChangeHandler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
+func (h *StateChangeHandler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
 	now := time.Now()
 	return fmt.Sprintf("%s/%s/%s:%s-%s", h.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }

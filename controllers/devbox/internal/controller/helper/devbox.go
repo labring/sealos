@@ -28,7 +28,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/google/uuid"
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	utilsresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/label"
 )
@@ -50,7 +50,7 @@ func WithPodContentID(contentID string) DevboxPodOptions {
 		if pod.Annotations == nil {
 			pod.Annotations = make(map[string]string)
 		}
-		pod.Annotations[devboxv1alpha1.AnnotationContentID] = contentID
+		pod.Annotations[devboxv1alpha2.AnnotationContentID] = contentID
 	}
 }
 
@@ -59,7 +59,7 @@ func WithPodInit(init string) DevboxPodOptions {
 		if pod.Annotations == nil {
 			pod.Annotations = make(map[string]string)
 		}
-		pod.Annotations[devboxv1alpha1.AnnotationInit] = init
+		pod.Annotations[devboxv1alpha2.AnnotationInit] = init
 	}
 }
 
@@ -95,7 +95,7 @@ func NewContentID() string {
 	return uuid.New().String()
 }
 
-func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
+func GeneratePodLabels(devbox *devboxv1alpha2.Devbox) map[string]string {
 	labels := make(map[string]string)
 
 	if devbox.Spec.Config.Labels != nil {
@@ -114,49 +114,49 @@ func GeneratePodLabels(devbox *devboxv1alpha1.Devbox) map[string]string {
 	return labels
 }
 
-func GeneratePodAnnotations(devbox *devboxv1alpha1.Devbox) map[string]string {
+func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox) map[string]string {
 	annotations := make(map[string]string)
 	if devbox.Spec.Config.Annotations != nil {
 		for k, v := range devbox.Spec.Config.Annotations {
 			annotations[k] = v
 		}
 	}
-	annotations[devboxv1alpha1.AnnotationStorageLimit] = devbox.Spec.StorageLimit
+	annotations[devboxv1alpha2.AnnotationStorageLimit] = devbox.Spec.StorageLimit
 	return annotations
 }
 
-func GenerateDevboxPhase(devbox *devboxv1alpha1.Devbox, podList corev1.PodList) devboxv1alpha1.DevboxPhase {
+func GenerateDevboxPhase(devbox *devboxv1alpha2.Devbox, podList corev1.PodList) devboxv1alpha2.DevboxPhase {
 	if len(podList.Items) > 1 {
-		return devboxv1alpha1.DevboxPhaseError
+		return devboxv1alpha2.DevboxPhaseError
 	}
 	switch devbox.Spec.State {
-	case devboxv1alpha1.DevboxStateRunning:
+	case devboxv1alpha2.DevboxStateRunning:
 		if len(podList.Items) == 0 {
-			return devboxv1alpha1.DevboxPhasePending
+			return devboxv1alpha2.DevboxPhasePending
 		}
 		switch podList.Items[0].Status.Phase {
 		case corev1.PodFailed, corev1.PodSucceeded:
-			return devboxv1alpha1.DevboxPhaseStopped
+			return devboxv1alpha2.DevboxPhaseStopped
 		case corev1.PodPending:
-			return devboxv1alpha1.DevboxPhasePending
+			return devboxv1alpha2.DevboxPhasePending
 		case corev1.PodRunning:
 			if podList.Items[0].Status.ContainerStatuses[0].Ready && podList.Items[0].Status.ContainerStatuses[0].ContainerID != "" {
-				return devboxv1alpha1.DevboxPhaseRunning
+				return devboxv1alpha2.DevboxPhaseRunning
 			}
-			return devboxv1alpha1.DevboxPhasePending
+			return devboxv1alpha2.DevboxPhasePending
 		}
-	case devboxv1alpha1.DevboxStateStopped:
+	case devboxv1alpha2.DevboxStateStopped:
 		if len(podList.Items) == 0 {
-			return devboxv1alpha1.DevboxPhaseStopped
+			return devboxv1alpha2.DevboxPhaseStopped
 		}
-		return devboxv1alpha1.DevboxPhaseStopping
-	case devboxv1alpha1.DevboxStateShutdown:
+		return devboxv1alpha2.DevboxPhaseStopping
+	case devboxv1alpha2.DevboxStateShutdown:
 		if len(podList.Items) == 0 {
-			return devboxv1alpha1.DevboxPhaseShutdown
+			return devboxv1alpha2.DevboxPhaseShutdown
 		}
-		return devboxv1alpha1.DevboxPhaseShutting
+		return devboxv1alpha2.DevboxPhaseShutting
 	}
-	return devboxv1alpha1.DevboxPhaseUnknown
+	return devboxv1alpha2.DevboxPhaseUnknown
 }
 
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
@@ -195,7 +195,7 @@ func GenerateSSHVolumeMounts() []corev1.VolumeMount {
 }
 
 // GenerateSSHVolume generates a volume for SSH keys
-func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
+func GenerateSSHVolume(devbox *devboxv1alpha2.Devbox) corev1.Volume {
 	return corev1.Volume{
 		Name: "devbox-ssh-keys",
 		VolumeSource: corev1.VolumeSource{
@@ -218,7 +218,7 @@ func GenerateSSHVolume(devbox *devboxv1alpha1.Devbox) corev1.Volume {
 }
 
 // GenerateResourceRequirements generates the resource requirements for the Devbox pod
-func GenerateResourceRequirements(devbox *devboxv1alpha1.Devbox, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceRequirements {
+func GenerateResourceRequirements(devbox *devboxv1alpha2.Devbox, requestRate utilsresource.RequestRate, ephemeralStorage utilsresource.EphemeralStorage) corev1.ResourceRequirements {
 	return corev1.ResourceRequirements{
 		Limits:   calculateResourceLimit(devbox.Spec.Resource, ephemeralStorage),
 		Requests: calculateResourceRequest(devbox.Spec.Resource, requestRate, ephemeralStorage),
@@ -260,17 +260,17 @@ func calculateResourceRequest(original corev1.ResourceList, requestRate utilsres
 }
 
 // GetWorkingDir get the working directory for the Devbox pod
-func GetWorkingDir(devbox *devboxv1alpha1.Devbox) string {
+func GetWorkingDir(devbox *devboxv1alpha2.Devbox) string {
 	return devbox.Spec.Config.WorkingDir
 }
 
 // GetCommand get the command for the Devbox pod
-func GetCommand(devbox *devboxv1alpha1.Devbox) []string {
+func GetCommand(devbox *devboxv1alpha2.Devbox) []string {
 	return devbox.Spec.Config.Command
 }
 
 // GetArgs get the arguments for the Devbox pod
-func GetArgs(devbox *devboxv1alpha1.Devbox) []string {
+func GetArgs(devbox *devboxv1alpha2.Devbox) []string {
 	return devbox.Spec.Config.Args
 }
 
@@ -278,7 +278,7 @@ func IsExceededQuotaError(err error) bool {
 	return strings.Contains(err.Error(), "exceeded quota")
 }
 
-func GetStorageLimitInBytes(devbox *devboxv1alpha1.Devbox) (int64, error) {
+func GetStorageLimitInBytes(devbox *devboxv1alpha2.Devbox) (int64, error) {
 	if devbox.Spec.StorageLimit != "" {
 		storageLimit, err := resource.ParseQuantity(devbox.Spec.StorageLimit)
 		if err != nil {

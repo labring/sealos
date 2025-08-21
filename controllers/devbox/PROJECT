@@ -15,6 +15,6 @@ resources:
   domain: sealos.io
   group: devbox
   kind: Devbox
-  path: github.com/labring/sealos/controllers/devbox/api/v1alpha1
-  version: v1alpha1
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
 version: "3"

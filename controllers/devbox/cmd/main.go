@@ -46,7 +46,7 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
@@ -64,7 +64,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(devboxv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(devboxv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

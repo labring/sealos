@@ -17,7 +17,7 @@ limitations under the License.
 // Package v1alpha1 contains API Schema definitions for the devbox v1alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=devbox.sealos.io
-package v1alpha1
+package v1alpha2
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"

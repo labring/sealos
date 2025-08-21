@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 	"github.com/labring/sealos/controllers/devbox/internal/commit"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/helper"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
@@ -91,7 +91,7 @@ type DevboxReconciler struct {
 func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	devbox := &devboxv1alpha1.Devbox{}
+	devbox := &devboxv1alpha2.Devbox{}
 	if err := r.Get(ctx, req.NamespacedName, devbox); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -99,17 +99,17 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	recLabels := label.RecommendedLabels(&label.Recommended{
 		Name:      devbox.Name,
 		ManagedBy: label.DefaultManagedBy,
-		PartOf:    devboxv1alpha1.LabelDevBoxPartOf,
+		PartOf:    devboxv1alpha2.LabelDevBoxPartOf,
 	})
 
 	if devbox.ObjectMeta.DeletionTimestamp.IsZero() {
 		// retry add finalizer
 		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			latestDevbox := &devboxv1alpha1.Devbox{}
+			latestDevbox := &devboxv1alpha2.Devbox{}
 			if err := r.Get(ctx, req.NamespacedName, latestDevbox); err != nil {
 				return client.IgnoreNotFound(err)
 			}
-			if controllerutil.AddFinalizer(latestDevbox, devboxv1alpha1.FinalizerName) {
+			if controllerutil.AddFinalizer(latestDevbox, devboxv1alpha2.FinalizerName) {
 				return r.Update(ctx, latestDevbox)
 			}
 			return nil
@@ -124,7 +124,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 
 		logger.Info("devbox deleted, remove finalizer")
-		if controllerutil.RemoveFinalizer(devbox, devboxv1alpha1.FinalizerName) {
+		if controllerutil.RemoveFinalizer(devbox, devboxv1alpha2.FinalizerName) {
 			if err := r.Update(ctx, devbox); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -139,13 +139,13 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	// init devbox status commit record
 	if devbox.Status.CommitRecords[devbox.Status.ContentID] == nil {
-		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha1.CommitRecord)
-		devbox.Status.State = devboxv1alpha1.DevboxStateRunning
-		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha1.CommitRecord{
+		devbox.Status.CommitRecords = make(map[string]*devboxv1alpha2.CommitRecord)
+		devbox.Status.State = devboxv1alpha2.DevboxStateRunning
+		devbox.Status.CommitRecords[devbox.Status.ContentID] = &devboxv1alpha2.CommitRecord{
 			Node:         "",
 			BaseImage:    devbox.Spec.Image,
 			CommitImage:  r.generateImageName(devbox),
-			CommitStatus: devboxv1alpha1.CommitStatusPending,
+			CommitStatus: devboxv1alpha2.CommitStatusPending,
 			GenerateTime: metav1.Now(),
 		}
 	}
@@ -153,7 +153,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	// todo: implement the schedule logic to replace the current logic
 	// if devbox state is running, schedule devbox to node, update devbox status and create a new commit record
 	// and filter out the devbox that are not in the current node
-	if devbox.Spec.State == devboxv1alpha1.DevboxStateRunning {
+	if devbox.Spec.State == devboxv1alpha2.DevboxStateRunning {
 		if devbox.Status.CommitRecords[devbox.Status.ContentID].Node == "" {
 			if score := r.getAcceptanceScore(ctx, devbox); score >= r.AcceptanceThreshold {
 				// if devbox is not scheduled to node, schedule it to current node
@@ -194,7 +194,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	logger.Info("sync secret success")
 	r.Recorder.Eventf(devbox, corev1.EventTypeNormal, "Sync secret success", "Sync secret success")
 	// create service if network type is NodePort
-	if devbox.Spec.NetworkSpec.Type == devboxv1alpha1.NetworkTypeNodePort {
+	if devbox.Spec.NetworkSpec.Type == devboxv1alpha2.NetworkTypeNodePort {
 		logger.Info("syncing service")
 		if err := r.syncService(ctx, devbox, recLabels); err != nil {
 			logger.Error(err, "sync service failed")
@@ -226,7 +226,7 @@ func (r *DevboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	objectMeta := metav1.ObjectMeta{
 		Name:      devbox.Name,
 		Namespace: devbox.Namespace,
@@ -288,14 +288,14 @@ func (r *DevboxReconciler) syncSecret(ctx context.Context, devbox *devboxv1alpha
 	return nil
 }
 
-func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	logger := log.FromContext(ctx)
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
 	switch devbox.Spec.State {
-	case devboxv1alpha1.DevboxStateRunning:
+	case devboxv1alpha2.DevboxStateRunning:
 		// get pod
 		switch len(podList.Items) {
 		case 0:
@@ -332,7 +332,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
 			return fmt.Errorf("more than one pod found")
 		}
-	case devboxv1alpha1.DevboxStateStopped, devboxv1alpha1.DevboxStateShutdown:
+	case devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
 		if len(podList.Items) > 0 {
 			for _, pod := range podList.Items {
 				r.deletePod(ctx, &pod)
@@ -343,7 +343,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha1.D
 	return nil
 }
 
-func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	var servicePorts []corev1.ServicePort
 	// for _, port := range devbox.Spec.Config.Ports {
 	// 	servicePorts = append(servicePorts, corev1.ServicePort{
@@ -377,17 +377,17 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		},
 	}
 	switch devbox.Spec.State {
-	case devboxv1alpha1.DevboxStateShutdown:
+	case devboxv1alpha2.DevboxStateShutdown:
 		err := r.Client.Delete(ctx, service)
 		if err != nil && !errors.IsNotFound(err) {
 			return err
 		}
-		devbox.Status.Network = devboxv1alpha1.NetworkStatus{
-			Type:     devboxv1alpha1.NetworkTypeNodePort,
+		devbox.Status.Network = devboxv1alpha2.NetworkStatus{
+			Type:     devboxv1alpha2.NetworkTypeNodePort,
 			NodePort: int32(0),
 		}
 		return r.Status().Update(ctx, devbox)
-	case devboxv1alpha1.DevboxStateRunning, devboxv1alpha1.DevboxStateStopped:
+	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector
@@ -427,7 +427,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 		if nodePort == 0 {
 			return fmt.Errorf("NodePort not found for service %s", service.Name)
 		}
-		devbox.Status.Network.Type = devboxv1alpha1.NetworkTypeNodePort
+		devbox.Status.Network.Type = devboxv1alpha2.NetworkTypeNodePort
 		devbox.Status.Network.NodePort = nodePort
 		return r.Status().Update(ctx, devbox)
 	}
@@ -435,7 +435,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 }
 
 // sync devbox state, and record the state change event to state change recorder, state change handler will handle the event
-func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha1.Devbox) bool {
+func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1alpha2.Devbox) bool {
 	logger := log.FromContext(ctx)
 	logger.Info("syncDevboxState called",
 		"devbox", devbox.Name,
@@ -463,7 +463,7 @@ func (r *DevboxReconciler) syncDevboxState(ctx context.Context, devbox *devboxv1
 func (r *DevboxReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
 	// remove finalizer and delete pod
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
+	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
 	if err := r.Update(ctx, pod); err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
@@ -477,7 +477,7 @@ func (r *DevboxReconciler) deletePod(ctx context.Context, pod *corev1.Pod) error
 
 func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, pod *corev1.Pod) error {
 	logger := log.FromContext(ctx)
-	controllerutil.RemoveFinalizer(pod, devboxv1alpha1.FinalizerName)
+	controllerutil.RemoveFinalizer(pod, devboxv1alpha2.FinalizerName)
 	if err := r.Update(ctx, pod); err != nil {
 		logger.Error(err, "remove finalizer failed")
 		return err
@@ -485,19 +485,19 @@ func (r *DevboxReconciler) handlePodDeleted(ctx context.Context, pod *corev1.Pod
 	return nil
 }
 
-func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha1.Devbox) string {
+func (r *DevboxReconciler) generateImageName(devbox *devboxv1alpha2.Devbox) string {
 	now := time.Now()
 	return fmt.Sprintf("%s/%s/%s:%s-%s", r.CommitImageRegistry, devbox.Namespace, devbox.Name, rand.String(5), now.Format("2006-01-02-150405"))
 }
 
-func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha1.Devbox, recLabels map[string]string) error {
+func (r *DevboxReconciler) removeAll(ctx context.Context, devbox *devboxv1alpha2.Devbox, recLabels map[string]string) error {
 	// Delete Pod
 	podList := &corev1.PodList{}
 	if err := r.List(ctx, podList, client.InNamespace(devbox.Namespace), client.MatchingLabels(recLabels)); err != nil {
 		return err
 	}
 	for _, pod := range podList.Items {
-		if controllerutil.RemoveFinalizer(&pod, devboxv1alpha1.FinalizerName) {
+		if controllerutil.RemoveFinalizer(&pod, devboxv1alpha2.FinalizerName) {
 			if err := r.Update(ctx, &pod); err != nil {
 				return err
 			}
@@ -522,7 +522,7 @@ func (r *DevboxReconciler) deleteResourcesByLabels(ctx context.Context, obj clie
 	return client.IgnoreNotFound(err)
 }
 
-func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts ...helper.DevboxPodOptions) *corev1.Pod {
+func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha2.Devbox, opts ...helper.DevboxPodOptions) *corev1.Pod {
 	objectMeta := metav1.ObjectMeta{
 		Name:        devbox.Name,
 		Namespace:   devbox.Namespace,
@@ -586,7 +586,7 @@ func (r *DevboxReconciler) generateDevboxPod(devbox *devboxv1alpha1.Devbox, opts
 	}
 	// set controller reference and finalizer
 	_ = controllerutil.SetControllerReference(devbox, expectPod, r.Scheme)
-	controllerutil.AddFinalizer(expectPod, devboxv1alpha1.FinalizerName)
+	controllerutil.AddFinalizer(expectPod, devboxv1alpha2.FinalizerName)
 
 	for _, opt := range opts {
 		opt(expectPod)
@@ -602,32 +602,32 @@ func (r *DevboxReconciler) getAcceptanceConsideration(ctx context.Context) (help
 	}
 	ann := node.Annotations
 	ac := helper.AcceptanceConsideration{}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha1.AnnotationContainerFSAvailableThreshold], 64); err != nil {
-		logger.Info("failed to parse containerfs available threshold. use default value instead", "value", ann[devboxv1alpha1.AnnotationContainerFSAvailableThreshold])
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold], 64); err != nil {
+		logger.Info("failed to parse containerfs available threshold. use default value instead", "value", ann[devboxv1alpha2.AnnotationContainerFSAvailableThreshold])
 		ac.ContainerFSAvailableThreshold = helper.DefaultContainerFSAvailableThreshold
 	} else {
 		ac.ContainerFSAvailableThreshold = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha1.AnnotationCPURequestRatio], 64); err != nil {
-		logger.Info("failed to parse CPU request ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationCPURequestRatio])
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationCPURequestRatio], 64); err != nil {
+		logger.Info("failed to parse CPU request ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationCPURequestRatio])
 		ac.CPURequestRatio = helper.DefaultCPURequestRatio
 	} else {
 		ac.CPURequestRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha1.AnnotationCPULimitRatio], 64); err != nil {
-		logger.Info("failed to parse CPU limit ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationCPULimitRatio])
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationCPULimitRatio], 64); err != nil {
+		logger.Info("failed to parse CPU limit ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationCPULimitRatio])
 		ac.CPULimitRatio = helper.DefaultCPULimitRatio
 	} else {
 		ac.CPULimitRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha1.AnnotationMemoryRequestRatio], 64); err != nil {
-		logger.Info("failed to parse memory request ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationMemoryRequestRatio])
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryRequestRatio], 64); err != nil {
+		logger.Info("failed to parse memory request ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationMemoryRequestRatio])
 		ac.MemoryRequestRatio = helper.DefaultMemoryRequestRatio
 	} else {
 		ac.MemoryRequestRatio = v
 	}
-	if v, err := strconv.ParseFloat(ann[devboxv1alpha1.AnnotationMemoryLimitRatio], 64); err != nil {
-		logger.Info("failed to parse memory limit ratio. use default value instead", "value", ann[devboxv1alpha1.AnnotationMemoryLimitRatio])
+	if v, err := strconv.ParseFloat(ann[devboxv1alpha2.AnnotationMemoryLimitRatio], 64); err != nil {
+		logger.Info("failed to parse memory limit ratio. use default value instead", "value", ann[devboxv1alpha2.AnnotationMemoryLimitRatio])
 		ac.MemoryLimitRatio = helper.DefaultMemoryLimitRatio
 	} else {
 		ac.MemoryLimitRatio = v
@@ -635,7 +635,7 @@ func (r *DevboxReconciler) getAcceptanceConsideration(ctx context.Context) (help
 	return ac, nil
 }
 
-func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devboxv1alpha1.Devbox) int {
+func (r *DevboxReconciler) getAcceptanceScore(ctx context.Context, devbox *devboxv1alpha2.Devbox) int {
 	logger := log.FromContext(ctx)
 	var (
 		ac                  helper.AcceptanceConsideration
@@ -731,7 +731,7 @@ func getScoreUnit(p uint) int {
 func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -762,7 +762,7 @@ func (r *DevboxReconciler) getTotalCPURequestRatio(ctx context.Context) (float64
 func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -793,7 +793,7 @@ func (r *DevboxReconciler) getTotalCPULimitRatio(ctx context.Context) (float64, 
 func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -824,7 +824,7 @@ func (r *DevboxReconciler) getTotalMemoryRequestRatio(ctx context.Context) (floa
 func (r *DevboxReconciler) getTotalMemoryLimitRatio(ctx context.Context) (float64, error) {
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
-		client.MatchingFields{devboxv1alpha1.PodNodeNameIndex: r.NodeName},
+		client.MatchingFields{devboxv1alpha2.PodNodeNameIndex: r.NodeName},
 	}
 	if err := r.List(ctx, podList, listOpts...); err != nil {
 		return 0, err
@@ -871,18 +871,18 @@ func (p *ControllerRestartPredicate) Create(e event.CreateEvent) bool {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *DevboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha1.PodNodeNameIndex, func(rawObj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Pod{}, devboxv1alpha2.PodNodeNameIndex, func(rawObj client.Object) []string {
 		pod := rawObj.(*corev1.Pod)
 		if pod.Spec.NodeName == "" {
 			return nil
 		}
 		return []string{pod.Spec.NodeName}
 	}); err != nil {
-		return fmt.Errorf("failed to index field %s: %w", devboxv1alpha1.PodNodeNameIndex, err)
+		return fmt.Errorf("failed to index field %s: %w", devboxv1alpha2.PodNodeNameIndex, err)
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{MaxConcurrentReconciles: 10}).
-		For(&devboxv1alpha1.Devbox{}).
+		For(&devboxv1alpha2.Devbox{}).
 		Owns(&corev1.Pod{}, builder.WithPredicates(predicate.ResourceVersionChangedPredicate{})). // enqueue request if pod spec/status is updated
 		Owns(&corev1.Service{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
 		Owns(&corev1.Secret{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).

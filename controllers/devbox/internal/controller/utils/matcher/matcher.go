@@ -19,7 +19,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	devboxv1alpha1 "github.com/labring/sealos/controllers/devbox/api/v1alpha1"
+	devboxv1alpha2 "github.com/labring/sealos/controllers/devbox/api/v1alpha2"
 )
 
 type PodMatcher interface {
@@ -145,7 +145,7 @@ func (p PortMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
 type StorageLimitMatcher struct{}
 
 func (s StorageLimitMatcher) Match(expectPod *corev1.Pod, pod *corev1.Pod) bool {
-	return expectPod.ObjectMeta.Annotations[devboxv1alpha1.AnnotationStorageLimit] == pod.ObjectMeta.Annotations[devboxv1alpha1.AnnotationStorageLimit]
+	return expectPod.ObjectMeta.Annotations[devboxv1alpha2.AnnotationStorageLimit] == pod.ObjectMeta.Annotations[devboxv1alpha2.AnnotationStorageLimit]
 }
 
 // PredicateCommitStatus returns the commit status of the pod
