@@ -8,7 +8,6 @@ import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { theme } from '@/styles/chakraTheme';
 import { ApiResp } from '@/types/api';
-import { ChakraProvider } from '@chakra-ui/react';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
@@ -19,6 +18,7 @@ import { useEffect } from 'react';
 import 'react-day-picker/dist/style.css';
 import { EVENT_NAME } from 'sealos-desktop-sdk';
 import { sealosApp } from 'sealos-desktop-sdk/app';
+import { ChakraProvider } from '@chakra-ui/react';
 
 // Make sure to call `loadStripe` outside a component’s render to avoid
 // recreating the `Stripe` object on every render.
@@ -109,7 +109,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>
-        <ChakraProvider theme={theme} resetScope=".ck-reset">
+        <ChakraProvider theme={theme} resetScope=".ck-reset" disableGlobalStyle>
           <Layout>
             <Component {...pageProps} />
           </Layout>

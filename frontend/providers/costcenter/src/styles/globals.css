@@ -1,6 +1,29 @@
 @import '@sealos/shadcn-ui/shadcn.css';
 @import '@sealos/shadcn-ui/styles.css';
 
+@theme {
+  --background-image-plan-payg: linear-gradient(
+    90deg,
+    rgba(214, 217, 223, 0.16) 0%,
+    rgba(175, 178, 195, 0.16) 100%
+  );
+  --background-image-plan-starter: linear-gradient(
+    90deg,
+    rgba(129, 203, 252, 0.12) 0%,
+    rgba(81, 159, 245, 0.12) 100%
+  );
+  --background-image-plan-pro: linear-gradient(
+    90deg,
+    rgba(252, 129, 217, 0.12) 0%,
+    rgba(81, 159, 245, 0.12) 100%
+  );
+  --background-image-plan-enterprise: linear-gradient(
+    90deg,
+    rgba(252, 129, 234, 0.12) 0%,
+    rgba(144, 81, 245, 0.12) 100%
+  );
+}
+
 body {
   height: 100vh;
   width: 100vw;
