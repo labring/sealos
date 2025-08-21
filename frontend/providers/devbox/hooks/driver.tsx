@@ -5,7 +5,7 @@ import { track } from '@sealos/gtm';
 import { sealosApp } from 'sealos-desktop-sdk/app';
 
 import { useGuideStore } from '@/stores/guide';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sealos/shadcn-ui/button';
 
 let currentDriver: any = null;
 

@@ -3,11 +3,11 @@ import { CurrencySymbol } from '@sealos/ui';
 import { useTranslations } from 'next-intl';
 import { CircuitBoard, Cpu, HdmiPort, MemoryStick } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sealos/shadcn-ui';
 import { useEnvStore } from '@/stores/env';
 import { usePriceStore } from '@/stores/price';
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@sealos/shadcn-ui/card';
 
 export const colorMap = {
   cpu: '#33BABB',

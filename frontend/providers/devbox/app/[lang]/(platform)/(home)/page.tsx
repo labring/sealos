@@ -10,7 +10,7 @@ import { useClientSideValue } from '@/hooks/useClientSideValue';
 import List from './components/List';
 import Empty from './components/Empty';
 import Header from './components/Header';
-import { Loading } from '@/components/ui/loading';
+import { Loading } from '@sealos/shadcn-ui/loading';
 
 export default function HomePage() {
   const searchParams = useSearchParams();

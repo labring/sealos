@@ -7,9 +7,9 @@ import { listPrivateTemplateRepository as listPrivateTemplateRepositoryApi } fro
 import Empty from './Empty';
 import TemplateCard from './TemplateCard';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Pagination } from '@/components/ui/pagination';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Pagination } from '@sealos/shadcn-ui/pagination';
+import { Skeleton } from '@sealos/shadcn-ui/skeleton';
 
 export default function PrivateTemplate({ search }: { search: string }) {
   const [pageQueryBody, setPageQueryBody] = useState({

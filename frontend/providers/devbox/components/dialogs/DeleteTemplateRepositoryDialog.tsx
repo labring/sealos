@@ -10,8 +10,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from '@sealos/shadcn-ui/dialog';
+import { Button } from '@sealos/shadcn-ui/button';
 
 interface DeleteTemplateRepositoryDialogProps {
   uid: string;

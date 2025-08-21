@@ -3,14 +3,8 @@ import { useTranslations } from 'next-intl';
 import { TriangleAlert } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@sealos/shadcn-ui';
+import { Button } from '@sealos/shadcn-ui/button';
 
 export const useConfirm = ({
   title = 'prompt',
