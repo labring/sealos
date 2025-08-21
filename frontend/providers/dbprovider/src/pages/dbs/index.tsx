@@ -10,16 +10,14 @@ import { Box, Flex, Switch, Text } from '@chakra-ui/react';
 import { useGuideStore } from '@/store/guide';
 import { useRouter } from 'next/router';
 import { track } from '@sealos/gtm';
-import { getUserNamespace } from '@/utils/user';
-import { getDatabaseAlerts, getMockDatabaseAlerts, type DatabaseAlertItem } from '@/api/db';
+import { type DatabaseAlertItem } from '@/api/db';
 
 function Home() {
-  const { dbList, setDBList } = useDBStore();
+  const { dbList, setDBList, alerts, loadAlerts } = useDBStore();
   const { Loading } = useLoading();
   const [initialized, setInitialized] = useState(false);
   const router = useRouter();
   const { resetGuideState } = useGuideStore();
-  const [alerts, setAlerts] = useState<Record<string, DatabaseAlertItem>>({});
 
   const { refetch } = useQuery(['initDbData'], setDBList, {
     refetchInterval: 3000,
@@ -28,17 +26,11 @@ function Home() {
     }
   });
 
-  // fetch database alerts as soon as page loads
-  useEffect(() => {
-    const mockAlerts = getMockDatabaseAlerts();
-    // const ns = getUserNamespace();
-    // list = await getDatabaseAlerts(ns);
-    const map = (mockAlerts || []).reduce((acc, cur) => {
-      acc[cur.name] = cur;
-      return acc;
-    }, {} as Record<string, DatabaseAlertItem>);
-    setAlerts(map);
-  }, []);
+  // Fetch database alerts once when page loads
+  useQuery(['databaseAlerts'], loadAlerts, {
+    staleTime: Infinity,
+    cacheTime: 5 * 60 * 1000
+  });
 
   useEffect(() => {
     if (router.isReady) {
