@@ -143,7 +143,9 @@ const PublicTemplate = ({ search }: { search: string }) => {
     {
       [TagType.OFFICIAL_CONTENT]: [],
       [TagType.USE_CASE]: [],
-      [TagType.PROGRAMMING_LANGUAGE]: []
+      [TagType.PROGRAMMING_LANGUAGE]: [],
+      [TagType.OS]: [],
+      [TagType.MCP]: []
     } as Record<TagType, Tag[]>
   );
 
