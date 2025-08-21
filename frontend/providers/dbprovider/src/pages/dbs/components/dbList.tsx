@@ -2,6 +2,7 @@ import { pauseDBByName, restartDB, startDBByName, getDBSecret } from '@/api/db';
 import { BaseTable } from '@/components/BaseTable/baseTable';
 import { CustomMenu } from '@/components/BaseTable/customMenu';
 import DBStatusTag from '@/components/DBStatusTag';
+import type { DatabaseAlertItem } from '@/api/db';
 import MyIcon from '@/components/Icon';
 import { DBStatusEnum, DBTypeList } from '@/constants/db';
 import { applistDriverObj, startDriver } from '@/hooks/driver';
@@ -70,10 +71,12 @@ const DelModal = dynamic(() => import('@/pages/db/detail/components/DelModal'));
 
 const DBList = ({
   dbList = [],
-  refetchApps
+  refetchApps,
+  alerts = {}
 }: {
   dbList: DBListItemType[];
   refetchApps: () => void;
+  alerts?: Record<string, DatabaseAlertItem>;
 }) => {
   const { t } = useTranslation();
   const { setLoading } = useGlobalStore();
@@ -99,6 +102,10 @@ const DBList = ({
   const { openConfirm: onOpenPause, ConfirmChild: PauseChild } = useConfirm({
     content: t('pause_hint')
   });
+
+  useEffect(() => {
+    console.log('alerts', alerts);
+  }, []);
 
   const handleRestartApp = useCallback(
     async (db: DBListItemType) => {
@@ -449,7 +456,12 @@ const DBList = ({
         accessorKey: 'status',
         header: () => t('status'),
         cell: ({ row }) => (
-          <DBStatusTag conditions={row.original.conditions} status={row.original.status} />
+          <DBStatusTag
+            conditions={row.original.conditions}
+            status={row.original.status}
+            alertReason={alerts[row.original.name]?.reason}
+            alertDetails={alerts[row.original.name]?.details}
+          />
         )
       },
       {
