@@ -112,19 +112,24 @@ export default function PrivateTemplate({ search }: { search: string }) {
         )}
       </ScrollArea>
 
-      <Pagination
-        className="pr-2"
-        pageSize={pageQueryBody.pageSize}
-        totalPages={pageQueryBody.totalPage}
-        totalItems={pageQueryBody.totalItems}
-        currentPage={pageQueryBody.page}
-        onPageChange={(currentPage) => {
-          setPageQueryBody((page) => ({
-            ...page,
-            page: currentPage
-          }));
-        }}
-      />
+      <div className="flex items-center justify-between gap-2.5 pt-2 pr-2 text-sm/5 text-zinc-500">
+        <span>{t('Total') + ': ' + pageQueryBody.totalItems}</span>
+        <div className="flex items-center gap-3">
+          <Pagination
+            totalPages={pageQueryBody.totalPage}
+            currentPage={pageQueryBody.page}
+            onPageChange={(currentPage) => {
+              setPageQueryBody((page) => ({
+                ...page,
+                page: currentPage
+              }));
+            }}
+          />
+          <div className="flex items-center gap-1">
+            <span className="text-zinc-900">{pageQueryBody.pageSize}</span>/<span>{t('Page')}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
