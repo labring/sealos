@@ -13,7 +13,6 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
-        if: ${{ (github.event_name == 'workflow_dispatch') }}
         with:
           fetch-depth: 0
       - run: |
@@ -32,7 +31,6 @@ jobs:
           echo command=${command} >> $GITHUB_OUTPUT
         id: tagpr
         name: Print git-chglog tag
-        if: ${{ (github.event_name == 'workflow_dispatch') }}
       - name: Use command to generate version
         if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
         run: |
@@ -46,7 +44,7 @@ jobs:
             
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           commit-message: |
-            🤖 New release for ${{ steps.tagpr.outputs.name }} using robot.
+            🤖 Release ${{ steps.tagpr.outputs.name }} for ${{ steps.tagpr.outputs.name }} using github-actions.
           branch: tagpr-${{ steps.tagpr.outputs.version }}
           draft: true
           signoff: true
@@ -54,14 +52,27 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-#      - name: Trigger Release Workflow(only when tagged)
-#        uses: actions/github-script@v6
-#        if: "steps.tagpr.outputs.tag != ''"
-#        with:
-#          script: |
-#            github.rest.actions.createWorkflowDispatch({
-#              owner: context.repo.owner,
-#              repo: context.repo.repo,
-#              workflow_id: 'release.yml',
-#              ref: "refs/tags/${{ steps.tagpr.outputs.tag }}",
-#            })
+      - name: Auto tag and push changes
+        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
+        run: |
+          echo "Running new version: ${{ steps.tagpr.outputs.version }}"
+          branch=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $branch"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git pull 
+          git fetch --tags
+          git tag ${{ steps.tagpr.outputs.version }}
+          git remote set-url origin https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
+          git push -f origin ${{ steps.tagpr.outputs.version }}
+      - name: Trigger Release Workflow(only when tagged)
+        uses: actions/github-script@v6
+        if: ${{ (github.event_name == 'push') && (steps.tagpr.outputs.version != '') }}
+        with:
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: "refs/tags/${{ steps.tagpr.outputs.version }}",
+            })
