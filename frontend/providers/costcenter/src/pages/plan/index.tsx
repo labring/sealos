@@ -13,11 +13,8 @@ import {
   RadioGroup,
   RadioGroupItem,
   Separator,
-  Table,
-  TableBody,
   TableCell,
   TableHead,
-  TableHeader,
   TableRow
 } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
@@ -27,6 +24,13 @@ import { useQuery } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { PlanListResponse, SubscriptionPlan } from '@/types/plan';
+import {
+  TableLayout,
+  TableLayoutCaption,
+  TableLayoutHeadRow,
+  TableLayoutBody,
+  TableLayoutContent
+} from '@sealos/shadcn-ui/table-layout';
 
 function PlanHeader({ plans, isLoading }: { plans?: SubscriptionPlan[]; isLoading?: boolean }) {
   return (
@@ -97,23 +101,22 @@ function PlanHeader({ plans, isLoading }: { plans?: SubscriptionPlan[]; isLoadin
 
 function AllPlansSection() {
   return (
-    <div className="rounded-xl border overflow-hidden">
-      <div className="text-foreground font-medium text-base px-4 py-3 border-b bg-zinc-50">
+    <TableLayout>
+      <TableLayoutCaption className="font-medium text-base bg-zinc-50">
         Beijing A
-      </div>
+      </TableLayoutCaption>
 
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b">
-            <TableHead className="bg-transparent">Workspace</TableHead>
-            <TableHead className="bg-transparent">Plan</TableHead>
-            <TableHead className="bg-transparent">Renewal Time</TableHead>
-            <TableHead className="bg-transparent">Price</TableHead>
-            <TableHead className="bg-transparent">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody className="text-foreground">
-          <TableRow className="not-last:border-b">
+      <TableLayoutContent>
+        <TableLayoutHeadRow>
+          <TableHead className="bg-transparent">Workspace</TableHead>
+          <TableHead className="bg-transparent">Plan</TableHead>
+          <TableHead className="bg-transparent">Renewal Time</TableHead>
+          <TableHead className="bg-transparent">Price</TableHead>
+          <TableHead className="bg-transparent">Action</TableHead>
+        </TableLayoutHeadRow>
+
+        <TableLayoutBody>
+          <TableRow>
             <TableCell className="h-14">
               <div className="flex items-center gap-2.5">
                 <Avatar className="size-5">
@@ -133,9 +136,9 @@ function AllPlansSection() {
               </Button>
             </TableCell>
           </TableRow>
-        </TableBody>
-      </Table>
-    </div>
+        </TableLayoutBody>
+      </TableLayoutContent>
+    </TableLayout>
   );
 }
 

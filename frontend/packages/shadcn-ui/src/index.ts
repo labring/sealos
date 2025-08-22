@@ -31,3 +31,5 @@ export * from './components/ui/pagination';
 export * from './components/ui/sonner';
 export * from './components/ui/date-range-picker';
 export * from './components/ui/calendar';
+
+export * from './components/table-layout';
