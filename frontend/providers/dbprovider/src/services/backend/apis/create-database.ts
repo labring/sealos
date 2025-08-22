@@ -20,18 +20,12 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'mysql', 'mongodb', 'redis'].includes(request.body.dbForm.dbType)) {
-    const parameterConfig = request.body.dbForm.parameterConfig || {
-      walLevel: 'logical',
-      sharedPreloadLibraries: 'wal2json'
-    };
-
+  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(request.body.dbForm.dbType)) {
     const config = json2ParameterConfig(
       request.body.dbForm.dbName,
       request.body.dbForm.dbType,
       request.body.dbForm.dbVersion,
-      parameterConfig.walLevel,
-      parameterConfig.sharedPreloadLibraries
+      request.body.dbForm.parameterConfig
     );
 
     yamlList.push(config);

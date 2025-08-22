@@ -11,7 +11,12 @@ import type { YamlItemType } from '@/types';
 import type { DBEditType } from '@/types/db';
 import { adaptDBForm } from '@/utils/adapt';
 import { serviceSideProps } from '@/utils/i18n';
-import { json2Account, json2CreateCluster, limitRangeYaml } from '@/utils/json2Yaml';
+import {
+  json2Account,
+  json2CreateCluster,
+  json2ParameterConfig,
+  limitRangeYaml
+} from '@/utils/json2Yaml';
 import { Box, Flex } from '@chakra-ui/react';
 import { useMessage } from '@sealos/ui';
 import { track } from '@sealos/gtm';

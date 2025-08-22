@@ -70,8 +70,9 @@ export const dbEditSchema = z.object({
   autoBackup: z.optional(autoBackupFormSchema),
   parameterConfig: z.optional(
     z.object({
-      walLevel: z.string(),
-      sharedPreloadLibraries: z.string()
+      maxConnections: z.optional(z.string()),
+      timeZone: z.optional(z.string()),
+      lowerCaseTableNames: z.optional(z.string())
     })
   )
 });
