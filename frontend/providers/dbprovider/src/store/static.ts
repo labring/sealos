@@ -21,7 +21,11 @@ export let DBVersionMap: DBVersionMapType = {
     { id: 'postgresql-14.8.0', label: 'postgresql-14.8.0' }
   ],
   [DBTypeEnum.mongodb]: [{ id: 'mongodb-5.0', label: 'mongodb-5.0' }],
-  [DBTypeEnum.mysql]: [{ id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' }],
+  [DBTypeEnum.mysql]: [
+    { id: 'ac-mysql-8.0.30', label: 'ac-mysql-8.0.30' },
+    { id: 'ac-mysql-8.0.30-1', label: 'ac-mysql-8.0.30-1' },
+    { id: 'mysql-5.7.42', label: 'mysql-5.7.42' }
+  ],
   [DBTypeEnum.redis]: [{ id: 'redis-7.0.6', label: 'redis-7.0.6' }],
   [DBTypeEnum.kafka]: [{ id: 'kafka-3.3.2', label: 'kafka-3.3.2' }],
   [DBTypeEnum.qdrant]: [{ id: 'qdrant-1.5.0', label: 'qdrant-1.5.0' }],

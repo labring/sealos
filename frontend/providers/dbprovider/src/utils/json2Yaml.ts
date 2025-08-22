@@ -92,56 +92,126 @@ export const json2CreateCluster = (
         break;
     }
 
-    return [
-      {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Cluster',
-        metadata,
-        spec: {
-          affinity: {
-            nodeLabels: {},
-            podAntiAffinity: 'Preferred',
-            tenancy: 'SharedNode',
-            topologyKeys: ['kubernetes.io/hostname']
+    // Branch structure for different database types and versions
+    if (dbType === 'apecloud-mysql' && data.dbVersion === 'mysql-5.7.42') {
+      // MySQL 5.7.42 specific configuration
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata: {
+            labels: {
+              'clusterdefinition.kubeblocks.io/name': 'mysql',
+              'clusterversion.kubeblocks.io/name': 'mysql-5.7.42'
+            },
+            name: `${data.dbName}`,
+            namespace: getUserNamespace()
           },
-          clusterDefinitionRef: dbType,
-          clusterVersionRef: data.dbVersion,
-          componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
-            return {
-              componentDefRef: key,
-              monitor: true,
-              name: key,
-              replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
-              resources: resourceData.cpuMemory,
-              serviceAccountName: data.dbName,
-              switchPolicy: {
-                type: 'Noop'
-              },
-              ...(resourceData.storage > 0
-                ? {
-                    volumeClaimTemplates: [
-                      {
-                        name: 'data',
-                        spec: {
-                          accessModes: ['ReadWriteOnce'],
-                          resources: {
-                            requests: {
-                              storage: `${resourceData.storage}Gi`
+          spec: {
+            affinity: {
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode'
+            },
+            clusterDefinitionRef: dbType,
+            clusterVersionRef: data.dbVersion,
+            componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
+              return {
+                componentDefRef: key,
+                enabledLogs: ['error', 'slow'],
+                monitor: false,
+                name: key,
+                noCreatePDB: false,
+                replicas: resourceData.other?.replicas ?? data.replicas,
+                resources: resourceData.cpuMemory,
+                rsmTransformPolicy: 'ToSts',
+                serviceAccountName: data.dbName,
+                switchPolicy: {
+                  type: 'Noop'
+                },
+                ...(resourceData.storage > 0
+                  ? {
+                      volumeClaimTemplates: [
+                        {
+                          name: 'data',
+                          spec: {
+                            accessModes: ['ReadWriteOnce'],
+                            resources: {
+                              requests: {
+                                storage: `${resourceData.storage}Gi`
+                              }
                             }
-                          },
-                          ...storageClassName
+                          }
                         }
-                      }
-                    ]
-                  }
-                : {})
-            };
-          }),
-          terminationPolicy,
-          tolerations: []
+                      ]
+                    }
+                  : {})
+              };
+            }),
+            monitor: {},
+            resources: {
+              cpu: '0',
+              memory: '0'
+            },
+            storage: {
+              size: '0'
+            },
+            terminationPolicy
+          }
         }
-      }
-    ];
+      ];
+    } else {
+      // Default configuration for all other database types and versions
+      return [
+        {
+          apiVersion: 'apps.kubeblocks.io/v1alpha1',
+          kind: 'Cluster',
+          metadata,
+          spec: {
+            affinity: {
+              nodeLabels: {},
+              podAntiAffinity: 'Preferred',
+              tenancy: 'SharedNode',
+              topologyKeys: ['kubernetes.io/hostname']
+            },
+            clusterDefinitionRef: dbType,
+            clusterVersionRef: data.dbVersion,
+            componentSpecs: Object.entries(resources).map(([key, resourceData]) => {
+              return {
+                componentDefRef: key,
+                monitor: true,
+                name: key,
+                replicas: resourceData.other?.replicas ?? data.replicas, //For special circumstances in RedisHA
+                resources: resourceData.cpuMemory,
+                serviceAccountName: data.dbName,
+                switchPolicy: {
+                  type: 'Noop'
+                },
+                ...(resourceData.storage > 0
+                  ? {
+                      volumeClaimTemplates: [
+                        {
+                          name: 'data',
+                          spec: {
+                            accessModes: ['ReadWriteOnce'],
+                            resources: {
+                              requests: {
+                                storage: `${resourceData.storage}Gi`
+                              }
+                            },
+                            ...storageClassName
+                          }
+                        }
+                      ]
+                    }
+                  : {})
+              };
+            }),
+            terminationPolicy,
+            tolerations: []
+          }
+        }
+      ];
+    }
   }
 
   return createDBObject(data.dbType)
@@ -844,7 +914,9 @@ export const json2ParameterConfig = (
     maxConnections?: string;
     timeZone?: string;
     lowerCaseTableNames?: string;
-  }
+    isMaxConnectionsCustomized?: boolean;
+  },
+  dynamicMaxConnections?: number
 ) => {
   function buildPostgresYaml() {
     // Parse PostgreSQL version to get major version (e.g., "postgresql-12.14.0" -> "12", "16.4.0" -> "16")
@@ -854,13 +926,17 @@ export const json2ParameterConfig = (
     const pgParams: Record<string, string> = {};
 
     // Add max_connections parameter
-    if (parameterConfig?.maxConnections) {
-      pgParams['max_connections'] = `"${parameterConfig.maxConnections}"`;
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      pgParams['max_connections'] = `${maxConnections}`;
     }
 
     // Add timezone parameter for PostgreSQL
     if (parameterConfig?.timeZone) {
-      pgParams['timezone'] = `'${parameterConfig.timeZone}'`;
+      pgParams['time_zone'] = `${parameterConfig.timeZone}`;
     }
 
     if (majorVersion === '14') {
@@ -887,7 +963,7 @@ export const json2ParameterConfig = (
                 keys: [
                   {
                     'postgresql.conf': {
-                      ...(Object.keys(pgParams).length > 0 && { parameters: pgParams })
+                      parameters: pgParams
                     }
                   }
                 ],
@@ -901,6 +977,16 @@ export const json2ParameterConfig = (
             {
               configSpec: {
                 defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql14-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
                 keys: ['pgbouncer.ini'],
                 name: 'pgbouncer-configuration',
                 namespace: 'kb-system',
@@ -908,16 +994,6 @@ export const json2ParameterConfig = (
                 volumeName: 'pgbouncer-config'
               },
               name: 'pgbouncer-configuration'
-            },
-            {
-              configSpec: {
-                defaultMode: 292,
-                name: 'postgresql-custom-metrics',
-                namespace: 'kb-system',
-                templateRef: 'postgresql14-custom-metrics',
-                volumeName: 'postgresql-custom-metrics'
-              },
-              name: 'postgresql-custom-metrics'
             },
             {
               configSpec: {
@@ -957,7 +1033,7 @@ export const json2ParameterConfig = (
                 keys: [
                   {
                     'postgresql.conf': {
-                      ...(Object.keys(pgParams).length > 0 && { parameters: pgParams })
+                      parameters: pgParams
                     }
                   }
                 ],
@@ -971,16 +1047,6 @@ export const json2ParameterConfig = (
             {
               configSpec: {
                 defaultMode: 292,
-                name: 'postgresql-custom-metrics',
-                namespace: 'kb-system',
-                templateRef: 'postgresql12-custom-metrics',
-                volumeName: 'postgresql-custom-metrics'
-              },
-              name: 'postgresql-custom-metrics'
-            },
-            {
-              configSpec: {
-                defaultMode: 292,
                 keys: ['pgbouncer.ini'],
                 name: 'pgbouncer-configuration',
                 namespace: 'kb-system',
@@ -988,6 +1054,16 @@ export const json2ParameterConfig = (
                 volumeName: 'pgbouncer-config'
               },
               name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'postgresql-custom-metrics',
+                namespace: 'kb-system',
+                templateRef: 'postgresql12-custom-metrics',
+                volumeName: 'postgresql-custom-metrics'
+              },
+              name: 'postgresql-custom-metrics'
             },
             {
               configSpec: {
@@ -1010,17 +1086,24 @@ export const json2ParameterConfig = (
   function buildMysqlYaml() {
     const mysqlParams: Record<string, string> = {};
 
-    if (parameterConfig?.maxConnections) {
-      mysqlParams['max_connections'] = parameterConfig.maxConnections;
+    // Add max_connections parameter (use custom value or dynamic calculation)
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      mysqlParams['max_connections'] = maxConnections;
     }
 
     if (parameterConfig?.timeZone) {
-      mysqlParams['default-time-zone'] = `'${parameterConfig.timeZone}'`;
+      mysqlParams['default-time-zone'] = `${parameterConfig.timeZone}`;
     }
+    const lowerCaseTableNames =
+      parameterConfig?.lowerCaseTableNames !== undefined
+        ? parameterConfig.lowerCaseTableNames
+        : '0';
 
-    if (parameterConfig?.lowerCaseTableNames) {
-      mysqlParams['lower_case_table_names'] = parameterConfig.lowerCaseTableNames;
-    }
+    mysqlParams['lower_case_table_names'] = lowerCaseTableNames;
 
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -1082,11 +1165,20 @@ export const json2ParameterConfig = (
         ]
       }
     };
-    console.log(yaml.dump(template));
     return yaml.dump(template);
   }
   function buildMongodbYaml() {
     // Build MongoDB configuration parameters
+    const mongoParams: Record<string, string> = {};
+
+    // Add max_connections parameter (MongoDB uses maxIncomingConnections)
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
+
+    if (maxConnections) {
+      mongoParams['maxIncomingConnections'] = maxConnections;
+    }
 
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
@@ -1109,12 +1201,9 @@ export const json2ParameterConfig = (
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
               keys: [
+                'mongodb.conf',
                 {
-                  'mongodb.conf': {
-                    parameters: {
-                      maxIncomingConnections: parameterConfig?.maxConnections?.toString()
-                    }
-                  }
+                  ...(Object.keys(mongoParams).length > 0 && { parameters: mongoParams })
                 }
               ],
               name: 'mongodb-config',
@@ -1156,13 +1245,13 @@ export const json2ParameterConfig = (
     const redisParams: Record<string, string> = {};
 
     // Add max_connections parameter (Redis uses maxclients)
-    if (parameterConfig?.maxConnections) {
-      redisParams['maxclients'] = parameterConfig.maxConnections;
-    }
+    const maxConnections = parameterConfig?.isMaxConnectionsCustomized
+      ? parameterConfig?.maxConnections
+      : dynamicMaxConnections?.toString();
 
-    // Add other Redis-specific parameters as needed
-    // Example: acllog-max-len parameter
-    redisParams['acllog-max-len'] = '256';
+    if (maxConnections) {
+      redisParams['maxclients'] = maxConnections;
+    }
 
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',

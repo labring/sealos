@@ -1,11 +1,12 @@
 import { createDatabaseSchemas } from '@/types/apis';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList } from '@/constants/db';
+import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster, json2ParameterConfig } from '@/utils/json2Yaml';
+import { getScore } from '@/utils/tools';
 
 export async function createDatabase(
   k8s: Awaited<ReturnType<typeof getK8s>>,
@@ -21,11 +22,18 @@ export async function createDatabase(
   const yamlList = [account, cluster];
 
   if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(request.body.dbForm.dbType)) {
+    const dynamicMaxConnections = getScore(
+      request.body.dbForm.dbType,
+      request.body.dbForm.cpu,
+      request.body.dbForm.memory
+    );
+
     const config = json2ParameterConfig(
       request.body.dbForm.dbName,
       request.body.dbForm.dbType,
       request.body.dbForm.dbVersion,
-      request.body.dbForm.parameterConfig
+      request.body.dbForm.parameterConfig,
+      dynamicMaxConnections
     );
 
     yamlList.push(config);
