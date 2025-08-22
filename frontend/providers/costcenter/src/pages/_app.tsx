@@ -106,6 +106,7 @@ const App = ({ Component, pageProps }: AppProps) => {
       }
     })();
   }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Hydrate state={pageProps.dehydratedState}>
