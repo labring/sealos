@@ -4,6 +4,7 @@ import { RegionClient } from '@/types/region';
 import { formatMoney } from '@/utils/format';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
 type BillingState = {
   cpu: number;
   memory: number;
@@ -43,6 +44,7 @@ type BillingState = {
   updateNetwork: (network: number) => void;
   updateGpu: (gpu: number) => void;
 };
+
 const useBillingStore = create<BillingState>()(
   persist(
     (set, get) => ({
@@ -135,4 +137,5 @@ const useBillingStore = create<BillingState>()(
     }
   )
 );
+
 export default useBillingStore;
