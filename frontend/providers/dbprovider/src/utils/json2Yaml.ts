@@ -1211,6 +1211,16 @@ export const json2ParameterConfig = (
           },
           {
             configSpec: {
+              defaultMode: 292,
+              name: 'agamotto-configuration',
+              namespace: 'kb-system',
+              templateRef: 'apecloud-mysql8-agamotto-configuration',
+              volumeName: 'agamotto-configuration'
+            },
+            name: 'agamotto-configuration'
+          },
+          {
+            configSpec: {
               constraintRef: 'mysql-scale-vttablet-config-constraints',
               name: 'vttablet-config',
               namespace: 'kb-system',
@@ -1262,7 +1272,15 @@ export const json2ParameterConfig = (
             configSpec: {
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
-              keys: ['mongodb.conf'],
+              keys: [
+                {
+                  'mongodb.conf': {
+                    parameters: {
+                      maxIncomingConnections: parameterConfig?.maxConnections?.toString()
+                    }
+                  }
+                }
+              ],
               name: 'mongodb-config',
               namespace: 'kb-system',
               templateRef: 'mongodb5.0-config-template',
