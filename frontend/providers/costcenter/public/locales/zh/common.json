@@ -12,7 +12,9 @@
     "BillingDetails": "账单明细",
     "ValuationStandard": "计价标准",
     "resource_analysis": "资源分析",
-    "CreateInvoice": "开具发票"
+    "CreateInvoice": "开具发票",
+    "Plan": "套餐",
+    "Usage": "用量"
   },
   "Valuation": {
     "Standard": "计价标准",
