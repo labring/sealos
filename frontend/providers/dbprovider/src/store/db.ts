@@ -9,6 +9,7 @@ import {
   getDBByName,
   getMonitorData,
   getDatabaseAlerts,
+  getMockDatabaseAlerts,
   type DatabaseAlertItem
 } from '@/api/db';
 import { defaultDBDetail } from '@/constants/db';
@@ -101,11 +102,19 @@ export const useDBStore = create<State>()(
             state.dataSourceIds[dbName] = dataSourceId;
           }),
         getDataSourceId: (dbName: string) => get().dataSourceIds[dbName],
-        alerts: {},
+        alerts: (() => {
+          // Initialize with mock data for immediate availability
+          const alertsList = getMockDatabaseAlerts();
+          return (alertsList || []).reduce((acc, cur) => {
+            acc[cur.name] = cur;
+            return acc;
+          }, {} as Record<string, DatabaseAlertItem>);
+        })(),
         loadAlerts: async () => {
           try {
             const namespace = getUserNamespace();
-            const alertsList = await getDatabaseAlerts(namespace);
+            // const alertsList = await getDatabaseAlerts(namespace);
+            const alertsList = getMockDatabaseAlerts();
             const alertsMap = (alertsList || []).reduce((acc, cur) => {
               acc[cur.name] = cur;
               return acc;
@@ -117,7 +126,6 @@ export const useDBStore = create<State>()(
             return alertsMap;
           } catch (error) {
             console.error('Failed to load database alerts:', error);
-            // Return empty alerts on error to avoid breaking the UI
             const emptyAlerts = {} as Record<string, DatabaseAlertItem>;
             set((state) => {
               state.alerts = emptyAlerts;
