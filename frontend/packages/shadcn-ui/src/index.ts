@@ -29,3 +29,5 @@ export * from './components/ui/avatar';
 export * from './components/ui/stepper';
 export * from './components/ui/pagination';
 export * from './components/ui/sonner';
+export * from './components/ui/date-range-picker';
+export * from './components/ui/calendar';
