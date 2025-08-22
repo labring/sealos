@@ -3,7 +3,6 @@ import stripe_icon from '@/assert/bi_stripe.svg';
 import wechat_icon from '@/assert/ic_baseline-wechat.svg';
 import alipay_icon from '@/assert/ic_baseline-alipay.svg';
 import CurrencySymbol from '@/components/CurrencySymbol';
-import OuterLink from '@/components/outerLink';
 import { useCustomToast } from '@/hooks/useCustomToast';
 import useEnvStore from '@/stores/env';
 import useSessionStore from '@/stores/session';
@@ -30,7 +29,6 @@ import {
   Text,
   useDisclosure
 } from '@chakra-ui/react';
-import { MyTooltip } from '@sealos/ui';
 import { Stripe } from '@stripe/stripe-js';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { AxiosInstance } from 'axios';
@@ -38,10 +36,11 @@ import { isNumber } from 'lodash';
 import { useTranslation } from 'next-i18next';
 import { QRCodeSVG } from 'qrcode.react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import GiftIcon from './icons/GiftIcon';
-import HelpIcon from './icons/HelpIcon';
 import useRechargeStore from '@/stores/recharge';
 import { gtmOpenTopup, gtmTopupCheckout } from '@/utils/gtm';
+import { Gift, CircleHelp, Minus, Plus, Loader } from 'lucide-react';
+import MyTooltip from './MyTooltip';
+
 const StripeForm = (props: {
   tradeNO?: string;
   complete: number;
@@ -80,22 +79,13 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       px="37px"
       justify={'center'}
       align={'center'}
-      m={'auto'}
       display={'flex'}
       justifyContent={'center'}
       alignItems={'center'}
       position={'relative'}
     >
-      <Flex
-        width={'267px'}
-        height={'295px'}
-        direction={'column'}
-        align="center"
-        justify={'space-between'}
-      >
-        <Text color="#7B838B" mb="8px" textAlign="center">
-          {t('Scan with WeChat')}
-        </Text>
+      <Flex height={'295px'} direction={'column'} align="center" justify={'space-between'}>
+        <p className="text-lg font-semibold mb-2 text-center">{t('Scan with WeChat')}</p>
         {props.complete === 2 && !!props.codeURL ? (
           <QRCodeSVG
             size={185}
@@ -117,7 +107,7 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
             {t('Order Number')}： {props.tradeNO || ''}
           </Text>
           <Text color="#717D8A" fontSize="12px">
-            {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
+            {props.complete === 3 ? t('Payment Successful') : t('In Payment')}
           </Text>
         </Box>
       </Flex>
@@ -138,16 +128,8 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
       alignItems={'center'}
       position={'relative'}
     >
-      <Flex
-        width={'267px'}
-        height={'295px'}
-        direction={'column'}
-        align="center"
-        justify={'space-between'}
-      >
-        <Text color="#7B838B" mb="8px" textAlign="center">
-          {t('Scan with Alipay')}
-        </Text>
+      <Flex height={'295px'} direction={'column'} align="center" justify={'space-between'}>
+        <p className="text-lg font-semibold mb-2 text-center">{t('Scan with Alipay')}</p>
         {props.complete === 2 && !!props.codeURL ? (
           <QRCodeSVG
             size={185}
@@ -168,41 +150,41 @@ function AlipayPayment(props: { complete: number; codeURL?: string; tradeNO?: st
           <Text color="#717D8A" fontSize="12px" fontWeight="normal">
             {t('Order Number')}： {props.tradeNO || ''}
           </Text>
-          <Text color="#717D8A" fontSize="12px">
-            {t('Payment Result')}:{props.complete === 3 ? t('Payment Successful') : t('In Payment')}
-          </Text>
+          <p className="mt-3 text-blue-600 text-sm font-medium flex gap-0.5 items-center justify-center">
+            {props.complete !== 3 ? (
+              <span className="animate-spin">
+                <Loader size={14} />
+              </span>
+            ) : null}
+            <span>{props.complete === 3 ? t('Payment Successful') : t('In Payment')}</span>
+          </p>
         </Box>
       </Flex>
     </Flex>
   );
 }
-const BonusBox = (props: {
-  onClick: () => void;
-  selected: boolean;
-  bouns: number;
-  isFirst?: boolean;
-  amount: number;
-}) => {
-  const { t } = useTranslation();
+const BonusBox = (props: { onClick: () => void; selected: boolean; amount: number }) => {
   const currency = useEnvStore((s) => s.currency);
 
   return (
     <Flex
       width="140px"
       height="92px"
-      justify={'center'}
+      justify={'start'}
       align={'center'}
+      padding={'calc(var(--spacing) * 4)'}
       border="1.5px solid"
       {...(props.selected
         ? {
-            color: 'brightBlue.600',
-            borderColor: 'brightBlue.500'
+            color: 'var(--color-zinc-900)',
+            borderColor: 'var(--color-zinc-900)',
+            bg: 'var(--color-zinc-50)'
           }
         : {
-            borderColor: '#EFF0F1'
+            borderColor: 'var(--color-zinc-200)',
+            bg: 'var(--color-white)'
           })}
-      bg={'grayModern.100'}
-      borderRadius="4px"
+      borderRadius="var(--radius-xl)"
       position={'relative'}
       flexGrow="0"
       cursor={'pointer'}
@@ -211,75 +193,10 @@ const BonusBox = (props: {
         props.onClick();
       }}
     >
-      {props.bouns === props.amount ? (
-        <Flex
-          position={'absolute'}
-          minW={'max-content'}
-          right={'-6px'}
-          top="-18px"
-          color={'royalBlue.700'}
-          background="royalBlue.100"
-          alignItems={'center'}
-          borderRadius="2px"
-          zIndex={'99'}
-          fontStyle="normal"
-          fontWeight="500"
-          fontSize="12px"
-          _before={{
-            position: 'absolute',
-            inset: 'auto',
-            borderRadius: '2px',
-            width: '50px',
-            height: '50px',
-            content: '""',
-            transform: 'rotate(45deg)',
-            zIndex: '-1',
-            bgColor: 'royalBlue.100'
-          }}
-          w="50px"
-          h="50px"
-          align={'center'}
-          justify={'center'}
-        >
-          <Flex flexDirection={'column'} align={'center'}>
-            <Text>{t('Double')}!</Text>
-            <Flex align={'center'}>
-              +
-              <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-              <Text>{props.bouns}</Text>
-            </Flex>
-          </Flex>
-        </Flex>
-      ) : props.bouns !== 0 ? (
-        <Flex
-          position={'absolute'}
-          minW={'max-content'}
-          left="78px"
-          top="4px"
-          px={'9.5px'}
-          py={'2.5px'}
-          color={'purple.600'}
-          background="purple.100"
-          alignItems={'center'}
-          borderRadius="10px 10px 10px 0px"
-          zIndex={'99'}
-          fontStyle="normal"
-          fontWeight="500"
-          fontSize="12px"
-        >
-          <Text mr="4px">+</Text>
-          <CurrencySymbol boxSize={'10px'} mr={'2px'} type={currency} />
-          <Text>{props.bouns}</Text>
-        </Flex>
-      ) : (
-        <></>
-      )}
-      <Flex align={'center'} fontSize="24px">
+      <div className="flex gap-1 items-center font-medium">
         <CurrencySymbol boxSize="20px" type={currency} />
-        <Text ml="4px" fontStyle="normal" fontWeight="500">
-          {props.amount}
-        </Text>
-      </Flex>
+        <span>{props.amount}</span>
+      </div>
     </Flex>
   );
 };
@@ -498,15 +415,15 @@ const RechargeModal = forwardRef(
                 <ModalHeader
                   px={'20px'}
                   py={'12px'}
-                  bg={'grayModern.25'}
-                  borderBottom={'1px solid'}
-                  fontWeight={500}
-                  fontSize={'16px'}
+                  bg={'var(--color-white)'}
+                  fontWeight={'var(--font-weight-semibold)'}
+                  fontSize={'var(--text-lg)'}
                   borderColor={'grayModern.100'}
                 >
                   {t('credit_purchase')}
                 </ModalHeader>
                 <ModalCloseButton top={'8px'} right={'18px'} />
+
                 <Flex
                   pointerEvents={complete === 0 ? 'auto' : 'none'}
                   pt="24px"
@@ -518,54 +435,48 @@ const RechargeModal = forwardRef(
                   justifyContent="center"
                   alignItems="center"
                 >
-                  <Flex align={'center'} alignSelf={'flex-start'} mb={'20px'}>
-                    <Text color="grayModern.600" fontWeight={'normal'} mr={'24px'}>
-                      {t('remaining_balance')}
-                    </Text>
-                    <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
-                    <Text ml="4px" color="#24282C" fontWeight={'medium'} fontSize="24px">
-                      {formatMoney(balance).toFixed(2)}
-                    </Text>
-                  </Flex>
                   <Flex direction={'column'} mb={'20px'} width={'full'}>
-                    <Flex mb={'36px'} justify={'space-between'}>
-                      <Text color="grayModern.600" fontWeight={'normal'}>
-                        {t('Select Amount')}
-                      </Text>
-                      {specialBonus && specialBonus.length > 0 && (
-                        <Flex align={'center'}>
-                          <GiftIcon boxSize={'16px'} mr={'8px'}></GiftIcon>
-                          <Text
-                            mr={'4px'}
-                            color={'grayModern.900'}
-                            fontSize={'14px'}
-                            fontWeight={500}
-                          >
-                            {t('first_recharge_title')}
-                          </Text>
-                          <MyTooltip
-                            px={'12px'}
-                            py={'8px'}
-                            minW={'unset'}
-                            width={'auto'}
-                            label={
-                              <Text fontSize={'12px'} fontWeight={400}>
-                                {t('first_recharge_tips')}
-                              </Text>
-                            }
-                          >
-                            <HelpIcon boxSize={'16px'}></HelpIcon>
-                          </MyTooltip>
-                        </Flex>
-                      )}
-                    </Flex>
+                    <div className="flex flex-col gap-6">
+                      <section className="w-full bg-plan-payg px-6 py-5 rounded-xl gap-1 flex flex-col">
+                        <span className="text-slate-500 text-sm">{t('remaining_balance')}</span>
+                        <span className="text-2xl font-semibold leading-none flex gap-1 items-center">
+                          <CurrencySymbol boxSize="20px" type={currency} fontSize="24px" />
+                          <span>{formatMoney(balance).toFixed(2)}</span>
+                        </span>
+                      </section>
+
+                      <section className="mt-2">
+                        <div className="flex justify-between">
+                          <div className="font-medium">{t('Select Amount')}</div>
+                          {specialBonus && specialBonus.length > 0 && (
+                            <div className="text-sm flex gap-1 items-center">
+                              <Gift size={16} className="text-blue-600" />
+                              <span>{t('first_recharge_title')}</span>
+                              {/* We have z-index issues when using Shadcn tooltip in a chakra modal */}
+                              <MyTooltip
+                                px={'12px'}
+                                py={'8px'}
+                                minW={'unset'}
+                                width={'auto'}
+                                label={
+                                  <Text fontSize={'12px'} fontWeight={400}>
+                                    {t('first_recharge_tips')}
+                                  </Text>
+                                }
+                              >
+                                <CircleHelp size={16} className="text-zinc-400" />
+                              </MyTooltip>
+                            </div>
+                          )}
+                        </div>
+                      </section>
+                    </div>
+
                     <Flex wrap={'wrap'} gap={'16px'}>
                       {steps.map((amount, index) => (
                         <BonusBox
                           key={index}
                           amount={amount}
-                          isFirst={specialBonus.findIndex((a) => +a[0] === amount) >= 0}
-                          bouns={getBonus(amount)}
                           onClick={() => {
                             setSelectAmount(index);
                             setAmount(amount);
@@ -575,29 +486,23 @@ const RechargeModal = forwardRef(
                       ))}
                     </Flex>
                   </Flex>
-                  <Flex alignSelf={'flex-start'} align={'center'}>
-                    <Text color="grayModern.600" mr={'36px'}>
-                      {t('custom_amount')}
-                    </Text>
+
+                  <div className="flex gap-8 items-center">
+                    <div className="font-medium">{t('custom_amount')}</div>
+
                     <NumberInput
                       defaultValue={15}
                       clampValueOnBlur={false}
                       min={0}
-                      flex={1}
                       step={step}
-                      // mt="8px"
-                      w="200px"
-                      h="32px"
-                      boxSizing="border-box"
-                      background="grayModern.50"
-                      pl={'12px'}
-                      border="1px solid"
-                      borderColor={'grayModern.200'}
-                      borderRadius="8px"
-                      alignItems="center"
-                      display={'flex'}
                       value={amount}
                       variant={'unstyled'}
+                      bg={'transparent'}
+                      className="flex h-10 items-center border hover:border rounded-lg overflow-hidden flex-1"
+                      padding={0}
+                      _hover={{
+                        borderColor: 'var(--border)'
+                      }}
                       onChange={(str, v) => {
                         const maxAmount = 10_000_000;
                         if (!str || !isNumber(v) || isNaN(v)) {
@@ -611,46 +516,32 @@ const RechargeModal = forwardRef(
                         setAmount(v);
                       }}
                     >
-                      <NumberInputField color={'grayModern.900'} borderRadius={'unset'} />
-                      <CurrencySymbol boxSize="14px" mr={'32px'} type={currency} />
-
-                      <NumberInputStepper borderColor={'grayModern.200'}>
-                        <NumberIncrementStepper width={'24px'} borderColor={'grayModern.200'}>
-                          <Img src={vector.src}></Img>
-                        </NumberIncrementStepper>
-                        <NumberDecrementStepper w="24px" borderColor={'grayModern.200'}>
-                          <Img src={vector.src} transform={'rotate(180deg)'}></Img>
+                      <NumberInputStepper
+                        position={'relative'}
+                        border={'unset'}
+                        width={'60px'}
+                        borderRight={'1px solid var(--border)'}
+                      >
+                        <NumberDecrementStepper border={'none'}>
+                          <Minus size={14} />
                         </NumberDecrementStepper>
                       </NumberInputStepper>
-                    </NumberInput>
-                    <Flex fontSize={'12px'} align={'center'}>
-                      <Text
-                        py={'1px'}
-                        px="7px"
-                        ml={'10px'}
-                        color={'purple.600'}
-                        background="purple.100"
-                        borderRadius="6px 6px 6px 0px;"
-                        fontStyle="normal"
-                        fontWeight="500"
-                        fontSize="12px"
-                        mr="4px"
-                      >
-                        {t('Bonus')}
-                      </Text>
 
-                      <CurrencySymbol boxSize={'10px'} type={currency} />
-                      {getBonus(amount)}
-                    </Flex>
-                  </Flex>
-                  <Flex
-                    alignSelf={'flex-start'}
-                    align={'center'}
-                    mt={'24px'}
-                    onClick={() => setDetail(true)}
-                  >
-                    <OuterLink text={t('View Discount Rules')}></OuterLink>
-                  </Flex>
+                      <CurrencySymbol boxSize="14px" type={currency} mx={'4px'} />
+                      <NumberInputField bg={'transparent'} />
+
+                      <NumberInputStepper
+                        position={'relative'}
+                        width={'60px'}
+                        borderLeft={'1px solid var(--border)'}
+                      >
+                        <NumberIncrementStepper border={'none'} borderRadius={'0px'}>
+                          <Plus size={14} />
+                        </NumberIncrementStepper>
+                      </NumberInputStepper>
+                    </NumberInput>
+                  </div>
+
                   <Flex gap={'16px'} width={'full'} mt={'24px'}>
                     {stripeEnabled && (
                       <Button
@@ -659,6 +550,8 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => {
                           handleStripeConfirm();
                         }}
@@ -676,6 +569,8 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => handleWechatConfirm()}
                       >
                         <Img src={wechat_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
@@ -691,6 +586,8 @@ const RechargeModal = forwardRef(
                         h="auto"
                         py="14px"
                         px="34px"
+                        bg={'var(--primary)'}
+                        borderRadius={'var(--radius-lg)'}
                         onClick={() => handleAlipayConfirm()}
                       >
                         <Img src={alipay_icon.src} mr="8px" w="24px" h="24px" fill={'teal.400'} />
@@ -707,11 +604,11 @@ const RechargeModal = forwardRef(
                 <ModalHeader
                   px={'20px'}
                   py={'12px'}
-                  bg={'grayModern.25'}
-                  borderBottom={'1px solid'}
-                  fontWeight={500}
-                  fontSize={'16px'}
+                  bg={'var(--color-white)'}
+                  fontWeight={'var(--font-weight-semibold)'}
+                  fontSize={'var(--text-lg)'}
                   borderColor={'grayModern.100'}
+                  borderBottom={'1px solid var(--color-border)'}
                 >
                   <Img
                     src={vector.src}
@@ -755,11 +652,11 @@ const RechargeModal = forwardRef(
               <ModalHeader
                 py={'12px'}
                 px={'20px'}
-                bg={'grayModern.25'}
-                borderBottom={'1px solid'}
-                fontWeight={500}
-                fontSize={'16px'}
+                bg={'var(--color-white)'}
+                fontWeight={'var(--font-weight-semibold)'}
+                fontSize={'var(--text-lg)'}
                 borderColor={'grayModern.100'}
+                borderBottom={'1px solid var(--color-border)'}
               >
                 <Text>{t('preferential_rules')}</Text>
               </ModalHeader>
