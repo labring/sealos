@@ -1,37 +1,31 @@
 import ExchangeIcon from '@/components/icons/ExchangeIcon';
-import InfoIcon from '@/components/icons/InfoIcon';
-import {
-  Box,
-  Button,
-  Text,
-  Flex,
-  Link,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
-  Input,
-  FormControl,
-  FormErrorMessage
-} from '@chakra-ui/react';
+import { Box, Text, Flex, Button as ChakraButton, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import request from '@/service/request';
 import { ApiResp } from '@/types/api';
 import { useMessage } from '@sealos/ui';
+import { Button } from '@sealos/shadcn-ui/button';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogTitle
+} from '@sealos/shadcn-ui/dialog';
+import { Label } from '@sealos/shadcn-ui/label';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Loader } from 'lucide-react';
 
 interface GiftCodeModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onToggle: (open: boolean) => void;
 }
 
 function GiftCode() {
   const { t } = useTranslation();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onToggle } = useDisclosure();
 
   return (
     <Box
@@ -53,28 +47,6 @@ function GiftCode() {
         >
           {t('Gift Card Redemption')}
         </Text>
-        {/* <Flex
-          padding="6px 0px"
-          alignItems="center"
-          justifyContent="center"
-          gap="4px"
-          borderRadius="6px"
-        >
-          <InfoIcon fill="#0884DD" />
-          <Link
-            color="var(--Bright-Blue-600, #0884DD)"
-            fontFamily="PingFang SC"
-            fontSize="11px"
-            fontStyle="normal"
-            fontWeight={500}
-            lineHeight="16px"
-            letterSpacing="0.5px"
-            textDecoration="none" // Added to remove default underline
-            _hover={{ textDecoration: 'underline' }} // Optional: adds underline on hover
-          >
-            {t('查看兑换规则')}
-          </Link>
-        </Flex> */}
       </Flex>
       <Flex
         display="flex"
@@ -92,7 +64,7 @@ function GiftCode() {
         onClick={onOpen}
       >
         <ExchangeIcon />
-        <Button
+        <ChakraButton
           variant="unstyled"
           height="auto"
           minWidth="0"
@@ -106,15 +78,15 @@ function GiftCode() {
           letterSpacing="0.1px"
         >
           {t('Redeem')}
-        </Button>
+        </ChakraButton>
       </Flex>
 
-      <GiftCodeModal isOpen={isOpen} onClose={onClose} />
+      <GiftCodeModal isOpen={isOpen} onToggle={onToggle} />
     </Box>
   );
 }
 
-function GiftCodeModal({ isOpen, onClose }: GiftCodeModalProps) {
+function GiftCodeModal({ isOpen, onToggle }: GiftCodeModalProps) {
   const { t } = useTranslation();
   const initialRef = React.useRef(null);
   const [code, setCode] = useState('');
@@ -147,7 +119,7 @@ function GiftCodeModal({ isOpen, onClose }: GiftCodeModalProps) {
           duration: 2000,
           position: 'top'
         });
-        onClose();
+        onToggle(false);
       },
       onError(err: any) {
         message({
@@ -187,120 +159,38 @@ function GiftCodeModal({ isOpen, onClose }: GiftCodeModalProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered initialFocusRef={initialRef}>
-      <ModalOverlay />
-      <Flex
-        as={ModalContent}
-        width="440px"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="flex-start"
-        borderRadius="10px"
-        background="var(--White, #FFF)"
-        boxShadow="0px 32px 64px -12px rgba(19, 51, 107, 0.20), 0px 0px 1px 0px rgba(19, 51, 107, 0.20)"
-      >
-        <Flex
-          as={ModalHeader}
-          height="48px"
-          padding="10px 20px"
-          justifyContent="center"
-          alignItems="center"
-          borderBottom="1px solid var(--Gray-Modern-100, #F4F4F7)"
-          background="var(--Gray-Modern-25, #FBFBFC)"
-          width="100%"
-        >
-          <Flex width="400px" justifyContent="space-between" alignItems="center">
-            <Flex width="98px" alignItems="center" gap="10px" flexShrink={0}>
-              {t('Gift Card Redemption')}
-            </Flex>
-            <Flex
-              as={ModalCloseButton}
-              position="static"
-              width="28px"
-              height="28px"
-              padding="4px"
-              borderRadius="4px"
-              justifyContent="center"
-              alignItems="center"
-              gap="10px"
-              flexShrink={0}
-            />
-          </Flex>
-        </Flex>
-        <Flex
-          as={ModalBody}
-          height="168px"
-          padding="24px 36px"
-          justifyContent="center"
-          alignItems="center"
-          width="100%"
-        >
-          <Flex width="368px" direction="column" alignItems="flex-end" gap="24px">
-            <Flex direction="column" alignItems="flex-start" gap="24px" alignSelf="stretch">
-              <Flex direction="column" alignItems="flex-start" gap="8px" width="100%">
-                <Text
-                  color="var(--light-general-on-surface, var(--Gray-Modern-900, #111824))"
-                  fontFamily="PingFang SC"
-                  fontSize="14px"
-                  fontStyle="normal"
-                  fontWeight={500}
-                  lineHeight="20px"
-                  letterSpacing="0.1px"
-                >
-                  {t('Gift Code')}
-                </Text>
-                <FormControl isInvalid={!!error}>
-                  <Input
-                    ref={initialRef}
-                    type="text"
-                    value={code}
-                    onChange={handleCodeChange}
-                    placeholder={t('Input Gift code')}
-                    width="368px"
-                    height="32px"
-                    padding="8px 12px"
-                    borderRadius="6px"
-                    border="1px solid var(--Gray-Modern-200, #E8EBF0)"
-                    background="var(--Gray-Modern-50, #F7F8FA)"
-                    _placeholder={{
-                      color: 'var(--Gray-Modern-400, #9AA4B2)'
-                    }}
-                    isDisabled={useGiftCodeMutation.isLoading}
-                  />
-                  {error && <FormErrorMessage>{error}</FormErrorMessage>}
-                </FormControl>
-              </Flex>
-            </Flex>
-            <Flex
-              paddingLeft="280px"
-              justifyContent="flex-end"
-              alignItems="center"
-              alignSelf="stretch"
-            >
-              <Flex justifyContent="flex-end" alignItems="flex-start" gap="8px">
-                <Button
-                  display="flex"
-                  width="88px"
-                  padding="8px 20px"
-                  justifyContent="center"
-                  alignItems="center"
-                  gap="8px"
-                  borderRadius="6px"
-                  background="var(--Gray-Modern-900, #111824)"
-                  boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-                  _hover={{ background: 'var(--Gray-Modern-800, #1F2937)' }}
-                  onClick={handleConfirm}
-                  isDisabled={!!error}
-                  isLoading={useGiftCodeMutation.isLoading}
-                >
-                  {t('Redeem')}
-                </Button>
-              </Flex>
-            </Flex>
-          </Flex>
-        </Flex>
-      </Flex>
-    </Modal>
+    <>
+      <Dialog open={isOpen} onOpenChange={(open) => onToggle(open)}>
+        <DialogContent>
+          <DialogTitle>{t('Gift Card Redemption')}</DialogTitle>
+
+          <div>
+            <Label className="flex gap-2 flex-col w-full items-start">
+              <div>{t('Gift Code')}</div>
+
+              <Input
+                type="text"
+                value={code}
+                onChange={handleCodeChange}
+                placeholder={t('Input Gift code')}
+                disabled={useGiftCodeMutation.isLoading}
+              />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+            </Label>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">{t('Cancel')}</Button>
+            </DialogClose>
+            <Button onClick={handleConfirm} disabled={!!error || useGiftCodeMutation.isLoading}>
+              {useGiftCodeMutation.isLoading && <Loader size={14} className="animate-spin" />}
+              {t('Redeem')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
