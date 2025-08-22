@@ -12,8 +12,10 @@ import receipt_icon from '@/assert/receipt_long.svg';
 import receipt_a_icon from '@/assert/receipt_long_black.svg';
 import useEnvStore from '@/stores/env';
 import { Box, Divider, Flex, Img, Text } from '@chakra-ui/react';
+import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import type { StaticImageData } from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 type Menu = {
@@ -88,47 +90,30 @@ export default function SideBar() {
     }
   ];
   return (
-    <Flex flexDirection="column" py={'22px'} px="16px">
+    <nav className="flex flex-col gap-1">
       {ready &&
         menus
           .filter((item) => item.display)
-          .map((item, idx) => {
+          .map((item) => {
             return (
-              <Box key={item.value}>
-                <Flex
-                  {...([1, 3, 5].includes(idx)
-                    ? {
-                        mb: '32px'
-                      }
-                    : {})}
-                  alignItems={'center'}
-                  onClick={() => {
-                    router.push(item.url);
-                  }}
-                  as="button"
-                  fontWeight={500}
-                  fontSize={'14px'}
-                >
-                  <Flex h={4} alignItems={'center'}>
-                    <Img
-                      src={router.route == item.url ? item.aicon.src : item.icon.src}
-                      width={'20px'}
-                      alt="icon of module"
-                    />
-                  </Flex>
-                  <Text
-                    color={router.route === item.url ? 'grayModern.900' : 'grayModern.500'}
-                    ml="8px"
-                  >
-                    {t(item.value)}
-                  </Text>
-                </Flex>
-                {([0, 2].includes(idx) || (idx === 4 && invoiceEnabled)) && (
-                  <Divider my="20px" borderColor={'grayModern.250'} />
-                )}
-              </Box>
+              <Button
+                variant="ghost"
+                className="data-[is-current-page=true]:bg-zinc-100 data-[is-current-page=true]:font-medium font-normal rounded-lg text-sm flex justify-start py-3 px-4"
+                asChild
+                key={item.id}
+                data-is-current-page={router.route === item.url}
+              >
+                <Link href={item.url} className="flex items-center gap-2">
+                  <Img
+                    src={router.route == item.url ? item.aicon.src : item.icon.src}
+                    width={'16px'}
+                    alt="icon of module"
+                  />
+                  <span>{t(item.value)}</span>
+                </Link>
+              </Button>
             );
           })}
-    </Flex>
+    </nav>
   );
 }

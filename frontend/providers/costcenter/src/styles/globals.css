@@ -24,6 +24,11 @@
   );
 }
 
+/* New designs uses white color for background. It's different from the default theme in shadcn-ui package (previously used by DevBox). */
+:root {
+  --background: #ffffff;
+}
+
 body {
   height: 100vh;
   width: 100vw;
