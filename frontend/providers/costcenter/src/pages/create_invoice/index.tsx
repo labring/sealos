@@ -43,6 +43,14 @@ import InvoicdForm from './InvoicdForm';
 import InvoicdFormDetail from './InvoicdFormDetail';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { ReceiptText, Search } from 'lucide-react';
+import {
+  TableLayout,
+  TableLayoutCaption,
+  TableLayoutHeadRow,
+  TableLayoutBody,
+  TableLayoutFooter,
+  TableLayoutContent
+} from '@sealos/shadcn-ui/table-layout';
 
 function Invoice() {
   const { t, i18n } = useTranslation();
@@ -105,15 +113,11 @@ function Invoice() {
           </TabsList>
 
           <TabsContent value="listing">
-            <div className="border shadow-sm overflow-hidden rounded-2xl bg-card">
-              <div className="flex py-3 px-4 border-b justify-between">
+            <TableLayout>
+              <TableLayoutCaption>
                 <div className="flex gap-3 items-center">
                   <DateRangePicker placeholder="PICK DATE RANGE!" buttonClassName="shadow-none" />
-                  <Input
-                    icon={<Search size={16}></Search>}
-                    placeholder="Order ID"
-                    className="w-[15rem]"
-                  />
+                  <Input icon={<Search size={16} />} placeholder="Order ID" className="w-[15rem]" />
                 </div>
 
                 <div className="flex items-center gap-3 font-medium">
@@ -123,112 +127,78 @@ function Invoice() {
                     <span>Obtain Invoice: 10</span>
                   </Button>
                 </div>
-              </div>
+              </TableLayoutCaption>
 
-              <Table className="text-sm">
-                <TableHeader className="h-10">
-                  <TableRow className="[&>th]:bg-transparent border-b">
-                    <TableHead>
-                      <Checkbox></Checkbox>
-                    </TableHead>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead>Workspace</TableHead>
-                    <TableHead>Transaction Time</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="text-foreground">
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
+              <TableLayoutContent>
+                <TableLayoutHeadRow>
+                  <TableHead>
+                    <Checkbox />
+                  </TableHead>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Region</TableHead>
+                  <TableHead>Workspace</TableHead>
+                  <TableHead>Transaction Time</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Amount</TableHead>
+                </TableLayoutHeadRow>
+
+                <TableLayoutBody>
                   <ExampleOrderListRow />
                   <ExampleOrderListRow selected />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                  <ExampleOrderListRow />
-                </TableBody>
+                </TableLayoutBody>
 
-                <TableFooter className="bg-transparent">
-                  <TableRow>
-                    <TableCell colSpan={7} className="p-0">
-                      <div className="px-4 py-3 flex justify-between">
-                        <div className="flex items-center text-zinc-500">Total: 101</div>
-                        <div className="flex items-center gap-3">
-                          <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
-                          <span>
-                            <span>8</span>
-                            <span className="text-zinc-500"> / Page</span>
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </div>
+                <TableLayoutFooter>
+                  <div className="px-4 py-3 flex justify-between">
+                    <div className="flex items-center text-zinc-500">Total: 101</div>
+                    <div className="flex items-center gap-3">
+                      <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
+                      <span>
+                        <span>8</span>
+                        <span className="text-zinc-500"> / Page</span>
+                      </span>
+                    </div>
+                  </div>
+                </TableLayoutFooter>
+              </TableLayoutContent>
+            </TableLayout>
           </TabsContent>
 
           <TabsContent value="history">
-            <div className="border shadow-sm overflow-hidden rounded-2xl bg-card">
-              <div className="flex py-3 px-4 border-b">
+            <TableLayout>
+              <TableLayoutCaption>
                 <div className="flex gap-3 items-center">
                   <DateRangePicker placeholder="PICK DATE RANGE!" buttonClassName="shadow-none" />
-                  <Input
-                    icon={<Search size={16}></Search>}
-                    placeholder="Order ID"
-                    className="w-[15rem]"
-                  />
+                  <Input icon={<Search size={16} />} placeholder="Order ID" className="w-[15rem]" />
                 </div>
-              </div>
+              </TableLayoutCaption>
 
-              <Table className="text-sm">
-                <TableHeader className="h-10">
-                  <TableRow className="[&>th]:bg-transparent border-b">
-                    <TableHead>Invoice Request Time</TableHead>
-                    <TableHead>Invoice Issued Time</TableHead>
-                    <TableHead>Invoice Amount</TableHead>
-                    <TableHead>Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="text-foreground">
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                  <ExampleHistoryRow />
-                </TableBody>
+              <TableLayoutContent>
+                <TableLayoutHeadRow>
+                  <TableHead>Invoice Request Time</TableHead>
+                  <TableHead>Invoice Issued Time</TableHead>
+                  <TableHead>Invoice Amount</TableHead>
+                  <TableHead>Action</TableHead>
+                </TableLayoutHeadRow>
 
-                <TableFooter className="bg-transparent">
-                  <TableRow>
-                    <TableCell colSpan={7} className="p-0">
-                      <div className="px-4 py-3 flex justify-between">
-                        <div className="flex items-center text-zinc-500">Total: 101</div>
-                        <div className="flex items-center gap-3">
-                          <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
-                          <span>
-                            <span>8</span>
-                            <span className="text-zinc-500"> / Page</span>
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
-            </div>
+                <TableLayoutBody>
+                  <ExampleHistoryRow />
+                  <ExampleHistoryRow selected />
+                </TableLayoutBody>
+
+                <TableLayoutFooter>
+                  <div className="px-4 py-3 flex justify-between">
+                    <div className="flex items-center text-zinc-500">Total: 101</div>
+                    <div className="flex items-center gap-3">
+                      <Pagination currentPage={1} totalPages={20} onPageChange={() => {}} />
+                      <span>
+                        <span>8</span>
+                        <span className="text-zinc-500"> / Page</span>
+                      </span>
+                    </div>
+                  </div>
+                </TableLayoutFooter>
+              </TableLayoutContent>
+            </TableLayout>
           </TabsContent>
         </Tabs>
       </section>
