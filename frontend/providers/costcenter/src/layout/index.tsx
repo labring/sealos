@@ -34,11 +34,12 @@ export default function Layout({ children }: any) {
       w="100vw"
       h="100vh"
       position="relative"
-      background={'grayModern.100'}
       pt={'4px'}
       pb="10px"
+      px={'2.5rem'}
       alignItems={'center'}
       justifyContent={'center'}
+      className="bg-background"
     >
       {isLodaing ? (
         <Flex w={'100%'} h={'100%'} alignItems={'center'} justifyContent={'center'}>
@@ -54,9 +55,11 @@ export default function Layout({ children }: any) {
           )}
         </Flex>
       ) : (
-        <Flex width="full" height="full" maxWidth="1600px" justify={'center'}>
-          <SideBar />
-          <Box flexGrow={1} borderRadius="8px" overflow={'hidden'} w={0}>
+        <Flex width="full" height="full" maxWidth="1600px" justify={'center'} gap={'1.5rem'}>
+          <div className="pt-10 min-w-[12rem]">
+            <SideBar />
+          </div>
+          <Box flexGrow={1} borderRadius="8px" overflow={'hidden'} w={0} className="pt-10">
             {children}
           </Box>
         </Flex>
