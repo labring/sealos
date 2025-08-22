@@ -39,13 +39,25 @@ spec:
           spec:
             description: DevboxreleaseSpec defines the desired state of Devboxrelease.
             properties:
-              foo:
-                description: Foo is an example field of Devboxrelease. Edit devboxrelease_types.go
-                  to remove/update
+              devboxName:
                 type: string
+              notes:
+                type: string
+              version:
+                type: string
+            required:
+            - devboxName
+            - version
             type: object
           status:
-            description: DevboxreleaseStatus defines the observed state of Devboxrelease.
+            properties:
+              originalDevboxState:
+                type: string
+              phase:
+                type: string
+            required:
+            - originalDevboxState
+            - phase
             type: object
         type: object
     served: true

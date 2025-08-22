@@ -20,22 +20,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // DevboxreleaseSpec defines the desired state of Devboxrelease.
 type DevboxreleaseSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Devboxrelease. Edit devboxrelease_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// +kubebuilder:validation:Required
+	DevboxName string `json:"devboxName"`
+	// +kubebuilder:validation:Required
+	Version string `json:"version"`
+	// +kubebuilder:validation:Optional
+	Notes string `json:"notes,omitempty"`
 }
 
-// DevboxreleaseStatus defines the observed state of Devboxrelease.
+type DevboxReleasePhase string
+
+const (
+	// DevboxReleasePhaseSuccess means the Devbox has been released
+	DevboxReleasePhaseSuccess DevboxReleasePhase = "Success"
+	// DevboxReleasePhasePending means the Devbox has not been released
+	DevboxReleasePhasePending DevboxReleasePhase = "Pending"
+	// DevboxReleasePhaseFailed means the Devbox has not been released
+	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
+)
+
 type DevboxreleaseStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Phase               DevboxReleasePhase `json:"phase"`
+	OriginalDevboxState DevboxState        `json:"originalDevboxState"`
 }
 
 // +kubebuilder:object:root=true
