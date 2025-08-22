@@ -26,6 +26,7 @@ import {
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck, CircleHelp, Gift, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsContent, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 function PlanHeader() {
   return (
@@ -272,9 +273,9 @@ function TopupDialog() {
   );
 }
 
-export default function Testing() {
+export default function Plan() {
   return (
-    <div className="p-8 bg-white gap-8 flex flex-col">
+    <div className="bg-white gap-8 flex flex-col">
       <PlanHeader></PlanHeader>
 
       {/* Balance card */}
@@ -299,4 +300,12 @@ export default function Testing() {
       <TopupDialog></TopupDialog>
     </div>
   );
+}
+
+export async function getServerSideProps({ locale }: { locale: string }) {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale, undefined, null, ['zh', 'en']))
+    }
+  };
 }
