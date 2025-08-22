@@ -21,9 +21,6 @@ import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck, CircleHelp, Gift, Sparkles } from 'lucide-react';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useQuery } from '@tanstack/react-query';
-import request from '@/service/request';
-import { ApiResp } from '@/types/api';
-import { PlanListResponse, SubscriptionPlan } from '@/types/plan';
 import {
   TableLayout,
   TableLayoutCaption,
@@ -31,6 +28,10 @@ import {
   TableLayoutBody,
   TableLayoutContent
 } from '@sealos/shadcn-ui/table-layout';
+import { PlanListResponse, SubscriptionPlan, SubscriptionInfoResponse } from '@/types/plan';
+import useSessionStore from '@/stores/session';
+import useBillingStore from '@/stores/billing';
+import { getPlanList, getSubscriptionInfo } from '@/api/plan';
 
 function PlanHeader({ plans, isLoading }: { plans?: SubscriptionPlan[]; isLoading?: boolean }) {
   return (
@@ -323,12 +324,29 @@ function TopupDialog() {
 }
 
 export default function Plan() {
+  const { session } = useSessionStore();
+  const { getRegion, regionList } = useBillingStore();
+  const region = getRegion();
+  console.log('session', session, regionList, region);
+
   const { data: plansData, isLoading: plansLoading } = useQuery({
     queryKey: ['plan-list'],
-    queryFn: () => request.post<any, ApiResp<PlanListResponse>>('/api/plan/list')
-    // staleTime: 5 * 60 * 1000 // 5分钟缓存
+    queryFn: getPlanList
   });
-  console.log('plansData', plansData?.data);
+
+  // Get current workspace subscription info
+
+  const { data: subscriptionData, isLoading: subscriptionLoading } = useQuery({
+    queryKey: ['subscription-info', session?.user?.nsid, region?.uid],
+    queryFn: () =>
+      getSubscriptionInfo({
+        workspace: session?.user?.nsid || '',
+        regionDomain: region?.uid || ''
+      }),
+    enabled: !!(session?.user?.nsid && region?.uid)
+  });
+
+  console.log('subscriptionData', subscriptionData?.data);
 
   return (
     <div className="bg-white gap-8 flex flex-col">
