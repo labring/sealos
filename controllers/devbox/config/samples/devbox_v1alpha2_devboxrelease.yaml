@@ -1,0 +1,9 @@
+apiVersion: devbox.sealos.io/v1alpha2
+kind: Devboxrelease
+metadata:
+  labels:
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: devboxrelease-sample
+spec:
+  # TODO(user): Add fields here
