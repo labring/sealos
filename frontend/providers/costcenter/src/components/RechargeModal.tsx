@@ -106,9 +106,14 @@ function WechatPayment(props: { complete: number; codeURL?: string; tradeNO?: st
           <Text color="#717D8A" fontSize="12px" fontWeight="normal">
             {t('Order Number')}： {props.tradeNO || ''}
           </Text>
-          <Text color="#717D8A" fontSize="12px">
-            {props.complete === 3 ? t('Payment Successful') : t('In Payment')}
-          </Text>
+          <p className="mt-3 text-blue-600 text-sm font-medium flex gap-0.5 items-center justify-center">
+            {props.complete !== 3 ? (
+              <span className="animate-spin">
+                <Loader size={14} />
+              </span>
+            ) : null}
+            <span>{props.complete === 3 ? t('Payment Successful') : t('In Payment')}</span>
+          </p>
         </Box>
       </Flex>
     </Flex>
