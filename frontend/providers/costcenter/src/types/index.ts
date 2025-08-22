@@ -5,7 +5,7 @@ export * from './billing';
 export * from './invoice';
 export * from './session';
 export * from './Transfer';
-export * from './env';
+
 declare global {
   var mongodb: MongoClient | null;
   var dataLayer: { push: Function } | null;

@@ -4,14 +4,11 @@ import {
   Button,
   cn,
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Input,
   Label,
   RadioGroup,
   RadioGroupItem,
@@ -25,13 +22,15 @@ import {
 } from '@sealos/shadcn-ui';
 import { Badge } from '@sealos/shadcn-ui/badge';
 import { CircleCheck, CircleHelp, Gift, Sparkles } from 'lucide-react';
-import { Tabs, TabsList, TabsContent, TabsTrigger } from '@sealos/shadcn-ui/tabs';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useQuery } from '@tanstack/react-query';
+import request from '@/service/request';
+import { ApiResp } from '@/types/api';
+import { PlanListResponse, SubscriptionPlan } from '@/types/plan';
 
-function PlanHeader() {
+function PlanHeader({ plans, isLoading }: { plans?: SubscriptionPlan[]; isLoading?: boolean }) {
   return (
     <div className="bg-white shadow-sm border p-2 rounded-2xl">
-      {/* Magic Values! */}
       <div className="bg-plan-starter rounded-xl p-6 flex flex-col gap-4">
         <div className="flex justify-between items-center">
           <div>
@@ -39,10 +38,12 @@ function PlanHeader() {
             <h1 className="font-semibold text-2xl">Starter Plan</h1>
           </div>
 
-          <Button size="lg">
-            <Sparkles />
-            <span>Upgrade Plan</span>
-          </Button>
+          <UpgradePlanDialog plans={plans} isLoading={isLoading}>
+            <Button size="lg">
+              <Sparkles />
+              <span>Upgrade Plan</span>
+            </Button>
+          </UpgradePlanDialog>
         </div>
 
         <Separator className="border-slate-200" />
@@ -138,59 +139,90 @@ function AllPlansSection() {
   );
 }
 
-function UpgradePlanCard({ className }: { className?: string }) {
+function UpgradePlanCard({
+  plan,
+  className,
+  isPopular = false,
+  isCurrentPlan = false
+}: {
+  plan: SubscriptionPlan;
+  className?: string;
+  isPopular?: boolean;
+  isCurrentPlan?: boolean;
+}) {
+  // 获取月价格
+  const monthlyPrice = plan.Prices.find((p) => p.BillingCycle === '1m')?.Price || 0;
+
+  // 解析资源配置
+  let resources: any = {};
+  try {
+    resources = JSON.parse(plan.MaxResources);
+  } catch (e) {
+    resources = {};
+  }
+
   return (
     <section className={cn('flex flex-col border p-8 shadow-sm rounded-2xl bg-card', className)}>
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Starter</h2>
-        <Badge variant="default" className="bg-blue-600 rounded-full font-semibold">
-          Most Popular
-        </Badge>
+        <h2 className="text-xl font-semibold">{plan.Name}</h2>
+        {isPopular && (
+          <Badge variant="default" className="bg-blue-600 rounded-full font-semibold">
+            Most Popular
+          </Badge>
+        )}
       </div>
 
-      <p className="mt-3 text-muted-foreground text-sm">
-        For hobbyist developers building side projects.
-      </p>
+      <p className="mt-3 text-muted-foreground text-sm">{plan.Description}</p>
 
       <div className="mt-4">
-        <span className="text-4xl font-semibold">$58</span>
+        <span className="text-4xl font-semibold">${monthlyPrice}</span>
         <span className="text-muted-foreground">/month</span>
       </div>
 
-      <Button className="mt-4">Your current plan</Button>
+      <Button className="mt-4" disabled={isCurrentPlan}>
+        {isCurrentPlan ? 'Your current plan' : 'Subscribe'}
+      </Button>
 
       <ul className="flex mt-6 gap-3 flex-col">
+        {resources.cpu && (
+          <li className="flex gap-2">
+            <CircleCheck size={20} className="text-blue-600" />
+            <span className="text-muted-foreground text-sm">{resources.cpu} CPU</span>
+          </li>
+        )}
+        {resources.memory && (
+          <li className="flex gap-2">
+            <CircleCheck size={20} className="text-blue-600" />
+            <span className="text-muted-foreground text-sm">{resources.memory} Memory</span>
+          </li>
+        )}
         <li className="flex gap-2">
           <CircleCheck size={20} className="text-blue-600" />
-          <span className="text-muted-foreground text-sm">1 vCPU</span>
+          <span className="text-muted-foreground text-sm">
+            {plan.MaxSeats} Seat{plan.MaxSeats > 1 ? 's' : ''}
+          </span>
         </li>
         <li className="flex gap-2">
           <CircleCheck size={20} className="text-blue-600" />
-          <span className="text-muted-foreground text-sm">2GB RAM</span>
-        </li>
-        <li className="flex gap-2">
-          <CircleCheck size={20} className="text-blue-600" />
-          <span className="text-muted-foreground text-sm">2GB Disk</span>
-        </li>
-        <li className="flex gap-2">
-          <CircleCheck size={20} className="text-blue-600" />
-          <span className="text-muted-foreground text-sm">3GB Traffic</span>
-        </li>
-        <li className="flex gap-2">
-          <CircleCheck size={20} className="text-blue-600" />
-          <span className="text-muted-foreground text-sm">1 Port</span>
+          <span className="text-muted-foreground text-sm">{plan.Traffic}GB Traffic</span>
         </li>
       </ul>
     </section>
   );
 }
 
-function UpgradePlanDialog() {
+function UpgradePlanDialog({
+  children,
+  plans,
+  isLoading
+}: {
+  children: React.ReactNode;
+  plans?: SubscriptionPlan[];
+  isLoading?: boolean;
+}) {
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">UpgradePlanDialog</Button>
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="min-w-[70rem] py-8 px-20 bg-zinc-50">
         <div className="flex flex-col justify-center">
           <section className="mt-6">
@@ -200,11 +232,25 @@ function UpgradePlanDialog() {
             </p>
           </section>
 
-          <div className="flex pt-6 gap-3">
-            <UpgradePlanCard />
-            <UpgradePlanCard />
-            <UpgradePlanCard />
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div>Loading plans...</div>
+            </div>
+          ) : plans && plans.length > 0 ? (
+            <div className="flex pt-6 gap-3 overflow-x-auto">
+              {plans.map((plan, index) => (
+                <UpgradePlanCard
+                  key={plan.ID}
+                  plan={plan}
+                  isPopular={index === 1} // 设置第二个为推荐
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex justify-center py-12">
+              <div className="text-gray-500">No plans available</div>
+            </div>
+          )}
 
           <Button variant="link" className="underline text-zinc-600 text-base mt-4" asChild>
             <a href="">Still wanna charge by volume?</a>
@@ -274,9 +320,16 @@ function TopupDialog() {
 }
 
 export default function Plan() {
+  const { data: plansData, isLoading: plansLoading } = useQuery({
+    queryKey: ['plan-list'],
+    queryFn: () => request.post<any, ApiResp<PlanListResponse>>('/api/plan/list')
+    // staleTime: 5 * 60 * 1000 // 5分钟缓存
+  });
+  console.log('plansData', plansData?.data);
+
   return (
     <div className="bg-white gap-8 flex flex-col">
-      <PlanHeader></PlanHeader>
+      <PlanHeader plans={plansData?.data?.plans} isLoading={plansLoading} />
 
       {/* Balance card */}
       <div className="p-2 border shadow-sm rounded-2xl">
@@ -296,7 +349,6 @@ export default function Plan() {
       {/* All Plans */}
       <AllPlansSection />
 
-      <UpgradePlanDialog></UpgradePlanDialog>
       <TopupDialog></TopupDialog>
     </div>
   );
