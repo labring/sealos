@@ -1,7 +1,7 @@
 import { createDatabaseSchemas } from '@/types/apis';
 import { getK8s } from '../kubernetes';
 import { z } from 'zod';
-import { BackupSupportedDBTypeList } from '@/constants/db';
+import { BackupSupportedDBTypeList, DBTypeEnum } from '@/constants/db';
 import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';

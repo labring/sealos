@@ -42,11 +42,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     )) as any;
 
     body.items.forEach((item: any) => {
-      const db = item?.spec?.clusterDefinitionRef as `${DBTypeEnum}`;
+      const clusterDefinitionRef = item?.spec?.clusterDefinitionRef as string;
+
+      let db: `${DBTypeEnum}` | undefined;
+
+      if (clusterDefinitionRef === 'mysql' || clusterDefinitionRef === 'apecloud-mysql') {
+        db = DBTypeEnum.mysql;
+      } else {
+        db = clusterDefinitionRef as `${DBTypeEnum}`;
+      }
+
       if (
+        db &&
         DBVersionMap[db] &&
         item?.metadata?.name &&
-        !DBVersionMap[db].find((db) => db.id === item.metadata.name)
+        !DBVersionMap[db].find((version) => version.id === item.metadata.name)
       ) {
         DBVersionMap[db].unshift({
           id: item.metadata.name,

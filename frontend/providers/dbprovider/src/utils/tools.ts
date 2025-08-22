@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { useTranslation } from 'next-i18next';
+import { DBTypeEnum } from '@/constants/db';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -540,6 +541,22 @@ export function getPodRoleName(pod: PodDetailType): {
     isCreating: true
   };
 }
+
+export const getScore = (dbType: DBType, cpu: number, memory: number) => {
+  const cpuCores = cpu / 1000; // cpu in cores
+  const memoryGB = memory / 1024; // memory in GB
+  let score = 0;
+  if (
+    dbType === DBTypeEnum.postgresql ||
+    dbType === DBTypeEnum.mongodb ||
+    dbType === DBTypeEnum.mysql
+  ) {
+    score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
+  } else if (dbType === DBTypeEnum.redis) {
+    score = Math.min(cpuCores * 1000 + memoryGB * 500, 100000);
+  }
+  return Math.floor(score);
+};
 
 export type RequiredByKeys<T, K extends keyof T> = {
   [P in K]-?: T[P];
