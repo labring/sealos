@@ -39,7 +39,7 @@ jobs:
       - uses: peter-evans/create-pull-request@v5
         if: ${{ (github.event_name == 'workflow_dispatch') && (steps.tagpr.outputs.version != '') }}
         with:
-          title: 'Release ${{ steps.tagpr.outputs.name }} for ${{ steps.tagpr.outputs.version }}'
+          title: 'Release ${{ steps.tagpr.outputs.name }} note and fix version for ${{ steps.tagpr.outputs.version }}'
           body: |
             
             Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
@@ -48,6 +48,8 @@ jobs:
           branch: tagpr-${{ steps.tagpr.outputs.version }}
           draft: true
           signoff: true
+          labels: |
+            bot
           delete-branch: true
           token: ${{ secrets.GITHUB_TOKEN }}
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>

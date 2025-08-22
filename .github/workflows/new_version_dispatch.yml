@@ -53,6 +53,8 @@ jobs:
           branch: tagpr-new-${{ inputs.version }}
           signoff: true
           delete-branch: true
+          labels: |
+            bot
           token: ${{ secrets.GITHUB_TOKEN }}
           committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
           author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
