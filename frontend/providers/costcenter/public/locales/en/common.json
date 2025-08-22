@@ -12,7 +12,9 @@
     "BillingDetails": "Billing Details",
     "ValuationStandard": "Pricing",
     "resource_analysis": "Resource Analysis",
-    "CreateInvoice": "Create Invoice"
+    "CreateInvoice": "Create Invoice",
+    "Plan": "Plan",
+    "Usage": "Usage"
   },
   "Valuation": {
     "Standard": "Pricing",

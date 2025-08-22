@@ -11,7 +11,7 @@ import linechart_a_icon from '@/assert/lineChart_black.svg';
 import receipt_icon from '@/assert/receipt_long.svg';
 import receipt_a_icon from '@/assert/receipt_long_black.svg';
 import useEnvStore from '@/stores/env';
-import { Box, Divider, Flex, Img, Text } from '@chakra-ui/react';
+import { Img } from '@chakra-ui/react';
 import { Button } from '@sealos/shadcn-ui/button';
 import { useTranslation } from 'next-i18next';
 import type { StaticImageData } from 'next/image';
@@ -32,6 +32,22 @@ export default function SideBar() {
   const { t, ready } = useTranslation();
   const invoiceEnabled = useEnvStore((state) => state.invoiceEnabled);
   const menus: Menu[] = [
+    {
+      id: 'Plan',
+      url: '/plan',
+      value: 'SideBar.Plan',
+      icon: invoice_icon,
+      aicon: invoice_a_icon,
+      display: true
+    },
+    {
+      id: 'Usage',
+      url: '/usage',
+      value: 'SideBar.Usage',
+      icon: invoice_icon,
+      aicon: invoice_a_icon,
+      display: true
+    },
     {
       id: 'CostOverview',
       url: '/cost_overview',
@@ -57,14 +73,6 @@ export default function SideBar() {
       display: true
     },
     {
-      id: 'ResourceAnalysis',
-      url: '/resource_analysis',
-      value: 'SideBar.resource_analysis',
-      icon: layers_icon,
-      aicon: layers_a_icon,
-      display: true
-    },
-    {
       id: 'ValuationStandard',
       url: '/valuation',
       value: 'SideBar.ValuationStandard',
@@ -79,16 +87,9 @@ export default function SideBar() {
       icon: invoice_icon,
       aicon: invoice_a_icon,
       display: invoiceEnabled
-    },
-    {
-      id: 'Testing',
-      url: '/testing',
-      value: 'SideBar.CreateInvoice',
-      icon: invoice_icon,
-      aicon: invoice_a_icon,
-      display: true
     }
   ];
+
   return (
     <nav className="flex flex-col gap-1">
       {ready &&
