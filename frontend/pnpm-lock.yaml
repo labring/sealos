@@ -1292,6 +1292,9 @@ importers:
       typescript:
         specifier: ^5.2.2
         version: 5.2.2
+      zod:
+        specifier: ^4.0.17
+        version: 4.0.17
       zustand:
         specifier: ^4.4.1
         version: 4.4.7(@types/react@18.2.37)(immer@9.0.21)(react@18.2.0)
@@ -6379,7 +6382,7 @@ packages:
       react: '>=18'
     dependencies:
       '@chakra-ui/react': 2.8.2(@emotion/react@11.11.1)(@emotion/styled@11.11.0)(@types/react@18.2.37)(framer-motion@10.16.5)(react-dom@18.2.0)(react@18.2.0)
-      '@emotion/cache': 11.11.0
+      '@emotion/cache': 11.14.0
       '@emotion/react': 11.11.1(@types/react@18.2.37)(react@18.2.0)
       next: 13.5.11(@babel/core@7.23.5)(react-dom@18.2.0)(react@18.2.0)(sass@1.69.5)
       react: 18.2.0
@@ -11145,7 +11148,7 @@ packages:
       vue-router: 4.5.1(vue@3.5.13)
       whatwg-mimetype: 4.0.0
       yaml: 2.7.1
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -11200,7 +11203,7 @@ packages:
       vue-router: 4.5.1(vue@3.5.13)
       whatwg-mimetype: 4.0.0
       yaml: 2.7.1
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -11379,7 +11382,7 @@ packages:
       microdiff: 1.5.0
       nanoid: 5.1.5
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -11424,7 +11427,7 @@ packages:
       microdiff: 1.5.0
       nanoid: 5.1.5
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
       - '@vue/composition-api'
@@ -11656,7 +11659,7 @@ packages:
       nanoid: 5.1.5
       type-fest: 4.40.1
       yaml: 2.7.1
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@hyperjump/browser'
     dev: false
@@ -11726,7 +11729,7 @@ packages:
     resolution: {integrity: sha512-UMxX54taQXnEWYEuesbH+pkjlXRVV1u/Wx6YbVeU3QoJdFGqT3Z7si9zsokoG6MXDcdi1LGny7A0KwownmPvUQ==}
     engines: {node: '>=18'}
     dependencies:
-      zod: 3.23.8
+      zod: 3.24.1
     dev: false
 
   /@scalar/openapi-types@0.2.3:
@@ -11791,7 +11794,7 @@ packages:
       '@unhead/schema': 1.11.20
       nanoid: 5.1.5
       type-fest: 4.40.1
-      zod: 3.23.8
+      zod: 3.24.1
     dev: false
 
   /@scalar/types@0.1.16:
@@ -11871,7 +11874,7 @@ packages:
       cva: 1.0.0-beta.2(typescript@5.2.2)
       tailwind-merge: 2.6.0
       vue: 3.5.13(typescript@5.2.2)
-      zod: 3.23.8
+      zod: 3.24.1
     transitivePeerDependencies:
       - '@vue/composition-api'
       - typescript
@@ -30362,6 +30365,10 @@ packages:
 
   /zod@4.0.14:
     resolution: {integrity: sha512-nGFJTnJN6cM2v9kXL+SOBq3AtjQby3Mv5ySGFof5UGRHrRioSJ5iG680cYNjE/yWk671nROcpPj4hAS8nyLhSw==}
+    dev: false
+
+  /zod@4.0.17:
+    resolution: {integrity: sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==}
     dev: false
 
   /zrender@5.4.4:
