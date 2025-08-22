@@ -103,8 +103,9 @@ export interface DBEditType {
   terminationPolicy: KubeBlockClusterTerminationPolicy;
   autoBackup?: AutoBackupFormType;
   parameterConfig?: {
-    walLevel: string;
-    sharedPreloadLibraries: string;
+    maxConnections?: string;
+    timeZone?: string;
+    lowerCaseTableNames?: string;
   };
 }
 

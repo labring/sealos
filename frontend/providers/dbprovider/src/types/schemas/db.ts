@@ -33,7 +33,12 @@ export const dbEditSchema = z.object({
   type: dbTypeSchema,
   version: z.string(),
   resource: allResourceSchema,
-  autoBackup: autoBackupFormSchema.optional()
+  autoBackup: autoBackupFormSchema.optional(),
+  parameterConfig: z.object({
+    maxConnections: z.string().optional(),
+    timeZone: z.string().optional(),
+    lowerCaseTableNames: z.string().optional()
+  }).optional()
 });
 // export const dbConditionItemSchema = z.object({
 //   lastTransitionTime: z.string(),

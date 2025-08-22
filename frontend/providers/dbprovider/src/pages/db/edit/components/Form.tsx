@@ -19,6 +19,7 @@ import { AutoBackupType } from '@/types/backup';
 import type { DBEditType, DBType } from '@/types/db';
 import { I18nCommonKey } from '@/types/i18next';
 import { distributeResources } from '@/utils/database';
+import { json2ParameterConfig } from '@/utils/json2Yaml';
 import { InfoOutlineIcon } from '@chakra-ui/icons';
 import {
   Accordion,
@@ -208,6 +209,14 @@ const Form = ({
   }, [cpuCores]);
 
 
+  const timeZone =
+    watch('parameterConfig' as any)?.timeZone ||
+    (getValues('dbType') === DBTypeEnum.mysql || getValues('dbType') === DBTypeEnum.postgresql
+      ? 'UTC'
+      : '');
+  const lowerCaseTableNames = watch('parameterConfig' as any)?.lowerCaseTableNames || '0';
+  const maxConnections = watch('parameterConfig' as any)?.maxConnections;
+  const isMaxConnectionsCustomized = watch('parameterConfig' as any)?.isMaxConnectionsCustomized;
 
   const Label = ({
     children,
@@ -255,7 +264,7 @@ const Form = ({
   );
 
   const supportParameterConfig = useMemo(
-    () => ['postgresql', 'mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
+    () => ['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(getValues('dbType')),
     [getValues('dbType')]
   );
 
@@ -290,6 +299,7 @@ const Form = ({
     }, [supportBackup, supportParameterConfig]);
 
   const [activeNav, setActiveNav] = useState(navList[0].id);
+  const [editingParam, setEditingParam] = useState<string | null>(null);
 
   const { minStorageChange, minCPU, minMemory, minStorage } = useMemo(() => {
     const dbType = getValues('dbType');
@@ -331,43 +341,122 @@ const Form = ({
     setValue('storage', Math.max(3, minStorage, allocatedStorage));
     //eslint-disable-next-line react-hooks/exhaustive-deps
     if (!getValues('parameterConfig' as any)) {
-      setValue('parameterConfig' as any, {
-        walLevel: 'logical',
-        sharedPreloadLibraries: 'wal2json'
-      });
+      const dbType = getValues('dbType');
+      const defaultConfig: any = {};
+
+      // Add timezone for mysql and postgresql
+      if (dbType === DBTypeEnum.mysql || dbType === DBTypeEnum.postgresql) {
+        defaultConfig.timeZone = 'UTC';
+      }
+
+      // Add lower_case_table_names for mysql only
+      if (dbType === DBTypeEnum.mysql) {
+        defaultConfig.lowerCaseTableNames = '0';
+      }
+
+      // maxConnections will be calculated dynamically, no need to set default
+
+      setValue('parameterConfig' as any, defaultConfig);
     }
   }, [getValues('dbType'), allocatedStorage]);
 
   const backupSettingsRef = useRef<HTMLDivElement | null>(null);
+  const parameterConfigRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const tempRef = backupSettingsRef.current;
+    const backupRef = backupSettingsRef.current;
+    const paramRef = parameterConfigRef.current;
+
     const observerCallback = (
       entries: IntersectionObserverEntry[],
       observer: IntersectionObserver
     ) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.85) {
-          setActiveNav(navList[1].id);
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.75) {
+          const targetId = entry.target.id;
+          if (targetId === 'backupSettings') {
+            setActiveNav('backupSettings');
+          } else if (targetId === 'parameterConfig') {
+            setActiveNav('parameterConfig');
+          }
         } else {
-          setActiveNav(navList[0].id);
+          // If no section is prominently visible, default to baseInfo
+          const hasVisibleSection = entries.some(
+            (e) => e.isIntersecting && e.intersectionRatio >= 0.75
+          );
+          if (!hasVisibleSection) {
+            setActiveNav('baseInfo');
+          }
         }
       });
     };
+
     const observer = new IntersectionObserver(observerCallback, {
       root: null,
-      threshold: 0.85
+      threshold: 0.75
     });
-    if (tempRef) {
-      observer.observe(tempRef);
+
+    if (backupRef) {
+      observer.observe(backupRef);
     }
+    if (paramRef) {
+      observer.observe(paramRef);
+    }
+
     return () => {
-      if (tempRef) {
-        observer.unobserve(tempRef);
+      if (backupRef) {
+        observer.unobserve(backupRef);
+      }
+      if (paramRef) {
+        observer.unobserve(paramRef);
       }
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [backupSettingsRef, supportBackup]);
+  }, [backupSettingsRef, parameterConfigRef, supportBackup, supportParameterConfig]);
+
+  const getScore = (dbType: DBType) => {
+    const cpuCores = (getValues('cpu') || 0) / 1000; // cpu in cores
+    const memoryGB = (getValues('memory') || 0) / 1024; // memory in GB
+
+    let score = 0;
+    if (
+      dbType === DBTypeEnum.postgresql ||
+      dbType === DBTypeEnum.mongodb ||
+      dbType === DBTypeEnum.mysql
+    ) {
+      score = Math.min(cpuCores * 400 + memoryGB * 300, 100000);
+    } else if (dbType === DBTypeEnum.redis) {
+      score = Math.min(cpuCores * 500 + memoryGB * 400, 100000);
+    }
+    return Math.floor(score);
+  };
+
+  const getParaName = (dbType: DBType) => {
+    if (dbType === DBTypeEnum.postgresql || dbType === DBTypeEnum.mysql) {
+      return 'max_connections';
+    } else if (dbType === DBTypeEnum.mongodb) {
+      return 'maxIncomingConnections';
+    } else if (dbType === DBTypeEnum.redis) {
+      return 'maxclients';
+    }
+    return '';
+  };
+
+  useEffect(() => {
+    console.log(
+      json2ParameterConfig(
+        getValues('dbName'),
+        getValues('dbType'),
+        getValues('dbVersion'),
+        getValues('parameterConfig')
+      )
+    );
+  }, [
+    getValues('dbName'),
+    getValues('dbType'),
+    getValues('dbVersion'),
+    getValues('parameterConfig')
+  ]);
 
   return (
     <>
@@ -402,7 +491,7 @@ const Form = ({
             border={theme.borders.base}
             p={'4px'}
           >
-            {navList.slice(0, supportBackup ? 2 : 1).map((item) => (
+            {navList.map((item) => (
               <Box key={item.id} onClick={() => router.replace(`#${item.id}`)}>
                 <Flex
                   borderRadius={'base'}
@@ -476,7 +565,7 @@ const Form = ({
           {/* base info */}
           <Box id={'baseInfo'} {...boxStyles}>
             <Box {...headerStyles}>
-              <MyIcon name={'formInfo'} mr={5} w={'20px'} color={'grayModern.600'} />
+              <MyIcon name={'formInfo'} mr={5} w={'24px'} color={'grayModern.600'} />
               {t('basic')}
             </Box>
             <Box px={'42px'} py={'24px'}>
@@ -778,7 +867,7 @@ const Form = ({
           {supportBackup && (
             <Box id={'backupSettings'} ref={backupSettingsRef} {...boxStyles}>
               <Box {...headerStyles}>
-                <MyIcon name={'backupSettings'} mr={5} w={'20px'} color={'grayModern.600'} />
+                <MyIcon name={'backupSettings'} mr={5} w={'24px'} color={'grayModern.600'} />
                 {t('backup_settings')}
                 <Switch
                   ml={'20px'}
@@ -1008,7 +1097,13 @@ const Form = ({
 
           {/* parameter congif */}
           {supportParameterConfig && (
-            <Accordion pb={'100px'} id={'parameterConfig'} allowToggle defaultIndex={[]}>
+            <Accordion
+              pb={'100px'}
+              id={'parameterConfig'}
+              allowToggle
+              defaultIndex={[]}
+              ref={parameterConfigRef}
+            >
               <AccordionItem {...boxStyles}>
                 <AccordionButton
                   {...headerStyles}
@@ -1016,22 +1111,10 @@ const Form = ({
                   _hover={{ bg: '' }}
                 >
                   <Flex alignItems={'center'}>
-                    <MyIcon name={'slider'} mr={5} w={'20px'} color={'grayModern.200'} />
+                    <MyIcon name={'slider'} mr={5} w={'24px'} color={'grayModern.600'} />
                     {t('ParameterConfig')}
-                    <Center
-                      bg={'grayModern.200'}
-                      minW={'48px'}
-                      px={'8px'}
-                      height={'28px'}
-                      ml={'14px'}
-                      fontSize={'11px'}
-                      borderRadius={'33px'}
-                      color={'grayModern.700'}
-                    >
-                      {t('Option')}
-                    </Center>
                   </Flex>
-                  <AccordionIcon w={'20px'} h={'20px'} color={'#485264'} />
+                  <AccordionIcon w={'20px'} h={'20px'} color={'grayModern.600'} />
                 </AccordionButton>
 
                 <AccordionPanel px={'42px'} py={'24px'}>
@@ -1073,9 +1156,9 @@ const Form = ({
                       </Thead>
                       <Tbody>
                         <Tr>
-                          <Td w="190px">
+                          <Td w="350px">
                             <Text fontSize={'14px'} color={'grayModern.900'}>
-                              wal_level
+                              {getParaName(getValues('dbType'))}
                             </Text>
                           </Td>
                           <Td>
@@ -1152,8 +1235,192 @@ const Form = ({
                                 color: 'brightBlue.500'
                               }}
                             />
+                            <Flex alignItems={'center'} gap={'8px'}>
+                              {editingParam === 'maxConnections' ? (
+                                <Input
+                                  value={
+                                    isMaxConnectionsCustomized
+                                      ? maxConnections
+                                      : getScore(getValues('dbType'))
+                                  }
+                                  size="sm"
+                                  type="number"
+                                  borderRadius={'md'}
+                                  borderColor={'#E8EBF0'}
+                                  bg={'#F7F8FA'}
+                                  width={'120px'}
+                                  _focusVisible={{
+                                    borderColor: 'brightBlue.500',
+                                    boxShadow: '0px 0px 0px 2.4px rgba(33, 155, 244, 0.15)',
+                                    bg: '#FFF',
+                                    color: '#111824'
+                                  }}
+                                  _hover={{
+                                    borderColor: 'brightBlue.300'
+                                  }}
+                                  onBlur={() => setEditingParam(null)}
+                                  onChange={(e) => {
+                                    const newValue = parseInt(e.target.value) || 0;
+                                    setValue('parameterConfig' as any, {
+                                      ...getValues('parameterConfig' as any),
+                                      maxConnections: newValue,
+                                      isMaxConnectionsCustomized: true
+                                    });
+                                  }}
+                                />
+                              ) : (
+                                <Text fontSize={'12px'} color={'grayModern.600'}>
+                                  {isMaxConnectionsCustomized
+                                    ? maxConnections
+                                    : getScore(getValues('dbType'))}
+                                </Text>
+                              )}
+                              <MyIcon
+                                name="edit"
+                                w={'16px'}
+                                h={'16px'}
+                                color={'grayModern.500'}
+                                cursor={'pointer'}
+                                _hover={{
+                                  color: 'brightBlue.500'
+                                }}
+                                onClick={() =>
+                                  setEditingParam(
+                                    editingParam === 'maxConnections' ? null : 'maxConnections'
+                                  )
+                                }
+                              />
+                              {isMaxConnectionsCustomized && (
+                                <MyIcon
+                                  name="delete"
+                                  w={'14px'}
+                                  h={'14px'}
+                                  color={'grayModern.400'}
+                                  cursor={'pointer'}
+                                  _hover={{
+                                    color: 'brightBlue.500'
+                                  }}
+                                  onClick={() => {
+                                    setValue('parameterConfig' as any, {
+                                      ...getValues('parameterConfig' as any),
+                                      maxConnections: undefined,
+                                      isMaxConnectionsCustomized: false
+                                    });
+                                  }}
+                                />
+                              )}
+                            </Flex>
                           </Td>
                         </Tr>
+
+                        {/* Timezone parameter for MySQL and PostgreSQL */}
+                        {(getValues('dbType') === DBTypeEnum.mysql ||
+                          getValues('dbType') === DBTypeEnum.postgresql) && (
+                          <Tr>
+                            <Td w="350px">
+                              <Text fontSize={'14px'} color={'grayModern.900'}>
+                                {getValues('dbType') === DBTypeEnum.mysql
+                                  ? 'default-time-zone'
+                                  : 'time_zone'}
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                {editingParam === 'timeZone' ? (
+                                  <MySelect
+                                    width={'120px'}
+                                    value={timeZone}
+                                    list={[
+                                      { value: 'UTC', label: 'UTC' },
+                                      { value: 'Asia/Shanghai', label: 'Asia/Shanghai' }
+                                    ]}
+                                    onchange={(val: any) => {
+                                      setValue('parameterConfig' as any, {
+                                        ...getValues('parameterConfig' as any),
+                                        timeZone: val
+                                      });
+                                      setEditingParam(null);
+                                    }}
+                                  />
+                                ) : (
+                                  <Text fontSize={'12px'} color={'grayModern.600'}>
+                                    {timeZone}
+                                  </Text>
+                                )}
+                                <MyIcon
+                                  name="edit"
+                                  w={'16px'}
+                                  h={'16px'}
+                                  color={'grayModern.500'}
+                                  cursor={'pointer'}
+                                  _hover={{
+                                    color: 'brightBlue.500'
+                                  }}
+                                  onClick={() =>
+                                    setEditingParam(editingParam === 'timeZone' ? null : 'timeZone')
+                                  }
+                                />
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        )}
+
+                        {/* lower_case_table_names parameter for MySQL only */}
+                        {getValues('dbType') === DBTypeEnum.mysql && (
+                          <Tr>
+                            <Td w="350px">
+                              <Text fontSize={'14px'} color={'grayModern.900'}>
+                                lower_case_table_names
+                              </Text>
+                            </Td>
+                            <Td>
+                              <Flex alignItems={'center'} gap={'8px'}>
+                                {editingParam === 'lowerCaseTableNames' ? (
+                                  <MySelect
+                                    width={'120px'}
+                                    value={lowerCaseTableNames}
+                                    list={[
+                                      { value: '0', label: '0 (' + t('case_sensitive') + ')' },
+                                      { value: '1', label: '1 (' + t('case_insensitive') + ')' }
+                                    ]}
+                                    onchange={(val: any) => {
+                                      setValue('parameterConfig' as any, {
+                                        ...getValues('parameterConfig' as any),
+                                        lowerCaseTableNames: val
+                                      });
+                                      setEditingParam(null);
+                                    }}
+                                  />
+                                ) : (
+                                  <Text fontSize={'12px'} color={'grayModern.600'}>
+                                    {lowerCaseTableNames} (
+                                    {lowerCaseTableNames === '0'
+                                      ? t('case_sensitive')
+                                      : t('case_insensitive')}
+                                    )
+                                  </Text>
+                                )}
+                                <MyIcon
+                                  name="edit"
+                                  w={'16px'}
+                                  h={'16px'}
+                                  color={'grayModern.500'}
+                                  cursor={'pointer'}
+                                  _hover={{
+                                    color: 'brightBlue.500'
+                                  }}
+                                  onClick={() =>
+                                    setEditingParam(
+                                      editingParam === 'lowerCaseTableNames'
+                                        ? null
+                                        : 'lowerCaseTableNames'
+                                    )
+                                  }
+                                />
+                              </Flex>
+                            </Td>
+                          </Tr>
+                        )}
                       </Tbody>
                     </Table>
                   </TableContainer>
