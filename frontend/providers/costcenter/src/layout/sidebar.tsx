@@ -99,7 +99,7 @@ export default function SideBar() {
             return (
               <Button
                 variant="ghost"
-                className="data-[is-current-page=true]:bg-zinc-100 data-[is-current-page=true]:font-medium font-normal rounded-lg text-sm flex justify-start py-3 px-4"
+                className="data-[is-current-page=true]:bg-zinc-100 data-[is-current-page=true]:font-medium font-normal rounded-lg text-sm flex justify-start py-5 px-4"
                 asChild
                 key={item.id}
                 data-is-current-page={router.route === item.url}
@@ -110,7 +110,7 @@ export default function SideBar() {
                     width={'16px'}
                     alt="icon of module"
                   />
-                  <span>{t(item.value)}</span>
+                  <span className="leading-normal">{t(item.value)}</span>
                 </Link>
               </Button>
             );
