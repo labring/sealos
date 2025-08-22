@@ -10,7 +10,8 @@ export type IDEType =
   | 'trae'
   | 'traeCN'
   | 'gateway'
-  | 'toolbox';
+  | 'toolbox'
+  | 'zed';
 
 type State = {
   devboxIDEList: { ide: IDEType; devboxName: string }[];
@@ -28,7 +29,8 @@ const validIDETypes: IDEType[] = [
   'trae',
   'traeCN',
   'gateway',
-  'toolbox'
+  'toolbox',
+  'zed'
 ];
 
 const getValidIDE = (ide: string): IDEType => {
