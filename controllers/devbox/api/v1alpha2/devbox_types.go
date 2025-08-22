@@ -53,9 +53,9 @@ const (
 	DevboxStateRunning DevboxState = "Running"
 	// DevboxStatePending means the Devbox is pending
 	DevboxStatePending DevboxState = "Pending"
-	// DevboxStatePaused means the Devbox is paused, pod will be released
+	// DevboxStatePaused means the Devbox is paused, pod will be released but content lv and nodeport service will be retained
 	DevboxStatePaused DevboxState = "Paused"
-	// DevboxStateStopped means the Devbox is stopped, pod and content lv will be released
+	// DevboxStateStopped means the Devbox is stopped, pod and content lv will be released but nodeport service will be retained
 	DevboxStateStopped DevboxState = "Stopped"
 	// DevboxStateShutdown means the devbox is shutdown, pod, content lv and nodeport service will be released
 	DevboxStateShutdown DevboxState = "Shutdown"
@@ -79,7 +79,7 @@ type NetworkSpec struct {
 	// +kubebuilder:validation:Required
 	// +kubebuilder:validation:Enum=NodePort;Tailnet
 	Type NetworkType `json:"type"`
-	// // +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	ExtraPorts []corev1.ContainerPort `json:"extraPorts,omitempty"`
 }
 
@@ -127,7 +127,7 @@ type Config struct {
 // DevboxSpec defines the desired state of Devbox
 type DevboxSpec struct {
 	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Enum=Running;Stopped;Shutdown
+	// +kubebuilder:validation:Enum=Running;Paused;Stopped;Shutdown
 	// +kubebuilder:default=Running
 	State DevboxState `json:"state"`
 	// +kubebuilder:validation:Required
@@ -192,6 +192,10 @@ const (
 	DevboxPhaseRunning DevboxPhase = "Running"
 	// DevboxPhasePending means Devbox is run but not run success
 	DevboxPhasePending DevboxPhase = "Pending"
+	// DevboxPhasePaused means Devbox is paused and paused success
+	DevboxPhasePaused DevboxPhase = "Paused"
+	// DevboxPhasePausing means Devbox is pausing
+	DevboxPhasePausing DevboxPhase = "Pausing"
 	//DevboxPhaseStopped means Devbox is stop and stopped success
 	DevboxPhaseStopped DevboxPhase = "Stopped"
 	//DevboxPhaseStopping means Devbox is stopping

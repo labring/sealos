@@ -125,40 +125,6 @@ func GeneratePodAnnotations(devbox *devboxv1alpha2.Devbox) map[string]string {
 	return annotations
 }
 
-func GenerateDevboxPhase(devbox *devboxv1alpha2.Devbox, podList corev1.PodList) devboxv1alpha2.DevboxPhase {
-	if len(podList.Items) > 1 {
-		return devboxv1alpha2.DevboxPhaseError
-	}
-	switch devbox.Spec.State {
-	case devboxv1alpha2.DevboxStateRunning:
-		if len(podList.Items) == 0 {
-			return devboxv1alpha2.DevboxPhasePending
-		}
-		switch podList.Items[0].Status.Phase {
-		case corev1.PodFailed, corev1.PodSucceeded:
-			return devboxv1alpha2.DevboxPhaseStopped
-		case corev1.PodPending:
-			return devboxv1alpha2.DevboxPhasePending
-		case corev1.PodRunning:
-			if podList.Items[0].Status.ContainerStatuses[0].Ready && podList.Items[0].Status.ContainerStatuses[0].ContainerID != "" {
-				return devboxv1alpha2.DevboxPhaseRunning
-			}
-			return devboxv1alpha2.DevboxPhasePending
-		}
-	case devboxv1alpha2.DevboxStateStopped:
-		if len(podList.Items) == 0 {
-			return devboxv1alpha2.DevboxPhaseStopped
-		}
-		return devboxv1alpha2.DevboxPhaseStopping
-	case devboxv1alpha2.DevboxStateShutdown:
-		if len(podList.Items) == 0 {
-			return devboxv1alpha2.DevboxPhaseShutdown
-		}
-		return devboxv1alpha2.DevboxPhaseShutting
-	}
-	return devboxv1alpha2.DevboxPhaseUnknown
-}
-
 func GenerateSSHKeyPair() ([]byte, []byte, error) {
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {

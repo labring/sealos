@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.0
+    controller-gen.kubebuilder.io/version: v0.16.1
   name: devboxes.devbox.sealos.io
 spec:
   group: devbox.sealos.io
@@ -1030,9 +1030,7 @@ spec:
                           format: int32
                           type: integer
                         protocol:
-                          allOf:
-                          - default: TCP
-                          - default: TCP
+                          default: TCP
                           description: |-
                             The IP protocol for this port. Supports "TCP", "UDP", and "SCTP".
                             Default is TCP.
@@ -1220,9 +1218,7 @@ spec:
                             referred to by services.
                           type: string
                         protocol:
-                          allOf:
-                          - default: TCP
-                          - default: TCP
+                          default: TCP
                           description: |-
                             Protocol for port. Must be UDP, TCP, or SCTP.
                             Defaults to "TCP".
@@ -3109,7 +3105,6 @@ spec:
               network:
                 properties:
                   extraPorts:
-                    description: // +kubebuilder:validation:Optional
                     items:
                       description: ContainerPort represents a network port in a single
                         container.
@@ -3138,9 +3133,7 @@ spec:
                             referred to by services.
                           type: string
                         protocol:
-                          allOf:
-                          - default: TCP
-                          - default: TCP
+                          default: TCP
                           description: |-
                             Protocol for port. Must be UDP, TCP, or SCTP.
                             Defaults to "TCP".
@@ -3179,6 +3172,7 @@ spec:
                 default: Running
                 enum:
                 - Running
+                - Paused
                 - Stopped
                 - Shutdown
                 type: string

@@ -17,6 +17,7 @@
 # It should be run by config/default
 resources:
 - bases/devbox.sealos.io_devboxes.yaml
+- bases/devbox.sealos.io_devboxreleases.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:

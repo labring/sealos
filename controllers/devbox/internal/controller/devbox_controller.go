@@ -332,7 +332,7 @@ func (r *DevboxReconciler) syncPod(ctx context.Context, devbox *devboxv1alpha2.D
 			r.Recorder.Eventf(devbox, corev1.EventTypeWarning, "More than one pod found", "More than one pod found")
 			return fmt.Errorf("more than one pod found")
 		}
-	case devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
+	case devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped, devboxv1alpha2.DevboxStateShutdown:
 		if len(podList.Items) > 0 {
 			for _, pod := range podList.Items {
 				r.deletePod(ctx, &pod)
@@ -387,7 +387,7 @@ func (r *DevboxReconciler) syncService(ctx context.Context, devbox *devboxv1alph
 			NodePort: int32(0),
 		}
 		return r.Status().Update(ctx, devbox)
-	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStateStopped:
+	case devboxv1alpha2.DevboxStateRunning, devboxv1alpha2.DevboxStatePaused, devboxv1alpha2.DevboxStateStopped:
 		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
 			// only update some specific fields
 			service.Spec.Selector = expectServiceSpec.Selector

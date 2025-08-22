@@ -17,4 +17,22 @@ resources:
   kind: Devbox
   path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
   version: v1alpha2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: devbox
+  kind: Devboxreleases
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: devbox
+  kind: Devboxrelease
+  path: github.com/labring/sealos/controllers/devbox/api/v1alpha2
+  version: v1alpha2
 version: "3"

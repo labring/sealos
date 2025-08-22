@@ -14,5 +14,7 @@
 
 ## Append samples of your project ##
 resources:
-- devbox_v1alpha1_devbox.yaml
+- devbox_v1alpha2_devbox.yaml
+- devbox_v1alpha2_devboxreleases.yaml
+- devbox_v1alpha2_devboxrelease.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

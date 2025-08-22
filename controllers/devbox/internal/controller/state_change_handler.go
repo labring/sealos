@@ -61,8 +61,9 @@ func (h *StateChangeHandler) Handle(ctx context.Context, event *corev1.Event) er
 		return fmt.Errorf("shutdown state is not allowed to be changed to stopped state")
 	}
 
-	// Handle state transitions that require commit
-	needsCommit := (currentState == devboxv1alpha2.DevboxStateRunning || currentState == devboxv1alpha2.DevboxStateStopped) && targetState == devboxv1alpha2.DevboxStateShutdown
+	// Handle state transitions that require commit, only running and paused devbox can be shutdown or stopped
+	needsCommit := (targetState == devboxv1alpha2.DevboxStateShutdown || targetState == devboxv1alpha2.DevboxStateStopped) &&
+		(currentState == devboxv1alpha2.DevboxStateRunning || currentState == devboxv1alpha2.DevboxStatePaused)
 
 	if needsCommit {
 		// Check if commit is already in progress to prevent duplicate requests

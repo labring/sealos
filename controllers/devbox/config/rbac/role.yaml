@@ -39,6 +39,7 @@ rules:
   - devbox.sealos.io
   resources:
   - devboxes
+  - devboxreleases
   - runtimeclasses
   - runtimes
   verbs:
@@ -53,12 +54,14 @@ rules:
   - devbox.sealos.io
   resources:
   - devboxes/finalizers
+  - devboxreleases/finalizers
   verbs:
   - update
 - apiGroups:
   - devbox.sealos.io
   resources:
   - devboxes/status
+  - devboxreleases/status
   verbs:
   - get
   - patch

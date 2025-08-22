@@ -63,7 +63,6 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
 	utilruntime.Must(devboxv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -313,6 +312,14 @@ func main() {
 		stateChangeHandler.Handle(context.Background(), event)
 	})
 	defer watcher.Stop()
+
+	if err = (&controller.DevboxreleaseReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Devboxrelease")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
