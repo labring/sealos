@@ -98,17 +98,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const yamlList = [account, cluster];
 
     if (['postgresql', 'mysql', 'mongodb', 'redis'].includes(dbForm.dbType)) {
-      const parameterConfig = dbForm.parameterConfig || {
-        walLevel: 'logical',
-        sharedPreloadLibraries: 'wal2json'
-      };
-
       const config = json2ParameterConfig(
         dbForm.dbName,
         dbForm.dbType,
         dbForm.dbVersion,
-        parameterConfig.walLevel,
-        parameterConfig.sharedPreloadLibraries
+        dbForm.parameterConfig
       );
 
       yamlList.push(config);

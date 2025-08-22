@@ -849,122 +849,30 @@ export const json2ParameterConfig = (
   dbName: string,
   dbType: string,
   dbVersion: string,
-  walLevel: string,
-  sharedPreloadLibraries: string
+  parameterConfig?: {
+    maxConnections?: string;
+    timeZone?: string;
+    lowerCaseTableNames?: string;
+  }
 ) => {
   function buildPostgresYaml() {
-    // Parse PostgreSQL version to get major version (e.g., "16.4.0" -> "16")
-    const majorVersion = dbVersion.split('.')[0];
+    // Parse PostgreSQL version to get major version (e.g., "postgresql-12.14.0" -> "12", "16.4.0" -> "16")
+    const majorVersion = dbVersion.replace(/^postgresql-/, '').split('.')[0];
 
-    if (majorVersion === '16') {
-      const template = {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Configuration',
-        metadata: {
-          labels: {
-            'app.kubernetes.io/instance': `${dbName}`,
-            'app.kubernetes.io/managed-by': 'kubeblocks',
-            'apps.kubeblocks.io/component-name': 'postgresql'
-          },
-          name: `${dbName}-postgresql`,
-          namespace: getUserNamespace()
-        },
-        spec: {
-          clusterRef: `${dbName}`,
-          componentName: 'postgresql',
-          configItemDetails: [
-            {
-              configSpec: {
-                constraintRef: 'postgresql16-cc',
-                defaultMode: 511,
-                keys: ['postgresql.conf'],
-                name: 'postgresql-configuration',
-                namespace: 'kb-system',
-                templateRef: 'postgresql16-configuration',
-                volumeName: 'postgresql-config'
-              },
-              name: 'postgresql-configuration'
-            },
-            {
-              configSpec: {
-                defaultMode: 511,
-                name: 'postgresql-custom-metrics',
-                namespace: 'kb-system',
-                templateRef: 'postgresql16-custom-metrics',
-                volumeName: 'postgresql-custom-metrics'
-              },
-              name: 'postgresql-custom-metrics'
-            },
-            {
-              configSpec: {
-                defaultMode: 292,
-                keys: ['pgbouncer.ini'],
-                name: 'pgbouncer-configuration',
-                namespace: 'kb-system',
-                templateRef: 'pgbouncer-configuration',
-                volumeName: 'pgbouncer-config'
-              },
-              name: 'pgbouncer-configuration'
-            }
-          ]
-        }
-      };
-      return yaml.dump(template);
-    } else if (majorVersion === '15') {
-      const template = {
-        apiVersion: 'apps.kubeblocks.io/v1alpha1',
-        kind: 'Configuration',
-        metadata: {
-          labels: {
-            'app.kubernetes.io/instance': `${dbName}`,
-            'app.kubernetes.io/managed-by': 'kubeblocks',
-            'apps.kubeblocks.io/component-name': 'postgresql'
-          },
-          name: `${dbName}-postgresql`,
-          namespace: getUserNamespace()
-        },
-        spec: {
-          clusterRef: `${dbName}`,
-          componentName: 'postgresql',
-          configItemDetails: [
-            {
-              configSpec: {
-                constraintRef: 'postgresql15-cc',
-                defaultMode: 511,
-                keys: ['postgresql.conf'],
-                name: 'postgresql-configuration',
-                namespace: 'kb-system',
-                templateRef: 'postgresql15-configuration',
-                volumeName: 'postgresql-config'
-              },
-              name: 'postgresql-configuration'
-            },
-            {
-              configSpec: {
-                defaultMode: 511,
-                name: 'postgresql-custom-metrics',
-                namespace: 'kb-system',
-                templateRef: 'postgresql15-custom-metrics',
-                volumeName: 'postgresql-custom-metrics'
-              },
-              name: 'postgresql-custom-metrics'
-            },
-            {
-              configSpec: {
-                defaultMode: 292,
-                keys: ['pgbouncer.ini'],
-                name: 'pgbouncer-configuration',
-                namespace: 'kb-system',
-                templateRef: 'pgbouncer-configuration',
-                volumeName: 'pgbouncer-config'
-              },
-              name: 'pgbouncer-configuration'
-            }
-          ]
-        }
-      };
-      return yaml.dump(template);
-    } else if (majorVersion === '14') {
+    // Build PostgreSQL configuration parameters
+    const pgParams: Record<string, string> = {};
+
+    // Add max_connections parameter
+    if (parameterConfig?.maxConnections) {
+      pgParams['max_connections'] = `"${parameterConfig.maxConnections}"`;
+    }
+
+    // Add timezone parameter for PostgreSQL
+    if (parameterConfig?.timeZone) {
+      pgParams['timezone'] = `'${parameterConfig.timeZone}'`;
+    }
+
+    if (majorVersion === '14') {
       const template = {
         apiVersion: 'apps.kubeblocks.io/v1alpha1',
         kind: 'Configuration',
@@ -985,7 +893,13 @@ export const json2ParameterConfig = (
               configSpec: {
                 constraintRef: 'postgresql14-cc',
                 defaultMode: 292,
-                keys: ['postgresql.conf'],
+                keys: [
+                  {
+                    'postgresql.conf': {
+                      ...(Object.keys(pgParams).length > 0 && { parameters: pgParams })
+                    }
+                  }
+                ],
                 name: 'postgresql-configuration',
                 namespace: 'kb-system',
                 templateRef: 'postgresql-configuration',
@@ -1013,6 +927,16 @@ export const json2ParameterConfig = (
                 volumeName: 'postgresql-custom-metrics'
               },
               name: 'postgresql-custom-metrics'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
             }
           ]
         }
@@ -1039,7 +963,13 @@ export const json2ParameterConfig = (
               configSpec: {
                 constraintRef: 'postgresql12-cc',
                 defaultMode: 292,
-                keys: ['postgresql.conf'],
+                keys: [
+                  {
+                    'postgresql.conf': {
+                      ...(Object.keys(pgParams).length > 0 && { parameters: pgParams })
+                    }
+                  }
+                ],
                 name: 'postgresql-configuration',
                 namespace: 'kb-system',
                 templateRef: 'postgresql12-configuration',
@@ -1067,6 +997,16 @@ export const json2ParameterConfig = (
                 volumeName: 'pgbouncer-config'
               },
               name: 'pgbouncer-configuration'
+            },
+            {
+              configSpec: {
+                defaultMode: 292,
+                name: 'agamotto-configuration',
+                namespace: 'kb-system',
+                templateRef: 'postgresql-agamotto-configuration',
+                volumeName: 'agamotto-configuration'
+              },
+              name: 'agamotto-configuration'
             }
           ]
         }
@@ -1077,6 +1017,20 @@ export const json2ParameterConfig = (
   }
 
   function buildMysqlYaml() {
+    const mysqlParams: Record<string, string> = {};
+
+    if (parameterConfig?.maxConnections) {
+      mysqlParams['max_connections'] = parameterConfig.maxConnections;
+    }
+
+    if (parameterConfig?.timeZone) {
+      mysqlParams['default-time-zone'] = `'${parameterConfig.timeZone}'`;
+    }
+
+    if (parameterConfig?.lowerCaseTableNames) {
+      mysqlParams['lower_case_table_names'] = parameterConfig.lowerCaseTableNames;
+    }
+
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Configuration',
@@ -1093,16 +1047,36 @@ export const json2ParameterConfig = (
         clusterRef: dbName,
         componentName: 'mysql',
         configItemDetails: [
+          ...(Object.keys(mysqlParams).length > 0
+            ? [
+                {
+                  configFileParams: {
+                    'my.cnf': {
+                      parameters: mysqlParams
+                    }
+                  }
+                }
+              ]
+            : []),
           {
             configSpec: {
               constraintRef: 'mysql8.0-config-constraints',
               name: 'mysql-consensusset-config',
               namespace: 'kb-system',
-              reRenderResourceTypes: ['vscale'],
-              templateRef: 'mysql8.0-config-template',
+              templateRef: 'mysql8.0-auditlog-config-template',
               volumeName: 'mysql-config'
             },
             name: 'mysql-consensusset-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'agamotto-configuration',
+              namespace: 'kb-system',
+              templateRef: 'apecloud-mysql8-agamotto-configuration',
+              volumeName: 'agamotto-configuration'
+            },
+            name: 'agamotto-configuration'
           },
           {
             configSpec: {
@@ -1117,9 +1091,12 @@ export const json2ParameterConfig = (
         ]
       }
     };
+    console.log(yaml.dump(template));
     return yaml.dump(template);
   }
   function buildMongodbYaml() {
+    // Build MongoDB configuration parameters
+
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Configuration',
@@ -1140,13 +1117,43 @@ export const json2ParameterConfig = (
             configSpec: {
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
-              keys: ['mongodb.conf'],
+              keys: [
+                {
+                  'mongodb.conf': {
+                    parameters: {
+                      maxIncomingConnections: parameterConfig?.maxConnections?.toString()
+                    }
+                  }
+                }
+              ],
               name: 'mongodb-config',
               namespace: 'kb-system',
               templateRef: 'mongodb5.0-config-template',
               volumeName: 'mongodb-config'
             },
             name: 'mongodb-config'
+          },
+          {
+            configSpec: {
+              defaultMode: 292,
+              name: 'mongodb-metrics-config-new',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-metrics-config-new',
+              volumeName: 'mongodb-metrics-config'
+            },
+            name: 'mongodb-metrics-config-new'
+          },
+          {
+            configSpec: {
+              asEnvFrom: ['mongodb'],
+              constraintRef: 'mongodb-env-constraints',
+              keys: ['env'],
+              name: 'mongodb-env',
+              namespace: 'kb-system',
+              templateRef: 'mongodb-env-tpl',
+              volumeName: 'mongodb-env'
+            },
+            name: 'mongodb-env'
           }
         ]
       }
@@ -1154,6 +1161,18 @@ export const json2ParameterConfig = (
     return yaml.dump(template);
   }
   function buildRedisYaml() {
+    // Build Redis configuration parameters
+    const redisParams: Record<string, string> = {};
+
+    // Add max_connections parameter (Redis uses maxclients)
+    if (parameterConfig?.maxConnections) {
+      redisParams['maxclients'] = parameterConfig.maxConnections;
+    }
+
+    // Add other Redis-specific parameters as needed
+    // Example: acllog-max-len parameter
+    redisParams['acllog-max-len'] = '256';
+
     const template = {
       apiVersion: 'apps.kubeblocks.io/v1alpha1',
       kind: 'Configuration',
@@ -1170,12 +1189,22 @@ export const json2ParameterConfig = (
         clusterRef: dbName,
         componentName: 'redis',
         configItemDetails: [
+          ...(Object.keys(redisParams).length > 0
+            ? [
+                {
+                  configFileParams: {
+                    'redis.conf': {
+                      parameters: redisParams
+                    }
+                  }
+                }
+              ]
+            : []),
           {
             configSpec: {
               constraintRef: 'redis7-config-constraints',
               name: 'redis-replication-config',
               namespace: 'kb-system',
-              reRenderResourceTypes: ['vscale'],
               templateRef: 'redis7-config-template',
               volumeName: 'redis-config'
             },
@@ -1196,10 +1225,10 @@ export const json2ParameterConfig = (
     };
     return yaml.dump(template);
   }
-  // Only PostgreSQL is supported for now
+  // Support for multiple database types
   if (dbType === 'postgresql' || dbType === undefined) {
     return buildPostgresYaml();
-  } else if (dbType === 'mysql') {
+  } else if (dbType === 'apecloud-mysql') {
     return buildMysqlYaml();
   } else if (dbType === 'mongodb') {
     return buildMongodbYaml();

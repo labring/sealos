@@ -19,7 +19,8 @@ const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditT
     storage: parseFloat(dbForm.resource.storage),
     labels: {},
     terminationPolicy: dbForm.terminationPolicy,
-    autoBackup: dbForm.autoBackup
+    autoBackup: dbForm.autoBackup,
+    parameterConfig: dbForm.parameterConfig
   };
 };
 export async function createDatabase(
@@ -36,18 +37,12 @@ export async function createDatabase(
 
   const yamlList = [account, cluster];
 
-  if (['postgresql', 'mysql', 'mongodb', 'redis'].includes(request.body.type)) {
-    const parameterConfig = (request.body as any).parameterConfig || {
-      walLevel: 'logical',
-      sharedPreloadLibraries: 'wal2json'
-    };
-
+  if (['postgresql', 'apecloud-mysql', 'mongodb', 'redis'].includes(rawDbForm.dbType)) {
     const config = json2ParameterConfig(
-      request.body.name,
-      request.body.type,
-      request.body.version,
-      parameterConfig.walLevel,
-      parameterConfig.sharedPreloadLibraries
+      rawDbForm.dbName,
+      rawDbForm.dbType,
+      rawDbForm.dbVersion,
+      rawDbForm.parameterConfig
     );
 
     yamlList.push(config);
