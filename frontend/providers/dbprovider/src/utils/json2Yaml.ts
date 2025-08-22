@@ -1104,11 +1104,11 @@ export const json2ParameterConfig = (
     if (parameterConfig?.timeZone) {
       mysqlParams['default-time-zone'] = String(parameterConfig.timeZone);
     }
-
     const lowerCaseTableNames =
       parameterConfig?.lowerCaseTableNames !== undefined
         ? parameterConfig.lowerCaseTableNames
         : '0';
+
     mysqlParams['lower_case_table_names'] = String(lowerCaseTableNames);
 
     // Check if this is MySQL 5.7.42 version
@@ -1273,12 +1273,9 @@ export const json2ParameterConfig = (
               constraintRef: 'mongodb-config-constraints',
               defaultMode: 256,
               keys: [
+                'mongodb.conf',
                 {
-                  'mongodb.conf': {
-                    parameters: {
-                      maxIncomingConnections: parameterConfig?.maxConnections?.toString()
-                    }
-                  }
+                  ...(Object.keys(mongoParams).length > 0 && { parameters: mongoParams })
                 }
               ],
               name: 'mongodb-config',
