@@ -26,12 +26,26 @@ export const ResourceSchema = z.object({
   replicas: z.number().min(0).max(10).default(1).openapi({
     description: 'Number of pod replicas'
   }),
-  cpu: z.number().default(200).openapi({
-    description: 'CPU allocation in millicores'
-  }),
-  memory: z.number().default(256).openapi({
-    description: 'Memory allocation in MB'
-  }),
+  cpu: z
+    .number()
+    .refine((val) => [100, 200, 500, 1000, 2000, 3000, 4000, 8000].includes(val), {
+      message: 'CPU must be one of: 100, 200, 500, 1000, 2000, 3000, 4000, 8000'
+    })
+    .default(200)
+    .openapi({
+      description: 'CPU allocation in millicores',
+      enum: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+    }),
+  memory: z
+    .number()
+    .refine((val) => [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384].includes(val), {
+      message: 'Memory must be one of: 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384'
+    })
+    .default(256)
+    .openapi({
+      description: 'Memory allocation in MB',
+      enum: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+    }),
   gpu: z
     .object({
       vendor: z.string().default('nvidia'),

@@ -625,6 +625,12 @@ export async function updateAppResources(
         path: '/spec/template/spec/containers/0/image',
         value: updateData.image
       });
+
+      jsonPatch.push({
+        op: 'replace',
+        path: '/metadata/annotations/originImageName',
+        value: updateData.image
+      });
     }
 
     if (updateData.env !== undefined) {

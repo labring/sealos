@@ -357,8 +357,8 @@ export function transformFromLegacySchema(
     args: legacyData.cmdParam,
     resource: {
       replicas: legacyData.replicas || 1,
-      cpu: legacyData.cpu || 200,
-      memory: legacyData.memory || 256,
+      cpu: legacyData.cpu || (200 as const),
+      memory: legacyData.memory || (256 as const),
       gpu: legacyData.gpu
         ? {
             vendor: legacyData.gpu.manufacturers,
@@ -439,25 +439,55 @@ export const UpdateConfigMapSchema = z.object({
     })
 });
 
-export const UpdatePortsSchema = z.object({
+// POST - Create new ports (no identifiers needed)
+export const CreatePortsSchema = z.object({
   ports: z
     .array(
       z.object({
         port: z.number().default(80),
         protocol: z.enum(['TCP', 'UDP', 'SCTP']),
         appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
-        exposesPublicDomain: z.boolean(),
-
-        networkName: z.string().optional(),
-        portName: z.string().optional(),
-        serviceName: z.string().optional()
+        exposesPublicDomain: z.boolean()
       })
     )
     .min(1)
     .openapi({
-      description:
-        'Port/Network configurations to update. Include networkName/portName/serviceName for updates, omit for new ports'
+      description: 'Port configurations to create (new ports only)'
     })
+});
+
+// PATCH - Update existing ports (requires identifiers to locate)
+export const UpdatePortsSchema = z.object({
+  ports: z
+    .array(
+      z
+        .object({
+          port: z.number(),
+          protocol: z.enum(['TCP', 'UDP', 'SCTP']),
+          appProtocol: z.enum(['HTTP', 'GRPC', 'WS']).optional(),
+          exposesPublicDomain: z.boolean(),
+          // At least one identifier required to locate the port to update
+          networkName: z.string().optional(),
+          portName: z.string().optional(),
+          serviceName: z.string().optional()
+        })
+        .refine((data) => data.networkName || data.portName || data.serviceName, {
+          message:
+            'At least one identifier (networkName/portName/serviceName) is required to locate the port to update'
+        })
+    )
+    .min(1)
+    .openapi({
+      description:
+        'Port configurations to update. Must include at least one identifier (networkName/portName/serviceName) to locate existing port'
+    })
+});
+
+// DELETE - Delete ports by port number
+export const DeletePortsSchema = z.object({
+  ports: z.array(z.number()).min(1).openapi({
+    description: 'Array of port numbers to delete'
+  })
 });
 
 export const SimpleStorageSchema = z
