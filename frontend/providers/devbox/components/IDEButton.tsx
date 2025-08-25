@@ -125,6 +125,13 @@ const IDEButton = memo(
             return;
           }
 
+          if (currentIDE === 'zed') {
+            // Zed Editor uses a simpler SSH URL format: zed://ssh/user@host:port/path
+            const fullUri = `zed://ssh/${userName}@${env.sealosDomain}:${sshPort}${workingDir}`;
+            window.location.href = fullUri;
+            return;
+          }
+
           const idePrefix = ideObj[currentIDE].prefix;
           const fullUri = `${idePrefix}labring.devbox-aio?sshDomain=${encodeURIComponent(
             `${userName}@${env.sealosDomain}`
@@ -134,6 +141,7 @@ const IDEButton = memo(
             `${env.sealosDomain}_${env.namespace}_${devboxName}`
           )}&workingDir=${encodeURIComponent(workingDir)}&token=${encodeURIComponent(token)}`;
           window.location.href = fullUri;
+
         } catch (error: any) {
           console.error(error, '==');
         } finally {
@@ -363,6 +371,15 @@ export const ideObj = {
     value: 'gateway',
     sortId: 5,
     group: 'jetbrains'
+  },
+  zed: {
+    label: 'Zed',
+    menuLabel: 'Zed',
+    icon: 'zed',
+    prefix: 'zed://ssh/',
+    value: 'zed',
+    sortId: 6,
+    group: ''
   }
 } as const;
 
