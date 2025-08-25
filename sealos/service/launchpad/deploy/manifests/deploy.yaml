@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: launchpad-monitor
+  name: launchpad-monitor-config
+  namespace: sealos
+data:
+  config.yml: |
+    server:
+      addr: ":8428"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: launchpad-monitor
+  name: launchpad-monitor-deployment
+  namespace: sealos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: launchpad-monitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: launchpad-monitor
+    spec:
+      containers:
+        - args:
+            - /config/config.yml
+          command:
+            - /manager
+          env:
+            - name: VM_SERVICE_HOST
+              value: http://vmsingle-victoria-metrics-k8s-stack.vm.svc:8429
+          image: ghcr.io/labring/sealos-launchpad-service:latest
+          imagePullPolicy: Always
+          name: launchpad-monitor
+          ports:
+            - containerPort: 8428
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /config
+              name: config-vol
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: launchpad-monitor-config
+          name: config-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: launchpad-monitor
+  name: launchpad-monitor
+  namespace: sealos
+spec:
+  ports:
+    - name: http
+      port: 8428
+      protocol: TCP
+      targetPort: 8428
+  selector:
+    app: launchpad-monitor

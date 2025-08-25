@@ -1,0 +1,43 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: backup-etcd
+  namespace: kube-system   ## you can change to any namespace
+spec: #当没有指定pod选择器时它将根据pod模板中的标签创建
+  schedule: "0 21 * * *"  # backup everyday on 21：00
+  successfulJobsHistoryLimit: 3
+  jobTemplate: #创建新pod所使用的pod模板
+    spec:
+      template: # 此CronJob创建Job资源会用到的模板
+        spec:
+          restartPolicy: OnFailure  # Job不能使用Always作为默认的重新启动策略
+          nodeSelector:
+            name: sealos    ## this is your sealos init machine. so we can use hostPath.
+          volumes:
+          - hostPath:
+              path: /root/.sealos
+              type: DirectoryOrCreate
+            name: sealos-home
+          # if use password to auth, just remove this secret
+          # before use secret, you must create it.
+          - secret:
+              defaultMode: 420
+              items:
+                - key: id_rsa
+                  path: id_rsa
+              secretName: pk-sealos
+            name: pk-sealos
+          containers:
+          - name: sealos
+            image: louisehong/sealos:3.3.10
+            args:
+              - etcd
+              - save
+              - --docker
+            volumeMounts:
+              - mountPath: /root/.sealos
+                name: sealos-home
+              # if use password to auth, just remove this volumeMounts
+              - mountPath: /root/.ssh/id_rsa
+                name: pk-sealos
+                subPath: id_rsa

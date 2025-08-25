@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: cronjob-frontend
+  name: cronjob-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cronjob-frontend-config
+  namespace: cronjob-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cronjob-frontend
+  namespace: cronjob-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cronjob-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: cronjob-frontend
+    spec:
+      containers:
+        - name: cronjob-frontend
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: APPLAUNCHPAD_URL
+              value: applaunchpad.{{ .cloudDomain }}
+            - name: SUCCESSFUL_JOBS_HISTORY_LIMIT
+              value: "{{ .SUCCESSFUL_JOBS_HISTORY_LIMIT }}"
+            - name: FAILED_JOBS_HISTORY_LIMIT
+              value: "{{ .FAILED_JOBS_HISTORY_LIMIT }}"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-cronjob-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: cronjob-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - cronjob-frontend
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: cronjob-frontend-volume
+          configMap:
+            name: cronjob-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cronjob-frontend
+  name: cronjob-frontend
+  namespace: cronjob-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: cronjob-frontend

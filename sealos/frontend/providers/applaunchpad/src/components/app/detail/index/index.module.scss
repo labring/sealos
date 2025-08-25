@@ -1,0 +1,100 @@
+.logs {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-track {
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #bfbfbf;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #999;
+  }
+}
+
+.analysesAnimation::after {
+  display: inline-block;
+  content: '';
+  width: 4px;
+  height: 14px;
+  transform: translate(4px, 2px) scaleY(1.3);
+  background-color: var(--chakra-colors-chakra-body-text);
+  animation: blink 0.6s infinite;
+}
+.textEllipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.table {
+  border-radius: 2px;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+  background-color: #fff;
+
+  th {
+    border: 1px solid #eff0f1;
+    text-align: left;
+    padding: 8px;
+    user-select: all;
+    font-weight: 500;
+  }
+
+  tr:nth-child(even) {
+    background-color: #eff0f1;
+  }
+}
+
+@keyframes blink {
+  from,
+  to {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.fileSystemTable {
+  table {
+    thead {
+      th {
+        font-size: 12px;
+        font-weight: 500;
+        color: #485264;
+        background: #f4f4f7;
+      }
+      tr:first-child th:first-child {
+        border-top-left-radius: 6px;
+      }
+      tr:first-child th:last-child {
+        border-top-right-radius: 6px;
+      }
+      tr:last-child th:first-child {
+        border-bottom-left-radius: 6px;
+      }
+      tr:last-child th:last-child {
+        border-bottom-right-radius: 6px;
+      }
+      th {
+        border-bottom: none;
+      }
+    }
+    tbody {
+      tr:first-child {
+        border-top: none;
+      }
+      tr {
+        font-size: 12px;
+        color: #485264;
+        font-weight: 500;
+      }
+    }
+  }
+}

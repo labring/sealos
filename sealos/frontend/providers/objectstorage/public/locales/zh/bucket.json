@@ -1,0 +1,16 @@
+{
+  "privateBucket": "私有存储桶，不开放",
+  "sharedBucketRead": "共享存储桶，开放公共读功能",
+  "sharedBucketReadWrite": "共享存储桶，开放公共读写功能",
+  "bucketConfig": "存储桶配置",
+  "bucketName": "存储桶名字",
+  "bucketPermission": "存储桶权限",
+  "createBucket": "创建存储桶",
+  "bucketList": "存储桶列表",
+  "noBucket": "您还没有创建存储桶",
+  "confirmDeleteBucket": "如果确认要删除这个存储桶吗？如果执行此操作，将删除该存储桶的所有数据。",
+  "enterBucketNameConfirmation": "请输入存储桶名字 {{bucketName}} 确认",
+  "enterValidBucketName": "请输入正确的存储桶名字",
+  "initializing": "正在初始化中",
+	"reset_user_sk_title": "确认重置 Secret Key"
+}

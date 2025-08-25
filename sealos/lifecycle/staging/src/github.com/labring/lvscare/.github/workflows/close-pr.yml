@@ -1,0 +1,20 @@
+name: ❌ Close Pull Requests
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  close-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Close Pull Request
+        uses: superbrothers/close-pull-request@v3
+        with:
+          comment: "❌ PRs are not accepted in this repository."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

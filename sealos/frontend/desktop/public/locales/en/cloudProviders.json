@@ -1,0 +1,11 @@
+{
+  "volcano_engine": "Volcano Engine",
+  "alibaba_cloud": "Alibaba Cloud",
+  "tencent_cloud": "Tencent Cloud",
+  "google_cloud": "Google Cloud",
+  "provider": "Provider",
+  "beijing": "Beijing",
+  "singapore": "Singapore",
+  "guangzhou": "Guangzhou",
+  "hangzhou": "Hangzhou"
+}

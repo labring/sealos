@@ -1,0 +1,88 @@
+#Usage in github: https://github.com/actions/labeler
+
+area/command:
+- any: [ 'lifecycle/cmd/**/*' ]
+
+kind/documentation:
+- any: [ 'docs/**/*' ]
+
+area/qa:
+- 'QA.md'
+
+area/test:
+- '**/*_test.go'
+- 'lifecycle/test/**/*'
+
+area/buildah:
+- any: [ 'lifecycle/pkg/buildah/**/*' ]
+
+area/imageCRIShim:
+- any: [ 'lifecycle/staging/src/github.com/labring/image-cri-shim/**/*' ]
+
+area/lvscare:
+- any: [ 'lifecycle/staging/src/github.com/labring/lvscare/**/*' ]
+
+area/bootstrap:
+- any: [ 'lifecycle/pkg/bootstrap/**/*' ]
+
+area/clusterfile:
+- any: [ 'lifecycle/pkg/clusterfile/**/*' ]
+
+area/config:
+- any: [ 'lifecycle/pkg/config/**/*' ]
+- any: [ 'lifecycle/pkg/env/**/*' ]
+- any: [ 'lifecycle/pkg/template/**/*' ]
+
+area/guest:
+- any: [ 'lifecycle/pkg/guest/**/*' ]
+
+area/env:
+- any: [ 'lifecycle/pkg/system/**/*' ]
+
+area/filesystem:
+- any: [ 'lifecycle/pkg/filesystem/**/*' ]
+
+area/apply:
+- any: [ 'lifecycle/pkg/apply/**/*' ]
+
+area/check:
+- any: [ 'lifecycle/pkg/checker/**/*' ]
+
+area/ipvs:
+- any: [ 'lifecycle/pkg/ipvs/**/*' ]
+
+area/ssh:
+- any: [ 'lifecycle/pkg/ssh/**/*' ]
+
+area/registry:
+- any: [ 'lifecycle/pkg/registry/**/*' ]
+
+area/runtime:
+- any: [ 'lifecycle/pkg/runtime/**/*' ]
+
+area/api:
+- any: [ 'lifecycle/pkg/types/**/*' ]
+- any: [ 'lifecycle/**/*_types.go' ]
+
+area/cloud:
+- any: [ 'controllers/**/*' ]
+- any: [ 'service/**/*' ]
+
+area/lifecycle-management:
+- any: [ 'lifecycle/pkg/**/*' ]
+- any: [ 'lifecycle/staging/**/*' ]
+
+area/frontend:
+- any: [ 'frontend/**/*' ]
+
+area/ci:
+- 'scripts/**/*'
+- 'lifecycle/scripts/**/*'
+- 'lifecycle/docker/**/*'
+- 'deploy/**/*'
+- '.golangci.yml'
+- 'lifecycle/.goreleaser.yml'
+- 'lifecycle/Makefile'
+
+area/workflow:
+- any: [ '.github/**/*' ]

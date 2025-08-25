@@ -1,0 +1,45 @@
+# Copyright © 2022 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      X-Xss-Protection "1; mode=block"
+  name: kubepanel-frontend
+  namespace: kubepanel-frontend
+spec:
+  rules:
+    - host: kubepanel.{{ .cloudDomain }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: kubepanel-frontend
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - kubepanel.{{ .cloudDomain }}
+      secretName: {{ .certSecretName }}

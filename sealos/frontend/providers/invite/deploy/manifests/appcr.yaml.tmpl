@@ -1,0 +1,17 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: invite
+  namespace: app-system
+spec:
+  data:
+    desc: invite
+    url: "https://invite.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://invite.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  menuData:
+  name: invite
+  type: iframe
+  displayType: normal
+  i18n:
+    zh:
+      name: 邀请注册
