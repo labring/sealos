@@ -18,6 +18,7 @@ jobs:
         id: lychee
         uses: lycheeverse/lychee-action@v2
         with:
+          lycheeVersion: v0.19.1
           output: lychee-report.md
           fail: false
 
