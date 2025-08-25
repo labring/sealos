@@ -955,8 +955,7 @@ export const json2ParameterConfig = (
         metadata: {
           labels: {
             'app.kubernetes.io/instance': `${dbName}`,
-            'app.kubernetes.io/managed-by': 'kubeblocks',
-            'apps.kubeblocks.io/component-name': 'postgresql'
+            'app.kubernetes.io/managed-by': 'kubeblocks'
           },
           name: `${dbName}-postgresql`,
           namespace: getUserNamespace()
@@ -1025,8 +1024,7 @@ export const json2ParameterConfig = (
         metadata: {
           labels: {
             'app.kubernetes.io/instance': `${dbName}`,
-            'app.kubernetes.io/managed-by': 'kubeblocks',
-            'apps.kubeblocks.io/component-name': 'postgresql'
+            'app.kubernetes.io/managed-by': 'kubeblocks'
           },
           name: `${dbName}-postgresql`,
           namespace: getUserNamespace()
@@ -1120,8 +1118,7 @@ export const json2ParameterConfig = (
       metadata: {
         labels: {
           'app.kubernetes.io/instance': dbName,
-          'app.kubernetes.io/managed-by': 'kubeblocks',
-          'apps.kubeblocks.io/component-name': 'mysql'
+          'app.kubernetes.io/managed-by': 'kubeblocks'
         },
         name: `${dbName}-mysql`,
         namespace: getUserNamespace()
@@ -1195,8 +1192,7 @@ export const json2ParameterConfig = (
       metadata: {
         labels: {
           'app.kubernetes.io/instance': dbName,
-          'app.kubernetes.io/managed-by': 'kubeblocks',
-          'apps.kubeblocks.io/component-name': 'mongodb'
+          'app.kubernetes.io/managed-by': 'kubeblocks'
         },
         name: `${dbName}-mongodb`,
         namespace: getUserNamespace()
@@ -1268,8 +1264,7 @@ export const json2ParameterConfig = (
       metadata: {
         labels: {
           'app.kubernetes.io/instance': dbName,
-          'app.kubernetes.io/managed-by': 'kubeblocks',
-          'apps.kubeblocks.io/component-name': 'redis'
+          'app.kubernetes.io/managed-by': 'kubeblocks'
         },
         name: `${dbName}-redis`,
         namespace: getUserNamespace()
