@@ -38,9 +38,9 @@ import {
 } from 'lucide-react';
 import AccountCenter from './AccountCenter';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
-import { CopyIcon } from '@sealos/ui';
 import { useGuideModalStore } from '@/stores/guideModal';
 import SecondaryLinks from '../SecondaryLinks';
+import { useAppsRunningPromptStore } from '@/stores/appsRunningPrompt';
 
 const baseItemStyle = {
   minW: '36px',
@@ -65,6 +65,7 @@ export default function Account() {
   const showDisclosure = useDisclosure();
   const [notificationAmount, setNotificationAmount] = useState(0);
   const { installedApps, openApp, openDesktopApp } = useAppStore();
+  const { setBlockingPageUnload } = useAppsRunningPromptStore();
   const { colorMode, toggleColorMode } = useColorMode();
   const { openGuideModal, setInitGuide, initGuide } = useGuideModalStore();
   const { toggleLanguage, currentLanguage } = useLanguageSwitcher();
@@ -73,6 +74,8 @@ export default function Account() {
 
   const logout = (e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
+    // We clear session data before unloading the page, running apps data can not be fetched at that time.
+    setBlockingPageUnload(false);
     delSession();
     queryclient.clear();
     router.replace('/signin');
