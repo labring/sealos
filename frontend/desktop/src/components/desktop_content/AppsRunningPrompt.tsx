@@ -37,20 +37,21 @@ const AppsRunningPrompt = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { dontShowAgain, setDontShowAgain, blockingPageUnload } = useAppsRunningPromptStore();
   const cancelRef = React.useRef<HTMLButtonElement>(null);
-  const [allowClose, setAllowClose] = useState(false);
 
   const runningApps = useQuery({
     queryKey: ['getRunningApps'],
     queryFn: getRunningApps,
     enabled: false, // We fetch manually
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false
   });
 
   const checkRunningApps = useCallback(async (): Promise<boolean> => {
     try {
       const result = await runningApps.refetch();
 
-      if (result.isError) {
+      if (!result.isSuccess) {
         // On error, assume no running apps to avoid blocking page close
         return false;
       }
@@ -71,7 +72,7 @@ const AppsRunningPrompt = () => {
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (dontShowAgain || !blockingPageUnload || allowClose) {
+      if (dontShowAgain || !blockingPageUnload) {
         return; // Don't prevent unload
       }
 
@@ -85,23 +86,10 @@ const AppsRunningPrompt = () => {
           if (hasRunningApps) {
             // Show dialog if there are running apps
             setTimeout(() => onOpen(), 100);
-          } else {
-            // No running apps, allow future closes
-            setAllowClose(true);
-            // Trigger close again
-            setTimeout(() => {
-              window.close();
-            }, 100);
           }
         })
         .catch((error) => {
           console.error('Error checking running apps:', error);
-          // On error, allow future closes
-          setAllowClose(true);
-          // Trigger close again
-          setTimeout(() => {
-            window.close();
-          }, 100);
         });
     };
 
@@ -110,7 +98,7 @@ const AppsRunningPrompt = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dontShowAgain, allowClose, onOpen, checkRunningApps, setAllowClose, blockingPageUnload]);
+  }, [dontShowAgain, onOpen, checkRunningApps, blockingPageUnload]);
 
   const appsToCheck: RunningApp[] = [
     {
