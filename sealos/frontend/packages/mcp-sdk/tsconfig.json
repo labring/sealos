@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.deps.json",
+  "compilerOptions": {
+    "lib": ["es2017", "DOM"],
+    "noImplicitAny": true,
+    "declaration": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "dist/**/*.d.ts", "dist/**/*.ts"]
+}

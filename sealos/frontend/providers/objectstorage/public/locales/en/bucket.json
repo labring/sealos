@@ -1,0 +1,15 @@
+{
+  "privateBucket": "Private Bucket, Not Open",
+  "sharedBucketRead": "Shared Bucket, Open for Public Read",
+  "sharedBucketReadWrite": "Shared Bucket, Open for Public Read and Write",
+  "bucketName": "Bucket Name",
+  "bucketPermission": "Bucket Permission",
+  "bucketList": "Bucket List",
+  "noBucket": "You haven't created any buckets yet",
+  "bucketConfig": "Bucket Configuration",
+  "confirmDeleteBucket": "Are you sure you want to delete this bucket? This action will delete all data in the bucket.",
+  "enterBucketNameConfirmation": "Please enter bucket name {{bucketName}} confirmation",
+  "enterValidBucketName": "Please enter a valid bucket name",
+  "initializing": "Initializing",
+	"reset_user_sk_title": "Confirm Reset Secret Key"
+}

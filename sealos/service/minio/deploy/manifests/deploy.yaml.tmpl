@@ -1,0 +1,182 @@
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    namespace: objectstorage-system
+    release: prometheus
+  name: object-storage-cluster
+  namespace: objectstorage-system
+spec:
+  bearerTokenSecret:
+    key: token
+    name: object-storage-probe
+  jobName: object-storage-cluster-job
+  targets:
+    staticConfig:
+      targets:
+        - object-storage.objectstorage-system.svc.cluster.local:80
+  vmProberSpec:
+    path: /minio/v2/metrics/cluster
+    scheme: http
+    url: object-storage.objectstorage-system.svc.cluster.local:80
+
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMProbe
+metadata:
+  labels:
+    namespace: objectstorage-system
+    release: prometheus
+  name: object-storage-bucket
+  namespace: objectstorage-system
+spec:
+  bearerTokenSecret:
+    key: token
+    name: object-storage-probe
+  jobName: object-storage-bucket-job
+  targets:
+    staticConfig:
+      targets:
+        - object-storage.objectstorage-system.svc.cluster.local:80
+  vmProberSpec:
+    path: /minio/v2/metrics/bucket
+    scheme: http
+    url: object-storage.objectstorage-system.svc.cluster.local:80
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: object-storage-probe
+  namespace: objectstorage-system
+data:
+  token: >-
+    {BASE64_TOKEN}
+type: Opaque
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: object-storage-monitor
+  name: object-storage-monitor-config
+  namespace: objectstorage-system
+data:
+  config.yml: |
+    server:
+      addr: ":9090"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: object-storage-monitor
+  name: object-storage-monitor-deployment
+  namespace: objectstorage-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: object-storage-monitor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: object-storage-monitor
+    spec:
+      containers:
+      - args:
+        - /config/config.yml
+        command:
+        - /manager
+        env:
+        - name: OBJECT_STORAGE_INSTANCE
+          value: object-storage.objectstorage-system.svc.cluster.local:80
+        - name: PROMETHEUS_SERVICE_HOST
+          value: http://vmselect-victoria-metrics-k8s-stack.vm.svc:8481/select/0/prometheus/
+        image: ghcr.io/labring/sealos-minio-service:latest
+        imagePullPolicy: Always
+        name: object-storage-monitor
+        ports:
+        - containerPort: 9090
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 50m
+            memory: 512Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /config
+          name: config-vol
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: object-storage-monitor-config
+        name: config-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: object-storage-monitor
+  name: object-storage-monitor
+  namespace: objectstorage-system
+spec:
+  ports:
+    - name: http
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: object-storage-monitor
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: object-storage-monitor
+  namespace: objectstorage-system
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 64k
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
+        expires 30d;
+        add_header Cache-Control "public";
+      }
+    nginx.ingress.kubernetes.io/proxy-body-size: 1g
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 64k
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/server-snippet: |
+      client_header_buffer_size 64k;
+      large_client_header_buffers 4 128k;
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/use-regex: 'true'
+spec:
+  tls:
+    - hosts:
+        - object-storage-monitor.{{ .cloudDomain }}
+      secretName: wildcard-cert
+  rules:
+    - host: object-storage-monitor.{{ .cloudDomain }}
+      http:
+        paths:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: object-storage-monitor
+                port:
+                  number: 9090

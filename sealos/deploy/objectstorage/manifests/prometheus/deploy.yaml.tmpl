@@ -1,0 +1,97 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  labels:
+    app: prometheus-object-storage
+  name: object-storage
+  namespace: objectstorage-system
+spec:
+  podMetadata:
+    labels:
+      app: prometheus-object-storage
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  securityContext:
+    fsGroup: 2000
+    runAsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  evaluationInterval: 60s
+  image: quay.io/prometheus/prometheus:v2.45.0
+  serviceMonitorSelector: {}
+  probeSelector: {}
+  ruleSelector: {}
+  portName: http-web
+  retention: 10d
+  scrapeInterval: 60s
+  serviceAccountName: object-storage-sa
+  replicas: 1
+  shards: 1
+  storage:
+    volumeClaimTemplate:
+      metadata:
+        annotations:
+          path: /prometheus
+          value: {{ .promStorageSize }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .promStorageSize }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-object-storage
+  namespace: objectstorage-system
+spec:
+  ports:
+    - port: 9090
+      targetPort: http-web
+      protocol: TCP
+      name: http-web
+  selector:
+    app: prometheus-object-storage
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: object-storage-sa
+  namespace: objectstorage-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: object-storage-role
+  namespace: objectstorage-system
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: object-storage-rolebind
+  namespace: objectstorage-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: object-storage-role
+subjects:
+  - kind: ServiceAccount
+    name: object-storage-sa
+    namespace: objectstorage-system
+

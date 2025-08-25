@@ -1,0 +1,13 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV registryAddr="sealos.hub:5000"
+ENV registryUser=admin
+ENV registryPassword=passw0rd
+ENV authAddr="sealos.hub:5000"
+
+CMD ["kubectl apply -f manifests"]

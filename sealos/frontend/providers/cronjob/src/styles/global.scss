@@ -1,0 +1,31 @@
+.table-cross {
+  border-radius: 6px;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+
+  th {
+    border: 1px solid transparent;
+    text-align: left;
+    padding: 8px 16px;
+    user-select: all;
+    font-weight: 500;
+    color: #485264;
+  }
+  th {
+    border: 1px solid transparent;
+    text-align: left;
+    padding: 8px 16px;
+    user-select: all;
+    font-weight: 500;
+    color: #485264;
+  }
+
+  thead tr {
+    background: #f4f4f7;
+  }
+
+  tbody tr:nth-child(odd) {
+    background: #fafafc;
+  }
+}

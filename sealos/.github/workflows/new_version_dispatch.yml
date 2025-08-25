@@ -1,0 +1,60 @@
+name: 🤖 Automated Update tagpr config
+
+on:
+  workflow_dispatch:
+    inputs:
+      pre-version:
+        description: 'Pre Version to release. Has v prefix'
+        required: true
+        default: 'v5.0.1'
+      version:
+        description: 'Version to release. Has v prefix'
+        required: true
+        default: 'v5.1.0'
+jobs:
+  config:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update tagpr config
+        env:
+          VERSION: "${{ inputs.version }}"
+          PRE_VERSION: "${{ inputs.pre-version }}"
+        run: |
+          # Create a .tagpr.json file with the necessary configuration
+          if [[ -z "$VERSION" || -z "$PRE_VERSION" ]]; then
+            echo "Error: VERSION and PRE_VERSION inputs are required."
+            exit 1
+          fi
+          cat << EOF > .tagpr.json
+          {
+              "name": "sealos",
+              "version": "${VERSION}",
+              "command": "bash scripts/changelog.sh ${VERSION} ${PRE_VERSION}",
+              "pre-version": "${PRE_VERSION}"
+          }
+          EOF
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'config: Automated Tagpr Update for ${{ inputs.version }}'
+          add-paths: |
+            .tagpr.json
+          body: |
+            
+            Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          commit-message: |
+            🤖 update tagpr config using robot.
+          branch: tagpr-new-${{ inputs.version }}
+          signoff: true
+          delete-branch: true
+          labels: |
+            bot
+          token: ${{ secrets.GITHUB_TOKEN }}
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>

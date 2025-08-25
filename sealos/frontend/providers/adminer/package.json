@@ -1,0 +1,35 @@
+{
+  "name": "adminer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "0.18.1",
+    "@tanstack/react-query": "^4.35.3",
+    "axios": "1.4.0",
+    "clsx": "^1.2.1",
+    "i18next": "^23.11.5",
+    "immer": "^10.0.2",
+    "js-yaml": "^4.1.0",
+    "next": "13.4.5",
+    "next-i18next": "^15.3.0",
+    "react": "18.2.0",
+    "react-i18next": "^14.1.2",
+    "sealos-desktop-sdk": "workspace:*",
+    "typescript": "^5.2.2",
+    "zustand": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.6",
+    "@types/node": "20.3.1",
+    "@types/react": "18.2.37",
+    "eslint": "8.42.0",
+    "eslint-config-next": "13.4.5",
+    "sass": "^1.68.0"
+  }
+}

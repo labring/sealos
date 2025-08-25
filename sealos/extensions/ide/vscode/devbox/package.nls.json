@@ -1,0 +1,20 @@
+{
+  "displayName": "Devbox",
+  "description": "help code for cloud devbox in sailos/sealos",
+  "devbox.connectRemoteSSH.title": "Devbox: Connect to Remote SSH",
+  "devbox.refresh.title": "Devbox: Refresh",
+  "devbox.create.title": "Devbox: Create new Devbox",
+  "devbox.open.title": "Devbox: Open Devbox",
+  "devbox.delete.title": "Devbox: Delete Devbox",
+  "devbox.openInBrowser.title": "Devbox: Open in Browser",
+  "devbox.copy.title": "Devbox: Copy",
+  "devbox.refreshDatabase.title": "Devbox: Refresh Database",
+  "devbox.refreshNetwork.title": "Devbox: Refresh Network",
+  "devbox.gotoDatabaseWebPage.title": "Devbox: Open Database Web Page",
+  "devbox.myProjects.title": "My Devboxes",
+  "devbox.feedback.title": "Feedback",
+  "devbox.network.title": "Network",
+  "devbox.database.title": "Database",
+  "devbox.devbox.title": "Devbox",
+  "devbox.welcome.title": "No Devbox yet, please create a new devbox.\n [Create Devbox](command:devboxDashboard.createDevbox)\n To learn more about how to use Devbox, please visit [Devbox Documentation](https://sailos.io/docs/quick-start)."
+}

@@ -1,0 +1,41 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: auth-system-manager-role
+rules:
+  - apiGroups: ["user.sealos.io"]
+    resources: ["users"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["user.sealos.io"]
+    resources: ["users/status"]
+    verbs: ["list", "get", "create", "update", "patch", "watch"]
+  - apiGroups: ["user.sealos.io"]
+    resources: ["operationrequests", "deleterequests"]
+    verbs: ["create","get"]
+ 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-user-editor-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: user-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: desktop-operationrequest-editor-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: operationrequest-editor-role
+subjects:
+  - kind: ServiceAccount
+    name: desktop-frontend
+    namespace: sealos
