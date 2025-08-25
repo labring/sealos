@@ -19,15 +19,17 @@ export const dbTypeSchema = z.enum([
 ]);
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
 export const baseResourceSchema = z.object({
-  cpu: z.custom<CPUResourceEnum>((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val as number)),
-  memory: z.custom<MemoryResourceEnum>((val) =>
-    [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val as number)
-  ),
+  cpu: z.number().refine((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val), {
+    message: 'CPU must be one of: 0.5, 1, 2, 3, 4, 5, 6, 7, 8'
+  }),
+  memory: z.number().refine((val) => [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val), {
+    message: 'Memory must be one of: 0.5, 1, 2, 4, 6, 8, 12, 16, 32'
+  }),
   storage: z.number().min(1).max(300)
 });
 export const allResourceSchema = baseResourceSchema.and(
   z.object({
-    replicas: z.custom<ReplicasResourceEnum>((val) => [1, 2, 3].includes(val as number))
+    replicas: z.number().min(1).max(3)
   })
 );
 export const dbEditSchema = z.object({
