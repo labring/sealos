@@ -18,7 +18,7 @@ export const raw2schema = (raw: DBDetailType): z.Infer<typeof dbDetailSchema> =>
       replicas: raw.replicas
     },
     id: raw.id,
-    status: raw.status.value, // 假设 status 是一个对象，其中的 value 是状态字符串
+    status: raw.status.value,
     createTime: raw.createTime,
     totalResource: {
       cpu: raw.totalCpu.toString(),
