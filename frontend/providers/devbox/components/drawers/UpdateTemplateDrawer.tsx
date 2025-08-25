@@ -22,18 +22,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage
-} from '@/components/ui/form';
+} from '@sealos/shadcn-ui/form';
 import {
   Drawer,
   DrawerContent,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle
-} from '@/components/ui/drawer';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+} from '@sealos/shadcn-ui/drawer';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
+import { ScrollArea } from '@sealos/shadcn-ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@sealos/shadcn-ui/popover';
 
 interface UpdateTemplateDrawerProps {
   isOpen: boolean;

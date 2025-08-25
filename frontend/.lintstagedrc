@@ -1,4 +1,4 @@
 {
-  "**/src/**/*.{js,jsx,ts,tsx}": ["prettier --write"],
-  "**/src/**/*.{json,css,scss,md}": ["prettier --write"]
+  "**/src/**/*.{js,jsx,ts,tsx}": ["npx prettier --write"],
+  "**/src/**/*.{json,css,scss,md}": ["npx prettier --write"]
 }

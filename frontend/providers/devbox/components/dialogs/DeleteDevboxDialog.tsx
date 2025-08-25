@@ -13,9 +13,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+} from '@sealos/shadcn-ui/dialog';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
 import { track } from '@sealos/gtm';
 
 interface DeleteDevboxDialogProps {

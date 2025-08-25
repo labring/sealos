@@ -356,33 +356,3 @@ jobs:
             bash scripts/manifest-cluster-images.sh "$ALIYUN_CLUSTER_IMAGE"
             bash scripts/manifest-cluster-images.sh "$ALIYUN_LATEST_CLUSTER_IMAGE"
           fi
-
-      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.cluster_image }}
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.cluster_image }}"
-
-      - name: Renew issue and Sync Images for ${{ steps.prepare.outputs.latest_cluster_image }}
-        uses: labring/gh-rebot@v0.0.6
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          version: v0.0.8-rc1
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          SEALOS_TYPE: "issue_renew"
-          SEALOS_ISSUE_TITLE: "[DaylyReport] Auto build for sealos"
-          SEALOS_ISSUE_BODYFILE: "scripts/ISSUE_RENEW.md"
-          SEALOS_ISSUE_LABEL: "dayly-report"
-          SEALOS_ISSUE_TYPE: "day"
-          SEALOS_ISSUE_REPO: "labring-actions/cluster-image"
-          SEALOS_COMMENT_BODY: "/imagesync ${{ steps.prepare.outputs.latest_cluster_image }}"

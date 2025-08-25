@@ -7,9 +7,11 @@ export const getUserKubeConfig = () => {
     process.env.NODE_ENV === 'development' ? process.env.NEXT_PUBLIC_MOCK_USER || '' : '';
 
   try {
-    const store = localStorage.getItem('session');
-    if (!kubeConfig && store) {
-      kubeConfig = JSON.parse(store)?.kubeconfig;
+    if (typeof localStorage !== 'undefined') {
+      const store = localStorage.getItem('session');
+      if (!kubeConfig && store) {
+        kubeConfig = JSON.parse(store)?.kubeconfig;
+      }
     }
   } catch (err) {
     console.log(err);
@@ -19,9 +21,11 @@ export const getUserKubeConfig = () => {
 
 export const getUserSession = () => {
   try {
-    const store = localStorage.getItem('session');
-    if (store) {
-      return JSON.parse(store) as SessionV1;
+    if (typeof localStorage !== 'undefined') {
+      const store = localStorage.getItem('session');
+      if (store) {
+        return JSON.parse(store) as SessionV1;
+      }
     }
     return null;
   } catch (err) {

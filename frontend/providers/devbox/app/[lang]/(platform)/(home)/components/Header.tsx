@@ -8,8 +8,8 @@ import { useGuideStore } from '@/stores/guide';
 import { useClientSideValue } from '@/hooks/useClientSideValue';
 import { destroyDriver, startDriver, startGuide2 } from '@/hooks/driver';
 
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { Input } from '@sealos/shadcn-ui/input';
+import { Button } from '@sealos/shadcn-ui/button';
 
 export default function Header({ onSearch }: { onSearch: (value: string) => void }) {
   const router = useRouter();

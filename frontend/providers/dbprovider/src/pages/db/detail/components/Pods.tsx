@@ -39,7 +39,7 @@ function Tag({
     <Box
       borderRadius="sm"
       bg={color}
-      color="#219BF4"
+      color="black"
       px={2}
       fontSize={fontSize}
       fontWeight="bold"
@@ -55,7 +55,15 @@ function Tag({
   );
 }
 
-const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
+const Pods = ({
+  dbName,
+  dbType,
+  onPodCountChange
+}: {
+  dbName: string;
+  dbType: DBType;
+  onPodCountChange?: (count: number) => void;
+}) => {
   const {
     t,
     i18n: { language }
@@ -176,25 +184,28 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
       title: 'operation',
       key: 'control',
       render: (item: PodDetailType, i: number) => (
-        <Flex alignItems={'center'} gap={'4px'}>
-          <MyTooltip offset={[0, 10]} label={t('details')}>
-            <Button variant={'square'} onClick={() => setDetailPodIndex(i)}>
-              <MyIcon name={'detail'} w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
-          <MyTooltip label={t('Logs')} offset={[0, 10]}>
-            <Button variant={'square'} onClick={() => setLogsPodIndex(i)}>
-              <MyIcon name="log" w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
-          <MyTooltip offset={[0, 10]} label={t('Restart')}>
-            <Button
-              variant={'square'}
-              onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
-            >
-              <MyIcon name={'restart'} w="18px" h="18px" fill={'#485264'} />
-            </Button>
-          </MyTooltip>
+        <Flex alignItems={'center'} gap={'10px'}>
+          <Button
+            variant={'outline'}
+            size={'sm'}
+            width={'71px'}
+            onClick={() => setDetailPodIndex(i)}
+          >
+            {t('details')}
+          </Button>
+
+          <Button variant={'outline'} size={'sm'} width={'56px'} onClick={() => setLogsPodIndex(i)}>
+            {t('Logs')}
+          </Button>
+
+          <Button
+            size={'sm'}
+            variant={'outline'}
+            width={'73px'}
+            onClick={openConfirmRestart(() => handleRestartPod(item.podName))}
+          >
+            {t('Restart')}
+          </Button>
         </Flex>
       )
     }
@@ -213,13 +224,13 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
         if (!isAccessible && isMaster) {
           return (
             <Box>
-              <Tag color="#F0FBFF">{language === 'zh' ? '主节点' : role}</Tag>
+              <Tag color="gray.100">{language === 'zh' ? '主节点' : role}</Tag>
             </Box>
           );
         } else if (!isAccessible && !isMaster) {
           return (
             <Box display="flex" alignItems={'center'}>
-              <Tag color="#F7F8FA">{language === 'zh' ? '从节点' : role}</Tag>
+              <Tag color="gray.100">{language === 'zh' ? '从节点' : role}</Tag>
               {(() => {
                 if (dbType !== DBTypeEnum.redis) {
                   if (switchTarget === item.podName) {
@@ -313,6 +324,12 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
     });
   }, [switching, switchTarget, animation]);
 
+  useEffect(() => {
+    if (onPodCountChange) {
+      onPodCountChange(dbPods.length);
+    }
+  }, [dbPods.length]); // dbPods 长度变了就触发
+
   return (
     <Box h={'100%'} position={'relative'}>
       <TableContainer overflowY={'auto'}>
@@ -327,7 +344,7 @@ const Pods = ({ dbName, dbType }: { dbName: string; dbType: DBType }) => {
                   border={'none'}
                   backgroundColor={'grayModern.50'}
                   fontWeight={'500'}
-                  color={'grayModern.600'}
+                  color={'#71717A'}
                   _first={{
                     borderLeftRadius: '6px'
                   }}

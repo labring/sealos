@@ -5,19 +5,23 @@ info:
   repository_url: https://github.com/labring/sealos
 options:
   tag_filter_pattern: '^v'
+  sort: "date"
   commits:
-    # filters:
-    #   Type:
-    #     - feat
-    #     - fix
-    #     - perf
-    #     - refactor
+   sort_by: Scope
+   filters:
+     Type:
+       - feat
+       - fix
+       - perf
+       - refactor
   commit_groups:
-    # title_maps:
-    #   feat: Features
-    #   fix: Bug Fixes
-    #   perf: Performance Improvements
-    #   refactor: Code Refactoring
+    group_by: Type
+    sort_by: Title
+    title_maps:
+      feat: Features
+      fix: Bug Fixes
+      perf: Performance Improvements
+      refactor: Code Refactoring
   header:
     pattern: '^(\w*)(?:\(([\w$.\-*/ ]*)\))?: (.*)$'
     pattern_maps:

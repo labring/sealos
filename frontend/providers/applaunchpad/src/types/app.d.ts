@@ -158,6 +158,15 @@ export interface AppDetailType extends AppEditType {
   labels: { [key: string]: string };
   source: TAppSource;
   // pods: PodDetailType[];
+  openapi?: {
+    status: {
+      observedGeneration: number;
+      replicas: number;
+      availableReplicas: number;
+      updatedReplicas: number;
+      isPause: boolean;
+    };
+  };
 }
 
 export interface PodStatusMapType {
