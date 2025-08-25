@@ -1,0 +1,11 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV apiServerPort="6443"
+
+CMD ["kubectl apply -f manifests/deploy.yaml","kubectl apply -f manifests/rbac.yaml"]

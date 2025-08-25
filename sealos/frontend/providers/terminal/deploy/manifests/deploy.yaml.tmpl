@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: terminal-frontend
+  name: terminal-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: terminal-frontend-config
+  namespace: terminal-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: terminal-frontend
+  namespace: terminal-frontend
+spec:
+  selector:
+    matchLabels:
+      app: terminal-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: terminal-frontend
+    spec:
+      containers:
+        - name: terminal-frontend
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 2048Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          env:
+            - name: TTYD_IMAGE
+              value: {{ .ttydImage }}
+            - name: SITE
+              value: {{ .cloudDomain }}
+            - name: KEEPALIVED
+              value: {{ .keepalived }}
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-terminal-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: terminal-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - terminal-frontend
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: terminal-frontend-volume
+          configMap:
+            name: terminal-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: terminal-frontend
+  name: terminal-frontend
+  namespace: terminal-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: terminal-frontend

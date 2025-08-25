@@ -1,0 +1,75 @@
+# vmagent-deploy.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vmagent-pvc
+  namespace: monitor-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+        # storageClassName: nfs-client
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vmagent
+  namespace: monitor-system
+  labels:
+    app: vmagent
+spec:
+  ports:
+    - name: http
+      port: 8429
+      targetPort: http
+  selector:
+    app: vmagent
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vmagent
+  namespace: monitor-system
+  labels:
+    app: vmagent
+spec:
+  selector:
+    matchLabels:
+      app: vmagent
+  template:
+    metadata:
+      labels:
+        app: vmagent
+    spec:
+      serviceAccountName: vmagent
+      containers:
+        - name: agent
+          securityContext:                 
+            allowPrivilegeEscalation: false
+          image: "victoriametrics/vmagent:v1.77.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - -promscrape.config=/config/prometheus.yml
+            - -remoteWrite.tmpDataPath=/tmpData
+            - -remoteWrite.url=http://10.64.31.179:8480/insert/0/prometheus
+            - -envflag.enable=true
+            - -envflag.prefix=VM_
+            - -loggerFormat=json
+          ports:
+            - name: http
+              containerPort: 8429
+          volumeMounts:
+            - name: tmpdata
+              mountPath: /tmpData
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: tmpdata
+          persistentVolumeClaim:
+            claimName: vmagent-pvc
+        - name: config
+          configMap:
+            name: vmagent-config
+

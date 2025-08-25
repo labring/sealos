@@ -1,0 +1,185 @@
+# Copyright © 2022 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: desktop-frontend
+  namespace: sealos
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: desktop-frontend
+  namespace: sealos
+spec:
+  ports:
+    - port: 3000
+  selector:
+    app: desktop-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: desktop-frontend-config
+  namespace: sealos
+data:
+  config.yaml: |-
+    addr: :3000
+  config.json: |-
+    {
+      "scripts": []
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: desktop-frontend
+  namespace: sealos
+spec:
+  selector:
+    matchLabels:
+      app: desktop-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: desktop-frontend
+    spec:
+      serviceAccountName: desktop-frontend
+      containers:
+        - name: desktop-frontend
+          env:
+            # callback url is used for oauth2 login, required
+            - name: CALLBACK_URL
+              value: https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/callback
+            # mongodb uri, required
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: mongodb_uri
+            # jwt secret, required
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: jwt_secret
+
+            # set to true to enable password login, modify the PASSWORD_SALT env to change the salt
+            - name: PASSWORD_ENABLED
+              value: '{{ .passwordEnabled }}'
+            # set to true to enable github login
+            - name: GITHUB_ENABLED
+              value: '{{ .githubEnabled }}'
+            # set to true to enable wechat login
+            - name: WECHAT_ENABLED
+              value: '{{ .wechatEnabled }}'
+            # set to true to enable sms login
+            - name: SMS_ENABLED
+              value: '{{ .smsEnabled }}'
+            # password login env
+            - name: PASSWORD_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: password_salt
+            # github login env
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: github_client_id
+                  optional: true
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: github_client_secret
+                  optional: true
+            # wechat login env
+            - name: WECHAT_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: wechat_client_id
+                  optional: true
+            - name: WECHAT_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: wechat_client_secret
+                  optional: true
+            # sms login env
+            - name: ALI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_endpoint
+                  optional: true
+            - name: ALI_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_access_key_id
+                  optional: true
+            - name: ALI_ACCESS_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_access_key_secret
+                  optional: true
+            - name: ALI_SIGN_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_sign_name
+                  optional: true
+            - name: ALI_TEMPLATE_CODE
+              valueFrom:
+                secretKeyRef:
+                  name: desktop-frontend-secret
+                  key: ali_sms_template_code
+                  optional: true
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: ghcr.io/labring/license-system-frontend:latest
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: desktop-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+            - mountPath: /app/data/config.json
+              name: desktop-frontend-volume
+              subPath: config.json
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: desktop-frontend-volume
+          configMap:
+            name: desktop-frontend-config

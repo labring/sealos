@@ -1,0 +1,24 @@
+.contexify {
+  background: rgba(239, 239, 242, 0.7);
+  backdrop-filter: blur(80px) saturate(150%);
+  color: #111824;
+  padding: 6px;
+  font-size: 12px;
+  top: 0;
+  left: 0;
+  min-width: 140px;
+  position: absolute;
+}
+
+.arrow {
+  position: absolute;
+  top: 100%;
+  left: 46%;
+  width: 0;
+  height: 0;
+  width: 16px;
+  height: 9px;
+  background: rgba(239, 239, 242, 0.7);
+  backdrop-filter: blur(80px) saturate(150%);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}

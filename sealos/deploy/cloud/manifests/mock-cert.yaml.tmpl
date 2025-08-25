@@ -1,0 +1,28 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: sealos-cloud
+  namespace: sealos-system
+spec:
+  secretName: wildcard-cert
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+  commonName: {{ .cloudDomain }}
+  duration: 867240h # 99 year
+  dnsNames:
+    - '{{ .cloudDomain }}'
+    - '*.{{ .cloudDomain }}'
+  secretTemplate:
+    annotations:
+      reflector.v1.k8s.emberstack.com/reflection-allowed: "true"
+      reflector.v1.k8s.emberstack.com/reflection-allowed-namespaces: sealos,\w+-system,\w+-frontend,ns-[\-a-z0-9]*
+      reflector.v1.k8s.emberstack.com/reflection-auto-enabled: "true"
+      reflector.v1.k8s.emberstack.com/reflection-auto-namespaces: sealos,\w+-system,\w+-frontend,ns-[\-a-z0-9]*

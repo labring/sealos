@@ -1,0 +1,15 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
+
+ENV SUCCESSFUL_JOBS_HISTORY_LIMIT="3"
+ENV FAILED_JOBS_HISTORY_LIMIT="3"
+
+CMD ["kubectl apply -f manifests"]

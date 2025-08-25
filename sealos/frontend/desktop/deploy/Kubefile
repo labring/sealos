@@ -1,0 +1,20 @@
+FROM scratch
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+COPY scripts scripts
+
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
+ENV regionUID="randomRegionUID"
+ENV databaseMongodbURI=""
+ENV databaseGlobalCockroachdbURI=""
+ENV databaseLocalCockroachdbURI=""
+ENV passwordSalt="randomSalt"
+ENV jwtInternal=""
+ENV jwtRegional=""
+ENV jwtGlobal=""
+
+CMD ["bash scripts/init.sh"]

@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: template-frontend
+  name: template-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: template-frontend-config
+  namespace: template-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+  config.json: |-
+    {
+      "showCarousel": false,
+      "slideData": []
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-frontend
+  namespace: template-frontend
+spec:
+  selector:
+    matchLabels:
+      app: template-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: template-frontend
+    spec:
+      initContainers:
+        - command:
+          - sh
+          - -c
+          - chmod -R 777 /data/templates/.git && cp -r -a /data/templates/. /template-data/
+          image: ghcr.io/labring-actions/sealos-template-init:latest
+          imagePullPolicy: Always
+          name: template-frontend-init
+          volumeMounts:
+            - mountPath: /template-data
+              name: template-data
+      containers:
+        - name: template-frontend
+          resources:
+            limits:
+              cpu: 2000m
+              memory: 1024Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          env:
+            - name: SEALOS_CLOUD_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: SEALOS_CLOUD_PORT
+              value: "{{ .cloudPort }}"
+            - name: SEALOS_USER_DOMAIN
+              value: {{ .userDomain }}
+            - name: SEALOS_CERT_SECRET_NAME
+              value: {{ .certSecretName }}
+            - name: TEMPLATE_REPO_URL
+              value: {{ .templateRepoUrl }}
+            - name: TEMPLATE_REPO_BRANCH
+              value: {{ .templateRepoBranch }}
+            - name: SHOW_AUTHOR
+              value: "false"
+            - name: ACCOUNT_URL
+              value: http://account-service.account-system.svc.cluster.local:2333
+            - name: GUIDE_ENABLED
+              value: "{{ .guideEnabled }}"
+            - name: BILLING_URL
+              value: {{ .billingUrl }}
+            - name: DESKTOP_DOMAIN
+              value: {{ .cloudDomain }}
+          image: ghcr.io/labring/sealos-template-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: template-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+            - name: template-frontend-volume
+              mountPath: /app/data/config.json
+              subPath: config.json
+            - name: template-data
+              mountPath: /app/providers/template/templates
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - template-frontend
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: template-frontend-volume
+          configMap:
+            name: template-frontend-config
+        - name: template-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: template-frontend
+  name: template-frontend
+  namespace: template-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: template-frontend
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  namespace: template-frontend
+  name: template-static
+spec:
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: default
+          containers:
+          - name: template-static
+            image: bitnami/kubectl:latest
+            command:
+            - /bin/sh
+            - -c
+            - >
+              echo "$(kubectl get instances -A -o=jsonpath='{range .items[*]}{.spec.title}{"\n"}{end}' | tr a-z A-Z | sort | uniq -c | sort -nr | sed 's/   *//g')" > /tmp/install-count &&
+              kubectl create configmap -n template-frontend template-static --from-file=/tmp/install-count -o yaml --dry-run=client | kubectl apply -f -
+            imagePullPolicy: IfNotPresent
+          restartPolicy: OnFailure
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: template-frontend-static-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create", "get", "list", "watch", "update", "delete","patch"]
+- apiGroups: ["app.sealos.io"]
+  resources: ["instances"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: template-frontend-static-role-binding
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: template-frontend
+roleRef:
+  kind: ClusterRole
+  name: template-frontend-static-role
+  apiGroup: rbac.authorization.k8s.io

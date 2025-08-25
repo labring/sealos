@@ -1,0 +1,45 @@
+# Copyright © 2023 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# permissions for end users to edit templates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: template-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: app
+    app.kubernetes.io/part-of: app
+    app.kubernetes.io/managed-by: kustomize
+  name: template-editor-role
+rules:
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - templates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - templates/status
+  verbs:
+  - get

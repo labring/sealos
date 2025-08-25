@@ -1,0 +1,111 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-service
+  namespace: account-system
+  labels:
+    cloud.sealos.io/app-deploy-manager: account-service
+spec:
+  ports:
+    - port: 2333
+      targetPort: 2333
+  selector:
+    app: account-service
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: account-system
+  annotations:
+    originImageName: ghcr.io/labring/sealos-account-service:latest
+    deploy.cloud.sealos.io/minReplicas: '1'
+    deploy.cloud.sealos.io/maxReplicas: '1'
+  labels:
+    cloud.sealos.io/app-deploy-manager: account-service
+    app: account-service
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: account-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: account-service
+    spec:
+      containers:
+        - name: account-service
+          image: ghcr.io/labring/sealos-account-service:latest
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+          envFrom:
+          - configMapRef:
+              name: account-manager-env
+          resources:
+            requests:
+              cpu: 50m
+              memory: 25Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          ports:
+            - containerPort: 2333
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 2333
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 6
+          imagePullPolicy: Always
+          volumeMounts:
+          - mountPath: /config/config.json
+            name: region-info
+            subPath: ./config/config.json
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: config.json
+            path: ./config/config.json
+          name: region-info
+        name: region-info
+      serviceAccountName: account-controller-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-node-viewer
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: account-node-viewer-binding
+subjects:
+- kind: ServiceAccount
+  name: account-controller-manager
+  namespace: account-system
+roleRef:
+  kind: ClusterRole
+  name: account-node-viewer
+  apiGroup: rbac.authorization.k8s.io

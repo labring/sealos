@@ -1,0 +1,61 @@
+body,
+h1,
+h2,
+h3,
+h4,
+hr,
+p,
+blockquote,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+pre,
+form,
+fieldset,
+legend,
+button,
+input,
+textarea,
+th,
+td,
+svg {
+  margin: 0;
+}
+
+body,
+#__next {
+  height: 100vh;
+  width: 100vw;
+}
+
+iframe {
+  border: none;
+}
+
+::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}

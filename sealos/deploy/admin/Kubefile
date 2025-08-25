@@ -1,0 +1,8 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY tars tars
+COPY scripts scripts
+
+CMD ["bash scripts/init.sh"]
