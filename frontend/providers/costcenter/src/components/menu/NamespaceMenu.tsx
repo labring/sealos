@@ -1,17 +1,28 @@
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import useOverviewStore from '@/stores/overview';
-import { FlexProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useEffect } from 'react';
-import BaseMenu from './BaseMenu';
+import { cn } from '@sealos/shadcn-ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
 
 export default function NamespaceMenu({
   isDisabled,
-  innerWidth = '360px',
-  ...props
-}: { innerWidth?: string; isDisabled: boolean } & FlexProps) {
+  className,
+  ...selectProps
+}: {
+  isDisabled?: boolean;
+  className?: {
+    trigger?: string;
+  };
+} & React.ComponentProps<typeof Select>) {
   const startTime = useOverviewStore((s) => s.startTime);
   const endTime = useOverviewStore((s) => s.endTime);
   const { setNamespace, setNamespaceList, namespaceList, namespaceIdx } = useBillingStore();
@@ -38,15 +49,25 @@ export default function NamespaceMenu({
   }, [nsListData, t]);
 
   return (
-    <BaseMenu
-      isDisabled={isDisabled || isFetching}
-      setItem={function (idx: number): void {
-        setNamespace(idx);
+    <Select
+      disabled={isDisabled || isFetching}
+      value={namespaceIdx.toString() ?? undefined}
+      onValueChange={(value) => {
+        // We use index as value
+        setNamespace(Number.isSafeInteger(Number(value)) ? Number(value) : 0);
       }}
-      itemIdx={namespaceIdx}
-      itemlist={namespaceList.map((v) => v[1])}
-      {...props}
-      innerWidth={innerWidth}
-    />
+      {...selectProps}
+    >
+      <SelectTrigger className={cn(className?.trigger)}>
+        <SelectValue placeholder={t('region')} />
+      </SelectTrigger>
+      <SelectContent>
+        {namespaceList.map((item, idx) => (
+          <SelectItem key={idx} value={idx.toString()}>
+            {item[1]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -2,22 +2,30 @@ import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { ApiResp } from '@/types';
 import { RegionClient } from '@/types/region';
-import { FlexProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
 import { useEffect, useMemo } from 'react';
-import BaseMenu from './BaseMenu';
+import { cn } from '@sealos/shadcn-ui';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@sealos/shadcn-ui/select';
 
 export default function RegionMenu({
   isDisabled,
-  innerWidth = '360px',
-  ...props
+  className,
+  ...selectProps
 }: {
-  innerWidth?: string;
-  isDisabled: boolean;
-} & FlexProps) {
+  isDisabled?: boolean;
+  className?: {
+    trigger?: string;
+  };
+} & React.ComponentProps<typeof Select>) {
   const { setRegion, setRegionList, regionList, regionIdx } = useBillingStore();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data, isFetching } = useQuery({
     queryFn() {
       return request<any, ApiResp<RegionClient[]>>('/api/getRegions');
@@ -26,21 +34,32 @@ export default function RegionMenu({
   });
   useEffect(() => {
     setRegionList(data?.data || []);
-    // setRegion(0);
   }, [data?.data]);
   const itemList = useMemo(
     () => regionList.map((v) => (i18n?.language === 'zh' ? v.name.zh : v.name.en)),
     [regionList, i18n?.language]
   );
+
   return (
-    <BaseMenu
-      itemIdx={regionIdx}
-      isDisabled={isDisabled || isFetching}
-      setItem={function (idx: number) {
-        setRegion(idx);
+    <Select
+      disabled={isDisabled || isFetching}
+      value={regionIdx.toString() ?? undefined}
+      onValueChange={(value) => {
+        // We use index as value
+        setRegion(Number.isSafeInteger(Number(value)) ? Number(value) : 0);
       }}
-      itemlist={itemList}
-      innerWidth={innerWidth}
-    />
+      {...selectProps}
+    >
+      <SelectTrigger className={cn(className?.trigger)}>
+        <SelectValue placeholder={t('region')} />
+      </SelectTrigger>
+      <SelectContent>
+        {itemList.map((item, idx) => (
+          <SelectItem key={idx} value={idx.toString()}>
+            {item}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
