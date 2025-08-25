@@ -23,7 +23,11 @@ export function TableLayoutCaption({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn('flex py-3 px-4 border-b justify-between', className)}>{children}</div>;
+  return (
+    <div className={cn('flex py-3 px-4 border-b justify-between items-center', className)}>
+      {children}
+    </div>
+  );
 }
 
 export function TableLayoutHeadRow({
