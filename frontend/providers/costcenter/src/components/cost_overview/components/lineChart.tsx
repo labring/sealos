@@ -129,7 +129,14 @@ export default function Trend({
       left: '40px',
       right: '5px'
     },
-    color: ['#485264', '#13C4B9', '#11B6FC', '#8774EE', '#C172E7'],
+    color: [
+      // Does not support CSS vars here.
+      'oklch(0.646 0.222 41.116)',
+      'oklch(0.6 0.118 184.704)',
+      'oklch(0.398 0.07 227.392)',
+      'oklch(0.828 0.189 84.429)',
+      'oklch(0.769 0.188 70.08)'
+    ],
     tooltip: {
       trigger: 'axis',
       // borderWidth: 0,

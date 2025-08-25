@@ -1,8 +1,6 @@
 import { Buget } from '@/components/cost_overview/buget';
 import GiftCode from '@/components/cost_overview/components/GiftCode';
 import UserCard from '@/components/cost_overview/components/user';
-import { Trend } from '@/components/cost_overview/trend';
-import { TrendBar } from '@/components/cost_overview/trendBar';
 import useNotEnough from '@/hooks/useNotEnough';
 import request from '@/service/request';
 import useEnvStore from '@/stores/env';
@@ -97,18 +95,6 @@ function CostOverview() {
                 <Buget expenditureAmount={expenditureAmount}></Buget>
               </Flex>
             </Box>
-            <Flex w={'full'} borderRadius="8px" bg="white" p="24px">
-              <Trend></Trend>
-            </Flex>
-            <Flex
-              direction={'column'}
-              flex={[1, null, null, 'auto']}
-              bg="white"
-              p="24px"
-              borderRadius="8px"
-            >
-              <TrendBar />
-            </Flex>
           </Flex>
         </Flex>
         <Flex
