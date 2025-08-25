@@ -6,7 +6,7 @@ export const pathParams = z.object({
 });
 
 export const body = z.object({
-  dbForm: dbEditSchema
+  resource: dbEditSchema
     .pick({
       resource: true
     })
