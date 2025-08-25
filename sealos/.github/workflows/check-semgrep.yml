@@ -1,0 +1,56 @@
+# Name of this GitHub Actions workflow.
+name: Check-Semgrep
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CHANGELOG/**"
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CHANGELOG/**"
+
+jobs:
+  semgrep:
+    # User-definable name of this GitHub Actions job:
+    name: Scan
+    # If you are self-hosting, change the following `runs-on` value:
+    runs-on: ubuntu-24.04
+
+    container:
+      # A Docker image with Semgrep installed. Do not change this.
+      image: semgrep/semgrep:1.109.0
+
+    # allow fails due to too many risks
+    continue-on-error: true
+
+    # Skip any PR created by dependabot to avoid permission issues:
+    if: (github.actor != 'dependabot[bot]')
+
+    steps:
+      # Fetch project source with GitHub Actions Checkout.
+      - uses: actions/checkout@v4
+      # Run the "semgrep ci" command on the command line of the docker image.
+      -
+        run: |
+          semgrep ci \
+          --exclude-rule go.lang.security.audit.xss.import-text-template.import-text-template \
+          --exclude-rule yaml.kubernetes.security.run-as-non-root.run-as-non-root \
+          --exclude-rule yaml.github-actions.security.pull-request-target-code-checkout.pull-request-target-code-checkout \
+          --exclude-rule yaml.github-actions.security.third-party-action-not-pinned-to-commit-sha.third-party-action-not-pinned-to-commit-sha
+        env:
+           # Add the rules that Semgrep uses by setting the SEMGREP_RULES environment variable.
+           SEMGREP_RULES: p/default # more at semgrep.dev/explore
+
+           # Uncomment SEMGREP_TIMEOUT to set this job's timeout (in seconds):
+           # Default timeout is 1800 seconds (30 minutes).
+           # Set to 0 to disable the timeout.
+           # SEMGREP_TIMEOUT: 300

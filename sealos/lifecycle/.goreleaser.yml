@@ -1,0 +1,293 @@
+project_name: sealos
+#gomod:
+#  # Proxy a module from proxy.golang.org, making the builds verifiable.
+#  # This will only be effective if running against a tag. Snapshots will ignore this setting.
+#  # Notice: for this to work your `build.main` must be a package, not a `.go` file.
+#  #
+#  # Default is false.
+#  proxy: true
+#
+#  # If proxy is true, use these environment variables when running `go mod` commands (namely, `go mod tidy`).
+#  # Defaults to `os.Environ()`.
+#  env:
+#    - GOPROXY=https://goproxy.cn
+
+before:
+  hooks:
+    - make clean
+    - go mod tidy
+builds:
+  - id: sealos
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    main: ./cmd/sealos
+    binary: sealos
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+    overrides:
+      - goos: linux
+        goarch: amd64
+        goamd64: v1
+        goarm: ""
+        gomips: ""
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-linux-gnu-gcc
+
+  - id: sealctl
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+    main: ./cmd/sealctl
+    binary: sealctl
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+    overrides:
+      - goos: linux
+        goarch: amd64
+        goamd64: v1
+        goarm: ""
+        gomips: ""
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-linux-gnu-gcc
+
+  - id: lvscare
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/lvscare
+    binary: lvscare
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
+  - id: image-cri-shim
+    env:
+      - CGO_ENABLED=0
+    main: ./cmd/image-cri-shim
+    binary: image-cri-shim
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    flags:
+      - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
+dockers:
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
+    dockerfile: docker/lvscare/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
+    dockerfile: docker/lvscare/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+    dockerfile: docker/sealos/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+    dockerfile: docker/sealos/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+docker_manifests:
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+
+nfpms:
+  - id: packages
+    builds:
+      - sealos
+    vendor: labring
+    homepage: https://github.com/labring/sealos
+    maintainer: fanux (https://github.com/fanux)
+    description: Cloud OS distribution with Kubernetes as kernel
+    license: Apache 2.0
+    formats:
+      - deb
+      - rpm
+
+publishers:
+  - name: "fury.io"
+    ids:
+      - packages
+    dir: "{{ dir .ArtifactPath }}"
+    cmd: |
+      bash -c '
+      if [[ "{{ .Tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
+      else
+        echo "Skipping deployment: Non-production release detected"
+      fi'
+archives:
+  - format: tar.gz
+    builds_info:
+      group: root
+      owner: root
+    files:
+      - README*
+      - readme*
+      - LICENSE*
+      - license*
+checksum:
+  name_template: "{{ .ProjectName }}_checksums.txt"
+  algorithm: sha256
+  ids:
+    - archive
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: Dependency updates
+      regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
+      order: 300
+    - title: 'New Features'
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 100
+    - title: 'Security updates'
+      regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+      order: 150
+    - title: 'Bug fixes'
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 200
+    - title: 'Documentation updates'
+      regexp: ^.*?doc(\([[:word:]]+\))??!?:.+$
+      order: 400
+    - title: 'Build process updates'
+      regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
+      order: 400
+    - title: Other work
+      order: 9999
+  filters:
+    exclude:
+      - '^test:'
+      - '^chore'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+release:
+  prerelease: auto

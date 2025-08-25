@@ -1,0 +1,44 @@
+# Copyright © 2024 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Prometheus Monitor Service (Metrics)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: devbox
+    app.kubernetes.io/managed-by: kustomize
+  name: controller-manager-metrics-monitor
+  namespace: system
+spec:
+  endpoints:
+    - path: /metrics
+      port: https # Ensure this is the name of the port that exposes HTTPS metrics
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        # TODO(user): The option insecureSkipVerify: true is not recommended for production since it disables
+        # certificate verification. This poses a significant security risk by making the system vulnerable to
+        # man-in-the-middle attacks, where an attacker could intercept and manipulate the communication between
+        # Prometheus and the monitored services. This could lead to unauthorized access to sensitive metrics data,
+        # compromising the integrity and confidentiality of the information.
+        # Please use the following options for secure configurations:
+        # caFile: /etc/metrics-certs/ca.crt
+        # certFile: /etc/metrics-certs/tls.crt
+        # keyFile: /etc/metrics-certs/tls.key
+        insecureSkipVerify: true
+  selector:
+    matchLabels:
+      control-plane: controller-manager

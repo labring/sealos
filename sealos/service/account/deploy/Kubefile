@@ -1,0 +1,11 @@
+FROM scratch
+COPY registry registry
+COPY manifests manifests
+COPY scripts scripts
+
+ENV DEFAULT_NAMESPACE account-system
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV certSecretName="wildcard-cert"
+
+CMD ["bash scripts/init.sh"]

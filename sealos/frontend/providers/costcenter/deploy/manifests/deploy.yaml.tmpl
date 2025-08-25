@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: costcenter-frontend
+  namespace: costcenter-frontend
+spec:
+  selector:
+    matchLabels:
+      app: costcenter-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: costcenter-frontend
+    spec:
+      containers:
+        - name: costcenter-frontend
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2048Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-costcenter-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: costcenter-frontend-volume
+              mountPath: /app/data/config.yaml
+              subPath: config.yaml
+          readinessProbe:
+            httpGet:
+              path: /api/platform/getAppConfig
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 2
+            successThreshold: 3
+            failureThreshold: 3
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "app"
+                  operator: In
+                  values:
+                  - costcenter-frontend
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: costcenter-frontend-volume
+          configMap:
+            name: costcenter-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: costcenter-frontend
+  name: costcenter-frontend
+  namespace: costcenter-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: costcenter-frontend

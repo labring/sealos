@@ -1,0 +1,10 @@
+FROM alpine:3.16.2
+
+RUN apk add --no-cache ipset iptables
+
+COPY lvscare /usr/bin/
+
+# nosemgrep: dockerfile.security.missing-user.missing-user
+ENTRYPOINT ["/usr/bin/lvscare"]
+# nosemgrep: dockerfile.security.missing-user.missing-user
+CMD ["--help"]

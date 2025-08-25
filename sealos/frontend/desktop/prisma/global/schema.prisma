@@ -1,0 +1,463 @@
+generator globalClient {
+  provider      = "prisma-client-js"
+  output        = "./generated/client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider     = "cockroachdb"
+  url          = env("GLOBAL_DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model OauthProvider {
+  uid          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String       @db.Uuid
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime     @updatedAt @db.Timestamptz(3)
+  providerType ProviderType
+  providerId   String
+  password     String?
+  user         User         @relation(fields: [userUid], references: [uid])
+
+  @@unique([providerId, providerType])
+  @@index([userUid])
+}
+
+model Region {
+  uid            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  displayName    String
+  location       String
+  domain         String
+  description    String?
+  txDetail       TransactionDetail[]
+  WorkspaceUsage WorkspaceUsage[]
+}
+
+model Account {
+  userUid                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityBonus           BigInt
+  encryptBalance          String
+  encryptDeductionBalance String
+  created_at              DateTime @default(now()) @db.Timestamptz(3)
+  create_region_id        String
+  updated_at              DateTime @default(now()) @db.Timestamptz(3)
+  balance                 BigInt?
+  deduction_balance       BigInt?
+}
+
+model AccountTransaction {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                     String
+  userUid                  String   @db.Uuid
+  deduction_balance        BigInt
+  deduction_balance_before BigInt?
+  balance                  BigInt
+  balance_before           BigInt?
+  message                  String?
+  created_at               DateTime @default(now()) @db.Timestamptz(3)
+  updated_at               DateTime @default(now()) @db.Timestamptz(3)
+  billing_id               String   @db.Uuid
+}
+
+model UserInfo {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid         String  @unique @map("user_uid") @db.Uuid
+  signUpRegionUid String  @map("sign_up_region_uid") @db.Uuid
+  isInited        Boolean @default(false) @map("is_inited")
+  // verify_email    Boolean @default(false)
+  config          Json?
+  user            User    @relation(fields: [userUid], references: [uid])
+
+  @@map("user_info")
+}
+
+model WorkspaceUsage {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String   @map("user_uid") @db.Uuid
+  workspaceUid String   @map("workspace_uid") @db.Uuid
+  regionUid    String   @map("region_uid") @db.Uuid
+  seat         Int
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  region       Region   @relation(fields: [regionUid], references: [uid])
+  user         User     @relation(fields: [userUid], references: [uid])
+
+  @@unique([regionUid, userUid, workspaceUid])
+  @@index([userUid])
+  @@map("workspace_usage")
+}
+
+model ErrorPaymentCreate {
+  userUid         String   @db.Uuid
+  regionUid       String   @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
+  regionUserOwner String
+  method          String
+  amount          BigInt
+  gift            BigInt?
+  trade_no        String   @unique
+  code_url        String?
+  invoiced_at     Boolean? @default(false)
+  remark          String?
+  message         String
+  create_time     DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Payment {
+  id              String   @id
+  userUid         String   @db.Uuid
+  regionUid       String   @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(3)
+  regionUserOwner String
+  method          String
+  amount          BigInt
+  gift            BigInt?
+  trade_no        String   @unique
+  code_url        String?
+  invoiced_at     Boolean? @default(false)
+  remark          String?
+  message         String
+}
+
+model User {
+  uid                         String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                   DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime                   @updatedAt @db.Timestamptz(3)
+  avatarUri                   String
+  nickname                    String
+  id                          String                     @unique
+  name                        String                     @unique
+  oauthProvider               OauthProvider[]
+  status                      UserStatus                 @default(NORMAL_USER)
+  oldMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("oldUser")
+  newMergeUserTransactionInfo MergeUserTransactionInfo[] @relation("newUser")
+  DeleteUserTransactionInfo   DeleteUserTransactionInfo?
+  deleteUserLog               DeleteUserLog?
+  userTasks                   UserTask[]
+  userInfo                    UserInfo?
+  WorkspaceUsage              WorkspaceUsage[]
+}
+
+model Transfer {
+  uid         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  fromUserUid String   @db.Uuid
+  toUserUid   String   @db.Uuid
+  amount      BigInt
+  remark      String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model ErrorAccountCreate {
+  userUid                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  activityBonus           BigInt
+  encryptBalance          String
+  encryptDeductionBalance String
+  created_at              DateTime @default(now()) @db.Timestamptz(3)
+  create_region_id        String
+  balance                 BigInt?
+  deduction_balance       BigInt?
+  userCr                  String   @unique
+  error_time              DateTime @default(now()) @db.Timestamptz(3)
+  regionUid               String   @db.Uuid
+  regionUserOwner         String
+  message                 String
+}
+
+model CommitTransactionSet {
+  createdAt               DateTime             @default(now()) @db.Timestamptz(3)
+  precommitTransactionUid String               @unique @db.Uuid
+  precommitTransaction    PrecommitTransaction @relation(fields: [precommitTransactionUid], references: [uid])
+}
+
+model PrecommitTransaction {
+  uid                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                 DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @db.Timestamptz(3)
+  transactionType           TransactionType
+  infoUid                   String
+  status                    TransactionStatus
+  transactionDetail         TransactionDetail[]
+  commitTransactionSet      CommitTransactionSet?
+  errorPreCommitTransaction ErrorPreCommitTransaction?
+
+  @@unique([infoUid, transactionType])
+}
+
+model ErrorPreCommitTransaction {
+  uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionUid       String               @unique @db.Uuid
+  reason               String?
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  precommitTransaction PrecommitTransaction @relation(fields: [transactionUid], references: [uid])
+}
+
+model TransactionDetail {
+  uid                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt            DateTime             @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime             @updatedAt @db.Timestamptz(3)
+  status               TransactionStatus
+  regionUid            String
+  transactionUid       String
+  region               Region               @relation(fields: [regionUid], references: [uid])
+  precommitTransaction PrecommitTransaction @relation(fields: [transactionUid], references: [uid])
+
+  @@unique([transactionUid, regionUid])
+  @@index([regionUid])
+}
+
+model MergeUserTransactionInfo {
+  uid          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mergeUserUid String @unique
+  userUid      String
+  mergeUser    User?  @relation("oldUser", fields: [mergeUserUid], references: [uid])
+  user         User?  @relation("newUser", fields: [userUid], references: [uid])
+
+  @@index([userUid])
+}
+
+model DeleteUserTransactionInfo {
+  uid     String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid String @unique
+  user    User?  @relation(fields: [userUid], references: [uid])
+}
+
+model DeleteUserLog {
+  userUid   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user      User     @relation(fields: [userUid], references: [uid])
+}
+
+model AuditLog {
+  uid            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  entityUid      String
+  entityName     String
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+  action         AuditAction
+  auditLogDetail AuditLogDetail[]
+}
+
+model AuditLogDetail {
+  auditLogUid String   @id
+  key         String
+  preValue    String
+  newValue    String
+  auditLog    AuditLog @relation(fields: [auditLogUid], references: [uid])
+}
+
+model EventLog {
+  uid       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  mainId    String
+  eventName String
+  // json
+  data      String
+}
+
+model InviteReward {
+  payment_id     String   @id
+  userUid        String   @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz(3)
+  payment_amount BigInt
+  reward_amount  BigInt
+  inviteFrom     String   @db.Uuid
+}
+
+model UserRealNameInfo {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid             String   @unique @db.Uuid
+  realName            String?
+  idCard              String?
+  phone               String?
+  isVerified          Boolean  @default(false)
+  idVerifyFailedTimes Int      @default(0)
+  createdAt           DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo      Json?
+
+  @@map("UserRealNameInfo")
+}
+
+model EnterpriseRealNameInfo {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid                  String   @unique @db.Uuid
+  enterpriseName           String?
+  enterpriseQualification  String?
+  legalRepresentativePhone String?
+  isVerified               Boolean  @default(false)
+  verificationStatus       String?
+  createdAt                DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt                DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo           Json?
+  supportingMaterials      Json?
+
+  @@map("EnterpriseRealNameInfo")
+}
+
+model RestrictedUser {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid         String   @unique @db.Uuid
+  restrictedLevel Int
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo  Json?
+
+  @@map("RestrictedUser")
+}
+
+model RealNameAuthProvider {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backend        String
+  authType       String
+  maxFailedTimes Int
+  config         Json?
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("RealNameAuthProvider")
+}
+
+model UserSemChannel {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid        String   @unique @db.Uuid
+  channel        String
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+  additionalInfo Json?
+
+  @@map("UserSemChannel")
+}
+
+model GiftCode {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code         String    @unique
+  creditAmount BigInt    @default(0)
+  used         Boolean   @default(false)
+  usedBy       String?   @db.Uuid
+  usedAt       DateTime?
+  createdAt    DateTime  @default(now())
+  expiredAt    DateTime?
+  comment      String?
+}
+
+
+model UserAccountType {
+  id            String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid       String          @unique @db.Uuid
+  userType      UserType        @default(EXTERNAL_USER)
+  productSeries ProductSeries[]
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  @@map("UserAccountType")
+}
+
+model GiftCodeCreation {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  giftCodeId       String           @unique @db.Uuid // 添加 @unique
+  createdByUserUid String           @db.Uuid
+  rechargeType     RechargeCodeType
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3)
+  @@map("GiftCodeCreation")
+}
+
+enum UserType {
+  EXTERNAL_USER 
+  INTERNAL_EMPLOYEE 
+}
+
+enum ProductSeries {
+  SEALOS
+  FASTGPT
+  LAF_SEALAF
+  AI_PROXY
+}
+
+enum RechargeCodeType {
+  TEST_RECHARGE 
+  COMPENSATION_RECHARGE 
+  ACTIVITY_RECHARGE 
+  CORPORATE_RECHARGE 
+}
+
+enum ProviderType {
+  PHONE
+  GITHUB
+  WECHAT
+  GOOGLE
+  PASSWORD
+  OAUTH2
+  EMAIL
+}
+
+enum TransactionStatus {
+  READY
+  RUNNING
+  FINISH
+  COMMITED
+  ERROR
+}
+
+enum TransactionType {
+  MERGE_USER
+  DELETE_USER
+}
+
+enum AuditAction {
+  UPDATE
+  DELETE
+  CREATE
+}
+
+enum UserStatus {
+  NORMAL_USER
+  LOCK_USER
+  DELETE_USER
+}
+
+model Task {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String
+  reward        BigInt
+  order         Int
+  isActive      Boolean    @default(true)
+  isNewUserTask Boolean    @default(false)
+  taskType      TaskType
+  createdAt     DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @db.Timestamptz(3)
+  userTasks     UserTask[]
+}
+
+model UserTask {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userUid      String     @db.Uuid
+  taskId       String     @db.Uuid
+  status       TaskStatus
+  rewardStatus TaskStatus
+  completedAt  DateTime
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userUid], references: [uid])
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@unique([userUid, taskId])
+  @@index([taskId])
+}
+
+enum TaskType {
+  LAUNCHPAD
+  COSTCENTER
+  DATABASE
+  DESKTOP
+  APPSTORE
+  CRONJOB
+  DEVBOX
+  CONTACT
+  REAL_NAME_AUTH
+}
+
+enum TaskStatus {
+  NOT_COMPLETED
+  COMPLETED
+}

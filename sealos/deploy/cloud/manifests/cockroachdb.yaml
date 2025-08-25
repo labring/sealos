@@ -1,0 +1,25 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: sealos-cockroachdb
+  namespace: sealos
+spec:
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "3Gi"
+        volumeMode: Filesystem
+  resources:
+    requests:
+      cpu: 100m
+      memory: 0.5Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  tlsEnabled: true
+  cockroachDBVersion: v23.1.11
+  nodes: 3

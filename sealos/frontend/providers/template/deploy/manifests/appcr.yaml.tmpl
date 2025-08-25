@@ -1,0 +1,18 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: template
+  namespace: app-system
+spec:
+  data:
+    url: https://template.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}
+  displayType: normal
+  i18n:
+    zh:
+      name: 应用商店
+    zh-Hans:
+      name: 应用商店
+  icon: https://template.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg
+  menuData:
+  name: App Store
+  type: iframe
