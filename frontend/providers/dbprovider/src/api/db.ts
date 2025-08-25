@@ -8,7 +8,10 @@ import type {
   DBType,
   OpsRequestItemType,
   PodDetailType,
-  SupportReconfigureDBType
+  SupportReconfigureDBType,
+  CPUResourceEnum,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
 } from '@/types/db';
 import { LogTypeEnum } from '@/constants/log';
 import { MonitorChartDataResult } from '@/types/monitor';
@@ -38,7 +41,17 @@ export const getConfigByName = ({ name, dbType }: { name: string; dbType: DBType
   GET<string>(`/api/getConfigByName?name=${name}&dbType=${dbType}`);
 
 export const createDB = (payload: {
-  dbForm: DBEditType;
+  type: string;
+  version: string;
+  name: string;
+  resource: {
+    cpu: CPUResourceEnum;
+    memory: MemoryResourceEnum;
+    storage: number; // 1-300 Gi range
+    replicas: ReplicasResourceEnum;
+  };
+  terminationPolicy: string;
+  autoBackup?: any;
   isEdit: boolean;
   backupInfo?: BackupItemType;
 }) => POST(`/api/createDB`, payload);

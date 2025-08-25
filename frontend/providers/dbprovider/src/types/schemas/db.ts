@@ -2,6 +2,7 @@ import { BackupStatusEnum, BackupTypeEnum } from '@/constants/backup';
 import { DBTypeEnum } from '@/constants/db';
 import * as z from 'zod';
 import { autoBackupFormSchema, backupInfoSchema } from './backup';
+import { CPUResourceEnum, MemoryResourceEnum, ReplicasResourceEnum } from '../db';
 
 export const dbTypeSchema = z.enum([
   'postgresql',
@@ -18,13 +19,15 @@ export const dbTypeSchema = z.enum([
 ]);
 export const kubeBlockClusterTerminationPolicySchema = z.enum(['Delete', 'WipeOut']);
 export const baseResourceSchema = z.object({
-  cpu: z.string(),
-  memory: z.string(),
-  storage: z.string()
+  cpu: z.custom<CPUResourceEnum>((val) => [0.5, 1, 2, 3, 4, 5, 6, 7, 8].includes(val as number)),
+  memory: z.custom<MemoryResourceEnum>((val) =>
+    [0.5, 1, 2, 4, 6, 8, 12, 16, 32].includes(val as number)
+  ),
+  storage: z.number().min(1).max(300)
 });
 export const allResourceSchema = baseResourceSchema.and(
   z.object({
-    replicas: z.number().min(1).max(3)
+    replicas: z.custom<ReplicasResourceEnum>((val) => [1, 2, 3].includes(val as number))
   })
 );
 export const dbEditSchema = z.object({

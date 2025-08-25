@@ -14,9 +14,9 @@ const schema2Raw = (raw: z.Infer<typeof createDatabaseSchemas.body>): DBEditType
     dbVersion: raw.version,
     dbName: raw.name,
     replicas: raw.resource.replicas,
-    cpu: parseFloat(raw.resource.cpu),
-    memory: parseFloat(raw.resource.memory),
-    storage: parseFloat(raw.resource.storage),
+    cpu: raw.resource.cpu,
+    memory: raw.resource.memory,
+    storage: raw.resource.storage,
     labels: {},
     terminationPolicy: raw.terminationPolicy,
     autoBackup: raw.autoBackup
