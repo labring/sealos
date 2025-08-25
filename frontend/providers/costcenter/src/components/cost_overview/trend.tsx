@@ -2,6 +2,7 @@ import chart7 from '@/assert/Chart7.svg';
 import Notfound from '@/components/notFound';
 import request from '@/service/request';
 import { Box, Divider, Flex, Heading, Img } from '@chakra-ui/react';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { subDays } from 'date-fns';
 import { useTranslation } from 'next-i18next';
@@ -41,24 +42,18 @@ export const Trend = memo(function Trend() {
     [data?.data, i18n.language]
   );
   return (
-    <Box w={'full'}>
-      <Flex align={'center'} gap={'10px'}>
-        <Heading color="grayModern.900" size={'sm'}>
-          {' '}
-          {t('Cost Trend')}
-        </Heading>
-        <Divider
-          orientation={'vertical'}
-          borderColor={'grayModern.500'}
-          bgColor={'grayModern.500'}
-          h={'14px'}
-          borderWidth={'1px'}
-        />
-        <Heading size={'sm'} color={'grayModern.500'}>
-          {t('Last 7 days')}
-        </Heading>
-      </Flex>
-      <Flex height="310px" width={'full'} justify={'center'} align={'center'} direction={'column'}>
+    <div className="flex flex-col text-sm border rounded-2xl">
+      <div className="flex px-6 items-center h-16 border-b">
+        <div className="flex h-5 gap-2 items-center font-medium">
+          <h3>{t('Cost Trend')}</h3>
+          <Separator
+            orientation="vertical"
+            className="data-[orientation=vertical]:w-0.5 text-zinc-400"
+          />
+          <span className="text-zinc-500">{t('Last 7 days')}</span>
+        </div>
+      </div>
+      <div className="px-8 py-4 flex flex-col items-center justify-center gap-4 h-[calc(300px+2rem)]">
         {isInitialLoading || !data ? (
           <>
             <Img src={chart7.src}></Img>
@@ -67,7 +62,7 @@ export const Trend = memo(function Trend() {
         ) : (
           <LineChart data={arr} cycle={'Day'} startTime={startTime} endTime={endTime}></LineChart>
         )}
-      </Flex>
-    </Box>
+      </div>
+    </div>
   );
 });
