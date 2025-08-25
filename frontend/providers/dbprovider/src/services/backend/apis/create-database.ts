@@ -6,20 +6,20 @@ import { updateBackupPolicyApi } from '@/pages/api/backup/updatePolicy';
 import { KbPgClusterType } from '@/types/cluster';
 import { adaptDBDetail, convertBackupFormToSpec } from '@/utils/adapt';
 import { json2Account, json2CreateCluster } from '@/utils/json2Yaml';
-import { DBEditType, EditType } from '@/types/db';
+import { DBEditType } from '@/types/db';
 import { raw2schema } from './get-database';
-const schema2Raw = (dbForm: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
+const schema2Raw = (raw: z.Infer<typeof createDatabaseSchemas.body>): DBEditType => {
   return {
-    dbType: dbForm.type,
-    dbVersion: dbForm.version,
-    dbName: dbForm.name,
-    replicas: dbForm.resource.replicas,
-    cpu: parseFloat(dbForm.resource.cpu),
-    memory: parseFloat(dbForm.resource.memory),
-    storage: parseFloat(dbForm.resource.storage),
+    dbType: raw.type,
+    dbVersion: raw.version,
+    dbName: raw.name,
+    replicas: raw.resource.replicas,
+    cpu: parseFloat(raw.resource.cpu),
+    memory: parseFloat(raw.resource.memory),
+    storage: parseFloat(raw.resource.storage),
     labels: {},
-    terminationPolicy: dbForm.terminationPolicy,
-    autoBackup: dbForm.autoBackup
+    terminationPolicy: raw.terminationPolicy,
+    autoBackup: raw.autoBackup
   };
 };
 export async function createDatabase(
