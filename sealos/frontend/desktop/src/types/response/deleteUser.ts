@@ -1,8 +1,0 @@
-import { RESPONSE_MESSAGE } from './utils';
-
-enum _DELETE_USERSTATUS {
-  CODE_ERROR = 'CODE_ERROR'
-}
-
-export const DELETE_USER_STATUS = Object.assign({}, _DELETE_USERSTATUS, RESPONSE_MESSAGE);
-export type DELETE_USER_STATUS = typeof DELETE_USER_STATUS;

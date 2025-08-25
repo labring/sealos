@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.deps.json",
-  "compilerOptions": {
-    "lib": ["es2017", "DOM"],
-    "noImplicitAny": true
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "dist/**/*.d.ts", "dist/**/*.ts"]
-}
