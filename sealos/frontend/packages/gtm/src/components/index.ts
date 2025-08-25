@@ -1,1 +1,0 @@
-export { GTMScript } from './GTMScript';
