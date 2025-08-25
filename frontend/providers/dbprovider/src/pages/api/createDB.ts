@@ -3,7 +3,13 @@ import { getK8s } from '@/services/backend/kubernetes';
 import { handleK8sError, jsonRes } from '@/services/backend/response';
 import { ApiResp } from '@/services/kubernet';
 import { KbPgClusterType } from '@/types/cluster';
-import { BackupItemType, DBEditType } from '@/types/db';
+import {
+  BackupItemType,
+  DBEditType,
+  CPUResourceEnum,
+  MemoryResourceEnum,
+  ReplicasResourceEnum
+} from '@/types/db';
 import { json2Account, json2ResourceOps, json2CreateCluster } from '@/utils/json2Yaml';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { updateBackupPolicyApi } from './backup/updatePolicy';
