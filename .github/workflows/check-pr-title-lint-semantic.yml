@@ -5,6 +5,8 @@ on:
       - opened
       - edited
       - synchronize
+      - labeled
+      - unlabeled
 permissions:
   pull-requests: write
   statuses: write
