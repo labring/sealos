@@ -1,7 +1,8 @@
 import chart7 from '@/assert/Chart7.svg';
 import Notfound from '@/components/notFound';
 import request from '@/service/request';
-import { Box, Divider, Flex, Heading, Img } from '@chakra-ui/react';
+import { Img } from '@chakra-ui/react';
+import { Separator } from '@sealos/shadcn-ui/separator';
 import { useQuery } from '@tanstack/react-query';
 import { subMonths } from 'date-fns';
 import { useTranslation } from 'next-i18next';
@@ -55,35 +56,23 @@ export const TrendBar = memo(function Trend() {
     [rechargeArr, t('Total Recharge')]
   ];
   return (
-    <Box bg="White">
-      <Flex align={'center'} gap={'10px'} fontSize={'500'}>
-        <Heading size={'sm'} color={'grayModern.900'}>
-          {t('Annual Income and Expenditure')}
-        </Heading>
-        <Divider
-          orientation={'vertical'}
-          borderColor={'grayModern.500'}
-          bgColor={'grayModern.500'}
-          h={'14px'}
-          borderWidth={'1px'}
-        />
-        <Heading size={'sm'} color={'grayModern.500'}>
-          {t('Last 6 Months')}
-        </Heading>
-        <Divider
-          orientation={'vertical'}
-          borderColor={'grayModern.500'}
-          bgColor={'grayModern.500'}
-          h={'14px'}
-          borderWidth={'1px'}
-        />
-        <Heading size={'sm'} color={'grayModern.500'}>
-          {' '}
-          {t('All Regions')}
-        </Heading>
-      </Flex>
-
-      <Flex height="310px" width={'100%'} justify={'center'} align={'center'} direction={'column'}>
+    <div className="flex flex-col text-sm border rounded-2xl">
+      <div className="flex px-6 items-center h-16 border-b">
+        <div className="flex h-5 gap-2 items-center font-medium">
+          <h3>{t('Annual Income and Expenditure')}</h3>
+          <Separator
+            orientation="vertical"
+            className="data-[orientation=vertical]:w-0.5 text-zinc-400"
+          />
+          <span className="text-zinc-500">{t('Last 6 Months')}</span>
+          <Separator
+            orientation="vertical"
+            className="data-[orientation=vertical]:w-0.5 text-zinc-400"
+          />
+          <span className="text-zinc-500">{t('All Regions')}</span>
+        </div>
+      </div>
+      <div className="px-8 py-4 flex flex-col items-center justify-center gap-4 h-[calc(300px+2rem)]">
         {isInitialLoading || !data ? (
           <>
             <Img src={chart7.src}></Img>
@@ -92,7 +81,7 @@ export const TrendBar = memo(function Trend() {
         ) : (
           <BarChart data={inOutData} startTime={startTime} endTime={endTime} />
         )}
-      </Flex>
-    </Box>
+      </div>
+    </div>
   );
 });
