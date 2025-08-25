@@ -1,0 +1,11 @@
+{
+  "volcano_engine": "火山引擎",
+  "alibaba_cloud": "阿里云",
+  "tencent_cloud": "腾讯云",
+  "google_cloud": "谷歌云",
+  "provider": "供应商",
+  "beijing": "北京",
+  "singapore": "新加坡",
+  "guangzhou": "广州",
+  "hangzhou": "杭州"
+}

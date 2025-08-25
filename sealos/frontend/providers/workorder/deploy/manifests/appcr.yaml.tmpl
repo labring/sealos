@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: workorder
+  namespace: app-system
+spec:
+  data:
+    desc: workorder
+    url: "https://workorder.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://workorder.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  menuData:
+  name: workorder
+  type: iframe
+  displayType: normal
+  i18n:
+    zh:
+      name: 工单
+    zh-Hans:
+      name: 工单

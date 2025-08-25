@@ -1,0 +1,8 @@
+FROM scratch
+COPY registry registry
+COPY manifests manifests
+COPY entrypoint.sh entrypoint.sh
+
+ENV cloudDomain=${cloudDomain:-"127.0.0.1.nip.io"}
+
+CMD ["bash entrypoint.sh"]

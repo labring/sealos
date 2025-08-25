@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+  name: sealos-desktop
+  namespace: sealos
+spec:
+  rules:
+    - host: {{ .cloudDomain }}
+      http:
+        paths:
+          - pathType: Prefix
+            #@see: https://github.com/kubernetes/ingress-nginx/issues/3122#issuecomment-1125881703
+            path: /
+            backend:
+              service:
+                name: desktop-frontend
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - '{{ .cloudDomain }}'
+      secretName: {{ .certSecretName }}

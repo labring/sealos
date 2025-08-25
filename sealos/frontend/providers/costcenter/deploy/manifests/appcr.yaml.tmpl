@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: costcenter
+  namespace: app-system
+spec:
+  data:
+    desc: sealos CLoud costcenter
+    url: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://costcenter.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 费用中心
+    zh-Hans:
+      name: 费用中心
+  menuData:
+  name: Cost Center
+  type: iframe
+  displayType: normal

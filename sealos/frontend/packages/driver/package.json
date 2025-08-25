@@ -1,0 +1,28 @@
+{
+  "name": "@sealos/driver",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/driver.ts",
+  "src": "./src",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next dev",
+    "build": "exit 0"
+  },
+  "keywords": [
+    "driver",
+    "tour",
+    "guide",
+    "overlay"
+  ],
+  "author": "3161362058@qq.com",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "18.2.37",
+    "@types/react-dom": "18.0.11"
+  }
+}

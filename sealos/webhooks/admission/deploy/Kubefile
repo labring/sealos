@@ -1,0 +1,23 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+
+# Example for ingressMutatingAnnotations
+# ENV ingressMutatingAnnotations="nginx.ingress.kubernetes.io/limit-connections=10,nginx.ingress.kubernetes.io/limit-rate-after=10m,nginx.ingress.kubernetes.io/limit-rate=100k,nginx.ingress.kubernetes.io/proxy-buffering=on"
+
+ENV domains="cloud.sealos.io,laf.dev,laf.run"
+ENV ingressMutatingAnnotations=""
+ENV ingressWebhookEnabled="true"
+ENV ingressWebhookFailurePolicy="Fail"
+ENV icpEnabled="false"
+ENV icpEndpoint=""
+ENV icpKey=""
+
+ENV namespaceWebhookEnabled="true"
+ENV namespaceWebhookFailurePolicy="Fail"
+
+CMD ["kubectl apply -f manifests/deploy.yaml"]

@@ -1,0 +1,10 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV DEFAULT_NAMESPACE node-system
+
+CMD ["kubectl apply -f manifests/deploy.yaml -n $DEFAULT_NAMESPACE"]

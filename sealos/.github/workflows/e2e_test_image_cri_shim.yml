@@ -1,0 +1,68 @@
+name: E2E Test sealos image-cri-shim service
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "**" ]
+    paths:
+      - ".github/workflows/e2e_test_image_cri_shim.yml"
+      - "lifecycle/cmd/**"
+      - "lifecycle/staging/src/github.com/image-cri-shim/**"
+      - "lifecycle/test/**"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - ".github/workflows/e2e_test_image_cri_shim.yml"
+      - "lifecycle/cmd/**"
+      - "lifecycle/staging/src/github.com/image-cri-shim/**"
+      - "lifecycle/test/**"
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: true
+      image: false
+  verify-image_cri_shim:
+    needs: [ call_ci_workflow ]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v4
+        with:
+          name: image-cri-shim-amd64
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-amd64
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/{sealos,image-cri-shim}
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Download e2e test
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e.test
+          path: /tmp/
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+      - name: Run image-cri-shim test
+        shell: bash
+        working-directory: /tmp/
+        run: |
+          sudo apt-get remove docker docker-engine docker.io containerd runc
+          sudo apt-get purge docker-ce docker-ce-cli containerd.io # docker-compose-plugin
+          sudo apt-get remove -y moby-engine moby-cli moby-buildx moby-compose
+          sudo rm -rf /var/run/docker.sock
+          sudo rm -rf /run/containerd/containerd.sock
+          sudo chmod a+x /tmp/e2e.test
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_image-cri-shim_run_test"

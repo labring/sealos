@@ -1,0 +1,16 @@
+**/Dockerfile
+**/.dockerignore
+**/node_modules/
+**/npm-debug.log
+**/README.md
+**/.next/
+**/.git/
+**/.env.local
+**/config.yaml
+**/.vscode/
+**/.yalc/
+**/dist/
+**/yalc.lock
+**/.gitignore
+**/providers/template/templates/
+**/providers/template/templates.json

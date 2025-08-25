@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "christian-kohler.npm-intellisense",
+        "streetsidesoftware.code-spell-checker",
+        "pomdtr.excalidraw-editor",
+        "lokalise.i18n-ally",
+        "stylelint.vscode-stylelint",
+        "EditorConfig.EditorConfig"
+    ]
+}

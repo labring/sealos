@@ -1,0 +1,48 @@
+.container {
+  &[data-show='true'] {
+    display: block;
+  }
+  .title {
+    font-weight: 500;
+    font-size: 18px;
+    // color: white;
+  }
+}
+
+.tab {
+  font-weight: 400;
+  font-size: 12px;
+  // color: rgba(255, 255, 255, 0.6);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.active {
+  font-weight: 500;
+  font-size: 12px;
+  // color: white;
+  border-bottom: 2px solid #1599e9;
+}
+
+.back_btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  position: absolute;
+  left: 0;
+  &[data-active='index'] {
+    display: none;
+  }
+}
+
+.scrollWrap {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,93 @@
+# Copyright © 2023 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.3
+  creationTimestamp: null
+  name: notifications.notification.sealos.io
+spec:
+  group: notification.sealos.io
+  names:
+    kind: Notification
+    listKind: NotificationList
+    plural: notifications
+    singular: notification
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: Notification is the Schema for the notifications API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: NotificationSpec defines the desired state of Notification
+                UserName and whether read will be set in label,because set in label
+                is ease to query
+              properties:
+                desktopPopup:
+                  type: boolean
+                from:
+                  type: string
+                i18ns:
+                  additionalProperties:
+                    properties:
+                      from:
+                        type: string
+                      message:
+                        type: string
+                      title:
+                        type: string
+                    required:
+                      - message
+                      - title
+                    type: object
+                  type: object
+                importance:
+                  type: string
+                message:
+                  type: string
+                timestamp:
+                  format: int64
+                  type: integer
+                title:
+                  type: string
+              required:
+                - message
+                - timestamp
+                - title
+              type: object
+            status:
+              description: NotificationStatus defines the observed state of Notification
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}

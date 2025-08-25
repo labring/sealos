@@ -1,0 +1,70 @@
+{
+  "name": "sealos",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "dev-desktop": "pnpm -r --filter ./desktop run dev",
+    "dev-app": "pnpm -r --filter ./providers/applaunchpad  run dev",
+    "dev-db": "pnpm -r --filter ./providers/dbprovider  run dev",
+    "dev-cost": "pnpm -r --filter ./providers/costcenter  run dev",
+    "dev-terminal": "pnpm -r --filter ./providers/terminal  run dev",
+    "dev-template": "pnpm -r --filter ./providers/template  run dev",
+    "dev-cronjob": "pnpm -r --filter ./providers/cronjob  run dev",
+    "dev-license": "pnpm -r --filter ./providers/license  run dev",
+    "dev-invite": "pnpm -r --filter ./providers/invite  run dev",
+    "dev-devbox": "pnpm -r --filter ./providers/devbox  run dev",
+    "dev-workorder": "pnpm -r --filter ./providers/workorder  run dev",
+    "gen:theme-typings": "pnpm chakra-cli tokens packages/ui/src/theme/theme.ts --out node_modules/.pnpm/node_modules/@chakra-ui/styled-system/dist/theming.types.d.ts",
+    "postinstall": "pnpm run gen:theme-typings && pnpm run build-packages",
+    "prepare": "cd .. && husky frontend/.husky",
+    "build-packages": "pnpm -r --filter './packages/*' run build"
+  },
+  "workspaces": [
+    "./packages/*",
+    "./providers/*",
+    "./desktop"
+  ],
+  "devDependencies": {
+    "@chakra-ui/cli": "^2.4.1",
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.9",
+    "prettier": "^2.8.8"
+  },
+  "dependencies": {
+    "@chakra-ui/anatomy": "^2.2.1",
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/next-js": "^2.1.5",
+    "@chakra-ui/react": "^2.8.1",
+    "@chakra-ui/system": "^2.6.1",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "framer-motion": "^10.16.4",
+    "i18next": "^23.11.5",
+    "next-i18next": "^15.3.0",
+    "react-i18next": "^14.1.2",
+    "typescript": "^5.2.2"
+  },
+  "pnpm": {
+    "supportedArchitectures": {
+      "os": [
+        "win32",
+        "darwin",
+        "current",
+        "linuxmusl"
+      ],
+      "cpu": [
+        "x64",
+        "arm64"
+      ],
+      "libc": [
+        "musl"
+      ]
+    }
+  },
+  "packageManager": "pnpm@8.9.0",
+  "engines": {
+    "node": "20.4.0",
+    "pnpm": "8.9.0"
+  }
+}

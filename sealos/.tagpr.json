@@ -1,0 +1,6 @@
+{
+    "name": "sealos",
+    "version": "v5.1.0-beta1",
+    "command": "bash scripts/changelog.sh v5.1.0-beta1 v5.0.1",
+    "pre-version": "v5.0.1"
+}

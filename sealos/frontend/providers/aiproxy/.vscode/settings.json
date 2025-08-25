@@ -1,0 +1,54 @@
+{
+  // editor
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.tabSize": 2,
+  "editor.suggestSelection": "first",
+  "editor.renderControlCharacters": true,
+  "editor.quickSuggestions": {
+    "strings": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  // eslint
+  "eslint.format.enable": true,
+  "eslint.run": "onSave",
+  "eslint.codeActionsOnSave.mode": "all",
+  // i18n
+  "i18n-ally.localesPaths": [
+    "app/i18n/locales"
+  ],
+  "i18n-ally.enabledParsers": [
+    "json"
+  ],
+  "i18n-ally.enabledFrameworks": [
+    "react",
+    "i18next",
+    "general"
+  ],
+  "i18n-ally.sourceLanguage": "zh",
+  "i18n-ally.displayLanguage": "zh,en",
+  "i18n-ally.keystyle": "nested",
+  // format and language sepciic
+  // "[typescriptreact]": {
+  //     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  // },
+  // "[typescript]": {
+  //     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  // },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": false
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
+}

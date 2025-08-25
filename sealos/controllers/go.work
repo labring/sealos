@@ -1,0 +1,28 @@
+go 1.24.0
+
+toolchain go1.24.3
+
+use (
+	./account
+	./devbox
+	./user
+	./app
+	./db/adminer
+	./job/heartbeat
+	./job/init
+	./license
+	./node
+	./objectstorage
+	./pkg
+	./resources
+	./terminal
+)
+
+replace (
+	k8s.io/api => k8s.io/api v0.32.3
+    k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.32.1
+    k8s.io/apimachinery => k8s.io/apimachinery v0.32.1
+    k8s.io/client-go => k8s.io/client-go v0.32.1
+    k8s.io/component-base => k8s.io/component-base v0.32.1
+    sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.20.4
+)

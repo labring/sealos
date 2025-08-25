@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
+    app.kubernetes.io/managed-by: kbcli
+  name: sealos-mongodb
+  namespace: sealos
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
+    app.kubernetes.io/managed-by: kbcli
+  name: sealos-mongodb
+  namespace: sealos
+rules:
+  - apiGroups:
+      - '*'
+    resources:
+      - '*'
+    verbs:
+      - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    sealos-db-provider-cr: sealos-mongodb
+    app.kubernetes.io/instance: sealos-mongodb
+    app.kubernetes.io/managed-by: kbcli
+  name: sealos-mongodb
+  namespace: sealos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: sealos-mongodb
+subjects:
+  - kind: ServiceAccount
+    name: sealos-mongodb
+---
+apiVersion: apps.kubeblocks.io/v1alpha1
+kind: Cluster
+metadata:
+  finalizers:
+    - cluster.kubeblocks.io/finalizer
+  labels:
+    clusterdefinition.kubeblocks.io/name: mongodb
+    clusterversion.kubeblocks.io/name: {{ .mongodbVersion }}
+  name: sealos-mongodb
+  namespace: sealos
+spec:
+  clusterDefinitionRef: mongodb
+  clusterVersionRef: {{ .mongodbVersion }}
+  componentSpecs:
+    - componentDefRef: mongodb
+      monitor: true
+      name: mongodb
+      replicas: 1
+      resources:
+        limits:
+          cpu: "1"
+          memory: 2Gi
+        requests:
+          cpu: 100m
+          memory: 102Mi
+      serviceAccountName: sealos-mongodb
+      volumeClaimTemplates:
+        - name: data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 5Gi
+  terminationPolicy: Delete

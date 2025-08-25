@@ -1,0 +1,50 @@
+run:
+  go: "1.20"
+
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 5m
+
+  # include test files or not, default is true
+  tests: true
+
+  modules-download-mode: readonly
+
+issues:
+  # https://github.com/golangci/golangci-lint/pull/4509
+  exclude-dirs-use-default: true
+  exclude-dirs:
+    - (^|/)fork($|/)
+    - pkg/registry/save/lib/
+
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports
+    - revive
+    - stylecheck
+    - goconst
+    - gosimple
+    - misspell
+    - whitespace
+    - ineffassign
+    - typecheck
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - nilerr
+    - unconvert
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    exclude-functions:
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+  revive:
+    rules:
+      - name: dot-imports
+        disabled: true

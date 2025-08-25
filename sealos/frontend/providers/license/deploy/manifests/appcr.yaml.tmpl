@@ -1,0 +1,17 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: license
+  namespace: ns-admin
+spec:
+  data:
+    desc: license
+    url: "https://license.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://license.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  menuData:
+  i18n:
+    zh:
+      name: 许可证
+  name: License
+  type: iframe
+  displayType: normal

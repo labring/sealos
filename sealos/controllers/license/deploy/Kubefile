@@ -1,0 +1,10 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV MONGO_URI="mongodb://mongo:27017/resources"
+
+CMD ["kubectl apply -f manifests"]

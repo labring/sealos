@@ -1,0 +1,9 @@
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
+
+.env
+!.vscode/
+resources/codicons/

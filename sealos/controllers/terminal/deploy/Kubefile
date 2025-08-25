@@ -1,0 +1,14 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV userNamespace="user-system"
+ENV cloudDomain="127.0.0.1.nip.io"
+ENV cloudPort=""
+ENV wildcardCertSecretName="wildcard-cert"
+ENV wildcardCertSecretNamespace="sealos-system"
+
+CMD ["kubectl apply -f manifests"]

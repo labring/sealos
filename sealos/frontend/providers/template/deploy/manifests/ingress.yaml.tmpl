@@ -1,0 +1,37 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}, https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_clear_headers "X-Frame-Options:";
+      more_set_headers "Content-Security-Policy: default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}";
+      more_set_headers "X-Xss-Protection: 1; mode=block";
+    higress.io/response-header-control-remove: X-Frame-Options
+    higress.io/response-header-control-update: |
+      Content-Security-Policy "default-src * blob: data: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; img-src * data: blob: resource: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} resource: *.baidu.com *.bdstatic.com https://js.stripe.com; frame-src 'self' *.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} {{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} mailto: tel: weixin: mtt: *.baidu.com https://js.stripe.com; frame-ancestors 'self' https://{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }} https://*.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+      X-Xss-Protection "1; mode=block"
+  name: template-frontend
+  namespace: template-frontend
+spec:
+  rules:
+    - host: template.{{ .cloudDomain }}
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: template-frontend
+                port:
+                  number: 3000
+  tls:
+    - hosts:
+        - template.{{ .cloudDomain }}
+      secretName: wildcard-cert

@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: cronjob
+  namespace: app-system
+spec:
+  data:
+    desc: CronJob
+    url: "https://cronjob.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://cronjob.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  menuData:
+  name: CronJob
+  type: iframe
+  displayType: normal
+  i18n:
+    zh:
+      name: 定时任务
+    zh-Hans:
+      name: 定时任务

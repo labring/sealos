@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: account-manager-env
+data:
+  ApproachingDeletionPeriod: '{{ .ApproachingDeletionPeriod | default "345600" }}'
+  ImminentDeletionPeriod: '{{ .ImminentDeletionPeriod | default "259200" }}'
+  FinalDeletionPeriod: '{{ .FinalDeletionPeriod | default "604800" }}'
+  DebtDetectionCycleSeconds: '{{ .DebtDetectionCycleSeconds | default "1800" }}'
+  OSAdminSecret: '{{ .OSAdminSecret }}'
+  OSInternalEndpoint: '{{ .OSInternalEndpoint }}'
+  OSNamespace: '{{ .OSNamespace }}'
+  MONGO_URI: '{{ .MONGO_URI }}'
+  LOCAL_COCKROACH_URI: '{{ .LOCAL_COCKROACH_URI }}'
+  GLOBAL_COCKROACH_URI: '{{ .GLOBAL_COCKROACH_URI }}'
+  LOCAL_REGION: '{{ .LOCAL_REGION }}'
+  DOMAIN: '{{ .cloudDomain }}'
+  PORT: '{{ .cloudPort }}'
+  ACCOUNT_API_JWT_SECRET: '{{ .ACCOUNT_API_JWT_SECRET }}'
+  BASE_BALANCE: '{{ .BASE_BALANCE | default "ri79LzQiQrs6CVa1ctE308+AseBXbOua0RIMCXAH5hc3irs=" }}'
+
+

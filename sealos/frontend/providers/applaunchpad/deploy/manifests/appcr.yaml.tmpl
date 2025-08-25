@@ -1,0 +1,19 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: applaunchpad
+  namespace: app-system
+spec:
+  data:
+    desc: App Launchpad
+    url: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}"
+  icon: "https://applaunchpad.{{ .cloudDomain }}{{ if .cloudPort }}:{{ .cloudPort }}{{ end }}/logo.svg"
+  i18n:
+    zh:
+      name: 应用管理
+    zh-Hans:
+      name: 应用管理
+  menuData:
+  name: App Launchpad
+  type: iframe
+  displayType: normal

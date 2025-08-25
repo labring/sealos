@@ -1,0 +1,5 @@
+FROM scratch
+COPY registry registry
+COPY manifests manifests
+
+CMD ["kubectl apply -f manifests/deploy.yaml]

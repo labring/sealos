@@ -1,0 +1,35 @@
+{
+  "name": "@sealos/ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.ts",
+  "src": "./src",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "next dev",
+    "build": "exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^8.0.7",
+    "react-syntax-highlighter": "^15.5.0",
+    "rollup-plugin-peer-deps-external": "^2.2.4"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.5",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.4",
+    "@types/react": "^18.2.37",
+    "@types/react-syntax-highlighter": "^15.5.7",
+    "rollup": "2.79.1",
+    "rollup-plugin-dts": "^4.2.3",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2"
+  }
+}

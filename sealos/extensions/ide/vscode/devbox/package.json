@@ -1,0 +1,242 @@
+{
+  "name": "devbox-aio",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "version": "1.4.3",
+  "keywords": [
+    "devbox",
+    "remote development",
+    "remote"
+  ],
+  "bugs": {
+    "url": "https://github.com/labring/sealos/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/labring/sealos"
+  },
+  "homepage": "https://github.com/labring/sealos/blob/main/extensions/ide/vscode/devbox/README.md",
+  "publisher": "labring",
+  "license": "Apache-2.0",
+  "icon": "images/icon.png",
+  "engines": {
+    "vscode": "^1.91.0"
+  },
+  "l10n": "./l10n",
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onUri"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "devbox.connectRemoteSSH",
+        "title": "%devbox.connectRemoteSSH.title%"
+      },
+      {
+        "command": "devboxDashboard.refresh",
+        "title": "%devbox.refresh.title%",
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "devboxDashboard.createDevbox",
+        "title": "%devbox.create.title%",
+        "icon": {
+          "light": "images/light/create.svg",
+          "dark": "images/dark/create.svg"
+        }
+      },
+      {
+        "command": "devboxDashboard.openDevbox",
+        "title": "%devbox.open.title%",
+        "icon": {
+          "light": "images/light/open.svg",
+          "dark": "images/dark/open.svg"
+        }
+      },
+      {
+        "command": "devboxDashboard.deleteDevbox",
+        "title": "%devbox.delete.title%",
+        "icon": {
+          "light": "images/light/delete.svg",
+          "dark": "images/dark/delete.svg"
+        }
+      },
+      {
+        "command": "devbox.openExternalLink",
+        "title": "%devbox.openInBrowser.title%"
+      },
+      {
+        "command": "devbox.copy",
+        "title": "%devbox.copy.title%",
+        "icon": {
+          "light": "images/light/copy.svg",
+          "dark": "images/dark/copy.svg"
+        }
+      },
+      {
+        "command": "devbox.refreshDatabase",
+        "title": "%devbox.refreshDatabase.title%",
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "devbox.refreshNetwork",
+        "title": "%devbox.refreshNetwork.title%",
+        "icon": {
+          "light": "images/light/refresh.svg",
+          "dark": "images/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "devbox.gotoDatabaseWebPage",
+        "title": "%devbox.gotoDatabaseWebPage.title%",
+        "icon": {
+          "light": "images/light/link-external.svg",
+          "dark": "images/dark/link-external.svg"
+        }
+      }
+    ],
+    "views": {
+      "devboxListView": [
+        {
+          "id": "devboxDashboard",
+          "name": "%devbox.myProjects.title%"
+        },
+        {
+          "id": "devboxFeedback",
+          "name": "%devbox.feedback.title%"
+        }
+      ],
+      "networkView": [
+        {
+          "id": "networkView",
+          "name": "%devbox.network.title%",
+          "type": "webview",
+          "when": "remoteName == ssh-remote"
+        }
+      ],
+      "dbView": [
+        {
+          "type": "webview",
+          "id": "dbView",
+          "name": "%devbox.database.title%",
+          "when": "remoteName == ssh-remote"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "devboxListView",
+          "title": "%devbox.devbox.title%",
+          "icon": "images/explorer.svg"
+        }
+      ],
+      "panel": [
+        {
+          "id": "networkView",
+          "title": "%devbox.network.title%",
+          "icon": "images/network.svg"
+        },
+        {
+          "id": "dbView",
+          "title": "%devbox.database.title%",
+          "icon": "images/database.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "devboxDashboard",
+        "contents": "%devbox.welcome.title%"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "devboxDashboard.createDevbox",
+          "when": "view == devboxDashboard",
+          "group": "navigation"
+        },
+        {
+          "command": "devboxDashboard.refresh",
+          "when": "view == devboxDashboard",
+          "group": "navigation"
+        },
+        {
+          "command": "devbox.refreshDatabase",
+          "when": "view == dbView",
+          "group": "navigation@2"
+        },
+        {
+          "command": "devbox.refreshNetwork",
+          "when": "view == networkView",
+          "group": "navigation"
+        },
+        {
+          "command": "devbox.gotoDatabaseWebPage",
+          "when": "view == dbView",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "devboxDashboard.openDevbox",
+          "when": "view == devboxDashboard && viewItem == devbox",
+          "group": "inline@1"
+        },
+        {
+          "command": "devboxDashboard.deleteDevbox",
+          "when": "view == devboxDashboard && viewItem == devbox",
+          "group": "inline@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "npm run copy-codicons && webpack --watch",
+    "package": "npm run copy-codicons && webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "copy-codicons": "mkdir -p resources/codicons && cp -r node_modules/@vscode/codicons/dist/* resources/codicons/",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.91.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.93.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@vscode/codicons": "^0.0.36",
+    "axios": "^1.7.5",
+    "dayjs": "^1.11.13",
+    "execa": "^9.5.1",
+    "ssh-config": "^5.0.0"
+  }
+}

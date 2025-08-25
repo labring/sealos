@@ -1,0 +1,107 @@
+# Copyright © 2023 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: kubernetes-dashboard
+  namespace: app-system
+spec:
+  data:
+    desc: Sealos Cloud Kubernetes Dashboard
+    url: ""
+  icon: /images/kubernetes.svg
+  menuData:
+    helpDropDown: true
+    nameColor: text-black
+  name: Kubernetes-Dashboard
+  type: iframe
+  displayType: hide
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: postgres
+  namespace: app-system
+spec:
+  data:
+    desc: postgres operator
+    url: ""
+  icon: /images/pgadmin.svg
+  menuData:
+  name: Postgres
+  type: app
+  displayType: normal
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: sealos-cloud-provider
+  namespace: app-system
+spec:
+  data:
+    desc: infra operator
+    url: ""
+  icon: /images/infraicon/scp.png
+  menuData:
+  name: sealos cloud provider
+  type: app
+  displayType: more
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: sealos-document
+  namespace: app-system
+spec:
+  data:
+    desc: Sealos Documents
+    url: https://www.sealos.io/docs/cloud/Intro
+  icon: /images/sealos.svg
+  menuData:
+  name: Sealos Document
+  type: iframe
+  displayType: normal
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: terminal
+  namespace: app-system
+spec:
+  data:
+    desc: sealos Terminal
+    url: ""
+  icon: /images/terminal.svg
+  menuData:
+  name: Terminal
+  type: iframe
+  displayType: normal
+  i18n:
+    zh-Hans:
+      name: 终端
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: deploy-manager
+spec:
+  name: Deploy Manager
+  icon: "/images/sealos.svg"
+  type: iframe
+  data:
+    url: "https://deploy.cloud.sealos.io"
+    desc: Deploy Manager
+  menuData:
+  displayType: normal

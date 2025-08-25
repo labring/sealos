@@ -1,0 +1,18 @@
+export type TloginFailureMessage =
+  | 'failed to get user from k8s'
+  | 'internal server error'
+  | 'invalid credentials'
+  | 'user not found'
+  | 'user oauthprovider not found'
+  | 'The REGION_UID is undefined'
+  | 'user not initialized'
+  | 'failed to get user from db'
+  | 'user already initialized userUid'
+  | 'other region is initializing'
+  | 'failed to get email'
+  | 'email conflict'
+  | 'failed to connect to GitHub'
+  | 'failed to get user from GitHub'
+  | 'failed to get email from GitHub'
+  | 'failed to get user from Google'
+  | 'failed to connect to Google';

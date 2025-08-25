@@ -1,0 +1,31 @@
+variable "name" {
+  default = "kubernetes-tf"
+}
+
+variable "zone" {
+  default = "ap-southeast-1a"
+}
+
+variable "region" {
+  default = "ap-southeast-1"
+}
+
+variable "image_id" {
+  default = "ubuntu_22_04_arm64_20G_alibase_20230712.vhd"
+}
+
+variable "resource_group_id" {
+  default = "rg-aek2rlg23xjy2jq"
+}
+
+variable "ecs_type" {
+  default = "ecs.g6r.xlarge"
+}
+
+variable "ecs_password" {
+  default = "Fanux#123"
+}
+
+variable "disk_category" {
+  default = "cloud_essd"
+}

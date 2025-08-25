@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "prisma/*": [
+        "prisma/*"
+      ]
+    },
+    "isolatedModules": true,
+    "types": [
+      "@types/jest"
+    ],
+    "noEmit": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "./scripts/**/*.ts",
+    "./prisma/**/*.ts",
+    "src/types/i18next.d.ts"
+  ],
+  "extends": "../tsconfig.web.json"
+}

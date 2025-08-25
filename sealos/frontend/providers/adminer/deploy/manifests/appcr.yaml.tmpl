@@ -1,0 +1,14 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: adminer
+  namespace: app-system
+spec:
+  data:
+    desc: sealos CLoud Adminer
+    url: "https://adminer.{{ .cloudDomain }}"
+  icon: "https://adminer.{{ .cloudDomain }}/logo.svg"
+  menuData:
+  name: Adminer
+  type: iframe
+  displayType: more

@@ -1,0 +1,442 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: adminer-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.0
+  name: adminers.adminer.db.sealos.io
+spec:
+  group: adminer.db.sealos.io
+  names:
+    kind: Adminer
+    listKind: AdminerList
+    plural: adminers
+    singular: adminer
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.keepalived
+      name: Keepalived
+      type: string
+    - jsonPath: .status.availableReplicas
+      name: Available
+      type: string
+    - jsonPath: .status.domain
+      name: Domain
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Adminer is the Schema for the adminers API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AdminerSpec defines the desired state of Adminer
+            properties:
+              connections:
+                items:
+                  type: string
+                type: array
+              ingressType:
+                default: nginx
+                enum:
+                - nginx
+                type: string
+              keepalived:
+                type: string
+            required:
+            - connections
+            - keepalived
+            type: object
+          status:
+            description: AdminerStatus defines the observed state of Adminer
+            properties:
+              availableReplicas:
+                format: int32
+                type: integer
+              domain:
+                type: string
+            required:
+            - availableReplicas
+            - domain
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: adminer-controller-manager
+  namespace: adminer-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: adminer-leader-election-role
+  namespace: adminer-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: adminer-manager-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - adminer.db.sealos.io
+  resources:
+  - adminers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - adminer.db.sealos.io
+  resources:
+  - adminers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - adminer.db.sealos.io
+  resources:
+  - adminers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: adminer-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: adminer-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: adminer-leader-election-rolebinding
+  namespace: adminer-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: adminer-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: adminer-controller-manager
+  namespace: adminer-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: adminer-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: adminer-manager-role
+subjects:
+- kind: ServiceAccount
+  name: adminer-controller-manager
+  namespace: adminer-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: adminer-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: adminer-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: adminer-controller-manager
+  namespace: adminer-system
+---
+apiVersion: v1
+data:
+  controller_manager_config.yaml: |
+    apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+    kind: ControllerManagerConfig
+    health:
+      healthProbeBindAddress: :8081
+    metrics:
+      bindAddress: 127.0.0.1:8080
+    webhook:
+      port: 9443
+    leaderElection:
+      leaderElect: true
+      resourceName: 50686b4e.sealos.io
+    # leaderElectionReleaseOnCancel defines if the leader should step down volume
+    # when the Manager ends. This requires the binary to immediately end when the
+    # Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
+    # speeds up voluntary leader transitions as the new leader don't have to wait
+    # LeaseDuration time first.
+    # In the default scaffold provided, the program ends immediately after
+    # the manager stops, so would be fine to enable this option. However,
+    # if you are doing or is intended to do any operation such as perform cleanups
+    # after the manager stops then its usage might be unsafe.
+    # leaderElectionReleaseOnCancel: true
+kind: ConfigMap
+metadata:
+  name: adminer-manager-config
+  namespace: adminer-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: adminer-controller-manager-metrics-service
+  namespace: adminer-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: adminer-controller-manager
+  namespace: adminer-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.12.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        env:
+        - name: DOMAIN
+          value: {{ .cloudDomain }}
+        - name: TLS_ENABLED
+          value: '{{ .tlsEnabled }}'
+        - name: IMAGE
+          value: {{ .image }}
+        - name: SECRET_NAME
+          value: {{ .wildcardCertSecretName }}
+        - name: SECRET_NAMESPACE
+          value: {{ .wildcardCertSecretNamespace }}
+        image: ghcr.io/labring/sealos-db-adminer-controller:latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: adminer-controller-manager
+      terminationGracePeriodSeconds: 10
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: "control-plane"
+                  operator: In
+                  values:
+                  - controller-manager
+              topologyKey: "kubernetes.io/hostname"

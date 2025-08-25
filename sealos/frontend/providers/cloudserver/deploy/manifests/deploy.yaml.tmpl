@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: cloudserver-frontend
+  name: cloudserver-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudserver-frontend-config
+  namespace: cloudserver-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudserver-frontend
+  namespace: cloudserver-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudserver-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: cloudserver-frontend
+    spec:
+      containers:
+        - name: cloudserver-frontend
+          env:
+            - name: LAF_BASE_URL
+              value: {{ .lafBaseUrl }}
+            - name: JWT_SECRET_APP
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-cloudserver-frontend:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: cloudserver-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: cloudserver-frontend-volume
+          configMap:
+            name: cloudserver-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cloudserver-frontend
+  name: cloudserver-frontend
+  namespace: cloudserver-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: cloudserver-frontend

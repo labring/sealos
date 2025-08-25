@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: workorder-frontend
+  name: workorder-frontend
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workorder-frontend-config
+  namespace: workorder-frontend
+data:
+  config.yaml: |-
+    addr: :3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workorder-frontend
+  namespace: workorder-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workorder-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        app: workorder-frontend
+    spec:
+      containers:
+        - name: workorder-frontend
+          env:
+            - name: SEALOS_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: MONGODB_URI
+            - name: MINIO_URL
+            - name: MINIO_BUCKET_NAME
+            - name: MINIO_ACCESS_KEY
+            - name: MINIO_SECRET_KEY
+            - name: MINIO_PORT
+            - name: ADMIN_FEISHU_URL
+            - name: ADMIN_FEISHU_CALLBACK_URL
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+            requests:
+              cpu: 10m
+              memory: 128Mi
+          # do not modify this image, it is used for CI/CD
+          image: ghcr.io/labring/sealos-workorder-frontend:latest
+          imagePullPolicy: Always
+          readinessProbe:
+            httpGet:
+              path: /api/cronjob/init
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 3
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          volumeMounts:
+            - name: workorder-frontend-volume
+              mountPath: /config.yaml
+              subPath: config.yaml
+      volumes:
+        - name: workorder-frontend-volume
+          configMap:
+            name: workorder-frontend-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: workorder-frontend
+  name: workorder-frontend
+  namespace: workorder-frontend
+spec:
+  ports:
+    - name: http
+      port: 3000
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: workorder-frontend

@@ -1,0 +1,11 @@
+FROM scratch
+COPY tars tars
+COPY scripts scripts
+
+ENV cloudDomain=${cloudDomain:-"127.0.0.1.nip.io"}
+ENV cloudPort=""
+ENV registryAddr=${registryAddr:-"sealos.hub:5000"}
+ENV registryUser=${registryUser:-"admin"}
+ENV registryPassword=${registryPassword:-"passw0rd"}
+
+CMD ["bash scripts/init.sh"]

@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.web.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2020",
+    "forceConsistentCasingInFileNames": false,
+    "moduleResolution": "bundler",
+    "paths": {
+      "@/*": ["./*"],
+      "prisma/*": ["prisma/*"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"]
+}

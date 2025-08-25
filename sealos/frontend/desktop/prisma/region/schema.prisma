@@ -1,0 +1,59 @@
+generator regionClient {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+	binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider     = "cockroachdb"
+  url          = env("REGION_DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Workspace {
+  uid           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String          @unique
+  displayName   String
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @updatedAt @db.Timestamptz(3)
+  userWorkspace UserWorkspace[]
+}
+
+model UserCr {
+  uid           String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  crName        String          @unique
+  userUid       String          @unique @db.Uuid
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime        @db.Timestamptz(3) @updatedAt
+  userWorkspace UserWorkspace[]
+}
+
+model UserWorkspace {
+  uid          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt    DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime   @db.Timestamptz(3) @updatedAt
+  workspaceUid String     @db.Uuid
+  userCrUid    String     @db.Uuid
+  handlerUid   String?    @db.Uuid
+  role         Role       @default(DEVELOPER)
+  status       JoinStatus
+  isPrivate    Boolean
+  joinAt       DateTime?  @db.Timestamptz(3)
+  userCr       UserCr     @relation(fields: [userCrUid], references: [uid])
+  workspace    Workspace  @relation(fields: [workspaceUid], references: [uid])
+
+  @@unique([workspaceUid, userCrUid])
+  @@index([userCrUid])
+}
+
+enum JoinStatus {
+  INVITED
+  IN_WORKSPACE
+  NOT_IN_WORKSPACE
+}
+
+enum Role {
+  MANAGER
+  DEVELOPER
+  OWNER
+}

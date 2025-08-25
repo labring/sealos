@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": ["./src/**/*"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "esnext",
+    "jsx": "react",
+    "types": ["node"],
+    "importHelpers": true,
+    "target": "esnext"
+  }
+}

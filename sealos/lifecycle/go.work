@@ -1,0 +1,10 @@
+go 1.23
+
+toolchain go1.23.1
+
+use (
+	.
+	./staging/src/github.com/labring/image-cri-shim
+	./staging/src/github.com/labring/lvscare
+	./test/e2e
+)
