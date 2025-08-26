@@ -52,6 +52,7 @@
     "react-day-picker": "^8.8.2",
     "react-dom": "18.2.0",
     "react-i18next": "^14.1.2",
+    "react-zoom-pan-pinch": "^3.7.0",
     "sealos-desktop-sdk": "workspace:*",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.2.2",

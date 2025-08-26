@@ -56,7 +56,7 @@ export const TrendBar = memo(function Trend() {
     [rechargeArr, t('Total Recharge')]
   ];
   return (
-    <div className="flex flex-col text-sm border rounded-2xl">
+    <div className="flex flex-col text-sm border rounded-2xl shadow-sm">
       <div className="flex px-6 items-center h-16 border-b">
         <div className="flex h-5 gap-2 items-center font-medium">
           <h3>{t('Annual Income and Expenditure')}</h3>
