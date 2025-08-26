@@ -3,6 +3,9 @@ import '@/styles/globals.css';
 import Layout from '@/layout';
 import { getAppConfig } from '@/api/platform';
 import { getAppList } from '@/api/billing';
+import request from '@/service/request';
+import { ApiResp } from '@/types/api';
+import { Region } from '@/types/region';
 import useAppTypeStore from '@/stores/appType';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
@@ -39,17 +42,19 @@ const App = ({ Component, pageProps }: AppProps) => {
   const state = useEnvStore();
   const router = useRouter();
   const { setAppTypeMap, appTypeMap } = useAppTypeStore();
-  const { setAppTypeList } = useBillingStore();
+  const { setAppTypeList, setRegionList } = useBillingStore();
   // init language
   const changeI18n = (data: { currentLanguage: string }) => {
     router.replace(router.basePath, router.asPath, { locale: data.currentLanguage });
   };
+
   useEffect(() => {
     sealosApp.addAppEventListen(EVENT_NAME.CHANGE_I18N, changeI18n);
     return () => {
       sealosApp.removeAppEventListen(EVENT_NAME.CHANGE_I18N);
     };
   }, []);
+
   useEffect(() => {
     state.setEnv('i18nIsInitialized', false);
     (async () => {
@@ -98,6 +103,22 @@ const App = ({ Component, pageProps }: AppProps) => {
       if (record) {
         setAppTypeMap(new Map(Object.entries(record)));
         setAppTypeList(['all_app_type', ...(Object.values(record) || [])]);
+      }
+    })();
+  }, []);
+
+  // Initialize regions data
+  useEffect(() => {
+    (async () => {
+      try {
+        const regionData = await queryClient.fetchQuery({
+          queryFn: () => request<any, ApiResp<Region[]>>('/api/getRegions'),
+          queryKey: ['regionList', 'app']
+        });
+        console.log('Regions loaded in app:', regionData);
+        setRegionList(regionData?.data || []);
+      } catch (error) {
+        console.error('Failed to load regions:', error);
       }
     })();
   }, []);
