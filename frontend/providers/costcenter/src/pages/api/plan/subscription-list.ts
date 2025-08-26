@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { WorkspaceSubscriptionRequestSchema, SubscriptionInfoResponse } from '@/types/plan';
+import { WorkspaceSubscriptionListResponse } from '@/types/plan';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,31 +9,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const parseResult = WorkspaceSubscriptionRequestSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return jsonRes(res, {
-        code: 400,
-        message: parseResult.error.message
-      });
-    }
-
-    const { workspace, regionDomain } = parseResult.data;
-
     const client = await makeAPIClientByHeader(req, res);
     if (!client) return;
 
-    const response = await client.post<SubscriptionInfoResponse>(
-      '/account/v1alpha1/workspace-subscription/info',
-      {
-        workspace,
-        regionDomain
-      }
+    const response = await client.post<WorkspaceSubscriptionListResponse>(
+      '/account/v1alpha1/workspace-subscription/list'
     );
 
-    return jsonRes<SubscriptionInfoResponse>(res, {
+    return jsonRes<WorkspaceSubscriptionListResponse>(res, {
       data: response.data
     });
   } catch (error: any) {
+    console.error('Error in workspace subscription list API:', error);
+
     if (error.response?.data) {
       return jsonRes(res, {
         code: error.response.status || 500,
