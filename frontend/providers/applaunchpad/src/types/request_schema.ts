@@ -31,7 +31,8 @@ import {
   ResourceSchema,
   PortConfigSchema,
   LaunchpadApplicationSchema,
-  imageRegistrySchema
+  imageRegistrySchema,
+  resourceConverters
 } from './schema';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
@@ -55,15 +56,40 @@ export const UpdateAppResourcesSchema = z
     // Resource configuration (use nested structure like CreateLaunchpadRequestSchema)
     resource: z
       .object({
-        cpu: z.number().optional().openapi({
-          description: 'CPU allocation in millicores'
-        }),
-        memory: z.number().optional().openapi({
-          description: 'Memory allocation in MB'
-        }),
-        replicas: z.number().min(0).optional().openapi({
-          description: 'Number of pod replicas'
-        })
+        cpu: z
+          .number()
+          .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
+            message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
+          })
+          .optional()
+          .openapi({
+            description: 'CPU allocation in cores',
+            enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
+          }),
+        memory: z
+          .number()
+          .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
+            message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
+          })
+          .optional()
+          .openapi({
+            description: 'Memory allocation in GB',
+            enum: [0.1, 0.5, 1, 2, 4, 8, 16]
+          }),
+        replicas: z
+          .number()
+          .refine(
+            (val) =>
+              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(val),
+            {
+              message: 'Replicas must be between 1 and 20'
+            }
+          )
+          .optional()
+          .openapi({
+            description: 'Number of pod replicas',
+            enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+          })
       })
       .optional()
       .openapi({
@@ -217,8 +243,8 @@ export const CreateLaunchpadRequestSchema = z
 export function transformToLegacySchema(
   standardRequest: z.infer<typeof CreateLaunchpadRequestSchema>
 ): AppEditType {
-  const cpuValue = standardRequest.resource.cpu;
-  const memoryValue = standardRequest.resource.memory;
+  const cpuValue = resourceConverters.cpuToMillicores(standardRequest.resource.cpu);
+  const memoryValue = resourceConverters.memoryToMB(standardRequest.resource.memory);
 
   const networks = standardRequest.ports?.map((port) => ({
     serviceName: `service-${nanoid()}`, // 自动生成
@@ -357,8 +383,8 @@ export function transformFromLegacySchema(
     args: legacyData.cmdParam,
     resource: {
       replicas: legacyData.replicas || 1,
-      cpu: legacyData.cpu || (200 as const),
-      memory: legacyData.memory || (256 as const),
+      cpu: resourceConverters.millicoresToCpu(legacyData.cpu || 200),
+      memory: resourceConverters.mbToMemory(legacyData.memory || 256),
       gpu: legacyData.gpu
         ? {
             vendor: legacyData.gpu.manufacturers,

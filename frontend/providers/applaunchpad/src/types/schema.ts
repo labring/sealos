@@ -22,29 +22,55 @@ import { customAlphabet } from 'nanoid';
 
 export const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyz', 12);
 
+// Conversion utilities for resource values
+export const resourceConverters = {
+  // Convert CPU cores to millicores (e.g., 0.1 -> 100, 1 -> 1000)
+  cpuToMillicores: (cores: number): number => cores * 1000,
+
+  // Convert GB to MB (e.g., 0.5 -> 512, 1 -> 1024)
+  memoryToMB: (gb: number): number => gb * 1024,
+
+  // Convert millicores to cores for display (e.g., 100 -> 0.1, 1000 -> 1)
+  millicoresToCpu: (millicores: number): number => millicores / 1000,
+
+  // Convert MB to GB for display (e.g., 512 -> 0.5, 1024 -> 1)
+  mbToMemory: (mb: number): number => mb / 1024
+};
+
 export const ResourceSchema = z.object({
-  replicas: z.number().min(0).max(10).default(1).openapi({
-    description: 'Number of pod replicas'
-  }),
+  replicas: z
+    .number()
+    .refine(
+      (val) =>
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].includes(val),
+      {
+        message: 'Replicas must be between 1 and 20'
+      }
+    )
+    .default(1)
+    .openapi({
+      description: 'Number of pod replicas',
+      enum: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    }),
   cpu: z
     .number()
-    .refine((val) => [100, 200, 500, 1000, 2000, 3000, 4000, 8000].includes(val), {
-      message: 'CPU must be one of: 100, 200, 500, 1000, 2000, 3000, 4000, 8000'
+    .refine((val) => [0.1, 0.2, 0.5, 1, 2, 3, 4, 8].includes(val), {
+      message: 'CPU must be one of: 0.1, 0.2, 0.5, 1, 2, 3, 4, 8'
     })
-    .default(200)
+    .default(0.2)
     .openapi({
-      description: 'CPU allocation in millicores',
-      enum: [100, 200, 500, 1000, 2000, 3000, 4000, 8000]
+      description: 'CPU allocation in cores',
+      enum: [0.1, 0.2, 0.5, 1, 2, 3, 4, 8]
     }),
   memory: z
     .number()
-    .refine((val) => [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384].includes(val), {
-      message: 'Memory must be one of: 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384'
+    .refine((val) => [0.1, 0.5, 1, 2, 4, 8, 16].includes(val), {
+      message: 'Memory must be one of: 0.1, 0.5, 1, 2, 4, 8, 16'
     })
-    .default(256)
+    .default(0.5)
     .openapi({
-      description: 'Memory allocation in MB',
-      enum: [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+      description: 'Memory allocation in GB',
+      enum: [0.1, 0.5, 1, 2, 4, 8, 16]
     }),
   gpu: z
     .object({

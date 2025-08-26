@@ -8,7 +8,7 @@ import { str2Num } from '@/utils/tools';
 import { adaptAppDetail } from '@/utils/adapt';
 import { DeployKindsType, AppDetailType } from '@/types/app';
 import { z } from 'zod';
-import { LaunchpadApplicationSchema } from '@/types/schema';
+import { LaunchpadApplicationSchema, resourceConverters } from '@/types/schema';
 import { transformFromLegacySchema } from '@/types/request_schema';
 import {
   PatchUtils,
@@ -550,31 +550,33 @@ export async function updateAppResources(
     }> = [];
 
     if (updateData.resource?.cpu !== undefined) {
+      const millicores = resourceConverters.cpuToMillicores(updateData.resource.cpu);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/cpu',
-          value: `${str2Num(Math.floor(updateData.resource.cpu * 0.1))}m`
+          value: `${str2Num(Math.floor(millicores * 0.1))}m`
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/cpu',
-          value: `${str2Num(updateData.resource.cpu)}m`
+          value: `${str2Num(millicores)}m`
         }
       );
     }
 
     if (updateData.resource?.memory !== undefined) {
+      const memoryMB = resourceConverters.memoryToMB(updateData.resource.memory);
       jsonPatch.push(
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/requests/memory',
-          value: `${str2Num(Math.floor(updateData.resource.memory * 0.1))}Mi`
+          value: `${str2Num(Math.floor(memoryMB * 0.1))}Mi`
         },
         {
           op: 'replace',
           path: '/spec/template/spec/containers/0/resources/limits/memory',
-          value: `${str2Num(updateData.resource.memory)}Mi`
+          value: `${str2Num(memoryMB)}Mi`
         }
       );
     }
