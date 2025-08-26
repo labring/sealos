@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Trend as OverviewTrend } from '@/components/cost_overview/trend';
 import { TrendBar as TrendOverviewBar } from '@/components/cost_overview/trendBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@sealos/shadcn-ui/tabs';
+import { CostTree } from '@/components/billing/CostTree';
 
 function Billing() {
   const { t } = useTranslation();
@@ -28,7 +29,9 @@ function Billing() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="listing"></TabsContent>
+        <TabsContent value="listing">
+          <CostTree />
+        </TabsContent>
 
         <TabsContent value="trends" className="flex flex-col gap-4">
           <OverviewTrend />
