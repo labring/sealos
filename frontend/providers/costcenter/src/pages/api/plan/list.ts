@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClient } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { PlanListResponse, PlanListResponseSchema } from '@/types/plan';
-import { ApiResp } from '@/types/api';
+import { PlanListResponse } from '@/types/plan';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
