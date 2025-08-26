@@ -357,6 +357,7 @@
   "running_time": "Uptime",
   "sealaf": "sealaf",
   "search": "Search",
+  "search_name_and_remark_placeholder": "Search by name or remark",
   "search_or_create": "Search or create",
   "select_a_maximum_of_10_files": "Select up to 10 files",
   "service_deletion_failed": "Failed to delete the service",
