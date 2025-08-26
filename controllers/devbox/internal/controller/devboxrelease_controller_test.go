@@ -40,13 +40,13 @@ var _ = Describe("Devboxrelease Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		devboxrelease := &devboxv1alpha2.Devboxrelease{}
+		devboxrelease := &devboxv1alpha2.DevboxRelease{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind Devboxrelease")
 			err := k8sClient.Get(ctx, typeNamespacedName, devboxrelease)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &devboxv1alpha2.Devboxrelease{
+				resource := &devboxv1alpha2.DevboxRelease{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -59,7 +59,7 @@ var _ = Describe("Devboxrelease Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &devboxv1alpha2.Devboxrelease{}
+			resource := &devboxv1alpha2.DevboxRelease{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

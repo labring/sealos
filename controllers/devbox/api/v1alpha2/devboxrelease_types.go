@@ -20,8 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DevboxreleaseSpec defines the desired state of Devboxrelease.
-type DevboxreleaseSpec struct {
+// DevboxReleaseSpec defines the desired state of Devboxrelease.
+type DevboxReleaseSpec struct {
 	// +kubebuilder:validation:Required
 	DevboxName string `json:"devboxName"`
 	// +kubebuilder:validation:Required
@@ -41,32 +41,34 @@ const (
 	DevboxReleasePhaseFailed DevboxReleasePhase = "Failed"
 )
 
-type DevboxreleaseStatus struct {
-	Phase               DevboxReleasePhase `json:"phase"`
-	OriginalDevboxState DevboxState        `json:"originalDevboxState"`
+type DevboxReleaseStatus struct {
+	Phase               DevboxReleasePhase `json:"phase,omitempty"`
+	OriginalDevboxState DevboxState        `json:"originalDevboxState,omitempty"`
+	SourceImage         string             `json:"sourceImage,omitempty"`
+	TargetImage         string             `json:"targetImage,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Devboxrelease is the Schema for the devboxreleases API.
-type Devboxrelease struct {
+// DevboxRelease is the Schema for the devboxreleases API.
+type DevboxRelease struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   DevboxreleaseSpec   `json:"spec,omitempty"`
-	Status DevboxreleaseStatus `json:"status,omitempty"`
+	Spec   DevboxReleaseSpec   `json:"spec,omitempty"`
+	Status DevboxReleaseStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// DevboxreleaseList contains a list of Devboxrelease.
-type DevboxreleaseList struct {
+// DevboxReleaseList contains a list of DevboxRelease.
+type DevboxReleaseList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Devboxrelease `json:"items"`
+	Items           []DevboxRelease `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Devboxrelease{}, &DevboxreleaseList{})
+	SchemeBuilder.Register(&DevboxRelease{}, &DevboxReleaseList{})
 }

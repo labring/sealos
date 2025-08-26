@@ -51,6 +51,7 @@ import (
 	"github.com/labring/sealos/controllers/devbox/internal/controller"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/matcher"
 	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/nodes"
+	"github.com/labring/sealos/controllers/devbox/internal/controller/utils/registry"
 	utilresource "github.com/labring/sealos/controllers/devbox/internal/controller/utils/resource"
 	"github.com/labring/sealos/controllers/devbox/internal/stat"
 	// +kubebuilder:scaffold:imports
@@ -298,10 +299,7 @@ func main() {
 		Logger:              ctrl.Log.WithName("state-change-handler"),
 	}
 
-	// 添加调试日志
-	setupLog.Info("StateChangeHandler initialized",
-		"nodeName", nodes.GetNodeName(),
-		"registryAddr", registryAddr)
+	setupLog.Info("StateChangeHandler initialized", "nodeName", nodes.GetNodeName())
 
 	watcher := stateChangeBroadcaster.StartEventWatcher(func(event *corev1.Event) {
 		setupLog.Info("Event received by watcher",
@@ -316,6 +314,13 @@ func main() {
 	if err = (&controller.DevboxreleaseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
+		Registry: registry.Registry{
+			Host: registryAddr,
+			BasicAuth: registry.BasicAuth{
+				Username: registryUser,
+				Password: registryPassword,
+			},
+		},
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Devboxrelease")
 		os.Exit(1)

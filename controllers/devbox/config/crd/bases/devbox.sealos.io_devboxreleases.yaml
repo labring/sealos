@@ -8,8 +8,8 @@ metadata:
 spec:
   group: devbox.sealos.io
   names:
-    kind: Devboxrelease
-    listKind: DevboxreleaseList
+    kind: DevboxRelease
+    listKind: DevboxReleaseList
     plural: devboxreleases
     singular: devboxrelease
   scope: Namespaced
@@ -17,7 +17,7 @@ spec:
   - name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: Devboxrelease is the Schema for the devboxreleases API.
+        description: DevboxRelease is the Schema for the devboxreleases API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DevboxreleaseSpec defines the desired state of Devboxrelease.
+            description: DevboxReleaseSpec defines the desired state of Devboxrelease.
             properties:
               devboxName:
                 type: string
