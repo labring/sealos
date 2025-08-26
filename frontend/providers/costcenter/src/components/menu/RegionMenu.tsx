@@ -1,10 +1,10 @@
 import request from '@/service/request';
 import useBillingStore from '@/stores/billing';
 import { ApiResp } from '@/types';
-import { RegionClient } from '@/types/region';
+import { Region } from '@/types/region';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'next-i18next';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@sealos/shadcn-ui';
 import {
   Select,
@@ -26,15 +26,17 @@ export default function RegionMenu({
 } & React.ComponentProps<typeof Select>) {
   const { setRegion, setRegionList, regionList, regionIdx } = useBillingStore();
   const { t, i18n } = useTranslation();
+
   const { data, isFetching } = useQuery({
     queryFn() {
-      return request<any, ApiResp<RegionClient[]>>('/api/getRegions');
+      return request<any, ApiResp<Region[]>>('/api/getRegions');
     },
-    queryKey: ['regionList', 'menu']
+    queryKey: ['regionList', 'menu'],
+    onSuccess: (data) => {
+      setRegionList(data?.data || []);
+    }
   });
-  useEffect(() => {
-    setRegionList(data?.data || []);
-  }, [data?.data]);
+
   const itemList = useMemo(
     () => regionList.map((v) => (i18n?.language === 'zh' ? v.name.zh : v.name.en)),
     [regionList, i18n?.language]
