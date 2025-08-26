@@ -1,5 +1,4 @@
-import ExchangeIcon from '@/components/icons/ExchangeIcon';
-import { Box, Text, Flex, Button as ChakraButton, useDisclosure } from '@chakra-ui/react';
+import { Box, useDisclosure } from '@chakra-ui/react';
 import { useTranslation } from 'next-i18next';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -35,52 +34,9 @@ function GiftCode() {
       gap="16px"
       alignSelf="stretch"
     >
-      <Flex alignItems="center" gap="8px" width="100%">
-        <Text
-          fontWeight="bold"
-          color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
-          fontFamily="PingFang SC"
-          fontSize="14px"
-          fontStyle="normal"
-          lineHeight="20px"
-          letterSpacing="0.1px"
-        >
-          {t('Gift Card Redemption')}
-        </Text>
-      </Flex>
-      <Flex
-        display="flex"
-        width="100%"
-        padding="8px 14px"
-        justifyContent="center"
-        alignItems="center"
-        gap="6px"
-        alignSelf="stretch"
-        borderRadius="6px"
-        border="0.4px solid var(--Gray-Modern-250, #DFE2EA)"
-        background="var(--White, #FFF)"
-        boxShadow="0px 1px 2px 0px rgba(19, 51, 107, 0.05), 0px 0px 1px 0px rgba(19, 51, 107, 0.08)"
-        cursor="pointer"
-        onClick={onOpen}
-      >
-        <ExchangeIcon />
-        <ChakraButton
-          variant="unstyled"
-          height="auto"
-          minWidth="0"
-          padding="0"
-          color="var(--light-general-on-surface-low, var(--Gray-Modern-600, #485264))"
-          fontFamily="PingFang SC"
-          fontSize="14px"
-          fontStyle="normal"
-          fontWeight={500}
-          lineHeight="20px"
-          letterSpacing="0.1px"
-        >
-          {t('Redeem')}
-        </ChakraButton>
-      </Flex>
-
+      <Button variant="outline" onClick={onOpen}>
+        {t('Redeem')}
+      </Button>
       <GiftCodeModal isOpen={isOpen} onToggle={onToggle} />
     </Box>
   );

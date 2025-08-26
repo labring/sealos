@@ -1,7 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { makeAPIClientByHeader } from '@/service/backend/region';
 import { jsonRes } from '@/service/backend/response';
-import { SubscriptionPayRequestSchema, PaymentResponse, PaymentResponseSchema } from '@/types/plan';
+import {
+  SubscriptionPayRequestSchema,
+  PaymentResponse,
+  PaymentResponseSchema,
+  SubscriptionPayRequest
+} from '@/types/plan';
 import { ApiResp } from '@/types/api';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -10,13 +15,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // 验证请求参数
     const parseResult = SubscriptionPayRequestSchema.safeParse(req.body);
     if (!parseResult.success) {
       return jsonRes(res, {
         code: 400,
-        message: 'Invalid request parameters',
-        error: parseResult.error.flatten()
+        message: 'Invalid request parameters'
       });
     }
 
@@ -35,7 +38,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 准备请求体
-    const requestBody: any = {
+    const requestBody: SubscriptionPayRequest = {
       workspace,
       regionDomain,
       planName,
@@ -50,6 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // 调用后端 API
+    console.log('requestBody', requestBody);
     const response = await client.post<ApiResp<PaymentResponse>>(
       '/account/v1alpha1/workspace-subscription/pay',
       requestBody,
@@ -69,9 +73,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: response.data?.data
     });
   } catch (error: any) {
-    console.error('Error in workspace subscription pay API:', error);
-
-    // 处理后端 API 错误
     if (error.response?.data) {
       return jsonRes(res, {
         code: error.response.status || 500,

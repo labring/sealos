@@ -92,7 +92,6 @@ export function AllPlansSection() {
                 <TableHead className="bg-transparent">Plan</TableHead>
                 <TableHead className="bg-transparent">Renewal Time</TableHead>
                 <TableHead className="bg-transparent">Status</TableHead>
-                <TableHead className="bg-transparent">Action</TableHead>
               </TableLayoutHeadRow>
 
               <TableLayoutBody>
@@ -131,11 +130,6 @@ export function AllPlansSection() {
                           {subscription.pay_status || subscription.PayStatus || 'Unknown'}
                         </span>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">
-                        {subscription.type === 'SUBSCRIPTION' ? 'Manage' : 'Subscribe'}
-                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
