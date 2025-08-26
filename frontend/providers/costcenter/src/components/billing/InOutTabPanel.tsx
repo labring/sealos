@@ -86,19 +86,13 @@ export default function InOutTabPanel() {
           <Text fontSize={'12px'} width={'80px'} color={'grayModern.900'} fontWeight={'500'}>
             {t('region')}
           </Text>
-          <RegionMenu
-            isDisabled={isFetching}
-            innerWidth={isBigScreen2 ? '300px' : isBigScreen1 ? '180px' : '300px'}
-          />
+          <RegionMenu isDisabled={isFetching} />
         </Flex>
         <Flex align={'center'} mb="16px" mr="40px">
           <Text fontSize={'12px'} width={'80px'} color={'grayModern.900'} fontWeight={'500'}>
             {t('workspace')}
           </Text>
-          <NamespaceMenu
-            isDisabled={isFetching}
-            innerWidth={isBigScreen2 ? '300px' : isBigScreen1 ? '180px' : '300px'}
-          />
+          <NamespaceMenu isDisabled={isFetching} />
         </Flex>
         <Flex align={'center'} mb="16px" mr={'40px'}>
           <Text fontSize={'12px'} width={'80px'} color={'grayModern.900'} fontWeight={'500'}>
