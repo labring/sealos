@@ -320,6 +320,7 @@ const DBList = ({
     const searchTerm = filterValue.toLowerCase();
     const name = row.original.name.toLowerCase();
     const remark = (row.original.remark || '').toLowerCase();
+    console.log('row data', row.original.remark);
     return name.includes(searchTerm) || remark.includes(searchTerm);
   };
 
@@ -430,6 +431,7 @@ const DBList = ({
       },
       {
         accessorKey: 'dbType',
+        enableGlobalFilter: false,
         header: () => t('Type'),
         cell: ({ row }) => (
           <Flex alignItems={'center'} gap={'6px'}>
@@ -703,8 +705,8 @@ const DBList = ({
         </Center>
         <Box flex={1}></Box>
         <InputGroup w={'200px'} h={'36px'} mr={'12px'}>
-          <InputLeftElement pointerEvents="none">
-            <Search />
+          <InputLeftElement pointerEvents="none" h="full" alignItems="center">
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </InputLeftElement>
           <Input
             placeholder={t('search_name_and_remark_placeholder')}
