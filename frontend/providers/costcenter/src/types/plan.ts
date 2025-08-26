@@ -142,3 +142,11 @@ export const PaymentResponseSchema = z.object({
   message: z.string().optional()
 });
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
+
+export const WorkspaceSubscriptionListResponseSchema = z.object({
+  subscriptions: z.array(WorkspaceSubscriptionSchema)
+});
+
+export type WorkspaceSubscriptionListResponse = z.infer<
+  typeof WorkspaceSubscriptionListResponseSchema
+>;

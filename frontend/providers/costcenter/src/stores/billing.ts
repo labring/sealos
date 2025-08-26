@@ -1,6 +1,6 @@
 import { CYCLE } from '@/constants/valuation';
 import { Cycle } from '@/types/cycle';
-import { RegionClient } from '@/types/region';
+import { Region } from '@/types/region';
 import { formatMoney } from '@/utils/format';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -18,14 +18,14 @@ type BillingState = {
   appNameIdx: number;
   namespaceList: [string, string][];
   appTypeList: string[];
-  regionList: RegionClient[];
+  regionList: Region[];
   appNameList: string[];
   setAppType: (appType: number) => void;
   setAppName: (appName: number) => void;
   setNamespace: (namespace: number) => void;
   setAppNameList: (appNameList: string[]) => void;
   setAppTypeList: (appTypeList: string[]) => void;
-  setRegionList: (regionList: RegionClient[]) => void;
+  setRegionList: (regionList: Region[]) => void;
   setNamespaceList: (namespaceList: [string, string][]) => void;
   setRegion: (region: number) => void;
   setCycle: (cycle: number) => void;
@@ -37,7 +37,7 @@ type BillingState = {
   closeBillingDetail: () => void;
   // [id, name]
   getNamespace: () => [string, string] | null;
-  getRegion: () => RegionClient | null;
+  getRegion: () => Region | null;
   updateCpu: (cpu: number) => void;
   updateMemory: (memory: number) => void;
   updateStorage: (storage: number) => void;
@@ -75,7 +75,7 @@ const useBillingStore = create<BillingState>()(
       setAppTypeList(appTypeList: string[]) {
         set({ appTypeList });
       },
-      setRegionList(regionList: RegionClient[]) {
+      setRegionList(regionList: Region[]) {
         const { getRegion } = get();
         const region = getRegion();
         const newRegionIdx = regionList.findIndex((item) => item.uid === region?.uid);

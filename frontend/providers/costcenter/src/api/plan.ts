@@ -7,7 +7,8 @@ import {
   UpgradeAmountRequest,
   UpgradeAmountResponse,
   SubscriptionPayRequest,
-  PaymentResponse
+  PaymentResponse,
+  WorkspaceSubscriptionListResponse
 } from '@/types/plan';
 
 // Get all subscription plans
@@ -42,4 +43,10 @@ export const createSubscriptionPayment = (data: SubscriptionPayRequest) =>
   request<any, ApiResp<PaymentResponse>>('/api/plan/pay', {
     method: 'POST',
     data
+  });
+
+// Get user all regions workspace subscription list
+export const getWorkspaceSubscriptionList = () =>
+  request<any, ApiResp<WorkspaceSubscriptionListResponse>>('/api/plan/subscription-list', {
+    method: 'POST'
   });

@@ -1,13 +1,12 @@
 import '@/styles/globals.css';
 
 import Layout from '@/layout';
-import { Response as initDataRes } from '@/pages/api/platform/getAppConfig';
-import request from '@/service/request';
+import { getAppConfig } from '@/api/platform';
+import { getAppList } from '@/api/billing';
 import useAppTypeStore from '@/stores/appType';
 import useBillingStore from '@/stores/billing';
 import useEnvStore from '@/stores/env';
 import { theme } from '@/styles/chakraTheme';
-import { ApiResp } from '@/types/api';
 import { Hydrate, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { appWithTranslation } from 'next-i18next';
 import type { AppProps } from 'next/app';
@@ -71,7 +70,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await request<any, ApiResp<initDataRes>>('/api/platform/getAppConfig');
+        const { data } = await getAppConfig();
         state.setEnv('realNameRechargeLimit', !!data?.REALNAME_RECHARGE_LIMIT);
         state.setEnv('invoiceEnabled', !!data?.INVOICE_ENABLED);
         state.setEnv('transferEnabled', !!data?.TRANSFER_ENABLED);
@@ -92,11 +91,7 @@ const App = ({ Component, pageProps }: AppProps) => {
   useEffect(() => {
     (async () => {
       const { data } = await queryClient.fetchQuery({
-        queryFn() {
-          return request<any, ApiResp<{ appMap: Record<string, string> }>>(
-            '/api/billing/getAppList'
-          );
-        },
+        queryFn: getAppList,
         queryKey: ['appList']
       });
       const record = data?.appMap;
